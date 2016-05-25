@@ -1,0 +1,82 @@
+@CHARSET "UTF-8";
+
+@import url(https://fonts.googleapis.com/css?family=Roboto:400,900);
+
+* {
+	box-sizing: border-box;
+}
+
+body, html {
+	background: #eee;
+	color: #555;
+	font-family: Roboto, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.main {
+	margin: auto;
+	width: 900px;
+}
+
+.container {
+	padding: 100px 0;
+}
+
+.left {
+	
+}
+
+.error {
+	
+}
+
+.error .ohmy {
+	font-size: 145px;
+	font-weight: 900;
+}
+
+.error .errstr {
+	font-size: 32px;
+	margin-bottom: 25px;
+	width: 500px;
+}
+
+.error .errcode {
+	font-size: 22px;
+	color: #999;
+}
+
+.right {
+	float: right;
+	width: 300px;
+}
+
+.error-icon {
+	width: 100%;
+}
+
+.moreinfo {
+	margin-top: 25px;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+}
+
+table th {
+	text-align: left;
+	border-bottom: 1px solid #ddd;
+	background: #fff;
+}
+
+table th, table td {
+	padding: 5px;
+}
+
+table td {
+	font-size: 12px;
+}
+
+table tr:hover > td {
+	background-color: #ddd;
+}

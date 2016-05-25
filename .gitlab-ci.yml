@@ -1,0 +1,25 @@
+stages:
+  - test
+  - build
+  - deploy
+variables:
+    TARGET_TEMP_DIR: "/tmp/hazaar-platform/module"
+Default Test:
+  script:
+  - git submodule update --init
+  - phpunit --bootstrap tests/bootstrap.php tests
+  stage: test
+Deploy:
+  script:
+  - rsync --exclude=.* --delete -r . $DEPLOY_TARGET
+  stage: build
+  only:
+  - master
+Platform Server:
+  script:
+  - python build/platform.py $TARGET_TEMP_DIR
+  - rsync -r $TARGET_TEMP_DIR $PLATFORM_TARGET
+  - rm -rf $TARGET_TEMP_DIR
+  stage: deploy
+  only:
+  - stable

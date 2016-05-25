@@ -1,0 +1,144 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+<head>
+
+<title><?=$this->code;?> - <?=$this->status;?></title>
+
+<?=$this->html->link($this->application->url('hazaar/Error/Error.css'));?>
+
+</head>
+
+<body>
+
+	<div class="main">
+
+		<div class="container">
+
+			<div class="right">
+
+				<img class="error-icon"
+					src="<?=$this->application->url('hazaar/Error/hazaarlogo.svg');?>" />
+
+			</div>
+
+			<div class="left">
+
+				<div class="error">
+
+					<div class="ohmy">Oh my!</div>
+
+					<div class="errstr"><?=$this->err['short_message']; ?>
+                
+				</div>
+					<div class="errcode">
+					Error code: <?=$this->code;?>
+            	</div>
+
+				<?php if(APPLICATION_ENV == 'development'): ?>
+				
+				<div class="moreinfo">
+
+						<h2>Message:</h2>
+
+						<div><?=$this->err['message'];?></div>
+
+						<h2>File:</h2>
+
+						<div><?=$this->err['file'];?></div>
+
+						<h2 class="label label-important">Line #:</h2>
+
+						<div><?=$this->err['line'];?></div>
+    
+            		<?php if(isset($this->err['type'])): ?>
+    
+        				<h2>Error Type:</h2>
+
+						<div><?=$this->err['type'];?></div>
+    
+            		<?php endif; ?>
+    
+            		<?php if(isset($this->err['class'])): ?>
+    
+                    	<h2>Exception Class:</h2>
+
+						<div><?=$this->err['class'];?></div>
+    
+          		  	<?php endif; ?>
+    
+            		<?php if(isset($this->err['context'])): ?>
+    
+                   		<h2>Context:</h2>
+
+						<div><?=$this->err['context'];?></div>
+   
+            		<?php endif; ?>
+    
+            		<h2>Backtrace:</h2>
+
+						<div class="debug_trace">
+
+							<table>
+
+								<thead>
+									<tr>
+										<th>#</th>
+										<th>File</th>
+
+										<th>Line</th>
+
+										<th>Location</th>
+
+									</tr>
+
+								</thead>
+
+								<tbody>
+
+                    			<?php foreach ($this->trace as $seq => $trace) { ?>
+
+                        		<tr>
+
+										<td><?=$seq;?></td>
+
+										<td><?=ake($trace, 'file');?></td>
+
+										<td><?=ake($trace, 'line');?></td>
+
+										<td><?=(($class = ake($trace, 'class')) ? $class . '::' : NULL) . $trace['function'];?>()</td>
+
+									</tr>
+
+                    			<?php } ?>
+                			</tbody>
+
+							</table>
+
+						</div>
+
+					</div>
+				
+				<?php endif; ?>
+
+			</div>
+
+			</div>
+
+		</div>
+
+<?=$this->post();?>
+
+
+
+
+
+
+
+</body>
+
+</html>
