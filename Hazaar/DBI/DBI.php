@@ -63,7 +63,7 @@ class DBI {
         
         if (\Hazaar\Map::is_array($config)) {
             
-            if (! $config->has('dsn')) {
+            if (!$config->has('dsn')) {
                 
                 $dsn = $config->driver . ':';
                 
@@ -84,7 +84,7 @@ class DBI {
 
     static public function getDefaultConfig($env = NULL) {
 
-        if (! array_key_exists($env, DBI::$default_config)) {
+        if (!array_key_exists($env, DBI::$default_config)) {
             
             DBI::$default_config[$env] = new \Hazaar\Application\Config('database.ini', $env);
         }
@@ -97,10 +97,10 @@ class DBI {
 
         $driver = ucfirst(substr($dsn, 0, strpos($dsn, ':')));
         
-        if (! $driver)
+        if (!$driver)
             throw new DBI\Exception\DriverNotSpecified();
         
-        if (! array_key_exists($driver, DBI::$connections))
+        if (!array_key_exists($driver, DBI::$connections))
             DBI::$connections[$driver] = array();
         
         $hash = md5(serialize(array(
@@ -118,12 +118,12 @@ class DBI {
             
             $class = 'Hazaar\DBI\DBD\\' . $driver;
             
-            if (! class_exists($class))
+            if (!class_exists($class))
                 throw new DBI\Exception\DriverNotFound($driver);
             
             $this->driver = new $class();
             
-            if (! $driver_options)
+            if (!$driver_options)
                 $driver_options = array();
             
             $driver_options = array_replace(array(
@@ -131,7 +131,7 @@ class DBI {
                 \PDO::ATTR_EMULATE_PREPARES => FALSE
             ), $driver_options);
             
-            if (! ($this->conn = $this->driver->connect($dsn, $username, $password, $driver_options)))
+            if (!($this->conn = $this->driver->connect($dsn, $username, $password, $driver_options)))
                 throw new DBI\Exception\ConnectionFailed($dsn);
             
             DBI::$connections[$hash] = $this->driver;
@@ -161,9 +161,9 @@ class DBI {
     
     }
 
-    public function getAttribute() {
+    public function getAttribute($option) {
 
-        return $this->driver->getAttribute();
+        return $this->driver->getAttribute($option);
     
     }
 
@@ -173,7 +173,7 @@ class DBI {
         
         $dir = new \Hazaar\File\Dir(dirname(__FILE__) . '/DBD');
         
-        while ($file = $dir->read()) {
+        while($file = $dir->read()) {
             
             if (preg_match('/class (\w*) extends \\\Hazaar\\\DBI\\\BaseDriver\W/m', $file->getContents(), $matches)) {
                 
@@ -304,7 +304,7 @@ class DBI {
 
         $arglist = array();
         
-        foreach ($args as $arg)
+        foreach($args as $arg)
             $arglist[] = (is_numeric($arg) ? $arg : $this->quote($arg));
         
         $sql = 'SELECT ' . $method . '(' . implode(',', $arglist) . ');';
@@ -412,6 +412,12 @@ class DBI {
     public function dropConstraint($name, $table, $schema = NULL) {
 
         return $this->driver->dropConstraint($name, $table, $schema);
+    
+    }
+
+    public function execCount() {
+
+        return $this->driver->execCount();
     
     }
 
