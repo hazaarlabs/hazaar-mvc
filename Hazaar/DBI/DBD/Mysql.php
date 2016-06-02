@@ -353,31 +353,19 @@ class Mysql extends BaseDriver {
 
     public function exec($sql) {
 
-        BaseDriver::$execs++;
-        
         return $this->conn->exec($sql);
     
     }
 
     public function query($sql) {
 
-        if ($result = $this->conn->query($sql)) {
-            
-            BaseDriver::$execs++;
-            
-            return new \Hazaar\DBI\Result($result);
-        }
-        
-        return false;
+        return $this->conn->query($sql);
     
     }
 
     public function prepare($sql) {
 
-        if ($result = $this->conn->prepare($sql))
-            return new \Hazaar\DBI\Result($result);
-        
-        return false;
+        return $this->conn->prepare($sql);
     
     }
 

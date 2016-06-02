@@ -27,7 +27,7 @@ namespace Hazaar\DBI;
  * }
  * </code>
  */
-class Table implements \ArrayAccess, \Countable, \Iterator {
+class Table {
 
     private $driver;
 
@@ -41,15 +41,7 @@ class Table implements \ArrayAccess, \Countable, \Iterator {
 
     private $joins = array();
 
-    private $order;
-
-    private $order_desc = FALSE;
-
-    private $limit;
-
-    private $offset;
-
-    private $result;
+    private $options = array();
 
     function __construct(DBD\BaseDriver $driver, $name, $alias = NULL, $schema = NULL) {
 
@@ -74,7 +66,7 @@ class Table implements \ArrayAccess, \Countable, \Iterator {
      *
      * @return \Hazaar\DBI\Table
      */
-    public function find($criteria = array(), $fields = array()) {
+    public function find($criteria = array(), $fields = array(), $options = array()) {
 
         if (!is_array($criteria))
             $criteria = array();
@@ -88,16 +80,16 @@ class Table implements \ArrayAccess, \Countable, \Iterator {
         
         $this->fields = $fields;
         
-        return $this;
+        $this->options = $options;
+        
+        return new Result($this->execute());
     
     }
 
     public function findOne($criteria = array(), $fields = array(), $order = NULL) {
 
-        if ($result = $this->find($criteria, $fields, $order, 1)) {
-            
+        if ($result = $this->find($criteria, $fields, $order, 1))
             return $result->row();
-        }
         
         return FALSE;
     
@@ -107,12 +99,8 @@ class Table implements \ArrayAccess, \Countable, \Iterator {
 
         $sql = 'SELECT EXISTS (SELECT * FROM ' . $this->from() . ' WHERE ' . $this->driver->prepareCriteria($criteria) . ');';
         
-        $result = $this->driver->query($sql);
-        
-        if ($result) {
-            
+        if ($result = $this->driver->query($sql))
             return boolify($result->fetchColumn(0));
-        }
         
         return FALSE;
     
@@ -154,49 +142,65 @@ class Table implements \ArrayAccess, \Countable, \Iterator {
         if (count($this->criteria) > 0)
             $sql .= ' WHERE ' . $this->driver->prepareCriteria($this->criteria);
         
-        if ($this->order) {
+        if (count($this->options) > 0) {
             
-            $sql .= ' ORDER BY ';
-            
-            if (is_array($this->order)) {
+            foreach($this->options as $option => $value) {
                 
-                $order = array();
-                
-                foreach($this->order as $field => $mode) {
-                    
-                    if (is_array($mode)) {
+                switch ($option) {
+                    case 'sort' :
                         
-                        $nulls = ake($mode, '$nulls', 0);
+                        $sql .= ' ORDER BY ';
                         
-                        $mode = ake($mode, '$dir', 1);
-                    } else {
+                        if (is_array($value)) {
+                            
+                            $order = array();
+                            
+                            foreach($value as $field => $mode) {
+                                
+                                if (is_array($mode)) {
+                                    
+                                    $nulls = ake($mode, '$nulls', 0);
+                                    
+                                    $mode = ake($mode, '$dir', 1);
+                                } else {
+                                    
+                                    $nulls = 0;
+                                }
+                                
+                                $dir = (($mode == 1) ? 'ASC' : 'DESC');
+                                
+                                if ($nulls > 0)
+                                    $dir .= ' NULLS FIRST';
+                                
+                                elseif ($nulls < 0)
+                                    $dir .= ' NULLS LAST';
+                                
+                                $order[] = $field . ($dir ? ' ' . $dir : NULL);
+                            }
+                            
+                            $sql .= implode(', ', $order);
+                        } else {
+                            
+                            $desc = false;
+                            
+                            if (substr($value, 0, 1) == '-') {
+                                
+                                $desc = true;
+                                
+                                $value = substr($value, 1);
+                            }
+                            
+                            $sql .= $value . ($desc ? ' DESC' : NULL);
+                        }
                         
-                        $nulls = 0;
-                    }
+                        break;
                     
-                    $dir = (($mode == 1) ? 'ASC' : 'DESC');
-                    
-                    if ($nulls > 0)
-                        $dir .= ' NULLS FIRST';
-                    
-                    elseif ($nulls < 0)
-                        $dir .= ' NULLS LAST';
-                    
-                    $order[] = $field . ($dir ? ' ' . $dir : NULL);
+                    default :
+                        $sql .= ' ' . strtoupper($option) . (string) (int) $value;
+                        break;
                 }
-                
-                $sql .= implode(', ', $order);
-            } else {
-                
-                $sql .= $this->order . ($this->order_desc ? ' DESC' : NULL);
             }
         }
-        
-        if ($this->limit !== NULL)
-            $sql .= ' LIMIT ' . (string) (int) $this->limit;
-        
-        if ($this->offset !== NULL)
-            $sql .= ' OFFSET ' . (string) (int) $this->offset;
         
         if ($terminate_with_colon)
             $sql .= ';';
@@ -207,14 +211,9 @@ class Table implements \ArrayAccess, \Countable, \Iterator {
 
     public function execute() {
 
-        if ($this->result === NULL) {
-            
-            $sql = $this->toString();
-            
-            $this->result = $this->driver->query($sql);
-        }
+        $sql = $this->toString();
         
-        return $this->result;
+        return $this->driver->query($sql);
     
     }
 
@@ -274,24 +273,6 @@ class Table implements \ArrayAccess, \Countable, \Iterator {
     
     }
 
-    public function sort($field, $desc = FALSE) {
-
-        $this->order = $field;
-        
-        $this->order_desc = $desc;
-        
-        return $this;
-    
-    }
-
-    public function limit($limit = 1) {
-
-        $this->limit = $limit;
-        
-        return $this;
-    
-    }
-
     public function offset($offset) {
 
         $this->offset = $offset;
@@ -321,165 +302,6 @@ class Table implements \ArrayAccess, \Countable, \Iterator {
     public function deleteAll() {
 
         return $this->driver->deleteAll($this->name);
-    
-    }
-
-    public function row() {
-
-        if ($result = $this->execute())
-            return $result->row();
-        
-        return FALSE;
-    
-    }
-
-    public function fetch($offset = 0) {
-
-        if ($result = $this->execute())
-            return $result->fetch(\PDO::FETCH_ASSOC, \PDO::FETCH_ORI_NEXT, $offset);
-        
-        return FALSE;
-    
-    }
-
-    public function fetchAll() {
-
-        if ($result = $this->execute())
-            return $result->fetchAll(\PDO::FETCH_ASSOC);
-        
-        return FALSE;
-    
-    }
-
-    public function reset() {
-
-        $this->result = NULL;
-        
-        return $this;
-    
-    }
-
-    /*
-     * Array Access
-     */
-    public function offsetExists($offset) {
-
-        if ($result = $this->execute())
-            return array_key_exists($offset, $result);
-        
-        return FALSE;
-    
-    }
-
-    public function offsetGet($offset) {
-
-        if ($result = $this->execute())
-            return $result[$offset];
-        
-        return NULL;
-    
-    }
-
-    public function offsetSet($offset, $value) {
-
-        throw new \Exception('Updating a value in a database result is not currently implemented!');
-    
-    }
-
-    public function offsetUnset($offset) {
-
-        throw new \Exception('Unsetting a value in a database result is not currently implemented!');
-    
-    }
-
-    /*
-     * Iterator
-     */
-    public function current() {
-
-        if (!$this->result)
-            $this->execute();
-        
-        return $this->result->current();
-    
-    }
-
-    public function key() {
-
-        if (!$this->result)
-            $this->execute();
-        
-        return $this->result->key();
-    
-    }
-
-    public function next() {
-
-        if (!$this->result)
-            $this->execute();
-        
-        return $this->result->next();
-    
-    }
-
-    public function rewind() {
-
-        if (!$this->result)
-            $this->execute();
-        
-        return $this->result->rewind();
-    
-    }
-
-    public function valid() {
-
-        if (!$this->result)
-            $this->execute();
-        
-        return $this->result->valid();
-    
-    }
-
-    /*
-     * Countable
-     */
-    public function count() {
-
-        if ($this->result) {
-            
-            return $this->result->rowCount();
-        } else {
-            
-            $fields = $this->fields;
-            
-            $this->fields = array(
-                'count(*)' => 'count'
-            );
-            
-            $result = $this->execute();
-            
-            $this->fields = $fields;
-            
-            if ($result) {
-                
-                $row = $result->row();
-                
-                $this->result = NULL;
-                
-                return $row['count'];
-            }
-        }
-        
-        return FALSE;
-    
-    }
-
-    public function getResult() {
-
-        if (!$this->result)
-            $this->execute();
-        
-        return $this->result;
     
     }
 

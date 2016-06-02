@@ -298,18 +298,14 @@ abstract class BaseDriver implements Driver_Interface {
             
             $sql .= ';';
             
-            if ($result = $this->query($sql)) {
-                
+            if ($result = $this->query($sql))
                 $return_value = (int) $this->lastinsertid();
-            }
         } elseif (is_string($returning)) {
             
             $sql .= ' ' . $returning . ';';
             
-            if ($result = $this->query($sql)) {
-                
+            if ($result = $this->query($sql))
                 $return_value = $result->fetchColumn(0);
-            }
         }
         
         return $return_value;
@@ -377,10 +373,8 @@ abstract class BaseDriver implements Driver_Interface {
             ORDER BY table_name DESC;
         ";
         
-        if ($result = $this->query($sql)) {
-            
+        if ($result = $this->query($sql))
             return $result->fetchAll(\PDO::FETCH_ASSOC);
-        }
         
         return NULL;
     
@@ -421,7 +415,7 @@ abstract class BaseDriver implements Driver_Interface {
                     $name = $info['name'];
                 }
                 
-                $def = $this->field($name) . ' ' . $this->type($info['data_type']) . ($info['length'] ? '(' . $info['length'] . ')' : NULL);
+                $def = $this->field($name) . ' ' . $this->type($info['data_type']) . (ake($info, 'length') ? '(' . $info['length'] . ')' : NULL);
                 
                 if (array_key_exists('default', $info) && !empty($info['default']))
                     $def .= ' DEFAULT ' . $info['default'];
@@ -475,7 +469,9 @@ abstract class BaseDriver implements Driver_Interface {
         $result = $info->find(array(
             'table_name' => $name,
             'table_schema' => $schema
-        ))->sort($sort);
+        ), array(), array(
+            'sort' => $sort
+        ));
         
         $pkeys = array();
         
@@ -634,7 +630,7 @@ abstract class BaseDriver implements Driver_Interface {
         
         $result = $this->query($sql);
         
-        return $result->fetchAll();
+        return $result->fetchAll(\PDO::FETCH_ASSOC);
     
     }
 
@@ -698,10 +694,8 @@ abstract class BaseDriver implements Driver_Interface {
         
         if ($result = $this->query($sql)) {
             
-            while($row = $result->row()) {
-                
+            while($row = $result->fetch(\PDO::FETCH_ASSOC))
                 $constraints[] = $row;
-            }
             
             return $constraints;
         }

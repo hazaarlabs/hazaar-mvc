@@ -41,67 +41,106 @@ class Result implements \ArrayAccess, \Countable, \Iterator {
 
     private $json_columns = array();
 
-    function __construct(\PDOStatement $statement) {
+    function __construct($statement) {
 
         $this->statement = $statement;
         
-        for($i = 0; $i < $this->statement->columnCount(); $i++) {
+        if ($statement instanceof \PDOStatement) {
             
-            $meta = $this->statement->getColumnMeta($i);
-            
-            $key = $meta['name'];
-            
-            if ($meta['pdo_type'] == \PDO::PARAM_STR && (substr(ake($meta, 'native_type'), 0, 4) == 'json' || (!array_key_exists('native_type', $meta) && in_array('blob', ake($meta, 'flags')))))
-                $this->json_columns[] = $meta['name'];
+            for($i = 0; $i < $this->statement->columnCount(); $i++) {
+                
+                $meta = $this->statement->getColumnMeta($i);
+                
+                $key = $meta['name'];
+                
+                if ($meta['pdo_type'] == \PDO::PARAM_STR && (substr(ake($meta, 'native_type'), 0, 4) == 'json' || (!array_key_exists('native_type', $meta) && in_array('blob', ake($meta, 'flags')))))
+                    $this->json_columns[] = $meta['name'];
+            }
         }
+    
+    }
+
+    public function __toString() {
+
+        return $this->toString();
+    
+    }
+
+    public function toString() {
+
+        return $this->statement->queryString;
     
     }
 
     public function bindColumn($column, &$param, $type, $maxlen, $driverdata) {
 
-        return $this->statement->bindColumn($column, $param, $type, $maxlen, $driverdata);
+        if ($this->statement instanceof \PDOStatement)
+            return $this->statement->bindColumn($column, $param, $type, $maxlen, $driverdata);
+        
+        return false;
     
     }
 
     public function bindParam($parameter, &$variable, $data_type = \PDO::PARAM_STR, $length, $driver_options) {
 
-        return $this->statement->bindParam($parameter, $variable, $data_type, $length, $driver_options);
+        if ($this->statement instanceof \PDOStatement)
+            return $this->statement->bindParam($parameter, $variable, $data_type, $length, $driver_options);
+        
+        return false;
     
     }
 
     public function bindValue($parameter, $value, $data_type = \PDO::PARAM_STR) {
 
-        return $this->statement->bindValue($parameter, $value, $data_type);
+        if ($this->statement instanceof \PDOStatement)
+            return $this->statement->bindValue($parameter, $value, $data_type);
+        
+        return false;
     
     }
 
     public function closeCursor() {
 
-        return $this->statement->closeCursor();
+        if ($this->statement instanceof \PDOStatement)
+            return $this->statement->closeCursor();
+        
+        return false;
     
     }
 
     public function columnCount() {
 
-        return $this->statement->columnCount();
+        if ($this->statement instanceof \PDOStatement)
+            return $this->statement->columnCount();
+        
+        return false;
     
     }
 
     public function debugDumpParams() {
 
-        return $this->statement->debugDumpParams();
+        if ($this->statement instanceof \PDOStatement)
+            return $this->statement->debugDumpParams();
+        
+        return false;
     
     }
 
     public function errorCode() {
 
-        return $this->statement->errorCode();
+        if ($this->statement instanceof \PDOStatement)
+            return $this->statement->errorCode();
+        
+        return false;
     
     }
 
     public function errorInfo() {
 
-        return $this->statement->errorInfo();
+        if ($this->statement instanceof \PDOStatement)
+            return $this->statement->errorInfo();
+        
+        return false;
     
     }
 
@@ -118,52 +157,78 @@ class Result implements \ArrayAccess, \Countable, \Iterator {
     
     }
 
-    public function fetch($fetch_style, $cursor_orientation = \PDO::FETCH_ORI_NEXT, $cursor_offset = 0) {
+    public function fetch($fetch_style = \PDO::FETCH_ASSOC, $cursor_orientation = \PDO::FETCH_ORI_NEXT, $cursor_offset = 0) {
 
-        $this->reset = true;
+        if ($this->statement instanceof \PDOStatement) {
+            
+            $this->reset = true;
+            
+            return $this->statement->fetch($fetch_style, $cursor_orientation, $cursor_offset);
+        }
         
-        return $this->statement->fetch($fetch_style, $cursor_orientation, $cursor_offset);
+        return false;
     
     }
 
     public function fetchAll($fetch_style = \PDO::FETCH_ASSOC, $fetch_argument = null, $ctor_args = array()) {
 
-        $this->reset = true;
-        
-        if ($fetch_argument !== null) {
+        if ($this->statement instanceof \PDOStatement) {
             
-            return $this->statement->fetchAll($fetch_style, $fetch_argument, $ctor_args);
+            $this->reset = true;
+            
+            if ($fetch_argument !== null) {
+                
+                return $this->statement->fetchAll($fetch_style, $fetch_argument, $ctor_args);
+            }
+            
+            return $this->statement->fetchAll($fetch_style);
         }
         
-        return $this->statement->fetchAll($fetch_style);
+        return false;
     
     }
 
     public function fetchColumn($column_number = 0) {
 
-        $this->reset = true;
+        if ($this->statement instanceof \PDOStatement) {
+            
+            $this->reset = true;
+            
+            return $this->statement->fetchColumn($column_number);
+        }
         
-        return $this->statement->fetchColumn($column_number);
+        return false;
     
     }
 
     public function fetchObject($class_name = "stdClass", $ctor_args) {
 
-        $this->reset = true;
+        if ($this->statement instanceof \PDOStatement) {
+            
+            $this->reset = true;
+            
+            return $this->statement->fetchObject($class_name, $ctor_args);
+        }
         
-        return $this->statement->fetchObject($class_name, $ctor_args);
+        return false;
     
     }
 
     public function getAttribute($attribute) {
 
-        return $this->statement->getAttribute($attribute);
+        if ($this->statement instanceof \PDOStatement)
+            return $this->statement->getAttribute($attribute);
+        
+        return false;
     
     }
 
     public function getColumnMeta($column) {
 
-        return $this->statement->getColumnMeta($column);
+        if ($this->statement instanceof \PDOStatement)
+            return $this->statement->getColumnMeta($column);
+        
+        return false;
     
     }
 
@@ -184,27 +249,50 @@ class Result implements \ArrayAccess, \Countable, \Iterator {
 
     public function nextRowset() {
 
-        $this->reset = true;
+        if ($this->statement instanceof \PDOStatement) {
+            
+            $this->reset = true;
+            
+            return $this->statement->nextRowset();
+        }
         
-        return $this->statement->nextRowset();
+        return false;
     
     }
 
     public function rowCount() {
 
-        return $this->statement->rowCount();
+        if ($this->statement instanceof \PDOStatement)
+            return $this->statement->rowCount();
+        
+        return 0;
+    
+    }
+
+    /*
+     * Countable
+     */
+    public function count() {
+
+        return $this->rowCount();
     
     }
 
     public function setAttribute($attribute, $value) {
 
-        return $this->statement->setAttribute($attribute, $value);
+        if ($this->statement instanceof \PDOStatement)
+            return $this->statement->setAttribute($attribute, $value);
+        
+        return false;
     
     }
 
     public function setFetchMode($mode) {
 
-        return $this->statement->setFetchMode($mode);
+        if ($this->statement instanceof \PDOStatement)
+            return $this->statement->setFetchMode($mode);
+        
+        return false;
     
     }
 
@@ -223,23 +311,33 @@ class Result implements \ArrayAccess, \Countable, \Iterator {
 
     public function all() {
 
-        $this->reset = true;
+        if ($this->statement instanceof \PDOStatement) {
+            
+            $this->reset = true;
+            
+            return $this->statement->fetchAll(\PDO::FETCH_ASSOC);
+        }
         
-        return $this->statement->fetchAll(\PDO::FETCH_ASSOC);
+        return false;
     
     }
 
     public function row() {
 
-        $this->reset = true;
+        if ($this->statement instanceof \PDOStatement) {
+            
+            $this->reset = true;
+            
+            return $this->statement->fetch(\PDO::FETCH_ASSOC);
+        }
         
-        return $this->statement->fetch(\PDO::FETCH_ASSOC);
+        return false;
     
     }
 
     private function store() {
 
-        if (!$this->wakeup) {
+        if ($this->statement instanceof \PDOStatement && !$this->wakeup) {
             
             $this->records = $this->statement->fetchAll(\PDO::FETCH_ASSOC);
             
@@ -333,11 +431,16 @@ class Result implements \ArrayAccess, \Countable, \Iterator {
         if ($this->wakeup)
             return next($this->records);
         
-        $this->reset = true;
+        if ($this->statement instanceof \PDOStatement) {
+            
+            $this->reset = true;
+            
+            $this->record = $this->statement->fetch(\PDO::FETCH_ASSOC);
+            
+            return $this->fix($this->record);
+        }
         
-        $this->record = $this->statement->fetch(\PDO::FETCH_ASSOC);
-        
-        return $this->fix($this->record);
+        return false;
     
     }
 
@@ -346,12 +449,17 @@ class Result implements \ArrayAccess, \Countable, \Iterator {
         if ($this->wakeup)
             return reset($this->records);
         
-        if ($this->reset == true)
-            $this->statement->execute();
+        if ($this->statement instanceof \PDOStatement) {
+            
+            if ($this->reset == true)
+                $this->statement->execute();
+            
+            $this->record = $this->statement->fetch(\PDO::FETCH_ASSOC);
+            
+            return $this->fix($this->record);
+        }
         
-        $this->record = $this->statement->fetch(\PDO::FETCH_ASSOC);
-        
-        return $this->fix($this->record);
+        return false;
     
     }
 
@@ -361,15 +469,6 @@ class Result implements \ArrayAccess, \Countable, \Iterator {
             return (current($this->records));
         
         return is_array($this->record);
-    
-    }
-
-    /*
-     * Countable
-     */
-    public function count() {
-
-        return $this->statement->rowCount();
     
     }
 

@@ -105,31 +105,19 @@ class Pgsql extends BaseDriver {
 
     public function exec($sql) {
 
-        BaseDriver::$execs++;
-        
         return $this->conn->exec($sql);
     
     }
 
     public function query($sql) {
 
-        if ($result = $this->conn->query($sql)) {
-            
-            BaseDriver::$execs++;
-            
-            return new \Hazaar\DBI\Result($result);
-        }
-        
-        return false;
+        return $this->conn->query($sql);
     
     }
 
     public function prepare($sql) {
 
-        if ($result = $this->conn->prepare($sql))
-            return new \Hazaar\DBI\Result($result);
-        
-        return false;
+        return $this->conn->prepare($sql);
     
     }
 
@@ -169,7 +157,7 @@ class Pgsql extends BaseDriver {
         
         $result = $this->query($sql);
         
-        while($row = $result->row()) {
+        while($row = $result->fetch(\PDO::FETCH_ASSOC)) {
             
             $row['columns'] = (explode(',', substr($row['columns'], 1, strlen($row['columns']) - 2)));
             
