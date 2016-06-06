@@ -52,7 +52,7 @@ class Bootstrap extends \Hazaar\View\Helper {
      *              Bootstrap project.  A number of different button styles are available.  This method is also 100%
      *              compatible with the Font Awesome helper so that you can use FA icons in your button labels.
      *
-     *              <div class="alert alert-info">For information on what button styles are available, see:
+     *              p(notice notice-info). For information on what button styles are available, see:
      *              [[http://twitter.github.com/bootstrap/base-css.html#buttons]]
      *
      *              Here is an example using the Font Awesome helper to include an icon on the button.
@@ -67,7 +67,7 @@ class Bootstrap extends \Hazaar\View\Helper {
      *              </div>
      *              </code></pre>
      *
-     *              <div class="alert alert-info">Take note of the space before the string label.  This is required to
+     *              p(notice notice-info). Take note of the space before the string label.  This is required to
      *              add a nice gap between the icon and the label.</div>
      *
      * @since       1.0.0

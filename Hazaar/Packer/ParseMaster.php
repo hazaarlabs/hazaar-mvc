@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @package     Packer
+ */
 namespace Hazaar\Packer;
 
 class ParseMaster {

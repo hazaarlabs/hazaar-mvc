@@ -1,4 +1,7 @@
 <?php
+/**
+ * @package     Socket
+ */
 namespace\Hazaar\Socket;
 
 abstract class WebSocketServer extends Server {

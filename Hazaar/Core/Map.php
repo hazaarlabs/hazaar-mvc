@@ -144,7 +144,7 @@ class Map implements \ArrayAccess, \Iterator {
      *                  'label' => string 'Test Map' (length=8)
      *              </code>
      *
-     *              <div class="alert alert-info">If the input arguments are strings then the Map class will try and
+     *              p(notice notice-info). If the input arguments are strings then the Map class will try and
      *              figure out what kind of string is is and either convert from JSON or unserialize the string.</div>
      *
      * @since       1.0.0
@@ -924,7 +924,7 @@ class Map implements \ArrayAccess, \Iterator {
      *              before the element is returned here.
      *              Filters are applied/executed only for element types specified in the 'out' filter definition.
      *
-     *              <div class="alert alert-warning">Note that when using an output filter the value will NOT be
+     *              p(notice notice-warning). Note that when using an output filter the value will NOT be
      *              returned by reference meaning in-place modifications will not work.</div>
      *
      * @since       1.0.0

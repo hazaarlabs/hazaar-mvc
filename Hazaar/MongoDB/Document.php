@@ -19,7 +19,7 @@ namespace Hazaar\MongoDB;
  *              It has many advanced features that allow in-place 'atomic' updates of fields via is built-in differencing
  *              engine.
  *
- *              <div class="alert alert-info">At the time of writing, this class works with MongoDB version 2.2.1.</div>
+ *              p(notice notice-info). At the time of writing, this class works with MongoDB version 2.2.1.</div>
  *
  *              h3. Example
  *

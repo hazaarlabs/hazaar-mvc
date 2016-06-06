@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @package     Socket
+ */
 namespace Hazaar\Socket;
 
 /**

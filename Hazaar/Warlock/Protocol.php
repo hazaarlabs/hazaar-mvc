@@ -4,6 +4,8 @@
  * Author: Jamie Carl
  * Date: 25/09/14
  * Time: 9:21 AM
+ * 
+ * @package     Socket
  */
 
 namespace Hazaar\Warlock;

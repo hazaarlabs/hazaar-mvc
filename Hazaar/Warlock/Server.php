@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @package     Socket
+ */
 namespace Hazaar\Warlock;
 
 if(! extension_loaded('sockets')) {

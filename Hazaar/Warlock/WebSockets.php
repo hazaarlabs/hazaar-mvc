@@ -4,6 +4,8 @@
  * User: jamie
  * Date: 22/09/14
  * Time: 1:12 PM
+ * 
+ * @package     Socket
  */
 
 namespace Hazaar\Warlock;

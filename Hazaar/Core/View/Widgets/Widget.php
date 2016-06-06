@@ -389,7 +389,7 @@ abstract class Widget extends \Hazaar\View\ViewableObject {
      *              as the default theme is set when creating each widget.  However you may want to override
      *              the theme on a per widget basis and this allows for that.
      *
-     *              <div class="alert alert-info">Keep in mind that the theme file used will have to included
+     *              p(notice notice-info). Keep in mind that the theme file used will have to included
      *              manually.</div>
      *
      * @param       string $value The name of the theme.

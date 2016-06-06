@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @package     Parser
+ */
 namespace Hazaar\Parser;
 
 class PHP {

@@ -87,11 +87,11 @@ define ( 'SUPPORT_PATH', realpath ( LIBRARY_PATH . '/Libs' ) );
  * $loader->loadController('index');
  * </code>
  *
- * <div class="alert alert-info">The loader class is loaded automatically when starting the application.
+ * p(notice notice-info). The loader class is loaded automatically when starting the application.
  * There should be no need to use the Loader instance directly and static methods have been provided for
  * some extra functionality.</div>
  *
- * <div class="alert alert-warning">Instantiating this class directly can have undefined results.</div>
+ * p(notice notice-warning). Instantiating this class directly can have undefined results.</div>
  *
  * @since 1.0.0
  */
@@ -103,7 +103,7 @@ class Loader {
 	/**
 	 * @brief Initialise a new loader
 	 *
-	 * @detail <div class="alert alert-warning">Do NOT instantiate this class directly. See Loader::getInstance()
+	 * @detail p(notice notice-warning). Do NOT instantiate this class directly. See Loader::getInstance()
 	 * on how to get a new Loader instance.</div>
 	 */
 	function __construct($application) {
