@@ -15,7 +15,7 @@ set_include_path(implode(PATH_SEPARATOR, array(
 putenv('HOME=' . APPLICATION_PATH);
 
 /** Hazaar_Application */
-require_once 'Hazaar/Application.php';
+require_once 'Hazaar/Core/Application.php';
 
 // Create application, bootstrap, and run
 $application = new Hazaar\Application(APPLICATION_ENV, APPLICATION_PATH . '/configs/application.ini');
