@@ -463,7 +463,7 @@ class DBI {
     
     }
 
-    public function getSchemaVersions($keys = false) {
+    public function getSchemaVersions($with_file_obj = false) {
 
         $db_dir = dirname($this->schema_file);
         
@@ -482,19 +482,17 @@ class DBI {
                 
                 if (preg_match('/(\d*)_(\w*)/', $file, $matches)) {
                     
-                    $versions[(int) $matches[1]] = $file;
+                    if ($with_file_obj) {
+                        
+                        $versions[(int) $matches[1]] = $file;
+                    } else {
+                        
+                        $versions[(int) $matches[1]] = str_replace('_', ' ', $matches[2]);
+                    }
                 }
             }
             
-            if ($keys) {
-                
-                $versions = array_keys($versions);
-                
-                sort($versions);
-            } else {
-                
-                ksort($versions);
-            }
+            ksort($versions);
             
             return $versions;
         }
@@ -595,37 +593,40 @@ class DBI {
 
     /**
      * Snapshot the database schema and create a new schema version with migration replay files.
-     * 
-     * This method is used to create the database schema migration files.  These files are used by the \Hazaar\DBI::migrate()
-     * method to bring a database up to a certain version.  Using this method simplifies creating these migration files
+     *
+     * This method is used to create the database schema migration files. These files are used by the \Hazaar\DBI::migrate()
+     * method to bring a database up to a certain version. Using this method simplifies creating these migration files
      * and removes the need to create them manually when there are trivial changes.
-     * 
+     *
      * When developing your project
-     * 
+     *
      * Currently only the following changes are supported:
      * * Table creation, removal and rename.
      * * Column creation, removal and alteration.
      * * Index creation and removal.
-     * 
-     * p(notice notice-info). Table rename detection works by comparing new tables with removed tables for tables that have the same columns.  Because
-     * of this, rename detection will not work if columns are added or removed at the same time the table is renamed.  If you want to
-     * rename a table, make sure that this is the only operation being performed on the table for a single snapshot.  Modifying other
-     * tables will not affect this.  If you want to rename a table AND change it's column layout, make sure you do either the rename
+     *
+     * p(notice notice-info). Table rename detection works by comparing new tables with removed tables for tables that have the same columns. Because
+     * of this, rename detection will not work if columns are added or removed at the same time the table is renamed. If you want to
+     * rename a table, make sure that this is the only operation being performed on the table for a single snapshot. Modifying other
+     * tables will not affect this. If you want to rename a table AND change it's column layout, make sure you do either the rename
      * or the modifications first, then snapshot, then do the other operation before snapshotting again.
-     * 
-     * @param string $comment A comment to add to the migration file.
-     * 
+     *
+     * @param string $comment
+     *            A comment to add to the migration file.
+     *            
      * @throws \Exception
-     * 
-     * @return boolean True if the snapshot was successful.  False if no changes were detected and nothing needed to be done. 
+     *
+     * @return boolean True if the snapshot was successful. False if no changes were detected and nothing needed to be done.
      */
     public function snapshot($comment = null) {
 
         $this->migration_start = microtime(true);
         
-        $versions = $this->getSchemaVersions(true);
+        $versions = $this->getSchemaVersions();
         
-        $lastest_version = array_pop($versions);
+        end($versions);
+        
+        $lastest_version = key($versions);
         
         $version = $this->getSchemaVersion();
         
@@ -952,28 +953,28 @@ class DBI {
 
     /**
      * Database migration method.
-     * 
-     * This method does some fancy database migration magic.  It makes use of the 'db' subdirectory in the project directory 
-     * which should contain the schema.json file.  This file is the current database schema definition.
-     * 
+     *
+     * This method does some fancy database migration magic. It makes use of the 'db' subdirectory in the project directory
+     * which should contain the schema.json file. This file is the current database schema definition.
+     *
      * A few things can occur here.
-     * 
+     *
      * # If the database schema does not exist, then a new schema will be created using the schema.json schema definition file.
      * This will create the database at the latest version of the schema.
      * # If the database schema already exists, then the current version is checked against the version requested using the
-     * $version parameter.  If no version is requested ($version is NULL) then the latest version number is used.
-     * # If the version numbers are different, then a migration will be performed.  
+     * $version parameter. If no version is requested ($version is NULL) then the latest version number is used.
+     * # If the version numbers are different, then a migration will be performed.
      * # # If the requested version is greater than the current version, the migration mode will be 'up'.
      * # # If the requested version is less than the current version, the migration mode will be 'down'.
      * # All migration files between the two selected versions (current and requested) will be replayed using the migration mode.
-     * 
+     *
      * This process can be used to bring a database schema up to the latest version using database migration files stored in the
-     * db/migrate project subdirectory.  These migration files are typically created using the \Hazaar\DBI::snapshot() method
-     * although they can be created manually.  Take care when using manually created migration files.
-     * 
+     * db/migrate project subdirectory. These migration files are typically created using the \Hazaar\DBI::snapshot() method
+     * although they can be created manually. Take care when using manually created migration files.
+     *
      * The migration is performed in a database transaction (if the database supports it) so that if anything goes wrong there
-     * is no damage to the database.  If something goes wrong, errors will be availabl in the migration log accessible with 
-     * \Hazaar\DBI::getMigrationLog().  Errors in the migration files can be fixed and the migration retried.
+     * is no damage to the database. If something goes wrong, errors will be availabl in the migration log accessible with
+     * \Hazaar\DBI::getMigrationLog(). Errors in the migration files can be fixed and the migration retried.
      *
      * @param int $version
      *            The database schema version to migrate to.
@@ -986,7 +987,7 @@ class DBI {
         
         $mode = 'up';
         
-        $versions = $this->getSchemaVersions();
+        $versions = $this->getSchemaVersions(true);
         
         $file = new \Hazaar\File($this->schema_file);
         
@@ -1225,18 +1226,17 @@ class DBI {
         
         $this->log('Migration failed when committing transaction.');
         
-        dump($this->errorInfo());
-        
         return false;
     
     }
 
     /**
      * Reply a database migration schema file
-     * 
+     *
      * This should only be used internally by the migrate method to replay an individual schema migration file.
-     * 
-     * @param array $schema The JSON decoded schema to replay.
+     *
+     * @param array $schema
+     *            The JSON decoded schema to replay.
      */
     private function replay($schema) {
 
@@ -1326,8 +1326,9 @@ class DBI {
 
     /**
      * Logs a message to the migration log.
-     * 
-     * @param string $msg The message to log.
+     *
+     * @param string $msg
+     *            The message to log.
      */
     private function log($msg) {
 
@@ -1340,14 +1341,13 @@ class DBI {
 
     /**
      * Returns the migration log
-     * 
-     * Snapshots and migrations are complex processes where many things happen in a single execution.  This means stuff
+     *
+     * Snapshots and migrations are complex processes where many things happen in a single execution. This means stuff
      * can go wrong and you will probably want to know what/why when they do.
-     * 
-     *  When running \Hazaar\DBI::snapshot() or \Hazaar\DBI::migrate() a log of what has been done is stored internally
-     *  in an array of timestamped messages.  You can use the \Hazaar\DBI::getMigrationLog() method to retrieve this
-     *  log so that if anything goes wrong, you can see what and fix it/
-     *   
+     *
+     * When running \Hazaar\DBI::snapshot() or \Hazaar\DBI::migrate() a log of what has been done is stored internally
+     * in an array of timestamped messages. You can use the \Hazaar\DBI::getMigrationLog() method to retrieve this
+     * log so that if anything goes wrong, you can see what and fix it/
      */
     public function getMigrationLog() {
 
