@@ -27,7 +27,7 @@ namespace Hazaar\DBI;
  * }
  * </code>
  */
-class Table {
+class Table implements \ArrayAccess, \Iterator, \Countable {
 
     private $driver;
 
