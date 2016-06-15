@@ -37,7 +37,7 @@ class Error extends \Hazaar\Controller {
 
     function __initialize($request = NULL) {
 
-        if ($request instanceof Request\Http && function_exists('apache_request_headers')) {
+        if ($request instanceof \Hazaar\Application\Request\Http && function_exists('apache_request_headers')) {
             
             $h = apache_request_headers();
             
@@ -289,7 +289,7 @@ class Error extends \Hazaar\Controller {
                     foreach($this->callstack as $id => $call) {
                         
                         if (array_key_exists('class', $call))
-                            $out .= "$id - " . str_pad($call['file'], 75, ' ', STR_PAD_RIGHT) . ' ' . str_pad($call['line'], 4, ' ', STR_PAD_RIGHT) . " $call[class]::$call[function]\n";
+                            $out .= "$id - " . str_pad(ake($call, 'file'), 75, ' ', STR_PAD_RIGHT) . ' ' . str_pad(ake($call, 'line'), 4, ' ', STR_PAD_RIGHT) . " $call[class]::$call[function]\n";
                         
                         else
                             $out .= "$id - $call[function]\n";
