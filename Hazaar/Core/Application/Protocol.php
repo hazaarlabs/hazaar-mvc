@@ -5,19 +5,21 @@
  * Date: 25/09/14
  * Time: 9:21 AM
  * 
- * @package     Socket
+ * @package     Core
  */
 
-namespace Hazaar\Warlock;
+namespace Hazaar\Application;
 
 /**
- * @brief       Warlock Protocol Class
+ * @brief       Hazaar Application Protocol Class
  *
- * @detail      Common class used to encode/decode information transmitted between warlock endpoints.
+ * @detail      The Application Protocol is a simple protocol developed to allow communication between
+*               parts of the Hazaar framework over the wire or other IO interfaces.  It allows common information
+*               to be encoded/decoded between endpoints.
  *
  * @since       2.0.0
  *
- * @module      warlock
+ * @package     Core
  */
 class Protocol {
 

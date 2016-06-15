@@ -618,9 +618,12 @@ class DBI {
      *
      * @return boolean True if the snapshot was successful. False if no changes were detected and nothing needed to be done.
      */
-    public function snapshot($comment = null) {
+    public function snapshot($comment = null, $test = false) {
 
-        $this->migration_start = microtime(true);
+        $this->log('Snapshot process starting');
+        
+        if ($test)
+            $this->log('Test mode ENABLED');
         
         $versions = $this->getSchemaVersions();
         
@@ -894,13 +897,17 @@ class DBI {
             }
         }
         
+        if ($test) {
+            
+            return $changes['up'];
+        
         /**
          * Save the migrate diff file
          */
-        if (count($changes) > 0) {
+        } elseif (count($changes) > 0) {
             
             if (!$comment)
-                $comment = $this->ask('Snapshot comment', null, true);
+                $comment = "New Snapshot";
             
             $this->log('Comment: ' . $comment);
             
@@ -981,9 +988,12 @@ class DBI {
      *            
      * @return boolean Returns true on successful migration. False if no migration was neccessary. Throws an Exception on error.
      */
-    public function migrate($version = null) {
+    public function migrate($version = null, $test = false) {
 
-        $this->migration_start = microtime(true);
+        $this->log('Migration process starting');
+        
+        if ($test)
+            $this->log('Test mode ENABLED');
         
         $mode = 'up';
         
@@ -991,31 +1001,19 @@ class DBI {
         
         $file = new \Hazaar\File($this->schema_file);
         
-        if (!$file->exists()) {
-            
-            $this->log("This application has no schema file.  Database schema is not being managed.");
-            
-            return false;
-        }
+        if (!$file->exists())
+            throw new \Exception("This application has no schema file.  Database schema is not being managed.");
         
-        if (!($schema = json_decode($file->get_contents(), true))) {
-            
+        if (!($schema = json_decode($file->get_contents(), true)))
             $this->log("Unable to parse the migration file.  Bad JSON?");
-            
-            return false;
-        }
         
         if ($version) {
             
             /**
              * Make sure the requested version exists
              */
-            if (!array_key_exists($version, $versions)) {
-                
-                $this->log("Unable to find migration version '$version'.");
-                
-                return false;
-            }
+            if (!array_key_exists($version, $versions))
+                throw new \Exception("Unable to find migration version '$version'.");
         } else {
             
             if (count($versions) > 0) {
@@ -1049,13 +1047,10 @@ class DBI {
                 
                 $name = $this->config->dbname;
                 
-                $this->log("Database '$name' does not exist.  Please create the database with owner '{$this->config->user}'.");
-            } else {
-                
-                $this->log($e->getMessage());
+                throw new \Exception("Database '$name' does not exist.  Please create the database with owner '{$this->config->user}'.");
             }
             
-            return false;
+            throw new \Exception($e->getMessage());
         }
         
         /**
@@ -1079,14 +1074,13 @@ class DBI {
             
             $this->log("Database is already at version: $version");
             
-            $this->log("Database is up to date.");
-            
-            return true;
+            return false;
         }
         
         $this->log('Starting database migration process.');
         
-        $this->beginTransaction();
+        if (!$test)
+            $this->beginTransaction();
         
         if (!$current_version && $version == $schema['version']) {
             
@@ -1101,14 +1095,10 @@ class DBI {
              * Otherwise we have to replay the migration files from current version to the target version.
              */
             
-            if (count($this->listTables()) > 1) {
+            if (count($this->listTables()) > 1)
+                throw new \Exception("Tables exist in database but no schema info was found!  This should only be run on an empty database!");
                 
-                $this->log("Tables exist in database but no schema info was found!  This should only be run on an empty database!");
-                
-                return false;
-            }
-            
-            /*
+                /*
              * There is no current database so just initialise from the schema file.
              */
             $this->log("Initialising database" . ($version ? " at version '$version'" : ''));
@@ -1119,28 +1109,24 @@ class DBI {
                     
                     $this->log("Creating table '$table'.");
                     
-                    $this->createTable($table, $columns);
+                    if (!$test)
+                        $this->createTable($table, $columns);
                 }
                 
                 foreach(ake($schema, 'indexes', array()) as $table => $indexes) {
                     
-                    dump($indexes);
-                    
                     $this->log("Creating index '$table'.");
                     
-                    $this->createIndex($idx_info, $table);
+                    if (!$test)
+                        $this->createIndex($idx_info, $table);
                 }
                 
                 $committed_versions[] = $schema['version'];
             }
         } else {
             
-            if (!array_key_exists($current_version, $versions)) {
-                
-                $this->log("Your current database version has no migration source.");
-                
-                return false;
-            }
+            if (!array_key_exists($current_version, $versions))
+                throw new \Exception("Your current database version has no migration source.");
             
             $this->log("Migrating from version '$current_version' to '$version'.");
             
@@ -1175,24 +1161,14 @@ class DBI {
                     $this->log("Rolling back version '$ver' from file '$source'.");
                 } else {
                     
-                    $this->log("Unknown mode!");
-                    
-                    return false;
+                    throw new \Exception("Unknown mode!");
                 }
                 
-                if (!($current_schema = json_decode($source->get_contents(), true))) {
-                    
-                    $this->log("Unable to parse the migration file.  Bad JSON?");
-                    
-                    return false;
-                }
+                if (!($current_schema = json_decode($source->get_contents(), true)))
+                    throw new \Exception("Unable to parse the migration file.  Bad JSON?");
                 
-                if (!$this->replay($current_schema[$mode])) {
-                    
-                    $this->log("An error occurred replaying the migration script.");
-                    
-                    return false;
-                }
+                if (!$this->replay($current_schema[$mode], $test))
+                    throw new \Exception("An error occurred replaying the migration script.");
                 
                 $committed_versions[] = $ver;
             } while($source = next($versions));
@@ -1204,29 +1180,29 @@ class DBI {
                 
                 $this->log('Inserting version record: ' . $ver);
                 
-                $this->insert('schema_info', array(
-                    'version' => $ver
-                ));
+                if (!$test)
+                    $this->insert('schema_info', array(
+                        'version' => $ver
+                    ));
             } elseif ($mode == 'down') {
                 
                 $this->log('Removing version record: ' . $ver);
                 
-                $this->delete('schema_info', array(
-                    'version' => $ver
-                ));
+                if (!$test)
+                    $this->delete('schema_info', array(
+                        'version' => $ver
+                    ));
             }
         }
         
-        if ($this->commit()) {
+        if ($test || $this->commit()) {
             
             $this->log('Migration completed successfully.');
             
             return true;
         }
         
-        $this->log('Migration failed when committing transaction.');
-        
-        return false;
+        throw new \Exception('Migration failed when committing transaction.');
     
     }
 
@@ -1238,7 +1214,7 @@ class DBI {
      * @param array $schema
      *            The JSON decoded schema to replay.
      */
-    private function replay($schema) {
+    private function replay($schema, $test = false) {
 
         foreach($schema as $action => $data) {
             
@@ -1252,6 +1228,9 @@ class DBI {
                             
                             $this->log("Creating $type item: $item[name]");
                             
+                            if ($test)
+                                continue;
+                            
                             if ($type == 'table')
                                 $this->createTable($item['name'], $item['cols']);
                             
@@ -1262,6 +1241,9 @@ class DBI {
                         
                         case 'remove' :
                             $this->log("Removing $type item: $item");
+                            
+                            if ($test)
+                                continue;
                             
                             if ($type == 'table')
                                 $this->dropTable($item);
@@ -1284,10 +1266,16 @@ class DBI {
                                             
                                             $this->log("Adding column '$col[name]'.");
                                             
+                                            if ($test)
+                                                continue;
+                                            
                                             $this->addColumn($item_name, $col);
                                         } elseif ($alter_action == 'drop') {
                                             
                                             $this->log("Dropping column '$col'.");
+                                            
+                                            if ($test)
+                                                continue;
                                             
                                             $this->dropColumn($item_name, $col);
                                         }
@@ -1302,6 +1290,9 @@ class DBI {
                         
                         case 'rename' :
                             $this->log("Renaming $type item: $item[from] => $item[to]");
+                            
+                            if ($test)
+                                continue;
                             
                             if ($type == 'table')
                                 $this->renameTable($item['from'], $item['to']);

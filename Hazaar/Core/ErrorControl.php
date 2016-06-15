@@ -50,7 +50,7 @@ function errorAndDie() {
 
         }
 
-        $controller->__initialize($_REQUEST);
+        $controller->__initialize($app->request);
 
         call_user_func_array(array(
                                  $controller,

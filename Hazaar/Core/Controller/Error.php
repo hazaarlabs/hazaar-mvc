@@ -37,27 +37,27 @@ class Error extends \Hazaar\Controller {
 
     function __initialize($request = NULL) {
 
-        if (function_exists('apache_request_headers')) {
+        if ($request instanceof Request\Http && function_exists('apache_request_headers')) {
             
             $h = apache_request_headers();
             
             if (array_key_exists('X-Requested-With', $h)) {
                 
                 switch ($h['X-Requested-With']) {
-                    case 'XMLHttpRequest':
+                    case 'XMLHttpRequest' :
                         $this->response = 'json';
                         
                         break;
                     
-                    case 'XMLRPCRequest':
+                    case 'XMLRPCRequest' :
                         $this->response = 'xmlrpc';
                         
                         break;
                 }
             }
-        } elseif (getenv('WARLOCK_SID')) {
+        } elseif (defined('RESPONSE_PROTOCOL')) {
             
-            $this->response = 'warlock';
+            $this->response = constant('RESPONSE_PROTOCOL');
         } else {
             
             $this->response = 'text';
@@ -75,7 +75,7 @@ class Error extends \Hazaar\Controller {
             
             $h = fopen($file, 'r');
             
-            while ($line = fgets($h)) {
+            while($line = fgets($h)) {
                 
                 if (preg_match('/^(\d*)\s(.*)$/', $line, $matches)) {
                     
@@ -127,7 +127,7 @@ class Error extends \Hazaar\Controller {
             
             $this->callstack = $e->getTrace();
             
-            if (! array_key_exists($this->code = $e->getCode(), $this->status_codes)) {
+            if (!array_key_exists($this->code = $e->getCode(), $this->status_codes)) {
                 
                 $this->code = 500;
             }
@@ -214,7 +214,7 @@ class Error extends \Hazaar\Controller {
             
             switch ($this->response) {
                 
-                case 'json':
+                case 'json' :
                     $error = array(
                         'ok' => FALSE,
                         'error' => array(
@@ -231,12 +231,10 @@ class Error extends \Hazaar\Controller {
                     
                     break;
                 
-                case 'xmlrpc':
+                case 'xmlrpc' :
                     $xml = new \SimpleXMLElement('<xml/>');
                     
-                    $struct = $xml->addChild('fault')
-                        ->addChild('value')
-                        ->addChild('struct');
+                    $struct = $xml->addChild('fault')->addChild('value')->addChild('struct');
                     
                     $code = $struct->addChild('member');
                     
@@ -272,7 +270,7 @@ class Error extends \Hazaar\Controller {
                     
                     break;
                 
-                case 'text':
+                case 'text' :
                     $out = "*****************************\n\tEXCEPTION\n*****************************\n\n";
                     
                     if ($this->errno > 0)
@@ -288,7 +286,7 @@ class Error extends \Hazaar\Controller {
                     
                     $out .= "Backtrace:\n\n";
                     
-                    foreach ($this->callstack as $id => $call) {
+                    foreach($this->callstack as $id => $call) {
                         
                         if (array_key_exists('class', $call))
                             $out .= "$id - " . str_pad($call['file'], 75, ' ', STR_PAD_RIGHT) . ' ' . str_pad($call['line'], 4, ' ', STR_PAD_RIGHT) . " $call[class]::$call[function]\n";
@@ -303,20 +301,28 @@ class Error extends \Hazaar\Controller {
                     
                     break;
                 
-                case 'warlock':
+                case 'runner' :
                     
-                    $w_sid = getenv('WARLOCK_SID');
+                    $encoded = (defined('RESPONSE_ENCODED') ? constant('RESPONSE_ENCODED') : false);
                     
-                    $protocol = new \Hazaar\Warlock\Protocol($w_sid, FALSE);
+                    $protocol = new \Hazaar\Application\Protocol(intval(getenv('HAZAAR_SID')), $encoded);
                     
-                    echo $protocol->encode('error', $this->errstr) . "\n";
+                    $error = array(
+                        'code' => $this->errno,
+                        'short' => $this->short_message,
+                        'message' => $this->errstr,
+                        'file' => $this->errfile,
+                        'line' => $this->errline
+                    );
+                    
+                    echo $protocol->encode('error', $error) . "\n";
                     
                     exit($this->errno);
                     
                     break;
                 
-                case 'html':
-                default:
+                case 'html' :
+                default :
                     $response = new Response\Html($this->code);
                     
                     $view = new \Hazaar\View('@Error/Error');
@@ -354,7 +360,7 @@ class Error extends \Hazaar\Controller {
 
     public function clean_output_buffer() {
 
-        while (count(ob_get_status()) > 0) {
+        while(count(ob_get_status()) > 0) {
             
             ob_end_clean();
         }

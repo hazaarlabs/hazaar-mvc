@@ -92,7 +92,7 @@ class Control extends WebSockets {
 
         $this->key = uniqid();
 
-        $this->protocol = new Protocol($this->config->sys->id, $this->config->server->encoded);
+        $this->protocol = new \Hazaar\Application\Protocol($this->config->sys->id, $this->config->server->encoded);
 
         /**
          * First we check to see if we need to start the Warlock server process

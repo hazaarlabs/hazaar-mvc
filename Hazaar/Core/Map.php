@@ -1727,7 +1727,7 @@ class Map implements \ArrayAccess, \Iterator {
                     foreach($parts as $part) {
 
                         if(! array_key_exists($part, $cur))
-                            $cur[$part] = array();
+                            $cur[$part] = array();  
 
                         if(is_array($cur))
                             $cur =& $cur[$part];
