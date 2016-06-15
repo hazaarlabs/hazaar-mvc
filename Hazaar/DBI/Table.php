@@ -43,6 +43,8 @@ class Table {
 
     private $options = array();
 
+    private $result;
+
     function __construct(DBD\BaseDriver $driver, $name, $alias = NULL, $schema = NULL) {
 
         $this->driver = $driver;
@@ -80,9 +82,7 @@ class Table {
         
         $this->fields = $fields;
         
-        $this->options = $options;
-        
-        return new Result($this->execute());
+        return $this;
     
     }
 
@@ -211,9 +211,10 @@ class Table {
 
     public function execute() {
 
-        $sql = $this->toString();
+        if ($this->result == null)
+            return $this->result = $this->driver->query($this->toString());
         
-        return $this->driver->query($sql);
+        return false;
     
     }
 
@@ -273,6 +274,25 @@ class Table {
     
     }
 
+    public function sort($field, $desc = false) {
+
+        $this->options['sort'] = array(
+            $field,
+            $desc
+        );
+        
+        return $this;
+    
+    }
+
+    public function limit($count = 1) {
+
+        $this->options['limit'] = $count;
+        
+        return $this;
+    
+    }
+
     public function offset($offset) {
 
         $this->offset = $offset;
@@ -302,6 +322,158 @@ class Table {
     public function deleteAll() {
 
         return $this->driver->deleteAll($this->name);
+    
+    }
+
+    public function row() {
+
+        if ($result = $this->execute())
+            return $result->row();
+        
+        return false;
+    
+    }
+
+    public function fetch($offset = 0) {
+
+        if ($result = $this->execute())
+            return $result->fetch(\PDO::FETCH_ASSOC, \PDO::FETCH_ORI_NEXT, $offset);
+        
+        return FALSE;
+    
+    }
+
+    public function fetchAll() {
+
+        if ($result = $this->execute())
+            return $result->fetchAll(\PDO::FETCH_ASSOC);
+        
+        return FALSE;
+    
+    }
+
+    public function reset() {
+
+        $this->result = NULL;
+        
+        return $this;
+    
+    }
+
+    /*
+     * Array Access
+     */
+    public function offsetExists($offset) {
+
+        if ($result = $this->execute())
+            return array_key_exists($offset, $result);
+        
+        return FALSE;
+    
+    }
+
+    public function offsetGet($offset) {
+
+        if ($result = $this->execute())
+            return $result[$offset];
+        
+        return NULL;
+    
+    }
+
+    public function offsetSet($offset, $value) {
+
+        throw new \Exception('Updating a value in a database result is not currently supported!');
+    
+    }
+
+    public function offsetUnset($offset) {
+
+        throw new \Exception('Unsetting a value in a database result is not currently supported!');
+    
+    }
+
+    /*
+     * Iterator
+     */
+    public function current() {
+
+        if ($this->result_data)
+            return current($this->result_data);
+        
+        return NULL;
+    
+    }
+
+    public function key() {
+
+        if ($this->result_data)
+            return key($this->result_data);
+        
+        return NULL;
+    
+    }
+
+    public function next() {
+
+        if ($this->result_data)
+            return next($this->result_data);
+        
+        return FALSE;
+    
+    }
+
+    public function rewind() {
+
+        if ($this->result_data)
+            return reset($this->result_data);
+        
+        $result = $this->execute();
+        
+        return $this->result_data = $result->fetchAll(\PDO::FETCH_ASSOC);
+    
+    }
+
+    public function valid() {
+
+        if ($this->result_data && is_array($this->result_data) && current($this->result_data))
+            return TRUE;
+        
+        return FALSE;
+    
+    }
+
+    /*
+     * Countable
+     */
+    public function count() {
+
+        if ($this->result) {
+            
+            return $this->result->rowCount();
+        } else {
+            
+            $fields = $this->fields;
+            
+            $this->fields = array(
+                'count(*)' => 'count'
+            );
+            
+            $result = $this->execute();
+            
+            $this->fields = $fields;
+            
+            if ($result) {
+                
+                $row = $result->row();
+                
+                $this->result = NULL;
+                
+                return $row['count'];
+            }
+        }
+        
+        return FALSE;
     
     }
 
