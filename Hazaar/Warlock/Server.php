@@ -62,17 +62,17 @@ set_include_path(implode(PATH_SEPARATOR, array(
     get_include_path()
 )));
 
-require_once ('Hazaar/Application.php');
+require_once ('Hazaar/Core/Application.php');
 
-require_once ('Hazaar/Map.php');
+require_once ('Hazaar/Core/Map.php');
 
-require_once ('Hazaar/Application/Config.php');
+require_once ('Hazaar/Core/Application/Config.php');
 
 require_once ('Hazaar/Warlock/WebSockets.php');
 
-require_once ('Hazaar/Warlock/Protocol.php');
+require_once ('Hazaar/Core/Application/Protocol.php');
 
-require_once ('Hazaar/File/RRD.php');
+require_once ('Hazaar/Core/File/RRD.php');
 
 $log_level = W_INFO;
 
