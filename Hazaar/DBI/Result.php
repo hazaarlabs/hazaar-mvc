@@ -67,6 +67,8 @@ class Result implements \ArrayAccess, \Countable, \Iterator {
     }
 
     public function toString() {
+        
+        dump($this->statement);
 
         return $this->statement->queryString;
     

@@ -564,8 +564,6 @@ class Application {
         
         $warlock = new \Hazaar\Application\Config('warlock.ini', NULL, $defaults);
         
-        define('RESPONSE_PROTOCOL', 'runner');
-        
         define('RESPONSE_ENCODED', $warlock->server->encoded);
         
         $protocol = new \Hazaar\Application\Protocol($warlock->sys->id, $warlock->server->encoded);

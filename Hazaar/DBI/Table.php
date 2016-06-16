@@ -27,7 +27,7 @@ namespace Hazaar\DBI;
  * }
  * </code>
  */
-class Table implements \ArrayAccess, \Iterator, \Countable {
+class Table {
 
     private $driver;
 
@@ -41,7 +41,11 @@ class Table implements \ArrayAccess, \Iterator, \Countable {
 
     private $joins = array();
 
-    private $options = array();
+    private $order;
+
+    private $limit;
+
+    private $offset;
 
     private $result;
 
@@ -68,7 +72,7 @@ class Table implements \ArrayAccess, \Iterator, \Countable {
      *
      * @return \Hazaar\DBI\Table
      */
-    public function find($criteria = array(), $fields = array(), $options = array()) {
+    public function find($criteria = array(), $fields = array()) {
 
         if (!is_array($criteria))
             $criteria = array();
@@ -95,14 +99,19 @@ class Table implements \ArrayAccess, \Iterator, \Countable {
     
     }
 
-    public function exists($criteria) {
+    public function exists($criteria = null) {
 
-        $sql = 'SELECT EXISTS (SELECT * FROM ' . $this->from() . ' WHERE ' . $this->driver->prepareCriteria($criteria) . ');';
+        if ($criteria) {
+            
+            $sql = 'SELECT EXISTS (SELECT * FROM ' . $this->from() . ' WHERE ' . $this->driver->prepareCriteria($criteria) . ');';
+            
+            if ($result = $this->driver->query($sql))
+                return boolify($result->fetchColumn(0));
+            
+            return FALSE;
+        }
         
-        if ($result = $this->driver->query($sql))
-            return boolify($result->fetchColumn(0));
-        
-        return FALSE;
+        return $this->driver->tableExists($this->name);
     
     }
 
@@ -142,65 +151,43 @@ class Table implements \ArrayAccess, \Iterator, \Countable {
         if (count($this->criteria) > 0)
             $sql .= ' WHERE ' . $this->driver->prepareCriteria($this->criteria);
         
-        if (count($this->options) > 0) {
+        if ($this->order) {
             
-            foreach($this->options as $option => $value) {
+            $sql .= ' ORDER BY ';
+            
+            $order = array();
+            
+            foreach($this->order as $field => $mode) {
                 
-                switch ($option) {
-                    case 'sort' :
-                        
-                        $sql .= ' ORDER BY ';
-                        
-                        if (is_array($value)) {
-                            
-                            $order = array();
-                            
-                            foreach($value as $field => $mode) {
-                                
-                                if (is_array($mode)) {
-                                    
-                                    $nulls = ake($mode, '$nulls', 0);
-                                    
-                                    $mode = ake($mode, '$dir', 1);
-                                } else {
-                                    
-                                    $nulls = 0;
-                                }
-                                
-                                $dir = (($mode == 1) ? 'ASC' : 'DESC');
-                                
-                                if ($nulls > 0)
-                                    $dir .= ' NULLS FIRST';
-                                
-                                elseif ($nulls < 0)
-                                    $dir .= ' NULLS LAST';
-                                
-                                $order[] = $field . ($dir ? ' ' . $dir : NULL);
-                            }
-                            
-                            $sql .= implode(', ', $order);
-                        } else {
-                            
-                            $desc = false;
-                            
-                            if (substr($value, 0, 1) == '-') {
-                                
-                                $desc = true;
-                                
-                                $value = substr($value, 1);
-                            }
-                            
-                            $sql .= $value . ($desc ? ' DESC' : NULL);
-                        }
-                        
-                        break;
+                if (is_array($mode)) {
                     
-                    default :
-                        $sql .= ' ' . strtoupper($option) . (string) (int) $value;
-                        break;
+                    $nulls = ake($mode, '$nulls', 0);
+                    
+                    $mode = ake($mode, '$dir', 1);
+                } else {
+                    
+                    $nulls = 0;
                 }
+                
+                $dir = (($mode == 1) ? 'ASC' : 'DESC');
+                
+                if ($nulls > 0)
+                    $dir .= ' NULLS FIRST';
+                
+                elseif ($nulls < 0)
+                    $dir .= ' NULLS LAST';
+                
+                $order[] = $field . ($dir ? ' ' . $dir : NULL);
             }
+            
+            $sql .= implode(', ', $order);
         }
+        
+        if ($this->limit !== NULL)
+            $sql .= ' LIMIT ' . (string) (int) $this->limit;
+        
+        if ($this->offset !== NULL)
+            $sql .= ' OFFSET ' . (string) (int) $this->offset;
         
         if ($terminate_with_colon)
             $sql .= ';';
@@ -211,10 +198,14 @@ class Table implements \ArrayAccess, \Iterator, \Countable {
 
     public function execute() {
 
-        if ($this->result == null)
-            return $this->result = $this->driver->query($this->toString());
+        if ($this->result === null) {
+            
+            $sql = $this->toString();
+            
+            $this->result = new Result($this->driver->query($sql));
+        }
         
-        return false;
+        return $this->result;
     
     }
 
@@ -274,20 +265,24 @@ class Table implements \ArrayAccess, \Iterator, \Countable {
     
     }
 
-    public function sort($field, $desc = false) {
+    public function sort($field_def, $desc = FALSE) {
 
-        $this->options['sort'] = array(
-            $field,
-            $desc
-        );
+        if (!is_array($field_def)) {
+            
+            $field_def = array(
+                $field_def => ($desc ? -1 : 1)
+            );
+        }
+        
+        $this->order = $field_def;
         
         return $this;
     
     }
 
-    public function limit($count = 1) {
+    public function limit($limit = 1) {
 
-        $this->options['limit'] = $count;
+        $this->limit = $limit;
         
         return $this;
     
@@ -327,10 +322,13 @@ class Table implements \ArrayAccess, \Iterator, \Countable {
 
     public function row() {
 
-        if ($result = $this->execute())
-            return $result->row();
-        
-        return false;
+        return $this->fetch();
+    
+    }
+
+    public function all() {
+
+        return $this->fetchAll();
     
     }
 
@@ -383,13 +381,13 @@ class Table implements \ArrayAccess, \Iterator, \Countable {
 
     public function offsetSet($offset, $value) {
 
-        throw new \Exception('Updating a value in a database result is not currently supported!');
+        throw new \Exception('Updating a value in a database result is not currently implemented!');
     
     }
 
     public function offsetUnset($offset) {
 
-        throw new \Exception('Unsetting a value in a database result is not currently supported!');
+        throw new \Exception('Unsetting a value in a database result is not currently implemented!');
     
     }
 
@@ -398,48 +396,46 @@ class Table implements \ArrayAccess, \Iterator, \Countable {
      */
     public function current() {
 
-        if ($this->result_data)
-            return current($this->result_data);
+        if (!$this->result)
+            $this->execute();
         
-        return NULL;
+        return $this->result->current();
     
     }
 
     public function key() {
 
-        if ($this->result_data)
-            return key($this->result_data);
+        if (!$this->result)
+            $this->execute();
         
-        return NULL;
+        return $this->result->key();
     
     }
 
     public function next() {
 
-        if ($this->result_data)
-            return next($this->result_data);
+        if (!$this->result)
+            $this->execute();
         
-        return FALSE;
+        return $this->result->next();
     
     }
 
     public function rewind() {
 
-        if ($this->result_data)
-            return reset($this->result_data);
+        if (!$this->result)
+            $this->execute();
         
-        $result = $this->execute();
-        
-        return $this->result_data = $result->fetchAll(\PDO::FETCH_ASSOC);
+        return $this->result->rewind();
     
     }
 
     public function valid() {
 
-        if ($this->result_data && is_array($this->result_data) && current($this->result_data))
-            return TRUE;
+        if (!$this->result)
+            $this->execute();
         
-        return FALSE;
+        return $this->result->valid();
     
     }
 
@@ -453,29 +449,27 @@ class Table implements \ArrayAccess, \Iterator, \Countable {
             return $this->result->rowCount();
         } else {
             
-            $fields = $this->fields;
+            $sql = 'SELECT count(*) FROM ' . $this->from();
             
-            $this->fields = array(
-                'count(*)' => 'count'
-            );
+            if ($this->criteria)
+                $sql .= ' WHERE ' . $this->driver->prepareCriteria($this->criteria);
             
-            $result = $this->execute();
+            $result = new Result($this->driver->query($sql));
             
-            $this->fields = $fields;
-            
-            if ($result) {
-                
-                $row = $result->row();
-                
-                $this->result = NULL;
-                
-                return $row['count'];
-            }
+            return $result['count'];
         }
         
         return FALSE;
     
     }
 
-}
+    public function getResult() {
 
+        if (!$this->result)
+            $this->execute();
+        
+        return $this->result;
+    
+    }
+
+}

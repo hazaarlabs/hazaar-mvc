@@ -51,6 +51,9 @@ class DBI {
     private $schema_file;
 
     private $migration_log = array();
+    
+    // Prepared statements
+    private $statements = array();
 
     function __construct($config_env = NULL) {
 
@@ -242,12 +245,6 @@ class DBI {
     public function query($sql) {
 
         return new \Hazaar\DBI\Result($this->driver->query($sql));
-    
-    }
-
-    public function prepare($sql) {
-
-        return $this->driver->prepare($sql);
     
     }
 
@@ -452,12 +449,15 @@ class DBI {
 
     public function getSchemaVersion() {
 
-        if ($result = $this->schema_info->findOne(array(), array(
+        if (!$this->schema_info->exists())
+            return false;
+        
+        $result = $this->schema_info->find(array(), array(
             'version'
-        ), array(
-            'sort' => '-version'
-        )))
-            return ake($result, 'version');
+        ))->sort('version', true);
+        
+        if ($row = $result->row())
+            return $row['version'];
         
         return false;
     
@@ -625,15 +625,19 @@ class DBI {
         if ($test)
             $this->log('Test mode ENABLED');
         
-        $versions = $this->getSchemaVersions();
-        
-        end($versions);
-        
-        $lastest_version = key($versions);
+        if ($versions = $this->getSchemaVersions()) {
+            
+            end($versions);
+            
+            $latest_version = key($versions);
+        } else {
+            
+            $latest_version = 0;
+        }
         
         $version = $this->getSchemaVersion();
         
-        if ($lastest_version > $version)
+        if ($latest_version > $version)
             throw new \Exception('Snapshoting a database that is not at the latest schema version is not supported.');
         
         $this->beginTransaction();
@@ -787,14 +791,17 @@ class DBI {
                 
                 foreach($indexes as $key => $index) {
                     
-                    var_dump($key);
+                    // var_dump($key);
                     
-                    var_dump($index);
+                    // var_dump($index);
                     
-                    // $diff[] = $index;
+                    $def = array(
+                        'type' => 'index',
+                        'def' => $index
+                    );
+                    
+                    $changes['up']['create'][] = $def;
                 }
-                
-                $changes['indexes'][$name] = $def;
             }
         }
         
@@ -899,7 +906,7 @@ class DBI {
         
         if ($test) {
             
-            return $changes['up'];
+            return ake($changes,'up');
         
         /**
          * Save the migrate diff file
@@ -997,6 +1004,8 @@ class DBI {
         
         $mode = 'up';
         
+        $current_version = 0;
+        
         $versions = $this->getSchemaVersions(true);
         
         $file = new \Hazaar\File($this->schema_file);
@@ -1058,11 +1067,11 @@ class DBI {
          */
         if ($result = $this->table('schema_info')->find(array(), array(
             'version'
-        ), array(
-            'sort' => '-version'
-        ))) {
+        ))->sort('version', true)) {
             
-            $current_version = $result->fetchColumn(0);
+            $row = $result->fetch();
+            
+            $current_version = $row['version'];
             
             $this->log("Current database version: " . ($current_version ? $current_version : "None"));
         }
@@ -1113,12 +1122,12 @@ class DBI {
                         $this->createTable($table, $columns);
                 }
                 
-                foreach(ake($schema, 'indexes', array()) as $table => $indexes) {
+                foreach(ake($schema, 'indexes', array()) as $table => $index_info) {
                     
-                    $this->log("Creating index '$table'.");
+                    $this->log("Creating index on '$table'.");
                     
                     if (!$test)
-                        $this->createIndex($idx_info, $table);
+                        $this->createIndex($index_info, $table);
                 }
                 
                 $committed_versions[] = $schema['version'];
@@ -1343,6 +1352,48 @@ class DBI {
     public function getMigrationLog() {
 
         return $this->migration_log;
+    
+    }
+
+    /**
+     * Prepared statements
+     */
+    public function prepare($sql, $name = null) {
+
+        $statement = $this->driver->prepare($sql, $driver_options);
+        
+        if ($name)
+            $this->statements[$name] = $statement;
+        else
+            $this->statements[] = $statement;
+        
+        return $statement;
+    
+    }
+
+    public function execute($name, $input_parameters) {
+
+        if (!($statement = ake($this->statements, $name)) instanceof \PDOStatement)
+            return false;
+        
+        if (!is_array($input_parameters))
+            $input_parameters = array(
+                $input_parameters
+            );
+        
+        return $statement->execute($input_parameters);
+    
+    }
+
+    public function getPreparedStatements() {
+
+        return $this->statements;
+    
+    }
+
+    public function listPreparedStatements() {
+
+        return array_keys($this->statements);
     
     }
 

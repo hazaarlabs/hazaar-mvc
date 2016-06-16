@@ -55,9 +55,9 @@ class Error extends \Hazaar\Controller {
                         break;
                 }
             }
-        } elseif (defined('RESPONSE_PROTOCOL')) {
+        } elseif (getenv('HAZAAR_SID')) {
             
-            $this->response = constant('RESPONSE_PROTOCOL');
+            $this->response = 'runner';
         } else {
             
             $this->response = 'text';

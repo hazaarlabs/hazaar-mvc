@@ -469,9 +469,7 @@ abstract class BaseDriver implements Driver_Interface {
         $result = $info->find(array(
             'table_name' => $name,
             'table_schema' => $schema
-        ), array(), array(
-            'sort' => $sort
-        ));
+        ))->sort($sort);
         
         $pkeys = array();
         
@@ -485,7 +483,7 @@ abstract class BaseDriver implements Driver_Interface {
         
         $columns = array();
         
-        foreach($result as $col) {
+        while($col = $result->row()) {
             
             $col = array_change_key_case($col, CASE_LOWER);
             
