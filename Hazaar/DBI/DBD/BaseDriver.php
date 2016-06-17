@@ -120,6 +120,7 @@ abstract class BaseDriver implements Driver_Interface {
                         break;
                     
                     case 'ref' :
+                        
                         $parts[] = $tissue . ' ' . $value;
                         
                         break;
@@ -142,13 +143,13 @@ abstract class BaseDriver implements Driver_Interface {
                     
                     case 'gt' :
                         
-                        $parts[] = '> ' . $this->prepareValue($value);
+                        $parts[] = '>' . $this->prepareCriteria($value);
                         
                         break;
                     
                     case 'lt' :
                         
-                        $parts[] = '< ' . $this->prepareValue($value);
+                        $parts[] = '<' . $this->prepareCriteria($value);
                         
                         break;
                     
@@ -185,6 +186,7 @@ abstract class BaseDriver implements Driver_Interface {
                         break;
                     
                     default :
+                        
                         $parts[] = ' ' . $tissue . ' ' . $this->prepareCriteria($value, strtoupper(substr($key, 1)));
                         
                         break;
@@ -205,6 +207,9 @@ abstract class BaseDriver implements Driver_Interface {
                         
                         $parts[] = $sub_value;
                     }
+                } elseif (is_numeric($key)) {
+                    
+                    $parts[] = $value;
                 } else {
                     
                     if ($parent_ref && strpos($key, '.') === FALSE)
@@ -212,6 +217,7 @@ abstract class BaseDriver implements Driver_Interface {
                     
                     if (is_null($value))
                         $joiner = 'IS ' . (($tissue == '!=') ? 'NOT ' : NULL);
+                    
                     else
                         $joiner = $tissue;
                     
@@ -222,10 +228,8 @@ abstract class BaseDriver implements Driver_Interface {
         
         $sql = '';
         
-        if (count($parts) > 0) {
-            
+        if (count($parts) > 0)
             $sql = ((count($parts) > 1) ? '( ' : NULL) . implode(" $bind_type ", $parts) . ((count($parts) > 1) ? ' )' : NULL);
-        }
         
         return $sql;
     
