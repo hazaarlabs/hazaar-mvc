@@ -202,7 +202,10 @@ class Table {
             
             $sql = $this->toString();
             
-            $this->result = new Result($this->driver->query($sql));
+            if ($stmt = $this->driver->query($sql))
+                $this->result = new Result($stmt);
+            else
+                throw new \Exception($this->driver->errorinfo()[2]);
         }
         
         return $this->result;
@@ -454,9 +457,12 @@ class Table {
             if ($this->criteria)
                 $sql .= ' WHERE ' . $this->driver->prepareCriteria($this->criteria);
             
-            $result = new Result($this->driver->query($sql));
-            
-            return $result['count'];
+            if ($stmt = $this->driver->query($sql)) {
+                
+                $result = new Result($stmt);
+                
+                return $result['count'];
+            }
         }
         
         return FALSE;

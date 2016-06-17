@@ -41,7 +41,7 @@ class Result implements \ArrayAccess, \Countable, \Iterator {
 
     private $json_columns = array();
 
-    function __construct($statement) {
+    function __construct(\PDOStatement $statement) {
 
         $this->statement = $statement;
         
@@ -67,9 +67,9 @@ class Result implements \ArrayAccess, \Countable, \Iterator {
     }
 
     public function toString() {
-        
-        dump($this->statement);
 
+        dump($this->statement);
+        
         return $this->statement->queryString;
     
     }
