@@ -165,11 +165,8 @@ class Url {
              */
             $host = $_SERVER['HTTP_HOST'];
 
-            if($_SERVER['SERVER_PORT'] != 80 && $_SERVER['SERVER_PORT'] != 443) {
-
+            if(strpos($host, ':') === false && $_SERVER['SERVER_PORT'] != 80 && $_SERVER['SERVER_PORT'] != 443) 
                 $host .= ':' . $_SERVER['SERVER_PORT'];
-
-            }
 
             $proto = (($_SERVER['SERVER_PORT'] == 443) ? 'https' : 'http');
 
