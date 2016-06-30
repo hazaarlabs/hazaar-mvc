@@ -140,7 +140,7 @@ class Loader {
 		}
 	}
 
-    public function fixDirectorySeparator($path){
+    static public function fixDirectorySeparator($path){
 
         return str_replace(((DIRECTORY_SEPARATOR == '/') ? '\\' : '/'), DIRECTORY_SEPARATOR, $path);
 
@@ -335,7 +335,7 @@ class Loader {
 
 		$loader = Loader::getInstance ();
 
-        $search_file = $loader->fixDirectorySeparator($search_file);
+        $search_file = Loader::fixDirectorySeparator($search_file);
 
         //If the search file is an absolute path just return it if it exists.
         if(substr($search_file, 1, 1) == ':' || substr($search_file, 0, 1) == DIRECTORY_SEPARATOR){
