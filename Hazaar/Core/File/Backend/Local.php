@@ -46,7 +46,7 @@ class Local implements _Interface {
 
         if($path == DIRECTORY_SEPARATOR)
             $path = $base;
-        else
+        elseif(substr($path, 1, 1) !== ':') //Not an absolute Windows path
             $path = $base . ((substr($base, -1, 1) != DIRECTORY_SEPARATOR) ? DIRECTORY_SEPARATOR : NULL) . trim($path, DIRECTORY_SEPARATOR);
 
         if($file)
