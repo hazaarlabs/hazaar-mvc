@@ -2,3 +2,4 @@
 .settings
 .buildpath
 tests/application/.runtime
+*.phpproj

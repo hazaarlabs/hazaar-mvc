@@ -15,7 +15,7 @@ class Dir {
     function __construct($path, $backend = NULL) {
 
         if(! $backend)
-            $backend = new Backend\Local(array('root' => '/'));
+            $backend = new Backend\Local(array('root' => DIRECTORY_SEPARATOR));
 
         $this->path = $this->fixPath($path);
 
@@ -25,10 +25,10 @@ class Dir {
 
     public function fixPath($path, $file = NULL) {
 
-        $path = '/' . trim($path, '/');
+        $path = DIRECTORY_SEPARATOR . trim($path, DIRECTORY_SEPARATOR);
 
         if($file)
-            $path .= ((strlen($path) > 1) ? '/' : NULL) . $file;
+            $path .= ((strlen($path) > 1) ? DIRECTORY_SEPARATOR : NULL) . $file;
 
         return $path;
 
@@ -85,7 +85,7 @@ class Dir {
 
             $last = dirname($last);
 
-            if($last == '/')
+            if($last == DIRECTORY_SEPARATOR)
                 break;
 
         }
@@ -169,7 +169,7 @@ class Dir {
         if(! $start)
             $start = $this->path;
 
-        $start = rtrim($start, '/') . '/';
+        $start = rtrim($start, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
 
         $list = array();
 

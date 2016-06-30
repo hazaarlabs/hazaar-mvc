@@ -50,20 +50,16 @@ class Config extends \Hazaar\Map {
 
         $this->env = $env;
 
-        if($source) {
+        if($source = trim($source)) {
 
-            if(substr(trim($source), 0, 1) !== '/')
-                $source = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $source, NULL, FALSE, $req_writable);
+            $source = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $source, NULL, FALSE, $req_writable);
 
             $this->source = $source;
 
             if(file_exists($this->source)) {
 
-                if(in_array('apc', get_loaded_extensions())) {
-
+                if(in_array('apc', get_loaded_extensions()))
                     $apc_key = md5(gethostname() . ':' . $this->source);
-
-                }
 
                 if(isset($apc_key)) {
 

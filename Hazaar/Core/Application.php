@@ -121,7 +121,8 @@ class Application {
             'app' => array(
                 'defaultController' => 'Index',
                 'favicon' => 'favicon.png',
-                'timezone' => 'UTC'
+                'timezone' => 'UTC',
+                'layout' => 'application'
             ),
             'paths' => array(
                 'model' => 'models',
@@ -164,28 +165,19 @@ class Application {
         
         $locale = NULL;
         
-        if ($this->config->app->has('locale')) {
-            
+        if ($this->config->app->has('locale'))
             $locale = $this->config->app['locale'];
-        }
         
-        if (setlocale(LC_ALL, $locale) === FALSE) {
-            
-            die("Unable to set locale to $locale.  Make sure the $locale locale is enabled on your system.");
-        }
+        if (setlocale(LC_ALL, $locale) === FALSE)
+            throw new \Exception("Unable to set locale to $locale.  Make sure the $locale locale is enabled on your system.");
         
-        if ($this->config->app->has('timezone')) {
-            
+        if ($this->config->app->has('timezone')) 
             $tz = $this->config->app->timezone;
-        } else {
-            
+        else
             $tz = 'UTC';
-        }
-        
-        if (!date_default_timezone_set($tz)) {
-            
+
+        if (!date_default_timezone_set($tz))
             throw new Application\Exception\BadTimezone($tz);
-        }
         
         $this->request = Application\Request\Loader::load($this->config);
         

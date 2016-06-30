@@ -36,7 +36,7 @@ class File {
             $this->source_file = $file;
 
             if(! $backend)
-                $backend = new File\Backend\Local(array('root' => '/'));
+                $backend = new File\Backend\Local(array('root' => DIRECTORY_SEPARATOR));
 
             if(! $backend instanceof File\Backend\_Interface)
                 throw new \Exception('Can not create new file object without a valid file backend!');
@@ -99,7 +99,7 @@ class File {
 
         $dir = $this->dirname();
 
-        return $dir . ((substr($dir, -1, 1) != '/') ? '/' : NULL) . $this->basename();
+        return $dir . ((substr($dir, -1, 1) != DIRECTORY_SEPARATOR) ? DIRECTORY_SEPARATOR : NULL) . $this->basename();
 
     }
 

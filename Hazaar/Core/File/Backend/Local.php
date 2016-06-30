@@ -18,9 +18,9 @@ class Local implements _Interface {
                                          ), $options);
 
         if(strlen($this->options->root) > 1)
-            $this->options->root = '/' . trim($this->options->root, '/');
+            $this->options->root = DIRECTORY_SEPARATOR . trim($this->options->root, DIRECTORY_SEPARATOR);
 
-        $metafile = $this->options->root . '/.metadata';
+        $metafile = $this->options->root . DIRECTORY_SEPARATOR . '.metadata';
 
         if(file_exists($metafile) && $meta = json_decode(file_get_contents($metafile), TRUE))
             $this->meta = $meta;
@@ -29,8 +29,8 @@ class Local implements _Interface {
 
     public function __destruct() {
 
-        if(is_array($this->meta) && count($this->meta) > 0 && $this->options->root != '/')
-            file_put_contents($this->options->root . '/.metadata', json_encode($this->meta));
+        if(is_array($this->meta) && count($this->meta) > 0 && $this->options->root != DIRECTORY_SEPARATOR)
+            file_put_contents($this->options->root . DIRECTORY_SEPARATOR . '.metadata', json_encode($this->meta));
 
     }
 
@@ -42,15 +42,15 @@ class Local implements _Interface {
 
     private function resolvePath($path, $file = NULL) {
 
-        $base = $this->options->get('root', '/');
+        $base = $this->options->get('root', DIRECTORY_SEPARATOR);
 
-        if($path == '/')
+        if($path == DIRECTORY_SEPARATOR)
             $path = $base;
         else
-            $path = $base . ((substr($base, -1, 1) != '/') ? '/' : NULL) . trim($path, '/');
+            $path = $base . ((substr($base, -1, 1) != DIRECTORY_SEPARATOR) ? DIRECTORY_SEPARATOR : NULL) . trim($path, DIRECTORY_SEPARATOR);
 
         if($file)
-            $path .= ((strlen($path) > 1) ? '/' : NULL) . trim($file, '/');
+            $path .= ((strlen($path) > 1) ? DIRECTORY_SEPARATOR : NULL) . trim($file, DIRECTORY_SEPARATOR);
 
         return $path;
 
@@ -134,7 +134,7 @@ class Local implements _Interface {
 
     public function upload($path, $file, $overwrite = TRUE) {
 
-        $fullPath = $this->resolvePath(rtrim($path, '/') . '/' . $file['name']);
+        $fullPath = $this->resolvePath(rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $file['name']);
 
         if(file_exists($fullPath) && $overwrite == FALSE)
             return FALSE;
@@ -145,9 +145,9 @@ class Local implements _Interface {
 
     public function copy($src, $dst, $recursive = FALSE) {
 
-        $src = rtrim($src, '/');
+        $src = rtrim($src, DIRECTORY_SEPARATOR);
 
-        $dst = rtrim($dst, '/');
+        $dst = rtrim($dst, DIRECTORY_SEPARATOR);
 
         if($this->is_file($src)) {
 
@@ -171,7 +171,7 @@ class Local implements _Interface {
 
         } elseif($this->is_dir($src) && $recursive) {
 
-            $dst .= '/' . basename($src);
+            $dst .= DIRECTORY_SEPARATOR . basename($src);
 
             if(! $this->exists($dst))
                 $this->mkdir($dst);
@@ -180,7 +180,7 @@ class Local implements _Interface {
 
             foreach($dir as $file) {
 
-                $fullpath = $src . '/' . $file;
+                $fullpath = $src . DIRECTORY_SEPARATOR . $file;
 
                 if($this->is_dir($fullpath))
                     $this->copy($fullpath, $dst, TRUE);
@@ -371,7 +371,7 @@ class Local implements _Interface {
                 if($file == '.' || $file == '..')
                     continue;
 
-                $fullpath = $path . '/' . $file;
+                $fullpath = $path . DIRECTORY_SEPARATOR . $file;
 
                 if($this->is_dir($fullpath)) {
 
@@ -387,7 +387,7 @@ class Local implements _Interface {
 
         }
 
-        if($path == '/')
+        if($path == DIRECTORY_SEPARATOR)
             return TRUE;
 
         return rmdir($realPath);
