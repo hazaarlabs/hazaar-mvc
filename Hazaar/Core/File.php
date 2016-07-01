@@ -33,7 +33,7 @@ class File {
 
         } else {
 
-            $this->source_file = $file;
+            $this->source_file = \Hazaar\Loader::fixDirectorySeparator($file);
 
             if(! $backend)
                 $backend = new File\Backend\Local(array('root' => DIRECTORY_SEPARATOR));
