@@ -1569,11 +1569,14 @@ class Map implements \ArrayAccess, \Iterator {
 
     }
 
-    public function flatten($inner_glue = '=', $outer_glue = ' ') {
+    public function flatten($inner_glue = '=', $outer_glue = ' ', $ignore = array()) {
 
         $elements = array();
 
         foreach($this->elements as $key => $value) {
+        
+            if(in_array($key, $ignore))
+                continue;
 
             if(gettype($value) == 'boolean')
                 $value = strbool($value);
