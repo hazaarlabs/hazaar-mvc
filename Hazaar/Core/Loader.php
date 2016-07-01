@@ -611,8 +611,6 @@ class Loader {
 
 			} else {
 
-                dump($class_name);
-
 				$full_path = str_replace ( '\\', '/', $class_name . '.php' );
 
 				if ($include = Loader::getClassSource ( $full_path )) {

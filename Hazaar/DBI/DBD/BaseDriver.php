@@ -312,7 +312,7 @@ public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $p
                 $return_value = (int) $this->lastinsertid();
         } elseif (is_string($returning)) {
             
-            $sql .= ' ' . $returning . ';';
+            $sql .= ' RETURNING ' . $returning . ';';
             
             if ($result = $this->query($sql))
                 $return_value = $result->fetchColumn(0);
