@@ -76,7 +76,7 @@ class DBI {
                 
                 $this->config->del('driver');
                 
-                $dsn .= $this->config->flatten('=', ';');
+                $dsn .= $this->config->flatten('=', ';', array('user', 'password'));
                 
                 $this->config->dsn = $dsn;
             }
