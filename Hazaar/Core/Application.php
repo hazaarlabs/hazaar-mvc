@@ -121,8 +121,7 @@ class Application {
             'app' => array(
                 'defaultController' => 'Index',
                 'favicon' => 'favicon.png',
-                'timezone' => 'UTC',
-                'layout' => 'application'
+                'timezone' => 'UTC'
             ),
             'paths' => array(
                 'model' => 'models',
