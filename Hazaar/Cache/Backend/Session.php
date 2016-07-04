@@ -211,6 +211,7 @@ class Session extends \Hazaar\Cache\Backend {
 
     /**
      * @detail Clears all values from all applications.
+     * 
      * This equates to a full session reset.
      *
      * @warning Use this wisely as it will affect other applications using the same session.
@@ -220,8 +221,6 @@ class Session extends \Hazaar\Cache\Backend {
      */
     public function clear() {
 
-        dump("THIS SHOULD NOT BE HAPPENING!");
-        
         if (ini_get("session.use_cookies")) {
             
             $params = session_get_cookie_params();
