@@ -273,7 +273,7 @@ abstract class Element implements _Interface {
      */
     public function data($key, $value){
     
-        $this->attr('data-' . trim($key), $value);
+        return $this->attr('data-' . trim($key), $value);
         
     }
 
