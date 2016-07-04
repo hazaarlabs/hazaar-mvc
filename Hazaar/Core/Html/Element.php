@@ -261,6 +261,21 @@ abstract class Element implements _Interface {
         return $this;
 
     }
+    
+    /*
+     * Set an HTML5 data atrribute.
+     *
+     * @param $key string The name of the data attribute to set.
+     * 
+     * @param $value string The value of the data attributes.
+     *
+     * @since 2.0
+     */
+    public function data($key, $value){
+    
+        $this->attr('data-' . trim($key), $value);
+        
+    }
 
 }
 
