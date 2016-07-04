@@ -453,15 +453,15 @@ class Table {
         } else {
             
             $sql = 'SELECT count(*) FROM ' . $this->from();
-            
+
             if ($this->criteria)
                 $sql .= ' WHERE ' . $this->driver->prepareCriteria($this->criteria);
             
             if ($stmt = $this->driver->query($sql)) {
-                
+
                 $result = new Result($stmt);
-                
-                return $result['count'];
+
+                return $result->fetchColumn(0);
             }
         }
         
