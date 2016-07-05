@@ -19,6 +19,8 @@ class File {
      */
     protected $contents;
 
+    protected $resource;
+
     function __construct($file, $backend = NULL) {
 
         if($file instanceof \Hazaar\File) {
@@ -30,6 +32,14 @@ class File {
             $this->info = $file->info;
 
             $this->mime_content_type = $file->mime_content_type;
+
+        }elseif(is_resource($file)){
+
+            $meta = stream_get_meta_data($file);
+
+            $this->backend = new \Hazaar\File\Backend\Local();
+
+            $this->source_file = $meta['uri'];
 
         } else {
 
@@ -110,6 +120,9 @@ class File {
     }
 
     public function size() {
+
+        if($this->contents)
+            return strlen($this->contents);
 
         return $this->backend->filesize($this->source_file);
 
@@ -204,7 +217,10 @@ class File {
 
     public function put_contents($data, $overwrite = FALSE) {
 
-        $content_type = $this->mime_content_type();
+        $content_type = null;
+
+        if(!is_resource($this->source_file))
+            $content_type = $this->mime_content_type();
 
         if(! $content_type)
             $content_type = 'text/text';
@@ -324,6 +340,49 @@ class File {
     public function direct_uri() {
 
         return $this->backend->direct_uri($this->fullpath());
+
+    }
+
+    public function toArray($delimiter = "\n"){
+
+        return explode($delimiter, $this->get_contents());
+
+    }
+
+    public function getCSV(){
+
+        return array_map('str_getcsv', $this->toArray("\n"));
+
+    }
+
+    public function unzip($filename){
+
+        $file = false;
+
+        $zip = zip_open($this->source_file);
+
+        if(!is_resource($zip))
+            return false;
+
+        while($zip_entry = zip_read($zip)){
+
+            $name = zip_entry_name($zip_entry);
+
+            if(preg_match('/' . $filename . '/', $name)){
+
+                $file = new File($filename);
+
+                $file->set_contents(zip_entry_read($zip_entry, zip_entry_filesize($zip_entry)));
+
+                break;
+
+            }
+
+        }
+
+        zip_close($zip);
+
+        return $file;
 
     }
 
