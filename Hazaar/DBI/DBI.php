@@ -76,7 +76,7 @@ class DBI {
                 
                 $this->config->del('driver');
                 
-                $dsn .= $this->config->flatten('=', ';', array('user', 'password'));
+                $dsn .= $this->config->flatten('=', ';');
                 
                 $this->config->dsn = $dsn;
             }
@@ -244,7 +244,12 @@ class DBI {
 
     public function query($sql) {
 
-        return new \Hazaar\DBI\Result($this->driver->query($sql));
+        $result = $this->driver->query($sql);
+        
+        if($result instanceof \PDOStatement)
+            return new \Hazaar\DBI\Result($result);
+            
+        return $result;
     
     }
 
@@ -1398,4 +1403,3 @@ class DBI {
     }
 
 }
-
