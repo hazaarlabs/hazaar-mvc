@@ -733,7 +733,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
      */
     public function export(){
 
-        return $this->exportArray($this->values, $this->fields);
+        return $this->exportArray($this->toArray(), $this->fields);
 
     }
 
@@ -778,7 +778,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                     $values[$key] = array(
                         'label' => $label,
-                        'value' => $items
+                        'items' => $items
                     );
 
                 }else{
