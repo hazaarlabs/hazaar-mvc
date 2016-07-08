@@ -25,7 +25,7 @@ class Dir {
 
     public function fixPath($path, $file = NULL) {
 
-        $path = DIRECTORY_SEPARATOR . trim($path, DIRECTORY_SEPARATOR);
+        $path = \Hazaar\Loader::fixDirectorySeparator($path);
 
         if($file)
             $path .= ((strlen($path) > 1) ? DIRECTORY_SEPARATOR : NULL) . $file;
