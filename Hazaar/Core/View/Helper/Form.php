@@ -11,7 +11,7 @@ namespace Hazaar\View\Helper;
 
 class Form extends \Hazaar\View\Helper {
 
-    public function impoty() {
+    public function import() {
 
         $this->requires('html');
 
