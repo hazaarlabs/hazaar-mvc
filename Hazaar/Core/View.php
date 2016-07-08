@@ -517,7 +517,7 @@ class View {
     public function partial($view, array $data = array()) {
 
         if (substr($view, 0, 1) !== '/')
-            $view = dirname($this->_viewfile) . '/' . $view . '.phtml';
+            $view = dirname($this->_viewfile) . '/' . $view;
         
         $output = '';
         
