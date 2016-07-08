@@ -4,7 +4,7 @@ namespace Hazaar\DBI\DBD;
 
 class Mysql extends BaseDriver {
 
-    private $conn;
+    protected $quote_special = '`';
 
     protected $reserved_words = array(
         'ACCESSIBLE',
@@ -235,315 +235,94 @@ class Mysql extends BaseDriver {
         'ZEROFILL'
     );
 
-    private $dbname;
-
     public function connect($dsn, $username = null, $password = null, $driver_options = null) {
 
         $d_pos = strpos($dsn, ':');
-        
+
         $driver = strtolower(substr($dsn, 0, $d_pos));
-        
+
         if (!$driver == 'mysql')
             return false;
-        
+
         $dsn_parts = array_unflatten(substr($dsn, $d_pos + 1));
-        
+
         foreach($dsn_parts as $key => $value) {
-            
+
             switch ($key) {
-                
+
                 case 'dbname' :
                     $this->dbname = $value;
-                    
+
                     break;
-                
+
                 case 'user' :
                     $username = $value;
-                    
+
                     unset($dsn_parts[$key]);
-                    
+
                     break;
-                
+
                 case 'password' :
                     $password = $value;
-                    
+
                     unset($dsn_parts[$key]);
-                    
+
                     break;
+
             }
+
         }
-        
+
         $dsn = $driver . ':' . array_flatten($dsn_parts);
-        
-        $this->conn = new \PDO($dsn, $username, $password, $driver_options);
-        
-        return true;
-    
-    }
 
-    public function beginTransaction() {
+        return parent::connect($dsn, $username, $password, $driver_options);
 
-        return $this->conn->beginTransaction();
-    
-    }
-
-    public function commit() {
-
-        return $this->conn->commit();
-    
-    }
-
-    public function getAttribute($attribute) {
-
-        return $this->conn->getAttribute($attribute);
-    
-    }
-
-    public function inTransaction() {
-
-        return $this->conn->inTransaction();
-    
-    }
-
-    public function lastInsertId() {
-
-        return $this->conn->lastInsertId();
-    
     }
 
     public function quote($string) {
 
-        if ($string instanceof \Hazaar\Date) {
-            
+        if ($string instanceof \Hazaar\Date)
             $string = $string->timestamp();
-        }
-        
-        if (!is_numeric($string)) {
-            
-            $string = $this->conn->quote((string) $string);
-        }
-        
+
+        if (!is_numeric($string))
+            $string = $this->pdo->quote((string) $string);
+
         return $string;
-    
+
     }
 
-    public function rollBack() {
+    public function createIndex($idx_info, $table) {
 
-        return $this->conn->rollback();
-    
-    }
-
-    public function setAttribute($attribute, $value) {
-
-        return $this->conn->setAttribute($attribute, $value);
-    
-    }
-
-    public function errorCode() {
-
-        return $this->conn->errorCode();
-    
-    }
-
-    public function errorInfo() {
-
-        return $this->conn->errorInfo();
-    
-    }
-
-    public function exec($sql) {
-
-        return $this->conn->exec($sql);
-    
-    }
-
-    public function query($sql) {
-
-        return $this->conn->query($sql);
-    
-    }
-
-    public function prepare($sql) {
-
-        return $this->conn->prepare($sql);
-    
-    }
-
-    public function listTables($schema = null) {
-
-        if (!$schema || $schema == 'public')
-            $schema = $this->dbname;
-        
-        return parent::listTables($schema);
-    
-    }
-
-    public function tableExists($table, $schema = null) {
-
-        if (!$schema || $schema == 'public')
-            $schema = $this->dbname;
-        
-        $info = new \Hazaar\DBI\Table($this, 'tables', 'information_schema');
-        
-        return $info->exists(array(
-            'table_name' => $table,
-            'table_schema' => $schema
-        ));
-    
-    }
-
-    public function createTable($name, $columns, $schema = null) {
-
-        if (!$schema || $schema == 'public')
-            $schema = $this->dbname;
-        
-        return parent::createTable($name, $columns, $schema);
-    
-    }
-
-    public function describeTable($name, $schema = null, $sort = null) {
-
-        if (!$schema || $schema == 'public')
-            $schema = $this->dbname;
-        
-        return parent::describeTable($name, $schema, $sort);
-    
-    }
-
-    public function renameTable($from_name, $to_name, $schema = null) {
-
-        if (!$schema || $schema == 'public')
-            $schema = $this->dbname;
-        
-        return parent::renameTable($from_name, $to_name, $schema);
-    
-    }
-
-    public function dropTable($name, $schema = null) {
-
-        if (!$schema || $schema == 'public')
-            $schema = $this->dbname;
-        
-        return parent::dropTable($name, $schema);
-    
-    }
-
-    public function addColumn($table, $column_spec, $schema = null) {
-
-        if (!$schema || $schema == 'public')
-            $schema = $this->dbname;
-        
-        return parent::addColumn($table, $column_spec, $schema);
-    
-    }
-
-    public function alterColumn($table, $column, $column_spec, $schema = null) {
-
-        if (!$schema || $schema == 'public')
-            $schema = $this->dbname;
-        
-        return parent::alterColumn($table, $column, $column_spec, $schema);
-    
-    }
-
-    public function dropColumn($table, $column, $schema = null) {
-
-        if (!$schema || $schema == 'public')
-            $schema = $this->dbname;
-        
-        return parent::dropColumn($table, $column, $schema);
-    
-    }
-
-    public function listSequences($schema = null) {
-
-        if (!$schema || $schema == 'public')
-            $schema = $this->dbname;
-        
-        return parent::listSequences();
-    
-    }
-
-    public function describeSequence($name, $schema = null) {
-
-        if (!$schema || $schema == 'public')
-            $schema = $this->dbname;
-        
-        return parent::describeSequence($name, $schema);
-    
-    }
-
-    public function listIndexes($table, $schema = null) {
-
-        if (!$schema || $schema == 'public')
-            $schema = $this->dbname;
-        
-        throw new \Exception('MySQL Indexes are not supported yet!');
-    
-    }
-
-    public function createIndex($idx_info, $table, $schema = null) {
-
-        if (!$schema || $schema == 'public')
-            $schema = $this->dbname;
-        
         if (!array_key_exists('name', $idx_info))
             return false;
-        
+
         if (!array_key_exists('table', $idx_info))
             return false;
-        
+
         if (!array_key_exists('columns', $idx_info))
             return false;
-        
+
         $sql = 'CREATE';
-        
+
         if (array_key_exists('unique', $idx_info) && $idx_info['unique'])
             $sql .= ' UNIQUE';
-        
+
         $sql .= ' INDEX ' . $idx_info['name'] . ' ON ' . $idx_info['table'];
-        
+
         $sql .= ' (' . implode(',', $idx_info['columns']) . ')';
-        
+
         if (array_key_exists('using', $idx_info) && $idx_info['using'])
             $sql .= ' USING ' . $idx_info['using'];
-        
+
         $sql .= ';';
-        
+
         $affected = $this->exec($sql);
-        
+
         if ($affected === false)
             return false;
-        
+
         return true;
-    
-    }
 
-    public function listTableConstraints($name, $schema = null, $type = null, $invert_type = false) {
-
-        if (!$schema || $schema == 'public')
-            $schema = $this->dbname;
-        
-        return parent::listTableConstraints($name, $schema, $type, $invert_type);
-    
-    }
-
-    public function addConstraint($info, $table, $schema = null) {
-
-        if (!$schema || $schema == 'public')
-            $schema = $this->dbname;
-        
-        return parent::addConstraint($info, $table, $schema);
-    
-    }
-
-    public function dropConstraint($name, $table, $schema = null) {
-
-        if (!$schema || $schema == 'public')
-            $schema = $this->dbname;
-        
-        return parent::dropConstraint($name, $table, $schema);
-    
     }
 
 }

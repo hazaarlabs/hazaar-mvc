@@ -66,14 +66,113 @@ abstract class BaseDriver implements Driver_Interface {
 
     protected $reserved_words = array();
 
+    protected $quote_special = '"';
+
+    protected $pdo;
+
+    protected $schema;
+
     protected static $execs = 0;
+
+    public function __construct($config){
+
+        $this->schema = $config->get('dbname', 'public');
+
+    }
+
+    public function connect($dsn, $username = null, $password = null, $driver_options = array()){
+
+        $this->pdo = new \PDO($dsn, $username, $password, $driver_options);
+
+        return true;
+
+    }
+
+    public function beginTransaction() {
+
+        return $this->pdo->beginTransaction();
+
+    }
+
+    public function commit() {
+
+        return $this->pdo->commit();
+
+    }
+
+    public function getAttribute($attribute) {
+
+        return $this->pdo->getAttribute($attribute);
+
+    }
+
+    public function inTransaction() {
+
+        return $this->pdo->inTransaction();
+
+    }
+
+    public function lastInsertId() {
+
+        return $this->pdo->lastInsertId();
+
+    }
+
+    public function quote($string) {
+
+        if (is_string($string))
+            $string = $this->pdo->quote($string);
+
+        return $string;
+
+    }
+
+    public function rollBack() {
+
+        return $this->pdo->rollback();
+
+    }
+
+    public function setAttribute($attribute, $value) {
+
+        return $this->pdo->setAttribute($attribute, $value);
+
+    }
+
+    public function errorCode() {
+
+        return $this->pdo->errorCode();
+
+    }
+
+    public function errorInfo() {
+
+        return $this->pdo->errorInfo();
+
+    }
+
+    public function exec($sql) {
+
+        return $this->pdo->exec($sql);
+
+    }
+
+    public function query($sql) {
+
+        return $this->pdo->query($sql);
+
+    }
+
+    public function prepare($sql) {
+
+        return $this->pdo->prepare($sql);
+
+    }
 
     public function field($string) {
 
-        if (in_array(strtoupper($string), $this->reserved_words)) {
-
-            $string = '"' . $string . '"';
-        }
+        if (in_array(strtoupper($string), $this->reserved_words))
+            $string = $this->quote_special . $string . $this->quote_special;
 
         return $string;
 
@@ -94,7 +193,7 @@ abstract class BaseDriver implements Driver_Interface {
 
     }
 
-public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $parent_ref = NULL) {
+    public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $parent_ref = NULL) {
 
         $parts = array();
 
@@ -269,7 +368,8 @@ public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $p
 
         if (is_array($value)) {
 
-            $value = $this->prepareCriteria($value, NULL, NULL);
+            $value = $this->quote(json_encode($value));//$this->prepareCriteria($value, NULL, NULL);
+
         } elseif ($value instanceof \Hazaar\Date) {
 
             $value = $this->quote($value->format('Y-m-d H:i:s'));
@@ -309,18 +409,21 @@ public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $p
             $sql .= ';';
 
             $return_value = $this->exec($sql);
+
         } elseif ($returning === TRUE) {
 
             $sql .= ';';
 
             if ($result = $this->query($sql))
                 $return_value = (int) $this->lastinsertid();
+
         } elseif (is_string($returning)) {
 
             $sql .= ' RETURNING ' . $returning . ';';
 
             if ($result = $this->query($sql))
                 $return_value = $result->fetchColumn(0);
+
         }
 
         return $return_value;
@@ -367,26 +470,17 @@ public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $p
     /*
      * Database information methods
      */
-    public function schemaName($table, $schema = NULL) {
-
-        if ($schema && !strpos($table, '.'))
-            $table = trim($schema) . '.' . trim($table);
-
-        return $table;
-
-    }
 
     public function listTables() {
 
-        $sql = "
-            SELECT
-                table_schema as `schema`,
-                table_name as name
-            FROM information_schema.tables t
-            WHERE table_type = 'BASE TABLE'
-                AND table_schema NOT IN ( 'information_schema', 'pg_catalog' )
-            ORDER BY table_name DESC;
-        ";
+        $sql = "SELECT table_schema as `schema`, table_name as name FROM information_schema.tables t WHERE table_type = 'BASE TABLE'";
+
+        if($this->schema != 'public')
+            $sql .= " AND table_schema = '$this->schema'";
+        else
+            $sql .= "AND table_schema NOT IN ( 'information_schema', 'pg_catalog' )";
+
+        $sql .= " ORDER BY table_name DESC;";
 
         if ($result = $this->query($sql))
             return $result->fetchAll(\PDO::FETCH_ASSOC);
@@ -395,20 +489,18 @@ public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $p
 
     }
 
-    public function tableExists($table, $schema = NULL) {
+    public function tableExists($table) {
 
-        $info = new \Hazaar\DBI\Table($this, 'tables', NULL, 'information_schema');
+        $info = new \Hazaar\DBI\Table($this, 'information_schema.tables');
 
         return $info->exists(array(
             'table_name' => $table,
-            'table_schema' => $schema
+            'table_schema' => $this->schema
         ));
 
     }
 
-    public function createTable($name, $columns, $schema = NULL) {
-
-        $name = $this->schemaName($name, $schema);
+    public function createTable($name, $columns) {
 
         $sql = "CREATE TABLE $name (\n";
 
@@ -422,12 +514,11 @@ public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $p
 
                 if (is_numeric($name)) {
 
-                    if (!array_key_exists('name', $info)) {
-
+                    if (!array_key_exists('name', $info))
                         throw new \Exception('Error creating new table.  Name is a number which is not allowed!');
-                    }
 
                     $name = $info['name'];
+
                 }
 
                 $def = $this->field($name) . ' ' . $this->type($info['data_type']) . (ake($info, 'length') ? '(' . $info['length'] . ')' : NULL);
@@ -442,20 +533,22 @@ public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $p
 
                     $driver = strtolower(basename(str_replace('\\', '/', get_class($this))));
 
-                    if ($driver == 'pgsql') {
-
+                    if ($driver == 'pgsql')
                         $constraints[] = ' PRIMARY KEY(' . $this->field($name) . ')';
-                    } else {
 
+                    else
                         $def .= ' PRIMARY KEY';
-                    }
+
                 }
+
             } else {
 
                 $def = "\t$name $info";
+
             }
 
             $coldefs[] = $def;
+
         }
 
         $sql .= implode(",\n", $coldefs);
@@ -474,21 +567,21 @@ public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $p
 
     }
 
-    public function describeTable($name, $schema = NULL, $sort = NULL) {
+    public function describeTable($name, $sort = NULL) {
 
         if (!$sort)
             $sort = 'ordinal_position';
 
-        $info = new \Hazaar\DBI\Table($this, 'columns', NULL, 'information_schema');
+        $info = new \Hazaar\DBI\Table($this, 'information_schema.columns');
 
         $result = $info->find(array(
             'table_name' => $name,
-            'table_schema' => $schema
+            'table_schema' => $this->schema
         ))->sort($sort);
 
         $pkeys = array();
 
-        if ($constraints = $this->listTableConstraints($name, $schema, 'PRIMARY KEY')) {
+        if ($constraints = $this->listTableConstraints($name, 'PRIMARY KEY')) {
 
             foreach($constraints as $constraint) {
 
@@ -527,16 +620,17 @@ public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $p
 
     }
 
-    public function renameTable($from_name, $to_name, $schema = NULL) {
-
-        $from_name = $this->schemaName($from_name, $schema);
+    public function renameTable($from_name, $to_name) {
 
         if (strpos($to_name, '.')) {
 
+            list($from_schema, $from_name) = explode('.', $from_name);
+
             list($to_schema, $to_name) = explode('.', $to_name);
 
-            if ($to_schema != $schema)
+            if ($to_schema != $from_schema)
                 throw new \Exception('You can not rename tables between schemas!');
+
         }
 
         $sql = "ALTER TABLE $from_name RENAME TO $to_name;";
@@ -550,9 +644,7 @@ public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $p
 
     }
 
-    public function dropTable($name, $schema = NULL) {
-
-        $name = $this->schemaName($name, $schema);
+    public function dropTable($name) {
 
         $sql = "DROP TABLE $name;";
 
@@ -565,9 +657,7 @@ public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $p
 
     }
 
-    public function addColumn($table, $column_spec, $schema = NULL) {
-
-        $table = $this->schemaName($table, $schema);
+    public function addColumn($table, $column_spec) {
 
         if (!array_key_exists('name', $column_spec))
             return FALSE;
@@ -594,9 +684,7 @@ public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $p
 
     }
 
-    public function alterColumn($table, $column, $column_spec, $schema = NULL) {
-
-        $table = $this->schemaName($table, $schema);
+    public function alterColumn($table, $column, $column_spec) {
 
         $sqls = array();
 
@@ -620,9 +708,7 @@ public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $p
 
     }
 
-    public function dropColumn($table, $column, $schema = NULL) {
-
-        $table = $this->schemaName($table, $schema);
+    public function dropColumn($table, $column) {
 
         $sql = "ALTER TABLE $table DROP COLUMN $column;";
 
@@ -647,12 +733,12 @@ public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $p
 
     }
 
-    public function describeSequence($name, $schema = NULL) {
+    public function describeSequence($name) {
 
         $sql = "SELECT * FROM information_schema.sequences WHERE sequence_name = '$name'";
 
-        if ($schema)
-            $sql .= " AND sequence_schema = '$schema'";
+        if ($this->schema)
+            $sql .= " AND sequence_schema = '$this->schema'";
 
         $sql .= ';';
 
@@ -675,7 +761,7 @@ public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $p
 
     }
 
-    public function listTableConstraints($name, $schema = NULL, $type = NULL, $invert_type = FALSE) {
+    public function listTableConstraints($name, $type = NULL, $invert_type = FALSE) {
 
         $constraints = array();
 
@@ -697,8 +783,8 @@ public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $p
             LEFT JOIN information_schema.referential_constraints rc ON tc.constraint_name = rc.constraint_name
             WHERE tc.table_name = '$name'";
 
-        if ($schema)
-            $sql .= "\nAND tc.table_schema = '$schema'";
+        if ($this->schema)
+            $sql .= "\nAND tc.table_schema = '$this->schema'";
 
         if ($type)
             $sql .= "\nAND tc.constraint_type" . ($invert_type ? '!=' : '=') . "'$type'";
@@ -717,9 +803,7 @@ public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $p
 
     }
 
-    public function addConstraint($info, $table, $schema = NULL) {
-
-        $table = $this->schemaName($table, $schema);
+    public function addConstraint($info, $table) {
 
         if (!array_key_exists('type', $info) || !$info['type'])
             return FALSE;
@@ -745,9 +829,7 @@ public function prepareCriteria($criteria, $bind_type = 'AND', $tissue = '=', $p
 
     }
 
-    public function dropConstraint($name, $table, $schema = NULL) {
-
-        $table = $this->schemaName($table, $schema);
+    public function dropConstraint($name, $table) {
 
         $sql = "ALTER TABLE $table DROP CONSTRAINT $name";
 
