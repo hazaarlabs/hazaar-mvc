@@ -429,7 +429,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
         $old_value = NULL;
 
-        if ($def['type'] == 'model') {
+        if (ake($def, 'type') == 'model') {
 
             if ($this->values[$key] instanceof SubModel)
                 $this->values[$key]->populate($value);
