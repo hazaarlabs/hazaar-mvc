@@ -47,6 +47,8 @@ abstract class Strict implements \ArrayAccess, \Iterator {
      */
     protected $current;
 
+    protected $__label;
+
     function __construct() {
 
         $args = func_get_args();
@@ -710,6 +712,12 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     }
 
+    public function label(){
+
+        return $this->__label;
+
+    }
+
     /**
      * Export the mdel in HazaarModelView format for easy display in views.
      *
@@ -718,6 +726,9 @@ abstract class Strict implements \ArrayAccess, \Iterator {
      * @since 2.0.0
      */
     public function export($ignore_empty = false){
+
+        if(method_exists($this, '__toString'))
+            return array('label' => $this->label(), 'value' => $this->__toString());
 
         return $this->exportArray($this->toArray(false, 0), $this->fields, $ignore_empty);
 
@@ -746,44 +757,42 @@ abstract class Strict implements \ArrayAccess, \Iterator {
             if(!array_key_exists($key, $def))
                 continue;
 
-            if($label = ake($def[$key], 'label')){
+            $label = ake($def[$key], 'label');
 
-                if($value instanceof Strict){
+            if($value instanceof Strict){
 
-                    $values[$key] = array(
-                        'label' => $label,
-                        'value' => $value->export($ignore_empty)
-                    );
+                $values[$key] = array(
+                    'label' => $label,
+                    'items' => $value->export($ignore_empty)
+                );
 
-                }elseif(is_array($value)){
+            }elseif(is_array($value)){
 
-                    $items = array();
+                $items = array();
 
-                    foreach($value as $subValue){
+                foreach($value as $subValue){
 
-                        if(empty($subValue) && $ignore_empty)
-                            continue;
-
-                        $items[] = ($subValue instanceof Strict) ? $subValue->export($ignore_empty) : $subValue;
-
-                    }
-
-                    $values[$key] = array(
-                        'label' => $label,
-                        'items' => $items
-                    );
-
-                }else{
-
-                    if(empty($value) && $ignore_empty)
+                    if(empty($subValue) && $ignore_empty)
                         continue;
 
-                    $values[$key] = array(
-                        'label' => $label,
-                        'value' => $value
-                    );
+                    $items[] = ($subValue instanceof Strict) ? $subValue->export($ignore_empty) : $subValue;
 
                 }
+
+                $values[$key] = array(
+                    'label' => ($label ? $label : null),
+                    'items' => $items
+                );
+
+            }elseif($label){
+
+                if(empty($value) && $ignore_empty)
+                    continue;
+
+                $values[$key] = array(
+                    'label' => $label,
+                    'value' => $value
+                );
 
             }
 
