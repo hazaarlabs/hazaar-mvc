@@ -15,13 +15,13 @@ class Hmv extends \Hazaar\View\Helper {
 
     }
 
-    public function render(\Hazaar\Model\Strict $model, $render_empty = true){
+    public function render(\Hazaar\Model\Strict $model, $ignore_empty = false){
 
         $container = $this->html->div();
 
         $values = $model->export();
 
-        return $container->add($this->renderItems($values, $render_empty))->class('hmvContainer');
+        return $container->add($this->renderItems($values, $ignore_empty))->class('hmvContainer');
 
     }
 
