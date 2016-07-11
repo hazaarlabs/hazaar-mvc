@@ -719,7 +719,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
      */
     public function export($ignore_empty = false){
 
-        return $this->exportArray($this->toArray(), $this->fields, $ignore_empty);
+        return $this->exportArray($this->toArray(false, 0), $this->fields, $ignore_empty);
 
     }
 
