@@ -36,15 +36,12 @@ class Hmv extends \Hazaar\View\Helper {
 
             if($items = ake($item, 'items')){
 
-                $subItems = array();
+                $field = array();
 
-                foreach($items as $subItem)
-                    $subItems[] = $this->renderItems($subItem);
+                if($label)
+                    $field[] = $this->html->label($label)->class('hmvSectionLabel');
 
-                $field = array(
-                    $this->html->label($label)->class('hmvSectionLabel'),
-                    $this->html->div($subItems)->class('hmvSubItems')
-                );
+                $field[] =   $this->html->div($this->renderItems($items))->class('hmvSubItems');
 
             }else{
 
@@ -52,16 +49,21 @@ class Hmv extends \Hazaar\View\Helper {
 
                 if(is_array($value)){
 
+                    $subvalues = array();
+
+                    foreach($value as $valuePart)
+                        $subValues[] = $this->html->div($valuePart);
+
                     $field = array(
-                       $this->html->label($label)->class('hmvSectionLabel'),
-                       $this->html->div($this->renderItems($value))->class('hmvSubItems')
+                       $this->html->label($label)->class('hmvItemLabel'),
+                       $this->html->div($subValues)->class('hmvItemValue')
                    );
 
                 }else{
 
                     $field = array(
                         $this->html->label($label)->class('hmvItemLabel'),
-                        $this->html->span($value)->class('hmvItemValue')
+                        $this->html->div($value)->class('hmvItemValue')
                     );
 
                 }
