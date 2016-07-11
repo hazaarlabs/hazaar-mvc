@@ -366,7 +366,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                 foreach($value as $subKey => $subValue)
                     $value[$subKey] = $this->convertType($subValue, $def['arrayOf']);
-            
+
             }
 
         }
@@ -420,7 +420,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                             return FALSE;
 
                         break;
-                
+
                 }
 
             }
@@ -717,9 +717,9 @@ abstract class Strict implements \ArrayAccess, \Iterator {
      *
      * @since 2.0.0
      */
-    public function export(){
+    public function export($ignore_empty = false){
 
-        return $this->exportArray($this->toArray(), $this->fields);
+        return $this->exportArray($this->toArray(), $this->fields, $ignore_empty);
 
     }
 
@@ -734,7 +734,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
      *
      * @since 2.0.0
      */
-    private function exportArray($array, $def){
+    private function exportArray($array, $def, $ignore_empty = false){
 
         if(!is_array($array))
             return null;
@@ -752,15 +752,21 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                     $values[$key] = array(
                         'label' => $label,
-                        'value' => $value->export()
+                        'value' => $value->export($ignore_empty)
                     );
 
                 }elseif(is_array($value)){
 
                     $items = array();
 
-                    foreach($value as $subValue)
-                        $items[] =($subValue instanceof Strict) ? $subValue->export() : $subValue;
+                    foreach($value as $subValue){
+
+                        if(empty($subValue) && $ignore_empty)
+                            continue;
+
+                        $items[] = ($subValue instanceof Strict) ? $subValue->export($ignore_empty) : $subValue;
+
+                    }
 
                     $values[$key] = array(
                         'label' => $label,
@@ -768,6 +774,9 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                     );
 
                 }else{
+
+                    if(empty($value) && $ignore_empty)
+                        continue;
 
                     $values[$key] = array(
                         'label' => $label,
