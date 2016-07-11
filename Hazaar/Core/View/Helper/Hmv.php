@@ -19,13 +19,11 @@ class Hmv extends \Hazaar\View\Helper {
 
         $container = $this->html->div();
 
-        $values = $model->export();
-
-        return $container->add($this->renderItems($values, $ignore_empty))->class('hmvContainer');
+        return $container->add($this->renderItems($model->export($ignore_empty)))->class('hmvContainer');
 
     }
 
-    private function renderItems($items, $render_empty){
+    private function renderItems($items){
 
         if(!is_array($items))
             return null;
@@ -41,7 +39,7 @@ class Hmv extends \Hazaar\View\Helper {
                 $subItems = array();
 
                 foreach($items as $subItem)
-                    $subItems[] = $this->renderItems($subItem, $render_empty);
+                    $subItems[] = $this->renderItems($subItem);
 
                 $field = array(
                     $this->html->label($label)->class('hmvSectionLabel'),
@@ -50,14 +48,13 @@ class Hmv extends \Hazaar\View\Helper {
 
             }else{
 
-                if(!($value = ake($item, 'value')) && $render_empty == false)
-                    continue;
+                $value = ake($item, 'value');
 
                 if(is_array($value)){
 
                     $field = array(
                        $this->html->label($label)->class('hmvSectionLabel'),
-                       $this->html->div($this->renderItems($value, $render_empty))->class('hmvSubItems')
+                       $this->html->div($this->renderItems($value))->class('hmvSubItems')
                    );
 
                 }else{
