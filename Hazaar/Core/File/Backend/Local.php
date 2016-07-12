@@ -296,7 +296,7 @@ class Local implements _Interface {
 
                         $extens = explode(' ', $matches[2]);
 
-                        foreach($extens as $key => $value) {
+                        foreach($extens as $value) {
                             if($value)
                                 Local::$mime_types[strtolower($value)] = $matches[1];
                         }
@@ -309,23 +309,27 @@ class Local implements _Interface {
 
             }
 
-            if($type = ake(Local::$mime_types, ake($info, 'extension')))
+            if($type = ake(Local::$mime_types, $extension))
                 return $type;
 
         }
 
-        $const = defined('FILEINFO_MIME_TYPE') ? FILEINFO_MIME_TYPE : FILEINFO_MIME;
+        if(function_exists('finfo_open')){
 
-        $mime = finfo_open($const);
+            $const = defined('FILEINFO_MIME_TYPE') ? FILEINFO_MIME_TYPE : FILEINFO_MIME;
 
-        if(! empty($mime)) {
+            $mime = finfo_open($const);
 
-            if($type = finfo_file($mime, $path))
-                return $type;
+            if(! empty($mime)) {
+
+                if($type = finfo_file($mime, $path))
+                    return $type;
+
+            }
 
         }
 
-        return FALSE;
+        return 'text/text';
 
     }
 
