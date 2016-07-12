@@ -10,6 +10,9 @@ class Uri implements \ArrayAccess {
 
     function __construct($uri) {
 
+        if(strpos($uri, ':') == false)
+            $uri = 'http://' . $uri;
+            
         $this->parts = parse_url($uri);
 
         if(! is_array($this->parts))
