@@ -266,7 +266,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                 if ($value !== NULL)
                     $value = (string) $value;
 
-            } elseif (!settype($value, $type)) {
+            } elseif (!@settype($value, $type)) {
 
                 throw new Exception\InvalidDataType($type, get_class($value));
 
@@ -421,6 +421,37 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                         if (strlen($value) > $data)
                             return FALSE;
 
+                        break;
+
+                }
+
+            }
+
+        }
+
+        /*
+         * Apply any sort methods
+         */
+        if(ake($def, 'type') == 'array' && $sort = ake($def, 'sort')){
+
+            if(is_callable($sort)){
+
+                usort($value, $sort);
+
+            }else{
+
+                switch($sort){
+
+                    case 'asort':
+                        asort($value);
+                        break;
+
+                    case 'ksort':
+                        ksort($value);
+                        break;
+
+                    default:
+                        sort($value);
                         break;
 
                 }
