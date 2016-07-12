@@ -427,6 +427,7 @@ application/x-dvi				dvi
 application/x-executable
 application/x-font				pfa pfb gsf pcf pcf.Z
 application/x-font-woff				woff
+application/x-font-woff2			woff2
 application/x-freemind				mm
 application/x-futuresplash			spl
 application/x-ganttproject			gan
