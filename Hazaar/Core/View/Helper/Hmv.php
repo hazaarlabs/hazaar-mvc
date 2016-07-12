@@ -52,18 +52,18 @@ class Hmv extends \Hazaar\View\Helper {
                     $subvalues = array();
 
                     foreach($value as $valuePart)
-                        $subValues[] = $this->html->div($valuePart);
+                        $subvalues[] = $this->html->div($this->renderValue($valuePart));
 
                     $field = array(
                        $this->html->label($label)->class('hmvItemLabel'),
-                       $this->html->div($subValues)->class('hmvItemValue')
+                       $this->html->div($subvalues)->class('hmvItemValue')
                    );
 
                 }else{
 
                     $field = array(
                         $this->html->label($label)->class('hmvItemLabel'),
-                        $this->html->div($value)->class('hmvItemValue')
+                        $this->html->div($this->renderValue($value))->class('hmvItemValue')
                     );
 
                 }
@@ -75,6 +75,15 @@ class Hmv extends \Hazaar\View\Helper {
         }
 
         return $out;
+
+    }
+
+    private function renderValue($value){
+
+        if($value instanceof \Hazaar\Http\Uri)
+            return $this->html->a($value->toString(), $value->toString())->target('_blank');
+
+        return $value;
 
     }
 
