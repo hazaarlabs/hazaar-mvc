@@ -112,7 +112,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                 if (is_array($definition)) {
 
-                    if (array_key_exists('type', $definition) && $definition['type'] == 'array' && !array_key_exists('default', $definition)) {
+                    if (array_key_exists('type', $definition) && ($definition['type'] == 'array' || $definition['type'] == 'model') && !array_key_exists('default', $definition)) {
 
                         if (array_key_exists('items', $definition)) {
 
