@@ -776,7 +776,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
      *
      * @since 2.0.0
      */
-    private function exportArray($array, $def, $ignore_empty = false){
+    private function exportArray($array, $def, $hide_empty = false){
 
         if(!is_array($array))
             return null;
@@ -792,21 +792,27 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
             if($value instanceof Strict){
 
+                if($value->count() == 0 && ($hide_empty || ake($def[$key], 'force_hide_empty') == true))
+                    continue;
+
                 $values[$key] = array(
                     'label' => $label,
-                    'items' => $value->export($ignore_empty)
+                    'items' => $value->export($hide_empty)
                 );
 
             }elseif(is_array($value)){
+
+                if(count($value) == 0 && ($hide_empty || ake($def[$key], 'force_hide_empty') == true))
+                    continue;
 
                 $items = array();
 
                 foreach($value as $subValue){
 
-                    if(empty($subValue) && $ignore_empty)
+                    if(empty($subValue) && $hide_empty)
                         continue;
 
-                    $items[] = ($subValue instanceof Strict) ? $subValue->export($ignore_empty) : $subValue;
+                    $items[] = ($subValue instanceof Strict) ? $subValue->export($hide_empty) : $subValue;
 
                 }
 
@@ -817,7 +823,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
             }elseif($label){
 
-                if(empty($value) && $ignore_empty)
+                if(empty($value) && ($hide_empty || ake($def[$key], 'force_hide_empty') == true))
                     continue;
 
                 $values[$key] = array(
