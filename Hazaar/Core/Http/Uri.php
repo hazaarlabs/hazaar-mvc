@@ -25,7 +25,7 @@ class Uri implements \ArrayAccess {
 
     public function scheme() {
 
-        return ake($this->parts, 'scheme');
+        return ake($this->parts, 'scheme', 'http');
 
     }
 
