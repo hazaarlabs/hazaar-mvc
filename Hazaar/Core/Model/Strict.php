@@ -788,6 +788,9 @@ abstract class Strict implements \ArrayAccess, \Iterator {
             if(!array_key_exists($key, $def))
                 continue;
 
+            if(ake($def[$key], 'force_hide') === true)
+                continue;
+                
             $label = ake($def[$key], 'label');
 
             if($value instanceof Strict){
