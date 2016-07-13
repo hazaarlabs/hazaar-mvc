@@ -359,5 +359,35 @@ abstract class Request implements Request\_Interface {
         return $ret;
 
     }
+    
+    public function method(){ 
+ 
+        return $_SERVER['REQUEST_METHOD']; 
+ 
+    } 
+ 
+    public function isGET(){ 
+ 
+        return ($this->method == 'POST'); 
+ 
+    } 
+ 
+    public function isPOST(){ 
+ 
+        return ($this->method == 'POST'); 
+ 
+    } 
+ 
+    public function isPUT(){ 
+ 
+        return ($this->method == 'PUT'); 
+ 
+    } 
+ 
+    public function isDELETE(){ 
+ 
+        return ($this->method == 'DELETE'); 
+ 
+    } 
 
 }
