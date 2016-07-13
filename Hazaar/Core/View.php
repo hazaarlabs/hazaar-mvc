@@ -516,24 +516,33 @@ class View {
      */
     public function partial($view, array $data = array()) {
 
-        if (substr($view, 0, 1) !== '/')
-            $view = dirname($this->_viewfile) . '/' . $view;
-        
+        /*
+         * This converts "absolute paths" to paths that are relative to FILE_PATH_VIEW.
+         * 
+         * Relative paths are then made relative to the current view.
+         */
+        $fChar = substr($view, 0, 1);
+
+        if ($fChar == '/')
+            $view = substr($view, 1);
+        else
+            $view = dirname($this->name) . '/' . $view;
+
         $output = '';
-        
+
         if ($partial = new View($view)) {
-            
+
             $partial->registerMethodHandler($this->_methodHandler);
-            
+
             $partial->addHelper($this->_helpers);
-            
+
             $partial->populate($data);
-            
+
             $output = $partial->render();
         }
-        
+
         return $output;
-    
+
     }
 
     public function setRequiresParam($array) {
