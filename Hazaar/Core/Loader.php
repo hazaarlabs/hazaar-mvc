@@ -101,11 +101,11 @@ class Loader {
 	private static $instance;
 
 	/**
-	 * @brief Initialise a new loader
-	 *
-	 * @detail p(notice notice-warning). Do NOT instantiate this class directly. See Loader::getInstance()
-	 * on how to get a new Loader instance.</div>
-	 */
+     * @brief Initialise a new loader
+     *
+     * @detail p(notice notice-warning). Do NOT instantiate this class directly. See Loader::getInstance()
+     * on how to get a new Loader instance.</div>
+     */
 	function __construct($application) {
 		$this->application = $application;
 
@@ -115,8 +115,8 @@ class Loader {
 		}
 
 		/*
-		 * Add some default search paths
-		 */
+         * Add some default search paths
+         */
 		$this->addSearchPath ( FILE_PATH_CONFIG, realpath ( APPLICATION_PATH . DIRECTORY_SEPARATOR .'configs' ) );
 
 		$this->addSearchPath ( FILE_PATH_LIB, realpath ( APPLICATION_PATH . DIRECTORY_SEPARATOR .'..' . DIRECTORY_SEPARATOR . 'library' ) );
@@ -147,13 +147,13 @@ class Loader {
     }
 
 	/**
-	 * @detail Return the current instance of the Loader object.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param Application $application
-	 *        	The current application instance
-	 */
+     * @detail Return the current instance of the Loader object.
+     *
+     * @since 1.0.0
+     *
+     * @param Application $application
+     *        	The current application instance
+     */
 	static function getInstance($application = NULL) {
 		if (! Loader::$instance instanceof Loader) {
 
@@ -170,10 +170,10 @@ class Loader {
 	}
 
 	/**
-	 * @detail Register this loader instance as a class autoloader
-	 *
-	 * @since 1.0.0
-	 */
+     * @detail Register this loader instance as a class autoloader
+     *
+     * @since 1.0.0
+     */
 	public function register() {
 		spl_autoload_register ( array (
 				$this,
@@ -182,10 +182,10 @@ class Loader {
 	}
 
 	/**
-	 * @detail Unregister this loader instance as a class autoloader
-	 *
-	 * @since 1.0.0
-	 */
+     * @detail Unregister this loader instance as a class autoloader
+     *
+     * @since 1.0.0
+     */
 	public function unregister() {
 		spl_autoload_unregister ( array (
 				$this,
@@ -197,24 +197,24 @@ class Loader {
 	}
 
 	/**
-	 * @detail Add a new search path for loading classes from library files
-	 *
-	 * The path type can be anything if you are using the loader to load your own library files. There are
-	 * built in path types for loading Hazaar library files.
-	 *
-	 * * FILE_PATH_MODEL - Path contains model classes
-	 * * FILE_PATH_VIEW - Path contains view files.
-	 * * FILE_PATH_CONTROLLER - Path contains controller classes.
-	 * * FILE_PATH_SUPPORT - Path contains support files. Used by the Application::runDirect() method.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $type
-	 *        	The path type to add.
-	 *
-	 * @param string $path
-	 *        	The path to add.
-	 */
+     * @detail Add a new search path for loading classes from library files
+     *
+     * The path type can be anything if you are using the loader to load your own library files. There are
+     * built in path types for loading Hazaar library files.
+     *
+     * * FILE_PATH_MODEL - Path contains model classes
+     * * FILE_PATH_VIEW - Path contains view files.
+     * * FILE_PATH_CONTROLLER - Path contains controller classes.
+     * * FILE_PATH_SUPPORT - Path contains support files. Used by the Application::runDirect() method.
+     *
+     * @since 1.0.0
+     *
+     * @param string $type
+     *        	The path type to add.
+     *
+     * @param string $path
+     *        	The path to add.
+     */
 	public function addSearchPath($type, $path) {
 		if ($path = realpath ( $path )) {
 
@@ -228,13 +228,13 @@ class Loader {
 	}
 
 	/**
-	 * @detail Add multiple search paths from an array
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param Array $array
-	 *        	Array containing type/path pairs.
-	 */
+     * @detail Add multiple search paths from an array
+     *
+     * @since 1.0.0
+     *
+     * @param Array $array
+     *        	Array containing type/path pairs.
+     */
 	public function addSearchPaths($array) {
 		if (is_array ( $array ) || $array instanceof Map) {
 
@@ -246,12 +246,12 @@ class Loader {
 	}
 
 	/**
-	 * @detail Return an array of search paths for this loader instance
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return Array Array of search paths
-	 */
+     * @detail Return an array of search paths for this loader instance
+     *
+     * @since 1.0.0
+     *
+     * @return Array Array of search paths
+     */
 	public function getSearchPaths($type = NULL) {
 		if ($type) {
 
@@ -299,35 +299,40 @@ class Loader {
 		return NULL;
 	}
 
+    static public function isAbsolutePath($path){
+
+        return (substr($path, 1, 1) == ':' || substr($path, 0, 1) == DIRECTORY_SEPARATOR);
+
+    }
 	/**
-	 * @detail Return the absolute filesystem path to a file.
-	 * By default this method uses the application
-	 * path as the base path.
-	 *
-	 * This method also checks that the file exists. If the file does not exist then null will be
-	 * returned.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $type
-	 *        	The path type to search. See Loader::addSearchPath()
-	 *
-	 * @param string $filename
-	 *        	The name of the file to check and return the path to.
-	 *
-	 * @param string $base_path
-	 *        	The path to use as a search base if there are no paths of the requested
-	 *        	type.
-	 *
-	 * @param boolean $case_insensitive
-	 *        	By default paths are case sensitive. In some circumstances this might
-	 *        	not
-	 *        	be desirable so set this TRUE to perform a (slower) case insensitive
-	 *        	search.
-	 *
-	 * @return string The absolute path to the file if it exists. NULL otherwise.
-	 *
-	 */
+     * @detail Return the absolute filesystem path to a file.
+     * By default this method uses the application
+     * path as the base path.
+     *
+     * This method also checks that the file exists. If the file does not exist then null will be
+     * returned.
+     *
+     * @since 1.0.0
+     *
+     * @param string $type
+     *        	The path type to search. See Loader::addSearchPath()
+     *
+     * @param string $filename
+     *        	The name of the file to check and return the path to.
+     *
+     * @param string $base_path
+     *        	The path to use as a search base if there are no paths of the requested
+     *        	type.
+     *
+     * @param boolean $case_insensitive
+     *        	By default paths are case sensitive. In some circumstances this might
+     *        	not
+     *        	be desirable so set this TRUE to perform a (slower) case insensitive
+     *        	search.
+     *
+     * @return string The absolute path to the file if it exists. NULL otherwise.
+     *
+     */
 	static public function getFilePath($type, $search_file = NULL, $base_path = APPLICATION_PATH, $case_insensitive = FALSE, $req_writable = FALSE) {
 
 		if (! $base_path)
@@ -338,7 +343,7 @@ class Loader {
         $search_file = Loader::fixDirectorySeparator($search_file);
 
         //If the search file is an absolute path just return it if it exists.
-        if(substr($search_file, 1, 1) == ':' || substr($search_file, 0, 1) == DIRECTORY_SEPARATOR){
+        if(Loader::isAbsolutePath($search_file)){
 
             return Loader::resolveRealPath($search_file);
 
@@ -369,19 +374,19 @@ class Loader {
 
 			if (file_exists ( $absolute_path ))
 				return realpath ( $absolute_path );
-			
+
 		}
 
 		return NULL;
 	}
 
 	/**
-	 * @detail Resolve a filename within any of the search paths
-	 *
-	 * @since 1.0.0
-	 *
-	 * @return string Absolute path to the file
-	 */
+     * @detail Resolve a filename within any of the search paths
+     *
+     * @since 1.0.0
+     *
+     * @return string Absolute path to the file
+     */
 	static public function resolve($filename) {
 
 		$paths = explode ( PATH_SEPARATOR, get_include_path () );
@@ -399,34 +404,34 @@ class Loader {
 	}
 
 	/**
-	 * @detail This method is used to load a new instance of a controller class.
-	 * There are some
-	 * built-in 'magic controllers' that this method will automatically load upon request.
-	 *
-	 * These controllers are:
-	 *
-	 * * style - Returns a [[Hazaar\Controller\Style]] object to handle output for CSS stylesheets.
-	 * * script - Returns a [[Hazaar\Controller\Script]] object to handle output of JavaScript files.
-	 *
-	 * If no controller can be found the default site controller will be loaded.
-	 *
-	 * @since 1.0.0
-	 *
-	 * @param string $controller
-	 *        	The name of the controller to load. This can be _style_ or _script_ to
-	 *        	load Style and Script controllers.
-	 *
-	 * @return \Hazaar\Application\Controller A controller instance.
-	 */
+     * @detail This method is used to load a new instance of a controller class.
+     * There are some
+     * built-in 'magic controllers' that this method will automatically load upon request.
+     *
+     * These controllers are:
+     *
+     * * style - Returns a [[Hazaar\Controller\Style]] object to handle output for CSS stylesheets.
+     * * script - Returns a [[Hazaar\Controller\Script]] object to handle output of JavaScript files.
+     *
+     * If no controller can be found the default site controller will be loaded.
+     *
+     * @since 1.0.0
+     *
+     * @param string $controller
+     *        	The name of the controller to load. This can be _style_ or _script_ to
+     *        	load Style and Script controllers.
+     *
+     * @return \Hazaar\Application\Controller A controller instance.
+     */
 	public function loadController($controller) {
 		$newController = NULL;
 
 		/*
-		 * Check for MAGIC controllers
-		 *
-		 * Magic controllers are are controllers that are handled internally. These can be
-		 * either 'style', or 'script' to service up compressed CSS or JS files.
-		 */
+         * Check for MAGIC controllers
+         *
+         * Magic controllers are are controllers that are handled internally. These can be
+         * either 'style', or 'script' to service up compressed CSS or JS files.
+         */
 		switch ($controller) {
 			case 'hazaar' :
 
@@ -463,17 +468,17 @@ class Loader {
 				$controllerClass = ucfirst ( $controller ) . 'Controller';
 
 				/*
-				 * This call to class_exists() will actually load the class with the __autoload magic method. Then
-				 * we test if the class exists and if it doesn't we try and load the default controller . If that
-				 * failes we return FALSE so a nice error can be sent instead of a nasty fatal error
-				 */
+                 * This call to class_exists() will actually load the class with the __autoload magic method. Then
+                 * we test if the class exists and if it doesn't we try and load the default controller . If that
+                 * failes we return FALSE so a nice error can be sent instead of a nasty fatal error
+                 */
 				try {
 
 					if (! class_exists ( $controllerClass )) {
 
 						/*
-						 * Use the default controller if no controller has been found.
-						 */
+                         * Use the default controller if no controller has been found.
+                         */
 						if (boolify ( $this->application->config->app->useDefault )) {
 
 							$controllerClass = ucfirst ( $this->application->config->app->defaultController ) . 'Controller';
@@ -485,7 +490,8 @@ class Loader {
 							return FALSE;
 						}
 					}
-				} catch ( \Hazaar\Exception\ClassNotFound $e ) {
+				}
+                catch ( \Hazaar\Exception\ClassNotFound $e ) {
 
 					return FALSE;
 				}
@@ -499,33 +505,33 @@ class Loader {
 	}
 
 	/**
-	 * @detail Loads a class from a source file.
-	 * This is the main class loader used by the __autoload() PHP
-	 * trigger. It is responsible for loading the files that hold class source definitions by determining
-	 * the correct file to load based on the class name.
-	 *
-	 * First check if the class name is a single word that ends with 'Controller', designating it as a
-	 * controller class. If that matches then the class is loaded from the controller path.
-	 *
-	 * Otherwise we check if the class starts with Application and load from the application path.
-	 *
-	 * Lastly we do a 2 stage search of the library paths. Stage 1 looks for a correlating path while
-	 * stage
-	 * 2 looks for the class in a sub-directory of the module name.
-	 *
-	 * We do 2 stage class path checking.
-	 *
-	 * * _Stage 1:_ Look for the class in a correlating path. eg: [[Hazaar\Application]] in path
-	 * Hazaar/Application.php
-	 * * _Stage 2:_ If stage 1 fails, look in a module sub-directory. eg: [[Hazaar\Application]] in path
-	 * Hazaar/Application/Application.php
-	 *
-	 * If they both fail, the class is not found and we throw a pretty exception.
-	 *
-	 * @param string $class_name
-	 *        	The name of the class to load.
-	 *
-	 */
+     * @detail Loads a class from a source file.
+     * This is the main class loader used by the __autoload() PHP
+     * trigger. It is responsible for loading the files that hold class source definitions by determining
+     * the correct file to load based on the class name.
+     *
+     * First check if the class name is a single word that ends with 'Controller', designating it as a
+     * controller class. If that matches then the class is loaded from the controller path.
+     *
+     * Otherwise we check if the class starts with Application and load from the application path.
+     *
+     * Lastly we do a 2 stage search of the library paths. Stage 1 looks for a correlating path while
+     * stage
+     * 2 looks for the class in a sub-directory of the module name.
+     *
+     * We do 2 stage class path checking.
+     *
+     * * _Stage 1:_ Look for the class in a correlating path. eg: [[Hazaar\Application]] in path
+     * Hazaar/Application.php
+     * * _Stage 2:_ If stage 1 fails, look in a module sub-directory. eg: [[Hazaar\Application]] in path
+     * Hazaar/Application/Application.php
+     *
+     * If they both fail, the class is not found and we throw a pretty exception.
+     *
+     * @param string $class_name
+     *        	The name of the class to load.
+     *
+     */
 	static public function loadClassFromFile($class_name) {
 
 		if (preg_match ( '/^(\w*)Controller$/', $class_name, $matches )) {
@@ -555,9 +561,9 @@ class Loader {
 			$namepath = preg_split ( '/(\W|_)/', $class_name, NULL, PREG_SPLIT_NO_EMPTY );
 
 			/*
-			 * Check that the prefix is 'Application'. This is sort of a namespace 'key' if you will
-			 * to restrict the loadable path to that of the application itself.
-			 */
+             * Check that the prefix is 'Application'. This is sort of a namespace 'key' if you will
+             * to restrict the loadable path to that of the application itself.
+             */
 			if ($namepath [0] == 'Application') {
 
 				$filename = implode ( DIRECTORY_SEPARATOR, array_slice ( $namepath, 2 ) ) . '.php';
@@ -579,13 +585,13 @@ class Loader {
 				$full_path = implode ( DIRECTORY_SEPARATOR, $namepath ) . DIRECTORY_SEPARATOR . "{$module}.php";
 
 				/*
-				 * Check the correlating path as normal
-				 */
+                 * Check the correlating path as normal
+                 */
 				if (($include = Loader::getClassSource ( $full_path )) == false) {
 
 					/*
-					 * Check if the module is in fact the same as the path
-					 */
+                     * Check if the module is in fact the same as the path
+                     */
 					$full_path = implode ( DIRECTORY_SEPARATOR, $namepath ) . DIRECTORY_SEPARATOR . $module . DIRECTORY_SEPARATOR . "{$module}.php";
 
 					if (($include = Loader::getClassSource ( $full_path )) == false) {
@@ -628,10 +634,10 @@ class Loader {
 	}
 
 	/**
-	 * @detail Check the library paths to make sure the file exists somewhere
-	 *
-	 * @since 1.0.0
-	 */
+     * @detail Check the library paths to make sure the file exists somewhere
+     *
+     * @since 1.0.0
+     */
 	static private function getClassSource($path) {
 		foreach ( explode ( ':', get_include_path () ) as $lib ) {
 
@@ -646,4 +652,3 @@ class Loader {
 		return FALSE;
 	}
 }
-
