@@ -128,11 +128,6 @@ class View {
 
     public function load($view) {
 
-        if (substr($view, 0, 1) == '/') {
-            
-            $this->_viewfile = $view;
-        } else {
-            
             $type = FILE_PATH_VIEW;
             
             /*
@@ -147,11 +142,8 @@ class View {
             
             $viewFile = $view . '.phtml';
             
-            if (! ($this->_viewfile = Loader::getFilePath($type, $viewFile))) {
-                
-                throw new \Exception('File not found or permission denied accessing ' . $view);
-            }
-        }
+            if (! ($this->_viewfile = Loader::getFilePath($type, $viewFile)))
+               throw new \Exception('File not found or permission denied accessing ' . $viewFile);
     
     }
 
