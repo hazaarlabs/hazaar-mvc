@@ -519,14 +519,14 @@ class View {
         /*
          * This converts "absolute paths" to paths that are relative to FILE_PATH_VIEW.
          *
-         * Relative paths are then made relative to the current view.
+         * Relative paths are then made relative to the current view (using it's absolute path).
          */
         $fChar = substr($view, 0, 1);
 
         if ($fChar == '/')
             $view = substr($view, 1);
         else
-            $view = dirname($this->name) . '/' . $view;
+            $view = dirname($this->_viewfile) . '/' . $view . '.phtml';
 
         $output = '';
 
