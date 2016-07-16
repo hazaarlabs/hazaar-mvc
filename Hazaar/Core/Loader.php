@@ -639,7 +639,7 @@ class Loader {
      * @since 1.0.0
      */
 	static private function getClassSource($path) {
-		foreach ( explode ( ':', get_include_path () ) as $lib ) {
+		foreach ( explode ( PATH_SEPARATOR, get_include_path () ) as $lib ) {
 
 			$full_path = $lib . DIRECTORY_SEPARATOR . $path;
 
