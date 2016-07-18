@@ -74,11 +74,14 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
             switch (Adapter::$credential_encryption) {
                 case 'md5' :
                     $credential = md5($credential);
-                    
                     break;
+                    
                 case 'sha' :
                     $credential = sha1($credential);
+                    break;
                     
+                case 'sha256':
+                    $credential = hash('sha256', $credential);
                     break;
             }
         }
@@ -88,7 +91,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
     }
 
     /*
-     * Supported encryption is md5, sha and none. The count value can be used to employ further obfuscation
+     * Supported encryption is md5, sha, sha256 and none. The count value can be used to employ further obfuscation
      * by running the encryption method multiple times. Twice is usually more than enough.
      */
     static public function setCredentialEncryption($method, $count = 1) {
