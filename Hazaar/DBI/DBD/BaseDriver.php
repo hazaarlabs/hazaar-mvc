@@ -64,6 +64,8 @@ interface Driver_Interface {
  */
 abstract class BaseDriver implements Driver_Interface {
 
+    protected $allow_constraints = true;
+
     protected $reserved_words = array();
 
     protected $quote_special = '"';
@@ -748,6 +750,71 @@ abstract class BaseDriver implements Driver_Interface {
 
     }
 
+    public function listIndexes($table = NULL){
+
+        $sql = "SELECT table_name AS `table`,
+            index_name AS `name`,
+            CASE WHEN non_unique=1 THEN FALSE ELSE TRUE END as `unique`,
+            GROUP_CONCAT(column_name ORDER BY seq_in_index) AS `columns`
+            FROM information_schema.statistics
+            WHERE table_schema = '{$this->schema}'";
+
+        if($table)
+            $sql .= "\nAND table_name='$table'";
+
+        $sql .= "\nGROUP BY 1,2;";
+
+        if($result = $this->query($sql)){
+
+            $indexes = array();
+
+            while($row = $result->fetch(\PDO::FETCH_ASSOC)){
+
+                $indexes[$row['name']] = array(
+                    'table' => $row['table'],
+                    'columns' => explode(',', $row['columns']),
+                    'unique' => boolify($row['unique'])
+                );
+
+            }
+
+            return $indexes;
+
+        }
+
+        return false;
+
+    }
+
+    public function createIndex($index_name, $idx_info) {
+
+        if (!array_key_exists('table', $idx_info))
+            return false;
+
+        if (!array_key_exists('columns', $idx_info))
+            return false;
+
+        $sql = 'CREATE';
+
+        if (array_key_exists('unique', $idx_info) && $idx_info['unique'])
+            $sql .= ' UNIQUE';
+
+        $sql .= " INDEX $index_name ON $idx_info[table] (" . implode(',', $idx_info['columns']) . ')';
+
+        if (array_key_exists('using', $idx_info) && $idx_info['using'])
+            $sql .= ' USING ' . $idx_info['using'];
+
+        $sql .= ';';
+
+        $affected = $this->exec($sql);
+
+        if ($affected === false)
+            return false;
+
+        return true;
+
+    }
+
     public function dropIndex($name) {
 
         $sql = $this->exec('DROP INDEX ' . $name);
@@ -761,30 +828,36 @@ abstract class BaseDriver implements Driver_Interface {
 
     }
 
-    public function listTableConstraints($name, $type = NULL, $invert_type = FALSE) {
+    public function listConstraints($table = NULL, $type = NULL, $invert_type = FALSE) {
+
+        if(!$this->allow_constraints)
+            return false;
 
         $constraints = array();
 
-        $sql = "
-            SELECT
+        $sql = "SELECT
                 tc.constraint_name as name,
-                tc.table_name as table,
-                tc.table_schema as schema,
-                kcu.column_name as column,
-                ccu.table_name AS foreign_table,
-                ccu.column_name AS foreign_column,
+                tc.table_name as `table`,
+                tc.table_schema as `schema`,
+                kcu.column_name as `column`,
+                kcu.REFERENCED_TABLE_SCHEMA AS foreign_schema,
+                kcu.REFERENCED_TABLE_NAME AS foreign_table,
+                kcu.REFERENCED_COLUMN_NAME AS foreign_column,
                 tc.constraint_type as type,
                 rc.match_option,
                 rc.update_rule,
                 rc.delete_rule
             FROM information_schema.table_constraints tc
-            INNER JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name
-            INNER JOIN information_schema.constraint_column_usage ccu ON ccu.constraint_name = tc.constraint_name
+            INNER JOIN information_schema.key_column_usage kcu
+                ON kcu.constraint_schema = tc.constraint_schema
+                AND kcu.constraint_name = tc.constraint_name
+                AND kcu.table_schema = tc.table_schema
+                AND kcu.table_name = tc.table_name
             LEFT JOIN information_schema.referential_constraints rc ON tc.constraint_name = rc.constraint_name
-            WHERE tc.table_name = '$name'";
+            WHERE tc.CONSTRAINT_SCHEMA='{$this->schema}'";
 
-        if ($this->schema)
-            $sql .= "\nAND tc.table_schema = '$this->schema'";
+        if($table)
+            $sql .= "\nAND tc.table_name='$table'";
 
         if ($type)
             $sql .= "\nAND tc.constraint_type" . ($invert_type ? '!=' : '=') . "'$type'";
@@ -793,8 +866,24 @@ abstract class BaseDriver implements Driver_Interface {
 
         if ($result = $this->query($sql)) {
 
-            while($row = $result->fetch(\PDO::FETCH_ASSOC))
-                $constraints[] = $row;
+            while($row = $result->fetch(\PDO::FETCH_ASSOC)){
+
+                $constraint = array(
+                   'table' => $row['table'],
+                   'column' => $row['column'],
+                   'type' => $row['type']
+                );
+
+                if($row['foreign_table']){
+                    $constraint['references'] = array(
+                        'table' => $row['foreign_table'],
+                        'column' => $row['foreign_column']
+                    );
+                }
+
+                $constraints[$row['name']] = $constraint;
+
+            }
 
             return $constraints;
         }
@@ -803,22 +892,35 @@ abstract class BaseDriver implements Driver_Interface {
 
     }
 
-    public function addConstraint($info, $table) {
+    public function addConstraint($name, $info) {
 
-        if (!array_key_exists('type', $info) || !$info['type'])
-            return FALSE;
+        if(!$this->allow_constraints)
+            return false;
 
-        $sql = "ALTER TABLE $table ADD ";
+        if(!array_key_exists('table', $info))
+            return false;
 
-        if (array_key_exists('name', $info) && $info['name'])
-            $sql .= "CONSTRAINT $info[name] ";
+        if (!array_key_exists('type', $info) || !$info['type']){
 
-        $sql .= "$info[type] ($info[column])";
+            if(array_key_exists('references', $info))
+                $info['type'] = 'FOREIGN KEY';
+            else
+                return FALSE;
 
-        if (array_key_exists('foreign_table', $info) && $info['foreign_table']) {
-
-            $sql .= " REFERENCES $info[foreign_table] ($info[foreign_column]) ON UPDATE $info[update_rule] ON DELETE $info[delete_rule]";
         }
+
+        if(!array_key_exists('update_rule', $info))
+            $info['update_rule'] = 'NO ACTION';
+
+        if(!array_key_exists('delete_rule', $info))
+            $info['delete_rule'] = 'NO ACTION';
+
+        $sql = "ALTER TABLE $info[table] ADD CONSTRAINT $name $info[type] ($info[column])";
+
+        if (array_key_exists('references', $info))
+            $sql .= " REFERENCES {$info['references']['table']} ({$info['references']['column']}) ON UPDATE $info[update_rule] ON DELETE $info[delete_rule]";
+
+        $sql .= ';';
 
         $affected = $this->exec($sql);
 

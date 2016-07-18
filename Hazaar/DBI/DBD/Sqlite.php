@@ -4,6 +4,8 @@ namespace Hazaar\DBI\DBD;
 
 class Sqlite extends BaseDriver {
 
+    public $allow_constraints = false;
+
     public function connect($dsn, $username = null, $password = null, $driver_options = null) {
 
         $d_pos = strpos($dsn, ':');

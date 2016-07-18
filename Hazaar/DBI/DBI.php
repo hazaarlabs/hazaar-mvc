@@ -415,15 +415,15 @@ class DBI {
 
     }
 
-    public function listIndexes($table) {
+    public function listIndexes($table = NULL) {
 
         return $this->driver->listIndexes($table);
 
     }
 
-    public function createIndex($idx_info, $table) {
+    public function createIndex($index_name, $idx_info) {
 
-        return $this->driver->createIndex($idx_info, $table);
+        return $this->driver->createIndex($index_name, $idx_info);
 
     }
 
@@ -433,9 +433,19 @@ class DBI {
 
     }
 
-    public function listTableConstraints($name = NULL, $type = NULL, $invert_type = FALSE) {
+    public function listPrimaryKeys($table = NULL){
 
-        return $this->driver->listTableConstraints($name, $type, $invert_type);
+        return $this->driver->listConstraints($table, 'PRIMARY KEY');
+    }
+
+    public function listForeignKeys($table = NULL){
+
+        return $this->driver->listConstraints($table, 'FOREIGN KEY');
+    }
+
+    public function listConstraints($table = NULL, $type = NULL, $invert_type = FALSE) {
+
+        return $this->driver->listConstraints($table, $type, $invert_type);
 
     }
 
@@ -506,6 +516,8 @@ class DBI {
 
             return $versions;
         }
+
+        return null;
 
     }
 
@@ -1153,26 +1165,11 @@ class DBI {
              */
             $this->log("Initialising database" . ($version ? " at version '$version'" : ''));
 
-            if ($schema['version'] > 0) {
+            if ($schema['version'] > 0){
 
-                foreach(ake($schema, 'tables', array()) as $table => $columns) {
+                if($test || $this->createSchema($schema))
+                    $committed_versions[] = $schema['version'];
 
-                    $this->log("Creating table '$table'.");
-
-                    if (!$test)
-                        $this->createTable($table, $columns);
-
-                }
-
-                foreach(ake($schema, 'indexes', array()) as $table => $index_info) {
-
-                    $this->log("Creating index on '$table'.");
-
-                    if (!$test)
-                        $this->createIndex($index_info, $table);
-                }
-
-                $committed_versions[] = $schema['version'];
             }
 
         } else {
@@ -1258,6 +1255,73 @@ class DBI {
         }
 
         throw new \Exception('Migration failed when committing transaction.');
+
+    }
+
+    /**
+     * Takes a schema definition and creates it in the database.
+     *
+     * @param array $schema
+     */
+    public function createSchema($schema){
+
+        $this->beginTransaction();
+
+        try{
+
+            /* Create tables */
+            if($tables = ake($schema, 'tables')){
+
+                foreach($tables as $table => $columns){
+
+                    $this->createTable($table, $columns);
+
+                    if($this->errorCode() > 0)
+                        throw new \Exception('Error creating table ' . $table . ': ' . $this->errorInfo()[2]);
+
+                }
+
+            }
+
+            /* Create indexes */
+            if($indexes = ake($schema, 'indexes')){
+
+                foreach($indexes as $index_name => $index_info){
+
+                    $this->createIndex($index_name, $index_info);
+
+                    if($this->errorCode() > 0)
+                        throw new \Exception('Error creating index ' . $index_name . ': ' . $this->errorInfo()[2]);
+
+                }
+
+            }
+
+            /* Create foreign keys */
+            if($constraints = ake($schema, 'constraints')){
+
+                foreach($constraints as $fkey_name => $fkey_info){
+
+                    $this->addConstraint($fkey_name, $fkey_info);
+
+                    if($this->errorCode() > 0)
+                        throw new \Exception('Error creating constraint ' . $fkey_name . ': ' . $this->errorInfo()[2]);
+
+                }
+
+            }
+
+        }
+        catch(\Exception $e){
+
+            $this->rollBack();
+
+            throw $e;
+        }
+
+        $this->commit();
+
+        return true;
 
     }
 

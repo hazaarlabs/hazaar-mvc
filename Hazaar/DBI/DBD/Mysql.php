@@ -291,40 +291,6 @@ class Mysql extends BaseDriver {
 
     }
 
-    public function createIndex($idx_info, $table) {
-
-        if (!array_key_exists('name', $idx_info))
-            return false;
-
-        if (!array_key_exists('table', $idx_info))
-            return false;
-
-        if (!array_key_exists('columns', $idx_info))
-            return false;
-
-        $sql = 'CREATE';
-
-        if (array_key_exists('unique', $idx_info) && $idx_info['unique'])
-            $sql .= ' UNIQUE';
-
-        $sql .= ' INDEX ' . $idx_info['name'] . ' ON ' . $idx_info['table'];
-
-        $sql .= ' (' . implode(',', $idx_info['columns']) . ')';
-
-        if (array_key_exists('using', $idx_info) && $idx_info['using'])
-            $sql .= ' USING ' . $idx_info['using'];
-
-        $sql .= ';';
-
-        $affected = $this->exec($sql);
-
-        if ($affected === false)
-            return false;
-
-        return true;
-
-    }
-
 }
 
 
