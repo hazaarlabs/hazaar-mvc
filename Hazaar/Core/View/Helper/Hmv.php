@@ -9,6 +9,18 @@ namespace Hazaar\View\Helper;
  */
 class Hmv extends \Hazaar\View\Helper {
 
+    public $container_class = 'hmvContainer';
+
+    public $section_class = 'hmvSectionLabel';
+
+    public $sectionitems_class = 'hmvSubItems';
+
+    public $item_class = 'hmvItem';
+
+    public $label_class = 'hmvItemLabel';
+
+    public $value_class = 'hmvItemValue';
+
     public function import(){
 
         $this->requires('html');
@@ -19,7 +31,7 @@ class Hmv extends \Hazaar\View\Helper {
 
         $container = $this->html->div();
 
-        return $container->add($this->renderItems($model->export($ignore_empty)))->class('hmvContainer');
+        return $container->add($this->renderItems($model->export($ignore_empty)))->class($this->container_class);
 
     }
 
@@ -39,9 +51,9 @@ class Hmv extends \Hazaar\View\Helper {
                 $field = array();
 
                 if($label)
-                    $field[] = $this->html->label($label)->class('hmvSectionLabel');
+                    $field[] = $this->html->div($this->html->label($label))->class($this->section_class);
 
-                $field[] =   $this->html->div($this->renderItems($items))->class('hmvSubItems');
+                $field[] =   $this->html->div($this->renderItems($items))->class($this->sectionitems_class);
 
             }else{
 
@@ -55,22 +67,22 @@ class Hmv extends \Hazaar\View\Helper {
                         $subvalues[] = $this->html->div($this->renderValue($valuePart));
 
                     $field = array(
-                       $this->html->label($label)->class('hmvItemLabel'),
-                       $this->html->div($subvalues)->class('hmvItemValue')
+                       $this->html->div($this->html->label($label))->class($this->label_class),
+                       $this->html->div($subvalues)->class($this->value_class)
                    );
 
                 }else{
 
                     $field = array(
-                        $this->html->label($label)->class('hmvItemLabel'),
-                        $this->html->div($this->renderValue($value))->class('hmvItemValue')
+                        $this->html->div($this->html->label($label))->class($this->label_class),
+                        $this->html->div($this->renderValue($value))->class($this->value_class)
                     );
 
                 }
 
             }
 
-            $out[] = $this->html->div($field)->data('name', $key)->class('hmvItem');
+            $out[] = $this->html->div($field)->data('name', $key)->class($this->item_class);
 
         }
 
