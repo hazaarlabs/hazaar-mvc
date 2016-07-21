@@ -25,7 +25,8 @@ class A extends Block {
      */
     function __construct($href, $content = NULL, $parameters = array()) {
 
-        $parameters['href'] = $href;
+        if($href)
+            $parameters['href'] = $href;
 
         parent::__construct('a', $content, $parameters);
 
