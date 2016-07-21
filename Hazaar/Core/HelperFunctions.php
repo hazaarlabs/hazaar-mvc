@@ -136,6 +136,21 @@ function is_boolean($value) {
 }
 
 /**
+ * The Yes/No function
+ *
+ * Simply returns Yes or No based on a boolean value.
+ *
+ * @param boolean A boolean type value.  Can be an actual boolean or 1/0 yes/no on/off, etc.
+ * 
+ * @returns string
+ */
+function yn($value){
+
+    return boolify($value) ? 'Yes' : 'No';
+    
+}
+
+/**
  * @brief Retreive first non-null value from parameter list
  *
  * @detail Takes a variable list of arguments and returns the first non-null value.
