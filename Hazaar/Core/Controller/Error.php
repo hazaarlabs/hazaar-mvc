@@ -273,6 +273,8 @@ class Error extends \Hazaar\Controller {
                 case 'text' :
                     $out = "*****************************\n\tEXCEPTION\n*****************************\n\n";
                     
+                    $out .= "Environment:\t" . APPLICATION_ENV . "\n";
+                    
                     if ($this->errno > 0)
                         $out .= "Error:\t\t#" . $this->errno . "\n";
                     
