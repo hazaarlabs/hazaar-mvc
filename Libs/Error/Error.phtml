@@ -39,7 +39,7 @@
 					Error code: <?=$this->code;?>
             	</div>
 
-				<?php if(APPLICATION_ENV == 'development'): ?>
+				<?php if(ini_get('display_errors')): ?>
 				
 				<div class="moreinfo">
 
