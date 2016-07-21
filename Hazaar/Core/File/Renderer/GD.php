@@ -6,7 +6,7 @@
  * Time: 4:15 PM
  */
 
-namespace Hazaar\File\ImageBackend;
+namespace Hazaar\File\Renderer;
 
 class GD {
 
