@@ -1288,11 +1288,29 @@ class Map implements \ArrayAccess, \Iterator {
 
             foreach($criteria as $key => $value) {
 
-                if(! isset($elem[$key]))
-                    continue 2;
+                //Look for dot notation.
+                if(strpos($key, '.') > 0){
 
-                if($elem[$key] != $value)
-                    continue 2;
+                    //If there is a dot then grab the next element key and make sure it exists
+                    list($itemkey, $sub)  = explode('.', $key, 2);
+
+                    //Skip further checks if the key doesn't exist in this element
+                    if(!isset($elem[$itemkey]))
+                        continue 2;
+
+                    //Search the element for the remaining dot notated key.  If nothing is found skip this element.
+                    if($elem->find(array($sub => $value))->count() ==0)
+                        continue 2;
+
+                }else{
+
+                    if(! isset($elem[$key]))
+                        continue 2;
+
+                    if($elem[$key] != $value)
+                        continue 2;
+
+                }
 
             }
 
@@ -1311,9 +1329,11 @@ class Map implements \ArrayAccess, \Iterator {
      *
      * @param       Map $criteria Search criteria in the format of key => value.
      *
+     * @param       String Return a single field.  If the field does not exist returns null.
+     *
      * @return      mixed The first element that matches the criteria
      */
-    public function & findOne($criteria) {
+    public function & findOne($criteria, $field = null) {
 
         if($criteria instanceof \MongoId)
             $criteria = array('_id' => $criteria);
@@ -1321,26 +1341,49 @@ class Map implements \ArrayAccess, \Iterator {
         if(! Map::is_array($criteria))
             throw new Exception\InvalidSearchCriteria();
 
-        foreach($this->elements as $key => $elem) {
+        foreach($this->elements as $id => $elem) {
 
             if(! is_array($elem) && ! $elem instanceof \ArrayAccess)
                 continue;
 
-            foreach($criteria as $search_key => $search_value) {
+            foreach($criteria as $key => $value) {
 
-                if(! isset($elem[$search_key]))
-                    continue 2;
+                //Look for dot notation.
+                if(strpos($key, '.') > 0){
 
-                if($elem[$search_key] != $search_value)
-                    continue 2;
+                    //If there is a dot then grab the next element key and make sure it exists
+                    list($itemkey, $sub)  = explode('.', $key, 2);
+
+                    //Skip further checks if the key doesn't exist in this element
+                    if(!isset($elem[$itemkey]))
+                        continue 2;
+
+                    //Search the element for the remaining dot notated key.  If nothing is found skip this element.
+                    if($elem->find(array($sub => $value))->count() ==0)
+                        continue 2;
+
+                }else{
+
+                    if(! isset($elem[$key]))
+                        continue 2;
+
+                    if($elem[$key] != $value)
+                        continue 2;
+
+                }
 
             }
+
+            if($field)
+                return $elem->get($field);
 
             return $elem;
 
         }
 
-        return NULL;
+        $null = null;
+
+        return $null;
 
     }
 
@@ -1574,7 +1617,7 @@ class Map implements \ArrayAccess, \Iterator {
         $elements = array();
 
         foreach($this->elements as $key => $value) {
-        
+
             if(in_array($key, $ignore))
                 continue;
 
@@ -1730,7 +1773,7 @@ class Map implements \ArrayAccess, \Iterator {
                     foreach($parts as $part) {
 
                         if(! array_key_exists($part, $cur))
-                            $cur[$part] = array();  
+                            $cur[$part] = array();
 
                         if(is_array($cur))
                             $cur =& $cur[$part];
