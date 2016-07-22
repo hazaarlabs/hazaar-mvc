@@ -12,13 +12,9 @@ class Local implements _Interface {
 
     public function __construct($options = array()) {
 
-        $this->options = new \Hazaar\Map(array(
-                                             'display_hidden' => FALSE,
-                                             'root'           => APPLICATION_PATH
-                                         ), $options);
+        $root = ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : DIRECTORY_SEPARATOR);
 
-        if(strlen($this->options->root) > 1)
-            $this->options->root = DIRECTORY_SEPARATOR . trim($this->options->root, DIRECTORY_SEPARATOR);
+        $this->options = new \Hazaar\Map(array('display_hidden' => FALSE, 'root' => $root), $options);
 
         $metafile = $this->options->root . DIRECTORY_SEPARATOR . '.metadata';
 

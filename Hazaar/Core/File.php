@@ -21,7 +21,7 @@ class File {
 
     protected $resource;
 
-    function __construct($file, $backend = NULL) {
+    function __construct($file = null, $backend = NULL) {
 
         if($file instanceof \Hazaar\File) {
 
@@ -43,10 +43,13 @@ class File {
 
         } else {
 
+            if(empty($file))
+                $file = Application::getInstance()->runtimePath('tmp', true) . DIRECTORY_SEPARATOR . uniqid();
+
             $this->source_file = \Hazaar\Loader::fixDirectorySeparator($file);
 
             if(! $backend)
-                $backend = new File\Backend\Local(array('root' => DIRECTORY_SEPARATOR));
+                $backend = new File\Backend\Local(array('root' => ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : DIRECTORY_SEPARATOR)));
 
             if(! $backend instanceof File\Backend\_Interface)
                 throw new \Exception('Can not create new file object without a valid file backend!');
