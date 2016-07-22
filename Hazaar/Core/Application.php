@@ -238,7 +238,7 @@ class Application {
      */
     public function runtimePath($suffix = NULL, $create_dir = FALSE) {
 
-        $path = APPLICATION_PATH . '/' . ($this->config->app->has('runtimepath') ? $this->config->app->runtimepath : '.runtime');
+        $path = APPLICATION_PATH . DIRECTORY_SEPARATOR . ($this->config->app->has('runtimepath') ? $this->config->app->runtimepath : '.runtime');
         
         if (!file_exists($path)) {
             
@@ -266,18 +266,18 @@ class Application {
         
         if ($suffix = trim($suffix)) {
             
-            if ($suffix && substr($suffix, 0, 1) != '/')
-                $suffix = '/' . $suffix;
+            if ($suffix && substr($suffix, 0, 1) != DIRECTORY_SEPARATOR)
+                $suffix = DIRECTORY_SEPARATOR . $suffix;
             
             $full_path = $path . $suffix;
             
-            if (!file_exists($full_path) && $create_dir) {
-                
+            if (!file_exists($full_path) && $create_dir)
                 mkdir($full_path, 0775, TRUE);
-            }
+
         } else {
             
             $full_path = $path;
+
         }
         
         return $full_path;
