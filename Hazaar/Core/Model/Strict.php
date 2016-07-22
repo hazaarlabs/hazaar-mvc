@@ -756,12 +756,15 @@ abstract class Strict implements \ArrayAccess, \Iterator {
      *
      * @since 2.0.0
      */
-    public function export($ignore_empty = false){
+    public function export($ignore_empty = false, $obj = null){
 
         if(method_exists($this, '__toString'))
             return array('label' => $this->label(), 'value' => $this->__toString());
 
-        return $this->exportArray($this->toArray(false, 0), $this->fields, $ignore_empty);
+        if(!$obj)
+            $obj = new \Hazaar\Map($this->toArray());
+
+        return $this->exportArray($this->toArray(false, 0), $this->fields, $ignore_empty, $obj);
 
     }
 
@@ -776,7 +779,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
      *
      * @since 2.0.0
      */
-    private function exportArray($array, $def, $hide_empty = false){
+    private function exportArray($array, $def, $hide_empty = false, $object = null){
 
         if(!is_array($array))
             return null;
@@ -790,7 +793,23 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
             if(ake($def[$key], 'force_hide') === true)
                 continue;
-                
+
+            if($when = ake($def[$key], 'when')){
+
+                if(is_callable($when)){
+
+                    if(!call_user_func($when))
+                        continue;
+
+                }else{
+
+                    if(!$object->findOne($when))
+                        continue;
+
+                }
+
+            }
+
             $label = ake($def[$key], 'label');
 
             if($value instanceof Strict){
@@ -800,7 +819,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                 $values[$key] = array(
                     'label' => $label,
-                    'items' => $value->export($hide_empty)
+                    'items' => $value->export($hide_empty, $object)
                 );
 
             }elseif(is_array($value)){
@@ -815,7 +834,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                     if(empty($subValue) && $hide_empty)
                         continue;
 
-                    $items[] = ($subValue instanceof Strict) ? $subValue->export($hide_empty) : $subValue;
+                    $items[] = ($subValue instanceof Strict) ? $subValue->export($hide_empty, $object) : $subValue;
 
                 }
 
