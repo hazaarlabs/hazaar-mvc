@@ -8,13 +8,11 @@
 
 namespace Hazaar\File\Renderer;
 
-class Imagick {
+class Imagick extends BaseRenderer {
 
     private $dst;
 
     private $quality = NULL;
-
-    private $loaded  = FALSE;
 
     function __construct($quality = NULL) {
 
@@ -34,12 +32,6 @@ class Imagick {
     public function read() {
 
         return $this->dst->getImageBlob();
-
-    }
-
-    public function loaded() {
-
-        return $this->loaded;
 
     }
 

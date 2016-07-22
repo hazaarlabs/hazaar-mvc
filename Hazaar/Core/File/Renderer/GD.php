@@ -8,11 +8,44 @@
 
 namespace Hazaar\File\Renderer;
 
-class GD {
+class GD extends BaseRenderer {
+
+    private $img;
+
+    private $quality = 100;
+
+    public function load($bytes){
+
+        if($this->img = imagecreatefromstring($bytes))
+            $this->loaded = true;
+
+    }
+
+    public function read(){
+
+        return imagejpeg($this->img);
+
+    }
+
+    public function quality($quality = NULL){
+
+        $this->quality = $quality;
+
+    }
+
+    public function width(){
+
+        return imagesx($this->img);
+
+    }
+
+    public function height(){
+
+        return imagesy($this->img);
+
+    }
 
     public function compress($quality) {
-
-        $img = imagecreatefromstring($this->get_contents(-1, NULL, FALSE));
 
         ob_start();
 
@@ -20,14 +53,14 @@ class GD {
             case 'image/jpg' :
             case 'image/jpeg' :
 
-                imagejpeg($img, NULL, $quality);
+                imagejpeg($this->img, NULL, $quality);
 
                 return TRUE;
 
             case 'image/png' :
-                imagesavealpha($img, TRUE);
+                imagesavealpha($this->img, TRUE);
 
-                imagepng($img, NULL, (quality / 10) - 1);
+                imagepng($this->img, NULL, ($quality / 10) - 1);
 
                 return TRUE;
         }
@@ -41,17 +74,12 @@ class GD {
     public function resize($width = NULL, $height = NULL, $crop = FALSE, $align = NULL, $keep_aspect = TRUE, $reduce_only = TRUE, $ratio = NULL, $offsetTop = 0, $offsetLeft = 0) {
 
         /*
-         * Create the source and destination images in memory
-         */
-        $src = imagecreatefromstring($this->get_contents(-1, NULL, FALSE));
-
-        /*
          * Initialize the source dimenstions
          */
 
-        $src_w = imagesx($src);
+        $src_w = imagesx($this->img);
 
-        $src_h = imagesy($src);
+        $src_h = imagesy($this->img);
 
         if(! $ratio)
             $ratio = $src_h / $src_w;
@@ -148,7 +176,7 @@ class GD {
         /*
          * Do the actual resize
          */
-        imagecopyresampled($dst, $src, $dst_x, $dst_y, $src_x, $src_y, $dst_w, $dst_h, $src_w, $src_h);
+        imagecopyresampled($dst, $this->img, $dst_x, $dst_y, $src_x, $src_y, $dst_w, $dst_h, $src_w, $src_h);
 
         /*
          * Update the content with the resized image data
@@ -201,6 +229,10 @@ class GD {
         }
 
         $this->set_contents(ob_get_clean());
+
+    }
+
+    public function expand($xwidth = NULL, $xheight = NULL, $align = 'topleft', $offsetTop = 0, $offsetLeft = 0){
 
     }
 
