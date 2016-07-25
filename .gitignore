@@ -1,6 +1,2 @@
-.project
-.settings
-.buildpath
 tests/application/.runtime
-*.phpproj
 .vs
