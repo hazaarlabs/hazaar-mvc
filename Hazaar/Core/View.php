@@ -133,7 +133,7 @@ class View {
             $this->_viewfile = $view;
 
         }else{
-            
+
             $type = FILE_PATH_VIEW;
 
             /*
@@ -224,6 +224,12 @@ class View {
     }
 
     public function populate(array $array) {
+
+        $this->_data = $array;
+
+    }
+
+    public function extend(array $array) {
 
         $this->_data = array_merge($this->_data, $array);
 

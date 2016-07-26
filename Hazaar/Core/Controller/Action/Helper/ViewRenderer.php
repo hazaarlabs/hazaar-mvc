@@ -79,17 +79,25 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
     }
 
-    public function populate($array, $merge = FALSE) {
+    /**
+     * Sets the data available on any defined views.
+     * 
+     * @param array $array 
+     */
+    public function populate(array $array) {
 
-        if($merge) {
+        $this->_data = $array;
 
-            $this->_data = array_merge($this->_data, $array);
+    }
 
-        } else {
+    /**
+     * Extends the data available on any defined views.
+     * 
+     * @param array $array 
+     */
+    public function extend(array $array) {
 
-            $this->_data = $array;
-
-        }
+        $this->_data = array_merge($this->_data, $array);
 
     }
 

@@ -59,11 +59,8 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
 
         foreach($this->_views as $view) {
 
-            foreach($this->_helpers as $helper => $obj) {
-
+            foreach($this->_helpers as $obj)
                 $view->addHelper($obj);
-
-            }
 
             $view->registerMethodHandler($this->_methodHandler);
 
