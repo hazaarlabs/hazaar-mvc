@@ -1329,7 +1329,8 @@ class Map implements \ArrayAccess, \Iterator {
      *
      * @param       Map $criteria Search criteria in the format of key => value.
      *
-     * @param       String Return a single field.  If the field does not exist returns null.
+     * @param       String Return a single field.  If the field does not exist returns null.  This allows
+     *              us to safely return a single field in a single line in cases where nothing is found.
      *
      * @return      mixed The first element that matches the criteria
      */
