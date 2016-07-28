@@ -11,15 +11,7 @@ class Hmv extends \Hazaar\View\Helper {
 
     public $container_class = 'hmvContainer';
 
-    public $section_class = 'hmvSectionLabel';
-
-    public $sectionitems_class = 'hmvSubItems';
-
-    public $item_class = 'hmvItem';
-
-    public $label_class = 'hmvItemLabel';
-
-    public $value_class = 'hmvItemValue';
+    public $section_tag = 'h1';
 
     public function import(){
 
@@ -29,9 +21,9 @@ class Hmv extends \Hazaar\View\Helper {
 
     public function render(\Hazaar\Model\Strict $model, $ignore_empty = false){
 
-        $container = $this->html->div();
+        $container = $this->html->table()->class($this->container_class);
 
-        return $container->add($this->renderItems($model->export($ignore_empty)))->class($this->container_class);
+        return $container->add($this->renderItems($model->export($ignore_empty)));
 
     }
 
@@ -40,62 +32,31 @@ class Hmv extends \Hazaar\View\Helper {
         if(!is_array($items))
             return null;
 
-        $out = array();
+        $itemCollection = array();
 
         foreach($items as $key => $item){
 
-            $label = ake($item, 'label');
+            if($children = ake($item, 'items')){
 
-            if($items = ake($item, 'items')){
+                $section = $this->html->td($this->html->block($this->section_tag, ake($item, 'label')))->colspan(2);
 
-                $field = array();
+                $itemCollection[] = $this->html->tr($section);
 
-                if($label)
-                    $field[] = $this->html->div($this->html->label($label))->class($this->section_class);
-
-                $field[] =   $this->html->div($this->renderItems($items))->class($this->sectionitems_class);
+                $itemCollection = array_merge($itemCollection, $this->renderItems($children));
 
             }else{
 
-                $value = ake($item, 'value');
+                $label = $this->html->td($this->html->label(ake($item, 'label')));
 
-                if(is_array($value)){
+                $value = $this->html->td(ake($item, 'value'));
 
-                    $subvalues = array();
-
-                    foreach($value as $valuePart)
-                        $subvalues[] = $this->html->div($this->renderValue($valuePart));
-
-                    $field = array(
-                       $this->html->div($this->html->label($label))->class($this->label_class),
-                       $this->html->div($subvalues)->class($this->value_class)
-                   );
-
-                }else{
-
-                    $field = array(
-                        $this->html->div($this->html->label($label))->class($this->label_class),
-                        $this->html->div($this->renderValue($value))->class($this->value_class)
-                    );
-
-                }
+                $itemCollection[] = $this->html->tr(array($label, $value))->data('name', $key);
 
             }
 
-            $out[] = $this->html->div($field)->data('name', $key)->class($this->item_class);
-
         }
 
-        return $out;
-
-    }
-
-    private function renderValue($value){
-
-        if($value instanceof \Hazaar\Http\Uri)
-            return $this->html->a($value->toString(), $value->toString())->target('_blank');
-
-        return $value;
+        return $itemCollection;
 
     }
 
