@@ -81,39 +81,37 @@ class Application {
      * these error pages and redistributed JavaScript code libraries such as jQuery and KendoUI.
      *
      * @since 1.0.0
-     *       
+     *
      * @param string $env
      *            The application environment name. eg: 'development' or 'production'
-     *            
+     *
      * @param string $configFile
      *            The application configuration file to use. eg: application.ini
      */
     function __construct($env, $configFile) {
 
         $this->environment = $env;
-        
+
         if (!defined('HAZAAR_INIT_START'))
             define('HAZAAR_INIT_START', microtime(TRUE));
-        
+
         /**
          * Change the current working directory to the application path so that all paths are relative to it.
          */
         chdir(APPLICATION_PATH);
-        
+
         /*
          * Create a loader object and register it as the default autoloader
          */
         $this->loader = Loader::getInstance($this);
-        
+
         $this->loader->register();
-        
+
         /*
          * Set up error control
          */
         require_once ('Hazaar/Core/ErrorControl.php');
-        
-        Application::$instance = $this;
-        
+
         /**
          * Set up some default config properties.
          */
@@ -129,62 +127,64 @@ class Application {
                 'controller' => 'controllers'
             )
         );
-        
+
         /*
          * Load it with a config object. If the file doesn't exist
          * it will just be an empty object that will handle calls to
          * it silently.
          */
         $this->config = new Application\Config($configFile, $env, $defaults);
-        
+
+        Application::$instance = $this;
+
         /**
          * Check the load average and protect if needed
          */
         if ($this->config->app->has('maxload') && function_exists('sys_getloadavg')) {
-            
+
             $la = sys_getloadavg();
-            
+
             if ($la[0] > $this->config->app['maxload']) {
-                
+
                 throw new Application\Exception\ServerBusy();
             }
         }
-        
+
         /*
          * Create a timer for performance measuring
          */
         if ($this->config->app->has('timer') && $this->config->app['timer'] == TRUE) {
-            
+
             $this->timer = new Timer();
-            
+
             $this->timer->start('init', HAZAAR_INIT_START);
-            
+
             $this->timer->stop('init');
         }
-        
+
         $locale = NULL;
-        
+
         if ($this->config->app->has('locale'))
             $locale = $this->config->app['locale'];
-        
+
         if (setlocale(LC_ALL, $locale) === FALSE)
             throw new \Exception("Unable to set locale to $locale.  Make sure the $locale locale is enabled on your system.");
-        
-        if ($this->config->app->has('timezone')) 
+
+        if ($this->config->app->has('timezone'))
             $tz = $this->config->app->timezone;
         else
             $tz = 'UTC';
 
         if (!date_default_timezone_set($tz))
             throw new Application\Exception\BadTimezone($tz);
-        
+
         $this->request = Application\Request\Loader::load($this->config);
-        
+
         /*
          * Use the config to add search paths to the loader
          */
         $this->loader->addSearchPaths($this->config->get('paths'));
-    
+
     }
 
     /**
@@ -194,17 +194,17 @@ class Application {
      * run then it loses it. This prevents stale redirect URLs from accidentally being used.
      *
      * @since 1.0.0
-     *       
+     *
      */
     function __destruct() {
 
         $shutdown = APPLICATION_PATH . '/shutdown.php';
-        
+
         if (file_exists($shutdown)) {
-            
+
             include ($shutdown);
         }
-    
+
     }
 
     /**
@@ -214,13 +214,13 @@ class Application {
      * anywhere.
      *
      * @since 1.0.0
-     *       
+     *
      * @return \Hazaar\Application The application instance
      */
     static public function &getInstance() {
 
         return Application::$instance;
-    
+
     }
 
     /**
@@ -231,57 +231,57 @@ class Application {
      * and backend applications.
      *
      * @var string $suffix An optional suffix to tack on the end of the path
-     *     
+     *
      * @since 1.0.0
-     *       
+     *
      * @return string The path to the runtime directory
      */
     public function runtimePath($suffix = NULL, $create_dir = FALSE) {
 
         $path = APPLICATION_PATH . DIRECTORY_SEPARATOR . ($this->config->app->has('runtimepath') ? $this->config->app->runtimepath : '.runtime');
-        
+
         if (!file_exists($path)) {
-            
+
             $parent = dirname($path);
-            
+
             if (!is_writable($parent))
                 throw new Application\Exception\RuntimeDirUncreatable($path);
-                
+
                 // Try and create the directory automatically
             try {
-                
+
                 mkdir($path, 0775);
             } catch(\Exception $e) {
-                
+
                 throw new Application\Exception\RuntimeDirNotFound($path);
             }
         }
-        
+
         if (!is_writable($path)) {
-            
+
             throw new Application\Exception\RuntimeDirNotWritable($path);
         }
-        
+
         $path = realpath($path);
-        
+
         if ($suffix = trim($suffix)) {
-            
+
             if ($suffix && substr($suffix, 0, 1) != DIRECTORY_SEPARATOR)
                 $suffix = DIRECTORY_SEPARATOR . $suffix;
-            
+
             $full_path = $path . $suffix;
-            
+
             if (!file_exists($full_path) && $create_dir)
                 mkdir($full_path, 0775, TRUE);
 
         } else {
-            
+
             $full_path = $path;
 
         }
-        
+
         return $full_path;
-    
+
     }
 
     /**
@@ -295,19 +295,19 @@ class Application {
 
         if (strlen($path) > 0)
             $path = '/' . trim($path, '/');
-        
+
         if ($file)
             $path .= '/' . $file;
-        
+
         $path = APPLICATION_PATH . ($path ? $path : NULL);
-        
+
         $real = realpath($path);
-        
+
         if ($force_realpath === FALSE && $real == FALSE)
             return $path;
-        
+
         return $real;
-    
+
     }
 
     /**
@@ -318,20 +318,20 @@ class Application {
     public function getRequestedController() {
 
         return $this->request->getControllerName();
-    
+
     }
 
     /**
      * @brief Get the real path to the application on the local filesystem resolving links
      *
      * @since 1.0.0
-     *       
+     *
      * @return string The resolved application path
      */
     public function getApplicationPath($suffix = '') {
 
         return realpath(APPLICATION_PATH . '/' . $suffix);
-    
+
     }
 
     /**
@@ -341,13 +341,13 @@ class Application {
      * directories
      *
      * @since 1.0.0
-     *       
+     *
      * @return string The resolved base path
      */
     public function getBasePath($suffix = '') {
 
         return realpath(APPLICATION_PATH . '/../' . $suffix);
-    
+
     }
 
     /**
@@ -360,82 +360,82 @@ class Application {
      * it is ready for execution by the application.
      *
      * @since 1.0.0
-     *       
+     *
      * @return \Hazaar\Application Returns a reference to itself to allow chaining
-     *        
+     *
      *         @exception Application\Exception\MissingModule If any required modules are missing
-     *        
+     *
      *         @exception Application\Exception\NoRoute If the requested controller is could not be found and/or loaded
-     *        
+     *
      */
     public function bootstrap($simple_mode = FALSE) {
 
         if ($this->timer) {
-            
+
             $this->timer->start('pre_boot', HAZAAR_EXEC_START);
-            
+
             $this->timer->stop('pre_boot');
-            
+
             $this->timer->start('boot');
         }
-        
+
         if ($this->getRequestedController() !== 'hazaar') {
-            
+
             /*
              * Check that all required modules are loaded
              */
             if (!isset($this->config->module['require']))
                 $this->config->module->require = array();
-            
+
             if (count($missing = array_diff($this->config->module['require']->toArray(), get_loaded_extensions())) > 0) {
-                
+
                 throw new Application\Exception\ModuleMissing($missing);
             }
-            
+
             /*
              * Check for an application bootstrap file and execute it
              */
             $bootstrap = APPLICATION_PATH . '/bootstrap.php';
-            
+
             if (file_exists($bootstrap)) {
-                
+
                 $this->bootstrap = include ($bootstrap);
-                
+
                 if ($this->bootstrap === FALSE)
                     throw new \Exception('The application failed to start!');
             }
         }
-        
+
         if ($simple_mode === FALSE) {
-            
+
             if (!$this->request->processRoute()) {
-                
+
                 throw new Application\Exception\RouteFailed();
             }
-            
+
             /*
              * Load the controller and check it was successful
              */
             $this->controller = $this->loader->loadController($this->request->getControllerName());
-            
+
             if (!($this->controller instanceof Controller)) {
-                
+
                 throw new Application\Exception\RouteNotFound($this->request->getControllerName());
             }
-            
+
             $this->controller->setRequest($this->request);
-            
+
             /*
              * Initialise the controller with the current request
              */
             $this->controller->__initialize($this->request);
         }
-        
+
         if ($this->timer)
             $this->timer->stop('boot');
-        
+
         return $this;
-    
+
     }
 
     /**
@@ -454,79 +454,79 @@ class Application {
      * application context and will display basic fall-back error output.
      *
      * @since 1.0.0
-     *       
+     *
      *        @exception Application\Exception\InvalidResponse If the controller returns an invalid response object
-     *       
+     *
      *        @exception Application\Exception\ErrorLoop If an error was encountered while processing a
      *        [[Hazaar\Controller\Error]] object
-     *       
+     *
      */
     public function run(Controller $controller = NULL) {
 
         if ($this->timer)
             $this->timer->start('exec');
-        
+
         if (!$controller)
             $controller = $this->controller;
-        
+
         try {
-            
+
             /*
              * Execute the controllers run method.
              */
             $this->response = $controller->__run();
-            
+
             /*
              * The run method should have returned a response object that we can output to the client
              */
             if (!($this->response instanceof Controller\Response)) {
-                
+
                 throw new Application\Exception\ResponseInvalid();
             }
-            
+
             if ($this->config->app->has('tidy')) {
-                
+
                 $this->response->enableTidy($this->config->app['tidy']);
             }
-            
+
             /*
              * If the controller has specifically requested a return status code, set it now.
              */
             if ($controller->statusCode)
                 $this->response->setStatusCode($controller->statusCode);
-                
+
                 /*
              * Finally, write the response to the output buffer.
              */
             $this->response->__writeOutput();
-            
+
             /*
              * Shutdown the controller
              */
             $controller->__shutdown();
         } catch(Exception $e) {
-            
+
             /*
              * Here we check if the controller we tried to execute was already an error
              * If it is and we try and execute another error we could end up in an endless loop
              * so we throw a normal exception that will be grabbed by ErrorControl as an unhandled exception.
              */
             if ($controller instanceof Controller\Error) {
-                
+
                 die('FATAL: Error loop detected! Last error was: ' . $controller->getErrorMessage() . "\n\nTrace:\n\n<pre>" . print_r($controller->getTrace(), TRUE) . "</pre>");
             } else {
-                
+
                 throw $e;
             }
         }
-        
+
         if ($this->timer) {
-            
+
             $this->timer->start('post_exec');
-            
+
             $this->timer->stop('exec');
         }
-    
+
     }
 
     /**
@@ -543,7 +543,7 @@ class Application {
     public function runStdin() {
 
         $code = 1;
-        
+
         $defaults = array(
             'sys' => array(
                 'id' => crc32(APPLICATION_PATH)
@@ -552,79 +552,79 @@ class Application {
                 'encoded' => FALSE
             )
         );
-        
+
         $warlock = new \Hazaar\Application\Config('warlock.ini', NULL, $defaults);
-        
+
         define('RESPONSE_ENCODED', $warlock->server->encoded);
-        
+
         $protocol = new \Hazaar\Application\Protocol($warlock->sys->id, $warlock->server->encoded);
-        
+
         $line = fgets(STDIN);
-        
+
         $type = $protocol->decode($line, $payload);
-        
+
         switch ($type) {
-            
+
             case $protocol->getType('exec') :
-                
+
                 $params = (array_key_exists('params', $payload) ? $payload['params'] : array());
-                
+
                 eval('$_function = ' . $payload['function'] . ';');
-                
+
                 if (isset($_function) && $_function instanceof \Closure) {
-                    
+
                     $result = call_user_func_array($_function, $params);
-                    
+
                     if ($result === TRUE) {
-                        
+
                         $code = 0;
                     } elseif (is_int($result)) {
-                        
+
                         $code = $result;
                     } else {
-                        
+
                         $code = 0;
-                        
+
                         echo $protocol->encode('OK', $result);
                     }
                 } else {
-                    
+
                     $code = 2;
                 }
-                
+
                 break;
-            
+
             case $protocol->getType('SERVICE') :
-                
+
                 if (!array_key_exists('name', $payload)) {
-                    
+
                     $code = 3;
-                    
+
                     break;
                 }
-                
+
                 $params = (array_key_exists('params', $payload) ? $payload['params'] : array());
-                
+
                 $serviceClass = ucfirst($payload['name']) . 'Service';
-                
+
                 if (class_exists($serviceClass)) {
-                    
+
                     $service = new $serviceClass($this, $protocol);
-                    
+
                     $code = call_user_func_array(array(
                         $service,
                         'main'
                     ), $params);
                 } else {
-                    
+
                     $code = 2;
                 }
-                
+
                 break;
         }
-        
+
         exit($code);
-    
+
     }
 
     /**
@@ -637,9 +637,9 @@ class Application {
     static public function path($path = NULL) {
 
         $root = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/') . '/';
-        
+
         return $root . ($path ? trim($path, '/') : NULL);
-    
+
     }
 
     /**
@@ -654,19 +654,19 @@ class Application {
      * For examples see: "Generating URLs":http://www.hazaarmvc.com/docs/the-basics/generating-urls
      *
      * @since 1.0.0
-     *       
+     *
      */
     static public function url() {
 
         $url = new Application\Url();
-        
+
         call_user_func_array(array(
             $url,
             '__construct'
         ), func_get_args());
-        
+
         return $url;
-    
+
     }
 
     /**
@@ -677,13 +677,13 @@ class Application {
      * parameters from the URL to neaten the URL up.
      *
      * @since 1.0.0
-     *       
+     *
      * @param $location string
      *            The URL you want to redirect to
-     *            
+     *
      * @param $args array
      *            An optional array of parameters to tack onto the URL
-     *            
+     *
      * @param $save_url boolean
      *            Optionally save the URL so we can redirect back. See: Application::redirectBack()
      */
@@ -691,37 +691,37 @@ class Application {
 
         if (!$args)
             $args = array();
-        
+
         $url = $location . ((count($args) > 0) ? '?' . http_build_query($args) : NULL);
-        
+
         $headers = apache_request_headers();
-        
+
         if (array_key_exists('X-Requested-With', $headers) && $headers['X-Requested-With'] == 'XMLHttpRequest') {
-            
+
             echo "<script>document.location = '$url';</script>";
         } else {
-            
+
             $sess = new \Hazaar\Session();
-            
+
             if ($sess->has('REDIRECT') && $sess['REDIRECT'] == $location)
                 unset($sess['REDIRECT']);
-            
+
             if ($save_url) {
-                
+
                 $sess['REDIRECT'] = array(
                     'URI' => $_SERVER['REQUEST_URI'],
                     'METHOD' => $_SERVER['REQUEST_METHOD']
                 );
-                
+
                 if ($_SERVER['REQUEST_METHOD'] == 'POST')
                     $sess['REDIRECT']['POST'] = $_POST;
             }
-            
+
             header('Location: ' . $url);
         }
-        
+
         exit();
-    
+
     }
 
     /**
@@ -738,37 +738,37 @@ class Application {
     public function redirectBack() {
 
         $sess = new \Hazaar\Session();
-        
+
         if ($sess->has('REDIRECT')) {
-            
+
             if ($uri = trim($sess['REDIRECT']['URI'])) {
-                
+
                 if ($sess['REDIRECT']['METHOD'] == 'POST') {
-                    
+
                     if (substr($uri, -1, 1) !== '?')
                         $uri .= '?';
                     else
                         $uri .= '&';
-                    
+
                     $uri .= http_build_query($sess['REDIRECT']['POST']);
                 }
-                
+
                 unset($sess['REDIRECT']);
-                
+
                 header('Location: ' . $uri);
-                
+
                 exit();
             }
         }
-        
+
         return FALSE;
-    
+
     }
 
     public function version() {
 
         return HAZAAR_VERSION;
-    
+
     }
 
 }

@@ -36,7 +36,8 @@ function errorAndDie() {
                 if(! $controller instanceof \Hazaar\Controller\Error)
                     throw new Exception('Error controller does not extent Hazaar\Controller\Error');
 
-            } catch(Exception $e) {
+            }
+            catch(Exception $e) {
 
                 $controller = new \Hazaar\Controller\Error('Error', $app);
 
@@ -58,65 +59,86 @@ function errorAndDie() {
                              ), func_get_args());
 
         $controller->clean_output_buffer();
-        
+
         $app->run($controller);
 
     } else {
 
         $arg = func_get_args();
 
-        ?>
-        <html>
-        <head>
+        $error = array(10500, 'An unknown error occurred!', __FILE__, __LINE__, null, array());
 
-            <title>Hazaar MVC - Fatal Error</title>
+        if(count($arg) > 0){
 
-            <style>
-                body {
-                    font-family: Arial, Helvetica, sans-serif;
-                    padding: 0;
-                    margin: 0;
-                    color: #333;
-                }
+            if($arg[0] instanceof \Exception){
 
-                .container {
-                    max-width: 1170px;
-                    margin: auto;
-                }
+                $error = array(
+                    $arg[0]->getCode(),
+                    $arg[0]->getMessage(),
+                    $arg[0]->getFile(),
+                    $arg[0]->getLine(),
+                    null,
+                    $arg[0]->getTrace()
+                );
 
-                .topbar {
-                    background-color: #554D7C;
-                    color: #fff;
-                    padding: 15px;
-                }
+            }else{
 
-                h1 {
-                    margin-bottom: 0;
-                }
+                $error = $arg;
 
-                h3 {
-                    margin-top: 0;
-                    font-weight: normal;
-                    font-style: italic;
-                }
+            }
 
-                table {
-                    font-size: 18px;
-                    width: 100%;
-                    border-collapse: collapse;
-                }
+        } ?>
+<html>
+<head>
 
-                table th {
-                    color: #554D7C;
-                }
+    <title>Hazaar MVC - Fatal Error</title>
 
-                table td, table th {
-                    padding: 15px 15px 15px 0;
-                }
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            padding: 0;
+            margin: 0;
+            color: #333;
+        }
 
-                table.trace {
-                    background: #eee;
-                }
+        .container {
+            max-width: 1170px;
+            margin: auto;
+        }
+
+        .topbar {
+            background-color: #554D7C;
+            color: #fff;
+            padding: 15px;
+        }
+
+        h1 {
+            margin-bottom: 0;
+        }
+
+        h3 {
+            margin-top: 0;
+            font-weight: normal;
+            font-style: italic;
+        }
+
+        table {
+            font-size: 18px;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            table th {
+                color: #554D7C;
+            }
+
+            table td, table th {
+                padding: 15px 15px 15px 0;
+            }
+
+            table.trace {
+                background: #eee;
+            }
 
                 table.trace th {
                     border-bottom: 1px solid #554D7C;
@@ -129,47 +151,53 @@ function errorAndDie() {
                 table.trace tbody tr:nth-child(2) {
                 }
 
-                th {
-                    text-align: left;
-                    vertical-align: top;
-                    width: 50px;
-                }
-            </style>
-        </head>
-        <body>
+        th {
+            text-align: left;
+            vertical-align: top;
+            width: 50px;
+        }
+    </style>
+</head>
+<body>
 
-        <div class="topbar">
-
-            <div class="container">
-
-                <h1>FATAL ERROR</h1>
-
-                <h3>An error occurred without an application context...</h3>
-
-            </div>
-
-        </div>
-
+    <div class="topbar">
 
         <div class="container">
 
-            <h2><?=$arg[0]->getMessage();?></h2>
+            <h1>FATAL ERROR</h1>
 
-            <table>
-                <tr>
-                    <th>File:</th>
-                    <td><?=$arg[0]->getFile();?></td>
-                </tr>
-                <tr>
-                    <th>Line:</th>
-                    <td><?=$arg[0]->getLine();?></td>
-                </tr>
-                <tr>
-                    <th>Trace:</th>
-                    <td>
-                        <table class="trace">
+            <h3>An error occurred without an application context...</h3>
 
-                            <thead>
+        </div>
+
+    </div>
+
+
+    <div class="container">
+
+        <h2>
+            <?=$error[1]?>
+        </h2>
+
+        <table>
+            <tr>
+                <th>File:</th>
+                <td>
+                    <?=$error[2];?>
+                </td>
+            </tr>
+            <tr>
+                <th>Line:</th>
+                <td>
+                    <?=$error[3];?>
+                </td>
+            </tr>
+            <tr>
+                <th>Trace:</th>
+                <td>
+                    <table class="trace">
+
+                        <thead>
 
                             <tr>
                                 <th>Step</th>
@@ -178,30 +206,49 @@ function errorAndDie() {
                                 <th>Function</th>
                             </tr>
 
-                            </thead>
+                        </thead>
 
-                            <tbody>
+                        <tbody>
 
-                            <?php foreach($arg[0]->getTrace() as $id => $trace) { ?>
+                            <?php foreach($error[5] as $id => $trace) { ?>
 
-                                <tr>
-                                    <td><?=$id;?></td>
-                                    <td><?=$trace['file'];?></td>
-                                    <td><?=$trace['line'];?></td>
-                                    <td><?=($trace['class'] ? $trace['class'] . '::' : NULL) . $trace['function'] . '(' . ($trace['args'] ? implode(', ', $trace['args']) : NULL) . ')';?></td>
-                                </tr>
+                            <tr>
+                                <td>
+                                    <?=$id;?>
+                                </td>
+                                <td>
+                                    <?=ake($trace, 'file');?>
+                                </td>
+                                <td>
+                                    <?=ake($trace, 'line');?>
+                                </td>
+                                <td>
+                                    <?php
+                                      echo (isset($trace['class']) ? $trace['class'] . '::' : NULL) . ake($trace, 'function') . '(';
+                                      if(isset($trace['args']) && is_array($trace['args'])){
+                                          array_walk($trace['args'], function(&$item){
+                                              if(is_array($item))
+                                                  $item = 'Array(' . count($item) . ')';
+                                              elseif( is_string($item))
+                                                  $item = "'$item'";
+                                          });
+                                          echo implode(', ', $trace['args']);
+                                      }
+                                      echo ')';?>
+                                </td>
+                            </tr>
 
                             <?php } ?>
 
-                            </tbody>
-                        </table>
-                    </td>
-                </tr>
-            </table>
-        </div>
-        </body>
-        </html>
-        <?php
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>
+<?php
 
     }
 
@@ -262,68 +309,76 @@ if(function_exists('apache_get_modules')) {
 }
 
 function traceAndDie(){
-	
+
 	$trace = debug_backtrace();
-	 
-	?>
-	<html>
-	<head>
-	<style>
-	table {
-		border-collapse: collapse;
-		margin: auto;
-	}
-	table th {
-		text-align: left;
-		border-bottom: 1px solid #ddd;
-		background: #eee;
-	}
-	table th, table td {
-		padding: 5px;
-	}
-	</style>
-	</head>
-	<table><tr><th>File</th><th>Line</th><th>Function</th><th>Args</th></tr>
-	
-	<?php
-	 
+
+?>
+<html>
+<head>
+    <style>
+        table {
+            border-collapse: collapse;
+            margin: auto;
+        }
+
+            table th {
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+                background: #eee;
+            }
+
+            table th, table td {
+                padding: 5px;
+            }
+    </style>
+</head>
+<table>
+    <tr>
+        <th>File</th>
+        <th>Line</th>
+        <th>Function</th>
+        <th>Args</th>
+    </tr>
+
+    <?php
+
 	foreach($trace as $t){
-		
+
 		echo "<tr><td>" . ake($t, 'file', 'unknown') . "</td><td>" . ake($t, 'line') . "</td><td>" . $t['function'] . "</td>";
-		
+
 		if($args = ake($t, 'args')){
-			
+
 			$arglist = array();
-			
+
 			foreach($args as $a){
 
 				if(is_object($a)){
-					
+
 					$arglist[] = "Object(" . get_class($a) . ")";
-					
+
 				}else{
-					
+
 					$arglist[] = gettype($a) . "($a)";
-					
+
 				}
-				
+
 			}
-			
+
 			echo "<td>" . implode(", ", $arglist) . "</td>";
-			
+
 		}
-		
+
 		echo "</tr>";
-	
+
 	}
-	 
-	?>
-	</table>
-	
-	</html>
-	
-	<?php
-	 
+
+    ?>
+</table>
+
+</html>
+
+<?php
+
 	exit;
-	
+
 }
