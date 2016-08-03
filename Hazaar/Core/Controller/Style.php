@@ -42,12 +42,9 @@ class Style extends \Hazaar\Controller {
 
         if ($this->source) {
 
-            $out = new Response\Style();
+            $response = new Response\Style($this->source);
 
-            /* Load the file into memory */
-            $out->load($this->source);
-
-            $out->setCompression($this->application->config->app->compress);
+            $response->setUnmodified($this->request->getHeader('If-Modified-Since'));
 
         } else {
 
@@ -55,7 +52,7 @@ class Style extends \Hazaar\Controller {
 
         }
 
-        return $out;
+        return $response;
 
     }
 

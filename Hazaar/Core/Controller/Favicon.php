@@ -10,26 +10,26 @@ class Favicon extends \Hazaar\Controller {
 
     public function __run() {
 
-        $out = new Response\Image();
-
-        $out->setController($this);
-
         if($this->application->config->app->has('favicon'))
-            $filename = \Hazaar\Loader::getFilePath(FILE_PATH_PUBLIC, $this->application->config->app->favicon);
+            $filename = \Hazaar\Loader::getInstance()->getFilePath(FILE_PATH_PUBLIC, $this->application->config->app->favicon);
 
         if(! isset($filename))
-            $filename = \Hazaar\Loader::getFilePath(FILE_PATH_SUPPORT, 'favicon.png');
+            $filename = \Hazaar\Loader::getInstance()->getFilePath(FILE_PATH_LIBRARY, 'favicon.png');
 
         $max_width = 16;
 
         $max_height = 16;
 
-        $out->load($filename);
+        $response = new Response\Image($filename);
 
-        if($out->width() > $max_width || $out->height() > $max_height)
-            $out->resize($max_width, $max_height);
+        $response->setController($this);
 
-        return $out;
+        $response->setUnmodified($this->request->getHeader('If-Modified-Since'));;
+
+        if($response->width() > $max_width || $out->height() > $max_height)
+            $response->resize($max_width, $max_height);
+
+        return $response;
 
     }
 

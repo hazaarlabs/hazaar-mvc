@@ -30,17 +30,7 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
 
     public function modified() {
 
-        $fmtime = $this->file->mtime();
-        //The file modification time
-
-        if($rmtime = $this->getLastModified()) {//The requested last modified time
-
-            if($rmtime >= $fmtime)
-                return FALSE;
-
-        }
-
-        return TRUE;
+        return ($this->getStatus() == 304);
 
     }
 
@@ -56,23 +46,8 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
 
         $this->setContentType($this->file->mime_content_type());
 
-        /*
-         * Here we can check if the file has been modified and if so just return a 304.
-         */
-
-        /*
-         * If we have the If-Modified-Since header and the file modification date is greater than the
-         * requested modification date, set modified to true and load the file.
-         */
-        if($this->modified()) {
-
+        if(!$this->modified())
             $this->setLastModified($this->file->mtime());
-
-        } else {
-
-            $this->setUnmodified();
-
-        }
 
         return TRUE;
 
@@ -123,9 +98,23 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
 
     }
 
-    public function setUnmodified() {
+    public function setUnmodified($ifModifiedSince) {
+
+        if(!$this->file)
+            return false;
+
+        if(!$ifModifiedSince)
+            return false;
+
+        if(!$ifModifiedSince instanceof \Hazaar\Date)
+            $ifModifiedSince = new \Hazaar\Date($ifModifiedSince);
+
+        if($this->file->mtime() > $ifModifiedSince->getTimestamp())
+            return false;
 
         $this->setStatus(304);
+
+        return true;
 
     }
 

@@ -14,17 +14,21 @@ class Hazaar extends \Hazaar\Controller\Basic {
 
         if($file = $this->request->getRawPath()) {
 
-            if($source = \Hazaar\Loader::getFilePath(FILE_PATH_SUPPORT, $file)) {
+            if($source = \Hazaar\Loader::getInstance()->getFilePath(FILE_PATH_LIBRARY, $file)) {
 
-                $response = new Response\File();
+                $response = new Response\File($source);
 
-                $response->load($source);
+                $response->setUnmodified($this->request->getHeader('If-Modified-Since'));
 
             } else {
 
                 throw new Exception\InternalFileNotFound($file);
 
             }
+
+        }else{
+
+            throw new \Exception('Bad request', 400);
 
         }
 
