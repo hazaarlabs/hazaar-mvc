@@ -11,7 +11,7 @@ class Image extends File {
         parent::__construct($filename, $backend);
 
         $this->quality = $quality;
-        
+
         if($this->file)
             $this->file->quality($this->quality);
 
@@ -43,11 +43,17 @@ class Image extends File {
 
     public function width() {
 
+        if(!$this->file)
+            return null;
+
         return $this->file->width();
 
     }
 
     public function height() {
+
+        if(!$this->file)
+            return null;
 
         return $this->file->height();
 

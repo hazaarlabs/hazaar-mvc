@@ -26,7 +26,7 @@ class Favicon extends \Hazaar\Controller {
 
         $response->setUnmodified($this->request->getHeader('If-Modified-Since'));;
 
-        if($response->width() > $max_width || $out->height() > $max_height)
+        if($response->width() > $max_width || $response->height() > $max_height)
             $response->resize($max_width, $max_height);
 
         return $response;
