@@ -167,21 +167,7 @@ class Media extends \Hazaar\Controller\Action {
         if(preg_match_array($this->allowPreview, $file->mime_content_type()) > 0)
             $response = new \Hazaar\Controller\Response\Image($file);
 
-        $response->setLastModified($file->mtime());
-
-        if($this->request->hasHeader('If-Modified-Since')) {
-
-            $since = new \Hazaar\Date($this->request->getHeader('If-Modified-Since'));
-
-            if(! ($file->mtime() > $since->getTimestamp())) {
-
-                $response->setUnmodified();
-
-                return $response;
-
-            }
-
-        }
+	$response->setUnmodified($this->request->getHeader('If-Modified-Since'));
 
         if($this->request->has('download') && boolify($this->request->download))
             $response->setDownloadable(TRUE);
