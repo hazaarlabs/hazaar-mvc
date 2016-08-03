@@ -14,7 +14,7 @@ class Hazaar extends \Hazaar\Controller\Basic {
 
         if($file = $this->request->getRawPath()) {
 
-            if($source = \Hazaar\Loader::getInstance()->getFilePath(FILE_PATH_LIBRARY, $file)) {
+            if($source = \Hazaar\Loader::getInstance()->getFilePath(FILE_PATH_SUPPORT, $file)) {
 
                 $response = new Response\File($source);
 
