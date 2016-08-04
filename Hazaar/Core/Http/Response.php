@@ -30,6 +30,8 @@ class Response {
     //Length of the current chunk
     private $chunk_len = 0;
 
+    private $chunk_offset = 0;
+
     //Used for storing cookie information
     private $cache;
 
@@ -179,7 +181,7 @@ class Response {
                 while(strlen($this->buffer) > 0) {
 
                     //Get the current chunk length
-                    $chunk_len_end = strpos($this->buffer, "\r\n", $this->chunk_offset + 2) + 2;
+                    $chunk_len_end = strpos($this->buffer, "\r\n", $this->chunk_offset + 1) + 2;
 
                     $chunk_len_string = substr($this->buffer, 0, $chunk_len_end - $this->chunk_offset - 2);
 
