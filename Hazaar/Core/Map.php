@@ -1291,15 +1291,9 @@ class Map implements \ArrayAccess, \Iterator {
                 //Look for dot notation.
                 if(strpos($key, '.') > 0){
 
-                    //If there is a dot then grab the next element key and make sure it exists
-                    list($itemkey, $sub)  = explode('.', $key, 2);
+                    $dn = $elem->toDotNotation();
 
-                    //Skip further checks if the key doesn't exist in this element
-                    if(!isset($elem[$itemkey]))
-                        continue 2;
-
-                    //Search the element for the remaining dot notated key.  If nothing is found skip this element.
-                    if($elem->find(array($sub => $value))->count() ==0)
+                    if(!($dn->has($key) && $dn->get($key) == $value))
                         continue 2;
 
                 }else{
@@ -1352,15 +1346,9 @@ class Map implements \ArrayAccess, \Iterator {
                 //Look for dot notation.
                 if(strpos($key, '.') > 0){
 
-                    //If there is a dot then grab the next element key and make sure it exists
-                    list($itemkey, $sub)  = explode('.', $key, 2);
+                    $dn = $elem->toDotNotation();
 
-                    //Skip further checks if the key doesn't exist in this element
-                    if(!isset($elem[$itemkey]))
-                        continue 2;
-
-                    //Search the element for the remaining dot notated key.  If nothing is found skip this element.
-                    if($elem->find(array($sub => $value))->count() ==0)
+                    if(!($dn->has($key) && $dn->get($key) == $value))
                         continue 2;
 
                 }else{
