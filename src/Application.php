@@ -17,9 +17,7 @@ define('HAZAAR_EXEC_START', microtime(TRUE));
 
 define('HAZAAR_VERSION', '2.0.0');
 
-require_once ('Loader.php');
-
-require_once (LIBRARY_PATH . '/Hazaar/Core/HelperFunctions.php');
+require_once('HelperFunctions.php');
 
 /**
  * @brief The Application

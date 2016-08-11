@@ -1,10 +1,10 @@
 {  
   "name": "hazaarlabs/hazaar-mvc",  
   "description": "The MVC framework that makes PHP not suck!", 
-  "homepage": "https://github.com/zendframework/zend-mvc",
+  "homepage": "http://git.hazaarlabs.com/hazaar/hazaar-mvc",
   "autoload": {
     "psr-4": {
-      "Hazaar\\": "Hazaar/"
+      "Hazaar\\": "src/"
     }
   },
   "require": {  
