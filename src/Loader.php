@@ -49,10 +49,16 @@ define ( 'FILE_PATH_LIB', 'library' );
  */
 define ( 'FILE_PATH_PUBLIC', 'public' );
 
+define( 'CONFIG_PATH', realpath ( APPLICATION_PATH . DIRECTORY_SEPARATOR .'configs' ) );
+
+define( 'PUBLIC_PATH', realpath ( APPLICATION_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'public' ) );
+
 /**
  * @brief Constant containing the absolute filesystem path to the HazaarMVC library
  */
-define ( 'LIBRARY_PATH', realpath ( dirname ( __FILE__ ) . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR ) );
+define ( 'LIBRARY_PATH', realpath ( APPLICATION_PATH . DIRECTORY_SEPARATOR .'..' . DIRECTORY_SEPARATOR . 'library' ) );
+
+define ( 'SUPPORT_PATH', realpath ( LIBRARY_PATH . DIRECTORY_SEPARATOR . 'libs' ) );
 
 /**
  * @brief Constant containing the detected 'name' of the application.
@@ -67,8 +73,6 @@ define ( 'APPLICATION_NAME', array_pop ( $parts ) );
  * @brief Constant containing the application base path relative to the document root.
  */
 define ( 'APPLICATION_BASE', dirname ( $_SERVER ['SCRIPT_NAME'] ) );
-
-define ( 'SUPPORT_PATH', realpath ( LIBRARY_PATH . DIRECTORY_SEPARATOR . 'Libs' ) );
 
 /**
  * @brief Global class file loader
@@ -117,11 +121,13 @@ class Loader {
 		/*
          * Add some default search paths
          */
-		$this->addSearchPath ( FILE_PATH_CONFIG, realpath ( APPLICATION_PATH . DIRECTORY_SEPARATOR .'configs' ) );
+		$this->addSearchPath ( FILE_PATH_CONFIG, CONFIG_PATH );
 
-		$this->addSearchPath ( FILE_PATH_LIB, realpath ( APPLICATION_PATH . DIRECTORY_SEPARATOR .'..' . DIRECTORY_SEPARATOR . 'library' ) );
+		$this->addSearchPath ( FILE_PATH_LIB, LIBRARY_PATH);
 
-		$this->addSearchPath ( FILE_PATH_PUBLIC, realpath ( APPLICATION_PATH . DIRECTORY_SEPARATOR .'..' . DIRECTORY_SEPARATOR . 'public' ) );
+		$this->addSearchPath ( FILE_PATH_PUBLIC, PUBLIC_PATH );
+
+ 		$this->addSearchPath ( FILE_PATH_SUPPORT, SUPPORT_PATH );
 
 		$sep = ((PHP_OS == 'Windows') ? ';' : ':');
 

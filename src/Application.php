@@ -17,6 +17,8 @@ define('HAZAAR_EXEC_START', microtime(TRUE));
 
 define('HAZAAR_VERSION', '2.0.0');
 
+require_once ('ErrorControl.php');
+
 require_once('HelperFunctions.php');
 
 /**
@@ -104,11 +106,6 @@ class Application {
         $this->loader = Loader::getInstance($this);
 
         $this->loader->register();
-
-        /*
-         * Set up error control
-         */
-        require_once ('Hazaar/Core/ErrorControl.php');
 
         /**
          * Set up some default config properties.

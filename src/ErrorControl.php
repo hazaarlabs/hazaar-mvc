@@ -45,18 +45,13 @@ function errorAndDie() {
 
         } else {
 
-            require_once('Hazaar/Core/Controller/Error.php');
-
             $controller = new \Hazaar\Controller\Error('Error', $app);
 
         }
 
         $controller->__initialize($app->request);
 
-        call_user_func_array(array(
-                                 $controller,
-                                 'setError'
-                             ), func_get_args());
+        call_user_func_array(array($controller, 'setError'), func_get_args());
 
         $controller->clean_output_buffer();
 
