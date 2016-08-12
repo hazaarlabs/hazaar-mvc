@@ -364,10 +364,6 @@ class Application {
      *
      * @return \Hazaar\Application Returns a reference to itself to allow chaining
      *
-     *         @exception Application\Exception\MissingModule ifany required modules are missing
-     *
-     *         @exception Application\Exception\NoRoute ifthe requested controller is could not be found and/or loaded
-     *
      */
     public function bootstrap($simple_mode = FALSE) {
 
