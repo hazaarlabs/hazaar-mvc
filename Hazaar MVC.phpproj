@@ -609,6 +609,7 @@
     <Compile Include="src\View\Helper\Form.php" />
     <Compile Include="src\View\Helper\Geshi.php" />
     <Compile Include="src\View\Helper\Google.php" />
+    <Compile Include="src\View\Helper\Hazaar.php" />
     <Compile Include="src\View\Helper\Hmv.php" />
     <Compile Include="src\View\Helper\Html.php" />
     <Compile Include="src\View\Helper\JQuery.php" />
@@ -1304,10 +1305,8 @@
     <Content Include="libs\jqWidgets\styles\jqx.windowsphone.css" />
     <Content Include="libs\jqWidgets\styles\jqxeditor.css" />
     <Content Include="libs\js\filebrowser.js" />
-    <Content Include="libs\js\jquery-1.11.0.min.js" />
-    <Content Include="libs\js\jquery-1.11.0.min.map" />
+    <Content Include="libs\js\hazaar.js" />
     <Content Include="libs\js\jquery-helper.js" />
-    <Content Include="libs\js\jquery-ui.min.js" />
     <Content Include="libs\js\pdfobject.js" />
     <Content Include="libs\mime.types" />
     <Content Include="libs\Warlock\client.js" />
