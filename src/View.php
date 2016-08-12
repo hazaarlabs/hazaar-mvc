@@ -385,17 +385,29 @@ class View {
                         $uri->setParams($this->_requires_param);
 
                         $r->parameters()->set('href', $uri);
+
                     }
+
                 }
+
             }
 
             krsort($this->_links);
 
             foreach ($this->_links as $req)
-                $out .= implode("\n    ", $req) . "\n    ";
+                $out .= implode("\n", $req) . "\n";
 
-            $out .= "\n    ";
+            $out .= "\n";
+
         }
+
+        return $out;
+
+    }
+
+    public function post() {
+
+        $out = '';
 
         if (count($this->_requires) > 0) {
 
@@ -420,18 +432,11 @@ class View {
             krsort($this->_requires);
 
             foreach ($this->_requires as $priority => & $req)
-                $out .= implode("\n    ", $req) . "\n    ";
+                $out .= implode("\n", $req) . "\n";
 
             $out .= "\n";
+
         }
-
-        return $out;
-
-    }
-
-    public function post() {
-
-        $out = '';
 
         foreach ($this->_postItems as $item) {
 
@@ -440,15 +445,17 @@ class View {
 
             elseif ($item instanceof \Hazaar\Html\Script)
                 $out .= $item->renderObject();
+
         }
 
         if (count($this->_scripts) > 0)
             $out .= implode("\n", $this->_scripts) . "\n";
 
-        foreach ($this->_helpers as $name => $helper) {
+        foreach ($this->_helpers as $helper) {
 
             if (method_exists($helper, 'post'))
                 $out .= $helper->post();
+
         }
 
         return $out;
