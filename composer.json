@@ -1,7 +1,7 @@
 {  
   "name": "hazaarlabs/hazaar-mvc",  
   "description": "The MVC framework that makes PHP not suck!", 
-  "homepage": "http://git.hazaarlabs.com/hazaar/hazaar-mvc",
+  "homepage": "https://git.hazaarlabs.com/hazaar/hazaar-mvc",
   "autoload": {
     "psr-4": {
       "Hazaar\\": "src/"
