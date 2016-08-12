@@ -1,72 +1,145 @@
 # Introduction
 
-Getting up and running with HazaarMVC is really easy and is done in only a few basic steps, depending on the operating system you are working with.  I suggest Ubuntu Linux as Hazaar has been developed on Ubuntu so it will work with it.  I have made some effort to ensure that Hazaar is cross-platform compatible, particularly with Windows support, but as I do not develop under Windows daily, some bugs may arise.  If so, please create a support issue so they can be fixed.
+Getting up and running with HazaarMVC is really easy and is done in only a few basic
+steps, depending on the operating system you are working with.  I suggest Ubuntu Linux
+as Hazaar has been developed on Ubuntu so it will work with it.  I have made some effort
+to ensure that Hazaar is cross-platform compatible, particularly with Windows support, but
+as I do not develop under Windows daily, some bugs may arise.  If so, please create a
+support issue so they can be fixed.
 
-Hazaar MVC is installed and managed with the Hazaar Tool.  A simple program that communicates with our platform server to ensure you have the latest versions of Hazaar MVC modules installed correctly for your application.
+Hazaar MVC is installed with [Composer](http://getcomposer.org) and available via
+[Packagist](http://packagist.org). 
 
-## Linux Installation
+## Composer? Huh??
 
-### Using Packages (Debian/Ubuntu)
+Composer is a popular dependency management tool for PHP, created mainly to facilitate
+installation and updates for project dependencies. It will check which other packages
+a specific project depends on and install them for you, using the appropriate versions
+according to the project requirements.
 
-A Debian package repository is available which will allow you to keep your copy of Hazaar up to date with the latest release as part of your normal package update processes.
+# Linux Installation
 
-To add the Hazaar MVC repository to your host:
+This is just a generic installation process on an Debian/Ubuntu based system.  Seeing
+as you are a super smart developer you can translate these commands to other systems
+like Redhat/CentOS, etc.
 
-```
-wget -O - "http://packages.hazaarmvc.com/repo-pub.key" | sudo apt-key add -
-echo "deb http://packages.hazaarmvc.com/stable /" | sudo tee /etc/apt/sources.list.d/hazaar.list
-sudo apt-get update
-```
+## Step 1 — Installing the Dependencies
 
-Then you can simply install Hazaar by doing the following:
+Before we download and install Composer, we need to make sure our server has all
+dependencies installed.
 
-```
-apt-get install hazaar
-```
-
-Once you have installed the Hazaar Tool you can create a new application based on the example application by running the following commands:
-
-```
-mkdir your_app_dir
-cd your_app_dir
-hazaar init
-```
-
-This will download the example application and it's dependencies, which is the Hazaar MVC core module.  To install other modules you can do something like:
+First, update the package manager cache by running:
 
 ```
-hazaar install module dbi
+$ sudo apt-get update
 ```
 
-This will install the DBI database access module.  To get a list of available modules run:
+Now, let's install the dependencies. We'll need curl in order to download Composer
+and php5-cli for installing and running it. git is used by Composer for downloading
+project dependencies. Everything can be installed with the following command:
 
 ```
-hazaar list modules
+$ sudo apt-get install curl php5-cli git
 ```
 
-### Install from source
+You can now proceed to the next step.
 
-If you prefer to manually install the framework you can do so by following the below procedure.  Using GIT you can download the latest ‘stable’ branch (or master if you like to live danerously).
+## Step 2 — Downloading and Installing Composer
 
-#### Step 1 - Download
-
-```
-> git clone -b stable git://git.funkynerd.com/hazaar/hazaar-mvc
-```
-
-Put it anywhere you want. For a production installation I suggest _/usr/share/hazaar-mvc_
-
-#### Step 2 - Installation
-
-Hazaar MVC can live in a central location and your applicationcs can all link to the one source tree.  This is handy for development as it makes sure all your applications are running on the same version of Hazaar MVC.
-
-If you installed into _/usr/share/hazaar-mvc_, just do this in your application directory:
+Composer installation is really simple and can be done with a single command:
 
 ```
-cd your_app_dir
-mkdir library
-cd library
-sudo ln -s /usr/share/hazaar-mvc/Hazaar
+$ curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
 ```
 
-You are now ready to get apache up and running.
+This will download and install Composer as a system-wide command named composer, under
+ ```/usr/local/bin```. The output should look like this:
+
+```
+#!/usr/bin/env php
+All settings correct for using Composer
+Downloading...
+
+Composer successfully installed to: /usr/local/bin/composer
+Use it: php /usr/local/bin/composer
+```
+
+To test your installation, run:
+
+```
+$ composer
+```
+
+And you should get output similar to this:
+
+```
+   ______
+  / ____/___  ____ ___  ____  ____  ________  _____
+ / /   / __ \/ __ `__ \/ __ \/ __ \/ ___/ _ \/ ___/
+/ /___/ /_/ / / / / / / /_/ / /_/ (__  )  __/ /
+\____/\____/_/ /_/ /_/ .___/\____/____/\___/_/
+                    /_/
+Composer version 1.0-dev (9859859f1082d94e546aa75746867df127aa0d9e) 2015-08-17 14:57:00
+
+Usage:
+ command [options] [arguments]
+
+Options:
+ --help (-h)           Display this help message
+ --quiet (-q)          Do not output any message
+ --verbose (-v|vv|vvv) Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
+ --version (-V)        Display this application version
+ --ansi                Force ANSI output
+ --no-ansi             Disable ANSI output
+ --no-interaction (-n) Do not ask any interactive question
+ --profile             Display timing and memory usage information
+ --working-dir (-d)    If specified, use the given directory as working directory.
+
+. . .
+```
+
+This means Composer was succesfully installed on your system.
+
+
+If you prefer to have separate Composer executables for each project you might host on
+this server, you can simply install it locally, on a per-project basis. This method is
+also useful when your system user doesn't have permission to install software
+system-wide. In this case, installation can be done with 
+```curl -sS https://getcomposer.org/installer | php - this will generate a composer.phar```
+file in your current directory, which can be executed with php composer.phar [command].
+
+## Step 3 - Install the example application
+
+Because Hazaar MVC is a library, you need to create project that depends on it for composer
+to download it.  The easiest way to do this is to install the example application.  This will
+also give you a starting point for development.
+
+You can do this with one command using composer:
+
+```
+$ composer create-project hazaarlabs/example
+```
+
+That's it.  You should now have the example application and Hazaar MVC downloaded and ready
+to go. Now all you need to do is set up your web server and you're good to go.
+
+# Windows Installation
+
+Coming soon...
+
+# Getting Started
+
+A great place to get up to speed quickly on Hazaar MVC is by reading the
+[Hazaar MVC Quickstar Guide](http://hazaarmvc.com/quickstart).
+
+The QuickStart covers some of the most commonly used components of Hazaar MVC.
+
+# Contributing
+
+Please contact [support@hazaarlabs.com](mailto:support@hazaarlabs.com) if you would like to
+get involved!
+
+# Licence
+
+The files in this archive are released under the Zend Framework license. You can find a
+ copy of this license in [LICENCE.md](https://git.hazaarlabs.com/hazaar/hazaar-mvc/blob/master/LICENCE.md).
