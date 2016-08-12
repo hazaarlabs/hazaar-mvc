@@ -60,7 +60,8 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
     public function getHelpers() {
 
-        return $this->view->getHelpers();
+        if($this->view instanceof \Hazaar\View)
+            return $this->view->getHelpers();
 
     }
 
@@ -72,7 +73,7 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
     public function & __get($key) {
 
-        if($this->view->hasHelper($key))
+        if($this->view instanceof \Hazaar\View && $this->view->hasHelper($key))
             return $this->view->getHelper($key);
 
         return $this->_data[$key];
@@ -81,8 +82,8 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
     /**
      * Sets the data available on any defined views.
-     * 
-     * @param array $array 
+     *
+     * @param array $array
      */
     public function populate(array $array) {
 
@@ -92,8 +93,8 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
     /**
      * Extends the data available on any defined views.
-     * 
-     * @param array $array 
+     *
+     * @param array $array
      */
     public function extend(array $array) {
 
@@ -113,11 +114,8 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
         } else {
 
-            if(! $view instanceof \Hazaar\View\Layout) {
-
+            if(! $view instanceof \Hazaar\View\Layout)
                 $view = new \Hazaar\View\Layout($view);
-
-            }
 
             $this->view = $view;
 
@@ -163,11 +161,8 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
         $content = $this->render($this->view, $controller);
 
-        if(! $content) {
-
+        if(! $content)
             throw new Exception\NoContent(get_class($this->view));
-
-        }
 
         $response->addContent($content);
 
@@ -219,11 +214,8 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
     public function requires($script) {
 
-        if(! method_exists($this->view, 'requires')) {
-
+        if(! method_exists($this->view, 'requires'))
             throw new \Exception('The current view does not support script imports');
-
-        }
 
         $this->_requires[] = $script;
 
@@ -231,11 +223,8 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
     public function link($href, $rel = NULL) {
 
-        if(! method_exists($this->view, 'link')) {
-
+        if(! method_exists($this->view, 'link'))
             throw new \Exception('The current view does not support HTML links');
-
-        }
 
         return $this->view->link($href, $rel);
 
@@ -243,11 +232,8 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
     public function script($code) {
 
-        if(! method_exists($this->view, 'script')) {
-
+        if(! method_exists($this->view, 'script'))
             throw new \Exception('The current view does not support JavaScript code');
-
-        }
 
         return $this->view->script($code);
 
