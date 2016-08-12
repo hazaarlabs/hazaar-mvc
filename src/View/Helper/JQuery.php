@@ -9,7 +9,11 @@
 
 namespace Hazaar\View\Helper;
 
-define('JQUERY_CURRENT_VER', '1.11.0');
+if(!defined('JQUERY_CURRENT_VER'))
+    define('JQUERY_CURRENT_VER', '2.2.4');
+
+if(!defined('JQUERY_CURRENT_UI_VER'))
+    define('JQUERY_CURRENT_UI_VER', 1.12);
 
 class JQuery extends \Hazaar\View\Helper {
 
@@ -44,29 +48,15 @@ class JQuery extends \Hazaar\View\Helper {
              * version
              * with Hazaar.
              */
-            if($settings->has('version')) {
+            $version = $settings->has('version') ? $settings->get('version') : JQUERY_CURRENT_VER;
 
-                $view->requires('https://ajax.googleapis.com/ajax/libs/jquery/' . $settings->version . '/jquery.min.js');
-
-            } else {
-
-                $jquery = 'hazaar/js/jquery' . (defined('JQUERY_CURRENT_VER') ? '-' . JQUERY_CURRENT_VER : NULL) . '.min.js';
-
-                $view->requires($this->application->url($jquery));
-
-            }
+            $view->requires('https://ajax.googleapis.com/ajax/libs/jquery/' . $version . '/jquery.min.js');
 
             if($settings->has('ui') && $settings->ui === TRUE) {
 
-                if($settings->has('ui-version')) {
+                $ui_version = $settings->has('ui-version') ? $settings->get('ui-version') : JQUERY_CURRENT_UI_VER;
 
-                    $view->requires('https://ajax.googleapis.com/ajax/libs/jqueryui/' . $settings->get('ui-version') . '/jquery-ui.min.js');
-
-                } else {
-
-                    $view->requires($this->application->url('hazaar/js/jquery-ui.min.js'));
-
-                }
+                $view->requires('https://ajax.googleapis.com/ajax/libs/jqueryui/' . $ui_version . '/jquery-ui.min.js');
 
             }
 

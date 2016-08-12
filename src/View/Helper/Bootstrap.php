@@ -35,15 +35,9 @@ class Bootstrap extends \Hazaar\View\Helper {
      */
     public function init($view, $args = array()) {
 
-        $view->link($this->application->url('hazaar/bootstrap/css/bootstrap.min.css'));
+        $view->link('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css');
 
-        $view->requires($this->application->url('hazaar/bootstrap/js/bootstrap.min.js'));
-
-        if(array_key_exists('optional-theme', $args) && $args['optional-theme'] == true) {
-
-            $view->link($this->application->url('hazaar/bootstrap/css/bootstrap-theme.min.css'));
-
-        }
+        $view->requires('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js');
 
     }
 
