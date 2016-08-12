@@ -5,74 +5,83 @@
  *
  * @author      Jamie Carl <jamie@hazaarlabs.com>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright(c)2012 Jamie Carl(http://www.hazaarlabs.com)
  */
 namespace Hazaar;
 
 /**
  * @brief Constant to indicate a path contains config files
  */
-define ( 'FILE_PATH_CONFIG', 'config' );
+define('FILE_PATH_CONFIG', 'config');
 
 /**
  * @brief Constant to indicate a path contains model classes
  */
-define ( 'FILE_PATH_MODEL', 'model' );
+define('FILE_PATH_MODEL', 'model');
 
 /**
  * @brief Constant to indicate a path contains view files
  */
-define ( 'FILE_PATH_VIEW', 'view' );
+define('FILE_PATH_VIEW', 'view');
 
 /**
  * @brief Constant to indicate a path contains controller classes
  */
-define ( 'FILE_PATH_CONTROLLER', 'controller' );
+define('FILE_PATH_CONTROLLER', 'controller');
 
 /**
  * @brief Constant to indicate a path contains service classes
  */
-define ( 'FILE_PATH_SERVICE', 'service' );
+define('FILE_PATH_SERVICE', 'service');
 
 /**
  * @brief Constant to indicate a path contains Support files
  */
-define ( 'FILE_PATH_SUPPORT', 'support' );
+define('FILE_PATH_SUPPORT', 'support');
 
 /**
  * @brief Constant to indicate a path in the library path
  */
-define ( 'FILE_PATH_LIB', 'library' );
+define('FILE_PATH_LIB', 'library');
 
 /**
  * @brief Constant to indicate a path in the public path
  */
-define ( 'FILE_PATH_PUBLIC', 'public' );
+define('FILE_PATH_PUBLIC', 'public');
 
-define( 'CONFIG_PATH', realpath ( APPLICATION_PATH . DIRECTORY_SEPARATOR .'configs' ) );
+/**
+ * @brief Constant containing the absolute filesystem path to the application configuration directory
+ */
+define('CONFIG_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR .'configs'));
 
-define( 'PUBLIC_PATH', realpath ( APPLICATION_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'public' ) );
+/**
+ * @brief Constant containing the absolute filesystem path to the application public directory
+ */
+define('PUBLIC_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'public'));
 
 /**
  * @brief Constant containing the absolute filesystem path to the HazaarMVC library
  */
-define ( 'LIBRARY_PATH', realpath ( APPLICATION_PATH . DIRECTORY_SEPARATOR .'..' . DIRECTORY_SEPARATOR . 'library' ) );
+define('LIBRARY_PATH', realpath(dirname(__FILE__)));
 
-define ( 'SUPPORT_PATH', realpath ( LIBRARY_PATH . DIRECTORY_SEPARATOR . 'libs' ) );
+/**
+ * @brief Constant containing the absolute filesystem path to the HazaarMVC support library
+ */
+define('SUPPORT_PATH', realpath(LIBRARY_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs'));
 
 /**
  * @brief Constant containing the detected 'name' of the application.
  * Essentially this is the name of the
  * directory the application is stored in.
  */
-$parts = explode ( DIRECTORY_SEPARATOR, realpath ( APPLICATION_PATH . DIRECTORY_SEPARATOR . '..' ) );
+$parts = explode(DIRECTORY_SEPARATOR, realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..'));
 
-define ( 'APPLICATION_NAME', array_pop ( $parts ) );
+define('APPLICATION_NAME', array_pop($parts));
 
 /**
  * @brief Constant containing the application base path relative to the document root.
  */
-define ( 'APPLICATION_BASE', dirname ( $_SERVER ['SCRIPT_NAME'] ) );
+define('APPLICATION_BASE', dirname($_SERVER['SCRIPT_NAME']));
 
 /**
  * @brief Global class file loader
@@ -82,7 +91,7 @@ define ( 'APPLICATION_BASE', dirname ( $_SERVER ['SCRIPT_NAME'] ) );
  * working with paths and library files.
  *
  * This class is not meant to be instantiated directly and instances should be retrieved using the
- * Loader::getInstance() method.
+ * Loader::getInstance()method.
  *
  * h3. Example
  *
@@ -91,64 +100,53 @@ define ( 'APPLICATION_BASE', dirname ( $_SERVER ['SCRIPT_NAME'] ) );
  * $loader->loadController('index');
  * </code>
  *
- * p(notice notice-info). The loader class is loaded automatically when starting the application.
+ * p(notice notice-info) . The loader class is loaded automatically when starting the application.
  * There should be no need to use the Loader instance directly and static methods have been provided for
  * some extra functionality.</div>
  *
- * p(notice notice-warning). Instantiating this class directly can have undefined results.</div>
+ * p(notice notice-warning) . Instantiating this class directly can have undefined results.</div>
  *
  * @since 1.0.0
  */
 class Loader {
+
 	private $application;
-	public $paths = array ();
+
+	public $paths = array();
+
 	private static $instance;
 
 	/**
      * @brief Initialise a new loader
      *
-     * @detail p(notice notice-warning). Do NOT instantiate this class directly. See Loader::getInstance()
+     * @detail p(notice notice-warning) . Do NOT instantiate this class directly. See Loader::getInstance()
      * on how to get a new Loader instance.</div>
      */
-	function __construct($application) {
+	function __construct($application){
+
 		$this->application = $application;
 
-		if (! Loader::$instance instanceof Loader) {
-
+		if(! Loader::$instance instanceof Loader)
 			Loader::$instance = $this;
-		}
 
 		/*
          * Add some default search paths
          */
-		$this->addSearchPath ( FILE_PATH_CONFIG, CONFIG_PATH );
+		$this->addSearchPath(FILE_PATH_CONFIG, CONFIG_PATH);
 
-		$this->addSearchPath ( FILE_PATH_LIB, LIBRARY_PATH);
+		$this->addSearchPath(FILE_PATH_LIB, LIBRARY_PATH);
 
-		$this->addSearchPath ( FILE_PATH_PUBLIC, PUBLIC_PATH );
+		$this->addSearchPath(FILE_PATH_PUBLIC, PUBLIC_PATH);
 
- 		$this->addSearchPath ( FILE_PATH_SUPPORT, SUPPORT_PATH );
+        $this->addSearchPath(FILE_PATH_SUPPORT, SUPPORT_PATH);
 
 		$sep = ((PHP_OS == 'Windows') ? ';' : ':');
 
-		$paths = explode ( $sep, get_include_path () );
-
-		foreach ( $paths as $path ) {
-
-			$search = realpath ( $path . ((substr ( $path, - 1, 1 ) != DIRECTORY_SEPARATOR) ? DIRECTORY_SEPARATOR : NULL) . 'Hazaar' ) . DIRECTORY_SEPARATOR .'..' . DIRECTORY_SEPARATOR . 'Libs';
-
-			if (file_exists ( $search )) {
-
-				$this->addSearchPath ( FILE_PATH_SUPPORT, realpath ( $search ) );
-
-				break;
-			}
-		}
 	}
 
     static public function fixDirectorySeparator($path){
 
-        return str_replace(((DIRECTORY_SEPARATOR == '/') ? '\\' : '/'), DIRECTORY_SEPARATOR, $path);
+        return str_replace(((DIRECTORY_SEPARATOR == '/')? '\\' : '/'), DIRECTORY_SEPARATOR, $path);
 
     }
 
@@ -160,19 +158,22 @@ class Loader {
      * @param Application $application
      *        	The current application instance
      */
-	static function getInstance($application = NULL) {
-		if (! Loader::$instance instanceof Loader) {
+	static function getInstance($application = NULL){
 
-			Loader::$instance = new Loader ( $application );
-		} elseif ($application) {
+		if(! Loader::$instance instanceof Loader)
+			Loader::$instance = new Loader($application);
 
-			Loader::$instance->setApplication ( $application );
-		}
+		elseif($application)
+			Loader::$instance->setApplication($application);
 
 		return Loader::$instance;
+
 	}
-	public function setApplication($application) {
+
+	public function setApplication($application){
+
 		$this->application = $application;
+
 	}
 
 	/**
@@ -180,11 +181,10 @@ class Loader {
      *
      * @since 1.0.0
      */
-	public function register() {
-		spl_autoload_register ( array (
-				$this,
-				'loadClassFromFile'
-		) );
+	public function register(){
+
+		spl_autoload_register(array($this,'loadClassFromFile'));
+
 	}
 
 	/**
@@ -192,14 +192,16 @@ class Loader {
      *
      * @since 1.0.0
      */
-	public function unregister() {
-		spl_autoload_unregister ( array (
-				$this,
-				'loadClassFromFile'
-		) );
+	public function unregister(){
+
+		spl_autoload_unregister(array($this,'loadClassFromFile'));
+
 	}
-	public function addIncludePath($path) {
-		set_include_path ( get_include_path () . PATH_SEPARATOR . $path );
+
+	public function addIncludePath($path){
+
+		set_include_path(get_include_path() . PATH_SEPARATOR . $path);
+
 	}
 
 	/**
@@ -211,7 +213,7 @@ class Loader {
      * * FILE_PATH_MODEL - Path contains model classes
      * * FILE_PATH_VIEW - Path contains view files.
      * * FILE_PATH_CONTROLLER - Path contains controller classes.
-     * * FILE_PATH_SUPPORT - Path contains support files. Used by the Application::runDirect() method.
+     * * FILE_PATH_SUPPORT - Path contains support files. Used by the Application::runDirect()method.
      *
      * @since 1.0.0
      *
@@ -221,13 +223,15 @@ class Loader {
      * @param string $path
      *        	The path to add.
      */
-	public function addSearchPath($type, $path) {
-		if ($path = realpath ( $path )) {
+	public function addSearchPath($type, $path){
 
-			if (! array_key_exists ( $type, $this->paths ) || ! in_array ( $path, $this->paths [$type] ))
-				$this->paths [$type] [] = $path;
+		if($path = realpath($path)){
+
+			if(! array_key_exists($type, $this->paths)|| ! in_array($path, $this->paths[$type]))
+				$this->paths[$type][] = $path;
 
 			return TRUE;
+
 		}
 
 		return FALSE;
@@ -241,14 +245,15 @@ class Loader {
      * @param Array $array
      *        	Array containing type/path pairs.
      */
-	public function addSearchPaths($array) {
-		if (is_array ( $array ) || $array instanceof Map) {
+	public function addSearchPaths($array){
 
-			foreach ( $array as $type => $path ) {
+		if(is_array($array)|| $array instanceof Map){
 
-				$this->addSearchPath ( $type, APPLICATION_PATH . DIRECTORY_SEPARATOR . $path );
-			}
+			foreach($array as $type => $path)
+				$this->addSearchPath($type, APPLICATION_PATH . DIRECTORY_SEPARATOR . $path);
+
 		}
+
 	}
 
 	/**
@@ -258,48 +263,50 @@ class Loader {
      *
      * @return Array Array of search paths
      */
-	public function getSearchPaths($type = NULL) {
-		if ($type) {
+	public function getSearchPaths($type = NULL){
 
-			if (array_key_exists ( $type, $this->paths )) {
+		if($type){
 
-				return $this->paths [$type];
-			}
-		} else {
+			if(array_key_exists($type, $this->paths))
+				return $this->paths[$type];
+
+        } else {
 
 			return $this->paths;
+
 		}
 
 		return NULL;
+
 	}
 
-	static private function resolveRealPath($filename, $case_insensitive = FALSE) {
+	static private function resolveRealPath($filename, $case_insensitive = FALSE){
 
-		if (file_exists ( $filename )) {
+		if(file_exists($filename)){
 
-			return realpath ( $filename );
+			return realpath($filename);
 
-		} elseif ($case_insensitive) {
+		} elseif($case_insensitive){
 
-			$dirname = dirname ( $filename );
+			$dirname = dirname($filename);
 
-			$filename = strtolower ( basename ( $filename ) );
+			$filename = strtolower(basename($filename));
 
-			if (! file_exists ( $dirname ))
+			if(! file_exists($dirname))
 				return NULL;
 
-			$dir = dir ( $dirname );
+			$dir = dir($dirname);
 
-			while ( ($file = $dir->read ()) !== FALSE ) {
+			while(($file = $dir->read()) !== FALSE){
 
-				if (substr ( $file, 0, 1 ) == '.')
+				if(substr($file, 0, 1) == '.')
 					continue;
 
-				if (strtolower ( $file ) == $filename) {
+				if(strtolower($file) == $filename)
+					return realpath($dirname . DIRECTORY_SEPARATOR . $file);
 
-					return realpath ( $dirname . DIRECTORY_SEPARATOR . $file );
-				}
 			}
+
 		}
 
 		return NULL;
@@ -307,9 +314,10 @@ class Loader {
 
     static public function isAbsolutePath($path){
 
-        return (substr($path, 1, 1) == ':' || substr($path, 0, 1) == DIRECTORY_SEPARATOR);
+        return(substr($path, 1, 1) == ':' || substr($path, 0, 1) == DIRECTORY_SEPARATOR);
 
     }
+
 	/**
      * @detail Return the absolute filesystem path to a file.
      * By default this method uses the application
@@ -333,18 +341,18 @@ class Loader {
      * @param boolean $case_insensitive
      *        	By default paths are case sensitive. In some circumstances this might
      *        	not
-     *        	be desirable so set this TRUE to perform a (slower) case insensitive
+     *        	be desirable so set this TRUE to perform a(slower)case insensitive
      *        	search.
      *
      * @return string The absolute path to the file if it exists. NULL otherwise.
      *
      */
-	static public function getFilePath($type, $search_file = NULL, $base_path = APPLICATION_PATH, $case_insensitive = FALSE, $req_writable = FALSE) {
+	static public function getFilePath($type, $search_file = NULL, $base_path = APPLICATION_PATH, $case_insensitive = FALSE, $req_writable = FALSE){
 
-		if (! $base_path)
+		if(! $base_path)
 			$base_path = APPLICATION_PATH;
 
-		$loader = Loader::getInstance ();
+		$loader = Loader::getInstance();
 
         $search_file = Loader::fixDirectorySeparator($search_file);
 
@@ -353,23 +361,25 @@ class Loader {
 
             return Loader::resolveRealPath($search_file);
 
-        }elseif ($paths = $loader->getSearchPaths ( $type )) {
+        }elseif($paths = $loader->getSearchPaths($type)){
 
-			foreach ( $paths as $path ) {
+			foreach($paths as $path){
 
 				$filename = $path . DIRECTORY_SEPARATOR . $search_file;
 
-				if ($realpath = Loader::resolveRealPath( $filename, $case_insensitive ))
+				if($realpath = Loader::resolveRealPath($filename, $case_insensitive))
 					return $realpath;
+
 			}
 
-			if ($req_writable) {
+			if($req_writable){
 
 				// Find the first writable path for this file.
-				foreach ( $paths as $path ) {
+				foreach($paths as $path){
 
-					if (is_writable ( dirname ( $path ) ))
+					if(is_writable(dirname($path)))
 						return Loader::resolveRealPath($path .DIRECTORY_SEPARATOR . $search_file);
+
 				}
 
 			}
@@ -378,12 +388,13 @@ class Loader {
 
 			$absolute_path = $base_path . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR . $search_file;
 
-			if (file_exists ( $absolute_path ))
-				return realpath ( $absolute_path );
+			if(file_exists($absolute_path))
+				return realpath($absolute_path);
 
 		}
 
 		return NULL;
+
 	}
 
 	/**
@@ -393,20 +404,21 @@ class Loader {
      *
      * @return string Absolute path to the file
      */
-	static public function resolve($filename) {
+	static public function resolve($filename){
 
-		$paths = explode ( PATH_SEPARATOR, get_include_path () );
+		$paths = explode(PATH_SEPARATOR, get_include_path());
 
-		foreach ( $paths as $path ) {
+		foreach($paths as $path){
 
 			$target = $path . DIRECTORY_SEPARATOR . 'Hazaar' . DIRECTORY_SEPARATOR . $filename;
 
-			if (file_exists ( $target ))
+			if(file_exists($target))
 				return $target;
 
 		}
 
 		return NULL;
+
 	}
 
 	/**
@@ -416,8 +428,8 @@ class Loader {
      *
      * These controllers are:
      *
-     * * style - Returns a [[Hazaar\Controller\Style]] object to handle output for CSS stylesheets.
-     * * script - Returns a [[Hazaar\Controller\Script]] object to handle output of JavaScript files.
+     * * style - Returns a[[Hazaar\Controller\Style]] object to handle output for CSS stylesheets.
+     * * script - Returns a[[Hazaar\Controller\Script]] object to handle output of JavaScript files.
      *
      * If no controller can be found the default site controller will be loaded.
      *
@@ -427,9 +439,10 @@ class Loader {
      *        	The name of the controller to load. This can be _style_ or _script_ to
      *        	load Style and Script controllers.
      *
-     * @return \Hazaar\Application\Controller A controller instance.
+     * @return mixed A controller instance (\Hazaar\Application\Controller) or FALSE.
      */
-	public function loadController($controller) {
+	public function loadController($controller){
+
 		$newController = NULL;
 
 		/*
@@ -438,73 +451,73 @@ class Loader {
          * Magic controllers are are controllers that are handled internally. These can be
          * either 'style', or 'script' to service up compressed CSS or JS files.
          */
-		switch ($controller) {
+		switch($controller){
 			case 'hazaar' :
-
-				$newController = new Controller\Hazaar ( $controller, $this->application );
-
+				$newController = new Controller\Hazaar($controller, $this->application);
 				break;
+
 			case 'media' :
-
-				$newController = new Controller\Media ( $controller, $this->application );
-
+				$newController = new Controller\Media($controller, $this->application);
 				break;
-			case 'style' :
-				$newController = new Controller\Style ( $controller, $this->application );
 
+			case 'style' :
+				$newController = new Controller\Style($controller, $this->application);
 				break;
 
 			case 'script' :
-				$newController = new Controller\Script ( $controller, $this->application );
-
+				$newController = new Controller\Script($controller, $this->application);
 				break;
 
 			case 'warlock' :
-				$newController = new Controller\Warlock ( $controller, $this->application );
-
+				$newController = new Controller\Warlock($controller, $this->application);
 				break;
 
 			case 'favicon.png' :
 			case 'favicon.ico' :
-				$newController = new Controller\Favicon ( $controller, $this->application );
-
+				$newController = new Controller\Favicon($controller, $this->application);
 				break;
 
 			default :
-				$controllerClass = ucfirst ( $controller ) . 'Controller';
+				$controllerClass = ucfirst($controller) . 'Controller';
 
 				/*
-                 * This call to class_exists() will actually load the class with the __autoload magic method. Then
+                 * This call to class_exists()will actually load the class with the __autoload magic method. Then
                  * we test if the class exists and if it doesn't we try and load the default controller . If that
                  * failes we return FALSE so a nice error can be sent instead of a nasty fatal error
                  */
 				try {
 
-					if (! class_exists ( $controllerClass )) {
+					if(! class_exists($controllerClass)){
 
 						/*
                          * Use the default controller if no controller has been found.
                          */
-						if (boolify ( $this->application->config->app->useDefault )) {
+						if(boolify($this->application->config->app->useDefault)){
 
-							$controllerClass = ucfirst ( $this->application->config->app->defaultController ) . 'Controller';
+							$controllerClass = ucfirst($this->application->config->app->defaultController) . 'Controller';
 
-							if (! class_exists ( $controllerClass ))
+							if(! class_exists($controllerClass))
 								return FALSE;
+
 						} else {
 
 							return FALSE;
+
 						}
+
 					}
-				}
-                catch ( \Hazaar\Exception\ClassNotFound $e ) {
 
-					return FALSE;
+				}
+                catch(\Hazaar\Exception\ClassNotFound $e){
+
+					return NULL;
+
 				}
 
-				$newController = new $controllerClass ( $controller, $this->application );
+				$newController = new $controllerClass($controller, $this->application);
 
 				break;
+
 		}
 
 		return $newController;
@@ -512,7 +525,7 @@ class Loader {
 
 	/**
      * @detail Loads a class from a source file.
-     * This is the main class loader used by the __autoload() PHP
+     * This is the main class loader used by the __autoload()PHP
      * trigger. It is responsible for loading the files that hold class source definitions by determining
      * the correct file to load based on the class name.
      *
@@ -527,9 +540,9 @@ class Loader {
      *
      * We do 2 stage class path checking.
      *
-     * * _Stage 1:_ Look for the class in a correlating path. eg: [[Hazaar\Application]] in path
+     * * _Stage 1:_ Look for the class in a correlating path. eg:[[Hazaar\Application]] in path
      * Hazaar/Application.php
-     * * _Stage 2:_ If stage 1 fails, look in a module sub-directory. eg: [[Hazaar\Application]] in path
+     * * _Stage 2:_ If stage 1 fails, look in a module sub-directory. eg:[[Hazaar\Application]] in path
      * Hazaar/Application/Application.php
      *
      * If they both fail, the class is not found and we throw a pretty exception.
@@ -538,98 +551,48 @@ class Loader {
      *        	The name of the class to load.
      *
      */
-	static public function loadClassFromFile($class_name) {
+	static public function loadClassFromFile($class_name){
 
-		if (preg_match ( '/^(\w*)Controller$/', $class_name, $matches )) {
+		if(preg_match('/^(\w*)Controller$/', $class_name, $matches)){
 
-			$controllerClassFile = ucfirst ( $matches [1] ) . '.php';
+			$controllerClassFile = ucfirst($matches[1]) . '.php';
 
-			if ($filename = Loader::getFilePath ( FILE_PATH_CONTROLLER, $controllerClassFile )) {
+			if($filename = Loader::getFilePath(FILE_PATH_CONTROLLER, $controllerClassFile)){
 
-				require_once ($filename);
+				require_once($filename);
 
 				return NULL;
 			}
 
-		} elseif (preg_match ( '/^(\w*)Service$/', $class_name, $matches )) {
+		} elseif(preg_match('/^(\w*)Service$/', $class_name, $matches)){
 
-			$serviceClassFile = $matches [1] . '.php';
+			$serviceClassFile = $matches[1] . '.php';
 
-			if ($filename = Loader::getFilePath ( FILE_PATH_SERVICE, $serviceClassFile )) {
+			if($filename = Loader::getFilePath(FILE_PATH_SERVICE, $serviceClassFile)){
 
-				require_once ($filename);
+				require_once($filename);
 
 				return NULL;
+
 			}
 
 		} else {
 
-			$namepath = preg_split ( '/(\W|_)/', $class_name, NULL, PREG_SPLIT_NO_EMPTY );
+			$namepath = preg_split('/(\W|_)/', $class_name, NULL, PREG_SPLIT_NO_EMPTY);
 
 			/*
              * Check that the prefix is 'Application'. This is sort of a namespace 'key' if you will
              * to restrict the loadable path to that of the application itself.
              */
-			if ($namepath [0] == 'Application') {
+			if($namepath[0] == 'Application'){
 
-				$filename = implode ( DIRECTORY_SEPARATOR, array_slice ( $namepath, 2 ) ) . '.php';
+				$filename = implode(DIRECTORY_SEPARATOR, array_slice($namepath, 2)) . '.php';
 
-				if ($full_path = Loader::getFilePath ( strtolower ( $namepath [1] ), $filename, NULL, TRUE )) {
+				if($full_path = Loader::getFilePath(strtolower($namepath[1]), $filename, NULL, TRUE)){
 
-					require_once ($full_path);
-
-					return NULL;
-				}
-
-			} elseif ($namepath [0] == 'Hazaar') {
-
-				$module = array_pop ( $namepath );
-
-				if ($module == 'Interface')
-					$module = '_Interface';
-
-				$full_path = implode ( DIRECTORY_SEPARATOR, $namepath ) . DIRECTORY_SEPARATOR . "{$module}.php";
-
-				/*
-                 * Check the correlating path as normal
-                 */
-				if (($include = Loader::getClassSource ( $full_path )) == false) {
-
-					/*
-                     * Check if the module is in fact the same as the path
-                     */
-					$full_path = implode ( DIRECTORY_SEPARATOR, $namepath ) . DIRECTORY_SEPARATOR . $module . DIRECTORY_SEPARATOR . "{$module}.php";
-
-					if (($include = Loader::getClassSource ( $full_path )) == false) {
-
-						array_splice ( $namepath, 1, 0, array (
-								'Core'
-						) );
-
-						$full_path = implode ( DIRECTORY_SEPARATOR, $namepath ) . DIRECTORY_SEPARATOR . "{$module}.php";
-
-						$include = Loader::getClassSource ( $full_path );
-					}
-				}
-
-				if ($include !== FALSE) {
-
-					require_once ($include);
+					require_once($full_path);
 
 					return NULL;
-				}
-
-				throw new Exception ( "Make sure the module is loaded using the Hazaar Tool.", 501, 'Missing class: ' . $class_name );
-
-			} else {
-
-				$full_path = str_replace ( '\\', '/', $class_name . '.php' );
-
-				if ($include = Loader::getClassSource ( $full_path )) {
-
-					require_once ($include);
-
-					return null;
 
 				}
 
@@ -644,17 +607,19 @@ class Loader {
      *
      * @since 1.0.0
      */
-	static private function getClassSource($path) {
-		foreach ( explode ( PATH_SEPARATOR, get_include_path () ) as $lib ) {
+	static private function getClassSource($path){
+
+		foreach(explode(PATH_SEPARATOR, get_include_path())as $lib){
 
 			$full_path = $lib . DIRECTORY_SEPARATOR . $path;
 
-			if (file_exists ( $full_path )) {
-
+			if(file_exists($full_path))
 				return $full_path;
-			}
+
 		}
 
 		return FALSE;
+
 	}
+
 }
