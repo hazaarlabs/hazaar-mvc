@@ -98,6 +98,29 @@ abstract class Element implements _Interface {
 
     }
 
+    /**
+     * Enable or disable a property.
+     *
+     * Some element types have properties that have no value.  A good example is "checked" on a checkbox or radio, or "enabled" on an input.  This method
+     * allows these properties to be added or removed without requiring a value.
+     *
+     * @param string $key The property to set on the element.
+     *
+     * @param boolean $enabled If TRUE the property will be added.  If FALSE the property will not be added or it will be removed if it already exists.
+     *
+     * @return Element
+     */
+    public function prop($key, $enabled = true){
+
+        if($enabled)
+            $this->parameters->set($key);
+        else
+            $this->parameters->remove($key);
+
+        return $this;
+
+    }
+
     public function parameters() {
 
         return $this->parameters;
@@ -261,20 +284,20 @@ abstract class Element implements _Interface {
         return $this;
 
     }
-    
+
     /*
      * Set an HTML5 data atrribute.
      *
      * @param $key string The name of the data attribute to set.
-     * 
+     *
      * @param $value string The value of the data attributes.
      *
      * @since 2.0
      */
     public function data($key, $value){
-    
+
         return $this->attr('data-' . trim($key), $value);
-        
+
     }
 
 }

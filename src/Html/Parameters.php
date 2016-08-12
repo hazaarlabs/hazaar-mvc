@@ -106,6 +106,17 @@ class Parameters implements \Countable {
 
     }
 
+    public function remove($key){
+
+        if(!array_key_exists($key, $this->params))
+            return false;
+
+        unset($this->params[$key]);
+
+        return true;
+
+    }
+
     public function appendTo($key, $value) {
 
         if(! array_key_exists($key, $this->params))
