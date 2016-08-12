@@ -616,6 +616,14 @@ class Map implements \ArrayAccess, \Iterator {
 
         foreach(func_get_args() as $elements) {
 
+            if(is_string($elements)) {
+
+                if($json = json_decode($elements, TRUE))
+                    $elements = $json;
+
+
+            }
+
             if(Map::is_array($elements)) {
 
                 foreach($elements as $key => $elem) {
