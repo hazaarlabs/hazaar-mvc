@@ -10,17 +10,17 @@ class Memcached extends \Hazaar\Cache\Backend {
 
     protected $weight = 2;
 
-    public function init($namespace) {
-
-        $this->namespace = $namespace;
+    static public function available(){
 
         $modules = get_loaded_extensions();
 
-        if(! in_array('memcached', $modules)) {
+        return in_array('memcached', $modules);
 
-            throw new Exception\NoMemcached();
+    }
 
-        }
+    public function init($namespace) {
+
+        $this->namespace = $namespace;
 
         $this->configure(array(
                              'server'          => 'localhost',

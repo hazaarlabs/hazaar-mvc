@@ -10,12 +10,23 @@ class File extends \Hazaar\Cache\Backend {
 
     private   $namespace;
 
+    static public function available(){
+
+        return true;
+
+    }
+
     function init($namespace) {
 
         $this->namespace = $namespace;
 
+        if($app = \Hazaar\Application::getInstance())
+            $cache_dir = $app->runtimePath('cache', TRUE);
+        else
+            $cache_dir = sys_get_temp_dir();
+
         $this->configure(array(
-                             'cache_dir'   => \Hazaar\Application::getInstance()->runtimePath('cache', TRUE),
+                             'cache_dir'   => $cache_dir,
                              'file_prefix' => NULL,
                              'use_zlib'    => FALSE
                          ));

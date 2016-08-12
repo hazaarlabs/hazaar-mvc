@@ -8,12 +8,15 @@ class Sqlite3 extends \Hazaar\Cache\Backend {
 
     protected $weight = 5;
 
-    public function init($namespace) {
+    static public function available(){
 
         $modules = get_loaded_extensions();
 
-        if(! in_array('sqlite3', $modules))
-            throw new Exception\NoSQLite3();
+        return in_array('sqlite3', $modules);
+
+    }
+
+    public function init($namespace) {
 
         $this->configure(array(
                              'cache_table' => 'cache_' . $namespace,

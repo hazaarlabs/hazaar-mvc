@@ -8,17 +8,17 @@ class Apc extends \Hazaar\Cache\Backend {
 
     private   $namespace;
 
-    public function init($namespace) {
-
-        $this->namespace = $namespace;
+    static public function available(){
 
         $modules = get_loaded_extensions();
 
-        if(! in_array('apc', $modules)) {
+        return in_array('apc', $modules);
 
-            throw new Exception\NoAPC();
+    }
 
-        }
+    public function init($namespace) {
+
+        $this->namespace = $namespace;
 
         $this->addCapabilities('store_objects', 'expire', 'array');
 

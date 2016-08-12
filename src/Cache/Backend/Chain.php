@@ -8,6 +8,12 @@ class Chain extends \Hazaar\Cache\Backend {
 
     private $order    = array();
 
+    static public function available(){
+
+        return true;
+
+    }
+
     public function init($namespace) {
 
         foreach($this->options as $backend => $backendOptions) {

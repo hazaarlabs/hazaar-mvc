@@ -290,6 +290,7 @@
     <Compile Include="src\Cache\Backend\File.php" />
     <Compile Include="src\Cache\Backend\Memcached.php" />
     <Compile Include="src\Cache\Backend\Session.php" />
+    <Compile Include="src\Cache\Backend\Shm.php" />
     <Compile Include="src\Cache\Backend\Sqlite3.php" />
     <Compile Include="src\Cache\Backend\_Interface.php" />
     <Compile Include="src\Cache\Exception\InvalidBackend.php" />
@@ -612,6 +613,7 @@
     <Compile Include="src\View\Helper\Hazaar.php" />
     <Compile Include="src\View\Helper\Hmv.php" />
     <Compile Include="src\View\Helper\Html.php" />
+    <Compile Include="src\View\Helper\ICheck.php" />
     <Compile Include="src\View\Helper\JQuery.php" />
     <Compile Include="src\View\Helper\Money.php" />
     <Compile Include="src\View\Helper\PDF.php" />

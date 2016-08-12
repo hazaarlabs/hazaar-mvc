@@ -8,6 +8,12 @@ class Database extends \Hazaar\Cache\Backend {
 
     protected $weight = 6;
 
+    static public function available(){
+
+        return true;
+
+    }
+
     public function init($namespace) {
 
         $this->addCapabilities('array');
