@@ -35,8 +35,6 @@ class Bootstrap extends \Hazaar\View\Helper {
      */
     public function init($view, $args = array()) {
 
-
-
         $cdn = ake($args, 'cdn', 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7');
 
         $view->link($cdn . '/css/bootstrap.min.css');

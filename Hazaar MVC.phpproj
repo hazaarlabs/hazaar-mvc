@@ -602,6 +602,7 @@
     <Compile Include="src\Version.php" />
     <Compile Include="src\View.php" />
     <Compile Include="src\View\Helper.php" />
+    <Compile Include="src\View\Helper\Datatables.php" />
     <Compile Include="src\View\Helper\Bootstrap.php" />
     <Compile Include="src\View\Helper\Dropzone.php" />
     <Compile Include="src\View\Helper\Extra.php" />
