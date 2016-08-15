@@ -35,9 +35,16 @@ class Bootstrap extends \Hazaar\View\Helper {
      */
     public function init($view, $args = array()) {
 
-        $view->link('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css');
 
-        $view->requires('https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js');
+
+        $cdn = ake($args, 'cdn', 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7');
+
+        $view->link($cdn . '/css/bootstrap.min.css');
+
+        $view->requires($cdn . '/js/bootstrap.min.js');
+
+        if($theme = ake($args, 'theme'))
+            $view->link('https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/' . $theme . '/bootstrap.min.css');
 
     }
 
