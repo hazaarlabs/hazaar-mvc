@@ -72,11 +72,9 @@ class View {
                     $load = $this->application->config->view->helper->load;
 
                     if (! \Hazaar\Map::is_array($load))
-                        $load = array(
-                            $load
-                        );
+                        $load = array($load);
 
-                    foreach ($load as $helper) {
+                    foreach($load as $helper) {
 
                         $args = array();
 
@@ -86,9 +84,9 @@ class View {
 
                             foreach (explode(',', $matches[2]) as $arg) {
 
-                                $kv = explode(':', $arg);
+                                $kv = explode('=', $arg);
 
-                                if (isset($kv[1])) {
+                                if(isset($kv[1])) {
 
                                     $val = trim($kv[1]);
 
@@ -102,6 +100,7 @@ class View {
                                     ))) {
 
                                         $val = boolify($val);
+
                                     } elseif (is_numeric($val)) {
 
                                         if (strpos($val, '.') === FALSE) {
@@ -110,18 +109,27 @@ class View {
                                         } else {
 
                                             settype($val, 'float');
+
                                         }
+
                                     }
 
                                     $args[trim($kv[0])] = $val;
+
                                 }
+
                             }
+
                         }
 
                         $this->addHelper($helper, $args);
+
                     }
+
                 }
+
             }
+
         }
 
     }
@@ -303,36 +311,40 @@ class View {
      */
     public function addHelper($helper, $args = array()) {
 
-        if (is_array($helper)) {
+        if(is_array($helper)) {
 
             foreach ($helper as $h)
                 self::addHelper($h);
-        } else
-            if (is_object($helper)) {
 
-                if (! $helper instanceof View\Helper)
-                    return NULL;
+        } elseif(is_object($helper)) {
 
-                $id = strtolower($helper->getName());
+            if (! $helper instanceof View\Helper)
+                return NULL;
 
-                $this->_helpers[$id] = $helper;
+            $id = strtolower($helper->getName());
+
+            $this->_helpers[$id] = $helper;
+
+        } else {
+
+            $id = strtolower($helper);
+
+            if(! array_key_exists($id, $this->_helpers)) {
+
+                $class = '\\Hazaar\\View\\Helper\\' . ucfirst($helper);
+
+                $obj = new $class($this, $args);
+
+                $this->_helpers[$id] = $obj;
+
             } else {
 
-                $id = strtolower($helper);
+                if (($obj = $this->_helpers[$id]) instanceof View\Helper)
+                    $obj->extend($args);
 
-                if (! array_key_exists($id, $this->_helpers)) {
-
-                    $class = '\\Hazaar\\View\\Helper\\' . ucfirst($helper);
-
-                    $obj = new $class($this, $args);
-
-                    $this->_helpers[$id] = $obj;
-                } else {
-
-                    if (($obj = $this->_helpers[$id]) instanceof View\Helper)
-                        $obj->extend($args);
-                }
             }
+
+        }
 
     }
 
