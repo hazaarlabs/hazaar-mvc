@@ -356,18 +356,6 @@
     <Compile Include="src\Controller\_Interface.php" />
     <Compile Include="src\Cron.php" />
     <Compile Include="src\Date.php" />
-    <Compile Include="src\DBI.php" />
-    <Compile Include="src\DBI\DBD\BaseDriver.php" />
-    <Compile Include="src\DBI\DBD\Exception\NoUpdate.php" />
-    <Compile Include="src\DBI\DBD\Mysql.php" />
-    <Compile Include="src\DBI\DBD\Pgsql.php" />
-    <Compile Include="src\DBI\DBD\Sqlite.php" />
-    <Compile Include="src\DBI\Exception\ConnectionFailed.php" />
-    <Compile Include="src\DBI\Exception\DriverNotFound.php" />
-    <Compile Include="src\DBI\Exception\DriverNotSpecified.php" />
-    <Compile Include="src\DBI\Exception\MissingJoin.php" />
-    <Compile Include="src\DBI\Result.php" />
-    <Compile Include="src\DBI\Table.php" />
     <Compile Include="src\ErrorControl.php" />
     <Compile Include="src\Exception.php" />
     <Compile Include="src\Exception\BadFilterDeclaration.php" />
@@ -767,10 +755,6 @@
     <Folder Include="src\Controller\Response\" />
     <Folder Include="src\Controller\Response\Exception\" />
     <Folder Include="src\Controller\Response\HTTP\" />
-    <Folder Include="src\DBI\" />
-    <Folder Include="src\DBI\DBD\" />
-    <Folder Include="src\DBI\DBD\Exception\" />
-    <Folder Include="src\DBI\Exception\" />
     <Folder Include="src\Exception\" />
     <Folder Include="src\File\" />
     <Folder Include="src\File\Backend\" />
@@ -1327,7 +1311,6 @@
     <Content Include="libs\Warlock\warlock_icon.png" />
     <Content Include="src\Auth\.hazaar" />
     <Content Include="src\Cache\.hazaar" />
-    <Content Include="src\DBI\.hazaar" />
     <Content Include="src\Google\.hazaar" />
     <Content Include="src\Logger\.hazaar" />
     <Content Include="src\Mail\.hazaar" />
