@@ -108,6 +108,7 @@ class Session extends \Hazaar\Cache\Backend {
         if (!isset($_SESSION['session']['created'])) {
 
             $_SESSION['session']['created'] = time();
+
         } elseif (isset($_SESSION['session']['last_access'])) {
 
             if ((time() - $_SESSION['session']['last_access']) > $this->timeout) {
@@ -116,7 +117,9 @@ class Session extends \Hazaar\Cache\Backend {
                  * Reset the session
                  */
                 $this->clear();
+
             }
+
         }
 
         $_SESSION['session']['last_access'] = time();
@@ -257,7 +260,22 @@ class Session extends \Hazaar\Cache\Backend {
 
     public function toArray() {
 
-        return $_SESSION[APPLICATION_BASE][$this->namespace];
+        $values = array();
+
+        foreach($_SESSION[APPLICATION_BASE][$this->namespace] as $key => $item){
+            if($item['expire'] <= time()){
+
+                unset($_SESSION[APPLICATION_BASE][$this->namespace][$key]);
+
+                continue;
+
+            }
+
+            $values[$key] = $item['data'];
+
+        }
+
+        return $values;
 
     }
 
