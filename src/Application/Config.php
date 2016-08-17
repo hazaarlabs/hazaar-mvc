@@ -41,7 +41,7 @@ class Config extends \Hazaar\Map {
      * @param       string $env The application environment to read settings for.  Usually 'development' or
      *                             'production'.
      */
-    function __construct($source, $env = NULL, $defaults = array(), $req_writable = FALSE) {
+    function __construct($source, $env = NULL, $defaults = array(), $path_type = FILE_PATH_CONFIG) {
 
         $options = array();
 
@@ -52,7 +52,7 @@ class Config extends \Hazaar\Map {
 
         if($source = trim($source)) {
 
-            $source = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $source, NULL, FALSE, $req_writable);
+            $source = \Hazaar\Loader::getFilePath($path_type, $source, NULL, FALSE);
 
             $this->source = $source;
 
