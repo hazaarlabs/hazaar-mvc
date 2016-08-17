@@ -141,5 +141,5 @@ get involved!
 
 # Licence
 
-The files in this archive are released under the Zend Framework license. You can find a
+The files in this archive are released under the Apache 2.0 License. You can find a
  copy of this license in [LICENCE.md](https://git.hazaarlabs.com/hazaar/hazaar-mvc/blob/master/LICENCE.md).
