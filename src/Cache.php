@@ -44,26 +44,24 @@ class Cache implements \ArrayAccess {
 
         if (!$backend)
             $backend = array('shm', 'apc', 'session');
+        elseif(!is_array($backend))
+            $backend = array($backend);
 
-        if(is_array($backend)){
+        $backendClass = '\\Hazaar\\Cache\\Backend\\File';
 
-            foreach($backend as $name){
+        foreach($backend as $name){
 
-                $backendClass = '\\Hazaar\\Cache\\Backend\\' . ucfirst($name);
+            $backendClass = '\\Hazaar\\Cache\\Backend\\' . ucfirst($name);
 
-                if(!$backendClass::available())
-                    continue;
+            if(!$backendClass::available())
+                continue;
 
-                $backend = $name;
+            $backend = $name;
 
-                break;
+            break;
 
-
-            }
 
         }
-
-        $backendClass = '\\Hazaar\\Cache\\Backend\\' . ucfirst($backend);
 
         if (!class_exists($backendClass))
             throw new Cache\Exception\InvalidBackend($backendClass);
