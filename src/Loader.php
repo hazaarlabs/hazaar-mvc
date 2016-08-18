@@ -12,6 +12,11 @@ namespace Hazaar;
 /**
  * @brief Constant to indicate a path contains config files
  */
+define('FILE_PATH_ROOT', 'root');
+
+/**
+ * @brief Constant to indicate a path contains config files
+ */
 define('FILE_PATH_CONFIG', 'config');
 
 /**
@@ -52,7 +57,12 @@ define('FILE_PATH_PUBLIC', 'public');
 /**
  * @brief Constant containing the absolute filesystem path to the application configuration directory
  */
-define('CONFIG_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR .'configs'));
+define('ROOT_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..'));
+
+/**
+ * @brief Constant containing the absolute filesystem path to the application configuration directory
+ */
+define('CONFIG_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'configs'));
 
 /**
  * @brief Constant containing the absolute filesystem path to the application public directory
@@ -132,6 +142,8 @@ class Loader {
 		/*
          * Add some default search paths
          */
+        $this->addSearchPath(FILE_PATH_ROOT, ROOT_PATH);
+
 		$this->addSearchPath(FILE_PATH_CONFIG, CONFIG_PATH);
 
 		$this->addSearchPath(FILE_PATH_LIB, LIBRARY_PATH);
@@ -347,7 +359,7 @@ class Loader {
      * @return string The absolute path to the file if it exists. NULL otherwise.
      *
      */
-	static public function getFilePath($type, $search_file = NULL, $base_path = APPLICATION_PATH, $case_insensitive = FALSE, $req_writable = FALSE){
+	static public function getFilePath($type, $search_file = NULL, $base_path = APPLICATION_PATH, $case_insensitive = FALSE){
 
 		if(! $base_path)
 			$base_path = APPLICATION_PATH;
@@ -369,18 +381,6 @@ class Loader {
 
 				if($realpath = Loader::resolveRealPath($filename, $case_insensitive))
 					return $realpath;
-
-			}
-
-			if($req_writable){
-
-				// Find the first writable path for this file.
-				foreach($paths as $path){
-
-					if(is_writable(dirname($path)))
-						return Loader::resolveRealPath($path .DIRECTORY_SEPARATOR . $search_file);
-
-				}
 
 			}
 
