@@ -13,7 +13,7 @@ if(!defined('JQUERY_CURRENT_VER'))
     define('JQUERY_CURRENT_VER', '2.2.4');
 
 if(!defined('JQUERY_CURRENT_UI_VER'))
-    define('JQUERY_CURRENT_UI_VER', 1.12);
+    define('JQUERY_CURRENT_UI_VER', '1.11.4');
 
 class JQuery extends \Hazaar\View\Helper {
 
