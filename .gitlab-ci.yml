@@ -1,5 +1,6 @@
 Test:
   script:
   - git submodule update --init
-  - phpunit --bootstrap tests/bootstrap.php tests
+  - composer update --dev
+  - vender/bin/phpunit
   stage: test

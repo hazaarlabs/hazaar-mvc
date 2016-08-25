@@ -1,6 +1,8 @@
 <?php
 
-class ApplicationTest extends PHPUnit_Framework_TestCase {
+namespace HazaarTest;
+
+class ApplicationTest extends \PHPUnit_Framework_TestCase {
 
     private $app;
 
@@ -10,7 +12,7 @@ class ApplicationTest extends PHPUnit_Framework_TestCase {
 
         $this->config_file = realpath(APPLICATION_PATH . '/configs/application.ini');
 
-        $this->app = new Hazaar\Application('development', $this->config_file);
+        $this->app = new \Hazaar\Application('development', $this->config_file);
 
     }
 

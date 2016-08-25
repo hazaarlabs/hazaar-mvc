@@ -1,6 +1,8 @@
 <?php
 
-class WarlockTest extends PHPUnit_Framework_TestCase {
+namespace HazaarTest;
+
+class WarlockTest extends \PHPUnit_Framework_TestCase {
 
     private $server;
 
@@ -12,7 +14,7 @@ class WarlockTest extends PHPUnit_Framework_TestCase {
 
     public function testInitialise() {
 
-       #$this->assertInstanceOf('Hazaar\Warlock\Server', $this->server);
+        #$this->assertInstanceOf('Hazaar\Warlock\Server', $this->server);
 
     }
 

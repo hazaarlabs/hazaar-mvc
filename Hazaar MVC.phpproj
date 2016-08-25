@@ -563,8 +563,7 @@
     <Compile Include="src\Model\Exception\InitMissing.php" />
     <Compile Include="src\Model\Exception\InvalidDataType.php" />
     <Compile Include="src\Model\Strict.php" />
-    <Compile Include="src\Money\Money.php" />
-    <Compile Include="src\Money\View\Helper\Money.php" />
+    <Compile Include="src\Money.php" />
     <Compile Include="src\MongoDB\Document.php" />
     <Compile Include="src\MongoDB\EmbeddedDocument.php" />
     <Compile Include="src\MongoDB\Exception\BadDateValue.php" />
@@ -781,9 +780,6 @@
     <Folder Include="src\Mime\" />
     <Folder Include="src\Model\" />
     <Folder Include="src\Model\Exception\" />
-    <Folder Include="src\Money\" />
-    <Folder Include="src\Money\View\" />
-    <Folder Include="src\Money\View\Helper\" />
     <Folder Include="src\MongoDB\" />
     <Folder Include="src\MongoDB\Exception\" />
     <Folder Include="src\Packer\" />
@@ -1309,13 +1305,14 @@
     <Content Include="libs\Warlock\services.phtml" />
     <Content Include="libs\Warlock\warlock_bg.png" />
     <Content Include="libs\Warlock\warlock_icon.png" />
+    <Content Include="LICENCE.md" />
+    <Content Include="phpunit.xml" />
     <Content Include="src\Auth\.hazaar" />
     <Content Include="src\Cache\.hazaar" />
     <Content Include="src\Google\.hazaar" />
     <Content Include="src\Logger\.hazaar" />
     <Content Include="src\Mail\.hazaar" />
     <Content Include="src\Mime\.hazaar" />
-    <Content Include="src\Money\.hazaar" />
     <Content Include="src\MongoDB\.hazaar" />
     <Content Include="src\Packer\.hazaar" />
     <Content Include="src\Parser\.hazaar" />

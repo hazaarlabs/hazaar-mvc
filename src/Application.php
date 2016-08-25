@@ -163,22 +163,6 @@ class Application {
 
         }
 
-        $locale = NULL;
-
-        if($this->config->app->has('locale'))
-            $locale = $this->config->app['locale'];
-
-        if(setlocale(LC_ALL, $locale) === FALSE)
-            throw new \Exception("Unable to set locale to $locale.  Make sure the $locale locale is enabled on your system.");
-
-        if($this->config->app->has('timezone'))
-            $tz = $this->config->app->timezone;
-        else
-            $tz = 'UTC';
-
-        if(!date_default_timezone_set($tz))
-            throw new Application\Exception\BadTimezone($tz);
-
         $this->request = Application\Request\Loader::load($this->config);
 
         /*
@@ -376,6 +360,34 @@ class Application {
             $this->timer->start('boot');
 
         }
+
+        $locale = NULL;
+
+        if($this->config->app->has('locale'))
+            $locale = $this->config->app['locale'];
+
+        //Fix locates on windows
+        if(substr(PHP_OS, 0, 3) == 'WIN'){
+
+            //Remove any charset specs
+            if(strpos($locale, '.'))
+                $locale = explode('.', $locale, 2)[0];
+
+            //Change underscroes to hyphens and set lowercase
+            $locale = strtolower(str_replace('_', '-', $locale));
+
+        }
+
+        if(setlocale(LC_ALL, $locale) === FALSE)
+            throw new \Exception("Unable to set locale to $locale.  Make sure the $locale locale is enabled on your system.");
+
+        if($this->config->app->has('timezone'))
+            $tz = $this->config->app->timezone;
+        else
+            $tz = 'UTC';
+
+        if(!date_default_timezone_set($tz))
+            throw new Application\Exception\BadTimezone($tz);
 
         if($this->getRequestedController() !== 'hazaar') {
 

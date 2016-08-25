@@ -1,12 +1,14 @@
 <?php
 
-class MoneyTest extends PHPUnit_Framework_TestCase {
+namespace HazaarTest;
+
+class MoneyTest extends \PHPUnit_Framework_TestCase {
 
     public function testCanDoAdd() {
 
-        $a = new Hazaar\Money(100, 'USD');
+        $a = new \Hazaar\Money(100, 'USD');
 
-        $b = new Hazaar\Money(100, 'AUD');
+        $b = new \Hazaar\Money(100, 'AUD');
 
         $a->add($b);
 
@@ -16,7 +18,7 @@ class MoneyTest extends PHPUnit_Framework_TestCase {
 
     public function testCanGetExchangeRate() {
 
-        $a = new Hazaar\Money(100, 'AUD');
+        $a = new \Hazaar\Money(100, 'AUD');
 
         $rate = $a->getExchangeRate('USD');
 
@@ -28,7 +30,7 @@ class MoneyTest extends PHPUnit_Framework_TestCase {
 
     public function testCanConvertTo() {
 
-        $a = new Hazaar\Money(100, 'USD');
+        $a = new \Hazaar\Money(100, 'USD');
 
         $a->convertTo('AUD');
 

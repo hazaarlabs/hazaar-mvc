@@ -116,8 +116,6 @@ function is_boolean($value) {
     if (!is_string($value))
         return FALSE;
 
-    $value = strtolower(trim($value));
-
     $accepted = array(
         't',
         'true',
@@ -131,7 +129,7 @@ function is_boolean($value) {
         'off'
     );
 
-    return in_array($value, $accepted);
+    return in_array(strtolower(trim($value)), $accepted);
 
 }
 
