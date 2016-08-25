@@ -590,10 +590,8 @@ class View {
 
         if (! $script instanceof \Hazaar\Html\Script) {
 
-            if (! preg_match('/^http[s]?:\/\//', $script)) {
-
+            if (! preg_match('/^http[s]?:\/\//', $script))
                 $script = $this->application->url('script/' . $script);
-            }
 
             $script = $this->html->script()->src($script);
 

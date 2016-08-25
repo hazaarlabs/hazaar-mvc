@@ -92,12 +92,15 @@ class Fontawesome extends \Hazaar\View\Helper {
 
         $list = NULL;
 
-        $file = new \Hazaar\File(SUPPORT_PATH . '/' . $this->css_include);
+        $cache = new \Hazaar\Cache('file');
 
-        if(! $file->exists())
-            throw new \Exception('FontAwesome CSS support file does not exist!');
+        if(!$content = $cache->get('fontawesome')){
 
-        $content = $file->get_contents();
+            $content = file_get_contents($this->css_include);
+
+            $cache->set('fontawesome', $content);
+
+        }
 
         if(preg_match_all('/fa-([\w\-]+)\:before\s?\{/', $content, $matches))
             $list = $matches[1];
