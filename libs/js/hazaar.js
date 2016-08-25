@@ -14,7 +14,7 @@
     this.set = function (key, value) {
         this.data[key] = value;
     }
-    this.get = function (key) {
-        return this.data[key];
+    this.get = function (key, def) {
+        return (typeof this.data[key] == 'undefined') ? def : this.data[key];
     }
 }
