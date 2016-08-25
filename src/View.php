@@ -425,7 +425,9 @@ class View {
 
             if ($this->_requires_param) {
 
-                foreach ($this->_requires as $priority => & $req) {
+                $local = (string) $this->application->url();
+
+                foreach ($this->_requires as &$req) {
 
                     foreach ($req as $r) {
 
@@ -443,7 +445,7 @@ class View {
 
             krsort($this->_requires);
 
-            foreach ($this->_requires as $priority => & $req)
+            foreach ($this->_requires as &$req)
                 $out .= implode("\n", $req) . "\n";
 
             $out .= "\n";
