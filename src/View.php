@@ -563,7 +563,7 @@ class View {
 
             $partial->addHelper($this->_helpers);
 
-            $partial->populate($data);
+            $partial->extend($data);
 
             $output = $partial->render();
         }

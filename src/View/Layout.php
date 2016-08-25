@@ -64,7 +64,7 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
 
             $view->registerMethodHandler($this->_methodHandler);
 
-            $view->populate($this->_data);
+            $view->extend($this->_data);
 
             $output .= $view->render();
 

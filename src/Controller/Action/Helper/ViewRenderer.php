@@ -18,11 +18,8 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
     function init($controller = NULL) {
 
-        if(! ($controller instanceof \Hazaar\Controller\Action)) {
-
+        if(! ($controller instanceof \Hazaar\Controller\Action))
             throw new Exception\InvalidActionController(get_class($controller));
-
-        }
 
         //Store the controller
         $this->controller = $controller;
@@ -189,7 +186,7 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
         $view->registerMethodHandler($controller);
 
-        $view->populate($this->_data);
+        $view->extend($this->_data);
 
         $view->initHelpers();
 
