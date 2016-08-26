@@ -18,7 +18,7 @@ class MongoDB implements _Interface {
 
         $this->options = ($options instanceof \Hazaar\Map) ? $options : new \Hazaar\Map($options);
 
-        $this->db = new \Hazaar\MongoDB($this->options);
+        $this->db = new \Hazaar\MongoDB\Adapter($this->options);
 
         $this->gridFS = $this->db->getGridFS();
 
