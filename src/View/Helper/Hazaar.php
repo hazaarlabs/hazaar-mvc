@@ -35,4 +35,27 @@ class Hazaar extends \Hazaar\View\Helper {
 
     }
 
+    public function populate($values){
+
+        if(!is_array($values))
+            return false;
+
+        $this->data = $values;
+
+        return true;
+
+    }
+
+    public function extend($values){
+
+        if(!is_array($values))
+            return false;
+
+        $this->data = array_merge($this->data, $values);
+
+        return true;
+
+    }
+
+
 }
