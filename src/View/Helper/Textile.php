@@ -31,9 +31,16 @@ class Textile extends \Hazaar\View\Helper {
 
     private $parser;
 
+    public function import(){
+        
+        if(!class_exists('Textile'))
+            throw new \Exception('Textile module not available.  Please install netcarver/textile with Composer.');
+
+    }
+
     public function init($view, $args = array()) {
 
-        $this->parser = new \Hazaar\Parser\Textile();
+        $this->parser = new \Textile();
 
     }
 
