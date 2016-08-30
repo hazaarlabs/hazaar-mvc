@@ -14,7 +14,7 @@ class Favicon extends \Hazaar\Controller {
             $filename = \Hazaar\Loader::getInstance()->getFilePath(FILE_PATH_PUBLIC, $this->application->config->app->favicon);
 
         if(! isset($filename))
-            $filename = \Hazaar\Loader::getInstance()->getFilePath(FILE_PATH_LIBRARY, 'favicon.png');
+            $filename = \Hazaar\Loader::getInstance()->getFilePath(FILE_PATH_SUPPORT, 'favicon.png');
 
         $max_width = 16;
 
