@@ -53,12 +53,24 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
 
     }
 
-    public function setContent($data) {
+    public function setContent($data, $content_type = null) {
 
-        if(! $this->file)
+        if($data instanceof \Hazaar\File){
+
+            $this->file = $data;
+
+        }elseif(! $this->file){
+
             $this->file = new \Hazaar\File(NULL);
 
-        return $this->file->set_contents($data);
+            if($content_type)
+                $this->file->set_mime_content_type($content_type);
+
+            $this->file->set_contents($data);
+
+        }
+
+        return $this->file;
 
     }
 
@@ -162,7 +174,7 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
 
     }
 
-    public function getMimeType() {
+    public function getContentType() {
 
         return $this->file->mime_content_type();
 

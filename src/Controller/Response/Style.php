@@ -4,8 +4,6 @@ namespace Hazaar\Controller\Response;
 
 class Style extends File {
 
-    private $compress = FALSE;
-
     function __construct($source = NULL) {
 
         parent::__construct();
@@ -23,56 +21,26 @@ class Style extends File {
 
         if($this->file->extension() == 'less') {
 
-            if(! ($file = \Hazaar\Loader::getFilePath(FILE_PATH_SUPPORT, 'LessPHP/lessc.inc.php'))) {
+            $cache_dir = \Hazaar\Application::getInstance()->runtimePath('less', true);
 
-                throw new Exception\NoLessSupport();
+            $cache_file = new \Hazaar\File($cache_dir . DIRECTORY_SEPARATOR . $this->file->name() . '.css');
 
-            }
+            if(! ($cache_file->exists() && $cache_file->mtime() > $this->file->mtime())) {
 
-            require_once($file);
+                if(!class_exists('lessc'))
+                    throw new Exception\NoLessSupport();
 
-            $less = new \lessc;
+                $less = new \lessc;
 
-            $this->setContent($less->compile($this->getContent()));
+                $content = $less->compile($this->getContent());
 
-            $this->setContentType('text/css');
-
-        }
-
-    }
-
-    public function setCompression($toggle) {
-
-        $this->compress = $toggle;
-
-    }
-
-    public function getContent() {
-
-        if($buffer = parent::getContent()) {
-
-            /* Compress the style sheet if we are configured to compress */
-            if($this->getContentType() == 'text/css' && $this->compress) {
-
-                /* remove any comments */
-                $buffer = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $buffer);
-
-                /* remove tabs, spaces and new lines */
-                $buffer = str_replace(array(
-                                          "\r\n",
-                                          "\r",
-                                          "\n",
-                                          "\t",
-                                          '  ',
-                                          '    ',
-                                          '    '
-                                      ), '', $buffer);
+                $cache_file->put_contents($content, true);
 
             }
 
-        }
+             $this->setContent($cache_file, 'text/css');
 
-        return $buffer;
+        }
 
     }
 
