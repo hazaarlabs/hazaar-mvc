@@ -8,11 +8,17 @@ class Uri implements \ArrayAccess {
 
     private $params = array();
 
+    public $common_ports = array(
+        'ftp' => 21,
+        'http' => 80,
+        'https' => 443
+    );
+
     function __construct($uri) {
 
         if(strpos($uri, ':') == false)
             $uri = 'http://' . $uri;
-            
+
         $this->parts = parse_url($uri);
 
         if(! is_array($this->parts))
@@ -44,12 +50,19 @@ class Uri implements \ArrayAccess {
 
             if(! array_key_exists('port', $this->parts)) {
 
-                $services = file_get_contents('/etc/services');
+                /*
+                 * Check the scheme is a common one and get the port that way if we can.
+                 * Doing this first instead of using the services lookup will be faster for these common protocols.
+                 */
+                if($port = ake($this->common_ports, $this->scheme())){
 
-                if(! preg_match('/^' . $this->scheme() . '\s*(\d*)\/tcp/m', $services, $matches))
-                    throw new Exception\ProtocolPortUnknown($this->proto);
+                    $this->parts['port'] = $port;
 
-                $this->parts['port'] = (int)$matches[1];
+                }else{
+
+                    $this->parts['port'] = $this->lookupPort($this->scheme());
+
+                }
 
             }
 
@@ -59,6 +72,23 @@ class Uri implements \ArrayAccess {
 
         return $this->parts['port'] = func_get_arg(0);
 
+    }
+
+    public function lookupPort($scheme){
+
+        $services_file = ((substr(PHP_OS, 0, 3) == 'WIN') ? $_SERVER['SystemRoot'] . '\System32\drivers' : null )
+                        .  DIRECTORY_SEPARATOR . 'etc' . DIRECTORY_SEPARATOR . 'services';
+
+        if(file_exists($services_file)){
+
+            $services = file_get_contents($services_file);
+
+            if(preg_match('/^' . $scheme . '\s*(\d*)\/tcp/m', $services, $matches))
+                return (int)$matches[1];
+
+        }
+
+        return null;
     }
 
     public function user() {
