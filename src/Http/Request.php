@@ -53,7 +53,7 @@ class Request extends \Hazaar\Map {
              * I don't know why a FATAL error is thrown just because host we're connecting to is not found, but this
              * will check that the hostname exists first before trying to continue.
              */
-            if(! (ip2long(gethostbyname($this->uri->host())) > 0))
+            if(ip2long(gethostbyname($this->uri->host())) == false)
                 throw new Exception\HostNotFound($this->uri->host());
 
             //If the protocol ends in s, we're going to assume it is meant for SSL
