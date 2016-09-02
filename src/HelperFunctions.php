@@ -209,7 +209,7 @@ function is_assoc(array $array) {
 
 }
 
-function array_flatten($array) {
+function array_flatten($array, $delim = '=', $section_delim = ';') {
 
     if (!is_array($array))
         return NULL;
@@ -218,10 +218,10 @@ function array_flatten($array) {
 
     foreach($array as $key => $value) {
 
-        $items[] = $key . '=' . $value;
+        $items[] = $key . $delim . $value;
     }
 
-    return implode(';', $items);
+    return implode($section_delim, $items);
 
 }
 
