@@ -111,7 +111,7 @@ class Request extends \Hazaar\Map {
 
                         break;
 
-                    case 'secure' :
+                        case 'secure' :
                         if(! $this->uri->isSecure()) {
 
                             return FALSE;
@@ -214,17 +214,18 @@ class Request extends \Hazaar\Map {
                     switch($content_type) {
 
                         case 'text/json' :
-                        case 'application/json' :
-                        case 'application/javascript' :
-                        case 'application/x-javascript' :
+
+                            case 'application/json' :
+                            case 'application/javascript' :
+                            case 'application/x-javascript' :
 
                             $this->body[] = array($content_type, $this->toJSON());
 
                             break;
 
-                        case 'text/html' :
-                        case 'application/x-www-form-urlencoded':
-                        default:
+                            case 'text/html' :
+                            case 'application/x-www-form-urlencoded':
+                            default:
 
                             $elements = array();
 
@@ -268,20 +269,21 @@ class Request extends \Hazaar\Map {
                                 switch($content_type) {
 
                                     case 'text/json' :
-                                    case 'application/json' :
+
+                                        case 'application/json' :
 
                                         $data = json_encode($part[1]);
 
                                         break;
 
-                                    case 'text/html' :
-                                    case 'application/x-www-form-urlencoded':
+                                        case 'text/html' :
+                                        case 'application/x-www-form-urlencoded':
 
                                         $data = is_array($part[1]) ? http_build_query($part[1]) : $part[1];
 
                                         break;
 
-                                    default:
+                                        default:
 
                                         $data =& $part[1];
 
@@ -323,17 +325,18 @@ class Request extends \Hazaar\Map {
                 switch($this->getHeader('Content-Type')) {
 
                     case 'text/json' :
-                    case 'application/json' :
-                    case 'application/javascript' :
-                    case 'application/x-javascript' :
+
+                        case 'application/json' :
+                        case 'application/javascript' :
+                        case 'application/x-javascript' :
 
                         $body = $this->toJSON();
 
                         break;
 
-                    case 'text/html' :
-                    case 'application/x-www-form-urlencoded':
-                    default:
+                        case 'text/html' :
+                        case 'application/x-www-form-urlencoded':
+                        default:
 
                         $body = http_build_query($this->toArray());
 
@@ -377,6 +380,30 @@ class Request extends \Hazaar\Map {
         }
 
         $this->setHeader('Authorization', $auth);
+
+    }
+
+    public function authorization($user, $type = 'Bearer'){
+
+        return $this->authorisation($user, $type);
+
+    }
+
+    public function authorisation($user, $type = 'Bearer'){
+
+        if($user instanceof \Hazaar\Auth\Adapter){
+
+            if($user->has('oauth2') && ($token = ake($user->oauth2, 'access_token'))){
+
+                $this->setHeader('Authorization', $type . ' ' . $token);
+
+                return true;
+
+            }
+
+        }
+
+        return false;
 
     }
 
