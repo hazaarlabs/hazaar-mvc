@@ -215,6 +215,7 @@ class Request extends \Hazaar\Map {
 
                         case 'text/json' :
 
+
                             case 'application/json' :
                             case 'application/javascript' :
                             case 'application/x-javascript' :
@@ -269,6 +270,7 @@ class Request extends \Hazaar\Map {
                                 switch($content_type) {
 
                                     case 'text/json' :
+
 
                                         case 'application/json' :
 
@@ -325,6 +327,7 @@ class Request extends \Hazaar\Map {
                 switch($this->getHeader('Content-Type')) {
 
                     case 'text/json' :
+
 
                         case 'application/json' :
                         case 'application/javascript' :
@@ -389,11 +392,14 @@ class Request extends \Hazaar\Map {
 
     }
 
-    public function authorisation($user, $type = 'Bearer'){
+    public function authorisation($user, $type = null){
 
         if($user instanceof \Hazaar\Auth\Adapter){
 
             if($user->has('oauth2') && ($token = ake($user->oauth2, 'access_token'))){
+
+                if(!$type)
+                    $type = ake($user->oauth2, 'token_type', 'Bearer');
 
                 $this->setHeader('Authorization', $type . ' ' . $token);
 
