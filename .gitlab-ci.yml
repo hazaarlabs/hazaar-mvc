@@ -5,3 +5,5 @@ Test:
   - composer update --dev --no-ansi --no-interaction
   - vendor/bin/phpunit
   stage: test
+  only: 
+  - master
