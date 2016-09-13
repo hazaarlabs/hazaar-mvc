@@ -1,6 +1,7 @@
 Test:
   script:
   - git submodule update --init
+  - composer validate
   - composer update --dev --no-ansi --no-interaction
   - vendor/bin/phpunit
   stage: test
