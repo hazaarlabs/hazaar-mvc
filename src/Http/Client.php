@@ -29,6 +29,8 @@ class Client {
 
     private $password;
 
+    private $auth;
+
     function __construct($local_cert = NULL, $passphrase = NULL, $debug = FALSE) {
 
         $this->context = stream_context_create();
@@ -63,6 +65,12 @@ class Client {
 
     }
 
+    public function authorise(\Hazaar\Auth\Adapter $auth){
+
+        $this->auth = $auth;
+
+    }
+
     public function setHeader($header, $value) {
 
         $this->headers[$header] = $value;
@@ -73,11 +81,8 @@ class Client {
 
         $request = new Request($uri, 'OPTIONS');
 
-        if($this->cookie) {
-
+        if($this->cookie)
             $request->setHeader('Cookie', $this->cookie);
-
-        }
 
         return $this->send($request);
 
@@ -87,11 +92,8 @@ class Client {
 
         $request = new Request($uri, 'GET');
 
-        if($this->cookie) {
-
+        if($this->cookie)
             $request->setHeader('Cookie', $this->cookie);
-
-        }
 
         if($offset >= 0) {
 
@@ -112,11 +114,8 @@ class Client {
 
         $request = new Request($uri, 'HEAD');
 
-        if($this->cookie) {
-
+        if($this->cookie)
             $request->setHeader('Cookie', $this->cookie);
-
-        }
 
         return $this->send($request, $redirect_limit);
 
@@ -166,11 +165,8 @@ class Client {
 
         $request = new Request($url, 'DELETE');
 
-        if($this->cookie) {
-
+        if($this->cookie)
             $request->setHeader('Cookie', $this->cookie);
-
-        }
 
         return $this->send($request);
 
@@ -180,11 +176,8 @@ class Client {
 
         $request = new Request($url, 'TRACE');
 
-        if($this->cookie) {
-
+        if($this->cookie)
             $request->setHeader('Cookie', $this->cookie);
-
-        }
 
         return $this->send($request);
 
@@ -202,7 +195,10 @@ class Client {
 
         }
 
-        if($this->username)
+        if($this->auth)
+            $request->authorisation($this->auth);
+
+        elseif($this->username)
             $request->authorise($this->username, $this->password);
 
         $sck_fd = stream_socket_client($request->fsock_host, $errno, $errstr, $this->connection_timeout, STREAM_CLIENT_CONNECT, $this->context);
