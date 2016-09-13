@@ -44,23 +44,25 @@ class Money {
     /**
      * Default money format
      */
-    static public $money_format = '%!.2n';
+    static public   $money_format = '%!.2n';
 
     /**
      * Default currency code
      */
-    static public $default_currency = NULL;
+    static public   $default_currency = NULL;
 
     /**
      * @private
      */
-    static private $currency_info  = array();
+    static private  $currency_info  = array();
 
-    private        $value;
+    private         $value;
 
-    private        $local_currency = NULL;
+    private         $local_currency = NULL;
 
-    private        $cache;
+    private         $cache;
+
+    static private  $exchange_rates = array();
 
     /**
      * @detail      The money class constructors takes two parameters.  The value of the currency and the type of
@@ -82,60 +84,84 @@ class Money {
 
         $this->value = $value;
 
-        $backend = (in_array('apc', get_loaded_extensions()) ? 'apc' : 'file');
+        if(! Money::$currency_info){
 
-        $this->cache = new Cache($backend);
+            if(class_exists('Hazaar\Cache')){
 
-        if(! Money::$currency_info && (Money::$currency_info = $this->cache->get('currency_info')) == FALSE) {
+                $backend = (in_array('apc', get_loaded_extensions()) ? 'apc' : 'file');
 
-            if($info = Loader::getFilePath(FILE_PATH_SUPPORT, 'currencyInfo.csv')) {
+                $this->cache = new \Hazaar\Cache($backend);
 
-                $h = fopen($info, 'r');
+                if($this->cache->has('currency_info')){
 
-                if($h) {
+                    Money::$currency_info = $this->cache->get('currency_info');
 
-                    $lines = array();
+                }else{
 
-                    $headers = FALSE;
+                    Money::$currency_info = $this->loadCurrencyInfo();
 
-                    while($line = fgetcsv($h, 0, ',')) {
-
-                        if($headers == FALSE) {
-
-                            $headers = $line;
-
-                            continue;
-
-                        }
-
-                        if(substr($line[0], 0, 1) == '#')
-                            continue;
-
-                        $infoline = array();
-
-                        foreach($headers as $index => $key) {
-
-                            $infoline[$key] = $line[$index];
-
-                        };
-
-                        $lines[$line[3]] = $infoline;
-
-                    }
-
-                    fclose($h);
-
-                    $this->cache->set('currency_info', $lines);
-
-                    Money::$currency_info = $lines;
+                    $this->cache->set('currency_info', Money::$currency_info);
 
                 }
+
+            }else{
+
+                Money::$currency_info = $this->loadCurrencyInfo();
 
             }
 
         }
 
         $this->local_currency = $this->getCurrencyCode($currency);
+
+    }
+
+    private function loadCurrencyInfo(){
+
+        if($info = Loader::getFilePath(FILE_PATH_SUPPORT, 'currencyInfo.csv')) {
+
+            $h = fopen($info, 'r');
+
+            if($h) {
+
+                $lines = array();
+
+                $headers = FALSE;
+
+                while($line = fgetcsv($h, 0, ',')) {
+
+                    if($headers == FALSE) {
+
+                        $headers = $line;
+
+                        continue;
+
+                    }
+
+                    if(substr($line[0], 0, 1) == '#')
+                        continue;
+
+                    $infoline = array();
+
+                    foreach($headers as $index => $key) {
+
+                        $infoline[$key] = $line[$index];
+
+                    };
+
+                    $lines[$line[3]] = $infoline;
+
+                }
+
+                fclose($h);
+
+                return $lines;
+
+            }
+
+        }
+
+        return false;
 
     }
 
@@ -157,11 +183,8 @@ class Money {
         /**
          * If there is no currency set, get the default currency
          */
-        if(! $code) {
-
+        if(! $code)
             $code = Money::$default_currency;
-
-        }
 
         /**
          * If there is no default currency, look it up and set it now
@@ -265,35 +288,38 @@ class Money {
         if(strlen($foreign_currency) == 2)
             $foreign_currency = $this->getCode($foreign_currency);
 
-        if(strcasecmp($this->local_currency, $foreign_currency) == 0) {
-
+        if(strcasecmp($this->local_currency, $foreign_currency) == 0)
             return 1;
-
-        }
 
         $code = strtoupper(trim($this->local_currency) . trim($foreign_currency));
 
-        if(($rate = $this->cache->get('exchange_rate_' . $code)) == FALSE) {
+        if(!ake(Money::$exchange_rates, $code)){
 
-            $url = 'http://finance.yahoo.com/d/quotes.csv?f=l1&s=' . $code . '=X';
+            $key = 'exchange_rate_' . $code;
 
-            $handle = fopen($url, 'r');
+            if(!$this->cache || (Money::$exchange_rates[$code] = $this->cache->get($key)) == FALSE){
 
-            if($handle) {
+                $url = 'http://finance.yahoo.com/d/quotes.csv?f=l1&s=' . $code . '=X';
+
+                $handle = fopen($url, 'r');
+
+                if(!$handle)
+                    return false;
 
                 $result = fgetcsv($handle);
 
                 fclose($handle);
 
+                Money::$exchange_rates[$code] = (float)$result[0];
+
+                if($this->cache)
+                    $this->cache->set($key, Money::$exchange_rates[$code]);
+
             }
-
-            $rate = (float)$result[0];
-
-            $this->cache->get('exchange_rate_' . $code, $rate);
 
         }
 
-        return $rate;
+        return Money::$exchange_rates[$code];
 
     }
 
