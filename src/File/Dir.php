@@ -105,11 +105,8 @@ class Dir {
 
         if($recursive) {
 
-            while($file = $this->read()) {
-
-                $file->delete();
-
-            }
+            while($file = $this->read())
+                $file->unlink();
 
         }
 
