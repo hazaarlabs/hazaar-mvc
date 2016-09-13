@@ -65,9 +65,15 @@ class Client {
 
     }
 
-    public function authorise(\Hazaar\Auth\Adapter $auth){
+    public function authorisation(\Hazaar\Auth\Adapter $auth){
 
         $this->auth = $auth;
+
+    }
+
+    public function authorization(\Hazaar\Auth\Adapter $auth){
+
+        return $this->authorisation($auth);
 
     }
 
