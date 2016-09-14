@@ -19,11 +19,11 @@ class Hmv extends \Hazaar\View\Helper {
 
     }
 
-    public function render(\Hazaar\Model\Strict $model, $ignore_empty = false){
+    public function render(\Hazaar\Model\Strict $model, $ignore_empty = false, $export_all = false){
 
         $container = $this->html->table()->class($this->container_class);
 
-        return $container->add($this->renderItems($model->export($ignore_empty)));
+        return $container->add($this->renderItems($model->export($ignore_empty, $export_all)));
 
     }
 

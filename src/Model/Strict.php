@@ -756,7 +756,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
      *
      * @since 2.0.0
      */
-    public function export($ignore_empty = false, $obj = null){
+    public function export($ignore_empty = false, $export_all = false, $obj = null){
 
         if(method_exists($this, '__toString'))
             return array('label' => $this->label(), 'value' => $this->__toString());
@@ -764,7 +764,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         if(!$obj)
             $obj = new \Hazaar\Map($this->toArray());
 
-        return $this->exportArray($this->toArray(false, 0), $this->fields, $ignore_empty, $obj);
+        return $this->exportArray($this->toArray(false, 0), $this->fields, $ignore_empty, $export_all, $obj);
 
     }
 
@@ -779,7 +779,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
      *
      * @since 2.0.0
      */
-    private function exportArray($array, $def, $hide_empty = false, $object = null){
+    private function exportArray($array, $def, $hide_empty = false, $export_all = false, $object = null){
 
         if(!is_array($array))
             return null;
@@ -788,7 +788,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
         foreach($array as $key => $value){
 
-            if(!array_key_exists($key, $def))
+            if(!array_key_exists($key, $def) && !$export_all)
                 continue;
 
             if(ake($def[$key], 'force_hide') === true)
@@ -810,7 +810,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
             }
 
-            $label = ake($def[$key], 'label');
+            $label = ake($def[$key], 'label', $key);
 
             if($value instanceof Strict){
 
@@ -819,7 +819,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                 $values[$key] = array(
                     'label' => $label,
-                    'items' => $value->export($hide_empty, $object)
+                    'items' => $value->export($hide_empty, $export_all, $object)
                 );
 
             }elseif(is_array($value)){
