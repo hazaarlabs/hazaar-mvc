@@ -823,10 +823,10 @@ abstract class Strict implements \ArrayAccess, \Iterator {
             if(!array_key_exists($key, $def) && !$export_all)
                 continue;
 
-            if(ake($def[$key], 'force_hide') === true)
+            if(ake(ake($def, $key), 'force_hide') === true)
                 continue;
 
-            if($when = ake($def[$key], 'when')){
+            if($when = ake(ake($def, $key), 'when')){
 
                 if(is_callable($when)){
 
@@ -842,7 +842,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
             }
 
-            $label = ake($def[$key], 'label', $key);
+            $label = ake(ake($def, $key), 'label', $key);
 
             if($value instanceof Strict){
 
@@ -867,28 +867,41 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                 if(count($value) == 0 && ($hide_empty || ake($def[$key], 'force_hide_empty') == true))
                     continue;
 
-                $items = array();
+                $values[$key] = array(
+                    'label' => ($label ? $label : null)
+                );
 
-                foreach($value as $subValue){
+                foreach($value as $subKey => $subValue){
 
                     if(empty($subValue) && $hide_empty)
                         continue;
 
-                    if ($subValue instanceof Strict)
-                        $subValue = (method_exists($subValue, '__toString')) ? (string)$subValue : $subValue->export($hide_empty, $object);
+                    if ($subValue instanceof Strict){
 
-                    $items[] = $subValue;
+                        $values[$key]['collection'][] = (method_exists($subValue, '__toString')) ? (string)$subValue : $subValue->export($hide_empty, $object);
+
+                    }elseif(is_array($subValue)){
+
+                        $subDef = ake($def, $key);
+
+                        $values[$key]['collection'][] = $this->exportArray($subValue, (is_array($subDef)?$subDef:array()), $hide_empty, $export_all, $object);
+
+                    }else{
+
+                        if(!array_key_exists('items', $values[$key]))
+                            $values[$key]['items'] = array();
+
+                        $values[$key]['items'][] = array('label' => $subKey, 'value' => $subValue);
+
+                    }
 
                 }
 
-                $values[$key] = array(
-                    'label' => ($label ? $label : null),
-                    'collection' => $items
-                );
+
 
             }elseif($label){
 
-                if(empty($value) && ($hide_empty || ake($def[$key], 'force_hide_empty') == true))
+                if(empty($value) && ($hide_empty || ake(ake($def, $key), 'force_hide_empty') == true))
                     continue;
 
                 $values[$key] = array(

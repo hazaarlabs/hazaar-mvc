@@ -47,7 +47,9 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $itemCollection[] = $this->html->tr(array($section, $this->html->td($childTable)));
 
-            }elseif($children = ake($item, 'items')){
+            }
+
+            if($children = ake($item, 'items')){
 
                 $section = $this->html->td($this->html->block($this->section_tag, ake($item, 'label')));
 
@@ -57,7 +59,9 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $itemCollection[] = $this->html->tr(array($section, $this->html->td($childTable)));
 
-            }else{
+            }
+
+            if(!(array_key_exists('items', $item) || array_key_exists('collection', $item))){
 
                 $label = $this->html->td($this->html->label(ake($item, 'label')));
 
