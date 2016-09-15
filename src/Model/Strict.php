@@ -248,7 +248,33 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     }
 
-    private function convertType($value, $type) {
+    public function isObject($key){
+
+        $type = $this->getType($key);
+
+        if($type == 'object' || !in_array($type, Strict::$known_types))
+            return true;
+
+        return false;
+
+    }
+
+    public function getType($key){
+
+        if($field = ake($this->fields, $key)){
+
+            if(!is_array($field))
+                return $field;
+
+            return ake($field, 'type', gettype($this->values[$key]));
+
+        }
+
+        return gettype(ake($this->values, $key, false));
+
+    }
+
+    protected function convertType($value, $type) {
 
         if (in_array($type, Strict::$known_types)) {
 
