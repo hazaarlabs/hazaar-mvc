@@ -874,7 +874,10 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                     if(empty($subValue) && $hide_empty)
                         continue;
 
-                    $items[] = ($subValue instanceof Strict) ? $subValue->export($hide_empty, $object) : $subValue;
+                    if ($subValue instanceof Strict)
+                        $subValue = (method_exists($subValue, '__toString')) ? (string)$subValue : $subValue->export($hide_empty, $object);
+
+                    $items[] = $subValue;
 
                 }
 
