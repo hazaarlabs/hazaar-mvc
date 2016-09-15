@@ -864,7 +864,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
             }elseif(is_array($value)){
 
-                if(count($value) == 0 && ($hide_empty || ake($def[$key], 'force_hide_empty') == true))
+                if(count($value) == 0 && ($hide_empty || ake(ake($def, $key), 'force_hide_empty') == true))
                     continue;
 
                 $values[$key] = array(
