@@ -793,9 +793,6 @@ abstract class Strict implements \ArrayAccess, \Iterator {
      */
     public function export($ignore_empty = false, $export_all = false, $obj = null){
 
-        if(method_exists($this, '__toString'))
-            return array('label' => $this->label(), 'value' => $this->__toString());
-
         if(!$obj)
             $obj = new \Hazaar\Map($this->toArray());
 
@@ -852,10 +849,18 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                 if($value->count() == 0 && ($hide_empty || ake($def[$key], 'force_hide_empty') == true))
                     continue;
 
-                $values[$key] = array(
-                    'label' => $label,
-                    'items' => $value->export($hide_empty, $export_all, $object)
-                );
+                if(method_exists($value, '__toString')){
+
+                    $values[$key] = array('label' => $label, 'value' => $value->__toString());
+
+                }else{
+
+                    $values[$key] = array(
+                        'label' => $label,
+                        'items' => $value->export($hide_empty, $export_all, $object)
+                    );
+
+                }
 
             }elseif(is_array($value)){
 
