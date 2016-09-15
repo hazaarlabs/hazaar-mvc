@@ -36,13 +36,26 @@ class Hmv extends \Hazaar\View\Helper {
 
         foreach($items as $key => $item){
 
-            if($children = ake($item, 'items')){
+            if($children = ake($item, 'collection')){
 
-                $section = $this->html->td($this->html->block($this->section_tag, ake($item, 'label')))->colspan(2);
+                $section = $this->html->td($this->html->block($this->section_tag, ake($item, 'label')));
 
-                $itemCollection[] = $this->html->tr($section);
+                $childTable = $this->html->table()->class($this->container_class);
 
-                $itemCollection = array_merge($itemCollection, $this->renderItems($children));
+                foreach($children as $child)
+                    $childTable->add($this->renderItems($child));
+
+                $itemCollection[] = $this->html->tr(array($section, $this->html->td($childTable)));
+
+            }elseif($children = ake($item, 'items')){
+
+                $section = $this->html->td($this->html->block($this->section_tag, ake($item, 'label')));
+
+                $childTable = $this->html->table()->class($this->container_class);
+
+                $childTable->add($this->renderItems($children));
+
+                $itemCollection[] = $this->html->tr(array($section, $this->html->td($childTable)));
 
             }else{
 
