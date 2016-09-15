@@ -65,16 +65,19 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
         $this->loadDefinition($field_definition);
 
-        if (method_exists($this, 'construct'))
-            call_user_func_array(array($this, 'construct'), $args);
-
         if (is_object($data))
             $data = (array) $data;
+
+        if(!is_array($data))
+            $data = $this->prepare($data);
 
         if (is_array($data) && count($data) > 0)
             $this->populate($data);
 
         $this->loaded = TRUE;
+
+        if (method_exists($this, 'construct'))
+            call_user_func_array(array($this, 'construct'), $args);
 
     }
 
@@ -82,6 +85,12 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
         if (method_exists($this, 'shutdown'))
             $this->shutdown();
+
+    }
+
+    public function prepare($data){
+
+        return $data;
 
     }
 
