@@ -883,7 +883,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                 $values[$key] = array(
                     'label' => ($label ? $label : null),
-                    'items' => $items
+                    'collection' => $items
                 );
 
             }elseif($label){
