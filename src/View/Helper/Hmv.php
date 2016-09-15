@@ -65,9 +65,12 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $label = $this->html->td($this->html->label(ake($item, 'label')));
 
-                $value = $this->html->td(ake($item, 'value'));
+                $value = ake($item, 'value');
 
-                $itemCollection[] = $this->html->tr(array($label, $value))->data('name', $key);
+                if(is_bool($value))
+                    $value = ucfirst(strbool($value));
+
+                $itemCollection[] = $this->html->tr(array($label, $this->html->td($value)))->data('name', $key);
 
             }
 

@@ -84,16 +84,14 @@ function strbool($value) {
 
     $value = strtolower(trim($value));
 
-    if ($value == 't' || $value == 'true' || $value == 'on' || $value == 'yes') {
-
+    if ($value == 't' || $value == 'true' || $value == 'on' || $value == 'yes')
         return 'true';
-    } elseif (preg_match('/(\!|not)\s*null/', $value)) {
 
+    elseif (preg_match('/(\!|not)\s*null/', $value))
         return 'true';
-    } elseif ((int) $value != 0) {
 
+    elseif ((int) $value != 0)
         return 'true';
-    }
 
     return 'false';
 
