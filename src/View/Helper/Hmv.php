@@ -23,7 +23,7 @@ class Hmv extends \Hazaar\View\Helper {
 
         $container = $this->html->table()->class($this->container_class);
 
-        return $container->add($this->renderItems($model->export($ignore_empty, $export_all)));
+        return $container->add($this->renderItems($model->exportHMV($ignore_empty, $export_all)));
 
     }
 
@@ -36,7 +36,18 @@ class Hmv extends \Hazaar\View\Helper {
 
         foreach($items as $key => $item){
 
-            if($children = ake($item, 'collection')){
+            if($children = ake($item, 'list')){
+
+                $label = $this->html->td($this->html->label(ake($item, 'label')));
+
+                $itemsTD = $this->html->td();
+
+                foreach($children as $child)
+                    $itemsTD->add($this->html->div($child));
+
+                $itemCollection[] = $this->html->tr(array($label, $itemsTD));
+
+            }elseif($children = ake($item, 'collection')){
 
                 $section = $this->html->td($this->html->block($this->section_tag, ake($item, 'label')));
 
@@ -47,9 +58,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $itemCollection[] = $this->html->tr(array($section, $this->html->td($childTable)));
 
-            }
-
-            if($children = ake($item, 'items')){
+            }elseif($children = ake($item, 'items')){
 
                 $section = $this->html->td($this->html->block($this->section_tag, ake($item, 'label')));
 
@@ -59,9 +68,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $itemCollection[] = $this->html->tr(array($section, $this->html->td($childTable)));
 
-            }
-
-            if(!(array_key_exists('items', $item) || array_key_exists('collection', $item))){
+            }else{
 
                 $label = $this->html->td($this->html->label(ake($item, 'label')));
 
