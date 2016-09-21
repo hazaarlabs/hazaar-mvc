@@ -528,7 +528,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         if ($run_callbacks && array_key_exists('update', $def) && array_key_exists('post', $def['update']))
             $this->execCallback($def['update']['post'], $old_value, $key);
 
-        return TRUE;
+        return $value;
 
     }
 
