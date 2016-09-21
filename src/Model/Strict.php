@@ -191,6 +191,12 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     }
 
+    public function getDefinition($key){
+
+        return ake($this->fields, $key);
+
+    }
+
     public function has($key) {
 
         return array_key_exists($key, $this->fields);
