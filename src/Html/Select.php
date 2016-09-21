@@ -93,15 +93,33 @@ class Select extends Block {
 
         if($child instanceof Option) {
 
-            if($child->value == $this->value)
-                $child->selected = TRUE;
+            if(is_array($this->value)){
+
+                if(in_array($child->value, $this->value))
+                    $child->selected = true;
+
+            }else{
+
+                if($child->value == $this->value)
+                    $child->selected = true;
+
+            }
 
         } elseif($child instanceof Optgroup) {
 
             foreach($child->get() as $option) {
 
-                if($option->value == $this->value)
-                    $option->selected = TRUE;
+                if(is_array($this->value)){
+
+                    if(in_array($child->value, $this->value))
+                        $child->selected = true;
+
+                }else{
+
+                    if($option->value == $this->value)
+                        $option->selected = TRUE;
+
+                }
 
             }
 
