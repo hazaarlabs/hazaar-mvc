@@ -533,6 +533,34 @@ abstract class Strict implements \ArrayAccess, \Iterator {
     }
 
     /**
+     * Append an element to an array item
+     *
+     * @param mixed $key
+     * @param mixed $item
+     */
+    public function append($key, $item){
+
+        if(!($def = ake($this->fields, $key)))
+            return null;
+
+        $type = ake($def, 'type');
+
+        if(strtolower($type) != 'array')
+            return null;
+
+        if($arrayOf = ake($def, 'arrayOf'))
+            $item = $this->convertType($item, $arrayOf);
+
+        if(! (array_key_exists($key, $this->values) && is_array($this->values[$key])))
+            $this->values[$key] = array();
+
+        array_push($this->values[$key], $item);
+
+        return $item;
+
+    }
+
+    /**
      * @detail Execute the a callback function on a key/value pair.
      *
      * @param Mixed $cb_def     The callback definition
