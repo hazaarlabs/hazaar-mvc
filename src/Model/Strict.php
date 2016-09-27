@@ -601,25 +601,52 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     }
 
-    public function extend($values, $run_callbacks = TRUE) {
+    public function extend($values, $run_callbacks = TRUE, $ignore_keys = null) {
 
         if (\Hazaar\Map::is_array($values)) {
 
             foreach($values as $key => $value) {
+
+                if(is_array($ignore_keys) && in_array($key, $ignore_keys))
+                    continue;
 
                 if (!array_key_exists($key, $this->values))
                     continue;
 
                 if ($this->values[$key] instanceof Strict) {
 
-                    $this->values[$key]->extend($value);
+                    $this->values[$key]->extend($value, $run_callbacks, $ignore_keys);
 
                 } else {
 
-                    if ((is_array($value) && is_array($this->values[$key])) && is_assoc($this->values[$key]))
-                        $value = array_merge($this->values[$key], $value);
+                    if(is_array($value)){
 
-                    $this->set($key, $value, $run_callbacks);
+                        if(ake(ake($this->fields, $key), 'arrayOf')){
+
+                            foreach($value as $subKey => $subValue){
+
+                                if( $this->values[$key][$subKey] instanceof Strict)
+                                    $this->values[$key][$subKey]->extend($subValue, $run_callbacks, $ignore_keys);
+
+                                else
+                                    $this->values[$key][$subKey] = $subValue;
+
+                            }
+
+                        }else{
+
+                            if(is_array($this->values[$key]))
+                                $value = array_merge($this->values[$key], $value);
+
+                            $this->set($key, $value, $run_callbacks);
+
+                        }
+
+                    }else{
+
+                        $this->set($key, $value, $run_callbacks);
+
+                    }
 
                 }
 
@@ -854,13 +881,13 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
         foreach($array as $key => $value){
 
-            if(!array_key_exists($key, $def) && !$export_all)
+            if(!($key_def = ake($def, $key)) && !$export_all)
                 continue;
 
-            if(ake(ake($def, $key), 'force_hide') === true)
+            if(ake($key_def, 'force_hide') === true)
                 continue;
 
-            if($when = ake(ake($def, $key), 'when')){
+            if($when = ake($key_def, 'when')){
 
                 if(is_callable($when)){
 
@@ -876,34 +903,34 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
             }
 
-            $label = ake(ake($def, $key), 'label', $key);
+            //$label = ake($key_def, 'label', $key);
+
+            $values[$key] = $key_def;
 
             if($value instanceof Strict){
 
-                if($value->count() == 0 && ($hide_empty || ake($def[$key], 'force_hide_empty') == true))
+                if($value->count() == 0 && ($hide_empty || ake($key_def, 'force_hide_empty') == true))
                     continue;
 
                 if(method_exists($value, '__toString')){
 
-                    $values[$key] = array('label' => $label, 'value' => $value->__toString());
+                    $values[$key]['value'] = $value->__toString();
 
                 }else{
 
-                    $values[$key] = array(
-                        'label' => $label,
-                        'items' => $value->exportHMV($hide_empty, $export_all, $object)
-                    );
+                    $values[$key]['items'] = $value->exportHMV($hide_empty, $export_all, $object);
 
                 }
 
             }elseif(is_array($value)){
 
-                if(count($value) == 0 && ($hide_empty || ake(ake($def, $key), 'force_hide_empty') == true))
+                if(count($value) == 0 && ($hide_empty || ake($key_def, 'force_hide_empty') == true))
                     continue;
 
-                $values[$key] = array(
-                    'label' => ($label ? $label : null)
-                );
+                /* $values[$key] = array(
+                'label' => ($label ? $label : null)
+                );*/
+                $values[$key] = $key_def;
 
                 foreach($value as $subKey => $subValue){
 
@@ -928,7 +955,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                     }elseif(is_array($subValue)){
 
-                        $subDef = ake($def, $key);
+                        $subDef = $key_def;
 
                         $values[$key]['collection'][] = $this->exportHMVArray($subValue, (is_array($subDef)?$subDef:array()), $hide_empty, $export_all, $object);
 
@@ -943,17 +970,12 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                 }
 
+            }else{
 
-
-            }elseif($label){
-
-                if(empty($value) && ($hide_empty || ake(ake($def, $key), 'force_hide_empty') == true))
+                if(empty($value) && ($hide_empty || ake($key_def, 'force_hide_empty') == true))
                     continue;
 
-                $values[$key] = array(
-                    'label' => $label,
-                    'value' => $value
-                );
+                $values[$key]['value'] = $value;
 
             }
 
