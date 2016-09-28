@@ -68,8 +68,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         if (is_object($data))
             $data = (array) $data;
 
-        if(!is_array($data))
-            $data = $this->prepare($data);
+        $this->prepare($data);
 
         if (is_array($data) && count($data) > 0)
             $this->populate($data);
@@ -88,9 +87,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     }
 
-    public function prepare($data){
-
-        return $data;
+    public function prepare(&$data){
 
     }
 
