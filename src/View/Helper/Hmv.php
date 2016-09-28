@@ -11,6 +11,8 @@ class Hmv extends \Hazaar\View\Helper {
 
     public $container_class = 'hmvContainer';
 
+    public $input_class = 'hmvInput';
+
     public $section_tag = 'h1';
 
     public function import(){
@@ -84,6 +86,162 @@ class Hmv extends \Hazaar\View\Helper {
         }
 
         return $itemCollection;
+
+    }
+
+    public function renderEditor(\Hazaar\Model\Strict $model, $export_all = false){
+
+        $container = $this->html->table()->class($this->container_class);
+
+        return $container->add($this->renderInputs($model));
+
+    }
+
+
+    private function renderInputs($object, $prefix = null){
+
+        $tableRows = array();
+
+        $typeMap = array(
+            'string' => 'text',
+            'bool' => 'checkbox',
+            'float' => 'text'
+        );
+
+        foreach($object->toArray(true, 0) as $key => $item){
+
+            if($prefix)
+                $name = $prefix . '[' . $key . ']';
+            else
+                $name = $key;
+
+            $def = $object->getDefinition($key);
+
+            if(!($label = ake($def, 'label')))
+                continue;
+
+            if(!$item && $object->isObject($key))
+                $item = $object->set($key, array());
+
+            $input = null;
+
+            if(ake($def, 'edit', true) == false){
+
+                $labelTD = $this->html->td($this->html->label($label));
+
+                $input = (string)$item;
+
+            }elseif($render = ake($def, 'render')){
+
+                $labelTD = $this->html->td($this->html->label($label));
+
+                $input = call_user_func($render, $name, $item, $this->view);
+
+            }elseif($item instanceof \Hazaar\Model\Strict){
+
+                //If the object definition has a data source, use that to create the select
+                if($source = ake($def, 'source')){
+
+                    $labelTD = $this->html->td($this->html->label($label));
+
+                    if(!is_callable($source) && method_exists($item, $source))
+                        $source = array($item, $source);
+
+                    $data = call_user_func_array($source, ake($def, 'sourceArgs', array()));
+
+                    if(ake($def, 'nulls', true))
+                        $data = array('null' => 'Select...') + $data;
+
+                    if($valueKey = ake($def, 'valueKey'))
+                        $value = $item->get($valueKey);
+                    else
+                        $value = (string)$item;
+
+                    $input = $this->html->select($name, $data, $value)->class($this->input_class);
+
+
+                }else{ //Otherwise, try and render the object as a sub-object.
+
+                    $labelTD = $this->html->td($this->html->block($this->section_tag, $label));
+
+                    $input = $this->html->table()->class($this->container_class);
+
+                    $input->add($this->renderInputs($item, $name));
+
+                }
+
+            }elseif(is_array($item)){
+
+                $labelTD = $this->html->td($this->html->block($this->section_tag, $label));
+
+                if($source = ake($def, 'source')){
+
+                    if($class = ake($def, 'arrayOf')){
+
+                        if(!is_callable($source)){
+
+                            $o = new $class();
+
+                            if(method_exists($o, $source))
+                                $source = array($o, $source);
+
+                        }
+
+                        $data = call_user_func_array($source, ake($def, 'sourceArgs', array()));
+
+                        $values = array();
+
+                        if($valueKey = ake($def, 'valueKey')){
+
+                            foreach($item as $i)
+                                $values[] = $i->get($valueKey);
+
+                        }
+
+                        $input = $this->html->select($name, $data, $values)->multiple(true)->class($this->input_class);
+
+                    }
+
+                }else{
+
+                    $input = array();
+
+                    //$item[] = $object->append($key, array()); //Get a blank one to add a new element
+
+                    foreach($item as $index => $i){
+
+                        $table = $this->html->table()->class($this->container_class);
+
+                        $input[] = $table->add($this->renderInputs($i, $name . '[' . $index . ']'));
+
+                    }
+
+                }
+
+            }else{
+
+                $labelTD = $this->html->td($this->html->label($label));
+
+                if(!array_key_exists('input', $def))
+                    $def['input'] = $typeMap[ake($def, 'type', 'string')];
+
+                switch($type = ake($def, 'input')){
+
+                    case 'checkbox':
+                    case 'text':
+                    default:
+                        $input = $this->html->input($type, $name, $item)->class($this->input_class);
+                        break;
+
+                }
+
+            }
+
+            $tableRows[] = $this->html->tr(array($labelTD, $this->html->td($input)))->data('name', $key);
+
+        }
+
+        return $tableRows;
 
     }
 
