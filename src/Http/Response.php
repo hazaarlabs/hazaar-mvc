@@ -291,25 +291,19 @@ class Response {
 
     public function toString() {
 
-        $http_response = "{$this->_version} {$this->status} {$this->name}\r\n";
+        $http_response = "{$this->version} {$this->status} {$this->name}\r\n";
 
-        foreach($this->headers as $header => $value) {
+        foreach($this->headers as $header => $value)
+            $http_response .= $header . ': ' . $value . "\r\n";
 
-            $http_request .= $header . ': ' . $value . "\r\n";
+        $content_len = strlen($this->body);
 
-        }
+        if($content_len > 0)
+            $http_response .= 'Content-Length: ' . $content_len . "\r\n";
 
-        $content_len = strlen($this->request);
+        $http_response .= "\r\n" . $this->body;
 
-        if($content_len > 0) {
-
-            $http_request .= 'Content-Length: ' . $content_len . "\r\n";
-
-        }
-
-        $http_request .= "\r\n" . $this->request;
-
-        return $http_request;
+        return $http_response;
 
     }
 
