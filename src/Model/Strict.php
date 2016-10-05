@@ -881,6 +881,10 @@ abstract class Strict implements \ArrayAccess, \Iterator {
             if(!($key_def = ake($def, $key)) && !$export_all)
                 continue;
 
+            //If there is no key definition (because we are export_all=true) then use an empty array so things don't break
+            if(!is_array($key_def))
+                $key_def = array();
+
             if(ake($key_def, 'force_hide') === true)
                 continue;
 
@@ -899,8 +903,6 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                 }
 
             }
-
-            //$label = ake($key_def, 'label', $key);
 
             $values[$key] = $key_def;
 
@@ -923,11 +925,6 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                 if(count($value) == 0 && ($hide_empty || ake($key_def, 'force_hide_empty') == true))
                     continue;
-
-                /* $values[$key] = array(
-                'label' => ($label ? $label : null)
-                );*/
-                $values[$key] = $key_def;
 
                 foreach($value as $subKey => $subValue){
 
