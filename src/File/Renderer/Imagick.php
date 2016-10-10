@@ -20,7 +20,7 @@ class Imagick extends BaseRenderer {
 
     }
 
-    public function load($bytes) {
+    public function load($bytes, $type = null) {
 
         if(strlen($bytes) > 0)
             return $this->loaded = $this->dst->readImageBlob($bytes);

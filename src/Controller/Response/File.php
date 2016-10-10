@@ -102,7 +102,7 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
     }
 
     public function __writeOutput() {
-
+        
         if($this->file)
             $this->content = $this->file->get_contents();
 

@@ -12,18 +12,34 @@ class GD extends BaseRenderer {
 
     private $img;
 
+    private $type;
+
     private $quality = 100;
 
-    public function load($bytes){
+    public function load($bytes, $type = 'jpeg'){
 
         if($this->img = imagecreatefromstring($bytes))
             $this->loaded = true;
+
+        $this->type = $type;
 
     }
 
     public function read(){
 
-        return imagejpeg($this->img);
+        ob_start();
+
+        switch($this->type){
+            case 'png':
+                break;
+
+            case 'jpeg':
+            default:
+                imagejpeg($this->img);
+                break;
+        }
+
+        return ob_get_clean();
 
     }
 
@@ -49,25 +65,20 @@ class GD extends BaseRenderer {
 
         ob_start();
 
-        switch($this->mime_content_type()) {
-            case 'image/jpg' :
-            case 'image/jpeg' :
+        switch($this->type) {
+            case 'jpeg' :
 
                 imagejpeg($this->img, NULL, $quality);
 
-                return TRUE;
+            case 'png' :
 
-            case 'image/png' :
                 imagesavealpha($this->img, TRUE);
 
                 imagepng($this->img, NULL, ($quality / 10) - 1);
 
-                return TRUE;
         }
 
-        $this->set_contents(ob_end_clean());
-
-        return FALSE;
+        return ob_end_clean();
 
     }
 
@@ -183,14 +194,14 @@ class GD extends BaseRenderer {
          */
         ob_start();
 
-        switch($this->mime_content_type()) {
-            case 'image/gif' :
+        switch($this->type) {
+            case 'gif' :
+
                 imagegif($dst);
 
                 break;
 
-            case 'image/jpg' :
-            case 'image/jpeg' :
+            case 'png' :
 
                 if($this->quality) {
 
@@ -206,8 +217,10 @@ class GD extends BaseRenderer {
 
                 break;
 
-            case 'image/png' :
+
+            case 'jpeg':
             default :
+
                 imagesavealpha($dst, TRUE);
 
                 if($this->quality) {
@@ -222,13 +235,11 @@ class GD extends BaseRenderer {
 
                 }
 
-                //Hack to ensure the content type is correct. In case we are converting the image from some other format, like say PDF.
-                $this->set_mime_content_type('image/png');
 
                 break;
         }
 
-        $this->set_contents(ob_get_clean());
+        return ob_get_clean();
 
     }
 

@@ -9,7 +9,7 @@ abstract class Response implements Response\_Interface {
      */
     protected $headers      = array();
 
-    private   $headers_set  = FALSE;
+    protected $headers_set  = FALSE;
 
     protected $content;
 
@@ -252,7 +252,7 @@ abstract class Response implements Response\_Interface {
         if(! $content)
             $content = '';
 
-        if(! $this->headers_set) {
+        if(!$this->headers_set) {
 
             if(headers_sent())
                 throw new Exception\HeadersSent();

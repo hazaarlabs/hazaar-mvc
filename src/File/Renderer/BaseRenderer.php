@@ -12,7 +12,7 @@ namespace Hazaar\File\Renderer;
 
 interface ImageRendererInterface  {
 
-    public function load($bytes);
+    public function load($bytes, $type);
 
     public function read();
 
