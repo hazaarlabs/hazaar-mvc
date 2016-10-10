@@ -177,6 +177,14 @@ abstract class Controller implements Controller\_Interface {
 
     public function active($controller = NULL, $action = NULL) {
 
+        if($controller instanceof Application\Url){
+            
+            $action = $controller->method;
+
+            $controller = $controller->controller;
+
+        }
+
         if(is_array($controller)) {
 
             $parts = $controller;
