@@ -15,6 +15,8 @@ class Hmv extends \Hazaar\View\Helper {
 
     public $section_tag = 'h1';
 
+    public $section_class = 'hmvSection';
+
     public function import(){
 
         $this->requires('html');
@@ -51,7 +53,7 @@ class Hmv extends \Hazaar\View\Helper {
 
             }elseif($children = ake($item, 'collection')){
 
-                $section = $this->html->td($this->html->block($this->section_tag, ake($item, 'label')));
+                $section = $this->html->td($this->html->block($this->section_tag, ake($item, 'label'))->class($this->section_class));
 
                 $childTable = $this->html->table()->class($this->container_class);
 
@@ -62,7 +64,7 @@ class Hmv extends \Hazaar\View\Helper {
 
             }elseif($children = ake($item, 'items')){
 
-                $section = $this->html->td($this->html->block($this->section_tag, ake($item, 'label')));
+                $section = $this->html->td($this->html->block($this->section_tag, ake($item, 'label'))->class($this->section_class));
 
                 $childTable = $this->html->table()->class($this->container_class);
 
