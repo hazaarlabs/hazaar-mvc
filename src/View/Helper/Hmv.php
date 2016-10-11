@@ -15,7 +15,7 @@ class Hmv extends \Hazaar\View\Helper {
 
     public $section_tag = 'h1';
 
-    public $section_class = 'hmvSection';
+    public $newitem_class = 'hmvNewItem';
 
     public function import(){
 
@@ -208,16 +208,21 @@ class Hmv extends \Hazaar\View\Helper {
 
                     $input = array();
 
-                    //$item[] = $object->append($key, array()); //Get a blank one to add a new element
+                    $delTR = $this->html->tr(array($this->html->td(), $this->html->td($this->html->span()->class('btnDelItem'))));
 
                     foreach($item as $index => $i){
 
                         $table = $this->html->table()->class($this->container_class);
 
-                        $input[] = $table->add($this->renderInputs($i, $name . '[' . $index . ']'));
+                        $input[] = $table->add($this->renderInputs($i, $name . '[' . $index . ']'), $delTR);
 
                     }
 
+                    $table = $this->html->table()->class($this->container_class);
+
+                    $input[] = $table->add($this->renderInputs($object->append($key, array()), $name . '[]'), $delTR)->addClass($this->newitem_class);
+
+                    $input[] = $this->html->span()->class('btnNewItem');
                 }
 
             }else{
