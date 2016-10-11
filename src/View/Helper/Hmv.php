@@ -95,12 +95,12 @@ class Hmv extends \Hazaar\View\Helper {
 
         $container = $this->html->table()->class($this->container_class);
 
-        return $container->add($this->renderInputs($model));
+        return $container->add($this->renderInputs($model, null, $export_all));
 
     }
 
 
-    private function renderInputs($object, $prefix = null){
+    private function renderInputs($object, $prefix = null, $export_all = false){
 
         $tableRows = array();
 
@@ -110,17 +110,24 @@ class Hmv extends \Hazaar\View\Helper {
             'float' => 'text'
         );
 
-        foreach($object->toArray(true, 0) as $key => $item){
+        foreach($object->toArray(true, 0, $export_all) as $key => $item){
 
             if($prefix)
                 $name = $prefix . '[' . $key . ']';
             else
                 $name = $key;
 
-            $def = $object->getDefinition($key);
+            if(!($def = $object->getDefinition($key)))
+                $def = array();
 
-            if(!($label = ake($def, 'label')))
-                continue;
+            if(!($label = ake($def, 'label'))){
+
+                if($export_all)
+                    $label = $key;
+                else
+                    continue;
+
+            }
 
             if(!$item && $object->isObject($key))
                 $item = $object->set($key, array());
