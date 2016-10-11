@@ -190,7 +190,12 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     public function getDefinition($key){
 
-        return ake($this->fields, $key);
+        $def = ake($this->fields, $key);
+
+        if(is_string($def))
+            $def = array('type' => $def);
+
+        return $def;
 
     }
 
