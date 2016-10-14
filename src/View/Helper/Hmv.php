@@ -234,13 +234,39 @@ class Hmv extends \Hazaar\View\Helper {
 
             }else{
 
+                $values = null;
+
                 $labelTD = $this->html->td($this->html->label($label));
 
                 if(!array_key_exists('input', $def))
                     $def['input'] = $typeMap[ake($def, 'type', 'string')];
 
-                switch($type = ake($def, 'input')){
+                if($source = ake($def, 'source')){
 
+                    if(is_callable($source)){
+
+                        $values = call_user_func_array($source, ake($def, 'sourceArgs', array()));
+
+                        $def['input'] = 'array';
+
+                    }elseif(is_array($source)){
+
+                        $values = $source;
+
+                        $def['input'] = 'array';
+
+                    }else{
+
+                        $values = $source;
+
+                    }
+
+                }
+
+                switch($type = ake($def, 'input')){
+                    case 'array':
+                        $input = $this->html->select($name, $values);
+                        break;
                     case 'checkbox':
                     case 'text':
                     default:
@@ -248,6 +274,7 @@ class Hmv extends \Hazaar\View\Helper {
                         break;
 
                 }
+
 
             }
 
