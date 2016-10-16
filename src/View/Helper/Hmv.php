@@ -120,6 +120,9 @@ class Hmv extends \Hazaar\View\Helper {
             if(!($def = $object->getDefinition($key)))
                 $def = array();
 
+            if(ake($def, 'hideInEdit') === true)
+                continue;
+
             if(!($label = ake($def, 'label'))){
 
                 if($export_all)
@@ -138,7 +141,18 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $labelTD = $this->html->td($this->html->label($label));
 
-                $input = (string)$item;
+                if(is_array($item)){
+
+                    $input = $this->html->div();
+
+                    foreach($item as $subItem)
+                        $input->add((string)$subItem);
+
+                }else{
+
+                    $input = (string)$item;
+
+                }
 
             }elseif($render = ake($def, 'render')){
 
