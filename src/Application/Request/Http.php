@@ -69,16 +69,22 @@ class Http extends \Hazaar\Application\Request {
 
         $this->headers = getallheaders();
 
-        $this->setParams($request);
-
         $this->body = @file_get_contents('php://input');
+
+        if($content_type = explode(';', $this->getHeader('Content-Type'))){
+
+            if($content_type[0] == 'application/json')
+                $request = array_merge($request, json_decode($this->body, true));
+
+        }
+
+        $this->setParams($request);
 
         $request_uri = urldecode(ake($_SERVER, 'REQUEST_URI', '/'));
 
         /*
          * Figure out the PHP environment variables to use to find the controller that's being called
          */
-
         if($pos = strpos($request_uri, '?'))
             $request_uri = substr($request_uri, 0, $pos);
 

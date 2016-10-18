@@ -11,17 +11,17 @@ namespace Hazaar\Application;
 
 abstract class Request implements Request\_Interface {
 
-    private $controller;
+    protected $controller;
 
-    private $action     = 'index';
+    protected $action     = 'index';
 
-    private $dispatched = FALSE;
+    protected $dispatched = FALSE;
 
-    private $params     = array();
+    protected $params     = array();
 
-    private $exception;
+    protected $exception;
 
-    private $config;
+    protected $config;
 
     /**
      * The original path excluding the application base path
@@ -42,20 +42,11 @@ abstract class Request implements Request\_Interface {
 
         $args = func_get_args();
 
-        if(! ($this->config = array_shift($args)) instanceof Config) {
-
+        if(! ($this->config = array_shift($args)) instanceof Config)
             throw new \Exception('Argument one of the Request constructor MUST be an Application\Config object!');
 
-        }
-
-        if(method_exists($this, 'init')) {
-
-            $this->base_path = call_user_func_array(array(
-                                                        $this,
-                                                        'init'
-                                                    ), $args);
-
-        }
+        if(method_exists($this, 'init'))
+            $this->base_path = call_user_func_array(array($this,'init'), $args);
 
         if($this->base_path)
             $this->evaluate($this->base_path);
