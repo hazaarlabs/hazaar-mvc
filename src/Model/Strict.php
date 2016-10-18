@@ -623,15 +623,15 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                     if(is_array($value)){
 
-                        if(ake(ake($this->fields, $key), 'arrayOf')){
+                        if($type = ake(ake($this->fields, $key), 'arrayOf')){
 
                             foreach($value as $subKey => $subValue){
 
-                                if( $this->values[$key][$subKey] instanceof Strict)
+                                if(ake($this->values[$key], $subKey) instanceof Strict)
                                     $this->values[$key][$subKey]->extend($subValue, $run_callbacks, $ignore_keys);
 
                                 else
-                                    $this->values[$key][$subKey] = $subValue;
+                                    $this->values[$key][$subKey] = $this->convertType($subValue, $type);
 
                             }
 
