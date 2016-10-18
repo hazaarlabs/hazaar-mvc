@@ -110,6 +110,8 @@ class Hmv extends \Hazaar\View\Helper {
             'float' => 'text'
         );
 
+        $hiddenInputs = $this->html->td();
+
         foreach($object->toArray(true, 0, $export_all) as $key => $item){
 
             if($prefix)
@@ -122,6 +124,14 @@ class Hmv extends \Hazaar\View\Helper {
 
             if(ake($def, 'hideInEdit') === true)
                 continue;
+
+            if(ake($def, 'hide') === true){
+
+                $hiddenInputs->add($this->html->input('hidden', $name, $item));
+
+                continue;
+
+            }
 
             if(!($label = ake($def, 'label'))){
 
@@ -295,6 +305,9 @@ class Hmv extends \Hazaar\View\Helper {
             $tableRows[] = $this->html->tr(array($labelTD, $this->html->td($input)))->data('name', $key);
 
         }
+
+        if($hiddenInputs->count() > 0)
+            $tableRows[] = $this->html->tr($hiddenInputs);
 
         return $tableRows;
 
