@@ -509,7 +509,6 @@
     <Compile Include="src\Logger\Backend\_Interface.php" />
     <Compile Include="src\Logger\Exception\NoBackend.php" />
     <Compile Include="src\Logger\Frontend.php" />
-    <Compile Include="src\Logger\Logger.php" />
     <Compile Include="src\Map.php" />
     <Compile Include="src\Model\Email.php" />
     <Compile Include="src\Model\Exception\BadFieldDefinition.php" />
@@ -1175,6 +1174,5 @@
     <Content Include="libs\Warlock\warlock_icon.png" />
     <Content Include="LICENCE.md" />
     <Content Include="phpunit.xml" />
-    <Content Include="src\Logger\.hazaar" />
   </ItemGroup>
 </Project>

@@ -25,11 +25,8 @@ class Frontend {
 
         $backend_class = 'Hazaar\\Logger\\Backend\\' . ucfirst($backend);
 
-        if(! $this->backend = new $backend_class($backend_options)) {
-
+        if(! $this->backend = new $backend_class($backend_options))
             throw new Exception\NoBackend();
-
-        }
 
         if(is_numeric($level)) {
 
@@ -41,14 +38,16 @@ class Frontend {
 
         }
 
-        $this->writeLog('Log level set to: ' . $this->backend->getLogLevelId($this->level), E_ALL);
+        $buf = Frontend::$message_buffer;
 
-        if(count($buf = Frontend::$message_buffer) > 0) {
+        if(is_array($buf) && count($buf) > 0) {
 
             foreach($buf as $msg)
                 $this->writeLog($msg[0], $msg[1]);
 
         }
+
+        Frontend::$message_buffer = null;
 
     }
 
@@ -68,15 +67,16 @@ class Frontend {
 
     }
 
-    static public function write($message, $level = E_NOTICE) {
+    static public function write($tag, $message, $level = E_NOTICE) {
 
         if(Frontend::$logger instanceof Frontend) {
 
-            Frontend::$logger->writeLog($message, $level);
+            Frontend::$logger->writeLog($tag, $message, $level);
 
         } elseif(is_array(Frontend::$message_buffer)) {
 
             Frontend::$message_buffer[] = array(
+                $tag,
                 $message,
                 $level
             );
@@ -85,13 +85,28 @@ class Frontend {
 
     }
 
+    static public function i($tag, $message){
+
+        Frontend::write($tag, $message, E_NOTICE);
+
+    }
+
+    static public function w($tag, $message){
+
+        Frontend::write($tag, $message, E_WARNING);
+
+    }
+
+    static public function e($tag, $message){
+
+        Frontend::write($tag, $message, E_ERROR);
+
+    }
+
     static public function trace() {
 
-        if(Frontend::$logger instanceof Frontend) {
-
+        if(Frontend::$logger instanceof Frontend)
             Frontend::$logger->backtrace();
-
-        }
 
     }
 
@@ -101,32 +116,26 @@ class Frontend {
 
     }
 
-    public function writeLog($message, $level = E_NOTICE) {
+    public function writeLog($tag, $message, $level = E_NOTICE) {
 
         if(! ($level <= $this->level))
             return NULL;
 
         if(! $this->backend->can('write_objects')) {
 
-            if(is_array($message) || is_object($message)) {
-
-                $message = preg_replace('/\s+/', ' ', print_r($message, TRUE));
-
-            }
+            if(is_array($message) || is_object($message))
+                $message = "OBJECT DUMP:" . LINE_BREAK . preg_replace('/\n/', LINE_BREAK, print_r($message, TRUE));
 
         }
 
-        $this->backend->write($message, $level);
+        $this->backend->write($tag, $message, $level);
 
     }
 
     public function backtrace() {
 
-        if($this->backend->can('write_trace')) {
-
+        if($this->backend->can('write_trace'))
             $this->backend->trace();
-
-        }
 
     }
 

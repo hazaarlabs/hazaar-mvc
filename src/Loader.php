@@ -93,6 +93,8 @@ define('APPLICATION_NAME', array_pop($parts));
  */
 define('APPLICATION_BASE', dirname($_SERVER['SCRIPT_NAME']));
 
+define('LINE_BREAK', ((substr(PHP_OS, 0, 3) == 'WIN')?"\r\n":"\n"));
+
 /**
  * @brief Global class file loader
  *

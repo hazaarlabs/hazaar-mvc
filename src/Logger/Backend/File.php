@@ -10,7 +10,7 @@ class File extends \Hazaar\Logger\Backend {
 
         $this->addCapability('write_trace');
 
-        $this->setDefaultOption('logfile', '/tmp/hazaar.log');
+        $this->setDefaultOption('logfile', \Hazaar\Application::getInstance()->runtimePath('hazaar.log'));
 
         $this->setDefaultOption('write_ip', TRUE);
 
@@ -18,25 +18,19 @@ class File extends \Hazaar\Logger\Backend {
 
         $this->setDefaultOption('write_uri', TRUE);
 
-        if(($this->h = fopen($this->getOption('logfile'), 'a')) == FALSE) {
-
+        if(($this->h = fopen($this->getOption('logfile'), 'a')) == FALSE)
             throw new Exception\OpenLogFileFailed($this->getOption('logfile'));
-
-        }
 
     }
 
     public function postRun() {
 
-        if($this->h) {
-
+        if($this->h)
             fclose($this->h);
-
-        }
 
     }
 
-    public function write($message, $level = E_NOTICE) {
+    public function write($tag, $message, $level = E_NOTICE) {
 
         $remote = $_SERVER['REMOTE_ADDR'];
 
@@ -46,16 +40,18 @@ class File extends \Hazaar\Logger\Backend {
             $line[] = $remote;
 
         if($this->getOption('write_timestamp'))
-            $line[] = '[ ' . date('Y-m-d H:i:s') . ' ]';
+            $line[] = date('Y-m-d H:i:s');
 
-        $line[] = str_pad(strtoupper($this->getLogLevelId($level)), 6, ' ', STR_PAD_RIGHT) . ' |';
+        $line[] = str_pad(strtoupper($this->getLogLevelId($level)), 6, ' ', STR_PAD_RIGHT);
 
         if($this->getOption('write_uri'))
-            $line[] = $_SERVER['REQUEST_URI'] . ' -';
+            $line[] = $_SERVER['REQUEST_URI'];
+
+        $line[] = $tag;
 
         $line[] = $message;
 
-        fwrite($this->h, implode(' ', $line) . "\n");
+        fwrite($this->h, implode(' | ', $line) . "\r\n");
 
     }
 

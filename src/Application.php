@@ -82,14 +82,14 @@ class Application {
      * the application to begin processing and is the first piece of code executed within the HazaarMVC
      * environment.
      *
-     * Because of this is it responsible for setting up the class loader, logging, starting
+     * Because of this is it responsible for setting up the class loader, starting
      * code execution profiling timers, loading the application configuration and setting up the request
      * object.
      *
      * Hazaar also has a 'run direct' function that allows Hazaar to execute special requests directly
      * without going through the normal application execution path. These requests are used so hazaar
      * can serve static internal content such as error pages, images and style sheets required by
-     * these error pages and redistributed JavaScript code libraries such as jQuery and KendoUI.
+     * these error pages and redistributed JavaScript code libraries.
      *
      * @since 1.0.0
      *

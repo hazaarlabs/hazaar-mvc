@@ -1242,7 +1242,7 @@ class Map implements \ArrayAccess, \Iterator {
 
                 } else {
 
-                    $elem = NULL;
+                    $elem = array();
 
                 }
 
