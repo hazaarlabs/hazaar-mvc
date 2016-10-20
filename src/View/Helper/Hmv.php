@@ -147,7 +147,12 @@ class Hmv extends \Hazaar\View\Helper {
 
             $input = null;
 
-            if(ake($def, 'edit', true) == false){
+            $edit = ake($def, 'edit', true);
+
+            if(is_callable($edit))
+                $edit = $edit($item, $def, $object);
+
+            if($edit == false){
 
                 $labelTD = $this->html->td($this->html->label($label));
 
