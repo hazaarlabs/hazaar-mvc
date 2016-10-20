@@ -40,6 +40,8 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     protected $disable_callbacks = FALSE;
 
+    protected $convert_nulls = FALSE;
+
     private $loaded = FALSE;
 
     /**
@@ -239,12 +241,8 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         /*
          * Run any pre-read callbacks
          */
-        if ($run_callbacks && is_array($def) && array_key_exists('read', $def)) {
-
-            $result = $this->execCallback($def['read'], $value, $key);
-
-            return $result;
-        }
+        if ($run_callbacks && is_array($def) && array_key_exists('read', $def))
+            $value = $this->execCallback($def['read'], $value, $key);
 
         return $value;
 
@@ -716,6 +714,9 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                 }
 
             }
+
+            if($value === null && ake(ake($this->fields, $key), 'type', 'string') && $this->convert_nulls)
+                $value = '';
 
             $result[$key] = $value;
         }
