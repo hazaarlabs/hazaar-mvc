@@ -267,18 +267,9 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $labelTD = $this->html->td($this->html->label($label));
 
-                if(!array_key_exists('input', $def))
-                    $def['input'] = $typeMap[ake($def, 'type', 'string')];
-
                 if($source = ake($def, 'source')){
 
-                    if(is_callable($source)){
-
-                        $values = call_user_func_array($source, ake($def, 'sourceArgs', array()));
-
-                        $def['input'] = 'array';
-
-                    }elseif(is_array($source)){
+                    if(is_array($source)){
 
                         $values = $source;
 
@@ -286,9 +277,18 @@ class Hmv extends \Hazaar\View\Helper {
 
                     }else{
 
-                        $values = $source;
+                        if(!is_callable($source))
+                            $source = array($object, $source);
+
+                        $values = call_user_func_array($source, ake($def, 'sourceArgs', array()));
+
+                        $def['input'] = 'array';
 
                     }
+
+                }elseif(!array_key_exists('input', $def)){
+
+                    $def['input'] = $typeMap[ake($def, 'type', 'string')];
 
                 }
 
