@@ -42,6 +42,25 @@ function ake($array, $key, $default = NULL, $non_empty = FALSE) {
 }
 
 /**
+ * Array Key Rename
+ *
+ * Rename a key in an array to something else.
+ *
+ * @param array  $array     The array to work on.
+ * @param string $key_from  The key name to rename.
+ * @param string $key_to    The key name to change to.
+ */
+function akr(&$array, $key_from, $key_to){
+
+    $array[$key_to] = $array[$key_from];
+
+    unset($array[$key_from]);
+
+    return $array;
+
+}
+
+/**
  * @brief Normalize boolean values
  *
  * @detail This helper function will take a string representation of a boolean such as 't', 'true', 'yes', 'ok' and
