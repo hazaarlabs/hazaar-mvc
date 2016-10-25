@@ -178,14 +178,9 @@ class Hmv extends \Hazaar\View\Helper {
             }elseif($item instanceof \Hazaar\Model\Strict){
 
                 //If the object definition has a data source, use that to create the select
-                if($source = ake($def, 'source')){
+                if($data = $this->getItemData($def, $item)){
 
                     $labelTD = $this->html->td($this->html->label($label));
-
-                    if(!is_callable($source) && method_exists($item, $source))
-                        $source = array($item, $source);
-
-                    $data = call_user_func_array($source, ake($def, 'sourceArgs', array()));
 
                     if(ake($def, 'nulls', true))
                         $data = array('null' => 'Select...') + $data;
@@ -212,33 +207,18 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $labelTD = $this->html->td($this->html->block($this->section_tag, $label));
 
-                if($source = ake($def, 'source')){
+                if($data = $this->getItemData($def, ake($def, 'arrayOf', $item))){
 
-                    if($class = ake($def, 'arrayOf')){
+                    $values = array();
 
-                        if(!is_callable($source)){
+                    if($valueKey = ake($def, 'valueKey')){
 
-                            $o = new $class();
-
-                            if(method_exists($o, $source))
-                                $source = array($o, $source);
-
-                        }
-
-                        $data = call_user_func_array($source, ake($def, 'sourceArgs', array()));
-
-                        $values = array();
-
-                        if($valueKey = ake($def, 'valueKey')){
-
-                            foreach($item as $i)
-                                $values[] = $i->get($valueKey);
-
-                        }
-
-                        $input = $this->html->select($name, $data, $values)->multiple(true)->class($this->input_class);
+                        foreach($item as $i)
+                            $values[] = $i->get($valueKey);
 
                     }
+
+                    $input = $this->html->select($name, $data, $values)->multiple(true)->class($this->input_class);
 
                 }else{
 
@@ -267,30 +247,11 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $labelTD = $this->html->td($this->html->label($label));
 
-                if($source = ake($def, 'source')){
+                if($data = $this->getItemData($def, $object))
+                    $def['input'] = 'array';
 
-                    if(is_array($source)){
-
-                        $values = $source;
-
-                        $def['input'] = 'array';
-
-                    }else{
-
-                        if(!is_callable($source))
-                            $source = array($object, $source);
-
-                        $values = call_user_func_array($source, ake($def, 'sourceArgs', array()));
-
-                        $def['input'] = 'array';
-
-                    }
-
-                }elseif(!array_key_exists('input', $def)){
-
+                elseif(!array_key_exists('input', $def))
                     $def['input'] = $typeMap[ake($def, 'type', 'string')];
-
-                }
 
                 switch($type = ake($def, 'input')){
                     case 'array':
@@ -318,4 +279,37 @@ class Hmv extends \Hazaar\View\Helper {
 
     }
 
+    private function getItemData($def, $obj){
+
+        if(!($source = ake($def, 'source')))
+            return null;
+
+        $data = array();
+
+        //If it's an array but not callable, it's an array of data
+        if(is_array($source) && !is_callable($source)){
+
+            $data = $source;
+
+            //Otherwise it is supposed to be a callable
+        }else{
+
+            //But if it's not
+            if(!is_callable($source)){
+
+                //Look for the method if it's a string
+                if(is_string($source) && method_exists($obj, $source))
+                    $source = array($obj, $source);
+                else
+                    return null;
+
+            }
+
+            $data = call_user_func_array($source, ake($def, 'sourceArgs', array()));
+
+        }
+
+        return $data;
+
+    }
 }
