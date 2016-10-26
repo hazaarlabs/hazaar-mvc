@@ -207,18 +207,27 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $labelTD = $this->html->td($this->html->block($this->section_tag, $label));
 
-                if($data = $this->getItemData($def, ake($def, 'arrayOf', $item))){
+                if(array_key_exists('source', $def)){
 
-                    $values = array();
+                    if($class = ake($def, 'arrayOf', ake($def, 'type')))
+                        $obj = new $class();
+                    else
+                        $obj = $item;
 
-                    if($valueKey = ake($def, 'valueKey')){
+                    if($data = $this->getItemData($def, $obj)){
 
-                        foreach($item as $i)
-                            $values[] = $i->get($valueKey);
+                        $values = array();
+
+                        if($valueKey = ake($def, 'valueKey')){
+
+                            foreach($item as $i)
+                                $values[] = $i->get($valueKey);
+
+                        }
+
+                        $input = $this->html->select($name, $data, $values)->multiple(true)->class($this->input_class);
 
                     }
-
-                    $input = $this->html->select($name, $data, $values)->multiple(true)->class($this->input_class);
 
                 }else{
 
