@@ -75,7 +75,7 @@ class Select extends Block {
 
             $item = new Optgroup($label['label'], $label['items']);
 
-        } elseif($label instanceof Optgroup) {
+        } elseif($label instanceof Optgroup || $label instanceof Option) {
 
             $item = $label;
 
