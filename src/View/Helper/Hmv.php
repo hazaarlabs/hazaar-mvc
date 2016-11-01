@@ -9,11 +9,17 @@ namespace Hazaar\View\Helper;
  */
 class Hmv extends \Hazaar\View\Helper {
 
+    public $use_tables = true;
+
     public $container_class = 'hmvContainer';
 
-    public $input_class = 'hmvInput';
-
     public $section_tag = 'h1';
+
+    public $section_class = 'hmvSection';
+
+    public $item_class = 'hmvItem';
+
+    public $input_class = 'hmvInput';
 
     public $newitem_class = 'hmvNewItem';
 
@@ -25,13 +31,23 @@ class Hmv extends \Hazaar\View\Helper {
 
     public function render(\Hazaar\Model\Strict $model, $ignore_empty = false, $export_all = false, $empty_val = null){
 
-        $container = $this->html->table()->class($this->container_class);
+        if($this->use_tables){
 
-        return $container->add($this->renderItems($model->exportHMV($ignore_empty, $export_all), $empty_val));
+            $container = $this->html->table();
+
+            $container->add($this->renderTABLEItems($model->exportHMV($ignore_empty, $export_all), $empty_val));
+
+        }else{
+
+            $container = $this->html->div($this->renderDIVItems($model->exportHMV($ignore_empty, $export_all), $empty_val));
+
+        }
+
+        return $container->class($this->container_class);
 
     }
 
-    private function renderItems($items, $empty_val = null){
+    private function renderTABLEItems($items, $empty_val = null){
 
         if(!is_array($items))
             return null;
@@ -58,7 +74,7 @@ class Hmv extends \Hazaar\View\Helper {
                 $childTable = $this->html->table()->class($this->container_class);
 
                 foreach($children as $child)
-                    $childTable->add($this->renderItems($child, $empty_val));
+                    $childTable->add($this->renderTABLEItems($child, $empty_val));
 
                 $itemCollection[] = $this->html->tr(array($section, $this->html->td($childTable)));
 
@@ -68,7 +84,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $childTable = $this->html->table()->class($this->container_class);
 
-                $childTable->add($this->renderItems($children, $empty_val));
+                $childTable->add($this->renderTABLEItems($children, $empty_val));
 
                 $itemCollection[] = $this->html->tr(array($section, $this->html->td($childTable)));
 
@@ -82,6 +98,69 @@ class Hmv extends \Hazaar\View\Helper {
                     $value = ucfirst(strbool($value));
 
                 $itemCollection[] = $this->html->tr(array($label, $this->html->td($value)))->data('name', $key);
+
+            }
+
+        }
+
+        return $itemCollection;
+
+    }
+
+    private function renderDIVItems($items, $empty_val = null){
+
+        if(!is_array($items))
+            return null;
+
+        $itemCollection = array();
+
+        foreach($items as $key => $item){
+
+            if($children = ake($item, 'list')){
+
+                $label = $this->html->label(ake($item, 'label'));
+
+                $itemsDiv = $this->html->td();
+
+                foreach($children as $child)
+                    $itemsDiv->add($this->html->div($child));
+
+                $itemCollection[] = $this->html->div(array($label, $itemsDiv));
+
+            }elseif($children = ake($item, 'collection')){
+
+                $section = $this->html->block($this->section_tag, ake($item, 'label'))->class($this->section_class);
+
+                $childDiv = $this->html->div()->class($this->container_class);
+
+                foreach($children as $child)
+                    $childDiv->add($this->renderDIVItems($child, $empty_val));
+
+                $itemCollection[] = $this->html->div(array($section, $childDiv));
+
+            }elseif($children = ake($item, 'items')){
+
+                $section = $this->html->block($this->section_tag, ake($item, 'label'))->class($this->section_class);
+
+                $childDiv = $this->html->div()->class($this->container_class);
+
+                $childDiv->add($this->renderDIVItems($children, $empty_val));
+
+                $itemCollection[] = $this->html->div(array($section, $childDiv));
+
+            }else{
+
+                $label = $this->html->label(ake($item, 'label'));
+
+                $value = ake($item, 'value', $empty_val, true);
+
+                if(ake($item, 'empty', true) === false && $value == $empty_val)
+                    continue;
+
+                if(is_bool($value))
+                    $value = ucfirst(strbool($value));
+
+                $itemCollection[] = $this->html->div(array($label, $this->html->span($value)))->class($this->item_class)->data('name', $key);
 
             }
 
@@ -107,6 +186,7 @@ class Hmv extends \Hazaar\View\Helper {
         $typeMap = array(
             'string' => 'text',
             'bool' => 'checkbox',
+            'boolean' => 'checkbox',
             'float' => 'text'
         );
 
@@ -191,7 +271,6 @@ class Hmv extends \Hazaar\View\Helper {
                         $value = (string)$item;
 
                     $input = $this->html->select($name, $data, $value)->class($this->input_class);
-
 
                 }else{ //Otherwise, try and render the object as a sub-object.
 
@@ -321,4 +400,5 @@ class Hmv extends \Hazaar\View\Helper {
         return $data;
 
     }
+
 }
