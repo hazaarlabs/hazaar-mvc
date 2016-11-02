@@ -179,7 +179,7 @@ class Hmv extends \Hazaar\View\Helper {
     }
 
 
-    private function renderInputs($object, $prefix = null, $export_all = false){
+    private function renderInputs(\Hazaar\Model\Strict $object, $prefix = null, $export_all = false){
 
         $tableRows = array();
 
@@ -295,6 +295,8 @@ class Hmv extends \Hazaar\View\Helper {
 
                     if($data = $this->getItemData($def, $obj)){
 
+                        $input = $this->html->div();
+
                         $values = array();
 
                         if($valueKey = ake($def, 'valueKey')){
@@ -304,11 +306,24 @@ class Hmv extends \Hazaar\View\Helper {
 
                         }
 
-                        $input = $this->html->select($name, $data, $values)->multiple(true)->class($this->input_class);
+                        $count = 0;
+
+                        foreach($data as $itemName => $itemValue){
+
+                            $checkbox = $this->html->input('checkbox', $name . '[' . $count . ']')->value($itemName);
+
+                            if(in_array($itemName, $values))
+                                $checkbox->checked(true);
+
+                            $input->add($this->html->div($this->html->label(array($checkbox, $this->html->span($itemValue)))));
+
+                            $count++;
+
+                        }
 
                     }
 
-                }else{
+                }elseif(ake($def, 'arrayOf')){
 
                     $input = array();
 
@@ -327,6 +342,11 @@ class Hmv extends \Hazaar\View\Helper {
                     $input[] = $table->add($this->renderInputs($object->append($key, array()), $name . '[]'), $delTR)->addClass($this->newitem_class);
 
                     $input[] = $this->html->span()->class('btnNewItem');
+
+                }else{
+
+                    throw new \Exception('Unsupported array: ' . $name);
+
                 }
 
             }else{
