@@ -636,7 +636,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                             if($extend = ake($def, 'extend')){
 
                                 if(is_callable($extend))
-                                    $this->values[$key] = $extend($value);
+                                    $this->set($key, $extend($value, $this->values[$key]));
 
                             }else{
 
