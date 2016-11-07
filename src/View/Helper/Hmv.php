@@ -56,20 +56,23 @@ class Hmv extends \Hazaar\View\Helper {
 
         foreach($items as $key => $item){
 
+            if(!($label = ake($item, 'label')))
+                $label = $key;
+
             if($children = ake($item, 'list')){
 
-                $label = $this->html->td($this->html->label(ake($item, 'label')));
+                $labelTD = $this->html->td($this->html->label($label));
 
                 $itemsTD = $this->html->td();
 
                 foreach($children as $child)
                     $itemsTD->add($this->html->div($child));
 
-                $itemCollection[] = $this->html->tr(array($label, $itemsTD));
+                $itemCollection[] = $this->html->tr(array($labelTD, $itemsTD));
 
             }elseif($children = ake($item, 'collection')){
 
-                $section = $this->html->td($this->html->block($this->section_tag, ake($item, 'label')));
+                $section = $this->html->td($this->html->block($this->section_tag, $label));
 
                 $childTable = $this->html->table()->class($this->container_class);
 
@@ -90,14 +93,14 @@ class Hmv extends \Hazaar\View\Helper {
 
             }else{
 
-                $label = $this->html->td($this->html->label(ake($item, 'label')));
+                $labelTD = $this->html->td($this->html->label($label));
 
                 $value = ake($item, 'value', $empty_val, true);
 
                 if(is_bool($value))
                     $value = ucfirst(strbool($value));
 
-                $itemCollection[] = $this->html->tr(array($label, $this->html->td($value)))->data('name', $key);
+                $itemCollection[] = $this->html->tr(array($labelTD, $this->html->td($value)))->data('name', $key);
 
             }
 
