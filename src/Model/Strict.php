@@ -27,6 +27,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         'double',  // for historical reasons "double" is returned in case of a float, and not simply "float"
         'string',
         'array',
+        'list',
         'object',
         'resource',
         'NULL',
@@ -120,7 +121,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                 if (is_array($definition)) {
 
-                    if (array_key_exists('type', $definition) && ($definition['type'] == 'array' || $definition['type'] == 'model') && !array_key_exists('default', $definition)) {
+                    if (array_key_exists('type', $definition) && ($definition['type'] == 'array' || $definition['type'] == 'list' || $definition['type'] == 'model') && !array_key_exists('default', $definition)) {
 
                         if (array_key_exists('items', $definition)) {
 
@@ -175,7 +176,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                 } else {
 
-                    if ($definition == 'array')
+                    if ($definition == 'array' || $definition == 'list')
                         $value = array();
                     else
                         $value = NULL;
@@ -301,6 +302,13 @@ abstract class Strict implements \ArrayAccess, \Iterator {
             if (in_array($type, $bools)) {
 
                 $value = boolify($value);
+
+            }elseif($type == 'list'){
+
+                if(!is_array($value))
+                    @settype($value, 'array');
+                else
+                    $value = array_values($value);
 
             } elseif ($type == 'string' && is_object($value) && method_exists($value, '__tostring')) {
 
@@ -545,7 +553,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
         $type = ake($def, 'type');
 
-        if(strtolower($type) != 'array')
+        if(strtolower($type) != 'array' && strtolower($type) != 'list')
             return null;
 
         if($arrayOf = ake($def, 'arrayOf'))
