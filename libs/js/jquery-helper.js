@@ -40,6 +40,13 @@ $.stream = function (url, options) {
         },
         xhr: function () {
             var xhr = new XMLHttpRequest();
+            xhr.onreadystatechange = function (event) { if (typeof callbacks.readyStateChange == 'function') callbacks.readystatechange(event, ajax); };
+            xhr.onloadstart = function (event) { if (typeof callbacks.start == 'function') callbacks.loadStart(response, event.statusText, ajax); };
+            xhr.onabort = function (event) { if (typeof callbacks.abort == 'function') callbacks.abort(event, ajax); };
+            xhr.onerror = function (event) { if (typeof callbacks.error == 'function') callbacks.error(event, ajax); };
+            xhr.onload = function (event) { if (typeof callbacks.load == 'function') callbacks.load(event, ajax); };
+            xhr.ontimeout = function (event) { if (typeof callbacks.timeout == 'function') callbacks.timeout(event, ajax); };
+            xhr.upload.onprogress = function (event) { if (typeof callbacks.uploadProgress == 'function') callbacks.uploadProgress(event); };
             xhr.onprogress = function (event) {
                 var response;
                 while (response = this.read()) {
@@ -56,25 +63,18 @@ $.stream = function (url, options) {
                 if (typeof callbacks.done == 'function')
                     callbacks.done(response, event.statusText, ajax);
             };
-            xhr.upload.onprogress = function (event) {
-                if (typeof callbacks.uploadProgress == 'function')
-                    callbacks.uploadProgress(event);
-            };
             return xhr;
         }
     }));
-    ajax.uploadProgress = function (callback) {
-        callbacks.uploadProgress = callback;
-        return this;
-    };
-    ajax.progress = function (callback) {
-        callbacks.progress = callback;
-        return this;
-    };
-    ajax.done = function (callback) {
-        callbacks.done = callback;
-        return this;
-    };
+    ajax.readyStateChange = function (callback) { callbacks.readyStateChange = callback; return this; };
+    ajax.loadStart = function (callback) { callbacks.loadStart = callback; return this; };
+    ajax.abort = function (callback) { callbacks.abort = callback; return this; };
+    ajax.error = function (callback) { callbacks.error = callback; return this; };
+    ajax.load = function (callback) { callbacks.load = callback; return this; };
+    ajax.timeout = function (callback) { callbacks.timeout = callback; return this; };
+    ajax.uploadProgress = function (callback) { callbacks.uploadProgress = callback; return this; };
+    ajax.progress = function (callback) { callbacks.progress = callback; return this; };
+    ajax.done = function (callback) { callbacks.done = callback; return this; };
     return ajax;
 };
 
