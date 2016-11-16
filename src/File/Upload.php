@@ -128,7 +128,7 @@ class Upload {
      */
     public function __get($key) {
 
-        return $this->key($key);
+        return $this->get($key);
 
     }
 
@@ -277,6 +277,22 @@ class Upload {
         }
 
         return NULL;
+
+    }
+
+    /**
+     * Returns the uploaded file as a Hazaar\File object.
+     *
+     * @param mixed $key
+     *
+     * @return \Hazaar\File
+     */
+    public function getFile($key){
+
+        if(!($file = $this->get($key)))
+            return false;
+
+        return new \Hazaar\File($file['tmp_name']);
 
     }
 
