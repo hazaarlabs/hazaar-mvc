@@ -21,6 +21,8 @@ class File {
 
     protected $resource;
 
+    protected $handle;
+
     function __construct($file = null, $backend = NULL) {
 
         if($file instanceof \Hazaar\File) {
@@ -57,6 +59,12 @@ class File {
             $this->backend = $backend;
 
         }
+
+    }
+
+    public function __destruct(){
+
+        $this->close();
 
     }
 
@@ -352,7 +360,12 @@ class File {
 
     }
 
-    public function getCSV(){
+    /**
+     * Return the CSV content as a parsed array
+     *
+     * @return array
+     */
+    public function readCSV(){
 
         return array_map('str_getcsv', $this->toArray("\n"));
 
@@ -386,6 +399,99 @@ class File {
         zip_close($zip);
 
         return $file;
+
+    }
+
+    /**
+     * Open a file and return it's file handle
+     *
+     * This is useful for using the file with standard (yet unsupported) file functions.
+     *
+     * @param string $mode
+     *
+     * @return resource
+     */
+    public function open($mode = 'r'){
+
+        if($this->handle)
+            return $this->handle;
+
+        return $this->handle = fopen($this->source_file, $mode);
+
+    }
+
+    /**
+     * Close the file handle if it is currently open
+     *
+     * @return boolean
+     */
+    public function close(){
+
+        if(!$this->handle)
+            return false;
+
+        fclose($this->handle);
+
+        $this->handle = null;
+
+        return true;
+
+    }
+
+    /**
+     * Returns a character from the file pointer
+     *
+     * @return string
+     */
+    public function getc(){
+
+        if(!$this->handle)
+            return null;
+
+        return fgetc($this->handle);
+
+
+    }
+
+    /**
+     * Returns a line from the file pointer
+     *
+     * @return string
+     */
+    public function gets(){
+
+        if(!$this->handle)
+            return null;
+
+        return fgets($this->handle);
+
+    }
+
+    /**
+     * Returns a line from the file pointer and strips HTML tags
+     *
+     * @return string
+     */
+    public function getss(){
+
+        if(!$this->handle)
+            return null;
+
+        return fgetss($this->handle);
+
+    }
+
+    /**
+     * Returns a line from the file pointer and parse for CSV fields
+     *
+     * @return string
+     */
+    public function getcsv($length = 0, $delimiter = ',', $enclosure = '"', $escape = '\\'){
+
+        if(!$this->handle)
+            return null;
+
+        return fgetcsv($this->handle, $length, $delimiter, $enclosure, $escape);
 
     }
 
