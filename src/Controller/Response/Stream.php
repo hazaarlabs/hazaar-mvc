@@ -4,19 +4,24 @@ namespace Hazaar\Controller\Response;
 
 class Stream extends \Hazaar\Controller\Response\HTTP\OK {
 
-    function __construct() {
+    private $final;
+
+    function __construct($final_packet) {
 
         parent::__construct("text/plain");
+
+        $this->final = $final_packet;
+
+        if(is_array($this->final))
+            $this->final = json_encode($this->final);
 
     }
 
     public function __writeoutput() {
 
-        ob_flush();
+        echo dechex(strlen($this->final)) . "\0" . $this->final;
 
         flush();
-
-        return;
 
     }
 

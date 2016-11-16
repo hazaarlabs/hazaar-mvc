@@ -181,7 +181,7 @@ abstract class Action extends \Hazaar\Controller {
                                              ), $args);
 
             if($this->stream)
-                return new Response\Stream();
+                return new Response\Stream($response);
 
             if(! ($response instanceof Response)) {
 
