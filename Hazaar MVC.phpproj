@@ -619,7 +619,7 @@
     <Folder Include="libs\dropzone\" />
     <Folder Include="libs\dropzone\css\" />
     <Folder Include="libs\dropzone\images\" />
-    <Folder Include="libs\Error\" />
+    <Folder Include="libs\error\" />
     <Folder Include="libs\geshi\" />
     <Folder Include="libs\geshi\contrib\" />
     <Folder Include="libs\geshi\docs\" />
@@ -644,6 +644,7 @@
     <Folder Include="libs\jqWidgets\styles\images\start\" />
     <Folder Include="libs\jqWidgets\styles\images\sunny\" />
     <Folder Include="libs\js\" />
+    <Folder Include="libs\admin\" />
     <Folder Include="libs\text\" />
     <Folder Include="libs\Warlock\" />
     <Folder Include="src\" />
@@ -689,6 +690,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="composer.json" />
+    <Content Include="libs\admin\application.js" />
+    <Content Include="libs\admin\application.css" />
+    <Content Include="libs\admin\layout.css" />
+    <Content Include="libs\admin\layout.phtml" />
     <Content Include="libs\css\buttons.css" />
     <Content Include="libs\css\filebrowser.css" />
     <Content Include="libs\css\images\fileicon\archive.png" />
@@ -709,9 +714,9 @@
     <Content Include="libs\dropzone\dropzone.js" />
     <Content Include="libs\dropzone\images\spritemap%402x.png" />
     <Content Include="libs\dropzone\images\spritemap.png" />
-    <Content Include="libs\Error\Error.css" />
-    <Content Include="libs\Error\Error.phtml" />
-    <Content Include="libs\Error\hazaarlogo.svg" />
+    <Content Include="libs\error\error.css" />
+    <Content Include="libs\error\error.phtml" />
+    <Content Include="libs\error\hazaarlogo.svg" />
     <Content Include="libs\favicon.png" />
     <Content Include="libs\geshi\docs\api\blank.html" />
     <Content Include="libs\geshi\docs\api\classtrees_geshi.html" />

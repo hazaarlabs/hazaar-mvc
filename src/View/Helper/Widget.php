@@ -44,11 +44,11 @@ class Widget extends \Hazaar\View\Helper {
 
             if($settings['widgets']->count() > 0) {
 
-                $view->requires($this->application->url('hazaar/jqWidgets/jqxcore.js'));
+                $view->requires($this->application->url('hazaar/file/jqwidgets/jqxcore.js'));
 
                 foreach($settings['widgets'] as $widget) {
 
-                    $file = 'jqWidgets/jqx' . $widget . '.js';
+                    $file = 'jqwidgets/jqx' . $widget . '.js';
 
                     if(!\Hazaar\Loader::getFilePath(FILE_PATH_SUPPORT, $file)) {
 
@@ -56,19 +56,19 @@ class Widget extends \Hazaar\View\Helper {
 
                     }
 
-                    $view->requires($this->application->url('hazaar/' . $file));
+                    $view->requires($this->application->url('hazaar/file/' . $file));
 
                 }
 
             } else {
 
-                $view->requires($this->application->url('hazaar/jqWidgets/jqx-all.js'));
+                $view->requires($this->application->url('hazaar/file/jqwidgets/jqx-all.js'));
 
             }
 
-            $view->requires($this->application->url('hazaar/jqWidgets/globalization/globalize.js'));
+            $view->requires($this->application->url('hazaar/file/jqwidgets/globalization/globalize.js'));
 
-            $view->link($this->application->url('hazaar/jqWidgets/styles/jqx.base.css'));
+            $view->link($this->application->url('hazaar/file/jqwidgets/styles/jqx.base.css'));
 
             if(preg_match('/^http[s]?\:\/\//', $settings['theme'])) {
 
@@ -76,13 +76,13 @@ class Widget extends \Hazaar\View\Helper {
 
             } else {
 
-                $view->link($this->application->url('hazaar/jqWidgets/styles/jqx.' . $settings['theme'] . '.css'));
+                $view->link($this->application->url('hazaar/file/jqwidgets/styles/jqx.' . $settings['theme'] . '.css'));
 
             }
 
             if($settings['use_editor']) {
 
-                $view->requires($this->application->url('hazaar/jqWidgets/jqxeditor.js'));
+                $view->requires($this->application->url('hazaar/file/jqwidgets/jqxeditor.js'));
 
                 $view->link($this->application->url('hazaar/jqWidgets/styles/jqxeditor.css'));
 
@@ -495,7 +495,7 @@ class Widget extends \Hazaar\View\Helper {
         return new \Hazaar\View\Widgets\Input($name, $value, $button, $params, $input_type, $element_type);
 
     }
-    
+
     /**
      * @detail      Returns a jqxPasswordInput object
      *

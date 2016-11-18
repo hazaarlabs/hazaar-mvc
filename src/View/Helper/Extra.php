@@ -34,7 +34,7 @@ class Extra extends \Hazaar\View\Helper {
      */
     public function init($view, $args = array()) {
 
-        $view->link($this->application->url('hazaar/css/buttons.css'));
+        $view->link($this->application->url('hazaar/file/css/buttons.css'));
 
     }
 
