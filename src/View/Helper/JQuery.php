@@ -67,7 +67,7 @@ class JQuery extends \Hazaar\View\Helper {
 
             }
 
-            $view->requires($this->application->url('hazaar/js/jquery-helper.js'));
+            $view->requires($this->application->url('hazaar/file/js/jquery-helper.js'));
 
         }
 

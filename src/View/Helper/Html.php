@@ -68,7 +68,7 @@ class Html extends \Hazaar\View\Helper {
 
     public function poweredby($class = 'hazaar-powered-by') {
 
-        $image = $this->html->img($this->application->url('hazaar/hazaarpowered.png'));
+        $image = $this->html->img($this->application->url('hazaar/file/hazaarpowered.png'));
 
         return $this->a('http://www.hazaarmvc.com', $image, array(
             'target' => '_blank',

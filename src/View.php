@@ -619,7 +619,7 @@ class View {
 
             $info = pathinfo($href);
 
-            if ((array_key_exists('extension', $info) && $info['extension'] == 'css') || ! array_key_exists('extension', $info)) {
+            if ((array_key_exists('extension', $info) && ( $info['extension'] == 'css' || $info['extension'] == 'less')) || ! array_key_exists('extension', $info)) {
 
                 $rel = 'stylesheet';
             } elseif ($info['filename'] == 'favicon') {
