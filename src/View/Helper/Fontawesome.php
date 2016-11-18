@@ -22,7 +22,7 @@ namespace Hazaar\View\Helper;
  */
 class Fontawesome extends \Hazaar\View\Helper {
 
-    private $css_include = 'https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css';
+    private $css_include;
 
     public function import() {
 
@@ -36,6 +36,10 @@ class Fontawesome extends \Hazaar\View\Helper {
      * @since       1.0.0
      */
     public function init($view, $args = array()) {
+
+        $version = ake($args, 'version', '4.6.3');
+
+        $this->css_include = 'https://maxcdn.bootstrapcdn.com/font-awesome/' . $version . '/css/font-awesome.min.css';
 
         $view->link($this->css_include);
 
