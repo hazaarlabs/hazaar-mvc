@@ -161,6 +161,9 @@ abstract class Action extends \Hazaar\Controller {
 
         $response = NULL;
 
+        /**
+         * Check the cached actions to see if this requested should use a cached version
+         */
         if(array_key_exists($action, $this->cachedActions)) {
 
             $cache = new \Hazaar\Cache($this->cacheBackend);
@@ -176,9 +179,7 @@ abstract class Action extends \Hazaar\Controller {
             /*
              * Execute the requested action
              */
-            $response = call_user_func_array(array(
-                                                 $this, $action
-                                             ), $args);
+            $response = call_user_func_array(array($this, $action), $args);
 
             if($this->stream)
                 return new Response\Stream($response);

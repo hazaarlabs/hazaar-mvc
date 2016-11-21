@@ -493,7 +493,7 @@ class Application {
                 $this->response->enableTidy($this->config->app['tidy']);
 
             /*
-             * ifthe controller has specifically requested a return status code, set it now.
+             * If the controller has specifically requested a return status code, set it now.
              */
             if($controller->statusCode)
                 $this->response->setStatusCode($controller->statusCode);
@@ -512,15 +512,18 @@ class Application {
         catch(Exception $e) {
 
             /*
-             * Here we check ifthe controller we tried to execute was already an error
-             * ifit is and we try and execute another error we could end up in an endless loop
+             * Here we check if the controller we tried to execute was already an error
+             * if it is and we try and execute another error we could end up in an endless loop
              * so we throw a normal exception that will be grabbed by ErrorControl as an unhandled exception.
              */
             if($controller instanceof Controller\Error)
-                die('FATAL: Error loop detected! Last error was: ' . $controller->getErrorMessage() . "\n\nTrace:\n\n<pre>" . print_r($controller->getTrace(), TRUE) . "</pre>");
+                die('FATAL: Error loop detected! Last error was: '
+                . $controller->getErrorMessage() . "\n\nTrace:\n\n<pre>"
+                . print_r($controller->getTrace(), TRUE) . "</pre>");
 
             else
                 throw $e;
+
         }
 
         if($this->timer) {
