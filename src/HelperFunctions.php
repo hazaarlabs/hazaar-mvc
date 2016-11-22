@@ -868,7 +868,7 @@ function dump($data = NULL) {
 
         exit();
 
-    }elseif($response = 'hazaar'){
+    }elseif($response == 'hazaar'){
 
         echo "Hazaar Dump:\n\n";
 
