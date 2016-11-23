@@ -7,7 +7,7 @@
  * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
  */
 
-set_error_handler('error_handler', E_ALL ^ E_NOTICE);
+set_error_handler('error_handler', E_ERROR);
 
 set_exception_handler('exception_handler');
 

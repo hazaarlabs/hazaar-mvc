@@ -834,26 +834,41 @@ function guid() {
 
 function dump($data = NULL) {
 
-    if (function_exists('apache_request_headers')) {
+    $response = null;
 
-        $h = apache_request_headers();
+    $app = Hazaar\Application::getInstance();
 
-        if (ake($h, 'X-Requested-With') == 'XMLHttpRequest') {
+    if($app && !($response = $app->request->getResponseType())){
 
-            $dump = array(
-                'data' => $data,
-                'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)
-            );
+        if (function_exists('apache_request_headers')) {
 
-            header('Content-Type: application/javascript');
+            $h = apache_request_headers();
 
-            echo json_encode($dump);
+            if (ake($h, 'X-Requested-With') == 'XMLHttpRequest')
+                $response = 'json';
 
-            exit();
         }
+
+    }elseif (getenv('HAZAAR_SID')) {
+
+        $response = 'hazaar';
+
     }
 
-    if (getenv('HAZAAR_SID')) {
+    if($response == 'json'){
+
+        $dump = array(
+            'data' => $data,
+            'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)
+        );
+
+        header('Content-Type: application/json');
+
+        echo json_encode($dump);
+
+        exit();
+
+    }elseif($response == 'hazaar'){
 
         echo "Hazaar Dump:\n\n";
 
@@ -862,6 +877,7 @@ function dump($data = NULL) {
         echo "\n\n";
 
         debug_print_backtrace();
+
     } else {
 
         $style = "<style>

@@ -207,7 +207,7 @@ class Client {
         elseif($this->username)
             $request->authorise($this->username, $this->password);
 
-        $sck_fd = stream_socket_client($request->fsock_host, $errno, $errstr, $this->connection_timeout, STREAM_CLIENT_CONNECT, $this->context);
+        $sck_fd = @stream_socket_client($request->fsock_host, $errno, $errstr, $this->connection_timeout, STREAM_CLIENT_CONNECT, $this->context);
 
         if($sck_fd) {
 
