@@ -690,8 +690,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="composer.json" />
-    <Content Include="libs\admin\application.js" />
-    <Content Include="libs\admin\application.css" />
+    <Content Include="libs\admin\desktop.css" />
+    <Content Include="libs\admin\desktop.js" />
     <Content Include="libs\admin\layout.css" />
     <Content Include="libs\admin\layout.phtml" />
     <Content Include="libs\css\buttons.css" />
