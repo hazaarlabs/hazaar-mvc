@@ -30,7 +30,7 @@ class ApplicationTest extends \PHPUnit_Framework_TestCase {
 
         $this->assertEquals('0.0.1', $this->app->config->app->version);
 
-        $this->assertEquals(1, $this->app->config->app->debug);
+        $this->assertEquals(true, $this->app->config->app->debug);
 
     }
 
