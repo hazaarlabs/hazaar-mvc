@@ -306,6 +306,17 @@ class Map implements \ArrayAccess, \Iterator {
     }
 
     /**
+     * Check whether the map object is empty or not.
+     *
+     * @return boolean
+     */
+    public function isEmpty(){
+
+        return (count($this->elements) == 0);
+
+    }
+
+    /**
      * @detail      Reset the Map back to its default values
      *
      * @since       1.0.0
@@ -1734,6 +1745,23 @@ class Map implements \ArrayAccess, \Iterator {
         }
 
         return new Map($rows);
+
+    }
+
+    /**
+     * Populate or extend the object values from a JSON string
+     *
+     * @param mixed $json
+     * @param mixed $merge
+     */
+    public function fromJSON($json, $merge = FALSE){
+
+        $new = json_decode($json, true);
+
+        if($merge)
+            $this->extend($new);
+        else
+            $this->populate($new);
 
     }
 

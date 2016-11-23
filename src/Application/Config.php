@@ -41,115 +41,140 @@ class Config extends \Hazaar\Map {
      * @param       string $env The application environment to read settings for.  Usually 'development' or
      *                             'production'.
      */
-    function __construct($source, $env = NULL, $defaults = array(), $path_type = FILE_PATH_CONFIG) {
+    function __construct($source_file, $env = NULL, $defaults = array(), $path_type = FILE_PATH_CONFIG) {
 
-        $options = array();
+        $config = null;
+
+        $source = null;
 
         if(! $env)
             $env = APPLICATION_ENV;
 
         $this->env = $env;
 
-        if($source = trim($source)) {
+        if($source_file = trim($source_file)) {
 
-            $source = \Hazaar\Loader::getFilePath($path_type, $source, NULL, FALSE);
+            $info = pathinfo($source_file);
 
-            $this->source = $source;
+            //If we have an extension, just use that file.
+            if(array_key_exists('extension', $info)){
 
-            if(file_exists($this->source)) {
+                $source = \Hazaar\Loader::getFilePath($path_type, $source_file);
 
-                if(in_array('apc', get_loaded_extensions()))
-                    $apc_key = md5(gethostname() . ':' . $this->source);
+            }else{ //Otherwise, search for files with supported extensions
 
-                if(isset($apc_key)) {
+                $extensions = array('json', 'ini'); //Ordered by preference
 
-                    if(apc_exists($apc_key)) {
+                foreach($extensions as $ext){
 
-                        $info = apc_cache_info('user');
+                    $filename = $source_file . '.' . $ext;
 
-                        $mtime = 0;
-
-                        foreach($info['cache_list'] as $cache) {
-
-                            if(array_key_exists('info', $cache) && $cache['info'] == $apc_key) {
-
-                                $mtime = ake($cache, 'mtime');
-
-                                break;
-
-                            }
-
-                        }
-
-                        if($mtime > filemtime($this->source))
-                            $options = apc_fetch($apc_key);
-
-                    }
-
-                }
-
-                if(! $options && file_exists($this->source)) {
-
-                    $options = parse_ini_file($this->source, TRUE, INI_SCANNER_RAW);
-
-                    if(isset($apc_key))
-                        apc_store($apc_key, $options);
+                    if($source = \Hazaar\Loader::getFilePath($path_type, $filename))
+                        break;
 
                 }
 
             }
 
+            $config = $this->load($source, $defaults);
+
         }
-
-        if(array_key_exists($this->env, $options))
-            $this->loaded = TRUE;
-
-        $config = $this->load($options, $this->env, $defaults);
 
         parent::__construct($config);
 
-    }
-
-    public function reload() {
-
-        $options = parse_ini_file($this->source, TRUE, INI_SCANNER_RAW);
-
-        $config = $this->load($options, $this->env, $defaults);
-
-        return $this->populate($config);
+        if(!$this->isEmpty())
+            $this->processConfig($this);
 
     }
 
-    /**
-     * @private
-     */
-    private function load($options, $env, &$config = NULL) {
+    public function load($source = null, $defaults = array()) {
 
-        if(! is_array($config))
-            $config = array();
+        if($source)
+            $this->source = $source;
+        else
+            $source = $this->source;
 
-        if(! array_key_exists($env, $options))
-            return $config;
+        $options = new \Hazaar\Map();
 
-        foreach($options[$env] as $key => $value) {
+        if(file_exists($this->source)) {
+
+            //Check if APC is available for caching and load the config from cache.
+            if(in_array('apc', get_loaded_extensions())){
+
+                $apc_key = md5(gethostname() . ':' . $this->source);
+
+                if(apc_exists($apc_key)) {
+
+                    $info = apc_cache_info('user');
+
+                    $mtime = 0;
+
+                    foreach($info['cache_list'] as $cache) {
+
+                        if(array_key_exists('info', $cache) && $cache['info'] == $apc_key) {
+
+                            $mtime = ake($cache, 'mtime');
+
+                            break;
+
+                        }
+
+                    }
+
+                    if($mtime > filemtime($this->source))
+                        $options->populate(apc_fetch($apc_key));
+
+                }
+
+            }
+
+            if($options->isEmpty()) {
+
+                $info = pathinfo($this->source);
+
+                if($info['extension'] == 'json')
+                    $options->fromJSON(file_get_contents($this->source));
+
+                elseif($info['extension'] == 'ini')
+                    $options->fromDotNotation(parse_ini_file($this->source, TRUE, INI_SCANNER_RAW));
+
+                if(isset($apc_key))
+                    apc_store($apc_key, $options);
+
+            }
+
+        }
+
+
+
+        if(! $options->has($this->env))
+            return null;
+
+        $config = new \Hazaar\Map($defaults);
+
+        foreach($options[$this->env] as $key => $values) {
 
             if($key == 'include') {
 
-                if(! is_array($value))
-                    $value = array($value);
+                if(!\Hazaar\Map::is_array($values))
+                    $values = array($values);
 
-                foreach($value as $include_environment)
-                    $this->load($options, $include_environment, $config);
+                foreach($values as $include_environment)
+                    $config->extend($options[$include_environment]);
 
             } elseif($key == 'import') {
 
-                if($file = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $value)) {
+                if($file = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $values)) {
 
                     if(file_exists($file)) {
 
-                        $options = parse_ini_file($file, TRUE, INI_SCANNER_RAW);
+                        $info = pathinfo($this->source);
 
-                        $this->load($options, $env, $config);
+                        if($info['extension'] == 'json')
+                            $config->fromJSON(file_get_contents($file));
+
+                        elseif($info['extension'] == 'ini')
+                            $config->fromDotNotation(parse_ini_file($file, TRUE, INI_SCANNER_RAW));
 
                     }
 
@@ -157,11 +182,13 @@ class Config extends \Hazaar\Map {
 
             } else {
 
-                $this->loadConfigOption($key, $value, $config);
+                $config->extend($values);
 
             }
 
         }
+
+        $this->loaded = TRUE;
 
         return $config;
 
@@ -176,129 +203,52 @@ class Config extends \Hazaar\Map {
 
     }
 
-    private function parseValue($value) {
+    /**
+     * @private
+     */
+    private function processConfig(\Hazaar\Map $config = null) {
 
-        if(is_array($value)) {
+        if(!$config)
+            $config = $this;
 
-            foreach($value as &$v)
-                $v = $this->parseValue($v);
+        foreach($config as $key => $value){
 
-        } else {
+            switch($key) {
 
-            $first = substr($value, 0, 1);
+                /*
+                 * Authentication parameters set static variables in the Hazaar\Auth\Adapter class.
+                 */
+                case 'auth':
 
-            if($first == "'" || $first == '"') {
+                    foreach($value as $param) {
 
-                if(! substr($value, -1, 1) == $first)
-                    throw new \Exception('Encapsulated string not closed in config file!');
+                        if(property_exists('\Hazaar\Auth\Adapter', $param))
+                            \Hazaar\Auth\Adapter::$$param = $value;
 
-                $value = trim($value, $first);
+                    }
 
-            } elseif(strtolower($value) == 'false') {
+                /*
+                 * PHP root elements can be set directly with the PHP ini_set function
+                 */
+                case 'php' :
 
-                $value = FALSE;
+                    $php_values = $value->toDotNotation()->toArray();
 
-            } elseif(strtolower($value) == 'true') {
+                    foreach($php_values as $directive => $php_value)
+                        ini_set($directive, $php_value);
 
-                $value = TRUE;
+                    break;
 
-            } elseif(is_numeric($value)) {
+                case 'paths':
 
-                $value = (int)$value;
+                    foreach($value as $param)
+                        \Hazaar\Loader::getInstance()->addSearchPath($param, $value);
+
+                    break;
 
             }
 
         }
-
-        return $value;
-
-    }
-
-    /**
-     * @private
-     */
-    private function loadConfigOption($key, $value, &$config) {
-
-        /*
-         * Store the configuration value
-         *
-         * Turns the dot notation element into a multidimensional array
-         */
-
-        $value = $this->parseValue($value);
-
-        $params = preg_split('/\./', $key);
-
-        $array = NULL;
-        //Declare the base value
-
-        $ptr = &$array;
-        //Set a 'pointer' to the first level
-
-        foreach($params as $p) {
-
-            $ptr[$p] = NULL;
-            //Create a new child element on the current level
-
-            $ptr = &$ptr[$p];
-            //Set the 'pointer' to the new element on the next level
-
-        }
-
-        $ptr = $value;
-
-        //Set the final level element to the actual value
-
-        //Merge this array over the top of the existing values
-        $config = array_replace_recursive($config, $array);
-
-        /*
-         * Act upon certain config elements
-         */
-
-        $param = array_shift($params);
-
-        switch($param) {
-
-            /*
-             * Authentication parameters set static variables in the Hazaar\Auth\Adapter class.
-             */
-            case 'auth':
-
-                foreach($params as $param) {
-
-                    if(property_exists('\Hazaar\Auth\Adapter', $param))
-                        \Hazaar\Auth\Adapter::$$param = $value;
-
-                }
-
-            /*
-             * PHP root elements can be set directly with the PHP ini_set function
-             */
-            case 'php' :
-                ini_set(implode('.', $params), $value);
-
-                break;
-
-            /*
-             * If the debug option is set turn on debugging
-             */
-            case 'debug' :
-                if($value)
-                    $this->enableLogging();
-
-                break;
-
-            case 'paths':
-
-                foreach($params as $param)
-                    \Hazaar\Loader::getInstance()->addSearchPath($param, $value);
-
-                break;
-
-        }
-
-        return $config;
 
     }
 
@@ -320,11 +270,8 @@ class Config extends \Hazaar\Map {
      */
     public function getSource() {
 
-        if(file_exists($this->source)) {
-
+        if(file_exists($this->source))
             return file_get_contents($this->source);
-
-        }
 
         return 'config file not found';
 

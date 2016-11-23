@@ -71,26 +71,26 @@ class View {
 
                     $load = $this->application->config->view->helper->load;
 
-                    if (! \Hazaar\Map::is_array($load))
-                        $load = array($load);
+                    if (!Map::is_array($load))
+                        $load = new Map(array($load));
 
-                    foreach($load as $helper) {
+                    $helpers = new Map();
 
-                        $args = array();
+                    foreach($load as $key => $helper) {
 
-                        if (preg_match('/(\w*)\[(.*)\]/', $helper, $matches)) {
+                        //Check if the helper is in the old INI file format and parse it if it is.
+                        if (!is_array($helper) && preg_match('/(\w*)\[(.*)\]/', $helper, $matches)) {
 
-                            $helper = $matches[1];
+                            $key = $matches[1];
 
-                            foreach (explode(',', $matches[2]) as $arg) {
+                            $helper = array_unflatten($matches[2], '=', ',');
 
-                                $kv = explode('=', $arg);
+                            //Fix the values so they are the correct types
+                            foreach($helper as &$arg) {
 
-                                if(isset($kv[1])) {
+                                if($arg = trim($arg)) {
 
-                                    $val = trim($kv[1]);
-
-                                    if (in_array(strtolower($val), array(
+                                    if (in_array(strtolower($arg), array(
                                         'yes',
                                         'no',
                                         'true',
@@ -99,22 +99,16 @@ class View {
                                         'off'
                                     ))) {
 
-                                        $val = boolify($val);
+                                        $arg = boolify($arg);
 
-                                    } elseif (is_numeric($val)) {
+                                    } elseif (is_numeric($arg)) {
 
-                                        if (strpos($val, '.') === FALSE) {
-
-                                            settype($val, 'int');
-                                        } else {
-
-                                            settype($val, 'float');
-
-                                        }
+                                        if (strpos($arg, '.') === FALSE)
+                                            settype($arg, 'int');
+                                        else
+                                            settype($arg, 'float');
 
                                     }
-
-                                    $args[trim($kv[0])] = $val;
 
                                 }
 
@@ -122,9 +116,12 @@ class View {
 
                         }
 
-                        $this->addHelper($helper, $args);
+                        $helpers[$key]->fromDotNotation($helper);
 
                     }
+
+                    foreach($helpers as $helper => $args)
+                        $this->addHelper($helper, $args->toArray());
 
                 }
 

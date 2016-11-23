@@ -65,7 +65,8 @@ function errorAndDie() {
 
         if(count($arg) > 0){
 
-            if($arg[0] instanceof \Exception){
+            if($arg[0] instanceof \Exception
+                || $arg[0] instanceof \Error){
 
                 $error = array(
                     $arg[0]->getCode(),
