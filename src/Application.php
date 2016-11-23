@@ -95,11 +95,8 @@ class Application {
      *
      * @param string $env
      *            The application environment name. eg: 'development' or 'production'
-     *
-     * @param string $configFile
-     *            The application configuration file to use. eg: application.ini
      */
-    function __construct($env, $configFile) {
+    function __construct($env) {
 
         $this->environment = $env;
 
@@ -134,7 +131,7 @@ class Application {
          * it will just be an empty object that will handle calls to
          * it silently.
          */
-        $this->config = new Application\Config($configFile, $env, $defaults);
+        $this->config = new Application\Config('application', $env, $defaults);
 
         Application::$instance = $this;
 
