@@ -1,0 +1,46 @@
+{
+  "production": {
+    "app": {
+      "name": "Example Application",
+      "version": "0.0.1",
+      "locale": "en_AU.UTF-8",
+      "layout": "application",
+      "theme": {
+        "name": "test"
+      },
+      "defaultController": "Index"
+    },
+    "paths": {
+      "model": "models",
+      "view": "views",
+      "controller": "controllers"
+    },
+    "php": {
+      "date": {
+        "timezone": "UTC"
+      },
+      "display_startup_errors": 0,
+      "display_errors": 0
+    },
+    "view": {
+      "helper": {
+        "load": {
+          "bootstrap": {
+            "theme": "cyborg"
+          }
+        }
+      }
+    }
+  },
+  "development": {
+    "include": "production",
+    "app": {
+      "locale": "en",
+      "debug": true
+    },
+    "php": {
+      "display_startup_errors": 1,
+      "display_errors": 1
+    }
+  }
+}

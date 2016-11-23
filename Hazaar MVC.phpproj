@@ -596,8 +596,7 @@
     <Compile Include="src\View\Widgets\TreeItem.php" />
     <Compile Include="src\View\Widgets\Widget.php" />
     <Compile Include="src\View\Widgets\Window.php" />
-    <Compile Include="tests\application\configs\application.ini" />
-    <Compile Include="tests\application\configs\warlock.ini" />
+    <Compile Include="tests\application\configs\warlock.json" />
     <Compile Include="tests\application\controllers\Index.php" />
     <Compile Include="tests\application\views\application.phtml" />
     <Compile Include="tests\application\views\index.phtml" />
@@ -1174,5 +1173,6 @@
     <Content Include="libs\Warlock\warlock_icon.png" />
     <Content Include="LICENCE.md" />
     <Content Include="phpunit.xml" />
+    <Content Include="tests\application\configs\application.json" />
   </ItemGroup>
 </Project>
