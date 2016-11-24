@@ -38,7 +38,7 @@ abstract class Request implements Request\_Interface {
      */
     private $path;
 
-    private $response_type = 'html';
+    protected $response_type = null;
 
     function __construct() {
 
@@ -52,8 +52,6 @@ abstract class Request implements Request\_Interface {
 
         if($this->base_path)
             $this->evaluate($this->base_path);
-
-        $this->response_type = ake($this->params, 'response_type', 'html');
 
     }
 

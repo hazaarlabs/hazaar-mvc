@@ -100,6 +100,8 @@ class Http extends \Hazaar\Application\Request {
 
         }
 
+        $this->response_type = ake($request, 'response_type');
+
         return substr($request_uri, 1);
 
     }
