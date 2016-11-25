@@ -1756,7 +1756,12 @@ class Map implements \ArrayAccess, \Iterator {
      */
     public function fromJSON($json, $merge = FALSE){
 
-        $new = json_decode($json, true);
+        $bom = pack('H*','EFBBBF');
+
+        $json = preg_replace("/^$bom/", '', $json);
+
+        if(($new = json_decode($json, true)) === null)
+            throw new \Exception('JSON Parse Error #' . json_last_error() . ': ' . json_last_error_msg());
 
         if($merge)
             $this->extend($new);
