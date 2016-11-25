@@ -79,7 +79,7 @@ class View {
                     foreach($load as $key => $helper) {
 
                         //Check if the helper is in the old INI file format and parse it if it is.
-                        if (!is_array($helper)){
+                        if (!Map::is_array($helper)){
 
                             if(preg_match('/(\w*)\[(.*)\]/', $helper, $matches)) {
 
@@ -116,18 +116,16 @@ class View {
 
                                 }
 
+                                $helpers[$key]->fromDotNotation($helper);
+
                                 //If there is no config and it is just the helper name, just convert it to the new format
                             }else{
 
-                                $key = $helper;
-
-                                $helper = array();
+                                $helpers[$helper] = array();
 
                             }
 
                         }
-
-                        $helpers[$key]->fromDotNotation($helper);
 
                     }
 
