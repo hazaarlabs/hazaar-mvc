@@ -36,7 +36,6 @@
   "development": {
     "include": "production",
     "app": {
-      "locale": "en",
       "debug": true
     },
     "php": {
