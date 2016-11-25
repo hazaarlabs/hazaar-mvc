@@ -79,38 +79,49 @@ class View {
                     foreach($load as $key => $helper) {
 
                         //Check if the helper is in the old INI file format and parse it if it is.
-                        if (!is_array($helper) && preg_match('/(\w*)\[(.*)\]/', $helper, $matches)) {
+                        if (!is_array($helper)){
 
-                            $key = $matches[1];
+                            if(preg_match('/(\w*)\[(.*)\]/', $helper, $matches)) {
 
-                            $helper = array_unflatten($matches[2], '=', ',');
+                                $key = $matches[1];
 
-                            //Fix the values so they are the correct types
-                            foreach($helper as &$arg) {
+                                $helper = array_unflatten($matches[2], '=', ',');
 
-                                if($arg = trim($arg)) {
+                                //Fix the values so they are the correct types
+                                foreach($helper as &$arg) {
 
-                                    if (in_array(strtolower($arg), array(
-                                        'yes',
-                                        'no',
-                                        'true',
-                                        'false',
-                                        'on',
-                                        'off'
-                                    ))) {
+                                    if($arg = trim($arg)) {
 
-                                        $arg = boolify($arg);
+                                        if (in_array(strtolower($arg), array(
+                                            'yes',
+                                            'no',
+                                            'true',
+                                            'false',
+                                            'on',
+                                            'off'
+                                        ))) {
 
-                                    } elseif (is_numeric($arg)) {
+                                            $arg = boolify($arg);
 
-                                        if (strpos($arg, '.') === FALSE)
-                                            settype($arg, 'int');
-                                        else
-                                            settype($arg, 'float');
+                                        } elseif (is_numeric($arg)) {
+
+                                            if (strpos($arg, '.') === FALSE)
+                                                settype($arg, 'int');
+                                            else
+                                                settype($arg, 'float');
+
+                                        }
 
                                     }
 
                                 }
+
+                                //If there is no config and it is just the helper name, just convert it to the new format
+                            }else{
+
+                                $key = $helper;
+
+                                $helper = array();
 
                             }
 

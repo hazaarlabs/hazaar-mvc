@@ -145,14 +145,29 @@ class Config extends \Hazaar\Map {
 
         }
 
-
-
         if(! $options->has($this->env))
             return null;
 
         $config = new \Hazaar\Map($defaults);
 
-        foreach($options[$this->env] as $key => $values) {
+        if($this->loadConfigOptions($options, $config)){
+
+            $this->loaded = TRUE;
+
+            return $config;
+
+        }
+
+        return false;
+
+    }
+
+    private function loadConfigOptions(\Hazaar\Map $options, \Hazaar\Map $config, $env = null){
+
+        if(!$env)
+            $env = $this->env;
+
+        foreach($options[$env] as $key => $values) {
 
             if($key == 'include') {
 
@@ -160,7 +175,7 @@ class Config extends \Hazaar\Map {
                     $values = array($values);
 
                 foreach($values as $include_environment)
-                    $config->extend($options[$include_environment]);
+                    $this->loadConfigOptions($options, $config, $include_environment);
 
             } elseif($key == 'import') {
 
@@ -182,17 +197,16 @@ class Config extends \Hazaar\Map {
 
             } else {
 
-                $config->extend($values);
+                $config->set($key, $values, true);
 
             }
 
         }
 
-        $this->loaded = TRUE;
-
         return $config;
 
     }
+
 
     /**
      * Check whether the config was loaded from the source file.

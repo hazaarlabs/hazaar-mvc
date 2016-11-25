@@ -993,7 +993,7 @@ class Map implements \ArrayAccess, \Iterator {
      *
      * @since       1.0.0
      */
-    public function set($key, $value) {
+    public function set($key, $value, $merge_arrays = false) {
 
         if($this->locked)
             return FALSE;
@@ -1004,11 +1004,8 @@ class Map implements \ArrayAccess, \Iterator {
         /*
          * Here we want to specifically look for a REAL array so we can convert it to a Map
          */
-        if(is_array($value)) {
-
+        if(is_array($value))
             $value = new Map($value, NULL, $this->filter);
-
-        }
 
         $value = $this->execFilter($key, $value, 'in');
 
@@ -1022,17 +1019,20 @@ class Map implements \ArrayAccess, \Iterator {
 
                 $cur = &$this->elements;
 
-                foreach(explode('.', $key) as $child) {
-
+                foreach(explode('.', $key) as $child)
                     $cur = &$cur[$child];
-
-                }
 
                 $cur = $value;
 
             } else {
 
-                $this->elements[$key] = $value;
+                if($merge_arrays === true
+                    && array_key_exists($key, $this->elements)
+                    && $this->elements[$key] instanceof Map
+                    && $value instanceof Map)
+                    $this->elements[$key]->extend($value);
+                else
+                    $this->elements[$key] = $value;
 
             }
 
