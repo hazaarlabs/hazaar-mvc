@@ -654,7 +654,9 @@ class Map implements \ArrayAccess, \Iterator {
 
                     $elem = $this->execFilter($key, $elem, 'in');
 
-                    if(array_key_exists($key, $this->elements) && $this->elements[$key] instanceof Map) {
+                    if($elem instanceof Map
+                        && array_key_exists($key, $this->elements)
+                        && $this->elements[$key] instanceof Map) {
 
                         $this->elements[$key]->extend($elem);
 
