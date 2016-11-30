@@ -81,7 +81,7 @@ class View {
                         //Check if the helper is in the old INI file format and parse it if it is.
                         if (!Map::is_array($helper)){
 
-                            if(preg_match('/(\w*)\[(.*)\]/', $helper, $matches)) {
+                            if(preg_match('/(\w*)\[(.*)\]/', trim($helper), $matches)) {
 
                                 $key = $matches[1];
 
