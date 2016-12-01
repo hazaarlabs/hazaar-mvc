@@ -212,6 +212,15 @@ class Uri implements \ArrayAccess {
 
     }
 
+    public function queryString(){
+
+        if(count($this->params) > 0)
+            return '?' . http_build_query($this->params);
+
+        return null;
+
+    }
+
 }
 
 
