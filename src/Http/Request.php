@@ -351,11 +351,8 @@ class Request extends \Hazaar\Map {
 
         }
 
-        if(($length = strlen($body)) > 0) {
-
-            $this->setHeader('Content-Length', $length);
-
-        }
+        //Always include a content-length header.  Fixes POST to IIS returning 411 (length required).
+        $this->setHeader('Content-Length', strlen($body));
 
         /*
          * Build the header section
