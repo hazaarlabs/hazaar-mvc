@@ -25,7 +25,7 @@ class Uri implements \ArrayAccess {
             return;
 
         if(array_key_exists('query', $this->parts))
-            $this->params = array_unflatten($this->parts['query'], '=', '&');
+            parse_str($this->parts['query'], $this->params);
 
     }
 
