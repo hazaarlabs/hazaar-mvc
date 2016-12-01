@@ -222,17 +222,29 @@ class Error extends \Hazaar\Controller {
             switch ($this->response) {
 
                 case 'json' :
+
                     $error = array(
                         'ok' => FALSE,
                         'error' => array(
                             'type' => $this->errno,
                             'status' => $this->status,
-                            'str' => $this->errstr,
-                            'line' => $this->errline,
-                            'file' => $this->errfile,
-                            'context' => $this->errcontext
+                            'str' => $this->errstr
                         )
                     );
+
+                    if(ini_get('display_errors')){
+
+                        $error['error']['line'] = $this->errline;
+
+                        $error['error']['file'] = $this->errfile;
+
+                        $error['error']['context'] = $this->errcontext;
+
+                        $error['trace'] = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+
+                        $error['config'] = $this->application->config->toArray();
+
+                    }
 
                     $response = new Response\Json($error, $this->code);
 
@@ -327,8 +339,6 @@ class Error extends \Hazaar\Controller {
                     echo $protocol->encode('error', $error) . "\n";
 
                     exit($this->errno);
-
-                    break;
 
                 case 'html' :
                 default :
