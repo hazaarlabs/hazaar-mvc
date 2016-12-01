@@ -328,5 +328,32 @@ class Response {
 
     }
 
+    public function getContentType(&$args = array()){
+
+        $header = str_replace('; ', ';', $this->getHeader('content-type'));
+
+        $start = strpos($header, ';');
+
+        $content_type = substr($header, 0, $start);
+
+        $args = array_unflatten(substr($header, $start + 1), '=', ';');
+
+        return $content_type;
+
+    }
+
+    public function body(){
+
+        switch($this->getContentType()){
+
+            case 'application/json':
+                return json_decode($this->body, true);
+
+        }
+
+        return $this->body;
+
+    }
+
 }
 
