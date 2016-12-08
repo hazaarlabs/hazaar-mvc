@@ -190,7 +190,7 @@ class Hmv extends \Hazaar\View\Helper {
             'string' => 'text',
             'bool' => 'checkbox',
             'boolean' => 'checkbox',
-            'float' => 'text',
+            'float' => 'number',
             'int' => 'number',
             'integer' => 'number'
         );
