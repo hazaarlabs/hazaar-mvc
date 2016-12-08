@@ -190,7 +190,9 @@ class Hmv extends \Hazaar\View\Helper {
             'string' => 'text',
             'bool' => 'checkbox',
             'boolean' => 'checkbox',
-            'float' => 'text'
+            'float' => 'text',
+            'int' => 'number',
+            'integer' => 'number'
         );
 
         $hiddenInputs = $this->html->td();
@@ -362,7 +364,7 @@ class Hmv extends \Hazaar\View\Helper {
                     $def['input'] = 'array';
 
                 elseif(!array_key_exists('input', $def))
-                    $def['input'] = $typeMap[ake($def, 'type', 'string')];
+                    $def['input'] = ake($typeMap, ake($def, 'type', 'string'), 'text');
 
                 switch($type = ake($def, 'input')){
                     case 'array':
