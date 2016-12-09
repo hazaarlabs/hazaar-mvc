@@ -265,7 +265,7 @@ class Hmv extends \Hazaar\View\Helper {
                 //If the object definition has a data source, use that to create the select
                 if($data = $this->getItemData($def, $item)){
 
-                    $labelTD = $this->html->td($this->html->label($label));
+                    $labelTD = $this->html->td($this->html->label($label)->for($name));
 
                     if(ake($def, 'nulls', true))
                         $data = array('null' => 'Select...') + $data;
@@ -275,7 +275,7 @@ class Hmv extends \Hazaar\View\Helper {
                     else
                         $value = (string)$item;
 
-                    $input = $this->html->select($name, $data, $value)->class($this->input_class);
+                    $input = $this->html->select($name, $data, $value)->class($this->input_class)->id($name);
 
                 }else{ //Otherwise, try and render the object as a sub-object.
 
@@ -358,7 +358,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $values = null;
 
-                $labelTD = $this->html->td($this->html->label($label));
+                $labelTD = $this->html->td($this->html->label($label)->for($name));
 
                 if($data = $this->getItemData($def, $object))
                     $def['input'] = 'array';
@@ -373,7 +373,7 @@ class Hmv extends \Hazaar\View\Helper {
                     case 'checkbox':
                     case 'text':
                     default:
-                        $input = $this->html->input($type, $name, $item)->class($this->input_class);
+                        $input = $this->html->input($type, $name, $item)->class($this->input_class)->id($name);
                         break;
 
                 }
