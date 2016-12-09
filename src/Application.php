@@ -751,16 +751,16 @@ class Application {
 
         if($sess->has('REDIRECT')) {
 
-            if($uri = trim($sess['REDIRECT']['URI'])) {
+            if($uri = trim(ake($sess['REDIRECT'], 'URI'))) {
 
-                if($sess['REDIRECT']['METHOD'] == 'POST') {
+                if(ake($sess['REDIRECT'], 'METHOD') == 'POST') {
 
                     if(substr($uri, -1, 1) !== '?')
                         $uri .= '?';
                     else
                         $uri .= '&';
 
-                    $uri .= http_build_query($sess['REDIRECT']['POST']);
+                    $uri .= http_build_query(ake($sess['REDIRECT'], 'POST'));
 
                 }
 
