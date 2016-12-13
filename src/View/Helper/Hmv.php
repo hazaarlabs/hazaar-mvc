@@ -360,7 +360,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $labelTD = $this->html->td($this->html->label($label)->for($name));
 
-                if($data = $this->getItemData($def, $object))
+                if($values = $this->getItemData($def, $object))
                     $def['input'] = 'array';
 
                 elseif(!array_key_exists('input', $def))
