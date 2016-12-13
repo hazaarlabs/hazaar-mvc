@@ -12,21 +12,29 @@ class File extends \Hazaar\Logger\Backend {
 
         $this->setDefaultOption('logfile', \Hazaar\Application::getInstance()->runtimePath('hazaar.log'));
 
+        $this->setDefaultOption('errfile', \Hazaar\Application::getInstance()->runtimePath('error.log'));
+
         $this->setDefaultOption('write_ip', TRUE);
 
         $this->setDefaultOption('write_timestamp', TRUE);
 
         $this->setDefaultOption('write_uri', TRUE);
 
-        if(($this->h = fopen($this->getOption('logfile'), 'a')) == FALSE)
+        if(($this->hLog = fopen($this->getOption('logfile'), 'a')) == FALSE)
             throw new Exception\OpenLogFileFailed($this->getOption('logfile'));
+
+        if(($this->hErr = fopen($this->getOption('errfile'), 'a')) == FALSE)
+            throw new Exception\OpenLogFileFailed($this->getOption('errfile'));
 
     }
 
     public function postRun() {
 
-        if($this->h)
-            fclose($this->h);
+        if($this->hLog)
+            fclose($this->hLog);
+
+        if($this->hErr)
+            fclose($this->hErr);
 
     }
 
@@ -51,7 +59,10 @@ class File extends \Hazaar\Logger\Backend {
 
         $line[] = $message;
 
-        fwrite($this->h, implode(' | ', $line) . "\r\n");
+        fwrite($this->hLog, implode(' | ', $line) . "\r\n");
+
+        if($level == E_ERROR)
+            fwrite($this->hErr, implode(' | ', $line) . "\r\n");
 
     }
 
@@ -63,7 +74,7 @@ class File extends \Hazaar\Logger\Backend {
 
         $trace = ob_get_clean();
 
-        fwrite($this->h, $trace);
+        fwrite($this->hLog, $trace);
 
     }
 

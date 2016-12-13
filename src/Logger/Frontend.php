@@ -47,7 +47,7 @@ class Frontend {
 
         }
 
-        Frontend::$message_buffer = null;
+        Frontend::$message_buffer = array();
 
     }
 
@@ -59,11 +59,8 @@ class Frontend {
 
     static public function destroy() {
 
-        if(Frontend::$logger instanceof Frontend) {
-
+        if(Frontend::$logger instanceof Frontend)
             Frontend::$logger->close();
-
-        }
 
     }
 

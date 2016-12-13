@@ -254,11 +254,15 @@ function errorAndDie() {
 
 function error_handler($errno, $errstr, $errfile = NULL, $errline = NULL, $errcontext = NULL) {
 
+    \Hazaar\Logger\Frontend::e('CORE', implode(' | ', array('Error #' . $errno, $errfile, 'Line #' . $errline, $errstr)));
+
     errorAndDie($errno, $errstr, $errfile, $errline, $errcontext, debug_backtrace());
 
 }
 
 function exception_handler($e) {
+
+    \Hazaar\Logger\Frontend::e('CORE', implode(' | ', array('Error #' . $e->getCode(), $e->getFile(), 'Line #' . $e->getLine(), $e->getMessage())));
 
     errorAndDie($e);
 
