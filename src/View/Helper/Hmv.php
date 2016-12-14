@@ -368,7 +368,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                 switch($type = ake($def, 'input')){
                     case 'array':
-                        $input = $this->html->select($name, $values);
+                        $input = $this->html->select($name, $values, $item);
                         break;
                     case 'checkbox':
                     case 'text':
