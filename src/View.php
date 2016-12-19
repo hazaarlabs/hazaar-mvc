@@ -125,6 +125,10 @@ class View {
 
                             }
 
+                        }else{
+
+                            $helpers[$key] = $helper;
+
                         }
 
                     }
