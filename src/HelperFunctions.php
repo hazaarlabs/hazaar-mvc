@@ -103,7 +103,7 @@ function strbool($value) {
 
     $value = strtolower(trim($value));
 
-    if ($value == 't' || $value == 'true' || $value == 'on' || $value == 'yes')
+    if ($value == 't' || $value == 'true' || $value == 'on' || $value == 'yes' || $value == 'ok')
         return 'true';
 
     elseif (preg_match('/(\!|not)\s*null/', $value))
