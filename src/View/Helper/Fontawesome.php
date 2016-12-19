@@ -39,7 +39,7 @@ class Fontawesome extends \Hazaar\View\Helper {
 
         $version = ake($args, 'version', '4.6.3');
 
-        $this->css_include = 'https://maxcdn.bootstrapcdn.com/font-awesome/' . $version . '/css/font-awesome.min.css';
+        $this->css_include = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/' . $version . '/css/font-awesome.min.css';
 
         $view->link($this->css_include);
 
