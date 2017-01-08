@@ -1,6 +1,12 @@
 ﻿function HazaarJSHelper(base_url, data) {
     this.__base_url = base_url;
     this.__data = (typeof data == 'undefined') ? {} : data;
+    this.http_build_query = function (array) {
+        var parts = [];
+        for (x in array)
+            parts.push(x + '=' + array[x]);
+        return parts.join('&');
+    }
     this.url = function (controller, action, params) {
         var url = this.__base_url;
         if (typeof controller == 'undefined')
@@ -9,7 +15,9 @@
         if (typeof action == 'undefined')
             return url;
         url += '/' + action;
-        return url;
+        if (typeof params != 'object' || params.length == 0)
+            return url;
+        return url + '?' + this.http_build_query(params);
     }
     this.set = function (key, value) {
         this.__data[key] = value;
