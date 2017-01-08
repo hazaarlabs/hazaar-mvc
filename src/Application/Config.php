@@ -41,7 +41,7 @@ class Config extends \Hazaar\Map {
      * @param       string $env The application environment to read settings for.  Usually 'development' or
      *                             'production'.
      */
-    function __construct($source_file, $env = NULL, $defaults = array(), $path_type = FILE_PATH_CONFIG) {
+    function __construct($source_file = null, $env = NULL, $defaults = array(), $path_type = FILE_PATH_CONFIG) {
 
         $config = null;
 
@@ -296,30 +296,55 @@ class Config extends \Hazaar\Map {
 
     }
 
-    public function write() {
+    public function write($target = null) {
 
-        if(! $this->source)
+        if(!$target)
+            $target = $this->source;
+
+        if(!$target)
             return FALSE;
 
+        $info = pathinfo($target);
+
+        $type = ake($info, 'extension', 'json');
+
+        $options = new \Hazaar\Map();
+
         //Grab the original file so we can merge into it
-        $options = new \Hazaar\Map((file_exists($this->source) ? parse_ini_file($this->source, TRUE) : array()));
+        if($this->source && file_exists($this->source)){
 
-        $options->set($this->env, $this->todotnotation());
+            $info = pathinfo($this->source);
 
-        $output = '';
+            if($info['extension'] == 'json')
+                $options->fromJSON(file_get_contents($this->source));
 
-        foreach($options as $env => $option) {
-
-            $output .= "[$env]\n";
-
-            $output .= $option->todotnotation()
-                              ->flatten(' = ', "\n") . "\n";
-
-            $output .= "\n";
+            elseif($info['extension'] == 'ini')
+                $options->fromDotNotation(parse_ini_file($this->source, TRUE, INI_SCANNER_RAW));
 
         }
 
-        $result = file_put_contents($this->source, $output);
+        $options->set($this->env, $this->toArray());
+
+        $output = '';
+
+        if($type == 'ini'){
+
+            foreach($options as $env => $option) {
+
+                $output .= "[$env]" . LINE_BREAK;
+
+                $output .= $option->todotnotation()
+                                  ->flatten(' = ', LINE_BREAK) . LINE_BREAK;
+
+            }
+
+        }else{
+
+            $output = json_encode($this->toArray());
+
+        }
+
+        $result = file_put_contents($target, $output);
 
         if($result === FALSE)
             return FALSE;
