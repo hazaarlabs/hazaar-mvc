@@ -224,10 +224,12 @@ class Loader {
      * The path type can be anything if you are using the loader to load your own library files. There are
      * built in path types for loading Hazaar library files.
      *
+     * * FILE_PATH_ROOT - Path that contains the whole project
      * * FILE_PATH_MODEL - Path contains model classes
      * * FILE_PATH_VIEW - Path contains view files.
      * * FILE_PATH_CONTROLLER - Path contains controller classes.
      * * FILE_PATH_SUPPORT - Path contains support files. Used by the Application::runDirect()method.
+     * * FILE_PATH_CONFIG - Configuration files
      *
      * @since 1.0.0
      *
@@ -239,10 +241,19 @@ class Loader {
      */
 	public function addSearchPath($type, $path){
 
+        $is_win = (strtoupper(substr(PHP_OS, 0, 3)) == 'WIN');
+
+        if(($is_win && $path[1] != ':' && $path[2] != DIRECTORY_SEPARATOR)
+            || (!$is_win && $path[0] != DIRECTORY_SEPARATOR)){
+
+            $path = ROOT_PATH . DIRECTORY_SEPARATOR . $path;
+
+        }
+
 		if($path = realpath($path)){
 
-			if(! array_key_exists($type, $this->paths)|| ! in_array($path, $this->paths[$type]))
-				$this->paths[$type][] = $path;
+            if(! array_key_exists($type, $this->paths)|| ! in_array($path, $this->paths[$type]))
+                $this->paths[$type][] = $path;
 
 			return TRUE;
 
