@@ -135,6 +135,18 @@ class Application {
 
         Application::$instance = $this;
 
+        /*
+         * PHP root elements can be set directly with the PHP ini_set function
+         */
+        if($this->config->has('php')){
+
+            $php_values = $this->config->php->toDotNotation()->toArray();
+
+            foreach($php_values as $directive => $php_value)
+                ini_set($directive, $php_value);
+
+        }
+
         /**
          * Check the load average and protect ifneeded
          */
@@ -459,11 +471,7 @@ class Application {
      *
      * @since 1.0.0
      *
-     *        @exception Application\Exception\InvalidResponse ifthe controller returns an invalid response object
-     *
-     *        @exception Application\Exception\ErrorLoop ifan error was encountered while processing a
-     *        [[Hazaar\Controller\Error]] object
-     *
+     * @exception Application\Exception\ResponseInvalid if the controller returns an invalid response object
      */
     public function run(Controller $controller = NULL) {
 

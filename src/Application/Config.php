@@ -82,9 +82,6 @@ class Config extends \Hazaar\Map {
 
         parent::__construct($config);
 
-        if(!$this->isEmpty())
-            $this->processConfig($this);
-
     }
 
     public function load($source = null, $defaults = array()) {
@@ -214,55 +211,6 @@ class Config extends \Hazaar\Map {
     public function loaded() {
 
         return $this->loaded;
-
-    }
-
-    /**
-     * @private
-     */
-    private function processConfig(\Hazaar\Map $config = null) {
-
-        if(!$config)
-            $config = $this;
-
-        foreach($config as $key => $value){
-
-            switch($key) {
-
-                /*
-                 * Authentication parameters set static variables in the Hazaar\Auth\Adapter class.
-                 */
-                case 'auth':
-
-                    foreach($value as $param) {
-
-                        if(property_exists('\Hazaar\Auth\Adapter', $param))
-                            \Hazaar\Auth\Adapter::$$param = $value;
-
-                    }
-
-                /*
-                 * PHP root elements can be set directly with the PHP ini_set function
-                 */
-                case 'php' :
-
-                    $php_values = $value->toDotNotation()->toArray();
-
-                    foreach($php_values as $directive => $php_value)
-                        ini_set($directive, $php_value);
-
-                    break;
-
-                case 'paths':
-
-                    foreach($value as $param)
-                        \Hazaar\Loader::getInstance()->addSearchPath($param, $value);
-
-                    break;
-
-            }
-
-        }
 
     }
 
