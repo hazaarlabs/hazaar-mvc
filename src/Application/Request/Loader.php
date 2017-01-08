@@ -26,9 +26,9 @@ class Loader {
      *
      * @since 1.0.0
      *
-     * @param Hazaar\Application\Config $config The configuration object of the current application.
+     * @param \Hazaar\Application\Config $config The configuration object of the current application.
      *
-     * @return Hazaar\Application\Request Either a [[Hazaar\Application\Request\Http]] or
+     * @return \Hazaar\Application\Request Either a [[Hazaar\Application\Request\Http]] or
      * [[Hazaar\Application\Request\Cli]]
      * object.
      */
