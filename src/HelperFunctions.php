@@ -268,6 +268,46 @@ function array_unflatten($items, $delim = '=', $section_delim = ';') {
 
 }
 
+/**
+ * Converts a multi dimensional array into key[key][key] => value syntax that can be used in html INPUT field names.
+ *
+ * @param mixed $array
+ *
+ *@return array
+ */
+function array_build_html($array, $root = true){
+
+    if(!is_array($array))
+        return null;
+
+    $result = array();
+
+    foreach($array as $key => $value){
+
+        if(is_array($value)){
+
+            $value = array_build_html($value, false);
+
+            foreach($value as $skey => $svalue){
+
+                $newkey = $key . ( $root ? '[' . $skey . ']' : '][' . $skey);
+
+                $result[$newkey] = $svalue;
+
+            }
+
+        }else{
+
+            $result[$key] = $value;
+
+        }
+
+    }
+
+    return $result;
+
+}
+
 function base64url_encode($data) {
 
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
