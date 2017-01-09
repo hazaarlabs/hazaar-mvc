@@ -129,11 +129,15 @@ class Config extends \Hazaar\Map {
 
                 $info = pathinfo($this->source);
 
-                if($info['extension'] == 'json')
-                    $options->fromJSON(file_get_contents($this->source));
+                if($extension = ake($info, 'extension')){
 
-                elseif($info['extension'] == 'ini')
-                    $options->fromDotNotation(parse_ini_file($this->source, TRUE, INI_SCANNER_RAW));
+                    if($extension == 'json')
+                        $options->fromJSON(file_get_contents($this->source));
+
+                    elseif($extension == 'ini')
+                        $options->fromDotNotation(parse_ini_file($this->source, TRUE, INI_SCANNER_TYPED));
+
+                }
 
                 if(isset($apc_key))
                     apc_store($apc_key, $options);
