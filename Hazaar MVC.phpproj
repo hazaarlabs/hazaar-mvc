@@ -690,10 +690,13 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="composer.json" />
-    <Content Include="libs\admin\desktop.css" />
-    <Content Include="libs\admin\desktop.js" />
+    <Content Include="libs\admin\application.js" />
+    <Content Include="libs\admin\dashboard.phtml" />
     <Content Include="libs\admin\layout.css" />
     <Content Include="libs\admin\layout.phtml" />
+    <Content Include="libs\admin\login.css" />
+    <Content Include="libs\admin\login.phtml" />
+    <Content Include="libs\admin\settings.phtml" />
     <Content Include="libs\css\buttons.css" />
     <Content Include="libs\css\filebrowser.css" />
     <Content Include="libs\css\images\fileicon\archive.png" />
