@@ -90,6 +90,17 @@ class Hazaar extends \Hazaar\Controller\Action {
 
             if(class_exists('Hazaar\DBI\Adapter')){
 
+                $this->view->navitems['cache'] = array(
+                    'label' => 'Cache',
+                    'items' => array(
+                        'settings' => 'Settings'
+                    )
+                );
+
+            }
+
+            if(class_exists('Hazaar\DBI\Adapter')){
+
                 $this->view->navitems['db'] = array(
                     'label' => 'Database',
                     'items' => array(
