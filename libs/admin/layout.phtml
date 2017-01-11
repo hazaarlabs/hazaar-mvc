@@ -1,16 +1,80 @@
-<!DOCTYPE html>
+<?=$this->html->doctype();?>
+
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title>
-        Hazaar Application Console - <?=$this->title;?>
-    </title>
+    <title>Hazaar MVC</title>
 
     <?=$this->import(); ?>
 
 </head>
 <body>
 
-    <div id="desktop"></div>
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" href="<?=$this->url();?>">
+                    Hazaar MVC (<?=$this->application->config->app->name;?>)
+                </a>
+                <a class="navbar-brand" href="<?=$this->application->url();?>">Back to site</a>
+            </div>
+            <div id="navbar" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="<?=$this->url();?>">Dashboard</a>
+                    </li>
+                    <li>
+                        <a href="<?=$this->url('settings');?>">Settings</a>
+                    </li>
+                    <li>
+                        <a href="<?=$this->url('profile');?>">Profile</a>
+                    </li>
+                    <li>
+                        <a href="<?=$this->url('logout');?>">Logout</a>
+                    </li>
+                    <li>
+                        <a href="<?=$this->url('help');?>">Help</a>
+                    </li>
+                </ul>
+                <form class="navbar-form navbar-right">
+                    <input type="text" class="form-control" placeholder="Search..." />
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-3 col-md-2 sidebar">
+                <?php
+
+                foreach($this->navitems as $prefix => $section){
+
+                    echo $this->html->h3(ake($section, 'label'));
+
+                    $sidebar = $this->html->ul()->class('nav nav-sidebar');
+
+                    foreach(ake($section, 'items', array()) as $target => $label){
+
+                        $name = ( ( $prefix == 'app' && $target == 'index' ) ? '' : $prefix . '_' . $target );
+
+                        $sidebar->add($this->html->li($this->html->a($this->url($name), $label))->toggleClass('active', $this->active('hazaar', $name)));
+
+                    }
+                    echo $sidebar;
+
+                } ?>
+            </div>
+            <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+                <?=$this->layout();?>
+            </div>
+        </div>
+    </div>
 
     <?=$this->post();?>
 

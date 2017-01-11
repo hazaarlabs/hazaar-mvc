@@ -50,19 +50,85 @@ class Hazaar extends \Hazaar\Controller\Action {
      * The Management Console is a virtual desktop that allows the application to be
      * administered in a user friendly environment.
      */
-    public function index(){
+    public function __default($controller, $action){
 
-        $this->layout('@admin/layout');
+        session_start();
 
-        $this->view->addHelper('jQuery');
+        $this->view->addHelper('bootstrap');
 
-        $this->view->addHelper('fontawesome', array('version' => '4.7.0'));
+        if($this->request->getActionName() == 'logout'){
 
-        $this->view->requires($this->application->url('hazaar/file/admin/desktop.js'));
+            session_unset();
 
-        $this->view->link($this->application->url('hazaar/file/admin/desktop.css'));
+            $this->redirect($this->url());
 
-        $this->view->link($this->application->url('hazaar/file/admin/layout.css'));
+        }elseif(ake($_SESSION, 'user')){
+
+            $this->layout('@admin/layout');
+
+            $this->view->addHelper('jQuery');
+
+            $this->view->addHelper('fontawesome', array('version' => '4.7.0'));
+
+            $this->view->requires($this->application->url('hazaar/file/admin/application.js'));
+
+            $this->view->link($this->application->url('hazaar/file/admin/layout.css'));
+
+            $this->view('@admin/' . str_replace('_', '/', $action));
+
+            $this->view->navitems = array(
+                'app' => array(
+                    'label' => 'Application',
+                    'items' => array(
+                        'index' => 'Overview',
+                        'models' => 'Models',
+                        'views' => 'Views',
+                        'controllers' => 'Controllers'
+                    )
+                )
+            );
+
+            if(class_exists('Hazaar\DBI\Adapter')){
+
+                $this->view->navitems['db'] = array(
+                    'label' => 'Database',
+                    'items' => array(
+                        'settings' => 'Settings',
+                        'schema' => 'Schema Managment'
+                    )
+                );
+
+            }
+
+            if(class_exists('Hazaar\Warlock\Control')){
+
+                $this->view->navitems['warlock'] = array(
+                    'label' => 'Warlock',
+                    'items' => array(
+                        'index' => 'Overview',
+                        'connections' => 'Connections',
+                        'processes' => 'Processes',
+                        'services' => 'Services',
+                        'log' => 'Log File'
+                    )
+                );
+
+            }
+
+        }elseif($this->request->getActionName() !== 'login'){
+
+            if($action == 'authenticate'){
+
+                if($_SESSION['user'] = $this->request->username)
+                    $this->redirect($this->url());
+
+            }
+
+            $this->layout('@admin/login');
+
+            $this->view->link($this->application->url('hazaar/file/admin/login.css'));
+
+        }
 
     }
 
