@@ -40,7 +40,7 @@ class Hazaar extends \Hazaar\Controller\Action {
             )
         );
 
-        if(class_exists('Hazaar\DBI\Adapter')){
+        if(class_exists('Hazaar\Cache')){
 
             $this->view->navitems['cache'] = array(
                 'label' => 'Cache',
@@ -57,7 +57,8 @@ class Hazaar extends \Hazaar\Controller\Action {
                 'label' => 'Database',
                 'items' => array(
                     'settings' => 'Settings',
-                    'schema' => 'Schema Managment'
+                    'schema' => 'Schema Managment',
+                    'sync' => 'Data Sync'
                 )
             );
 
@@ -210,6 +211,19 @@ class Hazaar extends \Hazaar\Controller\Action {
         $db = new \Hazaar\DBI\Adapter();
 
         $result = $db->migrate($version, boolify($this->request->get('testmode', false)));
+
+        return array('ok' => $result, 'log' => $db->getMigrationLog());
+
+    }
+
+    public function syncdata(){
+
+        if(!$this->request->isPOST())
+            return false;
+
+        $db = new \Hazaar\DBI\Adapter();
+
+        $result = $db->syncSchemaData();
 
         return array('ok' => $result, 'log' => $db->getMigrationLog());
 
