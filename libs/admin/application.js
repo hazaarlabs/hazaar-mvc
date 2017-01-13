@@ -20,6 +20,7 @@ $(document).ready(function () {
     });
     $('#frmMigrate').submit(function () {
         var data = $(this).serializeArray();
+        $('#migratelog').empty().parent().addClass('panel-default').removeClass('panel-success').removeClass('panel-danger');
         $.post(hazaar.url('hazaar', 'migrate'), data).done(function (result) {
             showLog($('#migratelog'), result);
         });
