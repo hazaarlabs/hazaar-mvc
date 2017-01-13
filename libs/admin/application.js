@@ -26,4 +26,11 @@ $(document).ready(function () {
         });
         return false;
     });
+    $('#frmSync').submit(function () {
+        $('#synclog').empty().parent().addClass('panel-default').removeClass('panel-success').removeClass('panel-danger');
+        $.post(hazaar.url('hazaar', 'syncdata')).done(function (result) {
+            showLog($('#synclog'), result);
+        });
+        return false;
+    });
 });

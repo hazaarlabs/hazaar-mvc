@@ -695,6 +695,7 @@
     <Content Include="composer.json" />
     <Content Include="libs\admin\application.js" />
     <Content Include="libs\admin\cache\settings.phtml" />
+    <Content Include="libs\admin\db\sync.phtml" />
     <Content Include="libs\admin\db\schema.phtml" />
     <Content Include="libs\admin\db\settings.phtml" />
     <Content Include="libs\admin\index.phtml" />
