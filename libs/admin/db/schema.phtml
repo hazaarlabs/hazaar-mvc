@@ -1,1 +1,43 @@
+
 <h1>Database Schema Management</h1>
+
+<div class="row">
+    <div class="col col-md-6">
+        <div style="margin-bottom: 15px;">
+            <h3>Snapshot</h3>
+            <form id="frmSnapshot">
+                <button type="submit" class="btn btn-primary">Snapshot Database</button>
+                <label>
+                    Comment:
+                    <input type="text" name="comment" />
+                </label>
+                <label>
+                    <input type="checkbox" name="testmode" value="true" />Test Mode
+                </label>
+            </form>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">Snapshot Log</div>
+            <div id="snapshotlog" class="panel-body"></div>
+        </div>
+    </div>
+    <div class="col col-md-6">
+        <div style="margin-bottom: 15px;">
+            <form id="frmMigrate">
+                <h3>Migrate</h3>
+                <button type="submit" class="btn btn-primary">Migrate Database</button>
+                <label>
+                    Version: <?=$this->html->select('version', $this->versions);?>
+                </label>
+                <label>
+                    <input type="checkbox" name="testmode" value="true" />Test Mode
+                </label>
+            </form>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">Migration Log</div>
+            <div id="migratelog" class="panel-body"></div>
+        </div>
+    </div>
+</div>
+

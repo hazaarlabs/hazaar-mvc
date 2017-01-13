@@ -613,6 +613,9 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="libs\" />
+    <Folder Include="libs\admin\db\" />
+    <Folder Include="libs\admin\app\" />
+    <Folder Include="libs\admin\cache\" />
     <Folder Include="libs\css\" />
     <Folder Include="libs\css\images\" />
     <Folder Include="libs\css\images\fileicon\" />
@@ -691,11 +694,18 @@
   <ItemGroup>
     <Content Include="composer.json" />
     <Content Include="libs\admin\application.js" />
-    <Content Include="libs\admin\dashboard.phtml" />
+    <Content Include="libs\admin\cache\settings.phtml" />
+    <Content Include="libs\admin\db\schema.phtml" />
+    <Content Include="libs\admin\db\settings.phtml" />
+    <Content Include="libs\admin\index.phtml" />
     <Content Include="libs\admin\layout.css" />
     <Content Include="libs\admin\layout.phtml" />
     <Content Include="libs\admin\login.css" />
     <Content Include="libs\admin\login.phtml" />
+    <Content Include="libs\admin\app\views.phtml" />
+    <Content Include="libs\admin\app\controllers.phtml" />
+    <Content Include="libs\admin\app\models.phtml" />
+    <Content Include="libs\admin\profile.phtml" />
     <Content Include="libs\admin\settings.phtml" />
     <Content Include="libs\css\buttons.css" />
     <Content Include="libs\css\filebrowser.css" />
