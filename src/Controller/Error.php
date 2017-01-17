@@ -344,7 +344,7 @@ class Error extends \Hazaar\Controller {
                 default :
                     $response = new Response\Html($this->code);
 
-                    $view = new \Hazaar\View('@Error/Error');
+                    $view = new \Hazaar\View('@error/error');
 
                     $view->registerMethodHandler($this);
 
@@ -370,7 +370,9 @@ class Error extends \Hazaar\Controller {
                     $response->setContent($view->render($this));
 
                     break;
+
             }
+
         }
 
         return $response;
