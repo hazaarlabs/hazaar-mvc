@@ -202,9 +202,43 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     }
 
+    /**
+     * Return true/false indicating if a field has been defined.
+     *
+     * If the field is not "defined" but instead $allow_undefined has been enabled and the field was added, this will also return true.
+     *
+     * @param mixed $key The field name to check.
+     *
+     * @return boolean
+     */
     public function has($key) {
 
         return array_key_exists($key, $this->fields);
+
+    }
+
+    /**
+     * Test if any fields have non-null values
+     *
+     * @return boolean
+     */
+    public function hasValues(){
+
+        foreach($this->fields as $key => $def){
+
+            $type = ake($def, 'type');
+
+            if($type == 'array'){
+
+                if(count(ake($this->values, $key, array())) > 0)
+                    return true;
+
+            }elseif(ake($this->values, $key) !== null)
+                return true;
+
+        }
+
+        return false;
 
     }
 
