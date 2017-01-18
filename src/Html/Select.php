@@ -13,6 +13,8 @@ class Select extends Block {
 
     private $value;
 
+    private $use_options_index_as_value = true;
+
     /**
      * @detail      The HTML select constructor.
      *
@@ -22,10 +24,15 @@ class Select extends Block {
      *                                or arrays.
      *
      * @param       array $parameters Optional parameters to apply to the span.
+     *
+     * @param       boolean $use_options_index_as_value Normally not used, but this will disable the use of the options index and cause the
+     *                                                  resulting SELECT OPTIONS to have no VALUE attribute.
      */
-    function __construct($name = NULL, $options = NULL, $value = NULL, $params = array()) {
+    function __construct($name = NULL, $options = NULL, $value = NULL, $params = array(), $use_options_index_as_value = true) {
 
         $params['name'] = $name;
+
+        $this->use_options_index_as_value = $use_options_index_as_value;
 
         parent::__construct('select', NULL, $params);
 
@@ -42,8 +49,14 @@ class Select extends Block {
 
             if(is_array($arg)) {
 
-                foreach($arg as $value => $label)
-                    $this->addOption($label, $value);
+                foreach($arg as $value => $label){
+
+                    if($this->use_options_index_as_value)
+                        $this->addOption($label, $value);
+                    else
+                        $this->addOption($label);
+
+                }
 
                 return $this;
 
@@ -95,12 +108,26 @@ class Select extends Block {
 
             if(is_array($this->value)){
 
-                if(in_array($child->value, $this->value))
+                if($this->use_options_index_as_value){
+
+                    if(in_array($child->value, $this->value))
+                        $child->selected = true;
+
+                }else{
+
+                    if(in_array($child->get()[0], $this->value))
+                        $child->selected = true;
+
+                }
+
+            }elseif($this->use_options_index_as_value){
+
+                if($child->value == $this->value)
                     $child->selected = true;
 
             }else{
 
-                if($child->value == $this->value)
+                if($child->get()[0] == $this->value)
                     $child->selected = true;
 
             }

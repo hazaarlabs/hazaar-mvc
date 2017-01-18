@@ -1232,9 +1232,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Select
      */
-    public function select($name, $options = array(), $value = NULL, $params = array()) {
+    public function select($name, $options = array(), $value = NULL, $params = array(), $use_options_index_as_value = true) {
 
-        return new \Hazaar\Html\Select($name, $options, $value, $params);
+        return new \Hazaar\Html\Select($name, $options, $value, $params, $use_options_index_as_value);
 
     }
 

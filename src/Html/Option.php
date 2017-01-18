@@ -24,10 +24,8 @@ class Option extends Block {
      */
     function __construct($label, $value = null, $params = array()) {
 
-        if (is_null($value))
-            $value = $label;
-
-        $params['value'] = $value;
+        if (!is_null($value))
+            $params['value'] = $value;
 
         parent::__construct('option', $label, $params);
 

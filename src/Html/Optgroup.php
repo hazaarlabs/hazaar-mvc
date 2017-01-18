@@ -13,6 +13,8 @@ class Optgroup extends Block {
 
     private $value;
 
+    private $use_options_index_as_value = true;
+
     /**
      * @detail      The HTML optgroup constructor.
      *
@@ -23,9 +25,11 @@ class Optgroup extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the span.
      */
-    function __construct($label, $options = NULL, $value = NULL, $params = array()) {
+    function __construct($label, $options = NULL, $value = NULL, $params = array(), $use_options_index_as_value = true) {
 
         $params['label'] = $label;
+
+        $this->use_options_index_as_value = $use_options_index_as_value;
 
         parent::__construct('optgroup', NULL, $params);
 
