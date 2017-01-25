@@ -34,11 +34,8 @@ abstract class Helper implements Helper\_Interface {
         if(! $args)
             $args = $this->args;
 
-        if(method_exists($this, 'init')) {
-
-            echo $this->init($this->view, $args);
-
-        }
+        if(method_exists($this, 'init'))
+            $this->init($this->view, $args);
 
     }
 

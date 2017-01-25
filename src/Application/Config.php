@@ -147,7 +147,7 @@ class Config extends \Hazaar\Map {
         }
 
         if(! $options->has($this->env))
-            return null;
+            $options[$this->env] = array();
 
         $config = new \Hazaar\Map($defaults);
 
