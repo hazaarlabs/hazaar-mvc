@@ -6,12 +6,14 @@ class Hazaar extends \Hazaar\Controller\Action {
 
     private $open_actions = array('file', 'login');
 
-    private $passwd = CONFIG_PATH . DIRECTORY_SEPARATOR . '.passwd';
+    private $passwd = null;
 
     public function init(){
 
         if(in_array($this->request->getActionName(), $this->open_actions))
             return;
+
+        $this->passwd = CONFIG_PATH . DIRECTORY_SEPARATOR . '.passwd';
 
         if(!file_exists($this->passwd))
             die('Hazaar admin console is currently disabled!');
