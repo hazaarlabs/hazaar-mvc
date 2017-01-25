@@ -227,6 +227,11 @@ class Warlock extends \Hazaar\Controller {
 
         $out->addHelper('warlock');
 
+        $out->link($this->url('hazaar', 'Warlock/controlpanel.css'));
+
+        $out->requires($this->url('hazaar', 'Warlock/controlpanel.js'));
+
+
         $out->tabs = array(
             'dashboard' => 'Dashboard',
             'procs'     => 'Processes',
