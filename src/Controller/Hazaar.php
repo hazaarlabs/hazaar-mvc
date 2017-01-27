@@ -73,7 +73,13 @@ class Hazaar extends \Hazaar\Controller\Action {
 
                 $db = new \Hazaar\DBI\Adapter();
 
-                $this->view->versions = array('latest' => 'Latest Version') + $db->getSchemaVersions();
+                $current = $db->getSchemaVersion();
+
+                $versions = array('latest' => 'Latest Version') + $db->getSchemaVersions();
+
+                $this->view->current_version = $current . ' - ' . $versions[$current];
+
+                $this->view->versions = $versions;
 
             }
 
