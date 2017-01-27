@@ -116,3 +116,7 @@ body {
     float: left;
     width: 200px;
 }
+
+.logoutput {
+    font: 12px "Courier New";
+}
