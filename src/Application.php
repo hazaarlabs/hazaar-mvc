@@ -715,7 +715,7 @@ class Application {
 
             echo "<script>document.location = '$url';</script>";
 
-        } else {
+        } elseif(class_exists('Hazaar\Session')) {
 
             $sess = new \Hazaar\Session();
 
@@ -734,9 +734,9 @@ class Application {
 
             }
 
-            header('Location: ' . $url);
-
         }
+
+        header('Location: ' . $url);
 
         exit();
 
