@@ -77,9 +77,11 @@ class Hazaar extends \Hazaar\Controller\Action {
 
                 $versions = array('latest' => 'Latest Version') + $db->getSchemaVersions();
 
-                $this->view->current_version = $current . ' - ' . $versions[$current];
+                $this->view->current_version = $current . ' - ' . ake($versions, $current, 'missing');
 
                 $this->view->versions = $versions;
+
+                $this->view->latest = $db->isSchemaLatest();
 
             }
 
