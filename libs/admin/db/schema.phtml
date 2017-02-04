@@ -7,6 +7,12 @@
     </div>
 </div>
 
+<?php
+if($this->latest)
+    echo $this->html->div('Up to date')->class('label label-success');
+else
+    echo $this->html->div('Update available')->class('label label-warning');
+?>
 <div class="row">
     <div class="col col-md-6">
         <div style="margin-bottom: 15px;">
