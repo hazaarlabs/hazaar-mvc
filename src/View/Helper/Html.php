@@ -213,9 +213,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\B
      */
-    public function b($content) {
+    public function b($content = null, $params = array()) {
 
-        return new \Hazaar\Html\B($content);
+        return new \Hazaar\Html\B($content, $params);
 
     }
 
@@ -332,7 +332,7 @@ class Html extends \Hazaar\View\Helper {
      */
     public function caption($content, $align = NULL, $params = array()) {
 
-        return new \Hazaar\Html\Caption($caption, $align, $params);
+        return new \Hazaar\Html\Caption($content, $align, $params);
 
     }
 
@@ -385,19 +385,6 @@ class Html extends \Hazaar\View\Helper {
     public function colgroup($params = array()) {
 
         return new \Hazaar\Html\Colgroup($params);
-
-    }
-
-    /**
-     * @detail      Defines a command button that a user can invoke
-     *
-     * @since       1.2
-     *
-     * @return      \\Hazaar\\Html\\Command
-     */
-    public function command($params = array()) {
-
-        return new \Hazaar\Html\Command($params);
 
     }
 
@@ -603,22 +590,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Form
      */
-    public function form($params = array()) {
+    public function form($content = null, $params = array()) {
 
-        return new \Hazaar\Html\Form($params);
-
-    }
-
-    /**
-     * @detail      Defines HTML headings
-     *
-     * @since       1.2
-     *
-     * @return      \\Hazaar\\Html\\H1
-     */
-    public function h1($params = array()) {
-
-        return new \Hazaar\Html\H1($params);
+        return new \Hazaar\Html\Form($content, $params);
 
     }
 
@@ -629,9 +603,22 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\H1
      */
-    public function h2($params = array()) {
+    public function h1($content = null, $params = array()) {
 
-        return new \Hazaar\Html\H2($params);
+        return new \Hazaar\Html\H1($content, $params);
+
+    }
+
+    /**
+     * @detail      Defines HTML headings
+     *
+     * @since       1.2
+     *
+     * @return      \\Hazaar\\Html\\H1
+     */
+    public function h2($content  = null, $params = array()) {
+
+        return new \Hazaar\Html\H2($content, $params);
 
     }
 
@@ -642,9 +629,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\H3
      */
-    public function h3($params = array()) {
+    public function h3($content = null, $params = array()) {
 
-        return new \Hazaar\Html\H3($params);
+        return new \Hazaar\Html\H3($content, $params);
 
     }
 
@@ -655,9 +642,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\H4
      */
-    public function h4($params = array()) {
+    public function h4($content = null, $params = array()) {
 
-        return new \Hazaar\Html\H4($params);
+        return new \Hazaar\Html\H4($content, $params);
 
     }
 
@@ -668,9 +655,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\H5
      */
-    public function h5($params = array()) {
+    public function h5($content = null, $params = array()) {
 
-        return new \Hazaar\Html\H5($params);
+        return new \Hazaar\Html\H5($content, $params);
 
     }
 
@@ -681,9 +668,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\H6
      */
-    public function h6($params = array()) {
+    public function h6($content = null, $params = array()) {
 
-        return new \Hazaar\Html\H6($params);
+        return new \Hazaar\Html\H6($content, $params);
 
     }
 
@@ -694,9 +681,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Head
      */
-    public function head($params = array()) {
+    public function head($content = null, $params = array()) {
 
-        return new \Hazaar\Html\Head($params);
+        return new \Hazaar\Html\Head($content, $params);
 
     }
 
@@ -746,9 +733,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Html
      */
-    public function html($params = array()) {
+    public function html($content = null, $params = array()) {
 
-        return new \Hazaar\Html\Html($params);
+        return new \Hazaar\Html\Html($content, $params);
 
     }
 
@@ -759,9 +746,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\I
      */
-    public function i($params = array()) {
+    public function i($content = null, $params = array()) {
 
-        return new \Hazaar\Html\I($params);
+        return new \Hazaar\Html\I($content, $params);
 
     }
 
@@ -772,9 +759,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Iframe
      */
-    public function iframe($params = array()) {
+    public function iframe($content = null, $params = array()) {
 
-        return new \Hazaar\Html\Iframe($params);
+        return new \Hazaar\Html\Iframe($content, $params);
 
     }
 
@@ -916,11 +903,8 @@ class Html extends \Hazaar\View\Helper {
      */
     public function link($href, $rel = NULL, $type = NULL, $params = array()) {
 
-        if(! preg_match('/^http[s]?:\/\//', $href)) {
-
+        if(! preg_match('/^http[s]?:\/\//', $href))
             $href = $this->view->application->url('style', $href);
-
-        }
 
         return new \Hazaar\Html\Link($href, $rel, $type, $params);
 
@@ -933,9 +917,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Map
      */
-    public function map($params = array()) {
+    public function map($content = null, $name = null, $params = array()) {
 
-        return new \Hazaar\Html\Map($params);
+        return new \Hazaar\Html\Map($content, $name, $params);
 
     }
 
@@ -1037,9 +1021,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Optgroup
      */
-    public function optgroup($options = array(), $params = array()) {
+    public function optgroup($label = null, $options = array(), $value = null, $params = array(), $use_options_as_index = true) {
 
-        return new \Hazaar\Html\Optgroup($options, $params);
+        return new \Hazaar\Html\Optgroup($label, $options, $value, $params, $use_options_as_index);
 
     }
 
@@ -1076,9 +1060,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\P
      */
-    public function p($params = array()) {
+    public function p($content = null, $params = array()) {
 
-        return new \Hazaar\Html\P($params);
+        return new \Hazaar\Html\P($content, $params);
 
     }
 
@@ -1102,9 +1086,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Pre
      */
-    public function pre($params = array()) {
+    public function pre($content = null, $params = array()) {
 
-        return new \Hazaar\Html\Pre($params);
+        return new \Hazaar\Html\Pre($content, $params);
 
     }
 
@@ -1128,9 +1112,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Q
      */
-    public function q($params = array()) {
+    public function q($content = null, $params = array()) {
 
-        return new \Hazaar\Html\Q($params);
+        return new \Hazaar\Html\Q($content, $params);
 
     }
 
@@ -1180,9 +1164,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\S
      */
-    public function s($params = array()) {
+    public function s($content = null, $params = array()) {
 
-        return new \Hazaar\Html\S($params);
+        return new \Hazaar\Html\S($content, $params);
 
     }
 
@@ -1219,9 +1203,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Section
      */
-    public function section($params = array()) {
+    public function section($content = null, $params = array()) {
 
-        return new \Hazaar\Html\Section($params);
+        return new \Hazaar\Html\Section($content, $params);
 
     }
 
@@ -1245,9 +1229,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Small
      */
-    public function small($params = array()) {
+    public function small($content = null, $params = array()) {
 
-        return new \Hazaar\Html\Small($params);
+        return new \Hazaar\Html\Small($content, $params);
 
     }
 
@@ -1258,9 +1242,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Source
      */
-    public function source($params = array()) {
+    public function source($source, $type = null, $mime_prefix = null, $params = array()) {
 
-        return new \Hazaar\Html\Source($params);
+        return new \Hazaar\Html\Source($source, $type, $mime_prefix, $params);
 
     }
 
@@ -1349,9 +1333,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Table
      */
-    public function table($params = array()) {
+    public function table($content = null, $params = array()) {
 
-        return new \Hazaar\Html\Table($params);
+        return new \Hazaar\Html\Table($content, $params);
 
     }
 
@@ -1362,9 +1346,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Tbody
      */
-    public function tbody($params = array()) {
+    public function tbody($content = null, $params = array()) {
 
-        return new \Hazaar\Html\Tbody($params);
+        return new \Hazaar\Html\Tbody($content, $params);
 
     }
 
@@ -1375,9 +1359,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Td
      */
-    public function td($params = array()) {
+    public function td($content = null, $params = array()) {
 
-        return new \Hazaar\Html\Td($params);
+        return new \Hazaar\Html\Td($content, $params);
 
     }
 
@@ -1401,9 +1385,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Tfoot
      */
-    public function tfoot($params = array()) {
+    public function tfoot($content = null, $params = array()) {
 
-        return new \Hazaar\Html\Tfoot($params);
+        return new \Hazaar\Html\Tfoot($content, $params);
 
     }
 
@@ -1414,9 +1398,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Th
      */
-    public function th($params = array()) {
+    public function th($content = null, $params = array()) {
 
-        return new \Hazaar\Html\Th($params);
+        return new \Hazaar\Html\Th($content, $params);
 
     }
 
@@ -1427,9 +1411,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Thead
      */
-    public function thead($params = array()) {
+    public function thead($content = null, $params = array()) {
 
-        return new \Hazaar\Html\Thead($params);
+        return new \Hazaar\Html\Thead($content, $params);
 
     }
 
@@ -1466,9 +1450,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Tr
      */
-    public function tr($params = array()) {
+    public function tr($content = null, $params = array()) {
 
-        return new \Hazaar\Html\Tr($params);
+        return new \Hazaar\Html\Tr($content, $params);
 
     }
 
@@ -1479,9 +1463,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\U
      */
-    public function u($params = array()) {
+    public function u($content = null, $params = array()) {
 
-        return new \Hazaar\Html\U($params);
+        return new \Hazaar\Html\U($content, $params);
 
     }
 
@@ -1492,9 +1476,9 @@ class Html extends \Hazaar\View\Helper {
      *
      * @return      \\Hazaar\\Html\\Ul
      */
-    public function ul($params = array()) {
+    public function ul($content = null, $params = array()) {
 
-        return new \Hazaar\Html\Ul($params);
+        return new \Hazaar\Html\Ul($content, $params);
 
     }
 
