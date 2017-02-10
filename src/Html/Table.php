@@ -76,7 +76,7 @@ class Table extends Block {
                 parent::prepend($this->thead = new Thead());
 
             $this->thead->setRow($fields);
-            
+
         }
 
         return $this;
@@ -92,13 +92,18 @@ class Table extends Block {
      */
     public function addRows($rows) {
 
-        if(is_array($rows)) {
+        if($rows instanceof Thead){
 
-            foreach($rows as $row) {
+            parent::add($this->thead = $rows);
 
+        }elseif($rows instanceof Tbody){
+
+            parent::add($this->tbody = $rows);
+
+        }elseif(is_array($rows)) {
+
+            foreach($rows as $row)
                 $this->addRow($row);
-
-            }
 
         }
 
@@ -169,12 +174,12 @@ class Table extends Block {
                 parent::add($this->tfoot = new Tfoot());
 
             $this->tfoot->setRow($fields);
-            
+
         }
 
         return $this;
 
     }
-    
+
 
 }
