@@ -272,6 +272,34 @@ function array_unflatten($items, $delim = '=', $section_delim = ';') {
 }
 
 /**
+ * Collate a multi-dimensional array into an associative array where $key_item is the key and $value_item is the value.
+ *
+ * * If the key value does not exist in the array, the element is skipped.
+ * * If the value item does not exist, the value will be NULL.
+ *
+ * @param mixed $array The array to collate.
+ * @param mixed $key_item The value to use as the key.
+ * @param mixed $value_item The value to use as the value.
+ * @return array
+ */
+function array_collate($array, $key_item, $value_item){
+
+    $result = array();
+
+    foreach($array as $item){
+
+        if(!array_key_exists($key_item, $item))
+            continue;
+
+        $result[$item[$key_item]] = ake($item, $value_item);
+
+    }
+
+    return $result;
+
+}
+
+/**
  * Converts a multi dimensional array into key[key][key] => value syntax that can be used in html INPUT field names.
  *
  * @param mixed $array
