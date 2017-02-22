@@ -77,8 +77,8 @@ class Warlock extends \Hazaar\View\Helper {
         if($config->server->encoded === TRUE)
             $view->script("{$this->js_varname}.enableEncoding();");
 
-        if(array_key_exists('REMOTE_USER', $_SERVER))
-            $view->script("{$this->js_varname}.setUser('{$_SERVER['REMOTE_USER']}');");
+        if(($user = ake($_SERVER, 'REMOTE_USER')))
+            $view->script("{$this->js_varname}.setUser('$user');");
 
     }
 
