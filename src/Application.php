@@ -544,11 +544,7 @@ class Application {
     /**
      * @brief Execute code from standard input in the application context
      *
-     * @detail This method is part of the background code execution scheduler, Bulletin. Code can be scheduled to
-     * execute in the background at a later time. This code is stored in the schedulars memory and when
-     * it's time to execute it, Bulletin will launch a new application context, bootstrap it, but
-     * instead of calling the run() method like normal it will call this runStdin() method to execute the
-     * stored code that was passed via stdin.
+     * @detail This method is will accept Hazaar Protocol commands from STDIN and execute them.
      *
      * @since 1.0.0
      */
@@ -565,7 +561,7 @@ class Application {
             )
         );
 
-        $warlock = new \Hazaar\Application\Config('warlock.ini', NULL, $defaults);
+        $warlock = new \Hazaar\Application\Config('warlock', NULL, $defaults);
 
         define('RESPONSE_ENCODED', $warlock->server->encoded);
 
@@ -585,21 +581,34 @@ class Application {
 
                 if(isset($_function) && $_function instanceof \Closure) {
 
-                    $result = call_user_func_array($_function, $params);
+                    try{
 
-                    if($result === TRUE){
+                        ob_start();
 
-                        $code = 0;
+                        $result = call_user_func_array($_function, $params);
 
-                    } elseif(is_int($result)) {
+                        $output = ob_get_clean();
 
-                        $code = $result;
+                        //Any of these are considered an OK response.
+                        if($result === NULL
+                        || $result === TRUE
+                        || $result == 0){
 
-                    } else {
+                            $code = 0;
 
-                        $code = 0;
+                        } else { //Anything else is an error and we display it.
 
-                        echo $protocol->encode('OK', $result);
+                            $code = $result;
+
+                        }
+
+                        if($output)
+                            $protocol->stream($protocol->encode('OK', $output));
+
+                    }
+                    catch(\Exception $e){
+
+                        $protocol->stream($protocol->encode('ERROR', 'EXCEPTION: ' . $e->getMessage()));
 
                     }
 
