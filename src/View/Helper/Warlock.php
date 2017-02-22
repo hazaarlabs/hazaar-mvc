@@ -45,7 +45,7 @@ class Warlock extends \Hazaar\View\Helper {
                 'pid' => 'warlock.pid'
             ),
             'server'     => array(
-                'listen'  => $_SERVER['HTTP_HOST'],
+                'listen'  => $_SERVER['SERVER_NAME'],
                 'port'    => 8000,
                 'encoded' => TRUE
             ),
