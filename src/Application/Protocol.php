@@ -4,7 +4,7 @@
  * Author: Jamie Carl
  * Date: 25/09/14
  * Time: 9:21 AM
- * 
+ *
  * @package     Core
  */
 
@@ -14,8 +14,8 @@ namespace Hazaar\Application;
  * @brief       Hazaar Application Protocol Class
  *
  * @detail      The Application Protocol is a simple protocol developed to allow communication between
-*               parts of the Hazaar framework over the wire or other IO interfaces.  It allows common information
-*               to be encoded/decoded between endpoints.
+ *               parts of the Hazaar framework over the wire or other IO interfaces.  It allows common information
+ *               to be encoded/decoded between endpoints.
  *
  * @since       2.0.0
  *
@@ -131,6 +131,34 @@ class Protocol {
             $offset = time() - $packet['TME'];
 
         return $packet['TYP'];
+
+    }
+
+    public function stream($packet){
+
+        echo pack('N', strlen($packet)) . $packet;
+
+    }
+
+    public function process(&$input){
+
+        if(!$input)
+            return false;
+
+        //Get the length of the next packet in $input
+        $len = unpack('N', substr($input, 0, 4))[1];
+
+        //If there isn't enough data, return false
+        if($len > (strlen($input) - 4))
+            return false;
+
+        //Extract the first packet
+        $packet = substr($input, 4, $len);
+
+        //Leave the rest in the input variable.  Hopefully this will be sent back to this method later.
+        $input = substr($input, $len + 4);
+
+        return $packet;
 
     }
 
