@@ -22,8 +22,8 @@ var HazaarWarlock = function (sid, host, useWebSockets, websocketsAutoReconnect)
     this.encoded = false;
     this.sid = sid;
     this.host = host;
-    this.useWebSockets = false;
-    this.websocketsAutoReconnect = false;
+    this.useWebSockets = useWebSockets || true;
+    this.websocketsAutoReconnect = websocketsAutoReconnect || true;
     this.messageQueue = [];
     this.subscribeQueue = {};
     this.callbacks = {};
@@ -60,7 +60,7 @@ var HazaarWarlock = function (sid, host, useWebSockets, websocketsAutoReconnect)
                     o.reconnectDelay = 0;
                     o.reconnectRetries = 0;
                     if (o.admin_key) {
-                        o._send(p.sync, {'admin_key': o.admin_key}, true);
+                        o._send(p.sync, { 'admin_key': o.admin_key }, true);
                     }
                     if (Object.keys(o.subscribeQueue).length > 0) {
                         for (event_id in o.subscribeQueue) {
@@ -113,13 +113,13 @@ var HazaarWarlock = function (sid, host, useWebSockets, websocketsAutoReconnect)
                 return result;
             }
         }).fail(function (jqXHR) {
-            o._closeHandler({data: {'id': event_id, 'callback': callback, 'filter': filter}});
+            o._closeHandler({ data: { 'id': event_id, 'callback': callback, 'filter': filter } });
         }).always(function () {
             o._unlongpoll();
         });
         this.sockets.push(socket);
         if (this.admin_key && this.sockets.length == 1) {
-            this._send(p.sync, {'admin_key': this.admin_key});
+            this._send(p.sync, { 'admin_key': this.admin_key });
         }
     };
     this._unlongpoll = function (xhr) {
@@ -228,7 +228,7 @@ var HazaarWarlock = function (sid, host, useWebSockets, websocketsAutoReconnect)
             }
         } else {
             packet.CID = this.guid;
-            $.post(this.longPollingUrl, {CID: this.guid, P: this._encode(packet)}).done(function (data) {
+            $.post(this.longPollingUrl, { CID: this.guid, P: this._encode(packet) }).done(function (data) {
                 var packet = o._decode(data);
                 if (packet.TYP == p.ok) {
                 } else {
