@@ -74,6 +74,8 @@ class Application {
 
     private static $instance;
 
+    private $protocol;
+
     /**
      * @brief The main application constructor
      *
@@ -561,19 +563,19 @@ class Application {
             )
         );
 
-        $warlock = new \Hazaar\Application\Config('warlock', NULL, $defaults);
+        $warlock = new \Hazaar\Application\Config('warlock', APPLICATION_ENV, $defaults);
 
         define('RESPONSE_ENCODED', $warlock->server->encoded);
 
-        $protocol = new \Hazaar\Application\Protocol($warlock->sys->id, $warlock->server->encoded);
+        $this->protocol = new \Hazaar\Application\Protocol($warlock->sys->id, $warlock->server->encoded);
 
         $line = fgets(STDIN);
 
-        $type = $protocol->decode($line, $payload);
+        $type = $this->protocol->decode($line, $payload);
 
         switch ($type) {
 
-            case $protocol->getType('exec') :
+            case $this->protocol->getType('exec') :
 
                 $params = (array_key_exists('params', $payload) ? $payload['params'] : array());
 
@@ -581,34 +583,18 @@ class Application {
 
                 if(isset($_function) && $_function instanceof \Closure) {
 
-                    try{
+                    $result = call_user_func_array($_function, $params);
 
-                        ob_start();
+                    //Any of these are considered an OK response.
+                    if($result === NULL
+                    || $result === TRUE
+                    || $result == 0){
 
-                        $result = call_user_func_array($_function, $params);
+                        $code = 0;
 
-                        $output = ob_get_clean();
+                    } else { //Anything else is an error and we display it.
 
-                        //Any of these are considered an OK response.
-                        if($result === NULL
-                        || $result === TRUE
-                        || $result == 0){
-
-                            $code = 0;
-
-                        } else { //Anything else is an error and we display it.
-
-                            $code = $result;
-
-                        }
-
-                        if($output)
-                            $protocol->stream($protocol->encode('OK', $output));
-
-                    }
-                    catch(\Exception $e){
-
-                        $protocol->stream($protocol->encode('ERROR', 'EXCEPTION: ' . $e->getMessage()));
+                        $code = $result;
 
                     }
 
@@ -620,7 +606,7 @@ class Application {
 
                 break;
 
-            case $protocol->getType('SERVICE') :
+            case $this->protocol->getType('SERVICE') :
 
                 if(!array_key_exists('name', $payload)) {
 
@@ -636,7 +622,7 @@ class Application {
 
                 if(class_exists($serviceClass)) {
 
-                    $service = new $serviceClass($this, $protocol);
+                    $service = new $serviceClass($this, $this->protocol);
 
                     $code = call_user_func_array(array($service, 'main'), $params);
 
@@ -651,6 +637,22 @@ class Application {
         }
 
         exit($code);
+
+    }
+
+    private function trigger($event, $data){
+
+        if(!$this->protocol instanceof \Hazaar\Application\Protocol)
+            return false;
+
+        $packet = array(
+            'id' => $event
+        );
+
+        if($data)
+            $packet['data'] = $data;
+
+        return $this->protocol->stream($this->protocol->encode('trigger', $packet));
 
     }
 
