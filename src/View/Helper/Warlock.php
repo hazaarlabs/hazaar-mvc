@@ -50,31 +50,25 @@ class Warlock extends \Hazaar\View\Helper {
                 'encoded' => TRUE
             ),
             'websockets' => array(
-                'enabled'       => TRUE,
-                'autoReconnect' => TRUE
+                'enabled'       => true,
+                'autoReconnect' => true
             )
         );
 
-        $config = new \Hazaar\Application\Config('warlock.ini', NULL, $defaults);
+        $config = new \Hazaar\Application\Config('warlock', APPLICATION_ENV, $defaults);
 
-        if(trim($config->server->listen) == '0.0.0.0') {
-
+        if(trim($config->server->listen) == '0.0.0.0')
             $host = $_SERVER['HTTP_HOST'] . ':' . $config->server->port . '/' . APPLICATION_NAME;
-
-        } else {
-
+        else
             $host = $config->server->listen . ':' . $config->server->port . '/' . APPLICATION_NAME;
 
-        }
+        $wsEnabled = strbool($config->websockets->enabled === true);
 
-        $view->script("{$this->js_varname} = new HazaarWarlock('{$config->sys->id}', '$host');");
+        $wsAutoReconnect = strbool($config->websockets->autoReconnect === true);
 
-        $wsAutoReconnect = (($config->websockets->autoReconnect === TRUE) ? 'true' : 'false');
+        $view->script("{$this->js_varname} = new HazaarWarlock('{$config->sys->id}', '$host', $wsEnabled, $wsAutoReconnect);");
 
-        if($config->websockets->enabled === TRUE)
-            $view->script("{$this->js_varname}.enableWebsockets($wsAutoReconnect);");
-
-        if($config->server->encoded === TRUE)
+        if($config->server->encoded === true)
             $view->script("{$this->js_varname}.enableEncoding();");
 
         if(($user = ake($_SERVER, 'REMOTE_USER')))
