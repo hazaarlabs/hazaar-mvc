@@ -336,7 +336,7 @@ class Error extends \Hazaar\Controller {
                         'line' => $this->errline
                     );
 
-                    echo $protocol->encode('error', $error) . "\n";
+                    $protocol->stream($protocol->encode('error', $error));
 
                     exit($this->errno);
 
