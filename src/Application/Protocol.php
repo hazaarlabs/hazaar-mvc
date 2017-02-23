@@ -134,32 +134,4 @@ class Protocol {
 
     }
 
-    public function stream($packet){
-
-        echo pack('N', strlen($packet)) . $packet;
-
-    }
-
-    public function process(&$input){
-
-        if(!$input)
-            return false;
-
-        //Get the length of the next packet in $input
-        $len = unpack('N', substr($input, 0, 4))[1];
-
-        //If there isn't enough data, return false
-        if($len > (strlen($input) - 4))
-            return false;
-
-        //Extract the first packet
-        $packet = substr($input, 4, $len);
-
-        //Leave the rest in the input variable.  Hopefully this will be sent back to this method later.
-        $input = substr($input, $len + 4);
-
-        return $packet;
-
-    }
-
 } 
