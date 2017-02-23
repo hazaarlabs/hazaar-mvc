@@ -569,13 +569,16 @@ class Application {
 
         $this->protocol = new \Hazaar\Application\Protocol($warlock->sys->id, $warlock->server->encoded);
 
+        //Execution should wait here until we get a command
         $line = fgets(STDIN);
 
         $type = $this->protocol->decode($line, $payload);
 
-        switch ($type) {
+        $type_name = $this->protocol->getTypeName($type);
 
-            case $this->protocol->getType('exec') :
+        switch ($type_name) {
+
+            case 'EXEC' :
 
                 $params = (array_key_exists('params', $payload) ? $payload['params'] : array());
 
@@ -606,7 +609,7 @@ class Application {
 
                 break;
 
-            case $this->protocol->getType('SERVICE') :
+            case 'SERVICE' :
 
                 if(!array_key_exists('name', $payload)) {
 
@@ -652,7 +655,11 @@ class Application {
         if($data)
             $packet['data'] = $data;
 
-        return $this->protocol->stream($this->protocol->encode('trigger', $packet));
+        echo $this->protocol->encode('trigger', $packet) . "\n";
+
+        flush();
+
+        return true;
 
     }
 
