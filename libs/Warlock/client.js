@@ -165,7 +165,7 @@ var HazaarWarlock = function (sid, host, useWebSockets, websocketsAutoReconnect)
         switch (packet.TYP) {
             case p.event:
                 var event = packet.PLD;
-                if (this.subscribeQueue[event.id]) this.subscribeQueue[event.id].callback(event);
+                if (this.subscribeQueue[event.id]) this.subscribeQueue[event.id].callback(event.data, event);
                 break;
             case p.error:
                 alert('ERROR\n\nCommand:\t' + packet.PLD.command + '\n\nReason:\t\t' + packet.PLD.reason);
