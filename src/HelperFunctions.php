@@ -907,22 +907,30 @@ function dump($data = NULL) {
 
     $response = null;
 
-    $app = Hazaar\Application::getInstance();
+    if(PHP_SAPI == 'cli'){
+        
+        $response = 'hazaar';
 
-    if($app && !($response = $app->request->getResponseType())){
+    }else{
 
-        if (function_exists('apache_request_headers')) {
+        $app = Hazaar\Application::getInstance();
 
-            $h = apache_request_headers();
+        if($app && !($response = $app->request->getResponseType())){
 
-            if (ake($h, 'X-Requested-With') == 'XMLHttpRequest')
-                $response = 'json';
+            if (function_exists('apache_request_headers')) {
+
+                $h = apache_request_headers();
+
+                if (ake($h, 'X-Requested-With') == 'XMLHttpRequest')
+                    $response = 'json';
+
+            }
+
+        }elseif (getenv('HAZAAR_SID')) {
+
+            $response = 'hazaar';
 
         }
-
-    }elseif (getenv('HAZAAR_SID')) {
-
-        $response = 'hazaar';
 
     }
 
