@@ -98,36 +98,36 @@ function removePanel(parent, id) {
     parent.find('#panel_' + id).remove();
 }
 
-function handleTrigger(event) {
-    switch (event.data.args.type) {
+function handleTrigger(data, event) {
+    switch (data.args.type) {
         case 'job':
-            var job = event.data.args.job;
+            var job = data.args.job;
             var parent = $('#joblist');
-            if (event.data.command == 'add') {
-                var data = {
+            if (data.command == 'add') {
+                var info = {
                     'Status': String(job.status_text).toUpperCase(),
                     'ID': job.id,
                     'Start': (new Date(job.start * 1000)).toLocaleString(),
                     'Environment': job.application.env,
                     'Retries': job.retries
                 };
-                displayPanel(parent, event.data.args.id, (job.tag ? job.tag : job.id), data);
-            } else if (event.data.command == 'update') {
-                var data = {
+                displayPanel(parent, data.args.id, (job.tag ? job.tag : job.id), info);
+            } else if (data.command == 'update') {
+                var info = {
                     'Status': String(job.status_text).toUpperCase(),
                     'Started': (new Date(job.start * 1000)).toLocaleString(),
                     'Retries': job.retries
                 };
-                updatePanel(parent, event.data.args.id, data);
-            } else if (event.data.command == 'remove') {
-                removePanel(parent, event.data.args.id);
+                updatePanel(parent, data.args.id, info);
+            } else if (data.command == 'remove') {
+                removePanel(parent, data.args.id);
             }
             break;
         case  'process':
             var parent = $('#processlist');
-            var proc = event.data.args.process;
-            if (event.data.command == 'add') {
-                var data = {
+            var proc = data.args.process;
+            if (data.command == 'add') {
+                var info = {
                     'State': 'Starting',
                     'PID': proc.pid,
                     'Started': (new Date(proc.start)).toLocaleString(),
@@ -135,62 +135,62 @@ function handleTrigger(event) {
                     'Memory': '0 MB',
                     'Peak': '0 MB'
                 };
-                displayPanel(parent, event.data.args.id, event.data.args.process.tag, data);
-            } else if (event.data.command == 'update') {
-                var data = {
+                displayPanel(parent, data.args.id, data.args.process.tag, info);
+            } else if (data.command == 'update') {
+                var info = {
                     'State': proc.status.state,
                     'PID': proc.status.pid,
                     'Memory': mem(proc.status.mem) + ' MB',
                     'Peak': mem(proc.status.peak) + ' MB'
                 };
-                updatePanel(parent, event.data.args.id, data);
-            } else if (event.data.command == 'remove') {
-                removePanel(parent, event.data.args.id);
+                updatePanel(parent, data.args.id, info);
+            } else if (data.command == 'remove') {
+                removePanel(parent, data.args.id);
             }
             break;
         case 'client':
             var parent = $('#clientlist');
-            var client = event.data.args.client;
-            if (event.data.command == 'add') {
+            var client = data.args.client;
+            if (data.command == 'add') {
                 var host = client.ip ? client.ip + ':' + client.port : 'Internal';
                 var label = client.username ? client.username : host;
                 var since = new Date(client.since * 1000);
-                var data = {
+                var dinfoata = {
                     'ID': client.id,
                     'Host': host,
                     'User': (client.username ? client.username : 'None'),
                     'Since': formatDate(since)
                 };
-                displayPanel(parent, client.id, label, data)
+                displayPanel(parent, client.id, label, info)
                     .toggleClass('client-admin', client.admin)
                     .toggleClass('client-system', client.system);
-            } else if (event.data.command == 'update') {
+            } else if (data.command == 'update') {
                 updatePanel(parent, client.id, client).toggleClass('client-admin', client.admin);
-            } else if (event.data.command == 'remove') {
-                removePanel(parent, event.data.args.client);
+            } else if (data.command == 'remove') {
+                removePanel(parent, data.args.client);
             }
             break;
         case 'event':
             var parent = $('#eventlist');
-            var e = event.data.args.event;
-            if (event.data.command == 'add') {
-                var data = {
+            var e = data.args.event;
+            if (data.command == 'add') {
+                var info = {
                     'ID': e.trigger,
                     'When': (new Date(e.when * 1000)).toLocaleString(),
                     'Data': JSON.stringify(e.data)
                 };
-                displayPanel(parent, e.trigger, e.id, data);
-            } else if (event.data.command = 'remove') {
-                removePanel(parent, event.data.args.id);
+                displayPanel(parent, e.trigger, e.id, info);
+            } else if (data.command = 'remove') {
+                removePanel(parent, data.args.id);
             }
             break;
         case 'service':
             var parent = $('#servicelist');
-            var service = event.data.args.service;
+            var service = data.args.service;
             if (!service.name)
                 break;
-            if (event.data.command == 'update') {
-                var data = {
+            if (data.command == 'update') {
+                var info = {
                     'Status': service.status,
                     'Restarts': service.restarts,
                     'Heartbeats': service.heartbeats,
@@ -199,17 +199,17 @@ function handleTrigger(event) {
                 var panel = parent.find('#panel_' + service.name);
                 if (panel.length == 0) {
                     var button = $('<button class="btnToggleService">').html((service.enabled) ? 'Disable' : 'Enable');
-                    displayPanel(parent, service.name, service.name, data, button);
+                    displayPanel(parent, service.name, service.name, info, button);
                 } else {
-                    updatePanel(parent, service.name, data);
+                    updatePanel(parent, service.name, info);
                 }
             }
             break;
         default:
-            console.log("Event type '" + event.data.args.type + "' not implemented yet!");
+            console.log("Event type '" + data.args.type + "' not implemented yet!");
             break;
     }
-    updateStatus(event.data.status);
+    updateStatus(data.status);
 }
 
 $.fn.dialog = function (params) {

@@ -4,7 +4,7 @@
  * Author: Jamie Carl
  * Date: 25/09/14
  * Time: 9:21 AM
- * 
+ *
  * @package     Core
  */
 
@@ -14,8 +14,8 @@ namespace Hazaar\Application;
  * @brief       Hazaar Application Protocol Class
  *
  * @detail      The Application Protocol is a simple protocol developed to allow communication between
-*               parts of the Hazaar framework over the wire or other IO interfaces.  It allows common information
-*               to be encoded/decoded between endpoints.
+ *               parts of the Hazaar framework over the wire or other IO interfaces.  It allows common information
+ *               to be encoded/decoded between endpoints.
  *
  * @since       2.0.0
  *

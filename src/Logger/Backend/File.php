@@ -40,7 +40,7 @@ class File extends \Hazaar\Logger\Backend {
 
     public function write($tag, $message, $level = E_NOTICE) {
 
-        $remote = $_SERVER['REMOTE_ADDR'];
+        $remote = ake($_SERVER, 'REMOTE_ADDR', '--');
 
         $line = array();
 
@@ -53,7 +53,7 @@ class File extends \Hazaar\Logger\Backend {
         $line[] = str_pad(strtoupper($this->getLogLevelId($level)), 6, ' ', STR_PAD_RIGHT);
 
         if($this->getOption('write_uri'))
-            $line[] = $_SERVER['REQUEST_URI'];
+            $line[] = ake($_SERVER, 'REQUEST_URI');
 
         $line[] = $tag;
 
@@ -79,4 +79,3 @@ class File extends \Hazaar\Logger\Backend {
     }
 
 }
-
