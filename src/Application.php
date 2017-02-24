@@ -74,6 +74,8 @@ class Application {
 
     private static $instance;
 
+    private $protocol;
+
     /**
      * @brief The main application constructor
      *
@@ -544,11 +546,7 @@ class Application {
     /**
      * @brief Execute code from standard input in the application context
      *
-     * @detail This method is part of the background code execution scheduler, Bulletin. Code can be scheduled to
-     * execute in the background at a later time. This code is stored in the schedulars memory and when
-     * it's time to execute it, Bulletin will launch a new application context, bootstrap it, but
-     * instead of calling the run() method like normal it will call this runStdin() method to execute the
-     * stored code that was passed via stdin.
+     * @detail This method is will accept Hazaar Protocol commands from STDIN and execute them.
      *
      * @since 1.0.0
      */
@@ -565,19 +563,22 @@ class Application {
             )
         );
 
-        $warlock = new \Hazaar\Application\Config('warlock.ini', NULL, $defaults);
+        $warlock = new \Hazaar\Application\Config('warlock', APPLICATION_ENV, $defaults);
 
         define('RESPONSE_ENCODED', $warlock->server->encoded);
 
-        $protocol = new \Hazaar\Application\Protocol($warlock->sys->id, $warlock->server->encoded);
+        $this->protocol = new \Hazaar\Application\Protocol($warlock->sys->id, $warlock->server->encoded);
 
+        //Execution should wait here until we get a command
         $line = fgets(STDIN);
 
-        $type = $protocol->decode($line, $payload);
+        $type = $this->protocol->decode($line, $payload);
 
-        switch ($type) {
+        $type_name = $this->protocol->getTypeName($type);
 
-            case $protocol->getType('exec') :
+        switch ($type_name) {
+
+            case 'EXEC' :
 
                 $params = (array_key_exists('params', $payload) ? $payload['params'] : array());
 
@@ -587,19 +588,16 @@ class Application {
 
                     $result = call_user_func_array($_function, $params);
 
-                    if($result === TRUE){
+                    //Any of these are considered an OK response.
+                    if($result === NULL
+                    || $result === TRUE
+                    || $result == 0){
 
                         $code = 0;
 
-                    } elseif(is_int($result)) {
+                    } else { //Anything else is an error and we display it.
 
                         $code = $result;
-
-                    } else {
-
-                        $code = 0;
-
-                        echo $protocol->encode('OK', $result);
 
                     }
 
@@ -611,7 +609,7 @@ class Application {
 
                 break;
 
-            case $protocol->getType('SERVICE') :
+            case 'SERVICE' :
 
                 if(!array_key_exists('name', $payload)) {
 
@@ -627,7 +625,7 @@ class Application {
 
                 if(class_exists($serviceClass)) {
 
-                    $service = new $serviceClass($this, $protocol);
+                    $service = new $serviceClass($this, $this->protocol);
 
                     $code = call_user_func_array(array($service, 'main'), $params);
 
@@ -642,6 +640,26 @@ class Application {
         }
 
         exit($code);
+
+    }
+
+    private function trigger($event, $data){
+
+        if(!$this->protocol instanceof \Hazaar\Application\Protocol)
+            return false;
+
+        $packet = array(
+            'id' => $event
+        );
+
+        if($data)
+            $packet['data'] = $data;
+
+        echo $this->protocol->encode('trigger', $packet) . "\n";
+
+        flush();
+
+        return true;
 
     }
 

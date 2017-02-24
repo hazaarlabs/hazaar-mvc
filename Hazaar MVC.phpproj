@@ -266,7 +266,6 @@
     <Compile Include="src\Application\Request\Loader.php" />
     <Compile Include="src\Application\Request\_Interface.php" />
     <Compile Include="src\Application\Router.php" />
-    <Compile Include="src\Application\Runner.php" />
     <Compile Include="src\Application\Url.php" />
     <Compile Include="src\Closure.php" />
     <Compile Include="src\Controller.php" />
