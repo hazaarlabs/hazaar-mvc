@@ -43,6 +43,8 @@ class Protocol {
         0x0E => 'TRIGGER',      //Trigger an event
         0x0F => 'EVENT',        //An event
         0x10 => 'EXEC',         //Execute some code in the Warlock Runner.
+        0x11 => 'PING',         //Typical PING
+        0x12 => 'PONG',         //Typical PONG
         0x99 => 'DEBUG'
     );
 
@@ -130,7 +132,7 @@ class Protocol {
         if(array_key_exists('TME', $packet))
             $offset = time() - $packet['TME'];
 
-        return $packet['TYP'];
+        return $this->getTypeName($packet['TYP']);
 
     }
 
