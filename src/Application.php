@@ -124,7 +124,8 @@ class Application {
             'paths' => array(
                 'model' => 'models',
                 'view' => 'views',
-                'controller' => 'controllers'
+                'controller' => 'controllers',
+                'service' => 'services'
             )
         );
 
@@ -567,45 +568,21 @@ class Application {
 
         define('RESPONSE_ENCODED', $warlock->server->encoded);
 
-        $this->protocol = new \Hazaar\Application\Protocol($warlock->sys->id, $warlock->server->encoded);
+        $protocol = new \Hazaar\Application\Protocol($warlock->sys->id, $warlock->server->encoded);
 
         //Execution should wait here until we get a command
-        $line = fgets(STDIN);
+        $line = stream_get_contents(STDIN);
 
-        $type = $this->protocol->decode($line, $payload);
+        $type = $protocol->decode($line, $payload);
 
-        $type_name = $this->protocol->getTypeName($type);
-
-        switch ($type_name) {
+        switch ($type) {
 
             case 'EXEC' :
 
-                $params = (array_key_exists('params', $payload) ? $payload['params'] : array());
+                $container = new \Hazaar\Warlock\Container($this, $protocol);
 
-                eval('$_function = ' . $payload['function'] . ';');
-
-                if(isset($_function) && $_function instanceof \Closure) {
-
-                    $result = call_user_func_array($_function, $params);
-
-                    //Any of these are considered an OK response.
-                    if($result === NULL
-                    || $result === TRUE
-                    || $result == 0){
-
-                        $code = 0;
-
-                    } else { //Anything else is an error and we display it.
-
-                        $code = $result;
-
-                    }
-
-                } else {
-
-                    $code = 2;
-
-                }
+                if($container->connect($payload['application_name'], $payload['job_id'], $payload['access_key']))
+                    $code = $container->exec($payload['function'], ake($payload, 'params'));
 
                 break;
 
@@ -619,15 +596,18 @@ class Application {
 
                 }
 
-                $params = (array_key_exists('params', $payload) ? $payload['params'] : array());
-
                 $serviceClass = ucfirst($payload['name']) . 'Service';
 
                 if(class_exists($serviceClass)) {
 
-                    $service = new $serviceClass($this, $this->protocol);
+                    $service = new $serviceClass($this, $protocol);
 
-                    $code = call_user_func_array(array($service, 'main'), $params);
+                    if($service->connect($payload['application_name'],
+                        $payload['server_port'], $payload['job_id'], $payload['access_key'])){
+
+                        $code = call_user_func(array($service, 'main'));
+
+                    }
 
                 } else {
 

@@ -324,19 +324,7 @@ class Error extends \Hazaar\Controller {
 
                 case 'runner' :
 
-                    $encoded = (defined('RESPONSE_ENCODED') ? constant('RESPONSE_ENCODED') : false);
-
-                    $protocol = new \Hazaar\Application\Protocol(intval(getenv('HAZAAR_SID')), $encoded);
-
-                    $error = array(
-                        'code' => $this->errno,
-                        'short' => $this->short_message,
-                        'message' => $this->errstr,
-                        'file' => $this->errfile,
-                        'line' => $this->errline
-                    );
-
-                    $protocol->stream($protocol->encode('error', $error));
+                    echo "Runner Error #{$this->errno} at line #{$this->errline} in file {$this->errfile}\n\n{$this->errstr}\n\n";
 
                     exit($this->errno);
 
