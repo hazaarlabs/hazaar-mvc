@@ -339,6 +339,48 @@ function array_build_html($array, $root = true){
 
 }
 
+/**
+ * @brief       Convert to dot notation
+ *
+ * @detail      Converts/reduces a multidimensional array into a single dimensional array with keys in dot-notation.
+ *
+ * @since       2.0.0
+ *
+ * @return      array
+ */
+function array_to_dot_notation($array) {
+
+    if(!is_array($array))
+        return false;
+
+    $rows = array();
+
+    foreach($array as $key => $value) {
+
+        if(is_array($value)) {
+
+            $children = array_to_dot_notation($value);
+
+            foreach($children as $childkey => $child) {
+
+                $new_key = $key . '.' . $childkey;
+
+                $rows[$new_key] = $child;
+
+            }
+
+        } else {
+
+            $rows[$key] = $value;
+
+        }
+
+    }
+
+    return $rows;
+
+}
+
 function base64url_encode($data) {
 
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
@@ -907,22 +949,30 @@ function dump($data = NULL) {
 
     $response = null;
 
-    $app = Hazaar\Application::getInstance();
-
-    if($app && !($response = $app->request->getResponseType())){
-
-        if (function_exists('apache_request_headers')) {
-
-            $h = apache_request_headers();
-
-            if (ake($h, 'X-Requested-With') == 'XMLHttpRequest')
-                $response = 'json';
-
-        }
-
-    }elseif (getenv('HAZAAR_SID')) {
+    if(PHP_SAPI == 'cli'){
 
         $response = 'hazaar';
+
+    }else{
+
+        $app = Hazaar\Application::getInstance();
+
+        if($app && !($response = $app->request->getResponseType())){
+
+            if (function_exists('apache_request_headers')) {
+
+                $h = apache_request_headers();
+
+                if (ake($h, 'X-Requested-With') == 'XMLHttpRequest')
+                    $response = 'json';
+
+            }
+
+        }elseif (getenv('HAZAAR_SID')) {
+
+            $response = 'hazaar';
+
+        }
 
     }
 
