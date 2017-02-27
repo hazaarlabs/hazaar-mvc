@@ -144,6 +144,8 @@ class Config extends \Hazaar\Map {
 
             }
 
+            $this->loaded = TRUE;
+
         }
 
         if(! $options->has($this->env))
@@ -151,13 +153,8 @@ class Config extends \Hazaar\Map {
 
         $config = new \Hazaar\Map($defaults);
 
-        if($this->loadConfigOptions($options, $config)){
-
-            $this->loaded = TRUE;
-
+        if($this->loadConfigOptions($options, $config))
             return $config;
-
-        }
 
         return false;
 

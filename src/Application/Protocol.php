@@ -23,7 +23,7 @@ namespace Hazaar\Application;
  */
 class Protocol {
 
-    private $encoded   = TRUE;
+    private $encoded   = true;
 
     private $typeCodes = array(
         0x00 => 'NOOP',         //Null Opperation
@@ -43,6 +43,8 @@ class Protocol {
         0x0E => 'TRIGGER',      //Trigger an event
         0x0F => 'EVENT',        //An event
         0x10 => 'EXEC',         //Execute some code in the Warlock Runner.
+        0x11 => 'PING',         //Typical PING
+        0x12 => 'PONG',         //Typical PONG
         0x99 => 'DEBUG'
     );
 
@@ -50,7 +52,7 @@ class Protocol {
 
     private $last_error;
 
-    function __construct($id, $encoded = TRUE) {
+    function __construct($id, $encoded = true) {
 
         $this->id = $id;
 
@@ -68,7 +70,7 @@ class Protocol {
 
         $this->last_error = $msg;
 
-        return FALSE;
+        return false;
 
     }
 
@@ -81,7 +83,7 @@ class Protocol {
     public function getTypeName($type) {
 
         if(! array_key_exists($type, $this->typeCodes))
-            return FALSE;
+            return false;
 
         return $this->typeCodes[$type];
 
@@ -107,9 +109,9 @@ class Protocol {
 
     }
 
-    public function decode($packet, &$payload = NULL, &$offset = NULL) {
+    public function decode($packet, &$payload = null, &$time = null) {
 
-        $packet = json_decode(($this->encoded ? base64_decode($packet) : $packet), TRUE);
+        $packet = json_decode(($this->encoded ? base64_decode($packet) : $packet), true);
 
         if(! $packet)
             return $this->error('Packet decode failed');
@@ -128,9 +130,9 @@ class Protocol {
             $payload = $packet['PLD'];
 
         if(array_key_exists('TME', $packet))
-            $offset = time() - $packet['TME'];
+            $time = $packet['TME'];
 
-        return $packet['TYP'];
+        return $this->getTypeName($packet['TYP']);
 
     }
 
