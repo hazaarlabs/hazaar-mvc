@@ -21,9 +21,11 @@ namespace Hazaar\View;
  */
 class Template {
 
-    protected $content = null;
+    protected $content   = null;
 
-    protected $regex   = '/\$\{([\w\.]*)\}/';
+    protected $regex     = '/\$\{([\w\.]*)\}/';
+
+    public    $nullvalue = 'NULL';
 
     function __construct($content = null){
 
@@ -71,7 +73,7 @@ class Template {
 
             } else {
 
-                $replacement = 'NULL';
+                $replacement = $this->nullvalue;
 
             }
 

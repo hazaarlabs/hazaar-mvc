@@ -543,6 +543,7 @@
     <Compile Include="src\View\Helper\Widget.php" />
     <Compile Include="src\View\Helper\_Interface.php" />
     <Compile Include="src\View\Layout.php" />
+    <Compile Include="src\View\Template.php" />
     <Compile Include="src\View\Viewable.php" />
     <Compile Include="src\View\ViewableObject.php" />
     <Compile Include="src\View\Widgets\Button.php" />
