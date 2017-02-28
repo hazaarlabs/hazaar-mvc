@@ -23,7 +23,7 @@ class Template {
 
     protected $content   = null;
 
-    protected $regex     = '/\$\{([\w\.]*)\}/';
+    protected $regex     = '/\$\{(.*?)\}/';
 
     public    $nullvalue = 'NULL';
 
@@ -54,32 +54,51 @@ class Template {
 
     public function parse($params = array()) {
 
-        $replaced = array();
-
         $output = $this->content;
 
         $params = array_to_dot_notation($params);
 
-        preg_match_all($this->regex, $this->content, $matches);
+        $count = 0;
 
-        foreach($matches[1] as $match) {
+        while(preg_match_all($this->regex, $output, $matches)){
 
-            if(in_array($match, $replaced))
-                continue;
+            if($count++ > 5)
+                break;
 
-            if(array_key_exists($match, $params)) {
+            $replaced = array();
 
-                $replacement = $params[$match];
+            foreach($matches[1] as $match) {
 
-            } else {
+                if(in_array($match, $replaced))
+                    continue;
 
-                $replacement = $this->nullvalue;
+                if(substr($match, 0, 1) == '"'){ //It's a URL
+
+                    $parts = explode(':', $match, 2); //Split on the first colon
+
+                    $url = ake($parts, 1);
+
+                    //Check if it's a proper URL and if not, make it application relative.
+                    if(!preg_match('/^\w+\:\/\//', $url))
+                        $url = new \Hazaar\Application\Url($url);
+
+                    $replacement = (string)new \Hazaar\Html\A($url, trim(ake($parts, 0), '"'));
+
+                }elseif(array_key_exists($match, $params)) {
+
+                    $replacement = $params[$match];
+
+                } else {
+
+                    $replacement = $this->nullvalue;
+
+                }
+
+                $output = preg_replace('/\$\{' . preg_quote($match, '/') . '\}/', $replacement, $output);
+
+                $replaced[] = $match;
 
             }
-
-            $output = preg_replace('/\$\{' . $match . '\}/', $replacement, $output);
-
-            $replaced[] = $match;
 
         }
 
