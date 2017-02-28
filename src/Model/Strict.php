@@ -718,7 +718,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
      *
      * @since 1.0.0
      */
-    public function toArray($disable_callbacks = FALSE, $depth = NULL, $show_hidden = FALSE) {
+    public function toArray($disable_callbacks = FALSE, $depth = NULL, $show_hidden = true) {
 
         return $this->resolveArray($this, $disable_callbacks, $depth, $show_hidden);
 
@@ -911,9 +911,9 @@ abstract class Strict implements \ArrayAccess, \Iterator {
     public function exportHMV($ignore_empty = false, $export_all = false, $obj = null){
 
         if(!$obj)
-            $obj = new \Hazaar\Map($this->toArray());
+            $obj = new \Hazaar\Map($this->toArray(false, null, $export_all));
 
-        return $this->exportHMVArray($this->toArray(false, 0), $this->fields, $ignore_empty, $export_all, $obj);
+        return $this->exportHMVArray($this->toArray(false, 0, $export_all), $this->fields, $ignore_empty, $export_all, $obj);
 
     }
 
