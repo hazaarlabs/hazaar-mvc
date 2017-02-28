@@ -84,13 +84,37 @@ class Template {
 
                     $replacement = (string)new \Hazaar\Html\A($url, trim(ake($parts, 0), '"'));
 
-                }elseif(array_key_exists($match, $params)) {
+                }else{
 
-                    $replacement = $params[$match];
+                    $args = null;
 
-                } else {
+                    if(strpos($match, ':') !== false){
 
-                    $replacement = $this->nullvalue;
+                        $parts = explode(':', $match, 3);
+
+                        list($key, $modifier, $args) = array(
+                            ake($parts, 0),
+                            ake($parts, 1),
+                            ake($parts, 2)
+                        );
+
+                    }else{
+
+                        $key = $match;
+
+                        $modifier = 'string';
+
+                    }
+
+                    if(array_key_exists($key, $params)) {
+
+                        $replacement = $this->setType($params[$key], $modifier, $args);
+
+                    } else {
+
+                        $replacement = $this->nullvalue;
+
+                    }
 
                 }
 
@@ -105,5 +129,30 @@ class Template {
         return $output;
 
     }
+
+    private function setType($value, $type = 'string', $args = null){
+
+        switch($type){
+
+            case 'date':
+
+                if(!$value instanceof \Hazaar\Date)
+                    $value = new \Hazaar\Date($value);
+
+                $value = ($args?$value->format($args):(string)$value);
+
+                break;
+
+            case 'string':
+            default:
+
+                $value = (string) $value;
+
+        }
+
+        return $value;
+
+    }
+
 
 }
