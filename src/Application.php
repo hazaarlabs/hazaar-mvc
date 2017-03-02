@@ -549,20 +549,23 @@ class Application {
      *
      * @detail This method is will accept Hazaar Protocol commands from STDIN and execute them.
      *
+     * Exit codes:
+     *
+     * * 1 - Bad Payload - The execution payload could not be decoded.
+     * * 2 - Unknown Payload Type - The payload execution type is unknown.
+     * * 3 - Service Class Not Found - The service could not start because the service class could not be found.
+     * * 4 - Unable to open control channel - The application was unable to open a control channel back to the execution server.
+     *
      * @since 1.0.0
      */
     public function runStdin() {
 
-        $code = 1;
+        if(!class_exists('\Hazaar\Warlock\Config'))
+            throw new \Exception('Could not find default warlock config.  How is this even working!!?');
 
-        $defaults = array(
-            'sys' => array(
-                'id' => crc32(APPLICATION_PATH)
-            ),
-            'server' => array(
-                'encoded' => FALSE
-            )
-        );
+        $defaults = \Hazaar\Warlock\Config::$default_config;
+
+        $defaults['sys']['id'] = crc32(APPLICATION_PATH);
 
         $warlock = new \Hazaar\Application\Config('warlock', APPLICATION_ENV, $defaults);
 
@@ -573,49 +576,69 @@ class Application {
         //Execution should wait here until we get a command
         $line = stream_get_contents(STDIN);
 
-        $type = $protocol->decode($line, $payload);
+        $code = 1;
 
-        switch ($type) {
+        if($type = $protocol->decode($line, $payload)){
 
-            case 'EXEC' :
+            switch ($type) {
 
-                $container = new \Hazaar\Warlock\Container($this, $protocol);
+                case 'EXEC' :
 
-                if($container->connect($payload['application_name'], $payload['job_id'], $payload['access_key']))
-                    $code = $container->exec($payload['function'], ake($payload, 'params'));
+                    $container = new \Hazaar\Warlock\Container($this, $protocol);
 
-                break;
+                    if($container->connect($payload['application_name'], $payload['server_port'], $payload['job_id'], $payload['access_key'])){
 
-            case 'SERVICE' :
+                        $code = $container->exec($payload['function'], ake($payload, 'params'));
 
-                if(!array_key_exists('name', $payload)) {
+                    }else{
 
-                    $code = 3;
-
-                    break;
-
-                }
-
-                $serviceClass = ucfirst($payload['name']) . 'Service';
-
-                if(class_exists($serviceClass)) {
-
-                    $service = new $serviceClass($this, $protocol);
-
-                    if($service->connect($payload['application_name'],
-                        $payload['server_port'], $payload['job_id'], $payload['access_key'])){
-
-                        $code = call_user_func(array($service, 'main'));
+                        $code = 4;
 
                     }
 
-                } else {
+                    break;
+
+                case 'SERVICE' :
+
+                    if(!array_key_exists('name', $payload)) {
+
+                        $code = 3;
+
+                        break;
+
+                    }
+
+                    $serviceClass = ucfirst($payload['name']) . 'Service';
+
+                    if(class_exists($serviceClass)) {
+
+                        $service = new $serviceClass($this, $protocol);
+
+                        if($service->connect($payload['application_name'], $payload['server_port'], $payload['job_id'], $payload['access_key'])){
+
+                            $code = call_user_func(array($service, 'main'));
+
+                        }else{
+
+                            $code = 4;
+
+                        }
+
+                    } else {
+
+                        $code = 3;
+
+                    }
+
+                    break;
+
+                default:
 
                     $code = 2;
 
-                }
+                    break;
 
-                break;
+            }
 
         }
 
