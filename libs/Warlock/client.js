@@ -270,10 +270,11 @@ var HazaarWarlock = function (sid, host, useWebSockets, websocketsAutoReconnect)
         }
         return this;
     };
-    this.trigger = function (event_id, data) {
+    this.trigger = function (event_id, data, echo_self) {
         this._send(p.trigger, {
             'id': event_id,
-            'data': data
+            'data': data,
+            'echo': (echo_self === true)
         }, true);
     };
     this.enable = function (service) {
