@@ -644,7 +644,6 @@
     <Folder Include="libs\jqWidgets\styles\images\sunny\" />
     <Folder Include="libs\js\" />
     <Folder Include="libs\text\" />
-    <Folder Include="libs\Warlock\" />
     <Folder Include="src\" />
     <Folder Include="src\Application\" />
     <Folder Include="src\Application\Exception\" />
@@ -1157,19 +1156,6 @@
     <Content Include="libs\js\jquery-helper.js" />
     <Content Include="libs\js\pdfobject.js" />
     <Content Include="libs\mime.types" />
-    <Content Include="libs\Warlock\client.js" />
-    <Content Include="libs\Warlock\clients.phtml" />
-    <Content Include="libs\Warlock\controlpanel.css" />
-    <Content Include="libs\Warlock\controlpanel.js" />
-    <Content Include="libs\Warlock\controlpanel.phtml" />
-    <Content Include="libs\Warlock\dashboard.phtml" />
-    <Content Include="libs\Warlock\events.phtml" />
-    <Content Include="libs\Warlock\jobs.phtml" />
-    <Content Include="libs\Warlock\log.phtml" />
-    <Content Include="libs\Warlock\procs.phtml" />
-    <Content Include="libs\Warlock\services.phtml" />
-    <Content Include="libs\Warlock\warlock_bg.png" />
-    <Content Include="libs\Warlock\warlock_icon.png" />
     <Content Include="LICENCE.md" />
     <Content Include="phpunit.xml" />
     <Content Include="tests\application\configs\application.json" />
