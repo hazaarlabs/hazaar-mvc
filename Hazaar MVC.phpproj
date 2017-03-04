@@ -539,7 +539,6 @@
     <Compile Include="src\View\Helper\Money.php" />
     <Compile Include="src\View\Helper\PDF.php" />
     <Compile Include="src\View\Helper\Textile.php" />
-    <Compile Include="src\View\Helper\Warlock.php" />
     <Compile Include="src\View\Helper\Widget.php" />
     <Compile Include="src\View\Helper\_Interface.php" />
     <Compile Include="src\View\Layout.php" />
