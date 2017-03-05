@@ -1,8 +1,8 @@
 <?php
 
-namespace Hazaar\Controller;
+namespace Hazaar\Console;
 
-class Hazaar extends \Hazaar\Controller\Action {
+class Controller extends \Hazaar\Controller\Action {
 
     private $open_actions = array('file', 'login');
 
@@ -31,9 +31,9 @@ class Hazaar extends \Hazaar\Controller\Action {
 
         $this->view->addHelper('fontawesome', array('version' => '4.7.0'));
 
-        $this->view->requires($this->application->url('hazaar/file/admin/application.js'));
+        $this->view->requires($this->application->url('file/admin/application.js'));
 
-        $this->view->link($this->application->url('hazaar/file/admin/layout.css'));
+        $this->view->link($this->application->url('file/admin/layout.css'));
 
         $this->view->navitems = array(
             'app' => array(
@@ -175,7 +175,7 @@ class Hazaar extends \Hazaar\Controller\Action {
 
         $this->view->addHelper('bootstrap');
 
-        $this->view->link($this->application->url('hazaar/file/admin/login.css'));
+        $this->view->link($this->application->url('file/admin/login.css'));
 
     }
 
@@ -244,43 +244,4 @@ class Hazaar extends \Hazaar\Controller\Action {
 
     }
 
-    /**
-     * Directly access a file stored in the Hazaar libs directory.
-     *
-     * This is used for accessing files in the libs directory, such as internal built-in JavaScript,
-     * CSS, views and other files that are shipped as part of the core Hazaar MVC package.
-     *
-     * @param string $action
-     * @throws Exception\InternalFileNotFound
-     * @throws \Exception
-     * @return Response\File
-     */
-    public function file() {
-
-        $response = NULL;
-
-        //Grab the file and strip the action name.
-        if($file = substr($this->request->getRawPath(), 5)) {
-
-            if($source = \Hazaar\Loader::getInstance()->getFilePath(FILE_PATH_SUPPORT, $file)) {
-
-                $response = new Response\File($source);
-
-                $response->setUnmodified($this->request->getHeader('If-Modified-Since'));
-
-            } else {
-
-                throw new Exception\InternalFileNotFound($file);
-
-            }
-
-        }else{
-
-            throw new \Exception('Bad request', 400);
-
-        }
-
-        return $response;
-
-    }
 }

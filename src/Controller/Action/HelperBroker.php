@@ -62,7 +62,8 @@ class HelperBroker {
 
     public function __get($helper) {
 
-        if(array_key_exists($helper, $this->helpers) && $this->helpers[$helper] instanceof Helper) {
+        if(array_key_exists($helper, $this->helpers) 
+            && $this->helpers[$helper] instanceof Helper) {
 
             $obj = $this->helpers[$helper];
 
