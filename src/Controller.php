@@ -22,6 +22,8 @@ abstract class Controller implements Controller\_Interface {
 
     public    $statusCode;
 
+    public    $base_path; //Optional base_path for controller relative url() calls.
+
     public function __construct($name, $application) {
 
         $this->name = $name;
@@ -57,11 +59,8 @@ abstract class Controller implements Controller\_Interface {
 
     public function setRequest($request) {
 
-        if($request instanceof Application\Request) {
-
+        if($request instanceof Application\Request)
             $this->request = $request;
-
-        }
 
     }
 
@@ -151,11 +150,8 @@ abstract class Controller implements Controller\_Interface {
 
         }
 
-        if(! $controller) {
-
-            $controller = strtolower($this->getName());
-
-        }
+        if(! $controller)
+            $controller = ($this->base_path ? $this->base_path . '/' : null) . strtolower($this->getName());
 
         return $this->application->url($controller, $method, $params);
 
@@ -178,7 +174,7 @@ abstract class Controller implements Controller\_Interface {
     public function active($controller = NULL, $action = NULL) {
 
         if($controller instanceof Application\Url){
-            
+
             $action = $controller->method;
 
             $controller = $controller->controller;

@@ -282,12 +282,14 @@
     <Compile Include="src\Controller\Exception\BrowserRootNotDefined.php" />
     <Compile Include="src\Controller\Exception\BrowserRootNotFound.php" />
     <Compile Include="src\Controller\Exception\HeadersSent.php" />
-    <Compile Include="src\Controller\Exception\InternalFileNotFound.php" />
+    <Compile Include="src\File\Exception\InternalFileNotFound.php" />
     <Compile Include="src\Controller\Exception\MethodExists.php" />
     <Compile Include="src\Controller\Exception\MethodNotFound.php" />
     <Compile Include="src\Controller\Exception\NoDefaultRenderer.php" />
     <Compile Include="src\Controller\Favicon.php" />
-    <Compile Include="src\Controller\Hazaar.php" />
+    <Compile Include="src\Controller\Router.php" />
+    <Compile Include="src\File\Controller.php" />
+    <Compile Include="src\Console\Controller.php" />
     <Compile Include="src\Controller\Media.php" />
     <Compile Include="src\Controller\Response.php" />
     <Compile Include="src\Controller\Response\Exception\Default.php" />
@@ -320,7 +322,6 @@
     <Compile Include="src\Controller\Response\_Interface.php" />
     <Compile Include="src\Controller\Script.php" />
     <Compile Include="src\Controller\Style.php" />
-    <Compile Include="src\Controller\Warlock.php" />
     <Compile Include="src\Controller\XMLRPC.php" />
     <Compile Include="src\Controller\_Interface.php" />
     <Compile Include="src\Cron.php" />
@@ -612,16 +613,13 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="libs\" />
-    <Folder Include="libs\admin\db\" />
-    <Folder Include="libs\admin\app\" />
-    <Folder Include="libs\admin\cache\" />
     <Folder Include="libs\css\" />
     <Folder Include="libs\css\images\" />
     <Folder Include="libs\css\images\fileicon\" />
     <Folder Include="libs\dropzone\" />
     <Folder Include="libs\dropzone\css\" />
     <Folder Include="libs\dropzone\images\" />
-    <Folder Include="libs\error\" />
+    <Folder Include="libs\Error\" />
     <Folder Include="libs\geshi\" />
     <Folder Include="libs\geshi\contrib\" />
     <Folder Include="libs\geshi\docs\" />
@@ -646,7 +644,6 @@
     <Folder Include="libs\jqWidgets\styles\images\start\" />
     <Folder Include="libs\jqWidgets\styles\images\sunny\" />
     <Folder Include="libs\js\" />
-    <Folder Include="libs\admin\" />
     <Folder Include="libs\text\" />
     <Folder Include="src\" />
     <Folder Include="src\Application\" />
@@ -679,6 +676,7 @@
     <Folder Include="src\Logger\Exception\" />
     <Folder Include="src\Model\" />
     <Folder Include="src\Model\Exception\" />
+    <Folder Include="src\Console\" />
     <Folder Include="src\View\" />
     <Folder Include="src\View\Helper\" />
     <Folder Include="src\View\Widgets\" />
@@ -691,21 +689,6 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="composer.json" />
-    <Content Include="libs\admin\application.js" />
-    <Content Include="libs\admin\cache\settings.phtml" />
-    <Content Include="libs\admin\db\sync.phtml" />
-    <Content Include="libs\admin\db\schema.phtml" />
-    <Content Include="libs\admin\db\settings.phtml" />
-    <Content Include="libs\admin\index.phtml" />
-    <Content Include="libs\admin\layout.css" />
-    <Content Include="libs\admin\layout.phtml" />
-    <Content Include="libs\admin\login.css" />
-    <Content Include="libs\admin\login.phtml" />
-    <Content Include="libs\admin\app\views.phtml" />
-    <Content Include="libs\admin\app\controllers.phtml" />
-    <Content Include="libs\admin\app\models.phtml" />
-    <Content Include="libs\admin\profile.phtml" />
-    <Content Include="libs\admin\settings.phtml" />
     <Content Include="libs\css\buttons.css" />
     <Content Include="libs\css\filebrowser.css" />
     <Content Include="libs\css\images\fileicon\archive.png" />
@@ -726,9 +709,9 @@
     <Content Include="libs\dropzone\dropzone.js" />
     <Content Include="libs\dropzone\images\spritemap%402x.png" />
     <Content Include="libs\dropzone\images\spritemap.png" />
-    <Content Include="libs\error\error.css" />
-    <Content Include="libs\error\error.phtml" />
-    <Content Include="libs\error\hazaarlogo.svg" />
+    <Content Include="libs\Error\Error.css" />
+    <Content Include="libs\Error\Error.phtml" />
+    <Content Include="libs\Error\hazaarlogo.svg" />
     <Content Include="libs\favicon.png" />
     <Content Include="libs\geshi\docs\api\blank.html" />
     <Content Include="libs\geshi\docs\api\classtrees_geshi.html" />

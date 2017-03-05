@@ -695,7 +695,7 @@ class Application {
      * @since 1.0.0
      *
      */
-    static public function url() {
+    public function url() {
 
         $url = new Application\Url();
 

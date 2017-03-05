@@ -30,21 +30,18 @@ abstract class Action extends \Hazaar\Controller {
 
     private   $stream        = FALSE;
 
-    final public function __construct($name, $application) {
+    final public function __construct($name, $application, $use_app_config = true) {
 
         parent::__construct($name, $application);
 
         $this->_helper = new Action\HelperBroker($this);
 
-        if(! $this->view = $this->_helper->addHelper('ViewRenderer')) {
-
+        if(! $this->view = $this->_helper->addHelper('ViewRenderer'))
             throw new Exception\NoDefaultRenderer();
 
-        }
+        if($use_app_config && $this->application->config->app->has('layout')) {
 
-        if($this->application->config->app->has('layout')) {
-
-            $this->_helper->ViewRenderer->layout($this->application->config->app['layout']);
+            $this->_helper->ViewRenderer->layout($this->application->config->app['layout'], true);
 
             if($this->application->config->app->has('favicon'))
                 $this->_helper->ViewRenderer->link($this->application->config->app['favicon'], 'shortcut icon')

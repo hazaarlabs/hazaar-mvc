@@ -466,7 +466,7 @@ class Loader {
          */
 		switch($controller){
 			case 'hazaar' :
-				$newController = new Controller\Hazaar($controller, $this->application);
+				$newController = new Controller\Router($controller, $this->application);
 				break;
 
 			case 'media' :

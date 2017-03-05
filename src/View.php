@@ -43,7 +43,7 @@ class View {
 
     protected $_postItems = array();
 
-    public function __construct($view, $init_default_helpers = TRUE) {
+    public function __construct($view, $init_default_helpers = true, $use_app_config = true) {
 
         $this->_helpers['application'] = Application::getInstance();
 
@@ -57,86 +57,85 @@ class View {
 
             $this->addHelper('html');
 
-            if ($this->application->config->has('view')) {
+        }
 
-                if ($this->application->config->view->has('require')) {
+        if ($use_app_config && $this->application->config->has('view')) {
 
-                    foreach ($this->application->config->view->require as $req) {
+            if ($this->application->config->view->has('require')) {
 
-                        $this->requires($req);
-                    }
-                }
+                foreach ($this->application->config->view->require as $req)
+                    $this->requires($req);
 
-                if ($this->application->config->view->has('helper')) {
+            }
 
-                    $load = $this->application->config->view->helper->load;
+            if ($this->application->config->view->has('helper')) {
 
-                    if (!Map::is_array($load))
-                        $load = new Map(array($load));
+                $load = $this->application->config->view->helper->load;
 
-                    $helpers = new Map();
+                if (!Map::is_array($load))
+                    $load = new Map(array($load));
 
-                    foreach($load as $key => $helper) {
+                $helpers = new Map();
 
-                        //Check if the helper is in the old INI file format and parse it if it is.
-                        if (!Map::is_array($helper)){
+                foreach($load as $key => $helper) {
 
-                            if(preg_match('/(\w*)\[(.*)\]/', trim($helper), $matches)) {
+                    //Check if the helper is in the old INI file format and parse it if it is.
+                    if (!Map::is_array($helper)){
 
-                                $key = $matches[1];
+                        if(preg_match('/(\w*)\[(.*)\]/', trim($helper), $matches)) {
 
-                                $helper = array_unflatten($matches[2], '=', ',');
+                            $key = $matches[1];
 
-                                //Fix the values so they are the correct types
-                                foreach($helper as &$arg) {
+                            $helper = array_unflatten($matches[2], '=', ',');
 
-                                    if($arg = trim($arg)) {
+                            //Fix the values so they are the correct types
+                            foreach($helper as &$arg) {
 
-                                        if (in_array(strtolower($arg), array(
-                                            'yes',
-                                            'no',
-                                            'true',
-                                            'false',
-                                            'on',
-                                            'off'
-                                        ))) {
+                                if($arg = trim($arg)) {
 
-                                            $arg = boolify($arg);
+                                    if (in_array(strtolower($arg), array(
+                                        'yes',
+                                        'no',
+                                        'true',
+                                        'false',
+                                        'on',
+                                        'off'
+                                    ))) {
 
-                                        } elseif (is_numeric($arg)) {
+                                        $arg = boolify($arg);
 
-                                            if (strpos($arg, '.') === FALSE)
-                                                settype($arg, 'int');
-                                            else
-                                                settype($arg, 'float');
+                                    } elseif (is_numeric($arg)) {
 
-                                        }
+                                        if (strpos($arg, '.') === FALSE)
+                                            settype($arg, 'int');
+                                        else
+                                            settype($arg, 'float');
 
                                     }
 
                                 }
 
-                                $helpers[$key]->fromDotNotation($helper);
-
-                                //If there is no config and it is just the helper name, just convert it to the new format
-                            }else{
-
-                                $helpers[$helper] = array();
-
                             }
 
+                            $helpers[$key]->fromDotNotation($helper);
+
+                            //If there is no config and it is just the helper name, just convert it to the new format
                         }else{
 
-                            $helpers[$key] = $helper;
+                            $helpers[$helper] = array();
 
                         }
 
+                    }else{
+
+                        $helpers[$key] = $helper;
+
                     }
 
-                    foreach($helpers as $helper => $args)
-                        $this->addHelper($helper, $args->toArray());
-
                 }
+
+                foreach($helpers as $helper => $args)
+                    $this->addHelper($helper, $args->toArray());
 
             }
 
@@ -155,13 +154,15 @@ class View {
             $type = FILE_PATH_VIEW;
 
             /*
-             * If the name begins with an @ symbol then we are trying to load the view from an include path, not the application path
+             * If the name begins with an @ symbol then we are trying to load the view from a
+             * support file path, not the application path
              */
             if (substr($view, 0, 1) == '@') {
 
                 $view = substr($view, 1);
 
                 $type = FILE_PATH_SUPPORT;
+
             }
 
             $viewFile = $view . '.phtml';
@@ -600,8 +601,19 @@ class View {
 
         if (! $script instanceof \Hazaar\Html\Script) {
 
-            if (! preg_match('/^http[s]?:\/\//', $script))
-                $script = $this->application->url('script/' . $script);
+            if (! preg_match('/^http[s]?:\/\//', $script)){
+
+                if($this->_methodHandler instanceof \Hazaar\Controller
+                    && $this->_methodHandler->base_path)
+                    $script = $this->_methodHandler->base_path . '/'
+                        . $this->_methodHandler->getName()
+                        . '/script/' . $script;
+                else
+                    $script = 'script/' . $script;
+
+                $script = $this->application->url($script);
+
+            }
 
             $script = $this->html->script()->src($script);
 

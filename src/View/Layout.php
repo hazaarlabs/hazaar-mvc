@@ -15,12 +15,12 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
 
     private $_views   = array();
 
-    public function __construct($view = NULL, $init_default_helpers = TRUE) {
+    public function __construct($view = NULL, $init_default_helpers = true, $use_app_config = true) {
 
         if(! $view)
             $view = 'application';
 
-        parent::__construct($view, $init_default_helpers);
+        parent::__construct($view, $init_default_helpers, $use_app_config);
 
     }
 

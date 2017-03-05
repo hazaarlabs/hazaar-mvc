@@ -26,7 +26,7 @@ abstract class Request implements Request\_Interface {
     /**
      * The original path excluding the application base path
      */
-    private $base_path;
+    private $request_path;
 
     /**
      * The path without the controller reference in it
@@ -48,10 +48,10 @@ abstract class Request implements Request\_Interface {
             throw new \Exception('Argument one of the Request constructor MUST be an Application\Config object!');
 
         if(method_exists($this, 'init'))
-            $this->base_path = call_user_func_array(array($this,'init'), $args);
+            $this->request_path = call_user_func_array(array($this,'init'), $args);
 
-        if($this->base_path)
-            $this->evaluate($this->base_path);
+        if($this->request_path)
+            $this->evaluate($this->request_path);
 
     }
 
@@ -84,6 +84,8 @@ abstract class Request implements Request\_Interface {
      *              is essentially the core method of Hazaar that decides what to execute based on
      */
     public function evaluate($string) {
+
+        $this->action = 'index';
 
         $nodes = explode('/', $string);
 
@@ -182,9 +184,27 @@ abstract class Request implements Request\_Interface {
 
     }
 
+    public function getRequestPath() {
+
+        return $this->request_path;
+
+    }
+
+    public function setRequestPath($path) {
+
+        $this->request_path = $path;
+
+    }
+
     public function getBasePath() {
 
         return $this->base_path;
+
+    }
+
+    public function setBasePath($path) {
+
+        $this->base_path = $path;
 
     }
 

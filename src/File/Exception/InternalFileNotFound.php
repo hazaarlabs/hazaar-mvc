@@ -1,6 +1,6 @@
 <?php
 
-namespace Hazaar\Controller\Exception;
+namespace Hazaar\File\Exception;
 
 class InternalFileNotFound extends \Hazaar\Exception {
 
