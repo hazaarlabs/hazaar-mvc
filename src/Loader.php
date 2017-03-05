@@ -481,10 +481,6 @@ class Loader {
 				$newController = new Controller\Script($controller, $this->application);
 				break;
 
-			case 'warlock' :
-				$newController = new Controller\Warlock($controller, $this->application);
-				break;
-
 			case 'favicon.png' :
 			case 'favicon.ico' :
 				$newController = new Controller\Favicon($controller, $this->application);
@@ -494,7 +490,7 @@ class Loader {
 				$controllerClass = ucfirst($controller) . 'Controller';
 
 				/*
-                 * This call to class_exists()will actually load the class with the __autoload magic method. Then
+                 * This call to class_exists() will actually load the class with the __autoload magic method. Then
                  * we test if the class exists and if it doesn't we try and load the default controller . If that
                  * failes we return FALSE so a nice error can be sent instead of a nasty fatal error
                  */
