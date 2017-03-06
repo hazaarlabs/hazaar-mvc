@@ -20,20 +20,20 @@ class Controller extends \Hazaar\Controller\Action {
 
         session_start();
 
+        $this->view->layout('@console/layout');
+
         $this->view->addHelper('bootstrap');
 
         if(!ake($_SESSION, 'user'))
             $this->redirect($this->url('login'));
 
-        $this->layout('@admin/layout');
-
         $this->view->addHelper('jQuery');
 
         $this->view->addHelper('fontawesome', array('version' => '4.7.0'));
 
-        $this->view->requires($this->application->url('file/admin/application.js'));
+        $this->view->requires($this->application->url('file/console/application.js'));
 
-        $this->view->link($this->application->url('file/admin/layout.css'));
+        $this->view->link($this->application->url('file/console/layout.css'));
 
         $this->view->navitems = array(
             'app' => array(
@@ -171,11 +171,13 @@ class Controller extends \Hazaar\Controller\Action {
 
         }
 
-        $this->layout('@admin/login');
+        $this->layout('@console/login');
 
         $this->view->addHelper('bootstrap');
 
-        $this->view->link($this->application->url('file/admin/login.css'));
+        $this->view->link('console/login.css');
+
+        $this->view->requires('console/test.js');
 
     }
 

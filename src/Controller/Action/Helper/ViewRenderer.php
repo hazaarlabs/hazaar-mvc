@@ -51,6 +51,9 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
     public function addHelper($helper, $args = array()) {
 
+        if(!$this->view instanceof \Hazaar\View)
+            throw new \Exception('Unable to add helper ' . $helper . '.  Please set a view first!');
+
         $this->view->addHelper($helper, $args);
 
     }

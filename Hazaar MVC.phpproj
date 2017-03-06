@@ -613,6 +613,10 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="libs\" />
+    <Folder Include="libs\console\" />
+    <Folder Include="libs\console\app\" />
+    <Folder Include="libs\console\cache\" />
+    <Folder Include="libs\console\db\" />
     <Folder Include="libs\css\" />
     <Folder Include="libs\css\images\" />
     <Folder Include="libs\css\images\fileicon\" />
@@ -689,6 +693,21 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="composer.json" />
+    <Content Include="libs\console\application.js" />
+    <Content Include="libs\console\app\controllers.phtml" />
+    <Content Include="libs\console\app\models.phtml" />
+    <Content Include="libs\console\app\views.phtml" />
+    <Content Include="libs\console\cache\settings.phtml" />
+    <Content Include="libs\console\db\schema.phtml" />
+    <Content Include="libs\console\db\settings.phtml" />
+    <Content Include="libs\console\db\sync.phtml" />
+    <Content Include="libs\console\index.phtml" />
+    <Content Include="libs\console\layout.css" />
+    <Content Include="libs\console\layout.phtml" />
+    <Content Include="libs\console\login.css" />
+    <Content Include="libs\console\login.phtml" />
+    <Content Include="libs\console\profile.phtml" />
+    <Content Include="libs\console\settings.phtml" />
     <Content Include="libs\css\buttons.css" />
     <Content Include="libs\css\filebrowser.css" />
     <Content Include="libs\css\images\fileicon\archive.png" />
