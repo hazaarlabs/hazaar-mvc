@@ -22,7 +22,7 @@ class Controller extends \Hazaar\Controller\Action {
 
         $this->view->layout('@console/layout');
 
-        $this->view->addHelper('bootstrap');
+        $this->view->addHelper('bootstrap', array('theme' => 'flatly'));
 
         if(!ake($_SESSION, 'user'))
             $this->redirect($this->url('login'));
@@ -33,7 +33,7 @@ class Controller extends \Hazaar\Controller\Action {
 
         $this->view->requires($this->application->url('file/console/application.js'));
 
-        $this->view->link($this->application->url('file/console/layout.css'));
+        $this->view->link('console/layout.css');
 
         $this->view->navitems = array(
             'app' => array(
@@ -47,6 +47,7 @@ class Controller extends \Hazaar\Controller\Action {
             )
         );
 
+        /*
         if(class_exists('Hazaar\Cache')){
 
             $this->view->navitems['cache'] = array(
@@ -100,7 +101,7 @@ class Controller extends \Hazaar\Controller\Action {
                 )
             );
 
-        }
+        }*/
 
     }
 
