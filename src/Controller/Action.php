@@ -44,8 +44,7 @@ abstract class Action extends \Hazaar\Controller {
             $this->_helper->ViewRenderer->layout($this->application->config->app['layout'], true);
 
             if($this->application->config->app->has('favicon'))
-                $this->_helper->ViewRenderer->link($this->application->config->app['favicon'], 'shortcut icon')
-                                            ->id('favicon');
+                $this->_helper->ViewRenderer->link($this->application->config->app['favicon'], 'shortcut icon');
 
         }
 

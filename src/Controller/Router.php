@@ -26,9 +26,11 @@ class Router extends \Hazaar\Controller {
         if(!class_exists($this->className))
             throw new \Exception("Module '{$this->moduleName}' not found!", 404);
 
+        $path = $this->getSupportPath($this->className);
+
         if($this->request->getActionName() == 'file'){
 
-            if(!($path = $this->getSupportPath($this->className)))
+            if(!$path)
                 throw new \Exception("Module {$this->moduleName} does not have a support path!", 405);
 
             $this->module = new \Hazaar\File\Controller($this->moduleName, $this->application, false);
@@ -40,6 +42,9 @@ class Router extends \Hazaar\Controller {
         }else{
 
             $this->module = new $this->className($this->moduleName, $this->application, false);
+
+            if($path)
+                \Hazaar\Loader::getInstance()->addSearchPath(FILE_PATH_SUPPORT, $path);
 
         }
 

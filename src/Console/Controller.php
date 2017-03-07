@@ -177,8 +177,6 @@ class Controller extends \Hazaar\Controller\Action {
 
         $this->view->link('console/login.css');
 
-        $this->view->requires('console/test.js');
-
     }
 
     public function logout(){
@@ -198,7 +196,7 @@ class Controller extends \Hazaar\Controller\Action {
      */
     public function __default($controller, $action){
 
-        $this->view('@admin/' . str_replace('_', '/', $action));
+        $this->view('@console/' . str_replace('_', '/', $action));
 
     }
 

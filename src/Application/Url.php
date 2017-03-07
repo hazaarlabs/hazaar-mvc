@@ -36,6 +36,8 @@ class Url {
 
     public $hash;
 
+    public $base_path;
+
     function __construct() {
 
         /*
@@ -62,9 +64,12 @@ class Url {
 
                 }
 
-            } elseif(count($args) == 3) {
+            } elseif(count($args) >= 3) {
 
                 list($this->controller, $this->method, $this->params) = $args;
+
+                if(count($args) == 4)
+                    $this->base_path = $args[3];
 
             } else {
 
@@ -148,7 +153,7 @@ class Url {
      */
     public function renderObject($inc_path = TRUE, $params = NULL) {
 
-        $path = $this->controller . ($this->method ? '/' . $this->method : NULL);
+        $path = ($this->base_path ? $this->base_path . '/' : null) . $this->controller . ($this->method ? '/' . $this->method : NULL);
 
         $app = \Hazaar\Application::getInstance();
 
@@ -165,7 +170,7 @@ class Url {
              */
             $host = $_SERVER['HTTP_HOST'];
 
-            if(strpos($host, ':') === false && $_SERVER['SERVER_PORT'] != 80 && $_SERVER['SERVER_PORT'] != 443) 
+            if(strpos($host, ':') === false && $_SERVER['SERVER_PORT'] != 80 && $_SERVER['SERVER_PORT'] != 443)
                 $host .= ':' . $_SERVER['SERVER_PORT'];
 
             $proto = (($_SERVER['SERVER_PORT'] == 443) ? 'https' : 'http');
