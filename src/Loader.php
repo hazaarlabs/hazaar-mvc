@@ -232,12 +232,9 @@ class Loader {
      * * FILE_PATH_CONFIG - Configuration files
      *
      * @since 1.0.0
+     * @param string $type The path type to add.
+     * @param string $path The path to add.
      *
-     * @param string $type
-     *        	The path type to add.
-     *
-     * @param string $path
-     *        	The path to add.
      */
 	public function addSearchPath($type, $path){
 
@@ -261,6 +258,24 @@ class Loader {
 
 		return FALSE;
 	}
+
+    /**
+     * Sets the search path for a file type
+     *
+     * This is the same as addSearchPath except that it overwrites any existing paths.
+     *
+     * @since 2.3.3
+     * @param mixed $type The path type to add.
+     * @param mixed $path The path to add.
+     * @return boolean
+     */
+    public function setSearchPath($type, $path){
+
+        $this->paths[$type] = array();
+
+        return $this->addSearchPath($type, $path);
+
+    }
 
 	/**
      * @detail Add multiple search paths from an array

@@ -23,23 +23,25 @@ class Router extends \Hazaar\Controller {
 
         $this->className = '\Hazaar\\' . ucfirst($this->moduleName) . '\Controller';
 
-        if($path = $this->getSupportPath())
-            \Hazaar\Loader::getInstance()->addSearchPath(FILE_PATH_SUPPORT, $path);
+        if(!class_exists($this->className))
+            throw new \Exception("Module '{$this->moduleName}' not found!", 404);
 
-        $file_actions = array('file', 'script', 'style');
+        if($this->request->getActionName() == 'file'){
 
-        if(in_array($this->request->getActionName(), $file_actions)){
+            if(!($path = $this->getSupportPath($this->className)))
+                throw new \Exception("Module {$this->moduleName} does not have a support path!", 405);
 
-            $this->className = '\Hazaar\File\Controller';
+            $this->module = new \Hazaar\File\Controller($this->moduleName, $this->application, false);
+
+            $this->module->setPath($path);
 
             $request->evaluate($request->getRawPath());
 
+        }else{
+
+            $this->module = new $this->className($this->moduleName, $this->application, false);
+
         }
-
-        if(!class_exists($this->className))
-            throw new \Exception('Module ' . $this->moduleName . ' not found!', 404);
-
-        $this->module = new $this->className($this->moduleName, $this->application, false);
 
         if(!$this->module instanceof \Hazaar\Controller)
             throw new \Exception('Bad module controller!');
