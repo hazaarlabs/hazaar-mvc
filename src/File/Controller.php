@@ -6,6 +6,21 @@ use \Hazaar\Controller\Response\File;
 
 class Controller extends \Hazaar\Controller\Basic {
 
+    private $path;
+
+    /**
+     * Sets the support path to use to search for files.
+     *
+     * If this is not set, then the application configured support paths are used.
+     *
+     * @param mixed $path
+     */
+    public function setPath($path){
+
+        return $this->path = realpath($path);
+
+    }
+
     /**
      * Directly access a file stored in the Hazaar libs directory.
      *
@@ -23,17 +38,17 @@ class Controller extends \Hazaar\Controller\Basic {
 
         $file = $this->request->getRawPath();
 
-        if($source = \Hazaar\Loader::getInstance()->getFilePath(FILE_PATH_SUPPORT, $file)) {
+        if($this->path)
+            $source = $this->path . DIRECTORY_SEPARATOR . $file;
+        else
+            $source = \Hazaar\Loader::getInstance()->getFilePath(FILE_PATH_SUPPORT, $file);
 
-            $response = new File($source);
-
-            $response->setUnmodified($this->request->getHeader('If-Modified-Since'));
-
-        } else {
-
+        if(!file_exists($source))
             throw new Exception\InternalFileNotFound($file);
 
-        }
+        $response = new File($source);
+
+        $response->setUnmodified($this->request->getHeader('If-Modified-Since'));
 
         return $response;
 
