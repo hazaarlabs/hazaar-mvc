@@ -194,13 +194,10 @@ class View {
 
     public function get($helper, $default = NULL) {
 
-        if (array_key_exists($helper, $this->_helpers)) {
-
+        if (array_key_exists($helper, $this->_helpers))
             return $this->_helpers[$helper];
-        } elseif (array_key_exists($helper, $this->_data)) {
-
+        elseif (array_key_exists($helper, $this->_data))
             return $this->_data[$helper];
-        }
 
         return $default;
 
@@ -607,7 +604,7 @@ class View {
                     && $this->_methodHandler->base_path)
                     $script = $this->_methodHandler->base_path . '/'
                         . $this->_methodHandler->getName()
-                        . '/script/' . $script;
+                        . '/file/' . $script;
                 else
                     $script = 'script/' . $script;
 
@@ -634,30 +631,48 @@ class View {
             if ((array_key_exists('extension', $info) && ( $info['extension'] == 'css' || $info['extension'] == 'less')) || ! array_key_exists('extension', $info)) {
 
                 $rel = 'stylesheet';
+
             } elseif ($info['filename'] == 'favicon') {
 
                 $rel = 'shortcut icon';
+
             }
+
         }
+
+        $link = $this->html->inline('link')
+            ->rel($rel);
 
         if (! preg_match('/^http[s]?:\/\//', $href)) {
 
             switch ($rel) {
                 case 'stylesheet':
-                    $href = $this->application->url('style/' . $href);
+
+                    if($this->_methodHandler instanceof \Hazaar\Controller
+                    && $this->_methodHandler->base_path)
+                        $href = $this->_methodHandler->base_path . '/'
+                            . $this->_methodHandler->getName()
+                            . '/file/' . $href;
+                    else
+                        $href = 'style/' . $href;
+
+                    $link->href($this->application->url($href));
 
                     break;
 
                 case 'shortcut icon':
-                    $href = $this->application->url($href);
+
+                    $link->href($this->application->url($href))
+                        ->id('favicon');
 
                     break;
             }
-        }
 
-        $link = $this->html->inline('link')
-            ->rel($rel)
-            ->href($href);
+        }else{
+            
+            $link->href($href);
+
+        }
 
         $this->_links[$this->_priority][] = $link;
 

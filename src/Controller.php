@@ -151,9 +151,9 @@ abstract class Controller implements Controller\_Interface {
         }
 
         if(! $controller)
-            $controller = ($this->base_path ? $this->base_path . '/' : null) . strtolower($this->getName());
+            $controller = strtolower($this->getName());
 
-        return $this->application->url($controller, $method, $params);
+        return $this->application->url($controller, $method, $params, $this->base_path);
 
     }
 

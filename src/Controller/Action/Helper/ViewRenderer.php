@@ -16,6 +16,10 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
     private $_requires_param = array();
 
+    private $_links          = array();
+
+    private $_scripts        = array();
+
     function init($controller = NULL) {
 
         if(! ($controller instanceof \Hazaar\Controller\Action))
@@ -202,6 +206,20 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
         }
 
+        if(is_array($this->_links)){
+
+            foreach($this->_links as $link)
+                $view->link($link[0], $link[1]);
+
+        }
+
+        if(is_array($this->_scripts)){
+
+            foreach($this->_scripts as $script)
+                $view->script($script);
+
+        }
+
         return $view->render();
 
     }
@@ -226,7 +244,7 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
         if(! method_exists($this->view, 'link'))
             throw new \Exception('The current view does not support HTML links');
 
-        return $this->view->link($href, $rel);
+        $this->_links[] = array($href, $rel);
 
     }
 
@@ -235,7 +253,7 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
         if(! method_exists($this->view, 'script'))
             throw new \Exception('The current view does not support JavaScript code');
 
-        return $this->view->script($code);
+        $this->_scripts[] = $code;
 
     }
 
