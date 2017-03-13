@@ -56,9 +56,9 @@
 
                     $sidebar = $this->html->ul()->class('nav nav-sidebar');
 
-                    foreach(ake($section, 'items', array()) as $target => $label){
+                    foreach(ake($section, 'items', array()) as $target => $item){
 
-                        $sidebar->add($this->html->li($this->html->a($this->url($target), $label))
+                        $sidebar->add($this->html->li($this->html->a($this->url($prefix . '/' . $target), ake($item, 'label')))
                             ->toggleClass('active', $this->active('hazaar', $target)));
 
                     }

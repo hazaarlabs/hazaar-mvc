@@ -4,13 +4,13 @@ namespace Hazaar\Console;
 
 abstract class Module extends \Hazaar\Controller\Action {
 
-    private $admin;
+    private $handler;
 
     public $view_path;
 
-    final function __construct($name, $path, $application, Administration $admin){
+    final function __construct($name, $path, $application, Handler $handler){
 
-        $this->admin = $admin;
+        $this->handler = $handler;
 
         $this->view_path = $path;
 
@@ -32,7 +32,7 @@ abstract class Module extends \Hazaar\Controller\Action {
 
         $this->view->link($this->application->url('hazaar/file/console/layout.css'));
 
-        $this->view->navitems = $this->admin->getNavItems();
+        $this->view->navitems = $this->handler->getNavItems();
 
     }
 
@@ -44,13 +44,13 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     public function addMenuGroup($name, $label){
 
-        $this->admin->addMenuGroup($this, $name, $label);
+        $this->handler->addMenuGroup($this, $name, $label);
 
     }
 
     protected function addMenuItem($group, $label, $method = null){
 
-        $this->admin->addMenuItem($this, $group, $label, $method);
+        $this->handler->addMenuItem($this, $group, $label, $method);
 
     }
 

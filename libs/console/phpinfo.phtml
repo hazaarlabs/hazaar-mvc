@@ -1,0 +1,15 @@
+
+<div class="phpinfo">
+    <?php
+
+    ob_start();
+
+    phpinfo();
+
+    $php_info = ob_get_clean();
+
+    if(preg_match('/<body>(.*)<\/body>/ms', $php_info, $matches))
+        echo $matches[1];
+
+    ?>
+</div>

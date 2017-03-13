@@ -2,15 +2,7 @@
 
 namespace Hazaar\Console;
 
-/**
- * Administration short summary.
- *
- * Administration description.
- *
- * @version 1.0
- * @author jamie
- */
-class Administration {
+class Handler {
 
     private $passwd;
 
@@ -166,12 +158,25 @@ class Administration {
 
     public function exec(\Hazaar\Controller $controller, \Hazaar\Application\Request $request){
 
-        $name = $request->getActionName();
+        $section = $request->getActionName();
 
-        if($name == 'index')
-            $name = 'app';
+        if($section == 'index')
+            $section = 'app';
+
+        if(!array_key_exists($section, $this->menus))
+            throw new \Exception('Not found!', 404);
 
         $request->evaluate($request->getRawPath());
+
+        $action = $request->getActionName();
+
+        if($action == 'index')
+            $section = 'app';
+
+        if(!array_key_exists($action, $this->menus[$section]['items']))
+            throw new \Exception('Not found!', 404);
+
+        $name = $this->menus[$section]['items'][$action]['module'];
 
         if(!$this->moduleExists($name))
             throw new \Exception("Console module '$name' does not exist!", 404);
@@ -216,30 +221,7 @@ class Administration {
 
     public function getNavItems(){
 
-        $items = array();
-
-        if(count($this->menus) > 0){
-
-            foreach($this->menus as $name => $group){
-
-                $items[$name] = array(
-                    'label' => $group['label'],
-                    'items' => array()
-                );
-
-                foreach($group['items'] as $item){
-
-                    $target = $name . (ake($item, 'method') ? '/' . $item['method']: '');
-
-                    $items[$name]['items'][$target] = $item['label'];
-
-                }
-
-            }
-
-        }
-
-        return $items;
+        return $this->menus;
 
     }
 
@@ -250,7 +232,7 @@ class Administration {
 
         $this->menus[$name] = array(
             'label' => $label,
-            'module' => $module,
+            'module' => $module->getName(),
             'items' => array()
         );
 
@@ -263,10 +245,12 @@ class Administration {
         if(!array_key_exists($group, $this->menus))
             return false;
 
-        $this->menus[$group]['items'][] = array(
+        if(!$method)
+            $method = 'index';
+
+        $this->menus[$group]['items'][$method] = array(
             'label' => $label,
-            'module' => $module,
-            'method' => $method
+            'module' => $module->getName()
         );
 
         return true;

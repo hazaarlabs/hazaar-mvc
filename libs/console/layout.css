@@ -127,3 +127,101 @@ body {
 .logoutput {
     font: 12px "Courier New";
 }
+
+.phpinfo {
+    font-weight: lighter;
+}
+
+    .phpinfo pre {
+        margin: 0;
+        font-family: monospace;
+    }
+
+    .phpinfo a:link {
+        color: #009;
+        text-decoration: none;
+        background-color: #fff;
+    }
+
+    .phpinfo a:hover {
+        text-decoration: underline;
+    }
+
+    .phpinfo table {
+        border-collapse: collapse;
+        border: 0;
+        width: 100%;
+    }
+
+    .phpinfo .center {
+        text-align: center;
+    }
+
+        .phpinfo .center table {
+            margin: 1em auto;
+            text-align: left;
+        }
+
+            .phpinfo .center table:first-of-type tr.h {
+                background: none;
+                color: #333;
+            }
+
+                .phpinfo .center table:first-of-type tr.h td {
+                    border: none;
+                }
+
+        .phpinfo .center th {
+            text-align: center !important;
+        }
+
+    .phpinfo td, .phpinfo th {
+        border: 1px solid rgba(221, 221, 221, 0.3);
+        vertical-align: baseline;
+        padding: 8px 7px;
+    }
+
+    .phpinfo h1 {
+        font-size: 150%;
+        margin: 0;
+    }
+
+    .phpinfo h2 {
+        font-size: 125%;
+    }
+
+    .phpinfo .p {
+        text-align: left;
+    }
+
+    .phpinfo .e {
+        background-color: #ccf;
+        width: 300px;
+    }
+
+    .phpinfo .h {
+        background-color: #554d7c;
+        color: #fff;
+    }
+
+    .phpinfo .v {
+        background-color: #ddd;
+        max-width: 300px;
+        overflow-x: auto;
+    }
+
+        .phpinfo .v i {
+            color: #999;
+        }
+
+    .phpinfo img {
+        float: right;
+        border: 0;
+    }
+
+    .phpinfo hr {
+        width: 934px;
+        background-color: #ccc;
+        border: 0;
+        height: 1px;
+    }

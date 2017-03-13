@@ -6,16 +6,16 @@ class Controller extends \Hazaar\Controller\Action {
 
     private $passwd = null;
 
-    private $model;
+    private $handler;
 
     public function init(){
 
-        $this->model = new Administration();
+        $this->handler = new Handler();
 
         if($this->request->getActionName() == 'login')
             return;
 
-        if(!$this->model->authenticated())
+        if(!$this->handler->authenticated())
             return $this->redirect($this->url('login'));
 
     }
@@ -24,7 +24,7 @@ class Controller extends \Hazaar\Controller\Action {
 
         if($this->request->isPOST()){
 
-            if($this->model->authenticate($this->request->username, $this->request->password))
+            if($this->handler->authenticate($this->request->username, $this->request->password))
                 $this->redirect($this->url());
 
             $this->view->msg = 'Login failed';
@@ -43,7 +43,7 @@ class Controller extends \Hazaar\Controller\Action {
 
     public function logout(){
 
-        $this->model->deauth();
+        $this->handler->deauth();
 
         $this->redirect($this->url());
 
@@ -55,9 +55,9 @@ class Controller extends \Hazaar\Controller\Action {
      */
     public function __default($controller, $action){
 
-        $this->model->loadModules($this->application);
+        $this->handler->loadModules($this->application);
 
-        return $this->model->exec($this, $this->request);
+        return $this->handler->exec($this, $this->request);
 
     }
 
