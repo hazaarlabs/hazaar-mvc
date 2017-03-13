@@ -16,6 +16,10 @@ class Application extends Module {
 
         $this->addMenuItem('app', 'Controllers', 'controllers');
 
+        $this->addMenuGroup('sys', 'System');
+
+        $this->addMenuItem('sys', 'PHP Info', 'phpinfo');
+
     }
 
     public function index($request){
@@ -41,6 +45,12 @@ class Application extends Module {
     public function controllers($request){
 
         $this->view('controllers');
+
+    }
+
+    public function phpinfo($request){
+
+        $this->view('phpinfo');
 
     }
 

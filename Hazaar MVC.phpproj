@@ -268,7 +268,7 @@
     <Compile Include="src\Application\Router.php" />
     <Compile Include="src\Application\Url.php" />
     <Compile Include="src\Closure.php" />
-    <Compile Include="src\Console\Administration.php" />
+    <Compile Include="src\Console\Handler.php" />
     <Compile Include="src\Console\Application.php" />
     <Compile Include="src\Console\Module.php" />
     <Compile Include="src\Controller.php" />
@@ -699,6 +699,7 @@
     <Content Include="libs\console\console.js" />
     <Content Include="libs\console\controllers.phtml" />
     <Content Include="libs\console\models.phtml" />
+    <Content Include="libs\console\phpinfo.phtml" />
     <Content Include="libs\console\views.phtml" />
     <Content Include="libs\console\cache\settings.phtml" />
     <Content Include="libs\console\images\hazaar-icon-white.png" />
