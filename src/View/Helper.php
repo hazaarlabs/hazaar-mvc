@@ -39,7 +39,7 @@ abstract class Helper implements Helper\_Interface {
 
     }
 
-    public function extend($args) {
+    public function extendArgs($args) {
 
         if(! is_array($args))
             return;

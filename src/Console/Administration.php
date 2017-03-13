@@ -16,6 +16,12 @@ class Administration {
 
     private $session_key = 'hazaar-console-user';
 
+    private $modules = array();
+
+    private $menus = array();
+
+    private $application;
+
     public function __construct(){
 
         $this->passwd = CONFIG_PATH . DIRECTORY_SEPARATOR . '.passwd';
@@ -86,76 +92,186 @@ class Administration {
 
     }
 
-    public function getNavItems(){
+    public function loadModules($application){
 
-        return array(
-            'app' => array(
-                'label' => 'Application',
-                'items' => array(
-                    'index' => 'Overview',
-                    'models' => 'Models',
-                    'views' => 'Views',
-                    'controllers' => 'Controllers'
-                )
-            )
-        );
+        $path = LIBRARY_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs' . DIRECTORY_SEPARATOR . 'console';
 
-        /*
-        if(class_exists('Hazaar\Cache')){
+        $this->modules['app'] = new Application('app', $path, $application, $this);
 
-        $this->view->navitems['cache'] = array(
-        'label' => 'Cache',
-        'items' => array(
-        'settings' => 'Settings'
-        )
-        );
+        $installed = ROOT_PATH
+            . DIRECTORY_SEPARATOR . 'vendor'
+            . DIRECTORY_SEPARATOR . 'composer'
+            . DIRECTORY_SEPARATOR . 'installed.json';
 
-        }
+        if(file_exists($installed)){
 
-        if(class_exists('Hazaar\DBI\Adapter')){
+            $libraries = json_decode(file_get_contents($installed), true);
 
-        $this->view->navitems['db'] = array(
-        'label' => 'Database',
-        'items' => array(
-        'settings' => 'Settings',
-        'schema' => 'Schema Managment',
-        'sync' => 'Data Sync'
-        )
-        );
+            foreach($libraries as $library){
 
-        if($this->action == 'db_schema'){
+                if(!(($name = substr(ake($library, 'name'), 18))
+                    && ake($library, 'type') == 'library'
+                    && $consoleClass = ake(ake($library, 'extra'), 'hazaar-console-class')))
+                    continue;
 
-        $db = new \Hazaar\DBI\Adapter();
+                if(!class_exists($consoleClass))
+                    continue;
 
-        $current = $db->getSchemaVersion();
+                if(!($path = $this->getSupportPath($consoleClass)))
+                    continue;
 
-        $versions = array('latest' => 'Latest Version') + $db->getSchemaVersions();
+                $this->modules[$name] = new $consoleClass($name, $path . DIRECTORY_SEPARATOR . 'console', $application, $this);
 
-        $this->view->current_version = $current . ' - ' . ake($versions, $current, 'missing');
-
-        $this->view->versions = $versions;
-
-        $this->view->latest = $db->isSchemaLatest();
+            }
 
         }
 
-        }
+        ksort($this->modules);
 
-        if(class_exists('Hazaar\Warlock\Control')){
+        foreach($this->modules as $module)
+            $module->init();
 
-        $this->view->navitems['warlock'] = array(
-        'label' => 'Warlock',
-        'items' => array(
-        'index' => 'Overview',
-        'connections' => 'Connections',
-        'processes' => 'Processes',
-        'services' => 'Services',
-        'log' => 'Log File'
-        )
-        );
+        $this->application = $application;
 
-        }*/
+        return;
 
     }
+
+    private function getSupportPath($className = null){
+
+        if(!$className)
+            $className = $this->className;
+
+        $reflect = new \ReflectionClass($className);
+
+        $path = dirname($reflect->getFileName());
+
+        while(!file_exists($path . DIRECTORY_SEPARATOR . 'composer.json'))
+            $path = dirname($path);
+
+        $libs_path = $path . DIRECTORY_SEPARATOR . 'libs';
+
+        if(file_exists($libs_path))
+            return $libs_path;
+
+        return false;
+
+    }
+
+    public function  moduleExists($name){
+
+        return array_key_exists($name, $this->modules);
+
+    }
+
+    public function exec(\Hazaar\Controller $controller, \Hazaar\Application\Request $request){
+
+        $name = $request->getActionName();
+
+        if($name == 'index')
+            $name = 'app';
+
+        $request->evaluate($request->getRawPath());
+
+        if(!$this->moduleExists($name))
+            throw new \Exception("Console module '$name' does not exist!", 404);
+
+        $module = $this->modules[$name];
+
+        $action = $request->getActionName();
+
+        if(!method_exists($module, $action))
+            throw new \Exception("Method '$action' not found on module '$name'", 404);
+
+        if($module->view_path)
+            $this->application->loader->setSearchPath(FILE_PATH_VIEW, $module->view_path);
+
+        $module->base_path = 'hazaar/console';
+
+        $module->__initialize($request);
+
+        $module->setRequest($request);
+
+        $response = call_user_func(array($module, $action), $request);
+
+        if(!$response instanceof \Hazaar\Controller\Response){
+
+            if(is_array($response)){
+
+                $response = new \Hazaar\Controller\Response\Json($response);
+
+            }else{
+
+                $response = new \Hazaar\Controller\Response\Html();
+
+                $module->_helper->execAllHelpers($module, $response);
+
+            }
+
+        }
+
+        return $response;
+
+    }
+
+    public function getNavItems(){
+
+        $items = array();
+
+        if(count($this->menus) > 0){
+
+            foreach($this->menus as $name => $group){
+
+                $items[$name] = array(
+                    'label' => $group['label'],
+                    'items' => array()
+                );
+
+                foreach($group['items'] as $item){
+
+                    $target = $name . (ake($item, 'method') ? '/' . $item['method']: '');
+
+                    $items[$name]['items'][$target] = $item['label'];
+
+                }
+
+            }
+
+        }
+
+        return $items;
+
+    }
+
+    public function addMenuGroup($module, $name, $label){
+
+        if(array_key_exists($name, $this->menus))
+            return false;
+
+        $this->menus[$name] = array(
+            'label' => $label,
+            'module' => $module,
+            'items' => array()
+        );
+
+        return true;
+
+    }
+
+    public function addMenuItem($module, $group, $label, $method = null){
+
+        if(!array_key_exists($group, $this->menus))
+            return false;
+
+        $this->menus[$group]['items'][] = array(
+            'label' => $label,
+            'module' => $module,
+            'method' => $method
+        );
+
+        return true;
+
+    }
+
 
 }
