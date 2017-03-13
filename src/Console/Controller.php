@@ -4,28 +4,23 @@ namespace Hazaar\Console;
 
 class Controller extends \Hazaar\Controller\Action {
 
-    private $open_actions = array('file', 'login');
-
     private $passwd = null;
+
+    private $model;
 
     public function init(){
 
-        if(in_array($this->request->getActionName(), $this->open_actions))
+        $this->model = new Administration();
+
+        if($this->request->getActionName() == 'login')
             return;
 
-        $passwd = CONFIG_PATH . DIRECTORY_SEPARATOR . '.passwd';
-
-        if(!file_exists($passwd))
-            die('Hazaar admin console is currently disabled!');
-
-        session_start();
+        if(!$this->model->authenticated())
+            return $this->redirect($this->url('login'));
 
         $this->view->layout('@console/layout');
 
         $this->view->addHelper('bootstrap', array('theme' => 'flatly'));
-
-        if(!ake($_SESSION, 'user'))
-            $this->redirect($this->url('login'));
 
         $this->view->addHelper('jQuery');
 
@@ -35,154 +30,34 @@ class Controller extends \Hazaar\Controller\Action {
 
         $this->view->link('console/layout.css');
 
-        $this->view->navitems = array(
-            'app' => array(
-                'label' => 'Application',
-                'items' => array(
-                    'index' => 'Overview',
-                    'models' => 'Models',
-                    'views' => 'Views',
-                    'controllers' => 'Controllers'
-                )
-            )
-        );
-
-        /*
-        if(class_exists('Hazaar\Cache')){
-
-            $this->view->navitems['cache'] = array(
-                'label' => 'Cache',
-                'items' => array(
-                    'settings' => 'Settings'
-                )
-            );
-
-        }
-
-        if(class_exists('Hazaar\DBI\Adapter')){
-
-            $this->view->navitems['db'] = array(
-                'label' => 'Database',
-                'items' => array(
-                    'settings' => 'Settings',
-                    'schema' => 'Schema Managment',
-                    'sync' => 'Data Sync'
-                )
-            );
-
-            if($this->action == 'db_schema'){
-
-                $db = new \Hazaar\DBI\Adapter();
-
-                $current = $db->getSchemaVersion();
-
-                $versions = array('latest' => 'Latest Version') + $db->getSchemaVersions();
-
-                $this->view->current_version = $current . ' - ' . ake($versions, $current, 'missing');
-
-                $this->view->versions = $versions;
-
-                $this->view->latest = $db->isSchemaLatest();
-
-            }
-
-        }
-
-        if(class_exists('Hazaar\Warlock\Control')){
-
-            $this->view->navitems['warlock'] = array(
-                'label' => 'Warlock',
-                'items' => array(
-                    'index' => 'Overview',
-                    'connections' => 'Connections',
-                    'processes' => 'Processes',
-                    'services' => 'Services',
-                    'log' => 'Log File'
-                )
-            );
-
-        }*/
+        $this->view->navitems = $this->model->getNavItems();
 
     }
 
-
     public function login(){
-
-        $passwd = CONFIG_PATH . DIRECTORY_SEPARATOR . '.passwd';
-
-        if(!file_exists($passwd))
-            die('Hazaar admin console is currently disabled!');
-
-        session_start();
 
         if($this->request->isPOST()){
 
-            $users = array();
+            if($this->model->authenticate($this->request->username, $this->request->password))
+                $this->redirect($this->url());
 
-            $lines = explode("\n", trim(file_get_contents($passwd)));
-
-            foreach($lines as $line){
-
-                if(!$line)
-                    continue;
-
-                list($identity, $userhash) = explode(':', $line);
-
-                $users[$identity] = $userhash;
-
-            }
-
-            $credential = trim(ake($users, $this->request->username));
-
-            if(strlen($credential) > 0){
-
-                $hash = '';
-
-                if(substr($credential, 0, 6) == '$apr1$'){
-
-                    throw new \Exception('APR1-MD5 encoded passwords are not supported!');
-
-                }elseif(substr($credential, 0, 5) == '{SHA}'){
-
-                    $hash = '{SHA}' . base64_encode(sha1($this->request->password, TRUE));
-
-                }
-
-                if($hash == $credential){
-
-                    $_SESSION['user'] = $this->request->username;
-
-                    $this->redirect($this->url());
-
-                }else{
-
-                    $this->view->msg = 'Password is incorrect!';
-
-                }
-
-            }else{
-
-                $this->view->msg = 'User is not found!';
-
-            }
-
-        }elseif(ake($_SESSION, 'user')){
-
-            $this->redirect($this->url());
+            $this->view->msg = 'Login failed';
 
         }
 
-        $this->layout('@console/login');
+        $this->layout('@console/login/layout');
+
+        $this->view->link('console/login/main.css');
 
         $this->view->addHelper('bootstrap');
 
-        $this->view->link('console/login.css');
+        $this->view->addHelper('fontawesome');
 
     }
 
     public function logout(){
 
-        session_unset();
+        $this->model->deauth();
 
         $this->redirect($this->url());
 

@@ -1,0 +1,111 @@
+﻿body {
+    padding-top: 40px;
+    padding-bottom: 40px;
+    background: #eee url(hazaar-bg.jpg) no-repeat;
+    background-size: cover;
+    font-family: 'Raleway', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: bold;
+}
+
+.overlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-color: rgba(0,0,0,0.7);
+    z-index: -1;
+}
+
+.container {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.btn-hazaar {
+    color: #fff;
+    background-color: #554D7C;
+    border-color: #3E3653;
+}
+
+    .btn-hazaar:focus,
+    .btn-hazaar.focus {
+        color: #fff;
+        background-color: #6B5F91;
+        border-color: #554D7C;
+    }
+
+    .btn-hazaar:hover {
+        color: #fff;
+        background-color: #6B5F91;
+        border-color: #554D7C;
+    }
+
+.form-signin {
+    width: 400px;
+    padding: 35px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #ebebeb;
+}
+
+    .form-signin p.login-text {
+        color: #666;
+        margin-bottom: 20px;
+    }
+
+.login-heading {
+    text-align: center;
+    margin-bottom: 35px;
+}
+
+    .login-heading h1,
+    .login-heading h2 {
+        margin: 0;
+    }
+
+    .login-heading h1 {
+        color: #554D7C;
+    }
+
+    .login-heading h4 {
+        color: #666;
+    }
+
+
+.login-notice {
+    color: #fff;
+}
+
+.login-icon {
+    float: right;
+    background-image: url(hazaar-icon-lg.png);
+    background-repeat: no-repeat;
+    background-size: contain;
+    width: 64px;
+    height: 64px;
+}
+
+.form-group {
+    margin-bottom: 0;
+    border: 1px solid #eee;
+    margin-bottom: 35px;
+    padding: 15px;
+}
+
+    .form-group input {
+        outline: none;
+        border: none;
+        font: normal normal normal 14px/1 FontAwesome, "Raleway", sans-serif;
+        font-size: 16px;
+    }
+
+input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0px 1000px white inset;
+}
