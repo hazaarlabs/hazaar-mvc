@@ -154,8 +154,6 @@ class Loader {
 
         $this->addSearchPath(FILE_PATH_SUPPORT, SUPPORT_PATH);
 
-		$sep = ((PHP_OS == 'Windows') ? ';' : ':');
-
 	}
 
     static public function fixDirectorySeparator($path){

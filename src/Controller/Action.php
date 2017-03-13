@@ -30,7 +30,7 @@ abstract class Action extends \Hazaar\Controller {
 
     private   $stream        = FALSE;
 
-    final public function __construct($name, $application, $use_app_config = true) {
+    public function __construct($name, $application, $use_app_config = true) {
 
         parent::__construct($name, $application, $use_app_config);
 

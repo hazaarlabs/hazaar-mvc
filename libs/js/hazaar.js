@@ -9,6 +9,8 @@
     }
     this.url = function (controller, action, params) {
         var url = this.__base_url;
+        if (url.charAt(url.length - 1) != '/')
+            url += '/';
         if (typeof controller == 'undefined')
             return url;
         url += controller;

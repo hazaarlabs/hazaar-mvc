@@ -269,6 +269,8 @@
     <Compile Include="src\Application\Url.php" />
     <Compile Include="src\Closure.php" />
     <Compile Include="src\Console\Administration.php" />
+    <Compile Include="src\Console\Application.php" />
+    <Compile Include="src\Console\Module.php" />
     <Compile Include="src\Controller.php" />
     <Compile Include="src\Controller\Action.php" />
     <Compile Include="src\Controller\Action\Helper.php" />
@@ -615,9 +617,9 @@
   <ItemGroup>
     <Folder Include="libs\" />
     <Folder Include="libs\console\" />
-    <Folder Include="libs\console\app\" />
     <Folder Include="libs\console\cache\" />
-    <Folder Include="libs\console\db\" />
+    <Folder Include="libs\console\images\" />
+    <Folder Include="libs\console\login\" />
     <Folder Include="libs\css\" />
     <Folder Include="libs\css\images\" />
     <Folder Include="libs\css\images\fileicon\" />
@@ -694,19 +696,20 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="composer.json" />
-    <Content Include="libs\console\application.js" />
-    <Content Include="libs\console\app\controllers.phtml" />
-    <Content Include="libs\console\app\models.phtml" />
-    <Content Include="libs\console\app\views.phtml" />
+    <Content Include="libs\console\console.js" />
+    <Content Include="libs\console\controllers.phtml" />
+    <Content Include="libs\console\models.phtml" />
+    <Content Include="libs\console\views.phtml" />
     <Content Include="libs\console\cache\settings.phtml" />
-    <Content Include="libs\console\db\schema.phtml" />
-    <Content Include="libs\console\db\settings.phtml" />
-    <Content Include="libs\console\db\sync.phtml" />
+    <Content Include="libs\console\images\hazaar-icon-white.png" />
+    <Content Include="libs\console\images\hazaar-logo.png" />
     <Content Include="libs\console\index.phtml" />
     <Content Include="libs\console\layout.css" />
     <Content Include="libs\console\layout.phtml" />
-    <Content Include="libs\console\login.css" />
-    <Content Include="libs\console\login.phtml" />
+    <Content Include="libs\console\login\hazaar-bg.jpg" />
+    <Content Include="libs\console\login\hazaar-icon-lg.png" />
+    <Content Include="libs\console\login\layout.phtml" />
+    <Content Include="libs\console\login\main.css" />
     <Content Include="libs\console\profile.phtml" />
     <Content Include="libs\console\settings.phtml" />
     <Content Include="libs\css\buttons.css" />

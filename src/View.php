@@ -348,7 +348,7 @@ class View {
             } else {
 
                 if (($obj = $this->_helpers[$id]) instanceof View\Helper)
-                    $obj->extend($args);
+                    $obj->extendArgs($args);
 
             }
 

@@ -8,9 +8,12 @@ class Hazaar extends \Hazaar\View\Helper {
 
     function init($view, $args = array()){
 
+        if(!($url = ake($args, 'base_url')))
+            $url = $this->application->url();
+
         $view->requires($this->application->url('hazaar/file/js/hazaar.js'));
 
-        $script = 'var hazaar = new HazaarJSHelper("' . $this->application->url() . '", ' . json_encode($this->data) . ');';
+        $script = 'var hazaar = new HazaarJSHelper("' . $url . '", ' . json_encode($this->data) . ');';
 
         $view->requires($this->html->script($script));
 
