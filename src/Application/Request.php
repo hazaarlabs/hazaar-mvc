@@ -85,6 +85,8 @@ abstract class Request implements Request\_Interface {
      */
     public function evaluate($string) {
 
+        $this->action = 'index';
+
         $nodes = explode('/', $string);
 
         /* Pull out the first path node and use it to find the controller */
