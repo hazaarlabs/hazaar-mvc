@@ -158,35 +158,22 @@ class Handler {
 
     public function exec(\Hazaar\Controller $controller, \Hazaar\Application\Request $request){
 
-        $section = $request->getActionName();
+        $module_name = $request->getActionName();
 
-        if($section == 'index')
-            $section = 'app';
+        if($module_name == 'index')
+            $module_name = 'app';
 
-        if(!array_key_exists($section, $this->menus))
-            throw new \Exception('Not found!', 404);
+        if(!$this->moduleExists($module_name))
+            throw new \Exception("Console module '$module_name' does not exist!", 404);
 
         $request->evaluate($request->getRawPath());
 
         $action = $request->getActionName();
 
-        if($action == 'index')
-            $section = 'app';
-
-        if(!array_key_exists($action, $this->menus[$section]['items']))
-            throw new \Exception('Not found!', 404);
-
-        $name = $this->menus[$section]['items'][$action]['module'];
-
-        if(!$this->moduleExists($name))
-            throw new \Exception("Console module '$name' does not exist!", 404);
-
-        $module = $this->modules[$name];
-
-        $action = $request->getActionName();
+        $module = $this->modules[$module_name];
 
         if(!method_exists($module, $action))
-            throw new \Exception("Method '$action' not found on module '$name'", 404);
+            throw new \Exception("Method '$action' not found on module '$module_name'", 404);
 
         if($module->view_path)
             $this->application->loader->setSearchPath(FILE_PATH_VIEW, $module->view_path);
@@ -245,12 +232,9 @@ class Handler {
         if(!array_key_exists($group, $this->menus))
             return false;
 
-        if(!$method)
-            $method = 'index';
-
-        $this->menus[$group]['items'][$method] = array(
+        $this->menus[$group]['items'][] = array(
             'label' => $label,
-            'module' => $module->getName()
+            'target' => $module->getName() . ($method ? '/' . $method : null)
         );
 
         return true;

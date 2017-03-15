@@ -56,10 +56,10 @@
 
                     $sidebar = $this->html->ul()->class('nav nav-sidebar');
 
-                    foreach(ake($section, 'items', array()) as $target => $item){
+                    foreach(ake($section, 'items', array()) as $item){
 
-                        $sidebar->add($this->html->li($this->html->a($this->url($prefix . '/' . $target), ake($item, 'label')))
-                            ->toggleClass('active', $this->active('hazaar', $target)));
+                        $sidebar->add($this->html->li($this->html->a($this->url(ake($item, 'target')), ake($item, 'label')))
+                            ->toggleClass('active', $this->active('hazaar', ake($item, 'target'))));
 
                     }
                     echo $sidebar;
