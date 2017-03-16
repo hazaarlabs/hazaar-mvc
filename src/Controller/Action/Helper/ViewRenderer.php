@@ -67,6 +67,15 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
         if($this->view instanceof \Hazaar\View)
             return $this->view->getHelpers();
 
+        return null;
+
+    }
+
+    public function removeHelper($name) {
+
+        if($this->view instanceof \Hazaar\View)
+            $this->view->removeHelper($name);
+
     }
 
     public function __set($key, $value) {

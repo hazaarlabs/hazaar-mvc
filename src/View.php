@@ -368,6 +368,13 @@ class View {
 
     }
 
+    public function removeHelper($helper){
+
+        if(array_key_exists($helper, $this->_helpers))
+            unset($this->_helpers[$helper]);
+
+    }
+
     public function &getHelper($key) {
 
         if (array_key_exists($key, $this->_helpers))
@@ -669,7 +676,7 @@ class View {
             }
 
         }else{
-            
+
             $link->href($href);
 
         }
