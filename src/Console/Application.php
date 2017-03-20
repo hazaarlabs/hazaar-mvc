@@ -6,17 +6,15 @@ class Application extends Module {
 
     public function init(){
 
-        $this->addMenuGroup('app', 'Application');
+        $this->addMenuGroup('app', 'Application', 'bars');
 
-        $this->addMenuItem('app', 'Overview');
+        $this->addMenuItem('app', 'Models', 'models', 'sitemap', 3);
 
-        $this->addMenuItem('app', 'Models', 'models');
+        $this->addMenuItem('app', 'Views', 'views', 'binoculars', 12);
 
-        $this->addMenuItem('app', 'Views', 'views');
+        $this->addMenuItem('app', 'Controllers', 'controllers', 'code-fork', 5);
 
-        $this->addMenuItem('app', 'Controllers', 'controllers');
-
-        $this->addMenuGroup('sys', 'System');
+        $this->addMenuGroup('sys', 'System', 'wrench');
 
         $this->addMenuItem('sys', 'PHP Info', 'phpinfo');
 

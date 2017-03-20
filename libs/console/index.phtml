@@ -1,1 +1,89 @@
-<h1>Dashboard</h1>
+
+<div class="row">
+    <div class="col col-6">
+        <div class="panel primary">
+            <div class="panel-header">Maintenance</div>
+            <div class="panel-content" style="height: 250px;">
+                Parturient massa ac torquent nibh ac a tincidunt rutrum himenaeos ullamcorper quis vestibulum torquent a consectetur elit eu ut iaculis vehicula augue class pulvinar porta at quis. Metus ornare per proin cras scelerisque lacus scelerisque ac himenaeos posuere libero scelerisque non habitant amet. Elementum magna orci nostra ultrices dui gravida a eros a fringilla ad tempor orci ultrices consectetur nec tempus dui et litora dis ut consectetur dapibus leo.
+            </div>
+            <div class="panel-footer">
+                <button class="primary">Do Teh Thing</button>
+            </div>
+        </div>
+    </div>
+    <div class="col col-6">
+        <div class="panel info">
+            <div class="panel-header">Statistics</div>
+            <div class="panel-content" style="height: 200px;">
+                Parturient massa ac torquent nibh ac a tincidunt rutrum himenaeos ullamcorper quis vestibulum torquent a consectetur elit eu ut iaculis vehicula augue class pulvinar porta at quis. Metus ornare per proin cras scelerisque lacus scelerisque ac himenaeos posuere libero scelerisque non habitant amet. Elementum magna orci nostra ultrices dui gravida a eros a fringilla ad tempor orci ultrices consectetur nec tempus dui et litora dis ut consectetur dapibus leo.
+            </div>
+            <div class="panel-footer row">
+                <div class="col col-4">
+                    <div class="stat">
+                        <div class="number">107</div>
+                        <div class="label">Today</div>
+                    </div>
+                </div>
+                <div class="col col-4">
+                    <div class="stat">
+                        <div class="number">822</div>
+                        <div class="label">Week</div>
+                    </div>
+                </div>
+                <div class="col col-4">
+                    <div class="stat">
+                        <div class="number">72</div>
+                        <div class="label">Month</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col col-12">
+        <div class="panel">
+            <h3>Example List</h3>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Location</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Index</td>
+                        <td>/index</td>
+                        <td>
+                            <?=$this->datetime(time());?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>About</td>
+                        <td>/about</td>
+                        <td>
+                            <?=$this->datetime(time());?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Settings</td>
+                        <td>/settings</td>
+                        <td>
+                            <?=$this->datetime(time());?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Authentication</td>
+                        <td>/auth</td>
+                        <td>
+                            <?=$this->datetime(time());?>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
