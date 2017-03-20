@@ -212,13 +212,14 @@ class Handler {
 
     }
 
-    public function addMenuGroup($module, $name, $label){
+    public function addMenuGroup($module, $name, $label, $icon = null){
 
         if(array_key_exists($name, $this->menus))
             return false;
 
         $this->menus[$name] = array(
             'label' => $label,
+            'icon' => $icon,
             'module' => $module->getName(),
             'items' => array()
         );
@@ -227,14 +228,16 @@ class Handler {
 
     }
 
-    public function addMenuItem($module, $group, $label, $method = null){
+    public function addMenuItem($module, $group, $label, $method = null, $icon = null, $suffix = null){
 
         if(!array_key_exists($group, $this->menus))
             return false;
 
         $this->menus[$group]['items'][] = array(
             'label' => $label,
-            'target' => $module->getName() . ($method ? '/' . $method : null)
+            'target' => $module->getName() . ($method ? '/' . $method : null),
+            'icon' => $icon,
+            'suffix' => (is_array($suffix)?$suffix:array($suffix))
         );
 
         return true;
