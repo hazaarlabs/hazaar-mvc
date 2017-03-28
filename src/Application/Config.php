@@ -95,14 +95,14 @@ class Config extends \Hazaar\Map {
 
         if(file_exists($this->source)) {
 
-            //Check if APC is available for caching and load the config from cache.
-            if(in_array('apc', get_loaded_extensions())){
+            //Check if APCu is available for caching and load the config from cache.
+            if(in_array('apcu', get_loaded_extensions())){
 
                 $apc_key = md5(gethostname() . ':' . $this->source);
 
-                if(apc_exists($apc_key)) {
+                if(apcu_exists($apc_key)) {
 
-                    $info = apc_cache_info('user');
+                    $info = apcu_cache_info();
 
                     $mtime = 0;
 
@@ -119,7 +119,7 @@ class Config extends \Hazaar\Map {
                     }
 
                     if($mtime > filemtime($this->source))
-                        $options->populate(apc_fetch($apc_key));
+                        $options->populate(apcu_fetch($apc_key));
 
                 }
 
@@ -140,7 +140,7 @@ class Config extends \Hazaar\Map {
                 }
 
                 if(isset($apc_key))
-                    apc_store($apc_key, $options);
+                    apcu_store($apc_key, $options);
 
             }
 
