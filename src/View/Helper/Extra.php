@@ -123,14 +123,6 @@ class Extra extends \Hazaar\View\Helper {
 
     }
 
-    public function gravatar($address) {
-
-        $hash = md5($address);
-
-        return $this->html->img('http://www.gravatar.com/avatar/' . $hash, $address);
-
-    }
-
 }
 
 

@@ -693,57 +693,67 @@ class View {
 
     }
 
-    /*
+    /**
      * Render a partial view multiple times on an array
+     * 
+     * @param mixed $view The partial view to render
+     * @param array $data A data array.  Usually multi-dimensional
+     * @return string
      */
     public function partialLoop($view, array $data) {
 
         $output = '';
 
-        foreach ($data as $d) {
-
+        foreach ($data as $d) 
             $output .= $this->partial($view, $d);
-        }
 
         return $output;
 
     }
 
-    /*
-     * Built-in helper methods
-     */
-
-    /*
+    /**
      * Returns a date string formatted to the current set date format
+     *
+     * @param mixed $date
+     * @return string
      */
     public function date($date) {
 
-        if (! ($date instanceof \Hazaar\Date)) {
-
+        if (! ($date instanceof \Hazaar\Date))
             $date = new Date($date);
-        }
 
         return $date->date();
 
     }
 
+    /**
+     * Return a date/time type as a timestamp string.
+     *
+     * This is for making it quick and easy to output consistent timestamp strings.
+     *
+     * @param mixed $value
+     * @return string
+     */
     static public function timestamp($value) {
 
-        if (! ($value instanceof \Hazaar\Date)) {
-
+        if (! ($value instanceof \Hazaar\Date))
             $value = new Date($value);
-        }
 
         return $value->timestamp();
 
     }
 
+    /**
+     * Return a formatted date as a string.
+     *
+     * @param mixed $value This can be practically any date type.  Either a \Hazaar\Date object, epoch int, or even a string.
+     * @param mixed $format Optionally specify the format to display the date.  Otherwise the current default is used.
+     * @return string The nicely formatted datetime string.
+     */
     static public function datetime($value, $format = NULL) {
 
-        if (! ($value instanceof \Hazaar\Date)) {
-
+        if (! ($value instanceof \Hazaar\Date))
             $value = new Date($value);
-        }
 
         if ($format)
             return $value->format($format);
@@ -752,12 +762,30 @@ class View {
 
     }
 
-    public function yn($value, $labels = array(
-        'Yes',
-        'No'
-    )) {
+    /**
+     * Returns 'Yes' or 'No' text based on a boolean value
+     *
+     * @param mixed $value The boolean value
+     * @param mixed $labels Optionally specify your own yes/no text to display
+     * @return string
+     */
+    public function yn($value, $labels = array('Yes','No')) {
 
         return (boolify($value) ? $labels[0] : $labels[1]);
+
+    }
+
+    /**
+     * Display a Gravatar icon for a users email address.
+     *
+     * @param mixed $address The email address to show the gravatar image for.
+     * @return \Hazaar\Html\Img An IMG object so that extra options can be applied.
+     */
+    public function gravatar($address) {
+
+        $hash = md5($address);
+
+        return $this->html->img('http://www.gravatar.com/avatar/' . $hash, $address);
 
     }
 
