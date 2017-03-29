@@ -199,3 +199,52 @@ function humanFileSize(bytes, si) {
     } while (bytes >= thresh);
     return bytes.toFixed(1) + ' ' + units[u];
 }
+
+var dataBinder = function (data, name, parent) {
+    this._jquery = jQuery({});
+    this._name = name;
+    this._parent = parent;
+    this._attr_name = function (attr_name) {
+        if (this._parent)
+            attr_name = this._parent._attr_name(this._name + '.' + attr_name);
+        return attr_name;
+    }
+    this._defineProperty = function (object, key) {
+        Object.defineProperty(object, key, {
+            set: function (value) {
+                var name = this._binder._attr_name(key);
+                this._attributes[key] = value;
+                this._binder._jquery.trigger(name + ':change', [name, value]);
+            },
+            get: function () {
+                return this._attributes[key];
+            }
+        });
+    }
+    var object = {
+        _binder: this,
+        _attributes: data
+    }
+    for (var key in data) {
+        if (Array.isArray(data[key])) {
+            var array_len = data[key].length;
+            object[key] = [];
+            for (var i = 0; i < array_len; i++)
+                object[key][i] = new dataBinder(data[key][i], key + '[' + i + ']', this);
+        } else if (typeof data[key] == 'object') {
+            object[key] = new dataBinder(data[key], key, this);
+        } else {
+            this._jquery.on(this._attr_name(key) + ':change', function (event, attr_name, attr_value) {
+                jQuery('[data-bind="' + attr_name + '"]').each(function () {
+                    var o = jQuery(this);
+                    if (o.is("input, textarea, select"))
+                        o.val(attr_value);
+                    else
+                        o.html(attr_value);
+                });
+            });
+            this._defineProperty(object, key);
+        }
+    }
+    return object;
+};
