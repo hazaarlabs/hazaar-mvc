@@ -447,6 +447,10 @@ button {
     background-color: #777;
 }
 
+.success {
+    background-color: #48e478;
+}
+
 .primary {
     background-color: #2ECBFF;
 }
