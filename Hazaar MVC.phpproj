@@ -620,6 +620,7 @@
     <Folder Include="libs\console\cache\" />
     <Folder Include="libs\console\images\" />
     <Folder Include="libs\console\login\" />
+    <Folder Include="libs\console\js\" />
     <Folder Include="libs\css\" />
     <Folder Include="libs\css\images\" />
     <Folder Include="libs\css\images\fileicon\" />
@@ -696,8 +697,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="composer.json" />
-    <Content Include="libs\console\console.js" />
+    <Content Include="libs\console\js\configs.js" />
+    <Content Include="libs\console\js\console.js" />
     <Content Include="libs\console\controllers.phtml" />
+    <Content Include="libs\console\configs.phtml" />
     <Content Include="libs\console\phpinfo.css" />
     <Content Include="libs\console\models.phtml" />
     <Content Include="libs\console\phpinfo.phtml" />
