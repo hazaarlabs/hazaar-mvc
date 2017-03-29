@@ -45,8 +45,6 @@ class Config extends \Hazaar\Map {
 
         $config = null;
 
-        $source = null;
-
         if(! $env)
             $env = APPLICATION_ENV;
 
@@ -59,7 +57,7 @@ class Config extends \Hazaar\Map {
             //If we have an extension, just use that file.
             if(array_key_exists('extension', $info)){
 
-                $source = \Hazaar\Loader::getFilePath($path_type, $source_file);
+                $this->source = \Hazaar\Loader::getFilePath($path_type, $source_file);
 
             }else{ //Otherwise, search for files with supported extensions
 
@@ -69,14 +67,60 @@ class Config extends \Hazaar\Map {
 
                     $filename = $source_file . '.' . $ext;
 
-                    if($source = \Hazaar\Loader::getFilePath($path_type, $filename))
+                    if($this->source = \Hazaar\Loader::getFilePath($path_type, $filename))
                         break;
 
                 }
 
             }
 
-            $config = $this->load($source, $defaults);
+            if($this->source){
+
+                //Check if APCu is available for caching and load the config from cache.
+                if(in_array('apcu', get_loaded_extensions())){
+
+                    $apc_key = md5(gethostname() . ':' . $this->source);
+
+                    if(apcu_exists($apc_key)) {
+
+                        $info = apcu_cache_info();
+
+                        $mtime = 0;
+
+                        foreach($info['cache_list'] as $cache) {
+
+                            if(array_key_exists('info', $cache) && $cache['info'] == $apc_key) {
+
+                                $mtime = ake($cache, 'mtime');
+
+                                break;
+
+                            }
+
+                        }
+
+                        if($mtime > filemtime($this->source)){
+
+                            $config = apcu_fetch($apc_key);
+
+                            $this->loaded = true;
+
+                        }
+
+                    }
+
+                }
+
+                if(!$this->loaded){
+
+                    $config = $this->load($this->source, $defaults);
+
+                    if(isset($apc_key))
+                        apcu_store($apc_key, $config->toArray());
+
+                }
+
+            }
 
         }
 
@@ -84,46 +128,11 @@ class Config extends \Hazaar\Map {
 
     }
 
-    public function load($source = null, $defaults = array()) {
-
-        if($source)
-            $this->source = $source;
-        else
-            $source = $this->source;
+    public function load($source, $defaults = array()) {
 
         $options = new \Hazaar\Map();
 
         if(file_exists($this->source)) {
-
-            //Check if APCu is available for caching and load the config from cache.
-            if(in_array('apcu', get_loaded_extensions())){
-
-                $apc_key = md5(gethostname() . ':' . $this->source);
-
-                if(apcu_exists($apc_key)) {
-
-                    $info = apcu_cache_info();
-
-                    $mtime = 0;
-
-                    foreach($info['cache_list'] as $cache) {
-
-                        if(array_key_exists('info', $cache) && $cache['info'] == $apc_key) {
-
-                            $mtime = ake($cache, 'mtime');
-
-                            break;
-
-                        }
-
-                    }
-
-                    if($mtime > filemtime($this->source))
-                        $options->populate(apcu_fetch($apc_key));
-
-                }
-
-            }
 
             if($options->isEmpty()) {
 
@@ -179,17 +188,14 @@ class Config extends \Hazaar\Map {
 
                 if($file = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $values)) {
 
-                    if(file_exists($file)) {
+                    $info = pathinfo($this->source);
 
-                        $info = pathinfo($this->source);
+                    if($info['extension'] == 'json')
+                        $config->fromJSON(file_get_contents($file), true);
 
-                        if($info['extension'] == 'json')
-                            $config->fromJSON(file_get_contents($file));
+                    elseif($info['extension'] == 'ini')
+                        $config->fromDotNotation(parse_ini_file($file, true, INI_SCANNER_RAW), true);
 
-                        elseif($info['extension'] == 'ini')
-                            $config->fromDotNotation(parse_ini_file($file, TRUE, INI_SCANNER_RAW));
-
-                    }
 
                 }
 
