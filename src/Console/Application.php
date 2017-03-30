@@ -102,6 +102,9 @@ class Application extends Module {
 
         $this->view->requires('js/configs.js');
 
+        if(!(\Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, '.key')))
+            $this->notice('There is no application .key file.  Encrypting files will use the defaut key which is definitely NOT RECOMMENDED!', 'key', 'danger');
+
     }
 
     public function system($request){
