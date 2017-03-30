@@ -879,11 +879,20 @@ function hazaar_request_headers() {
         return array();
 
     $headers = array();
+
     foreach($_SERVER as $name => $value) {
-        if (substr($name, 0, 5) == 'HTTP_') {
+
+        if (substr($name, 0, 5) == 'HTTP_')
             $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
-        }
+
     }
+
+    //Fix a missing Content-Type header
+    if(isset($_SERVER['CONTENT_TYPE'])) $headers['Content-Type'] = $_SERVER['CONTENT_TYPE'];
+
+    //Fix a missing Content-Length header
+    if(isset($_SERVER['CONTENT_LENGTH'])) $headers['Content-Length'] = intval($_SERVER['CONTENT_LENGTH']);
+
     return $headers;
 
 }
