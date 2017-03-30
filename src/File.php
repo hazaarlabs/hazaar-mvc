@@ -23,6 +23,15 @@ class File {
 
     protected $handle;
 
+    /*
+     * Encryption bits
+     */
+    static public $default_cipher = 'aes-256-ctr';
+
+    static public $default_key = 'hazaar1234';
+
+    private $encrypted = false;
+
     function __construct($file = null, $backend = NULL) {
 
         if($file instanceof \Hazaar\File) {
@@ -220,9 +229,9 @@ class File {
     public function get_contents($offset = -1, $maxlen = NULL) {
 
         if($this->contents)
-            return $this->contents;
+            return $this->filter($this->contents);
 
-        return $this->backend->read($this->source_file, $offset, $maxlen);
+        return $this->filter($this->backend->read($this->source_file, $offset, $maxlen));
 
     }
 
@@ -248,7 +257,7 @@ class File {
 
     public function save() {
 
-        return $this->put_contents($this->contents, TRUE);
+        return $this->put_contents(($this->encrypted ? $this->encrypt(false) : $this->contents), TRUE);
 
     }
 
@@ -492,6 +501,89 @@ class File {
             return null;
 
         return fgetcsv($this->handle, $length, $delimiter, $enclosure, $escape);
+
+    }
+
+    /**
+     * Check if a file is encrypted using the built-in Hazaar encryption method
+     *
+     * @return boolean
+     */
+    public function isEncrypted(){
+
+        $r = $this->open();
+
+        $bom = pack('H*','BADA55');  //Haha, Bad Ass!
+
+        $encrypted = (fread($r, 3) == $bom);
+
+        $this->close();
+
+        return $encrypted;
+
+    }
+
+    /**
+     * Internal content filter
+     *
+     * Checks if the content is modified in some way using a BOM mask.  Currently this is used to determine if a file
+     * is encrypted and automatically decrypts it if an encryption key is available.
+     *
+     * @param mixed $content
+     * @return mixed
+     */
+    private function filter($content){
+
+        $bom = pack('H*','BADA55');
+
+        //Check if we are encrypted
+        if(substr($content, 0, 3) !== $bom)
+            return $content;
+
+        $this->encrypted = true;
+
+        $cipher_len = openssl_cipher_iv_length(File::$default_cipher);
+
+        $iv = substr($content, 3, $cipher_len);
+
+        return openssl_decrypt(substr($content, 3 + $cipher_len), File::$default_cipher, md5(File::$default_key), OPENSSL_RAW_DATA, $iv);
+
+    }
+
+    public function encrypt($write = true){
+
+        $bom = pack('H*','BADA55');
+
+        $content = $this->get_contents();
+
+        if(substr($content, 0, 3) == $bom)
+            return $this->contents;
+
+        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(File::$default_cipher));
+
+        $data = openssl_encrypt($content, File::$default_cipher, md5(File::$default_key), OPENSSL_RAW_DATA, $iv);
+
+        $this->contents = $bom . $iv . $data;
+
+        if($write)
+            $this->save();
+
+        $this->encrypted = true;
+
+        return $this->contents;
+
+    }
+
+    /**
+     * Writes the decrypted file to storage
+     */
+    public function decrypt(){
+
+        $this->contents = $this->get_contents();
+
+        $this->encrypted = false;
+
+        return $this->save();
 
     }
 
