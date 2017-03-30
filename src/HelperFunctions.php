@@ -873,22 +873,38 @@ function http_response_text($code) {
 
 }
 
-if (!function_exists('getallheaders')) {
+function hazaar_request_headers() {
 
-    function getallheaders() {
+    if (!is_array($_SERVER))
+        return array();
 
-        if (!is_array($_SERVER))
-            return array();
+    $headers = array();
 
-        $headers = array();
-        foreach($_SERVER as $name => $value) {
-            if (substr($name, 0, 5) == 'HTTP_') {
-                $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
-            }
-        }
-        return $headers;
+    foreach($_SERVER as $name => $value) {
+
+        if (substr($name, 0, 5) == 'HTTP_')
+            $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
 
     }
+
+    //Fix a missing Content-Type header
+    if(isset($_SERVER['CONTENT_TYPE'])) $headers['Content-Type'] = $_SERVER['CONTENT_TYPE'];
+
+    //Fix a missing Content-Length header
+    if(isset($_SERVER['CONTENT_LENGTH'])) $headers['Content-Length'] = intval($_SERVER['CONTENT_LENGTH']);
+
+    return $headers;
+
+}
+
+if(!function_exists('getallheaders')){
+
+    function getallheaders(){
+
+        return hazaar_request_headers();
+
+    }
+
 }
 
 // apache_request_headers replicement for nginx
@@ -896,7 +912,7 @@ if(!function_exists('apache_request_headers')){
 
     function apache_request_headers() {
 
-        return getallheaders();
+        return hazaar_request_headers();
 
     }
 
