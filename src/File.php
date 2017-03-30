@@ -523,6 +523,17 @@ class File {
 
     }
 
+    private function getEncryptionKey(){
+
+        if($key_file = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, '.key'))
+            $key = file_get_contents($key_file);
+        else
+            $key = File::$default_key;
+
+        return md5($key);
+
+    }
+
     /**
      * Internal content filter
      *
@@ -546,7 +557,7 @@ class File {
 
         $iv = substr($content, 3, $cipher_len);
 
-        return openssl_decrypt(substr($content, 3 + $cipher_len), File::$default_cipher, md5(File::$default_key), OPENSSL_RAW_DATA, $iv);
+        return openssl_decrypt(substr($content, 3 + $cipher_len), File::$default_cipher, $this->getEncryptionKey(), OPENSSL_RAW_DATA, $iv);
 
     }
 
@@ -561,7 +572,7 @@ class File {
 
         $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(File::$default_cipher));
 
-        $data = openssl_encrypt($content, File::$default_cipher, md5(File::$default_key), OPENSSL_RAW_DATA, $iv);
+        $data = openssl_encrypt($content, File::$default_cipher, $this->getEncryptionKey(), OPENSSL_RAW_DATA, $iv);
 
         $this->contents = $bom . $iv . $data;
 
