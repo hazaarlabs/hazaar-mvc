@@ -28,7 +28,7 @@ class File {
      */
     static public $default_cipher = 'aes-256-ctr';
 
-    static public $default_key = 'hazaar1234';
+    static public $default_key = 'hazaar_secret_badass_keys';
 
     private $encrypted = false;
 
