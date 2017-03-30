@@ -132,19 +132,21 @@ class Config extends \Hazaar\Map {
 
         $options = new \Hazaar\Map();
 
-        if(file_exists($this->source)) {
+        if(file_exists($source)) {
 
             if($options->isEmpty()) {
 
-                $info = pathinfo($this->source);
+                $info = pathinfo($source);
 
                 if($extension = ake($info, 'extension')){
 
+                    $source = new \Hazaar\File($source);
+
                     if($extension == 'json')
-                        $options->fromJSON(file_get_contents($this->source));
+                        $options->fromJSON($source->get_contents());
 
                     elseif($extension == 'ini')
-                        $options->fromDotNotation(parse_ini_file($this->source, TRUE, INI_SCANNER_TYPED));
+                        $options->fromDotNotation(parse_ini_string($source->get_contents(), TRUE, INI_SCANNER_TYPED));
 
                 }
 
@@ -188,13 +190,13 @@ class Config extends \Hazaar\Map {
 
                 if($file = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $values)) {
 
-                    $info = pathinfo($this->source);
+                    $source = new \Hazaar\File($file);
 
-                    if($info['extension'] == 'json')
-                        $config->fromJSON(file_get_contents($file), true);
+                    if($source->extension() == 'json')
+                        $config->fromJSON($source->get_contents(), true);
 
-                    elseif($info['extension'] == 'ini')
-                        $config->fromDotNotation(parse_ini_file($file, true, INI_SCANNER_RAW), true);
+                    elseif($source->extension() == 'ini')
+                        $config->fromDotNotation(parse_ini_string($source->get_contents(), true, INI_SCANNER_RAW), true);
 
 
                 }
