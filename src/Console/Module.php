@@ -46,9 +46,9 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     }
 
-    public function addMenuGroup($name, $label, $icon = null){
+    public function addMenuGroup($name, $label, $icon = null, $method = null){
 
-        $this->handler->addMenuGroup($this, $name, $label, $icon);
+        $this->handler->addMenuGroup($this, $name, $label, $icon, $method);
 
     }
 

@@ -14,8 +14,9 @@ class Application extends Module {
 
         $this->addMenuItem('app', 'Controllers', 'controllers', 'code-fork', 5);
 
-        $this->addMenuGroup('sys', 'System', 'wrench');
         $this->addMenuItem('app', 'Configuration', 'configs', 'cogs');
+
+        $this->addMenuGroup('sys', 'System', 'wrench', 'app/system');
 
         $this->addMenuItem('sys', 'PHP Info', 'phpinfo');
 
@@ -51,9 +52,25 @@ class Application extends Module {
 
         if($request->isXMLHttpRequest()){
 
-            $files = array();
+            if($request->has('encrypt')){
+
+                if(!($filename = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $request->encrypt)))
+                    throw new \Exception('Config file not found!', 404);
+
+                $file = new \Hazaar\File($filename);
+
+                if($file->isEncrypted())
+                    $file->decrypt();
+                else
+                    $file->encrypt();
+
+                return array('encrypt' => $file->isEncrypted());
+
+            }
 
             $search_paths = $this->application->loader->getSearchPaths(FILE_PATH_CONFIG);
+
+            $files = array();
 
             foreach($search_paths as $path){
 
@@ -65,13 +82,7 @@ class Application extends Module {
 
                     $file = new \Hazaar\File($config_file);
 
-                    $r = $file->open();
-
-                    $bom = pack('H*','BADA55');  //Haha, Bad Ass!
-
-                    $encrypted = (fread($r, 3) == $bom);
-
-                    $file->close();
+                    $encrypted = $file->isEncrypted();
 
                     $files[] = array(
                         'name' => trim(str_replace($path, '', $file->fullpath()), DIRECTORY_SEPARATOR),

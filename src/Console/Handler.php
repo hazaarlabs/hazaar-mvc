@@ -212,7 +212,7 @@ class Handler {
 
     }
 
-    public function addMenuGroup($module, $name, $label, $icon = null){
+    public function addMenuGroup($module, $name, $label, $icon = null, $method = null){
 
         if(array_key_exists($name, $this->menus))
             return false;
@@ -220,6 +220,7 @@ class Handler {
         $this->menus[$name] = array(
             'label' => $label,
             'icon' => $icon,
+            'method' => $method,
             'module' => $module->getName(),
             'items' => array()
         );
