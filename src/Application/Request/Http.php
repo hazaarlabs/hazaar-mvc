@@ -65,9 +65,9 @@ class Http extends \Hazaar\Application\Request {
         $this->method = $_SERVER['REQUEST_METHOD'];
 
         if(! in_array($this->method, $this->accept_methods))
-            throw new Exception('Request method not supported: ' . $this->method, 802);
+            throw new \Exception('Request method not supported: ' . $this->method, 802);
 
-        $this->headers = getallheaders();
+        $this->headers = hazaar_request_headers();
 
         $this->body = @file_get_contents('php://input');
 
@@ -191,7 +191,7 @@ class Http extends \Hazaar\Application\Request {
     /**
      * @detail      Check if a header was sent in the HTTP request.
      *
-     * @param       $header The header to check
+     * @param       $header string The header to check
      *
      * @return      bool TRUE if the header was sent.
      */
@@ -204,7 +204,7 @@ class Http extends \Hazaar\Application\Request {
     /**
      * @detail      Get a single header value
      *
-     * @param       $header The header value to get.
+     * @param       $header string The header value to get.
      *
      * @return      mixed Returns the header value if it exists.  Null otherwise.
      */
@@ -250,11 +250,8 @@ class Http extends \Hazaar\Application\Request {
 
         $sess = new \Hazaar\Session();
 
-        if($sess->has('REDIRECT_URI') && $sess->REDIRECT_URI != $_SERVER['REQUEST_URI']) {
-
+        if($sess->has('REDIRECT_URI') && $sess->REDIRECT_URI != $_SERVER['REQUEST_URI'])
             return $sess->REDIRECT_URI;
-
-        }
 
         return NULL;
 
