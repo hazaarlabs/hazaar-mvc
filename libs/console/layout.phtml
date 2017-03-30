@@ -38,12 +38,15 @@
 
                     $icon = ake($section, 'icon', 'cube');
 
-                    $module_nav->add($this->html->a($this->url($prefix), array(
+                    if(!($target = ake($section, 'method')))
+                        $target = $prefix;
+
+                    $module_nav->add($this->html->a($this->url($target), array(
                         $this->fontawesome->icon($icon),
                         ake($section, 'label'),
-                    )))->toggleClass('selected', $this->active($prefix));
+                    )))->toggleClass('selected', $this->active($target));
 
-                    if($this->active($prefix))
+                    if($this->active($target))
                         $module_info = array('label' => ake($section, 'label'), 'icon' => $icon);
 
                     if($items = ake($section, 'items')){

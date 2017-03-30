@@ -13,13 +13,19 @@
             tbody.append($('<tr>').html([
                 $('<td data-bind="files[' + x + '].name">').html(file.name),
                 $('<td data-bind="files[' + x + '].size">').html(file.size),
-                $('<td data-bind="files[' + x + '].encrypted">').html((file.encrypted ? 'Yes' : 'No')),
+                $('<td data-bind="files[' + x + '].encrypted">').html(file.encrypted),
                 $('<td>').html(action)
             ]).data('file', file));
         }
         $('#configFiles').find('button').click(function (event) {
             var i = $(this).data('i');
-            binder.files[i].encrypted = true;
+            var btn = $(this);
+            $.post(hazaar.url('app', 'configs'), { encrypt: binder.files[i].name }).done(function (data) {
+                binder.files[i].encrypted = data.encrypt;
+                btn.toggleClass('danger', data.encrypt)
+                    .toggleClass('success', !data.encrypt)
+                    .html((data.encrypt ? 'Decrypt' : 'Encrypt'));
+            });
         });
     });
 });
