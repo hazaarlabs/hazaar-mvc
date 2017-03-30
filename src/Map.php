@@ -1763,12 +1763,14 @@ class Map implements \ArrayAccess, \Iterator {
         $json = preg_replace("/^$bom/", '', $json);
 
         if(($new = json_decode($json, true)) === null)
-            throw new \Exception('JSON Parse Error #' . json_last_error() . ': ' . json_last_error_msg());
+            return false;
 
         if($merge)
             $this->extend($new);
         else
             $this->populate($new);
+
+        return true;
 
     }
 
