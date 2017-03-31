@@ -13,6 +13,8 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
 
     private $_content = '';
 
+    private $_rendered_views = null;
+
     private $_views   = array();
 
     public function __construct($view = NULL, $init_default_helpers = true, $use_app_config = true) {
@@ -27,6 +29,33 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
     public function setContent($content) {
 
         $this->_content = $content;
+
+    }
+
+    public function prepare($merge_data = true){
+
+        if($this->_rendered_views !== null)
+            return false;
+
+        $this->_rendered_views = '';
+
+        foreach($this->_views as $view) {
+
+            foreach($this->_helpers as $obj)
+                $view->addHelper($obj);
+
+            $view->registerMethodHandler($this->_methodHandler);
+
+            $view->extend($this->_data);
+
+            $this->_rendered_views .= $view->render();
+
+            if($merge_data)
+                $this->extend($view->getData());
+
+        }
+
+        return true;
 
     }
 
@@ -49,26 +78,26 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
 
         }
 
+        if($this->application->config->view['prepare'] === true)
+            $this->prepare();
+
         return parent::render();
 
     }
 
+    /**
+     * Render the views contained in this layout view
+     *
+     * @return string
+     */
     public function layout() {
 
         $output = $this->_content;
 
-        foreach($this->_views as $view) {
+        if($this->_rendered_views === null)
+            $this->prepare(false); //Prepare the views now, but don't bother merging data back in
 
-            foreach($this->_helpers as $obj)
-                $view->addHelper($obj);
-
-            $view->registerMethodHandler($this->_methodHandler);
-
-            $view->extend($this->_data);
-
-            $output .= $view->render();
-
-        }
+        $output .= $this->_rendered_views;
 
         return $output;
 
