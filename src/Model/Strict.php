@@ -911,7 +911,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
     public function exportHMV($ignore_empty = false, $export_all = false, $obj = null){
 
         if(!$obj)
-            $obj = new \Hazaar\Map($this->toArray(false, null, $export_all));
+            $obj = new \Hazaar\Map($this->toArray(false, 0, $export_all));
 
         return $this->exportHMVArray($this->toArray(false, 0, $export_all), $this->fields, $ignore_empty, $export_all, $obj);
 
