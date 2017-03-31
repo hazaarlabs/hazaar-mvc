@@ -126,6 +126,9 @@ class Application {
                 'view' => 'views',
                 'controller' => 'controllers',
                 'service' => 'services'
+            ),
+            'view' => array(
+                'prepare' => false
             )
         );
 
