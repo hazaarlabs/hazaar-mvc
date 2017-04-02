@@ -44,9 +44,17 @@ abstract class Module extends \Hazaar\Controller\Action {
 
         $this->view->navitems = $this->handler->getNavItems();
 
+        $this->prepare();
+
     }
 
     public function init(){
+
+        return true;
+
+    }
+
+    public function prepare(){
 
         return true;
 
