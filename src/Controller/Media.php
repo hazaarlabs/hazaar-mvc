@@ -19,17 +19,12 @@ class Media extends \Hazaar\Controller\Action {
 
     private function loadConfig() {
 
-        if($configFile = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, 'media.ini')) {
+        $config = new \Hazaar\Application\Config('media');
 
-            $config = new\Hazaar\Map();
+        if(!$config->loaded())
+            return false;
 
-            $config->fromDotNotation(parse_ini_file($configFile, TRUE));
-
-            return $config;
-
-        }
-
-        return FALSE;
+        return $config;
 
     }
 
