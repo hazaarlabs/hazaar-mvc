@@ -14,6 +14,8 @@ class System extends Module {
 
         $this->view('phpinfo');
 
+        $this->view->link('phpinfo.css');
+
     }
 
 }
