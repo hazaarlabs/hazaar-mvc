@@ -178,7 +178,7 @@ class Config extends \Hazaar\Map {
 
         foreach($options[$env] as $key => $values) {
 
-            if($key == 'include') {
+            if($key === 'include') {
 
                 if(!\Hazaar\Map::is_array($values))
                     $values = array($values);
@@ -186,7 +186,7 @@ class Config extends \Hazaar\Map {
                 foreach($values as $include_environment)
                     $this->loadConfigOptions($options, $config, $include_environment);
 
-            } elseif($key == 'import') {
+            } elseif($key === 'import') {
 
                 if($file = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $values)) {
 
