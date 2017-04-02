@@ -20,6 +20,8 @@ abstract class Module extends \Hazaar\Controller\Action {
 
         $this->view->layout('@console/layout');
 
+        $this->view->notices = array();
+
     }
 
     public function __initialize($request){
@@ -36,8 +38,6 @@ abstract class Module extends \Hazaar\Controller\Action {
 
         $this->view->navitems = $this->handler->getNavItems();
 
-        $this->view->notices = array();
-
     }
 
     public function init(){
@@ -46,15 +46,15 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     }
 
-    public function addMenuGroup($name, $label, $icon = null, $method = null){
+    public function addMenuGroup($label, $icon = null, $method = null){
 
-        $this->handler->addMenuGroup($this, $name, $label, $icon, $method);
+        $this->handler->addMenuGroup($this, $label, $icon, $method);
 
     }
 
-    protected function addMenuItem($group, $label, $method = null, $icon = null, $suffix = null){
+    protected function addMenuItem($label, $method = null, $icon = null, $suffix = null){
 
-        $this->handler->addMenuItem($this, $group, $label, $method, $icon, $suffix);
+        $this->handler->addMenuItem($this, $label, $method, $icon, $suffix);
 
     }
 
