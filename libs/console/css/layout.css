@@ -138,7 +138,7 @@ body {
             margin: 10px 10px 10px 25px;
             height: 40px;
             width: 40px;
-            background-image: url(images/hazaar-icon-white.png);
+            background-image: url(../images/hazaar-icon-white.png);
             background-size: contain;
             background-repeat: no-repeat;
         }
@@ -407,12 +407,12 @@ table.table {
     }
 
 /*
-        Buttons
-    */
+Buttons
+*/
 button {
     border: none;
     padding: 10px 15px;
-    color: #fff;
+    color: #333;
     border-radius: 3px;
     cursor: pointer;
     opacity: 0.8;
@@ -425,9 +425,13 @@ button {
     button.btn-hazaar {
         width: 100%;
     }
+
+    button.primary {
+        color: #fff;
+    }
 /*
-        Fancy Stat Class
-    */
+Fancy Stat Class
+*/
 .stat {
     text-align: center;
 }
@@ -466,3 +470,17 @@ button {
 .danger {
     background-color: #be3030;
 }
+
+.hz-error {
+    text-align: left;
+}
+
+    .hz-error .hz-error-msg {
+        margin-bottom: 15px;
+    }
+
+    .hz-error .hz-error-file label,
+    .hz-error .hz-error-line label {
+        font-weight: bold;
+        margin-right: 15px;
+    }

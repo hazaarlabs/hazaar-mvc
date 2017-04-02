@@ -1,36 +1,21 @@
-﻿function showLog(obj, result) {
-    var panel = obj.parent().removeClass('panel-default');
-    if (result.ok)
-        panel.addClass('panel-success');
-    else
-        panel.addClass('panel-danger');
-    for (x in result.log) {
-        var thetime = new Date(result.log[x].time * 1000);
-        obj.append($('<div>').append($('<div class="log-time">').html(thetime.toLocaleString()), $('<div class="log-msg">').html(result.log[x].msg)));
+﻿var handleError = function (response, status, xhr) {
+    if (typeof status == 'object') {
+        response = status;
+        status = xhr;
     }
-}
-$(document).ready(function () {
-    $('#frmSnapshot').submit(function () {
-        var data = $(this).serializeArray();
-        $('#snapshotlog').empty().parent().addClass('panel-default').removeClass('panel-success').removeClass('panel-danger');
-        $.post(hazaar.url('hazaar', 'snapshot'), data).done(function (result) {
-            showLog($('#snapshotlog'), result);
+    if (status == 'error') {
+        var error = response.responseJSON.error;
+        $('<div>').html($('<div class="hz-error">').html([
+            $('<div class="hz-error-msg">').html(error.str),
+            $('<div class="hz-error-line">').html([$('<label>').html('Line:'), $('<span>').html('#' + error.line)]),
+            $('<div class="hz-error-file">').html([$('<label>').html('File:'), $('<span>').html(error.file)])
+        ])).popup({
+            title: "Server Error",
+            icon: "error",
+            modal: true,
+            buttons: [
+                { label: "OK", action: "close" }
+            ]
         });
-        return false;
-    });
-    $('#frmMigrate').submit(function () {
-        var data = $(this).serializeArray();
-        $('#migratelog').empty().parent().addClass('panel-default').removeClass('panel-success').removeClass('panel-danger');
-        $.post(hazaar.url('hazaar', 'migrate'), data).done(function (result) {
-            showLog($('#migratelog'), result);
-        });
-        return false;
-    });
-    $('#frmSync').submit(function () {
-        $('#synclog').empty().parent().addClass('panel-default').removeClass('panel-success').removeClass('panel-danger');
-        $.post(hazaar.url('hazaar', 'syncdata')).done(function (result) {
-            showLog($('#synclog'), result);
-        });
-        return false;
-    });
-});
+    }
+};

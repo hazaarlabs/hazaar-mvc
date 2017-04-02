@@ -16,8 +16,6 @@ class Application extends Module {
 
         $this->addMenuItem('Configuration', 'configs', 'cogs');
 
-        //$this->addMenuGroup('System', 'wrench', 'phpinfo');
-
     }
 
     public function index($request){
