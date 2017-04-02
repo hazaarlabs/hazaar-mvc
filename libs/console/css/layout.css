@@ -346,6 +346,7 @@ body {
     box-shadow: 1px 1px 16px rgba(0,0,0,0.3);
     float: left;
     width: 100%;
+    margin-bottom: 25px;
 }
 
     .panel .panel-header {
@@ -443,6 +444,23 @@ Fancy Stat Class
     .stat .label {
         font-weight: lighter;
         font-size: .8em;
+    }
+
+/*
+        Labels
+    */
+.label {
+    border-radius: 2px;
+    background-color: #999;
+    float: left;
+    padding: 5px 15px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+    .label.success,
+    .label.warning {
+        color: #333;
     }
 /*
     Shared Background Colors
