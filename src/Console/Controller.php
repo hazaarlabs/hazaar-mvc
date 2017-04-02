@@ -33,9 +33,9 @@ class Controller extends \Hazaar\Controller\Action {
 
         $this->layout('@console/login/layout');
 
-        $this->view->link('console/layout.css');
+        $this->view->link('console/css/layout.css');
 
-        $this->view->link('console/login/main.css');
+        $this->view->link('console/css/login.css');
 
         $this->view->addHelper('fontawesome');
 
