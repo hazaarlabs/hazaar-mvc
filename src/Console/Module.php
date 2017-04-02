@@ -26,6 +26,10 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     public function __initialize($request){
 
+        $this->view->link($this->application->url('hazaar/file/console/css/popup.css'));
+
+        $this->view->link($this->application->url('hazaar/file/console/css/layout.css'));
+
         $this->view->addHelper('hazaar', array('base_url' => $this->application->url('hazaar/console')));
 
         $this->view->addHelper('jQuery');
@@ -34,7 +38,9 @@ abstract class Module extends \Hazaar\Controller\Action {
 
         $this->view->addHelper('extra');
 
-        $this->view->link($this->application->url('hazaar/file/console/layout.css'));
+        $this->view->requires($this->application->url('hazaar/file/console/js/popup.js'));
+
+        $this->view->requires($this->application->url('hazaar/file/console/js/console.js'));
 
         $this->view->navitems = $this->handler->getNavItems();
 
