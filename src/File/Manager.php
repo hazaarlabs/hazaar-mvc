@@ -34,17 +34,20 @@ class Manager {
 
         }
 
-        $class = 'Hazaar\File\Backend\\' . ucfirst($backend);
+        if(class_exists($backend))
+            $class = $backend;
+        else
+            $class = 'Hazaar\File\Backend\\' . ucfirst($backend);
 
-        if(! class_exists($class)) {
-
+        if(! class_exists($class))
             throw new Exception\BackendNotFound($backend);
-
-        }
 
         $this->backend_name = $backend;
 
         $this->backend = new $class($backend_options);
+
+        if(!$this->backend instanceof \Hazaar\File\Backend\_Interface)
+            throw new Exception\InvalidBackend($backend);
 
         if(! $name)
             $name = strtolower($backend);
