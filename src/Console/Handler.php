@@ -90,6 +90,8 @@ class Handler {
 
         $this->modules['app'] = new Application('app', $path, $application, $this);
 
+        $this->modules['sys'] = new System('sys', $path, $application, $this);
+
         $installed = ROOT_PATH
             . DIRECTORY_SEPARATOR . 'vendor'
             . DIRECTORY_SEPARATOR . 'composer'
@@ -98,6 +100,12 @@ class Handler {
         if(file_exists($installed)){
 
             $libraries = json_decode(file_get_contents($installed), true);
+
+            usort($libraries, function($a, $b){
+                if ($a['name'] == $b['name'])
+                    return 0;
+                return ($a['name'] < $b['name']) ? -1 : 1;
+            });
 
             foreach($libraries as $library){
 
@@ -117,8 +125,6 @@ class Handler {
             }
 
         }
-
-        ksort($this->modules);
 
         foreach($this->modules as $module)
             $module->init();
@@ -212,7 +218,9 @@ class Handler {
 
     }
 
-    public function addMenuGroup($module, $name, $label, $icon = null, $method = null){
+    public function addMenuGroup($module, $label, $icon = null, $url = null){
+
+        $name = $module->getName();
 
         if(array_key_exists($name, $this->menus))
             return false;
@@ -220,8 +228,7 @@ class Handler {
         $this->menus[$name] = array(
             'label' => $label,
             'icon' => $icon,
-            'method' => $method,
-            'module' => $module->getName(),
+            'target' => $module->getName() . ($url? '/' . $url:null),
             'items' => array()
         );
 
@@ -229,14 +236,16 @@ class Handler {
 
     }
 
-    public function addMenuItem($module, $group, $label, $method = null, $icon = null, $suffix = null){
+    public function addMenuItem($module, $label, $url = null, $icon = null, $suffix = null){
+
+        $group = $module->getName();
 
         if(!array_key_exists($group, $this->menus))
             return false;
 
         $this->menus[$group]['items'][] = array(
             'label' => $label,
-            'target' => $module->getName() . ($method ? '/' . $method : null),
+            'target' => $module->getName() . ($url? '/' . $url:null),
             'icon' => $icon,
             'suffix' => (is_array($suffix)?$suffix:array($suffix))
         );

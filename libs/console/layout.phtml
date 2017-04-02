@@ -32,14 +32,13 @@
                 <?php
                 $nav = $this->html->ul()->class('sidebar-nav-module');
 
-                foreach($this->navitems as $prefix => $section){
+                foreach($this->navitems as $group_name => $section){
 
                     $module_nav = $this->html->li()->class('sidebar-nav-item');
 
                     $icon = ake($section, 'icon', 'cube');
 
-                    if(!($target = ake($section, 'method')))
-                        $target = $prefix;
+                    $target = ake($section, 'target');
 
                     $module_nav->add($this->html->a($this->url($target), array(
                         $this->fontawesome->icon($icon),
@@ -66,7 +65,7 @@
                                 $link->add($this->html->div(ake($suffix, 0))->class('suffix ' . ake($suffix, 1, 'default')));
 
                             $nav_items->add($this->html->li($link)
-                                ->toggleClass('active', $this->active('hazaar', $target)));
+                                ->toggleClass('active', $this->active($target)));
 
                         }
 
