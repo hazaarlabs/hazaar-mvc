@@ -111,6 +111,8 @@ class Protocol {
 
     public function decode($packet, &$payload = null, &$time = null) {
 
+        $payload = null;
+
         $packet = json_decode(($this->encoded ? base64_decode($packet) : $packet), true);
 
         if(! $packet)
