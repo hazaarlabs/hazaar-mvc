@@ -97,6 +97,9 @@ class Error extends \Hazaar\Controller\Action {
 
     public function getStatusMessage($code = NULL) {
 
+        if($code === null)
+            $code = $this->code;
+
         return (array_key_exists($code, $this->status_codes) ? $this->status_codes[$code] : NULL);
 
     }
