@@ -157,7 +157,16 @@ body {
     background-color: #fff;
 }
 
-
+.sidebar-sub {
+    font-size: .8em;
+    color: #999;
+    text-align: center;
+    background: #2a2a2a;
+    padding: 5px 0;
+    border-style: solid;
+    border-color: #3a3a3a;
+    border-width: 1px 0;
+}
 /**
     Sidebar User info
 */
@@ -487,6 +496,11 @@ Fancy Stat Class
 
 .danger {
     background-color: #be3030;
+}
+
+.hazaar {
+    background-color: #554d7c;
+    color: #fff;
 }
 
 .hz-error {
