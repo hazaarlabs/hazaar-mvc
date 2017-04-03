@@ -20,7 +20,7 @@ define('ERR_TYPE_SHUTDOWN', 2);
  *
  * @detail This controller does basic stuff
  */
-class Error extends \Hazaar\Controller {
+class Error extends \Hazaar\Controller\Action {
 
     protected $type = ERR_TYPE_ERROR;
 
@@ -223,102 +223,19 @@ class Error extends \Hazaar\Controller {
 
                 case 'json' :
 
-                    $error = array(
-                        'ok' => FALSE,
-                        'error' => array(
-                            'type' => $this->errno,
-                            'status' => $this->status,
-                            'str' => $this->errstr
-                        )
-                    );
-
-                    if(ini_get('display_errors')){
-
-                        $error['error']['line'] = $this->errline;
-
-                        $error['error']['file'] = $this->errfile;
-
-                        $error['error']['context'] = $this->errcontext;
-
-                        $error['trace'] = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-
-                        $error['config'] = $this->application->config->toArray();
-
-                    }
-
-                    $response = new Response\Json($error, $this->code);
+                    $response = $this->json();
 
                     break;
 
                 case 'xmlrpc' :
-                    $xml = new \SimpleXMLElement('<xml/>');
 
-                    $struct = $xml->addChild('fault')->addChild('value')->addChild('struct');
-
-                    $code = $struct->addChild('member');
-
-                    $code->addChild('name', 'faultCode');
-
-                    $code->addChild('value')->addChild('int', $this->errno);
-
-                    $status = $struct->addChild('member');
-
-                    $status->addChild('name', 'faultString');
-
-                    $status->addChild('value')->addChild('string', $this->status);
-
-                    $string = $struct->addChild('member');
-
-                    $string->addChild('name', 'faultString');
-
-                    $string->addChild('value')->addChild('string', $this->errstr);
-
-                    $file = $struct->addChild('member');
-
-                    $file->addChild('name', 'faultFile');
-
-                    $file->addChild('value')->addChild('string', $this->errfile);
-
-                    $line = $struct->addChild('member');
-
-                    $line->addChild('name', 'faultLine');
-
-                    $line->addChild('value')->addChild('int', $this->errline);
-
-                    $response = new Response\Xml($xml->asXML());
+                    $response = $this->xmlrpc();
 
                     break;
 
                 case 'text' :
-                    $out = "*****************************\n\tEXCEPTION\n*****************************\n\n";
 
-                    $out .= "Environment:\t" . APPLICATION_ENV . "\n";
-
-                    if ($this->errno > 0)
-                        $out .= "Error:\t\t#" . $this->errno . "\n";
-
-                    $out .= "File:\t\t" . $this->errfile . "\n";
-
-                    $out .= "Line:\t\t" . $this->errline . "\n";
-
-                    $out .= "Message:\t" . $this->errstr . "\n";
-
-                    $out .= "Context:\t" . $this->errcontext . "\n\n";
-
-                    $out .= "Backtrace:\n\n";
-
-                    foreach($this->callstack as $id => $call) {
-
-                        if (array_key_exists('class', $call))
-                            $out .= "$id - " . str_pad(ake($call, 'file'), 75, ' ', STR_PAD_RIGHT) . ' ' . str_pad(ake($call, 'line'), 4, ' ', STR_PAD_RIGHT) . " $call[class]::$call[function]\n";
-
-                        else
-                            $out .= "$id - $call[function]\n";
-                    }
-
-                    $out .= "\n";
-
-                    $response = new Response\Text($out);
+                    $response = $this->text();
 
                     break;
 
@@ -330,34 +247,29 @@ class Error extends \Hazaar\Controller {
 
                 case 'html' :
                 default :
-                    $response = new Response\Html($this->code);
 
-                    $view = new \Hazaar\View('@error/error');
-
-                    $view->registerMethodHandler($this);
-
-                    $view->type = $this->type;
-
-                    $view->err = array(
-                        'code' => $this->errno,
-                        'message' => $this->errstr,
-                        'file' => $this->errfile,
-                        'line' => $this->errline,
-                        'context' => $this->errcontext,
-                        'class' => $this->errclass,
-                        'type' => $this->errtype,
-                        'short_message' => ($this->short_message ? $this->short_message : $this->status)
-                    );
-
-                    $view->trace = $this->callstack;
-
-                    $view->code = $this->code;
-
-                    $view->status = $this->status;
-
-                    $response->setContent($view->render($this));
+                    $response = $this->html();
 
                     break;
+
+            }
+
+        }
+
+        if(!$response instanceof \Hazaar\Controller\Response){
+
+            if(is_array($response)) {
+
+                $response = new Response\Json($response);
+
+            } else {
+
+                $response = new Response\Html();
+
+                /*
+                 * Execute the action helpers.  These are responsible for actually rendering any views.
+                 */
+                $this->_helper->execAllHelpers($this, $response);
 
             }
 
@@ -373,6 +285,142 @@ class Error extends \Hazaar\Controller {
 
             ob_end_clean();
         }
+
+    }
+
+    protected function json(){
+
+        $error = array(
+            'ok' => FALSE,
+            'error' => array(
+                'type' => $this->errno,
+                'status' => $this->status,
+                'str' => $this->errstr
+            )
+        );
+
+        if(ini_get('display_errors')){
+
+            $error['error']['line'] = $this->errline;
+
+            $error['error']['file'] = $this->errfile;
+
+            $error['error']['context'] = $this->errcontext;
+
+            $error['trace'] = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+
+            $error['config'] = $this->application->config->toArray();
+
+        }
+
+        return new Response\Json($error, $this->code);
+
+    }
+
+    protected function xmlrpc(){
+
+        $xml = new \SimpleXMLElement('<xml/>');
+
+        $struct = $xml->addChild('fault')->addChild('value')->addChild('struct');
+
+        $code = $struct->addChild('member');
+
+        $code->addChild('name', 'faultCode');
+
+        $code->addChild('value')->addChild('int', $this->errno);
+
+        $status = $struct->addChild('member');
+
+        $status->addChild('name', 'faultString');
+
+        $status->addChild('value')->addChild('string', $this->status);
+
+        $string = $struct->addChild('member');
+
+        $string->addChild('name', 'faultString');
+
+        $string->addChild('value')->addChild('string', $this->errstr);
+
+        $file = $struct->addChild('member');
+
+        $file->addChild('name', 'faultFile');
+
+        $file->addChild('value')->addChild('string', $this->errfile);
+
+        $line = $struct->addChild('member');
+
+        $line->addChild('name', 'faultLine');
+
+        $line->addChild('value')->addChild('int', $this->errline);
+
+        return new Response\Xml($xml->asXML());
+
+    }
+
+    protected function text(){
+
+        $out = "*****************************\n\tEXCEPTION\n*****************************\n\n";
+
+        $out .= "Environment:\t" . APPLICATION_ENV . "\n";
+
+        if ($this->errno > 0)
+            $out .= "Error:\t\t#" . $this->errno . "\n";
+
+        $out .= "File:\t\t" . $this->errfile . "\n";
+
+        $out .= "Line:\t\t" . $this->errline . "\n";
+
+        $out .= "Message:\t" . $this->errstr . "\n";
+
+        $out .= "Context:\t" . $this->errcontext . "\n\n";
+
+        $out .= "Backtrace:\n\n";
+
+        foreach($this->callstack as $id => $call) {
+
+            if (array_key_exists('class', $call))
+                $out .= "$id - " . str_pad(ake($call, 'file'), 75, ' ', STR_PAD_RIGHT) . ' ' . str_pad(ake($call, 'line'), 4, ' ', STR_PAD_RIGHT) . " $call[class]::$call[function]\n";
+
+            else
+                $out .= "$id - $call[function]\n";
+        }
+
+        $out .= "\n";
+
+        return new Response\Text($out);
+
+    }
+
+    protected function html(){
+
+        $response = new Response\Html($this->code);
+
+        $view = new \Hazaar\View('@error/error');
+
+        $view->registerMethodHandler($this);
+
+        $view->type = $this->type;
+
+        $view->err = array(
+            'code' => $this->errno,
+            'message' => $this->errstr,
+            'file' => $this->errfile,
+            'line' => $this->errline,
+            'context' => $this->errcontext,
+            'class' => $this->errclass,
+            'type' => $this->errtype,
+            'short_message' => ($this->short_message ? $this->short_message : $this->status)
+        );
+
+        $view->trace = $this->callstack;
+
+        $view->code = $this->code;
+
+        $view->status = $this->status;
+
+        $response->setContent($view->render($this));
+
+        return $response;
 
     }
 
