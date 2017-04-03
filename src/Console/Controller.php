@@ -31,7 +31,7 @@ class Controller extends \Hazaar\Controller\Action {
 
         }
 
-        $this->layout('@console/login/layout');
+        $this->layout('@console/login');
 
         $this->view->link('console/css/layout.css');
 
