@@ -22,6 +22,9 @@
                 <a class="sidebar-brand" href="<?=$this->url();?>">
                     Hazaar Admin
                 </a>
+                <div class="sidebar-sub" title="APPLICATION_ENV">
+                    <?=APPLICATION_ENV;?>
+                </div>
             </div>
             <div class="sidebar-user-info">
                 <?=$this->gravatar('jamie@hazaarlabs.com')->class('sidebar-user-img');?>
