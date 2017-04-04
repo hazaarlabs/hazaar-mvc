@@ -526,7 +526,7 @@ class File {
     private function getEncryptionKey(){
 
         if($key_file = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, '.key'))
-            $key = file_get_contents($key_file);
+            $key = trim(file_get_contents($key_file));
         else
             $key = File::$default_key;
 
