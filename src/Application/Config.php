@@ -142,11 +142,17 @@ class Config extends \Hazaar\Map {
 
                     $source = new \Hazaar\File($source);
 
-                    if($extension == 'json')
-                        $options->fromJSON($source->get_contents());
+                    if($extension == 'json'){
 
-                    elseif($extension == 'ini')
-                        $options->fromDotNotation(parse_ini_string($source->get_contents(), TRUE, INI_SCANNER_TYPED));
+                        if(!$options->fromJSON($source->get_contents()))
+                            throw new \Exception('Failed to parse JSON config file: ' . $source);
+
+                    }elseif($extension == 'ini'){
+
+                        if(!$options->fromDotNotation(parse_ini_string($source->get_contents(), TRUE, INI_SCANNER_TYPED)))
+                            throw new \Exception('Failed to parse INI config file: ' . $source);
+
+                    }
 
                 }
 
