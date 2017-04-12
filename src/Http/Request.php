@@ -392,10 +392,10 @@ class Request extends \Hazaar\Map {
 
         if($user instanceof \Hazaar\Auth\Adapter){
 
-            if($user->has('oauth2') && ($token = ake($user->oauth2, 'access_token'))){
+            if($token = $user->getToken()){
 
                 if(!$type)
-                    $type = ake($user->oauth2, 'token_type', 'Bearer');
+                    $type = $user->getTokenType();
 
                 $this->setHeader('Authorization', $type . ' ' . $token);
 
