@@ -15,7 +15,7 @@ class Dir {
     function __construct($path, $backend = NULL) {
 
         if(! $backend)
-            $backend = new Backend\Local(array('root' => DIRECTORY_SEPARATOR));
+            $backend = new Backend\Local(array('root' => '/'));
 
         $this->path = $this->fixPath($path);
 
@@ -25,10 +25,8 @@ class Dir {
 
     public function fixPath($path, $file = NULL) {
 
-        $path = \Hazaar\Loader::fixDirectorySeparator($path);
-
         if($file)
-            $path .= ((strlen($path) > 1) ? DIRECTORY_SEPARATOR : NULL) . $file;
+            $path .= ((strlen($path) > 1) ? '/' : NULL) . $file;
 
         return $path;
 
@@ -85,7 +83,7 @@ class Dir {
 
             $last = dirname($last);
 
-            if($last == DIRECTORY_SEPARATOR)
+            if($last == '/')
                 break;
 
         }
@@ -166,7 +164,7 @@ class Dir {
         if(! $start)
             $start = $this->path;
 
-        $start = rtrim($start, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        $start = rtrim($start, '/') . '/';
 
         $list = array();
 

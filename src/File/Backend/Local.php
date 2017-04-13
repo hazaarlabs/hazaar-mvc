@@ -38,6 +38,8 @@ class Local implements _Interface {
 
     private function resolvePath($path, $file = NULL) {
 
+        $path = \Hazaar\Loader::fixDirectorySeparator($path);
+
         $base = $this->options->get('root', DIRECTORY_SEPARATOR);
 
         if($path == DIRECTORY_SEPARATOR)
@@ -130,6 +132,8 @@ class Local implements _Interface {
 
     public function upload($path, $file, $overwrite = TRUE) {
 
+        $path = \Hazaar\Loader::fixDirectorySeparator($path);
+
         $fullPath = $this->resolvePath(rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $file['name']);
 
         if(file_exists($fullPath) && $overwrite == FALSE)
@@ -141,9 +145,9 @@ class Local implements _Interface {
 
     public function copy($src, $dst, $recursive = FALSE) {
 
-        $src = rtrim($src, DIRECTORY_SEPARATOR);
+        $src = rtrim(\Hazaar\Loader::fixDirectorySeparator($src), DIRECTORY_SEPARATOR);
 
-        $dst = rtrim($dst, DIRECTORY_SEPARATOR);
+        $dst = rtrim(\Hazaar\Loader::fixDirectorySeparator($dst), DIRECTORY_SEPARATOR);
 
         if($this->is_file($src)) {
 
