@@ -55,12 +55,12 @@ class File {
         } else {
 
             if(empty($file))
-                $file = Application::getInstance()->runtimePath('tmp', true) . DIRECTORY_SEPARATOR . uniqid();
+                $file = Application::getInstance()->runtimePath('tmp', true) . '/' . uniqid();
 
-            $this->source_file = \Hazaar\Loader::fixDirectorySeparator($file);
+            $this->source_file = $file;
 
             if(! $backend)
-                $backend = new File\Backend\Local(array('root' => ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : DIRECTORY_SEPARATOR)));
+                $backend = new File\Backend\Local(array('root' => ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : '/')));
 
             if(! $backend instanceof File\Backend\_Interface)
                 throw new \Exception('Can not create new file object without a valid file backend!');
@@ -115,7 +115,8 @@ class File {
 
     public function dirname() {
 
-        return dirname($this->source_file);
+        //Hack: The str_replace() call makes all directory separaters consistent as /.  The use of DIRECTORY_SEPARATOR should only be used in the local backend.
+        return str_replace('\\', '/', dirname($this->source_file));
 
     }
 
@@ -129,7 +130,7 @@ class File {
 
         $dir = $this->dirname();
 
-        return $dir . ((substr($dir, -1, 1) != DIRECTORY_SEPARATOR) ? DIRECTORY_SEPARATOR : NULL) . $this->basename();
+        return $dir . ((substr($dir, -1, 1) != '/') ? '/' : NULL) . $this->basename();
 
     }
 
