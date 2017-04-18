@@ -4,6 +4,16 @@ namespace Hazaar\Controller;
 
 class Media extends \Hazaar\Controller\Action {
 
+    static public  $default_config = array(
+        'enabled' => true,
+        'auth' => false,
+        'allow' => array(
+            'read' => false,    //Default disallow reads when auth enabled
+            'cmd'  => false    //Default disallow file manager commands
+        ),
+        'userdef' => array()
+    );
+
     private $allowPreview   = array(
         '/^image\//',
         '/application\/pdf/'
@@ -13,16 +23,50 @@ class Media extends \Hazaar\Controller\Action {
         'width', 'height', 'format', 'quality', 'format', 'xwidth', 'xheight', 'filter'
     );
 
+    private $auth;
+
+    private $connector;
+
+    private $global_cache = false;
+
+    private $config;
+
     public function init($request) {
+
+        $this->request->getResponseType('json');
+
+        if(class_exists('\Hazaar\Auth\Helper'))
+            $this->auth = new \Hazaar\Auth\Helper();
+
+        $this->connector = new \Hazaar\File\BrowserConnector($this->url(), $this->allowPreview);
+
+        $this->connector->setProgressCallback(array($this, 'progress'));
+
+        if($this->config = $this->loadConfig()) {
+
+            if($this->config->disabled === true)
+                return;
+
+            if($this->config->global->has('cache'))
+                $this->global_cache = boolify($this->config->global['cache']);
+
+            $this->loadSources($this->config, $this->connector);
+
+        }
 
     }
 
     private function loadConfig() {
 
-        $config = new \Hazaar\Application\Config('media');
+        $defaults = array('global' =>  Media::$default_config);
+
+        $config = new \Hazaar\Application\Config('media', APPLICATION_ENV, $defaults);
 
         if(!$config->loaded())
             return false;
+
+        foreach($config as $source)
+            $source->enhance(Media::$default_config);
 
         return $config;
 
@@ -35,14 +79,14 @@ class Media extends \Hazaar\Controller\Action {
 
         foreach($config as $id => $source) {
 
-            if($id == 'global' || boolify($source->disabled) || (count($names) > 0 && ! in_array($id, $names)))
+            if($id == 'global' || !boolify($source->enabled) || (count($names) > 0 && ! in_array($id, $names)))
                 continue;
 
-            if($source->has('type') && $source->has('name')) {
+            if($source->has('type')) {
 
-                $manager = new \Hazaar\File\Manager($source->type, $source->get($source->type), $id);
+                $manager = new \Hazaar\File\Manager($source->type, $source->get('options'), $id);
 
-                $connector->addSource($manager, $source->name, $id);
+                $connector->addSource($id, $manager, $source->get('name'));
 
             }
 
@@ -52,12 +96,7 @@ class Media extends \Hazaar\Controller\Action {
 
     public function authorise($source) {
 
-        $connector = new \Hazaar\File\BrowserConnector($this->url('browse'), $this->allowPreview);
-
-        if($config = $this->loadConfig())
-            $this->loadSources($config, $connector, $source);
-
-        $result = $connector->authorise($source, (string)$this->url(NULL, 'authorise/' . $source));
+        $result = $this->connector->authorise($source, (string)$this->url(NULL, 'authorise/' . $source));
 
         if($result) {
 
@@ -98,23 +137,18 @@ class Media extends \Hazaar\Controller\Action {
 
     public function __default() {
 
-        $connector = new \Hazaar\File\BrowserConnector($this->url(), $this->allowPreview);
+        if($this->request->has('cmd'))
+            return $this->command($this->request->get('cmd'), $this->connector);
 
-        $connector->setProgressCallback(array($this, 'progress'));
+        //Check for global authentication
+        if($this->config->global->has('auth')
+            && $this->config->global->auth === true
+            && $this->config->global->allow['read'] !== true){
 
-        $cache = FALSE;
-
-        if($config = $this->loadConfig()) {
-
-            if($config->global->has('cache'))
-                $cache = boolify($config->global['cache']);
-
-            $this->loadSources($config, $connector);
+            if(!($this->auth && $this->auth->authenticated()))
+                throw new \Exception('Unauthorised!', 403);
 
         }
-
-        if($this->request->has('cmd'))
-            return $this->command($this->request->get('cmd'), $connector);
 
         $target = $this->request->getRawPath();
 
@@ -123,10 +157,23 @@ class Media extends \Hazaar\Controller\Action {
         if(! ($sourceName = substr($target, 0, $pos)))
             throw new \Exception('Bad Request!', 400);
 
-        $source = $connector->source($sourceName);
+        $source = $this->connector->source($sourceName);
 
         if(! $source)
             throw new \Exception("Media source '$sourceName' is unknown!", 404);
+
+        if(!$this->config->has($source->name))
+            throw new \Exception("Config missing for loaded source!  What the hell!?");
+
+        //Check for source specific authentication
+        if($this->config[$source->name]->has('auth')
+            && $this->config[$source->name]->auth === true
+            && $this->config[$source->name]->public !== true){
+
+            if(!($this->auth && $this->auth->authenticated()))
+                throw new \Exception('Unauthorised!', 403);
+
+        }
 
         $target = substr($target, $pos);
 
@@ -162,8 +209,6 @@ class Media extends \Hazaar\Controller\Action {
         if(preg_match_array($this->allowPreview, $file->mime_content_type()) > 0)
             $response = new \Hazaar\Controller\Response\Image($file);
 
-	$response->setUnmodified($this->request->getHeader('If-Modified-Since'));
-
         if($this->request->has('download') && boolify($this->request->download))
             $response->setDownloadable(TRUE);
 
@@ -171,13 +216,16 @@ class Media extends \Hazaar\Controller\Action {
 
             $cache_dir = NULL;
 
+            $cache = ($this->config[$source->name]->has('cache') ? $this->config[$source->name]->cache : $this->global_cache);
+
             if($cache = boolify($this->request->get('cache', $cache))) {
 
                 try {
 
                     $cache_dir = $this->application->runtimePath('imagecache', TRUE);
 
-                } catch(Exception $e) {
+                }
+                catch(Exception $e) {
 
                     $cache = FALSE;
 
@@ -194,11 +242,18 @@ class Media extends \Hazaar\Controller\Action {
              */
             if($cache && file_exists($cache_file) && filesize($cache_file) > 0) {
 
-                $response->setHeader('X-Media-Cached', 'true');
+                $response->setLastModified(filemtime($cache_file));
 
-                $response->setContent(file_get_contents($cache_file));
+                //If the file has been modified, setUnmodified will return false because a 304 header is not set so we must load the content
+                if($response->setUnmodified($this->request->getHeader('If-Modified-Since')) === false){
 
-                $response->setContentType(file_get_contents($cache_file . '.info'));
+                    $response->setHeader('X-Media-Cached', 'true');
+
+                    $response->setContent(file_get_contents($cache_file));
+
+                    $response->setContentType(file_get_contents($cache_file . '.info'));
+
+                }
 
             } else {
 
@@ -279,7 +334,13 @@ class Media extends \Hazaar\Controller\Action {
 
                 }
 
+                $response->setLastModified(time());
+
             }
+
+        }else{
+
+            $response->setUnmodified($this->request->getHeader('If-Modified-Since'));
 
         }
 
@@ -288,6 +349,16 @@ class Media extends \Hazaar\Controller\Action {
     }
 
     private function command($cmd, $connector) {
+
+        //Check for global command authentication
+        if($this->config->global->has('auth')
+            && $this->config->global->auth === true
+            && $this->config->global->allow['cmd'] !== true){
+
+            if(!($this->auth && $this->auth->authenticated()))
+                throw new \Exception('Unauthorised!', 403);
+
+        }
 
         if($cmd == 'authorise') {
 
