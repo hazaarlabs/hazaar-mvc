@@ -63,12 +63,12 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
 
             $this->file = new \Hazaar\File(NULL);
 
-            if($content_type)
-                $this->file->set_mime_content_type($content_type);
-
-            $this->file->set_contents($data);
-
         }
+
+        if($content_type)
+            $this->file->set_mime_content_type($content_type);
+
+        $this->file->set_contents($data);
 
         return $this->file;
 
@@ -102,7 +102,7 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
     }
 
     public function __writeOutput() {
-        
+
         if($this->file)
             $this->content = $this->file->get_contents();
 
