@@ -25,12 +25,12 @@ class BrowserConnector {
 
     }
 
-    public function addSource($source, $name = NULL, $id = NULL) {
+    public function addSource($id, $source, $name = NULL) {
 
         if($source instanceof \Hazaar\File\Manager) {
 
             if(! $name)
-                $name = ucfirst($source->getBackendName());
+                $name = ucfirst($id);
 
         } else {
 
@@ -46,10 +46,7 @@ class BrowserConnector {
 
         $source->setOption('name', $name);
 
-        if($id !== NULL)
-            $this->sources[$id] = $source;
-        else
-            $this->sources[] = $source;
+        $this->sources[$id] = $source;
 
         return TRUE;
 
