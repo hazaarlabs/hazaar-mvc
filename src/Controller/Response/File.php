@@ -8,6 +8,8 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
 
     protected $backend;
 
+    protected $fmtime;
+
     /**
      * \Hazaar\File Constructor
      *
@@ -121,7 +123,7 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
         if(!$ifModifiedSince instanceof \Hazaar\Date)
             $ifModifiedSince = new \Hazaar\Date($ifModifiedSince);
 
-        if($this->file->mtime() > $ifModifiedSince->getTimestamp())
+        if(($this->fmtime ? $this->fmtime->sec() : $this->file->mtime()) > $ifModifiedSince->getTimestamp())
             return false;
 
         $this->setStatus(304);
@@ -130,12 +132,14 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
 
     }
 
-    public function setLastModified($fmdate) {
+    public function setLastModified($fmtime) {
 
-        if(! $fmdate instanceof \Hazaar\Date)
-            $fmdate = new \Hazaar\Date($fmdate);
+        if(! $fmtime instanceof \Hazaar\Date)
+            $fmtime = new \Hazaar\Date($fmtime, 'UTC');
 
-        $this->setHeader('Last-Modified', gmdate('r', $fmdate->sec()));
+        $this->fmtime = $fmtime;
+
+        $this->setHeader('Last-Modified', gmdate('r', $this->fmtime->sec()));
 
     }
 
