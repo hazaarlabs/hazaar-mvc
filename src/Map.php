@@ -952,7 +952,7 @@ class Map implements \ArrayAccess, \Iterator {
      *
      * @return      mixed Value at key $key
      */
-    public function & get($key) {
+    public function & get($key, $create = false) {
 
         if($key === NULL && ! $this->locked) {
 
@@ -961,6 +961,13 @@ class Map implements \ArrayAccess, \Iterator {
             array_push($this->elements, $elem);
 
         } elseif(! array_key_exists($key, $this->elements) && ! $this->locked) {
+
+            if($create === false){
+                
+                $null = null;
+
+                return $null;
+            }
 
             $this->elements[$key] = $elem = new Map(NULL, NULL, $this->filter);
 
@@ -985,7 +992,7 @@ class Map implements \ArrayAccess, \Iterator {
      */
     public function & __get($key) {
 
-        return $this->get($key);
+        return $this->get($key, true);
 
     }
 
