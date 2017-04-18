@@ -15,8 +15,7 @@ class Media extends \Hazaar\Controller\Action {
     );
 
     private $allowPreview   = array(
-        '/^image\//',
-        '/application\/pdf/'
+        '/^image\//'
     );
 
     private $cachableParams = array(
