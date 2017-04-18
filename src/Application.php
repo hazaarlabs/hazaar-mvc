@@ -520,6 +520,11 @@ class Application {
             $controller->__shutdown();
 
         }
+        catch(Controller\Exception\HeadersSent $e) {
+
+            die('HEADERS SENT');
+
+        }
         catch(Exception $e) {
 
             /*
