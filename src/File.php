@@ -227,6 +227,15 @@ class File {
 
     }
 
+    /**
+     * Returns the current contents of the file.
+     *
+     * @param mixed $offset
+     *
+     * @param mixed $maxlen
+     *
+     * @return mixed
+     */
     public function get_contents($offset = -1, $maxlen = NULL) {
 
         if($this->contents)
@@ -236,6 +245,15 @@ class File {
 
     }
 
+    /**
+     * Put contents directly writes data to the storage backend without storing it in the file object itself
+     *
+     * NOTE: This function is called internally to save data that has been updated in the file object.
+     *
+     * @param mixed $data The data to write
+     *
+     * @param mixed $overwrite Overwrite data if it exists
+     */
     public function put_contents($data, $overwrite = FALSE) {
 
         $content_type = null;
@@ -250,24 +268,89 @@ class File {
 
     }
 
+    /**
+     * Sets the current contents of the file in memory.
+     *
+     * Calling this function does not directly update the content of the file "on disk".  To do that
+     * you must call the File::save() method which will commit the data to storage.
+     *
+     * @param mixed $bytes The data to set as the content
+     */
     public function set_contents($bytes) {
 
         $this->contents = $bytes;
 
     }
 
+    /**
+     * Set the contents from an encoded string.
+     *
+     * Currently this supports only data URI encoded strings.  I have made this generic in case I come
+     * across other types of encodings that will work with this method.
+     *
+     * @param mixed $bytes The encoded data
+     */
+    public function set_decoded_contents($bytes){
+
+        if(substr($bytes, 0, 5) == 'data:'){
+
+            //Check we have a correctly encoded data URI
+            if(($pos = strpos($bytes, ',', 5)) === false)
+                return false;
+
+            $info = explode(';', substr($bytes, 5, $pos - 5), 2);
+
+            list($content_type, $encoding) = ((count($info) > 1) ? $info : array($info, null));
+
+            if($encoding == 'base64')
+                $this->contents = base64_decode(substr($bytes, $pos));
+            else
+                $this->contents = substr($bytes, $pos);
+
+            if($content_type)
+                $this->mime_content_type($content_type);
+
+            return true;
+
+        }
+
+        return false;
+
+    }
+
+    /**
+     * Saves the current in-memory content to the storage backend.
+     *
+     * Internally this calls File::put_contents() to write the data to the backend.
+     *
+     * @return mixed
+     */
     public function save() {
 
         return $this->put_contents(($this->encrypted ? $this->encrypt(false) : $this->contents), TRUE);
 
     }
 
+    /**
+     * Saves this file objects content to another file name.
+     *
+     * @param mixed $filename The filename to save as
+     *
+     * @param mixed $overwrite Boolean flag to indicate that the destination should be overwritten if it exists
+     *
+     * @return mixed
+     */
     public function saveAs($filename, $overwrite = FALSE) {
 
         return $this->backend->write($filename, $this->contents, $overwrite);
 
     }
 
+    /**
+     * Deletes the file from storage
+     *
+     * @return mixed
+     */
     public function unlink() {
 
         if(! $this->exists())
@@ -285,23 +368,45 @@ class File {
 
     }
 
-    /*
-     * Enhanced file functions
+    /**
+     * Generate an MD5 checksum of the current file content
+     *
+     * @return string
      */
     public function md5() {
 
+        //If the contents has been downloaded from the storage backend or updated in some way, use that instead
+        if($this->contents)
+            return md5($this->contents);
+
+        //Otherwise use the md5 provided by the backend.  This is because some backend providers (such as dropbox) provide
+        //a cheap method of calculating the checksum
         return $this->backend->md5Checksum($this->source_file);
 
     }
 
+    /**
+     * Return the base64 encoded content
+     *
+     * @return string
+     */
     public function base64() {
 
         return base64_encode($this->get_contents());
 
     }
 
-    /*
-     * Custom built-in functions
+    /**
+     * Returns the contents as decoded JSON.
+     *
+     * If the content is a JSON encoded string, this will decode the string and return it as a stdClass
+     * object, or an associative array if the $assoc parameter is TRUE.
+     *
+     * If the content can not be decoded because it is not a valid JSON string, this method will return FALSE.
+     *
+     * @param mixed $assoc Return as an associative array.  Default is to use stdClass.
+     *
+     * @return mixed
      */
     public function parseJSON($assoc = FALSE) {
 
