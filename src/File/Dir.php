@@ -238,7 +238,7 @@ class Dir {
 
                 if($recursive) {
 
-                    $dir = new Dir($sourcePath);
+                    $dir = new Dir($sourcePath, $this->backend);
 
                     $dir->copyTo($targetPath, $recursive, $transport_callback);
 
@@ -262,7 +262,13 @@ class Dir {
 
     public function get($child) {
 
-        return new \Hazaar\File($this->path($child));
+        return new \Hazaar\File($this->path($child), $this->backend);
+
+    }
+
+    public function dir($child) {
+
+        return new \Hazaar\File\Dir($this->path($child), $this->backend);
 
     }
 
