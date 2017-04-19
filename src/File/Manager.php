@@ -4,6 +4,16 @@ namespace Hazaar\File;
 
 class Manager {
 
+    static public  $default_config = array(
+        'enabled' => true,
+        'auth' => false,
+        'allow' => array(
+            'read' => false,    //Default disallow reads when auth enabled
+            'cmd'  => false    //Default disallow file manager commands
+        ),
+        'userdef' => array()
+    );
+
     static private $default_backend;
 
     static private $default_backend_options;
@@ -53,6 +63,26 @@ class Manager {
             $name = strtolower($backend);
 
         $this->name = $name;
+
+    }
+
+    /**
+     * Loads a Manager class by name as configured in media.json config
+     *
+     * @param mixed $name The name of the media source to load
+     */
+    static public function select($name){
+
+        $config = new \Hazaar\Application\Config('media');
+
+        if(!$config->has($name))
+            return false;
+
+        $source = new \Hazaar\Map(\Hazaar\File\Manager::$default_config, $config->get($name));
+
+        $manager = new \Hazaar\File\Manager($source->type, $source->get('options'), $name);
+
+        return $manager;
 
     }
 

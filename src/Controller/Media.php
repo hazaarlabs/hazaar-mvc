@@ -4,16 +4,6 @@ namespace Hazaar\Controller;
 
 class Media extends \Hazaar\Controller\Action {
 
-    static public  $default_config = array(
-        'enabled' => true,
-        'auth' => false,
-        'allow' => array(
-            'read' => false,    //Default disallow reads when auth enabled
-            'cmd'  => false    //Default disallow file manager commands
-        ),
-        'userdef' => array()
-    );
-
     private $allowPreview   = array(
         '/^image\//'
     );
@@ -57,7 +47,7 @@ class Media extends \Hazaar\Controller\Action {
 
     private function loadConfig() {
 
-        $defaults = array('global' =>  Media::$default_config);
+        $defaults = array('global' =>  \Hazaar\File\Manager::$default_config);
 
         $config = new \Hazaar\Application\Config('media', APPLICATION_ENV, $defaults);
 
@@ -65,7 +55,7 @@ class Media extends \Hazaar\Controller\Action {
             return false;
 
         foreach($config as $source)
-            $source->enhance(Media::$default_config);
+            $source->enhance(\Hazaar\File\Manager::$default_config);
 
         return $config;
 
