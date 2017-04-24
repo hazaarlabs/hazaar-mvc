@@ -99,16 +99,70 @@ class Dir {
 
     }
 
+    /**
+     * Delete the directory, optionally removing all it's contents.
+     *
+     * Executing this method will simply delete or "unlink" the directory.  Normally it must be empty
+     * to succeed.  However specifying the $recursive parameter as TRUE will delete everything inside
+     * the directory, recursively (obviously).
+     *
+     * @param mixed $recursive
+     * @return mixed
+     */
     public function delete($recursive = FALSE) {
 
         if($recursive) {
 
+            $org = $this->allow_hidden;
+
+            $this->allow_hidden = true;
+
+            $this->rewind();
+
             while($file = $this->read())
                 $file->unlink();
+
+            $this->allow_hidden = $org;
 
         }
 
         return $this->backend->rmdir($this->path);
+
+    }
+
+    /**
+     * Empty a directory of all it's contents.
+     *
+     * This is the same as calling delete(true) except that the directory itself is not deleted.
+     *
+     * By default hidden files are not deleted.  This is for protection.  You can choose to delete them
+     * as well by setting $include_hidden to true.
+     *
+     * @param mixed $include_hidden Also delete hidden files.
+     *
+     * @return boolean
+     */
+    public function empty($include_hidden = false){
+
+        $org = null;
+
+        if($include_hidden && !$this->allow_hidden){
+
+            $org = $this->allow_hidden;
+
+            $this->allow_hidden = true;
+
+        }
+
+        $this->rewind();
+
+        while($file = $this->read())
+            $file->unlink();
+
+        if($org !== null)
+            $this->allow_hidden = $org;
+
+        return true;
 
     }
 
@@ -269,6 +323,12 @@ class Dir {
     public function dir($child) {
 
         return new \Hazaar\File\Dir($this->path($child), $this->backend);
+
+    }
+
+    public function toArray(){
+
+        return $this->backend->scandir($this->path, null, $this->allow_hidden);
 
     }
 
