@@ -1793,6 +1793,9 @@ class Map implements \ArrayAccess, \Iterator {
      */
     public function fromDotNotation($array, $merge = FALSE) {
 
+        if(!is_array($array))
+            return false;
+
         $new = array();
 
         foreach($array as $idx => $value) {
@@ -1837,6 +1840,8 @@ class Map implements \ArrayAccess, \Iterator {
             $this->extend($new);
         else
             $this->populate($new);
+
+        return true;
 
     }
 
