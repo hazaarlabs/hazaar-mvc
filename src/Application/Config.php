@@ -194,7 +194,13 @@ class Config extends \Hazaar\Map {
 
             } elseif($key === 'import') {
 
-                if($file = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $values)) {
+                if(!\Hazaar\Map::is_array($values))
+                    $values = array($values);
+
+                foreach($values as $import_file){
+
+                    if(!($file = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $import_file)))
+                        continue;
 
                     $source = new \Hazaar\File($file);
 
@@ -203,7 +209,6 @@ class Config extends \Hazaar\Map {
 
                     elseif($source->extension() == 'ini')
                         $config->fromDotNotation(parse_ini_string($source->get_contents(), true, INI_SCANNER_RAW), true);
-
 
                 }
 
