@@ -273,7 +273,7 @@ abstract class Request implements Request\_Interface {
         if(! is_array($filter))
             $filter = array($filter);
 
-        return array_intersect_key($this->params, array_flip($filter));
+        return new \Hazaar\Map(array_intersect_key($this->params, array_flip($filter)));
 
     }
 
