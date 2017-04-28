@@ -677,18 +677,36 @@ class Map implements \ArrayAccess, \Iterator {
     }
 
     /**
-     * @detail      Pop an element off of the end of the Map
+     * Pop an element off of the Map
+     *
+     * This will by default pop an element off the end of an array.  However this method allows for
+     * an element key to be specified which will pop that specific element off the Map.
+     *
+     * @param       mixed $key Optionally specify the array element to pop off
      *
      * @since       1.0.0
      *
      * @return      mixed The element in the last position of the Map
      */
-    public function pop() {
+    public function pop($key = null) {
 
-        if($this->locked)
-            return FALSE;
+        if($key === null){
 
-        return array_pop($this->elements);
+            if($this->locked)
+                return FALSE;
+
+            return array_pop($this->elements);
+
+        }
+
+        if(!array_key_exists($key, $this->elements))
+            return false;
+
+        $value = $this->elements[$key];
+
+        unset($this->elements[$key]);
+
+        return $value;
 
     }
 
@@ -963,7 +981,7 @@ class Map implements \ArrayAccess, \Iterator {
         } elseif(! array_key_exists($key, $this->elements) && ! $this->locked) {
 
             if($create === false){
-                
+
                 $null = null;
 
                 return $null;

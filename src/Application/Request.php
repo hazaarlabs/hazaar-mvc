@@ -268,7 +268,7 @@ abstract class Request implements Request\_Interface {
     public function getParams($filter = NULL) {
 
         if($filter === NULL)
-            return $this->params;
+            return new \Hazaar\Map($this->params);
 
         if(! is_array($filter))
             $filter = array($filter);
