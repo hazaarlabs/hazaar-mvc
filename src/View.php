@@ -239,7 +239,7 @@ class View {
 
     }
 
-    public function populate(array $array) {
+    public function populate($array) {
 
         $this->_data = $array;
 
