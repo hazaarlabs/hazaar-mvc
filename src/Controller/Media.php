@@ -171,7 +171,7 @@ class Media extends \Hazaar\Controller\Action {
         if(! $file->exists())
             throw new \Exception('File not found!', 404);
 
-        $params = $this->request->getParams();
+        $params = $this->request->getParams()->toArray();
 
         /*
          * Check if we can offload this preview to the content provider.
