@@ -778,14 +778,20 @@ class View {
     /**
      * Display a Gravatar icon for a users email address.
      *
-     * @param mixed $address The email address to show the gravatar image for.
+     * @param string $address The email address to show the gravatar image for.
+     * @param string $default The default image to use if none is available.  This can be either a URL to a supported image, or one of gravatars built-in
+     *                        default images. See the "Default Image" section of https://en.gravatar.com/site/implement/images/ for available options.
+     *
      * @return \Hazaar\Html\Img An IMG object so that extra options can be applied.
      */
-    public function gravatar($address) {
+    public function gravatar($address, $default = null) {
 
-        $hash = md5($address);
+        $url = 'http://www.gravatar.com/avatar/' . md5($address);
 
-        return $this->html->img('http://www.gravatar.com/avatar/' . $hash, $address);
+        if($default)
+            $url .= '?d=' . urlencode($default);
+
+        return $this->html->img($url, $address);
 
     }
 
