@@ -26,8 +26,6 @@ abstract class Action extends \Hazaar\Controller {
 
     protected $cachedActions = array();
 
-    protected $cacheBackend  = 'session';
-
     private   $stream        = FALSE;
 
     public function __construct($name, $application, $use_app_config = true) {
@@ -52,10 +50,8 @@ abstract class Action extends \Hazaar\Controller {
 
     public function __registerMethod($name, $callback) {
 
-        if(array_key_exists($name, $this->methods)) {
-
+        if(array_key_exists($name, $this->methods))
             throw new Exception\MethodExists($name);
-        }
 
         $this->methods[$name] = $callback;
 
@@ -156,14 +152,14 @@ abstract class Action extends \Hazaar\Controller {
         if(! $method->isPublic())
             throw new Exception\ActionNotPublic(get_class($this), $action);
 
-        $response = NULL;
+        $response = null;
 
         /**
          * Check the cached actions to see if this requested should use a cached version
          */
         if(array_key_exists($action, $this->cachedActions)) {
 
-            $cache = new \Hazaar\Cache($this->cacheBackend);
+            $cache = new \Hazaar\Cache();
 
             $key = $this->name . '::' . $action;
 
@@ -196,16 +192,19 @@ abstract class Action extends \Hazaar\Controller {
                      */
                     $this->_helper->execAllHelpers($this, $response);
 
-                    if(isset($cache) && isset($key))
-                        $cache->set($key, $response);
+
 
                 }
 
             }
 
-            $response->setController($this);
+            if(isset($cache) && isset($key))
+                $cache->set($key, $response, $this->cachedActions[$action]);
 
         }
+
+        if($response instanceof Response)
+            $response->setController($this);
 
         return $response;
 

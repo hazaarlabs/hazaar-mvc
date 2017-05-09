@@ -27,21 +27,34 @@ abstract class Basic extends \Hazaar\Controller {
 
     private $action   = 'index';
 
-    private $javaMode = FALSE;
+    private $cachedActions = array();
+
+    public function cacheAction($action, $timeout = 60) {
+
+        /*
+         * To cache an action:
+         * * Caching library has to be installed
+         * * The method being cached must exist on the controller
+         * * The method must not already be set to cache
+         */
+        if(!class_exists('Hazaar\Cache')
+            || !method_exists($this, $action)
+            || array_key_exists($action, $this->cachedActions))
+            return false;
+
+        $this->cachedActions[$action] = $timeout;
+
+        return true;
+
+    }
 
     public function __initialize($request) {
 
-        if(! ($this->action = $request->getActionName())) {
-
+        if(! ($this->action = $request->getActionName()))
             $this->action = 'index';
 
-        }
-
-        if(method_exists($this, 'init')) {
-
+        if(method_exists($this, 'init'))
             $this->init($request);
-
-        }
 
     }
 
@@ -49,11 +62,8 @@ abstract class Basic extends \Hazaar\Controller {
 
         $args = array();
 
-        if($path = $this->application->request->getPath()) {
-
+        if($path = $this->application->request->getPath())
             $args = explode('/', $path);
-
-        }
 
         if(! method_exists($this, $this->action)) {
 
@@ -75,42 +85,48 @@ abstract class Basic extends \Hazaar\Controller {
 
         $method = new \ReflectionMethod($this, $this->action);
 
-        if(! $method->isPublic()) {
-
+        if(! $method->isPublic())
             throw new Exception\ActionNotPublic(get_class($this), $this->action);
 
-        }
+        $response = null;
 
-        $response = call_user_func_array(array(
-            $this,
-            $this->action
-        ), $args);
+        /**
+         * Check the cached actions to see if this requested should use a cached version
+         */
+        if(array_key_exists($this->action, $this->cachedActions)) {
 
-        if($this->javaMode || is_array($response)) {
+            $cache = new \Hazaar\Cache();
 
-            $response = new Response\Json($response);
+            $key = $this->name . '::' . $this->action;
 
-        } elseif(! is_object($response)) {
-
-            $response = new Response\Text($response);
+            $response = $cache->get($key, $args);
 
         }
 
-        if($response instanceof Response) {
+        if(!$response instanceof Response){
 
+            $response = call_user_func_array(array($this, $this->action), $args);
+
+            if(is_array($response)) {
+
+                $response = new Response\Json($response);
+
+            } elseif(! is_object($response)) {
+
+                $response = new Response\Text($response);
+
+            }
+
+            if(isset($cache) && isset($key))
+                $cache->set($key, $response, $this->cachedActions[$this->action]);
+
+        }
+
+        if($response instanceof Response)
             $response->setController($this);
-
-        }
 
         return $response;
 
     }
 
-    protected function enableJavaMode() {
-
-        $this->javaMode = TRUE;
-
-    }
-
 }
-
