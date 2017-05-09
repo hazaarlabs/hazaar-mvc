@@ -69,13 +69,29 @@ abstract class Action extends \Hazaar\Controller {
 
     }
 
+    public function cacheAction($action, $timeout = 60) {
+
+        /*
+         * To cache an action:
+         * * Caching library has to be installed
+         * * The method being cached must exist on the controller
+         * * The method must not already be set to cache
+         */
+        if(!class_exists('Hazaar\Cache')
+            || !method_exists($this, $action)
+            || array_key_exists($action, $this->cachedActions))
+            return false;
+
+        $this->cachedActions[$action] = $timeout;
+
+        return true;
+
+    }
+
     public function __call($method, $args) {
 
-        if(array_key_exists($method, $this->methods)) {
-
+        if(array_key_exists($method, $this->methods))
             return call_user_func_array($this->methods[$method], $args);
-
-        }
 
         throw new Exception\MethodNotFound(get_class($this), $method);
 
@@ -85,11 +101,8 @@ abstract class Action extends \Hazaar\Controller {
 
         throw new \Exception('Plugins not supported yet.  Called: ' . $plugin);
 
-        if(array_key_exists($plugin, $this->plugins)) {
-
+        if(array_key_exists($plugin, $this->plugins))
             return $this->plugins[$plugin];
-
-        }
 
         return NULL;
 
@@ -97,21 +110,15 @@ abstract class Action extends \Hazaar\Controller {
 
     public function __initialize($request) {
 
-        if(! ($this->action = $request->getActionName())) {
-
+        if(! ($this->action = $request->getActionName()))
             $this->action = 'index';
-
-        }
 
         if(method_exists($this, 'init')) {
 
             $ret = $this->init($request);
 
-            if($ret === FALSE) {
-
+            if($ret === FALSE)
                 throw new \Exception('Failed to initialize action controller! ' . get_class($this) . '::init() returned false!');
-
-            }
 
         }
 
@@ -123,11 +130,8 @@ abstract class Action extends \Hazaar\Controller {
 
         $action = $this->action;
 
-        if(($path = $this->application->request->getPath()) !== '') {
-
+        if(($path = $this->application->request->getPath()) !== '')
             $args = explode('/', $path);
-
-        }
 
         if(! method_exists($this, $action)) {
 
@@ -149,11 +153,8 @@ abstract class Action extends \Hazaar\Controller {
 
         $method = new \ReflectionMethod($this, $action);
 
-        if(! $method->isPublic()) {
-
+        if(! $method->isPublic())
             throw new Exception\ActionNotPublic(get_class($this), $action);
-
-        }
 
         $response = NULL;
 
@@ -195,17 +196,14 @@ abstract class Action extends \Hazaar\Controller {
                      */
                     $this->_helper->execAllHelpers($this, $response);
 
+                    if(isset($cache) && isset($key))
+                        $cache->set($key, $response);
+
                 }
 
             }
 
             $response->setController($this);
-
-            if(isset($cache) && isset($key)) {
-
-                $cache->set($key, $response);
-
-            }
 
         }
 

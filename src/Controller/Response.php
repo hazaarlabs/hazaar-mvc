@@ -13,13 +13,13 @@ abstract class Response implements Response\_Interface {
 
     protected $content;
 
-    private   $content_type = 'text/plain';
+    protected $content_type = 'text/plain';
 
-    private   $status_code;
+    protected $status_code;
 
     protected $controller;
 
-    private   $tidy         = FALSE;
+    protected $tidy         = FALSE;
 
     function __construct($type = "text/html", $status = 501) {
 
@@ -262,6 +262,12 @@ abstract class Response implements Response\_Interface {
         }
 
         echo $content;
+
+    }
+
+    public function __sleep(){
+
+        return array('content', 'content_type', 'headers', 'status_code', 'tidy');
 
     }
 

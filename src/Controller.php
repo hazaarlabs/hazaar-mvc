@@ -157,20 +157,6 @@ abstract class Controller implements Controller\_Interface {
 
     }
 
-    public function cacheAction($action, $timeout = 60) {
-
-        if(! array_key_exists($action, $this->cachedActions)) {
-
-            $this->cachedActions[$action] = $timeout;
-
-            return TRUE;
-
-        }
-
-        return FALSE;
-
-    }
-
     public function active($controller = NULL, $action = NULL) {
 
         if($controller instanceof Application\Url){
