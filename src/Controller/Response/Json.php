@@ -4,7 +4,7 @@ namespace Hazaar\Controller\Response;
 
 class Json extends \Hazaar\Controller\Response implements \ArrayAccess {
 
-    private $data = array();
+    protected $content = array();
 
     /*
      * If the callback is set, such as in a JSONP request, we use the callback to return
@@ -20,13 +20,13 @@ class Json extends \Hazaar\Controller\Response implements \ArrayAccess {
 
         parent::__construct("application/json", $status);
 
-        $this->data = $data;
+        $this->content = $data;
 
     }
 
     public function toArray() {
 
-        return $this->data;
+        return $this->content;
 
     }
 
@@ -38,7 +38,7 @@ class Json extends \Hazaar\Controller\Response implements \ArrayAccess {
 
     public function & get($key) {
 
-        return $this->data[$key];
+        return $this->content[$key];
 
     }
 
@@ -50,19 +50,19 @@ class Json extends \Hazaar\Controller\Response implements \ArrayAccess {
 
     public function set($key, $value) {
 
-        $this->data[$key] = $value;
+        $this->content[$key] = $value;
 
     }
 
     public function populate($data) {
 
-        $this->data = $data;
+        $this->content = $data;
 
     }
 
     public function push($data) {
 
-        $this->data[] = $data;
+        $this->content[] = $data;
 
     }
 
@@ -78,7 +78,7 @@ class Json extends \Hazaar\Controller\Response implements \ArrayAccess {
 
     public function getContent() {
 
-        $data = json_encode($this->data);
+        $data = json_encode($this->content);
 
         if($this->callback) {
 
@@ -94,14 +94,14 @@ class Json extends \Hazaar\Controller\Response implements \ArrayAccess {
 
     public function offsetExists($key) {
 
-        return array_key_exists($key, $this->data);
+        return array_key_exists($key, $this->content);
 
     }
 
     public function & offsetGet($key) {
 
-        if(array_key_exists($key, $this->data))
-            return $this->data[$key];
+        if(array_key_exists($key, $this->content))
+            return $this->content[$key];
 
         $null = NULL;
 
@@ -112,15 +112,15 @@ class Json extends \Hazaar\Controller\Response implements \ArrayAccess {
     public function offsetSet($key, $value) {
 
         if($key === NULL)
-            $this->data[] = $value;
+            $this->content[] = $value;
         else
-            $this->data[$key] = $value;
+            $this->content[$key] = $value;
 
     }
 
     public function offsetUnset($key) {
 
-        unset($this->data[$key]);
+        unset($this->content[$key]);
 
     }
 
