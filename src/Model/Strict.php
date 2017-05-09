@@ -276,8 +276,14 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         /*
          * Run any pre-read callbacks
          */
-        if ($run_callbacks && is_array($def) && array_key_exists('read', $def))
+        if ($run_callbacks && is_array($def) && array_key_exists('read', $def)){
+
             $value = $this->execCallback($def['read'], $value, $key);
+
+            if($type = ake($def, 'type'))
+                $this->convertType($value, $type);
+
+        }
 
         return $value;
 
@@ -315,7 +321,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     }
 
-    protected function convertType($value, $type) {
+    protected function convertType(&$value, $type) {
 
         if (in_array($type, Strict::$known_types)) {
 
@@ -425,7 +431,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
          * NOTE: Nulls are not converted as they may have special meaning.
          */
         if ($value !== NULL && array_key_exists('type', $def))
-            $value = $this->convertType($value, $def['type']);
+            $this->convertType($value, $def['type']);
 
         /*
          * NULL value check.
@@ -445,7 +451,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
             if (is_array($value)) {
 
                 foreach($value as & $subValue)
-                    $subValue = $this->convertType($subValue, $def['arrayOf']);
+                    $this->convertType($subValue, $def['arrayOf']);
 
             } else {
 
@@ -591,7 +597,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
             return null;
 
         if($arrayOf = ake($def, 'arrayOf'))
-            $item = $this->convertType($item, $arrayOf);
+            $this->convertType($item, $arrayOf);
 
         if(! (array_key_exists($key, $this->values) && is_array($this->values[$key])))
             $this->values[$key] = array();
