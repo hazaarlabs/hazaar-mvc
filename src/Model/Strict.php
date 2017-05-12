@@ -355,6 +355,10 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                 if ($value !== NULL)
                     $value = (string) $value;
 
+            } elseif ($type !== 'string' && ($value === '' || $value === 'null')){
+
+                $value = null;
+
             } elseif (!@settype($value, $type)) {
 
                 throw new Exception\InvalidDataType($type, get_class($value));
