@@ -97,6 +97,9 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $value = ake($item, 'value', $empty_val, true);
 
+                if(ake($item, 'empty', true) === false && $value == $empty_val)
+                    continue;
+
                 if(is_bool($value))
                     $value = ucfirst(strbool($value));
 
