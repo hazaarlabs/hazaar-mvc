@@ -1186,3 +1186,31 @@ if(!function_exists('money_format')){
     }
 
 }
+
+if (!function_exists('str_putcsv')) {
+
+    /**
+     * Convert an array into a CSV line.
+     *
+     * @param array $input
+     * @param string $delimiter Defaults to comma (,)
+     * @param string $enclosure Defaults to double quote (")
+     * @return string
+     */
+    function str_putcsv($input, $delimiter = ',', $enclosure = '"') {
+
+        $fp = fopen('php://temp', 'r+b');
+
+        fputcsv($fp, $input, $delimiter, $enclosure);
+
+        rewind($fp);
+
+        $data = rtrim(stream_get_contents($fp), "\n");
+
+        fclose($fp);
+
+        return $data;
+
+    }
+
+}
