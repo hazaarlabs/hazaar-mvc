@@ -82,8 +82,11 @@ class Protocol {
 
     public function getTypeName($type) {
 
+        if(!is_int($type))
+            return $this->error('Bad packet type!');
+
         if(! array_key_exists($type, $this->typeCodes))
-            return false;
+            return $this->error('Unknown packet type!');
 
         return $this->typeCodes[$type];
 
@@ -93,6 +96,9 @@ class Protocol {
 
         if(is_string($type))
             $type = array_search(strtoupper($type), $this->typeCodes);
+
+        if(!$type)
+            return false;
 
         $packet = array(
             'TYP' => $type,
@@ -113,9 +119,7 @@ class Protocol {
 
         $payload = null;
 
-        $packet = json_decode(($this->encoded ? base64_decode($packet) : $packet), true);
-
-        if(! $packet)
+        if(! ($packet = json_decode(($this->encoded ? base64_decode($packet) : $packet), true)))
             return $this->error('Packet decode failed');
 
         if(! is_array($packet))
