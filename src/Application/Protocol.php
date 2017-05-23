@@ -97,7 +97,7 @@ class Protocol {
         if(is_string($type))
             $type = array_search(strtoupper($type), $this->typeCodes);
 
-        if(!$type)
+        if($type === false)
             return false;
 
         $packet = array(
