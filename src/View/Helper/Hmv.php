@@ -318,7 +318,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                         foreach($data as $itemName => $itemValue){
 
-                            $checkbox = $this->html->input('checkbox', $name . '[' . $count . ']')->value($itemName);
+                            $checkbox = $this->html->input('checkbox', $name . '[' . $itemName . ']');
 
                             if(in_array($itemName, $values))
                                 $checkbox->checked(true);
