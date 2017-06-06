@@ -157,36 +157,4 @@ abstract class Controller implements Controller\_Interface {
 
     }
 
-    public function active($controller = NULL, $action = NULL) {
-
-        if($controller instanceof Application\Url){
-
-            $action = $controller->method;
-
-            $controller = $controller->controller;
-
-        }
-
-        if(is_array($controller)) {
-
-            $parts = $controller;
-
-            if(count($parts) > 0)
-                $controller = array_shift($parts);
-
-            if(count($parts) > 0)
-                $action = array_shift($parts);
-
-        }
-
-        if(! $controller)
-            $controller = $this->getName();
-
-        if(! $action)
-            $action = 'index';
-
-        return (strcasecmp($this->getName(), $controller) == 0 && strcasecmp($this->getAction(), $action) == 0);
-
-    }
-
 }
