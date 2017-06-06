@@ -14,17 +14,13 @@ namespace Hazaar\Controller;
  *
  * @detail      This controller handles actions and responses using views
  */
-abstract class Action extends \Hazaar\Controller {
+abstract class Action extends \Hazaar\Controller\Basic {
 
     public    $view;
 
     public    $_helper;
 
     protected $methods       = array();
-
-    protected $action        = 'index';
-
-    protected $cachedActions = array();
 
     private   $stream        = FALSE;
 
@@ -56,31 +52,6 @@ abstract class Action extends \Hazaar\Controller {
         $this->methods[$name] = $callback;
 
         return TRUE;
-
-    }
-
-    public function getAction() {
-
-        return $this->action;
-
-    }
-
-    public function cacheAction($action, $timeout = 60) {
-
-        /*
-         * To cache an action:
-         * * Caching library has to be installed
-         * * The method being cached must exist on the controller
-         * * The method must not already be set to cache
-         */
-        if(!class_exists('Hazaar\Cache')
-            || !method_exists($this, $action)
-            || array_key_exists($action, $this->cachedActions))
-            return false;
-
-        $this->cachedActions[$action] = $timeout;
-
-        return true;
 
     }
 
@@ -118,16 +89,16 @@ abstract class Action extends \Hazaar\Controller {
 
         }
 
+        if(($path = $this->application->request->getPath()) !== '')
+            $this->actionArgs = explode('/', $path);
+
     }
 
     public function __run() {
 
-        $args = array();
-
         $action = $this->action;
 
-        if(($path = $this->application->request->getPath()) !== '')
-            $args = explode('/', $path);
+        $args = $this->actionArgs;
 
         if(! method_exists($this, $action)) {
 

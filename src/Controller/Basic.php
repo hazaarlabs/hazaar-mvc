@@ -25,9 +25,11 @@ namespace Hazaar\Controller;
  */
 abstract class Basic extends \Hazaar\Controller {
 
-    private $action   = 'index';
+    protected $action        = 'index';
 
-    private $cachedActions = array();
+    protected $actionArgs    = array();
+
+    protected $cachedActions = array();
 
     public function cacheAction($action, $timeout = 60) {
 
@@ -45,6 +47,18 @@ abstract class Basic extends \Hazaar\Controller {
         $this->cachedActions[$action] = $timeout;
 
         return true;
+
+    }
+
+    public function getAction() {
+
+        return $this->action;
+
+    }
+
+    public function getActionArgs() {
+
+        return $this->actionArgs;
 
     }
 
@@ -126,6 +140,57 @@ abstract class Basic extends \Hazaar\Controller {
             $response->setController($this);
 
         return $response;
+
+    }
+
+    /**
+     * Test if a controller and action is active.
+     *
+     * @param mixed $controller
+     * @param mixed $action
+     * @return boolean
+     */
+    public function active($controller = NULL, $action = NULL) {
+
+        if($controller instanceof \Hazaar\Application\Url){
+
+            $action = $controller->method;
+
+            $controller = $controller->controller;
+
+        }
+
+        if(is_array($controller)) {
+
+            $parts = $controller;
+
+            if(count($parts) > 0)
+                $controller = array_shift($parts);
+
+            if(count($parts) > 0)
+                $action = array_shift($parts);
+
+        }
+
+        if(! $controller)
+            $controller = $this->getName();
+
+        if(! $action)
+            $action = 'index';
+
+        $params_match = true;
+
+        if(strpos($action, '/') > 0){
+
+            $args = explode('/', $action);
+
+            $action = array_shift($args);
+
+            $params_match = (count(array_intersect_assoc($args, $this->actionArgs)) > 0);
+
+        }
+
+        return (strcasecmp($this->getName(), $controller) == 0 && strcasecmp($this->getAction(), $action) == 0 && $params_match);
 
     }
 
