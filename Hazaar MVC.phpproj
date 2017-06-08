@@ -286,6 +286,7 @@
     <Compile Include="src\Controller\Exception\BrowserRootNotDefined.php" />
     <Compile Include="src\Controller\Exception\BrowserRootNotFound.php" />
     <Compile Include="src\Controller\Exception\HeadersSent.php" />
+    <Compile Include="src\File\GZFile.php" />
     <Compile Include="src\File\Exception\InvalidBackend.php" />
     <Compile Include="src\File\Exception\InternalFileNotFound.php" />
     <Compile Include="src\Controller\Exception\MethodExists.php" />

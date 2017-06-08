@@ -587,12 +587,12 @@ class File {
      *
      * @return string
      */
-    public function getss($length = null, $allowable_tags = null){
+    public function getss($allowable_tags = null){
 
         if(!$this->handle)
             return null;
 
-        return fgetss($this->handle, $length, $allowable_tags);
+        return strip_tags(fgets($this->handle), $allowable_tags);
 
     }
 
