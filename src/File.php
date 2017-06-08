@@ -599,7 +599,17 @@ class File {
     /**
      * Returns a line from the file pointer and parse for CSV fields
      *
-     * @return string
+     * @param mixed $length     Must be greater than the longest line (in characters) to be found in the CSV file
+     *                          (allowing for trailing line-end characters). Otherwise the line is split in chunks
+     *                          of length characters, unless the split would occur inside an enclosure.
+     *
+     *                          Omitting this parameter (or setting it to 0 in PHP 5.1.0 and later) the maximum
+     *                          line length is not limited, which is slightly slower.
+     * @param mixed $delimiter  The optional delimiter parameter sets the field delimiter (one character only).
+     * @param mixed $enclosure  The optional enclosure parameter sets the field enclosure character (one character only).
+     * @param mixed $escape     The optional escape parameter sets the escape character (one character only).
+     * 
+     * @return \array|null
      */
     public function getcsv($length = 0, $delimiter = ',', $enclosure = '"', $escape = '\\'){
 
@@ -607,6 +617,30 @@ class File {
             return null;
 
         return fgetcsv($this->handle, $length, $delimiter, $enclosure, $escape);
+
+    }
+
+    /**
+     * Writes an array to the file in CSV format.
+     *
+     * @param mixed $fields     Must be greater than the longest line (in characters) to be found in the CSV file
+     *                          (allowing for trailing line-end characters). Otherwise the line is split in chunks
+     *                          of length characters, unless the split would occur inside an enclosure.
+     *
+     *                          Omitting this parameter (or setting it to 0 in PHP 5.1.0 and later) the maximum
+     *                          line length is not limited, which is slightly slower.
+     * @param mixed $delimiter  The optional delimiter parameter sets the field delimiter (one character only).
+     * @param mixed $enclosure  The optional enclosure parameter sets the field enclosure character (one character only).
+     * @param mixed $escape     The optional escape parameter sets the escape character (one character only).
+     * 
+     * @return \integer|null
+     */
+    public function putcsv($fields, $delimiter = ',', $enclosure = '"', $escape = '\\'){
+
+        if(!($this->handle && is_array($fields)))
+            return null;
+
+        return fputcsv($this->handle, $fields, $delimiter, $enclosure, $escape);
 
     }
 
