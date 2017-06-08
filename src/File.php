@@ -587,12 +587,12 @@ class File {
      *
      * @return string
      */
-    public function getss(){
+    public function getss($length = null, $allowable_tags = null){
 
         if(!$this->handle)
             return null;
 
-        return fgetss($this->handle);
+        return fgetss($this->handle, $length, $allowable_tags);
 
     }
 
@@ -608,7 +608,7 @@ class File {
      * @param mixed $delimiter  The optional delimiter parameter sets the field delimiter (one character only).
      * @param mixed $enclosure  The optional enclosure parameter sets the field enclosure character (one character only).
      * @param mixed $escape     The optional escape parameter sets the escape character (one character only).
-     * 
+     *
      * @return \array|null
      */
     public function getcsv($length = 0, $delimiter = ',', $enclosure = '"', $escape = '\\'){
@@ -632,7 +632,7 @@ class File {
      * @param mixed $delimiter  The optional delimiter parameter sets the field delimiter (one character only).
      * @param mixed $enclosure  The optional enclosure parameter sets the field enclosure character (one character only).
      * @param mixed $escape     The optional escape parameter sets the escape character (one character only).
-     * 
+     *
      * @return \integer|null
      */
     public function putcsv($fields, $delimiter = ',', $enclosure = '"', $escape = '\\'){
