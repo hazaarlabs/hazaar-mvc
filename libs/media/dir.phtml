@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Index of <?=$this->path;?></title>
+
+    <style>
+        table th, table td { padding: 2px 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>
+        Index of <?=$this->path;?>
+    </h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Last Modified</th>
+                <th>Size</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php
+
+            echo $this->html->tr(array(
+                    $this->html->td($this->html->a($this->url(dirname($this->vpath)), '[parent]')),
+                    $this->html->td(),
+                    $this->html->td('-'),
+                    $this->html->td()
+                ));
+
+            while($file = $this->dir->read()){
+
+                echo $this->html->tr(array(
+                    $this->html->td($this->html->a($this->url($this->vpath . '/' . $file->basename()), $file->basename())),
+                    $this->html->td($this->datetime($file->mtime())),
+                    $this->html->td(str_bytes($file->size())),
+                    $this->html->td($file->get_meta('comment'))
+                ));
+            }
+            ?>
+        </tbody>
+    </table>
+</body>
+</html>

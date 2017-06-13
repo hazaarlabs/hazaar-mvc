@@ -222,7 +222,8 @@ class Dir {
 
         $list = array();
 
-        $dir = $this->backend->scandir($start, NULL, TRUE);
+        if(!($dir = $this->backend->scandir($start, NULL, TRUE)))
+            return null;
 
         foreach($dir as $file) {
 
