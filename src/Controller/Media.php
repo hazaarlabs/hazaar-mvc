@@ -20,6 +20,8 @@ class Media extends \Hazaar\Controller\Action {
 
     private $config;
 
+    private $file;
+
     public function init($request) {
 
         $this->request->getResponseType('json');
@@ -166,12 +168,31 @@ class Media extends \Hazaar\Controller\Action {
 
         $target = substr($target, $pos);
 
-        $file = $source->get($target);
+        $this->file = $source->get($target);
 
-        if(! $file->exists())
+        if(! $this->file->exists())
             throw new \Exception('File not found!', 404);
 
         $params = $this->request->getParams();
+
+        /*
+         * Run the media bootstrap file.
+         *
+         * The media bootstrap file can be used to run custom code when the media controller is
+         * being used.  Normally the media controller operates independently of the rest of the
+         * application.  This allows application defined code to be executed to either modify
+         * or restrict access to the controller.
+         */
+        $media_file = APPLICATION_PATH . DIRECTORY_SEPARATOR . $this->application->config->app->files['media'];
+
+        if(file_exists($media_file)){
+
+            $bootstrap = include($media_file);
+
+            if($bootstrap === FALSE)
+                throw new \Exception('Access to the requested file is restricted.', 401);
+
+        }
 
         /*
          * Check if we can offload this preview to the content provider.
@@ -182,10 +203,10 @@ class Media extends \Hazaar\Controller\Action {
          */
         if(count(array_intersect(array_keys($params), $this->cachableParams)) > 0) {
 
-            if($preview_uri = $file->preview_uri($params))
+            if($preview_uri = $this->file->preview_uri($params))
                 $this->redirect($preview_uri);
 
-        } else if($direct_uri = $file->direct_uri()) {
+        } else if($direct_uri = $this->file->direct_uri()) {
 
             $direct_uri = new \Hazaar\Http\Uri($direct_uri, $this->request->getParams());
 
@@ -193,143 +214,160 @@ class Media extends \Hazaar\Controller\Action {
 
         }
 
-        $response = new \Hazaar\Controller\Response\File($file);
+        if($this->file->is_dir()){
 
-        if(preg_match_array($this->allowPreview, $file->mime_content_type()) > 0)
-            $response = new \Hazaar\Controller\Response\Image($file);
+            $response = new \Hazaar\Controller\Response\View('@media/dir');
 
-        if($this->request->has('download') && boolify($this->request->download))
-            $response->setDownloadable(TRUE);
+            $response->path = $this->file->fullpath();
 
-        if(count(array_intersect(array_keys($params), $this->cachableParams)) > 0) {
+            $response->vpath = $this->request->getRawPath();
 
-            $cache_dir = NULL;
+            $dir = $this->file->dir();
 
-            $cache = ($this->config[$source->name]->has('cache') ? $this->config[$source->name]->cache : $this->global_cache);
+            $response->dir = $this->file->dir();
 
-            if($cache = boolify($this->request->get('cache', $cache))) {
 
-                try {
+        }else{
 
-                    $cache_dir = $this->application->runtimePath('imagecache', TRUE);
+            $response = new \Hazaar\Controller\Response\File($this->file);
 
-                }
-                catch(Exception $e) {
+            if(preg_match_array($this->allowPreview, $this->file->mime_content_type()) > 0)
+                $response = new \Hazaar\Controller\Response\Image($this->file);
 
-                    $cache = FALSE;
+            if($this->request->has('download') && boolify($this->request->download))
+                $response->setDownloadable(TRUE);
 
-                }
+            if(count(array_intersect(array_keys($params), $this->cachableParams)) > 0) {
 
-            }
+                $cache_dir = NULL;
 
-            $hash = md5($file->fullpath() . '-' . json_encode($params));
+                $cache = ($this->config[$source->name]->has('cache') ? $this->config[$source->name]->cache : $this->global_cache);
 
-            $cache_file = $cache_file = $cache_dir . '/' . $hash;
+                if($cache = boolify($this->request->get('cache', $cache))) {
 
-            /**
-             * Check the cache first for an image with these same request params.
-             */
-            if($cache && file_exists($cache_file) && filesize($cache_file) > 0) {
+                    try {
 
-                $response->setLastModified(filemtime($cache_file));
+                        $cache_dir = $this->application->runtimePath('imagecache', TRUE);
 
-                //If the file has been modified, setUnmodified will return false because a 304 header is not set so we must load the content
-                if($response->setUnmodified($this->request->getHeader('If-Modified-Since')) === false){
+                    }
+                    catch(Exception $e) {
 
-                    $response->setHeader('X-Media-Cached', 'true');
-
-                    $response->setContent(file_get_contents($cache_file));
-
-                    $response->setContentType(file_get_contents($cache_file . '.info'));
-
-                }
-
-            } else {
-
-                $params['ratio'] = ($this->request->has('ratio') ? $this->request->ratio : NULL);
-
-                if($this->request->has('format'))
-                    $response->setFormat($this->request->format);
-
-                if($thumbnail = $file->thumbnail($params)) {
-
-                    $response->setContent($thumbnail);
-
-                } else {
-
-                    switch($file->mime_content_type()) {
-                        case 'application/pdf':
-                        case 'image/svg+xml':
-
-                            if(! in_array('imagick', get_loaded_extensions()))
-                                throw new \Exception('Not supported', 406);
-
-                            $temp_dir = $this->application->runtimePath('temp', TRUE);
-
-                            $temp_file = $temp_dir . '/' . $hash;
-
-                            file_put_contents($temp_file, $file->get_contents());
-
-                            $pdf = new \Imagick($temp_file . '[0]');
-
-                            $pdf->setResolution(300, 300);
-
-                            $pdf->setImageFormat('png');
-
-                            $response->setContent($pdf->getImageBlob());
-
-                            unlink($temp_file);
-
-                            break;
-
-                        default:
-
-                            if($quality = ake($params, 'quality'))
-                                $response->quality(intval($quality));
-
-                            $xwidth = intval(ake($params, 'xwidth'));
-
-                            $xheight = intval(ake($params, 'xheight'));
-
-                            if($xwidth > 0 || $xheight > 0)
-                                $response->expand($xwidth, $xheight, ake($params, 'align'), ake($params, 'xoffsettop'), ake($params, 'xoffsetleft'));
-
-                            $width = intval(ake($params, 'width'));
-
-                            $height = intval(ake($params, 'height'));
-
-                            if($width > 0 || $height > 0) {
-
-                                $align = $this->request->get('align', (boolify(ake($params, 'center', 'false')) ? 'center' : NULL));
-
-                                $response->resize($width, $height, boolify(ake($params, 'crop', FALSE)), $align, boolify(ake($params, 'aspect', TRUE)), ! boolify(ake($params, 'enlarge')), ake($params, 'ratio'), intval(ake($params, 'offsettop')), intval(ake($params, 'offsetleft')));
-
-                            }
-
-                            if($filter = ake($params, 'filter'))
-                                $response->filter($filter);
-
-                            break;
+                        $cache = FALSE;
 
                     }
 
                 }
 
-                if($cache && is_writable($cache_dir)) {
+                $hash = md5($this->file->fullpath() . '-' . json_encode($params));
 
-                    file_put_contents($cache_file, $response->getContent());
+                $cache_file = $cache_file = $cache_dir . '/' . $hash;
 
-                    file_put_contents($cache_file . '.info', $response->getContentType());
+                /**
+                 * Check the cache first for an image with these same request params.
+                 */
+                if($cache && file_exists($cache_file) && filesize($cache_file) > 0) {
+
+                    $response->setLastModified(filemtime($cache_file));
+
+                    //If the file has been modified, setUnmodified will return false because a 304 header is not set so we must load the content
+                    if($response->setUnmodified($this->request->getHeader('If-Modified-Since')) === false){
+
+                        $response->setHeader('X-Media-Cached', 'true');
+
+                        $response->setContent(file_get_contents($cache_file));
+
+                        $response->setContentType(file_get_contents($cache_file . '.info'));
+
+                    }
+
+                } else {
+
+                    $params['ratio'] = ($this->request->has('ratio') ? $this->request->ratio : NULL);
+
+                    if($this->request->has('format'))
+                        $response->setFormat($this->request->format);
+
+                    if($thumbnail = $this->file->thumbnail($params)) {
+
+                        $response->setContent($thumbnail);
+
+                    } else {
+
+                        switch($this->file->mime_content_type()) {
+                            case 'application/pdf':
+                            case 'image/svg+xml':
+
+                                if(! in_array('imagick', get_loaded_extensions()))
+                                    throw new \Exception('Not supported', 406);
+
+                                $temp_dir = $this->application->runtimePath('temp', TRUE);
+
+                                $temp_file = $temp_dir . '/' . $hash;
+
+                                file_put_contents($temp_file, $this->file->get_contents());
+
+                                $pdf = new \Imagick($temp_file . '[0]');
+
+                                $pdf->setResolution(300, 300);
+
+                                $pdf->setImageFormat('png');
+
+                                $response->setContent($pdf->getImageBlob());
+
+                                unlink($temp_file);
+
+                                break;
+
+                            default:
+
+                                if($quality = ake($params, 'quality'))
+                                    $response->quality(intval($quality));
+
+                                $xwidth = intval(ake($params, 'xwidth'));
+
+                                $xheight = intval(ake($params, 'xheight'));
+
+                                if($xwidth > 0 || $xheight > 0)
+                                    $response->expand($xwidth, $xheight, ake($params, 'align'), ake($params, 'xoffsettop'), ake($params, 'xoffsetleft'));
+
+                                $width = intval(ake($params, 'width'));
+
+                                $height = intval(ake($params, 'height'));
+
+                                if($width > 0 || $height > 0) {
+
+                                    $align = $this->request->get('align', (boolify(ake($params, 'center', 'false')) ? 'center' : NULL));
+
+                                    $response->resize($width, $height, boolify(ake($params, 'crop', FALSE)), $align, boolify(ake($params, 'aspect', TRUE)), ! boolify(ake($params, 'enlarge')), ake($params, 'ratio'), intval(ake($params, 'offsettop')), intval(ake($params, 'offsetleft')));
+
+                                }
+
+                                if($filter = ake($params, 'filter'))
+                                    $response->filter($filter);
+
+                                break;
+
+                        }
+
+                    }
+
+                    if($cache && is_writable($cache_dir)) {
+
+                        file_put_contents($cache_file, $response->getContent());
+
+                        file_put_contents($cache_file . '.info', $response->getContentType());
+
+                    }
+
+                    $response->setLastModified(time());
 
                 }
 
-                $response->setLastModified(time());
+            }else{
+
+                $response->setUnmodified($this->request->getHeader('If-Modified-Since'));
 
             }
-
-        }else{
-
-            $response->setUnmodified($this->request->getHeader('If-Modified-Since'));
 
         }
 
