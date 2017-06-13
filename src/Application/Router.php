@@ -17,11 +17,8 @@ class Router {
 
     function __construct($route_file) {
 
-        if(! file_exists($route_file)) {
-
+        if(! file_exists($route_file))
             throw new \Exception('Routing file does not exist!');
-
-        }
 
         $this->file = $route_file;
 

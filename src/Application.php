@@ -119,7 +119,13 @@ class Application {
             'app' => array(
                 'defaultController' => 'Index',
                 'favicon' => 'favicon.png',
-                'timezone' => 'UTC'
+                'timezone' => 'UTC',
+                'files' => array(
+                    'bootstrap' => 'bootstrap.php',
+                    'shutdown' => 'shutdown.php',
+                    'route' => 'route.php',
+                    'media' => 'media.php'
+                )
             ),
             'paths' => array(
                 'model' => 'models',
@@ -198,7 +204,7 @@ class Application {
      */
     function __destruct() {
 
-        $shutdown = APPLICATION_PATH . '/shutdown.php';
+        $shutdown = APPLICATION_PATH . DIRECTORY_SEPARATOR . $this->config->app->files['shutdown'];
 
         if(file_exists($shutdown))
             include ($shutdown);
@@ -418,11 +424,11 @@ class Application {
             /*
              * Check for an application bootstrap file and execute it
              */
-            $bootstrap = APPLICATION_PATH . '/bootstrap.php';
+            $bootstrap = APPLICATION_PATH . DIRECTORY_SEPARATOR . $this->config->app->files['bootstrap'];
 
             if(file_exists($bootstrap)) {
 
-                $this->bootstrap = include ($bootstrap);
+                $this->bootstrap = include($bootstrap);
 
                 if($this->bootstrap === FALSE)
                     throw new \Exception('The application failed to start!');
