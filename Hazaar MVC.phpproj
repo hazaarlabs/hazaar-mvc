@@ -631,7 +631,7 @@
     <Folder Include="libs\dropzone\" />
     <Folder Include="libs\dropzone\css\" />
     <Folder Include="libs\dropzone\images\" />
-    <Folder Include="libs\Error\" />
+    <Folder Include="libs\error\" />
     <Folder Include="libs\geshi\" />
     <Folder Include="libs\geshi\contrib\" />
     <Folder Include="libs\geshi\docs\" />
@@ -656,6 +656,7 @@
     <Folder Include="libs\jqWidgets\styles\images\start\" />
     <Folder Include="libs\jqWidgets\styles\images\sunny\" />
     <Folder Include="libs\js\" />
+    <Folder Include="libs\media\" />
     <Folder Include="libs\text\" />
     <Folder Include="src\" />
     <Folder Include="src\Application\" />
@@ -745,9 +746,9 @@
     <Content Include="libs\dropzone\dropzone.js" />
     <Content Include="libs\dropzone\images\spritemap%402x.png" />
     <Content Include="libs\dropzone\images\spritemap.png" />
-    <Content Include="libs\Error\Error.css" />
-    <Content Include="libs\Error\Error.phtml" />
-    <Content Include="libs\Error\hazaarlogo.svg" />
+    <Content Include="libs\error\Error.css" />
+    <Content Include="libs\error\Error.phtml" />
+    <Content Include="libs\error\hazaarlogo.svg" />
     <Content Include="libs\favicon.png" />
     <Content Include="libs\geshi\docs\api\blank.html" />
     <Content Include="libs\geshi\docs\api\classtrees_geshi.html" />
@@ -1193,6 +1194,7 @@
     <Content Include="libs\js\hazaar.js" />
     <Content Include="libs\js\jquery-helper.js" />
     <Content Include="libs\js\pdfobject.js" />
+    <Content Include="libs\media\dir.phtml" />
     <Content Include="libs\mime.types" />
     <Content Include="LICENCE.md" />
     <Content Include="phpunit.xml" />
