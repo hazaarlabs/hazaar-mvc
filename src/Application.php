@@ -204,7 +204,7 @@ class Application {
      */
     function __destruct() {
 
-        $shutdown = APPLICATION_PATH . DIRECTORY_SEPARATOR . $this->config->app->files['shutdown'];
+        $shutdown = APPLICATION_PATH . DIRECTORY_SEPARATOR . ake($this->config->app->files, 'shutdown', 'shutdown.php');
 
         if(file_exists($shutdown))
             include ($shutdown);
@@ -424,7 +424,7 @@ class Application {
             /*
              * Check for an application bootstrap file and execute it
              */
-            $bootstrap = APPLICATION_PATH . DIRECTORY_SEPARATOR . $this->config->app->files['bootstrap'];
+            $bootstrap = APPLICATION_PATH . DIRECTORY_SEPARATOR . ake($this->config->app->files, 'bootstrap', 'bootstrap.php');
 
             if(file_exists($bootstrap)) {
 

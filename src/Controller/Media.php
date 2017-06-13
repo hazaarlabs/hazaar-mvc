@@ -183,7 +183,7 @@ class Media extends \Hazaar\Controller\Action {
          * application.  This allows application defined code to be executed to either modify
          * or restrict access to the controller.
          */
-        $media_file = APPLICATION_PATH . DIRECTORY_SEPARATOR . $this->application->config->app->files['media'];
+        $media_file = APPLICATION_PATH . DIRECTORY_SEPARATOR . ake($this->application->config->app->files, 'media', 'media.php');
 
         if(file_exists($media_file)){
 
