@@ -123,7 +123,7 @@ abstract class Request implements Request\_Interface {
 
         $result = TRUE;
 
-        $route = APPLICATION_PATH . DIRECTORY_SEPARATOR . $this->config->app->files['route'];
+        $route = APPLICATION_PATH . DIRECTORY_SEPARATOR . ake($this->config->app->files, 'route', 'route.php');
 
         if(file_exists($route)) {
 
