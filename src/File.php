@@ -185,7 +185,7 @@ class File {
     public function dir() {
 
         if($this->is_dir())
-            return new File\Dir($this->source_file);
+            return new File\Dir($this->source_file, $this->backend);
 
         return FALSE;
 
@@ -501,7 +501,7 @@ class File {
 
             if(preg_match('/' . $filename . '/', $name)){
 
-                $file = new File($filename);
+                $file = new File($filename, $this->backend);
 
                 $file->set_contents(zip_entry_read($zip_entry, zip_entry_filesize($zip_entry)));
 
