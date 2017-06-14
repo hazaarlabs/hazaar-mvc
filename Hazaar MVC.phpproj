@@ -518,7 +518,6 @@
     <Compile Include="src\Map.php" />
     <Compile Include="src\Model\Email.php" />
     <Compile Include="src\Model\Exception\BadFieldDefinition.php" />
-    <Compile Include="src\Model\Exception\Default.php" />
     <Compile Include="src\Model\Exception\FieldUndefined.php" />
     <Compile Include="src\Model\Exception\InitMissing.php" />
     <Compile Include="src\Model\Exception\InvalidDataType.php" />
