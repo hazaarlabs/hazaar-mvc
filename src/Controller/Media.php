@@ -146,7 +146,7 @@ class Media extends \Hazaar\Controller\Action {
         $pos = strpos($target, '/');
 
         if(! ($sourceName = substr($target, 0, $pos)))
-            throw new \Exception('Bad Request!', 400);
+            $sourceName = $target;
 
         $source = $this->connector->source($sourceName);
 
@@ -166,7 +166,10 @@ class Media extends \Hazaar\Controller\Action {
 
         }
 
-        $target = substr($target, $pos);
+        if($pos === false)
+            $target = '/';
+        else
+            $target = substr($target, $pos);
 
         $this->file = $source->get($target);
 
@@ -218,14 +221,17 @@ class Media extends \Hazaar\Controller\Action {
 
             $response = new \Hazaar\Controller\Response\View('@media/dir');
 
+            $response->source = $source->name;
+
             $response->path = $this->file->fullpath();
 
             $response->vpath = $this->request->getRawPath();
 
+            $response->root = ($this->file->fullpath() == '/');
+
             $dir = $this->file->dir();
 
             $response->dir = $this->file->dir();
-
 
         }else{
 
