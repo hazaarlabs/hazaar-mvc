@@ -221,7 +221,7 @@ class Media extends \Hazaar\Controller\Action {
 
             $response = new \Hazaar\Controller\Response\View('@media/dir');
 
-            $response->source = $source->name;
+            $response->source = $source->getOption('name');
 
             $response->path = $this->file->fullpath();
 
