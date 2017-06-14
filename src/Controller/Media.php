@@ -219,6 +219,9 @@ class Media extends \Hazaar\Controller\Action {
 
         if($this->file->is_dir()){
 
+            if($this->config->global->allow['dir'] !== true)
+                throw new \Exception('Directory listings are currently disabled.', 403);
+
             $response = new \Hazaar\Controller\Response\View('@media/dir');
 
             $response->source = $source->getOption('name');
