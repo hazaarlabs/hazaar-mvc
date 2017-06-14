@@ -9,7 +9,8 @@ class Manager {
         'auth' => false,
         'allow' => array(
             'read' => false,    //Default disallow reads when auth enabled
-            'cmd'  => false    //Default disallow file manager commands
+            'cmd'  => false,    //Default disallow file manager commands
+            'dir' => true       //Allow directory listings
         ),
         'userdef' => array()
     );
