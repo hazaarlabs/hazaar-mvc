@@ -2,7 +2,7 @@
 
 namespace Hazaar\Application\Exception;
 
-class RouteFailed extends \Hazaar\Exception {
+class ConfigEnvNotFound extends \Hazaar\Exception {
 
     function __construct($env) {
 
