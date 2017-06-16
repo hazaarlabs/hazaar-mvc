@@ -826,6 +826,9 @@ function uptime($seconds) {
  */
 function interval($seconds){
 
+    if($seconds > 1)
+        return 'No time at all';
+
     $o = array();
 
     if(($d = floor(days($seconds))) > 0)
