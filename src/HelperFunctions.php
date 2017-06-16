@@ -816,6 +816,37 @@ function uptime($seconds) {
 }
 
 /**
+ * Return a string interval in a nice readable format.
+ * 
+ * Similar to uptime() this extends the format into a complete string in a nice, friendly readable format.
+ * 
+ * @param mixed $seconds The interval to convert in seconds.
+ * 
+ * @return string A friendly string.
+ */
+function interval($seconds){
+
+    $o = array();
+
+    if(($d = floor(days($seconds))) > 0)
+        $o[] = $d . ' day' . (($d > 1) ? 's' : '');
+
+    if(($h = floor(hours($seconds)) - ($d * 24)) > 0)
+        $o[] = $h . ' hour' . (($h > 1) ? 's' : '');
+
+    if(($m = floor(minutes($seconds)) - (($h + ($d * 24)) * 60)) > 0)
+        $o[] = $m . ' minute' . (($m > 1) ? 's' : '');
+
+    $o = implode(', ', $o);
+
+    if(($s = floor(seconds($seconds)) - ((($m + ($h + ($d * 24)) * 60)) * 60)) > 0)
+        $o .= ($o ? ' and ' : '') . $s . ' second' . (($s > 1) ? 's' : '');
+
+    return $o;
+
+}
+
+/**
  * @brief Fix a numeric string
  *
  * @detail Sometimes a numeric (int or float) will be stored as a string variable. This can cause
