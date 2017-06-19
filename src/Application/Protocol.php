@@ -45,6 +45,7 @@ class Protocol {
         0x10 => 'EXEC',         //Execute some code in the Warlock Runner.
         0x11 => 'PING',         //Typical PING
         0x12 => 'PONG',         //Typical PONG
+        0x13 => 'LOG',          //Generic log message
         0x99 => 'DEBUG'
     );
 
