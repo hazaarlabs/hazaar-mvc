@@ -67,12 +67,25 @@ class Protocol {
 
     }
 
+    /**
+     * Checks that a protocol message type is valid and returns it's numeric value
+     *
+     * @param mixed $type If $type is a string, it is checked and if valid then it's numeric value is returned.  If $type is
+     *                      an integer it will be returned back if valid.  If either is not valid then false is returned.
+     * @return mixed The integer value of the message type. False if the type is not valid.
+     */
     public function check($type){
 
-        if(is_int($type))
-            return array_key_exists($type, $this->typeCodes);
+        if(is_int($type)){
 
-        return in_array(strtoupper($type), $this->typeCodes);
+            if(array_key_exists($type, $this->typeCodes))
+                return $type;
+
+            return false;
+
+        }
+
+        return array_search(strtoupper($type), $this->typeCodes, true);
 
     }
 
@@ -104,10 +117,7 @@ class Protocol {
 
     public function encode($type, $payload = array()) {
 
-        if(is_string($type))
-            $type = array_search(strtoupper($type), $this->typeCodes);
-
-        if($type === false)
+        if(($type = $this->check($type)) === false)
             return false;
 
         $packet = array(
