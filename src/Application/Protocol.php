@@ -67,6 +67,15 @@ class Protocol {
 
     }
 
+    public function check($type){
+
+        if(is_int($type))
+            return array_key_exists($type, $this->typeCodes);
+
+        return in_array(strtoupper($type), $this->typeCodes);
+
+    }
+
     private function error($msg) {
 
         $this->last_error = $msg;
