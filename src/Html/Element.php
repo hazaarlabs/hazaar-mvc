@@ -84,13 +84,18 @@ abstract class Element implements _Interface {
      * @return      \\Hazaar\\Html\Element Returns a ref to self.
      *
      */
-    public function attr($key, $value = NULL) {
+    public function attr() {
+
+        if(func_num_args() == 0)
+            return null;
+
+        if(func_num_args() == 1)
+            return $this->parameters->get(func_get_arg(0));
+
+        list($key, $value) = func_get_args();
 
         if(! $this->parameters instanceof Parameters)
             $this->parameters = new Parameters();
-
-        if($value === NULL)
-            return $this->parameters->get($key);
 
         $this->parameters->set($key, $value);
 
@@ -255,9 +260,7 @@ abstract class Element implements _Interface {
 
         } else {
 
-            $this->parameters->set($method);
-
-            return $this;
+            return $this->attr($method);
 
         }
 
