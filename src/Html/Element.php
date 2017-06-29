@@ -97,7 +97,10 @@ abstract class Element implements _Interface {
         if(! $this->parameters instanceof Parameters)
             $this->parameters = new Parameters();
 
-        $this->parameters->set($key, $value);
+        if($value === null)
+            $this->parameters->remove($key);
+        else
+            $this->parameters->set($key, $value);
 
         return $this;
 
@@ -260,7 +263,9 @@ abstract class Element implements _Interface {
 
         } else {
 
-            return $this->attr($method);
+            $this->parameters->set($method);
+
+            return $this;
 
         }
 
