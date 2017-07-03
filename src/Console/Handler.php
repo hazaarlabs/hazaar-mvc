@@ -27,7 +27,22 @@ class Handler {
 
     public function authenticated(){
 
-        return ake($_SESSION, $this->session_key);
+        if(ake($_SESSION, $this->session_key))
+            return true;
+
+        $headers = hazaar_request_headers();
+
+        if(!($authorization = ake($headers, 'Authorization')))
+            return false;
+
+        list($method, $code) = explode(' ', $authorization);
+
+        if(strtolower($method) != 'basic')
+            throw new \Exception('Unsupported authorization method: ' . $method);
+
+        list($identity, $credential) = explode(':', base64_decode($code));
+
+        return $this->authenticate($identity, $credential);
 
     }
 
@@ -156,7 +171,7 @@ class Handler {
 
     }
 
-    public function  moduleExists($name){
+    public function moduleExists($name){
 
         return array_key_exists($name, $this->modules);
 
