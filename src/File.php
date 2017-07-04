@@ -738,4 +738,12 @@ class File {
 
     }
 
+    static public function delete($path){
+
+        $file = new File($path);
+
+        return $file->unlink();
+
+    }
+
 }
