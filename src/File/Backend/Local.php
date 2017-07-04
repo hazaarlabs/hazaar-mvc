@@ -398,7 +398,7 @@ class Local implements _Interface {
         if($path == DIRECTORY_SEPARATOR)
             return TRUE;
 
-        if($handle)
+        if(isset($handle))
             closedir($handle);
 
         return rmdir($realPath);
