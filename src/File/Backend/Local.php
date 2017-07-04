@@ -247,7 +247,7 @@ class Local implements _Interface {
 
         $realPath = $this->resolvePath($path);
 
-        if(file_exists($realPath) && ! is_dir($realPath)) {
+        if((file_exists($realPath) || is_link($realPath)) && ! is_dir($realPath)) {
 
             $ret = unlink($realPath);
 
@@ -366,10 +366,6 @@ class Local implements _Interface {
         if(! is_dir($realPath))
             return FALSE;
 
-        //Hack to get PHP on windows to let go of the now empty directory so that we can remove it
-        if(substr(PHP_OS, 0, 3) == 'WIN')
-            $handle = opendir($realPath);
-
         if($recurse) {
 
             $dir = $this->scandir($path, NULL, TRUE);
@@ -398,8 +394,10 @@ class Local implements _Interface {
         if($path == DIRECTORY_SEPARATOR)
             return TRUE;
 
-        if(isset($handle))
-            closedir($handle);
+        //Hack to get PHP on windows to let go of the now empty directory so that we can remove it
+        $handle = opendir($realPath);
+
+        closedir($handle);
 
         return rmdir($realPath);
 
