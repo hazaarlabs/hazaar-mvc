@@ -706,9 +706,11 @@
     <Content Include="libs\console\css\phpinfo.css" />
     <Content Include="libs\console\css\popup.css" />
     <Content Include="libs\console\js\configs.js" />
+    <Content Include="libs\console\js\application.js" />
     <Content Include="libs\console\js\console.js" />
     <Content Include="libs\console\controllers.phtml" />
     <Content Include="libs\console\configs.phtml" />
+    <Content Include="libs\console\js\popup.js" />
     <Content Include="libs\console\login.phtml" />
     <Content Include="libs\console\system.phtml" />
     <Content Include="libs\console\models.phtml" />
