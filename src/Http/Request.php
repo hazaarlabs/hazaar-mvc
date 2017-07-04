@@ -12,13 +12,13 @@ class Request extends \Hazaar\Map {
         'Connection'   => 'close'
     );
 
-    public  $raw_uri;
+    private  $raw_uri;
 
-    public  $uri;
+    private  $uri;
 
-    public  $fsock_host;
+    private  $fsock_host;
 
-    public  $body    = NULL;
+    private  $body    = NULL;
 
     function __construct($uri = NULL, $method = 'GET', $content_type = NULL) {
 
@@ -41,52 +41,62 @@ class Request extends \Hazaar\Map {
 
         $this->setHeader('Content-Type', $content_type);
 
-        if($uri !== NULL) {
+        $this->uri($uri);
 
-            $this->raw_uri = $uri;
+        //Check for cached cookies
+        if($this->uri){
 
-            $this->uri = ($uri instanceof Uri) ? $uri : new Uri($uri);
+            if($path = \Hazaar\Application::getInstance()->runtimePath('cache')){
 
-            /**
-             * !!NOTE!!
-             * This is a hack to prevent bad hosts from throwing a FATAL error when trying to connect to them.
-             * I don't know why a FATAL error is thrown just because host we're connecting to is not found, but this
-             * will check that the hostname exists first before trying to continue.
-             */
-            if(ip2long(gethostbyname($this->uri->host())) == false)
-                throw new Exception\HostNotFound($this->uri->host());
+                $cache_file = $path . DIRECTORY_SEPARATOR . 'http_cookie_' . $this->uri->host();
 
-            //If the protocol ends in s, we're going to assume it is meant for SSL
-            if($this->uri->isSecure()) {
+                if(file_exists($cache_file)){
 
-                $this->fsock_host = 'ssl://' . $this->uri->host() . ':' . $this->uri->port();
+                    $cookie = file_get_contents($cache_file);
 
-            } else {
-
-                $this->fsock_host = 'tcp://' . $this->uri->host() . ':' . $this->uri->port();
-
-            }
-
-            $this->setHeader('Host', $this->uri->host());
-
-        }
-
-        if($this->uri) {
-
-            //Check for cached cookies
-            $cache = new \Hazaar\Cache('file');
-
-            if(($cookie = $cache->get('http_cookie_' . $this->uri->host())) != FALSE) {
-
-                if($this->useCookie($cookie)) {
-
-                    $this->setHeader('Cookie', $cookie);
+                    if($this->useCookie($cookie))
+                        $this->setHeader('Cookie', $cookie);
 
                 }
 
             }
 
         }
+
+    }
+
+    public function uri($uri = null){
+
+        if($uri === NULL)
+            return $this->uri;
+
+        $this->raw_uri = $uri;
+
+        $this->uri = ($uri instanceof Uri) ? $uri : new Uri($uri);
+
+        /**
+         * !!NOTE!!
+         * This is a hack to prevent bad hosts from throwing a FATAL error when trying to connect to them.
+         * I don't know why a FATAL error is thrown just because host we're connecting to is not found, but this
+         * will check that the hostname exists first before trying to continue.
+         */
+        if(ip2long(gethostbyname($this->uri->host())) == false)
+            throw new Exception\HostNotFound($this->uri->host());
+
+        //If the protocol ends in s, we're going to assume it is meant for SSL
+        if($this->uri->isSecure()) {
+
+            $this->fsock_host = 'ssl://' . $this->uri->host() . ':' . $this->uri->port();
+
+        } else {
+
+            $this->fsock_host = 'tcp://' . $this->uri->host() . ':' . $this->uri->port();
+
+        }
+
+        $this->setHeader('Host', $this->uri->host());
+
+        return $this->uri;
 
     }
 
@@ -154,6 +164,12 @@ class Request extends \Hazaar\Map {
             $this->body = array();
 
         $this->body[] = $part;
+
+    }
+
+    public function getHost(){
+
+        return $this->fsock_host;
 
     }
 
