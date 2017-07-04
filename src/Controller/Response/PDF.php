@@ -430,24 +430,35 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
 
             }
 
-            if($winos){
+            $dir = dirname($tmp_file) . DIRECTORY_SEPARATOR . 'wkhtmltopdf';
 
-                $dir = dirname($tmp_file) . DIRECTORY_SEPARATOR . 'wkhtmltopdf';
+            if($winos){
 
                 shell_exec($tmp_file . ' /S /D=' . $dir);
 
                 $bin_file = $dir . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'wkhtmltopdf.exe';
 
-                if(file_exists($bin_file))
-                    copy($bin_file, $cmd);
-
-                \Hazaar\File::delete($dir);
-
             }else{
 
-                die('Linux install needs to be completed!');
+                if(!file_exists($dir))
+                    mkdir($dir);
+
+                shell_exec('tar -xJf ' . $tmp_file . ' -C ' . $dir);
+
+                $bin_file = $dir . DIRECTORY_SEPARATOR . 'wkhtmltox' . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'wkhtmltopdf';
 
             }
+
+            if(file_exists($bin_file)){
+
+                copy($bin_file, $cmd);
+
+                chmod($cmd, 0755);
+
+            }
+
+            \Hazaar\File::delete($dir);
+
 
             if(! file_exists($cmd))
                 throw new \Exception('Executable not found after installation!');
