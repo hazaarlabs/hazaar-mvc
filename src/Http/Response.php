@@ -57,8 +57,6 @@ class Response {
         if(count($this->headers) > 0)
             $this->headers_parsed = TRUE;
 
-        $this->cache = new \Hazaar\Cache('file');
-
     }
 
     public function setSource(Uri $source) {
@@ -140,7 +138,8 @@ class Response {
                         case 'set-cookie' :
                             if($this->source instanceof Uri) {
 
-                                $this->cache->set('http_cookie_' . $this->source->host, $value);
+                                if($path = \Hazaar\Application::getInstance()->runtimePath('cache', true))
+                                    file_put_contents($path . DIRECTORY_SEPARATOR . 'http_cookie_' . $this->source->host, $value);
 
                             }
 
