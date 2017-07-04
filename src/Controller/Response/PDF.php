@@ -8,8 +8,6 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
 
     private $source_url = NULL;
 
-    private $cmd        = '';
-
     private $tmp        = '';
 
     private $status     = '';
@@ -55,31 +53,25 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
      */
     public function __construct($mode = self::PDF_EMBEDDED) {
 
-        $this->cmd = $this->getCommand();
+        $cmd = $this->getCommand();
 
-        if(! file_exists($this->cmd)) {
+        if(! file_exists($cmd)) {
 
             /*
              * Attempt to install the required file
              */
 
-            if(! $this->install()) {
-
-                throw new Exception\WKPDFInstallFailed($this->cmd, $this->last_error);
-
-            }
+            if(! $this->install())
+                throw new Exception\WKPDFInstallFailed($cmd, $this->last_error);
 
         }
 
-        if(! is_executable($this->cmd)) {
-
-            throw new Exception\WKPDFNotExecutable($this->cmd);
-
-        }
+        if(! is_executable($cmd))
+            throw new Exception\WKPDFNotExecutable($cmd);
 
         do {
 
-            $this->tmp = '/tmp/' . mt_rand() . '.html';
+            $this->tmp = \Hazaar\Application::getInstance()->runtimePath('tmp', true) . DIRECTORY_SEPARATOR . mt_rand() . '.html';
 
         } while(file_exists($this->tmp));
 
@@ -87,16 +79,16 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
 
     }
 
-    static private function getCommand() {
+    private function getCommand() {
 
-        $path = realpath(APPLICATION_PATH . '/../library/Hazaar/Support');
+        $path = \Hazaar\Application::getInstance()->runtimePath('bin');
 
-        $cmd = 'wkhtmltopdf';
+        $cmd = 'wkhtmltox';
 
-        if(php_uname('m') == 'x86_64')
-            $cmd .= '-amd64';
+        if(substr(PHP_OS, 0, 3) == 'WIN')
+            $cmd .= '.exe';
 
-        return $path . '/' . $cmd;
+        return $path . DIRECTORY_SEPARATOR . $cmd;
 
     }
 
@@ -122,6 +114,8 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
                 'w'
             )
         ), $pipes);
+
+
 
         fwrite($pipes[0], $input);
 
@@ -262,7 +256,8 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
 
         }
 
-        $cmd = '"' . $this->cmd . '"';
+        if(!file_exists($cmd = $this->getCommand()))
+            throw new \Exception('PDF converter executable not found!');
 
         // number of copies
         $cmd .= (($this->copies > 1) ? ' --copies ' . $this->copies : '');
@@ -311,7 +306,7 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
 
     }
 
-    public function write() {
+    public function __writeOutput() {
 
         $this->render();
 
@@ -372,7 +367,7 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
                 break;
         }
 
-        return parent::write();
+        return parent::__writeOutput();
 
     }
 
@@ -380,85 +375,93 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
 
         try {
 
-            $arch = php_uname('m');
+            $cmd = $this->getCommand();
 
-            $target = realpath(APPLICATION_PATH . '/../library/Hazaar/Support');
+            $target = \Hazaar\Application::getInstance()->runtimePath('bin', true);
 
-            $msg = 'Done';
+            if(! is_writable($target))
+                throw new \Exception('The runtime binary directory is not writable!');
 
-            if(! is_writable($target)) {
+            $tmp_path = \Hazaar\Application::getInstance()->runtimePath('tmp', true);
 
-                $msg = "The target directory is not writable<p>If you would like to automatically install the wkhtmltopdf executable then please execute:";
+            if($winos = (substr(PHP_OS, 0, 3) == 'WIN'))
+                $asset_suffix = '_mingw-w64-cross-win' . ((php_uname('m') == 'i586') ? '64' : '32') . '.exe';
+            else
+                $asset_suffix = '_linux-generic-' . ((php_uname('m') == 'x86_64') ? 'amd64' : 'i386') . '.tar.xz';
 
-                $uid = posix_getuid();
+            $client = new \Hazaar\Http\Client();
 
-                $user = posix_getpwuid($uid);
+            $request = new \Hazaar\Http\Request('http://api.github.com/repos/wkhtmltopdf/wkhtmltopdf/releases/latest');
 
-                $gid = posix_getgid();
+            if(!($response = $client->send($request)))
+                throw new \Exception('No response returned from Github API call!');
 
-                $group = posix_getgrgid($gid);
+            if($response->status != 200)
+                throw new \Exception('Got ' . $response->status . ' from Github API call!');
 
-                $owner_user = fileowner($target);
+            if(!is_array($info = $response->body()))
+                throw new \Exception('Unable to parse Github API response body!');
 
-                $owner_group = filegroup($target);
+            if(!($assets = ake($info, 'assets')))
+                throw new \Exception('Looks like the latest release of WKHTMLTOPDF has no assets!');
 
-                $perms = fileperms($target);
+            $source_url = null;
 
-                if($owner_user == $uid && ! ($perms & 0x0010)) {//Owner but no write priv
+            foreach($assets as $asset){
 
-                    $msg .= "<pre>chmod u+wx $target</pre>";
+                if(substr($asset['name'], -strlen($asset_suffix), strlen($asset_suffix)) != $asset_suffix)
+                    continue;
 
-                } elseif($owner_group != $gid) {
-
-                    $msg .= "<pre>chgrp $group[name] $target</pre>";
-
-                }
-
-                if(! ($perms & 0x0010)) {
-
-                    $msg .= "<pre>chmod g+wx $target</pre>";
-
-                }
-
-                throw new \Exception($msg);
+                $source_url = ake($asset, 'browser_download_url');
 
             }
 
-            $tmp_path = '/tmp/wkhtmltopdf-' . $arch . '.bz2';
+            if(!$source_url)
+                throw new \Exception('Unable to automatically install WKHTMLTOPDF.  I was unable to determine the latest release execute source!');
 
-            if(! file_exists($tmp_path)) {
+            $tmp_file = $tmp_path . DIRECTORY_SEPARATOR . basename($source_url);
 
-                if($arch == 'x86_64') {
+            if(!file_exists($tmp_file)){
 
-                    $source = 'http://wkhtmltopdf.googlecode.com/files/wkhtmltopdf-0.11.0_rc1-static-amd64.tar.bz2';
+                copy($source_url, $tmp_file);
 
-                } else {
-
-                    $source = 'http://wkhtmltopdf.googlecode.com/files/wkhtmltopdf-0.11.0_rc1-static-i386.tar.bz2';
-
-                }
-
-                copy($source, $tmp_path);
-
-                if(! file_exists($tmp_path))
-                    throw new Exception\WKPDFInstallFailed('Failed to download installation file!');
+                if(! file_exists($tmp_file))
+                    throw new \Exception('Failed to download installation file!');
 
             }
 
-            $out = shell_exec("tar xjf $tmp_path --directory $target 2>&1");
+            if($winos){
 
-            if(! file_exists(PDF::getCommand()))
-                throw new Exception\WKPDFInstallFailed('Executable not found after installation!');
+                $dir = dirname($tmp_file) . DIRECTORY_SEPARATOR . 'wkhtmltopdf';
 
-            return TRUE;
+                shell_exec($tmp_file . ' /S /D=' . $dir);
 
-        } catch(\Exception $e) {
+                $bin_file = $dir . DIRECTORY_SEPARATOR . 'bin' . DIRECTORY_SEPARATOR . 'wkhtmltopdf.exe';
+
+                if(file_exists($bin_file))
+                    copy($bin_file, $cmd);
+
+                \Hazaar\File::delete($dir);
+
+            }else{
+
+                die('Linux install needs to be completed!');
+
+            }
+
+            if(! file_exists($cmd))
+                throw new \Exception('Executable not found after installation!');
+
+            return true;
+
+        }
+        catch(\Exception $e) {
 
             $this->last_error = $e->getMessage();
 
         }
 
-        return FALSE;
+        return false;
 
     }
 
