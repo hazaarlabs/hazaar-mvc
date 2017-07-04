@@ -22,7 +22,7 @@ class Application extends Module {
 
         $this->view('index');
 
-        $this->view->requires('console.js');
+        $this->view->requires('js/application.js');
 
     }
 

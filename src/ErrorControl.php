@@ -39,7 +39,7 @@ function errorAndDie() {
             }
             catch(Exception $e) {
 
-                $controller = new \Hazaar\Controller\Error('Error', $app);
+                $controller = new \Hazaar\Controller\Error('Error', $app, !defined('APPLICATION_CONSOLE'));
 
             }
 
