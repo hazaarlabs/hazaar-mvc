@@ -2,6 +2,8 @@
 
 namespace Hazaar\Console;
 
+define('APPLICATION_CONSOLE', true);
+
 class Controller extends \Hazaar\Controller\Action {
 
     private $passwd = null;
