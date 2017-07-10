@@ -74,6 +74,8 @@ class Application {
 
     private static $instance;
 
+    private static $root;
+
     private $protocol;
 
     /**
@@ -117,6 +119,7 @@ class Application {
          */
         $defaults = array(
             'app' => array(
+                'root' => dirname($_SERVER['SCRIPT_NAME']),
                 'defaultController' => 'Index',
                 'favicon' => 'favicon.png',
                 'timezone' => 'UTC',
@@ -146,6 +149,9 @@ class Application {
         $this->config = new Application\Config('application', $env, $defaults);
 
         Application::$instance = $this;
+
+        //Allow the root to be configured but the default absolutely has to be set so here we double
+        Application::$root = rtrim($this->config->app['root'], '/') . '/';
 
         /*
          * PHP root elements can be set directly with the PHP ini_set function
@@ -689,9 +695,7 @@ class Application {
      */
     static public function path($path = NULL) {
 
-        $root = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/') . '/';
-
-        return $root . ($path ? trim($path, '/') : NULL);
+        return Application::$root . ($path ? trim($path, '/') : NULL);
 
     }
 
