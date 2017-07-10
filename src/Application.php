@@ -632,6 +632,9 @@ class Application {
 
                     if(class_exists($serviceClass)) {
 
+                        if($config = ake($payload, 'config'))
+                            $this->config->extend($config);
+
                         $service = new $serviceClass($this, $protocol);
 
                         if($service->connect($payload['application_name'], '127.0.0.1', $payload['server_port'], $payload['job_id'], $payload['access_key'])){
