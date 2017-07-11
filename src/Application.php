@@ -102,6 +102,8 @@ class Application {
      */
     function __construct($env) {
 
+        Application::$instance = $this;
+
         $this->environment = $env;
 
         if(!defined('HAZAAR_INIT_START'))
@@ -148,10 +150,12 @@ class Application {
          */
         $this->config = new Application\Config('application', $env, $defaults);
 
-        Application::$instance = $this;
-
         //Allow the root to be configured but the default absolutely has to be set so here we double
-        Application::$root = rtrim($this->config->app['root'], '/') . '/';
+        $this->config->app->addInputFilter(function($value){
+            Application::setRoot($value);
+        }, 'root');
+
+        Application::setRoot($this->config->app['root']);
 
         /*
          * PHP root elements can be set directly with the PHP ini_set function
@@ -230,6 +234,12 @@ class Application {
     static public function &getInstance() {
 
         return Application::$instance;
+
+    }
+
+    static public function setRoot($value){
+
+        Application::$root = rtrim($value, '/') . '/';
 
     }
 
@@ -632,8 +642,13 @@ class Application {
 
                     if(class_exists($serviceClass)) {
 
-                        if($config = ake($payload, 'config'))
+                        if($config = ake($payload, 'config')){
+
                             $this->config->extend($config);
+
+                            $this->config->app['test'] = '1234';
+
+                        }
 
                         $service = new $serviceClass($this, $protocol);
 
