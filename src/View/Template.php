@@ -52,9 +52,25 @@ class Template {
 
     }
 
-    public function parse($params = array()) {
+    public function parse($params = array(), $use_defaults = true) {
 
         $output = $this->content;
+
+        if($use_defaults){
+
+            $default_params = array(
+                '_COOKIE' => $_COOKIE,
+                '_ENV' => $_ENV,
+                '_GET' => $_GET,
+                '_POST' => $_POST,
+                '_REQUEST' => $_REQUEST,
+                '_SERVER' => $_SERVER,
+                'now' => new \Hazaar\Date()
+            );
+
+            $params = array_merge($default_params, $params);
+
+        }
 
         $params = array_to_dot_notation($params);
 
