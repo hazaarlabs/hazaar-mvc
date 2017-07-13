@@ -381,6 +381,8 @@ class Hmv extends \Hazaar\View\Helper {
 
                 }
 
+                if($input instanceof \Hazaar\Html\Element && $placeholder = ake($def, 'placeholder'))
+                    $input->placeholder($placeholder);
 
             }
 
