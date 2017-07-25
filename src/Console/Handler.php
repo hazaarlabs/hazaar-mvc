@@ -69,7 +69,7 @@ class Handler {
 
             $hash = '';
 
-            if(substr($credential, 0, 6) == '$apr1$'){
+            if(substr($credential, 0, 6) == '$apr1$'){                      //APR1-MD5
 
                 $BASE64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
@@ -127,9 +127,17 @@ class Handler {
 
                 $hash = '$apr1$' . $salt . '$' . $hash;
 
-            }elseif(substr($credential, 0, 5) == '{SHA}'){
+            }elseif(substr($credential, 0, 5) == '{SHA}'){                  //SHA1
 
                 $hash = '{SHA}' . base64_encode(sha1($password, TRUE));
+
+            }elseif(substr($credential, 0, 4) == '$2y$'){                   //Blowfish
+
+                $hash = crypt($password, substr($credential, 0, 29));       //Hash is $2y$ + two digit cost + $ + 22 character salt from stored credentail
+
+            }else{
+
+                throw new \Exception('Unsupported password encryption algorithm.');
 
             }
 
