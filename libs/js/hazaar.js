@@ -17,7 +17,7 @@
         if (typeof action == 'undefined')
             return url;
         url += '/' + action;
-        if (typeof params != 'object' || params.length == 0)
+        if (typeof params != 'object' || params == null || Object.keys(params).length == 0)
             return url;
         return url + '?' + this.http_build_query(params);
     }
