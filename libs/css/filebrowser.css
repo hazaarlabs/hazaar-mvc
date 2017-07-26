@@ -314,6 +314,7 @@
 
 .fb-container .fb-tree .fb-tree-item {
     padding-left: 15px;
+    position: relative;
 }
 
 .fb-container .fb-tree .fb-tree-item:last-child {
@@ -322,30 +323,63 @@
 
 .fb-container .fb-tree .fb-tree-item .fb-tree-item-chevron {
     float: left;
-    line-height: 16px;
+    width: 16px;
+    height: 16px;
     margin-right: 5px;
-    margin-top: 3px;
-    transition: all .5s;
-    font-size: 16px;
-    transform: scale(1, 1.4);
+    margin-top: 5px;
     cursor: pointer;
     vertical-align: middle;
-}
-
-.fb-container .fb-tree .fb-tree-item .fb-tree-item-chevron:hover {
-    color: #aaa;
+    font: normal normal normal 16px/1 FontAwesome;
+    color: #444;
+    text-align: center;
 }
 
 .fb-container .fb-tree .fb-tree-item .fb-tree-item-chevron:before {
-    content: "\025B8";
+    content: "\f196";
 }
 
-.fb-container .fb-tree .fb-tree-item .fb-tree-item-chevron.expanded {
-    transform: rotate(90deg) scale(0.7, 1.4);
+.fb-container .fb-tree .fb-tree-item .fb-tree-item-chevron:hover {
+    opacity: 0.8;
+}
+
+.fb-container .fb-tree .fb-tree-item .fb-tree-item-chevron.expanded:before {
+    content: "\f147";
 }
 
 .fb-container .fb-tree .fb-tree-item .fb-tree-item-chevron.childless {
     visibility: hidden;
+}
+
+.fb-container .fb-tree .fb-tree-item .fb-tree-item-chevron.dir-loading:before {
+    content: "\f021";
+}
+
+.fb-container .fb-tree .fb-tree-item .fb-tree-item-chevron.dir-loading {
+    animation: spin 2s infinite linear;
+}
+
+@-webkit-keyframes spin {
+    0% {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+
+    100% {
+        -webkit-transform: rotate(359deg);
+        transform: rotate(359deg);
+    }
+}
+
+@keyframes spin {
+    0% {
+        -webkit-transform: rotate(0deg);
+        transform: rotate(0deg);
+    }
+
+    100% {
+        -webkit-transform: rotate(359deg);
+        transform: rotate(359deg);
+    }
 }
 
 .fb-container .fb-tree .fb-tree-item .fb-tree-item-content {

@@ -68,7 +68,7 @@ var fbConnector = function (browser, url, filter, with_meta) {
     this.with_meta = with_meta || false;
     var conn = this;
     this._error = function (error) {
-        $('<div>').html(error.str).browserDialog({title: error.status});
+        $('<div>').html(error.str).browserDialog({ title: error.status });
     };
     this._send = function (packet) {
         var deferred = $.Deferred();
@@ -236,7 +236,7 @@ var fbConnector = function (browser, url, filter, with_meta) {
         window.location.href = this.url + '?' + $.param(packet);
     };
     this.tree = function (target, depth) {
-        var packet = {'cmd': 'tree'};
+        var packet = { 'cmd': 'tree' };
         if (target)
             packet.target = target;
         if (typeof depth != 'undefined')
@@ -449,7 +449,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
         };
         host._snatch = function (url) {
             var statusDIV = $('<div>').append([
-                $('<i class="fa fa-spinner fa-spin">').css({'font-size': '32px', 'float': 'left'}),
+                $('<i class="fa fa-spinner fa-spin">').css({ 'font-size': '32px', 'float': 'left' }),
                 $('<div>').html('Downloading ' + url)
             ]).browserDialog({
                 title: 'Status',
@@ -457,7 +457,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             });
             this.conn.snatch(url).done(function (data) {
                 if (!data.ok)
-                    $('<div>').html(data.reason).browserDialog({title: 'Error snatching file'});
+                    $('<div>').html(data.reason).browserDialog({ title: 'Error snatching file' });
             }).always(function () {
                 statusDIV.fadeOut(function () {
                     $(this).remove();
@@ -489,7 +489,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 posX = window.innerWidth - host.menuDIV.width();
             if ((posY + host.menuDIV.height()) > window.innerHeight)
                 posY = window.innerHeight - host.menuDIV.height();
-            host.menuDIV.css({left: posX, top: posY});
+            host.menuDIV.css({ left: posX, top: posY });
             if (!host.menuDIV.is(':visible'))
                 host.menuDIV.fadeIn();
             return false;
@@ -577,7 +577,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             host.mainDIV = $('<div class="fb-main">');
             $(host).addClass('fb-container')
                 .append(host.menuDIV, host.topbarDIV, host.treeDIV, host.mainDIV)
-                .css({width: host.settings.width, height: host.settings.height});
+                .css({ width: host.settings.width, height: host.settings.height });
             host.newBUTTON.click(function (event) {
                 var options = [
                     {
@@ -722,14 +722,14 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                     host.treeDIV.find('.selected').removeClass('selected');
                     $(this).parent().addClass('selected');
                     host.mainDIV.html($('<div class="fb-grid-items-loading">'));
-                    host.conn.open($(this).parent().attr('id'), true, 0).done(function () {
+                    host.conn.open($(this).parent().attr('id'), false, 0).done(function () {
                         if (host.settings.autoexpand && !chevronDIV.hasClass('expanded') && itemChildrenDIV.children().length > 0)
                             chevronDIV.click();
                     });
                 });
                 chevronDIV.click(function () {
                     var funcLoaded = function (obj) {
-                        obj.toggleClass('expanded');
+                        obj.toggleClass('expanded').removeClass('dir-loading');
                         if (obj.hasClass('expanded')) {
                             obj.siblings('.fb-tree-item-children').slideDown();
                         } else {
@@ -743,7 +743,8 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                     } else {
                         var obj = $(this);
                         var pathID = $(this).parent().attr('id');
-                        host.conn.tree(pathID, 1).done(function () {
+                        obj.addClass('dir-loading');
+                        host.conn.tree(pathID, 0).done(function () {
                             funcLoaded(obj);
                         });
                     }
@@ -822,24 +823,24 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                         event.stopPropagation();
                         $(this).addClass('highlight');
                     }).on('dragleave', function (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    $(this).removeClass('highlight');
-                }).on('drop', function (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    $(this).removeClass('highlight');
-                    var selected = event.originalEvent.dataTransfer.getData('text').split(',');
-                    var to = $(this).parent().attr('id');
-                    $.each(selected, function (index, from) {
-                        if (!from || !to || from == to)
-                            return;
-                        if (event.originalEvent.dataTransfer.dropEffect == 'copy')
-                            host.conn.copy(from, to);
-                        else
-                            host.conn.move(from, to);
+                        event.preventDefault();
+                        event.stopPropagation();
+                        $(this).removeClass('highlight');
+                    }).on('drop', function (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        $(this).removeClass('highlight');
+                        var selected = event.originalEvent.dataTransfer.getData('text').split(',');
+                        var to = $(this).parent().attr('id');
+                        $.each(selected, function (index, from) {
+                            if (!from || !to || from == to)
+                                return;
+                            if (event.originalEvent.dataTransfer.dropEffect == 'copy')
+                                host.conn.copy(from, to);
+                            else
+                                host.conn.move(from, to);
+                        });
                     });
-                });
             }
             if (host.cwd && item.id == host.cwd.id)
                 host._expand_dir(item.id);
@@ -928,7 +929,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                         var typeDIV = $('<div class="fb-info-item">').append($('<label>').html('Type:'), $('<span>').html(info.mime));
                         var modifiedDIV = $('<div class="fb-info-item">').append($('<label>').html('Date Modified:'), $('<span>').html((new Date(info.modified * 1000)).toLocaleString()));
                         host.infoDIV.empty().append(iconDIV, nameDIV, previewDIV, typeDIV, sizeDIV, modifiedDIV);
-                        var params = {w: previewDIV.width(), h: null};
+                        var params = { w: previewDIV.width(), h: null };
                         if (info.previewLink) {
                             var url = info.previewLink.replace(/crop=true/, '').replace(/\{\$(\w)}/g, function (match, sub) {
                                 return params[sub];
@@ -943,87 +944,87 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             }).dblclick(function () {
                 host.select();
             }).on('contextmenu', function (event) {
-                    if (event.ctrlKey)
-                        return;
-                    var item = $(this);
-                    var file = item.data('file');
-                    if (!item.hasClass('selected'))
-                        item.click();
-                    var options = [];
-                    if (file.read) {
-                        options.push({
-                            icon: 'download',
-                            label: 'Download',
-                            action: function () {
-                                host.conn.get(item.attr('id'));
-                            }
-                        });
-                        options.push('spacer');
-                        options.push({
-                            icon: 'copy',
-                            label: 'Copy',
-                            action: function () {
-                                host.copy(host.mainDIV.children('.selected'));
-                            }
-                        });
-                    }
-                    if (file.write) {
-                        options.push({
-                            icon: 'scissors',
-                            label: 'Cut',
-                            action: function () {
-                                host.cut(host.mainDIV.children('.selected'));
-                            }
-                        });
-                        options.push('spacer');
-                        options.push({
-                            icon: 'font',
-                            label: 'Rename',
-                            action: function () {
-                                host.rename($('#' + file.id));
-                            }
-                        });
-                        options.push({
-                            icon: 'comment',
-                            label: 'Comment',
-                            action: function () {
-                                var askComment = function (value) {
-                                    var commentTEXTAREA = $('<textarea>').html(value);
-                                    $('<div>').append(commentTEXTAREA).browserDialog({
-                                        title: 'Comment',
-                                        buttons: [
-                                            {
-                                                label: 'Save',
-                                                action: function () {
-                                                    var comment = commentTEXTAREA.val();
-                                                    host.conn.set_meta(file.id, {'comment': comment}).done(function (data) {
-                                                        if (data.ok)
-                                                            file.meta.comment = comment;
-                                                    });
-                                                }
-                                            }
-                                        ]
-                                    });
-                                };
-                                if (file.meta) {
-                                    askComment(file.meta.comment);
-                                } else {
-                                    host.conn.get_meta(file.id, 'comment').done(function (data) {
-                                        if (data.ok)
-                                            askComment(data.meta);
-                                    });
-                                }
-                            }
-                        });
-                        options.push('spacer');
-                        options.push({
-                            icon: 'trash',
-                            label: 'Remove',
-                            action: host.delete
-                        });
-                    }
-                    return host._contextMenu(event, options);
+                if (event.ctrlKey)
+                    return;
+                var item = $(this);
+                var file = item.data('file');
+                if (!item.hasClass('selected'))
+                    item.click();
+                var options = [];
+                if (file.read) {
+                    options.push({
+                        icon: 'download',
+                        label: 'Download',
+                        action: function () {
+                            host.conn.get(item.attr('id'));
+                        }
+                    });
+                    options.push('spacer');
+                    options.push({
+                        icon: 'copy',
+                        label: 'Copy',
+                        action: function () {
+                            host.copy(host.mainDIV.children('.selected'));
+                        }
+                    });
                 }
+                if (file.write) {
+                    options.push({
+                        icon: 'scissors',
+                        label: 'Cut',
+                        action: function () {
+                            host.cut(host.mainDIV.children('.selected'));
+                        }
+                    });
+                    options.push('spacer');
+                    options.push({
+                        icon: 'font',
+                        label: 'Rename',
+                        action: function () {
+                            host.rename($('#' + file.id));
+                        }
+                    });
+                    options.push({
+                        icon: 'comment',
+                        label: 'Comment',
+                        action: function () {
+                            var askComment = function (value) {
+                                var commentTEXTAREA = $('<textarea>').html(value);
+                                $('<div>').append(commentTEXTAREA).browserDialog({
+                                    title: 'Comment',
+                                    buttons: [
+                                        {
+                                            label: 'Save',
+                                            action: function () {
+                                                var comment = commentTEXTAREA.val();
+                                                host.conn.set_meta(file.id, { 'comment': comment }).done(function (data) {
+                                                    if (data.ok)
+                                                        file.meta.comment = comment;
+                                                });
+                                            }
+                                        }
+                                    ]
+                                });
+                            };
+                            if (file.meta) {
+                                askComment(file.meta.comment);
+                            } else {
+                                host.conn.get_meta(file.id, 'comment').done(function (data) {
+                                    if (data.ok)
+                                        askComment(data.meta);
+                                });
+                            }
+                        }
+                    });
+                    options.push('spacer');
+                    options.push({
+                        icon: 'trash',
+                        label: 'Remove',
+                        action: host.delete
+                    });
+                }
+                return host._contextMenu(event, options);
+            }
             ).on('dragstart', function (event) {
                 var selected = [];
                 if (!event.ctrlKey) {
@@ -1095,7 +1096,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                                 },
                                 default: true
                             },
-                            {label: 'No'}
+                            { label: 'No' }
                         ]
                     });
             }
@@ -1166,7 +1167,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             userpanel: null,
             defaulttools: true,
             mimeFilter: null,
-            previewsize: {w: 100, h: 100},
+            previewsize: { w: 100, h: 100 },
             useMeta: false,
             tools: [],
             monthNames: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -1196,39 +1197,39 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 host._file(file);
                 host.mainDIV.children('#' + file.id).children('.fb-item-thumb').append($('<div class="fb-item-upload-pct">'));
             }).on('uploadProgress', function (file, pct) {
-            var progressDIV = host.mainDIV.children('#' + file.id).find('.fb-item-upload-pct');
-            progressDIV.css('height', ((1 - pct) * 100) + '%');
-        }).on('uploadDone', function (file, data) {
-            var itemDIV = host.mainDIV.children('#' + file.id);
-            if (data.previewLink) {
-                var thumbDIV = itemDIV.children('.fb-item-thumb');
-                var image = new Image();
-                var params = {
-                    w: thumbDIV.width(),
-                    h: thumbDIV.height()
-                };
-                image.onload = function () {
-                    thumbDIV.css('background-image', 'url("' + image.src + '")');
-                };
-                image.src = data.previewLink.replace(/\{\$(\w)}/g, function (match, sub) {
-                    return params[sub];
-                });
-            }
-            itemDIV.data('file', data).find('.fb-item-upload-pct').remove();
-            host.progress();
-        }).on('uploadError', function (file) {
-            host.mainDIV.children('#' + file.id).addClass('uploadError').find('.fb-item-upload-pct').removeAttr('style');
-        }).on('progress', function (packet) {
-            if (packet.data.init) {
-                host.initProgress(packet.data.init);
-            } else {
-                if (packet.data.kind != 'dir') {
-                    host.progress();
+                var progressDIV = host.mainDIV.children('#' + file.id).find('.fb-item-upload-pct');
+                progressDIV.css('height', ((1 - pct) * 100) + '%');
+            }).on('uploadDone', function (file, data) {
+                var itemDIV = host.mainDIV.children('#' + file.id);
+                if (data.previewLink) {
+                    var thumbDIV = itemDIV.children('.fb-item-thumb');
+                    var image = new Image();
+                    var params = {
+                        w: thumbDIV.width(),
+                        h: thumbDIV.height()
+                    };
+                    image.onload = function () {
+                        thumbDIV.css('background-image', 'url("' + image.src + '")');
+                    };
+                    image.src = data.previewLink.replace(/\{\$(\w)}/g, function (match, sub) {
+                        return params[sub];
+                    });
                 }
-            }
-        });
+                itemDIV.data('file', data).find('.fb-item-upload-pct').remove();
+                host.progress();
+            }).on('uploadError', function (file) {
+                host.mainDIV.children('#' + file.id).addClass('uploadError').find('.fb-item-upload-pct').removeAttr('style');
+            }).on('progress', function (packet) {
+                if (packet.data.init) {
+                    host.initProgress(packet.data.init);
+                } else {
+                    if (packet.data.kind != 'dir') {
+                        host.progress();
+                    }
+                }
+            });
         host._render([host.settings.mode]);
-        host.conn.tree(null, 255).done(function () {
+        host.conn.tree(null, 0).done(function () {
             var startDir;
             if (host.settings.startDirectory) {
                 var matches = host.settings.startDirectory.match(/^\/(\w+)(\/?.*)/);
@@ -1239,15 +1240,12 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 if (matches)
                     startDir = matches[1];
             }
-            host.conn.open(startDir, true).done(function (data) {
-                if (host.settings.select) {
-                    var source = host.conn._source(startDir);
-                    var path = host.conn._path(startDir) + '/' + host.settings.select;
-                    console.log(source);
-                    console.log(path);
-                    console.log($('#' + host.conn._target(source, path)).addClass('selected'));
-                }
-            });
+            if (startDir) {
+                host.conn.open(startDir, true).done(function (data) {
+                    if (host.settings.select)
+                        $('#' + host.conn._target(host.conn._source(startDir), host.conn._path(startDir) + '/' + host.settings.select)).addClass('selected');
+                });
+            }
         });
         $(host).click(function (event) {
             if (!event.isTrigger && host.menuDIV.is(':visible')) {
