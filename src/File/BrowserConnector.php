@@ -278,7 +278,7 @@ class BrowserConnector {
             'files' => $files
         );
 
-        if($tree)
+        if(boolify($tree) === true)
             $result['tree'] = $this->tree($target, $depth);
 
         return $result;
