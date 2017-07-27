@@ -333,4 +333,17 @@ class Dir {
 
     }
 
+    /**
+     * Copy a file object into the current directory
+     * 
+     * @param \Hazaar\File $file The file to put in this directory
+     * 
+     * @return mixed
+     */
+    public function put(\Hazaar\File $file){
+
+        return $file->copyTo($this->path, false, $this->backend);
+
+    }
+
 }

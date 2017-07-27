@@ -217,7 +217,14 @@ class Manager {
 
     }
 
-    public function dir($path = '/', $sort = 'name') {
+    /**
+     * Return a directory object for a pgiven path.
+     * 
+     * @param mixed $path The path to create a directory object for
+     * 
+     * @return Dir The directory object.
+     */
+    public function dir($path = '/') {
 
         return new Dir($this->fixPath($path), $this->backend);
 
