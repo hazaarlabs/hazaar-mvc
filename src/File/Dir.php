@@ -111,22 +111,7 @@ class Dir {
      */
     public function delete($recursive = FALSE) {
 
-        if($recursive) {
-
-            $org = $this->allow_hidden;
-
-            $this->allow_hidden = true;
-
-            $this->rewind();
-
-            while($file = $this->read())
-                $file->unlink();
-
-            $this->allow_hidden = $org;
-
-        }
-
-        return $this->backend->rmdir($this->path);
+        return $this->backend->rmdir($this->path, $recursive);
 
     }
 
@@ -335,9 +320,9 @@ class Dir {
 
     /**
      * Copy a file object into the current directory
-     * 
+     *
      * @param \Hazaar\File $file The file to put in this directory
-     * 
+     *
      * @return mixed
      */
     public function put(\Hazaar\File $file){
