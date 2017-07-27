@@ -490,7 +490,37 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
 
     }
 
-    public function rmdir($path) {
+    public function rmdir($path, $recurse = false) {
+
+        $path = $this->resolvePath($path);
+
+        if(!$this->exists($path))
+            return false;
+
+        if($recurse) {
+
+            $dir = $this->scandir($path, NULL, TRUE);
+
+            foreach($dir as $file) {
+
+                if($file == '.' || $file == '..')
+                    continue;
+
+                $fullpath = $path . DIRECTORY_SEPARATOR . $file;
+
+                if($this->is_dir($fullpath)) {
+
+                    $this->rmdir($fullpath, TRUE);
+
+                } else {
+
+                    $this->unlink($fullpath);
+
+                }
+
+            }
+
+        }
 
         return $this->unlink($path);
 

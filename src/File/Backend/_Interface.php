@@ -54,7 +54,7 @@ interface _Interface {
     //Create a directory
     public function mkdir($path);
 
-    public function rmdir($path);
+    public function rmdir($path, $recurse = false);
 
     //Copy a file from src to dst
     public function copy($src, $dst, $recursive = FALSE);
