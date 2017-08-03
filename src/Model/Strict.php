@@ -1012,7 +1012,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                         }else{
 
-                            $values[$key]['collection'][] = $subValue->exportHMV($hide_empty, $object);
+                            $values[$key]['collection'][] = $subValue->exportHMV($hide_empty, $export_all, $object);
 
                         }
 
