@@ -10,7 +10,7 @@
 namespace Hazaar;
 
 if (!ini_get('date.timezone')) {
-    
+
     ini_set('date.timezone', 'UTC');
 }
 
@@ -73,7 +73,7 @@ class Date extends \Datetime {
      *            monday' will work. See the PHP documentation on
      *            [[http://au1.php.net/manual/en/function.strtotime.php|strtotime()]] for more information on valid
      *            formats. If the datetime value is not set, the current date and time will be used.
-     *            
+     *
      * @param string $timezone
      *            The timezone for this datetime value. If no timezone is specified then the default
      *            timezone is used.
@@ -81,92 +81,107 @@ class Date extends \Datetime {
     public function __construct($datetime = NULL, $timezone = NULL) {
 
         if (is_null($datetime)) {
-            
+
             $datetime = '@' . microtime(TRUE);
+
         } elseif (is_numeric($datetime)) {
-            
+
             $datetime = '@' . $datetime . '.0';
-        } elseif (is_array($datetime) && array_key_exists('sec', $datetime)) { // Common array date object
+
+        } elseif (is_array($datetime)){
             
-            $ndatetime = '@' . $datetime['sec'];
-            
-            if (array_key_exists('usec', $datetime))
-                $ndatetime .= '.' . $datetime['usec'];
-            
-            $datetime = $ndatetime;
-        } elseif (is_array($datetime) && array_key_exists('usec', $datetime) && array_key_exists('date', $datetime)) { // Array version of Hazaar\Date
-            
-            if (!$timezone && array_key_exists('timezone', $datetime))
-                $timezone = $datetime['timezone'];
-            
-            $datetime = '@' . strtotime($datetime['date']) . '.' . $datetime['usec'];
+            if(array_key_exists('sec', $datetime)) { // Common array date object
+
+                $ndatetime = '@' . $datetime['sec'];
+
+                if (array_key_exists('usec', $datetime))
+                    $ndatetime .= '.' . $datetime['usec'];
+
+                $datetime = $ndatetime;
+
+            } elseif (array_key_exists('usec', $datetime) && array_key_exists('date', $datetime)) { // Array version of Hazaar\Date
+
+                if (!$timezone && array_key_exists('timezone', $datetime))
+                    $timezone = $datetime['timezone'];
+
+                $datetime = '@' . strtotime($datetime['date']) . '.' . $datetime['usec'];
+            }else{
+                
+                $datetime = null;
+
+            }
+
         } elseif ($datetime instanceof Date) {
-            
+
             $datetime = '@' . $datetime->getTimestamp();
+
         } elseif (is_object($datetime)) {
-            
+
             $datetime = (string) $datetime;
-            
+
             if (is_numeric($datetime))
                 $datetime = '@' . $datetime;
+
         }
-        
+
         if (preg_match('/@(\d+)\.(\d+)/', $datetime, $matches)) {
-            
+
             $this->usec = $matches[2];
-            
+
             $datetime = '@' . $matches[1];
+
         } else {
-            
+
             $this->usec = 0;
-            
+
             $year = 2000;
-            
+
             $month = 5;
-            
+
             $day = 4;
-            
+
             $time = date_parse(strftime('%x', mktime(0, 0, 0, $month, $day, $year)));
-            
-            if ($time['month'] !== $month && preg_match('/\d+\/\d+\/\d+/', $datetime)) {
-                
+
+            if ($time['month'] !== $month && preg_match('/\d+\/\d+\/\d+/', $datetime))
                 $datetime = str_replace('/', '-', $datetime);
-            }
+
         }
-        
+
         if (substr($datetime, 0, 1) == '@') {
-            
+
             if (!$timezone)
                 $timezone = new \DateTimeZone(date_default_timezone_get());
-            
+
             parent::__construct($datetime);
-            
+
             $this->setTimezone($timezone);
+
         } else {
-            
+
             if (!$timezone)
                 $timezone = date_default_timezone_get();
-            
             elseif (is_numeric($timezone))
                 $timezone = timezone_identifiers_list()[(int) $timezone];
-            
+
             if (!$timezone instanceof \DateTimeZone) {
-                
+
                 if ($timezone == '+00:00')
                     $timezone = 'UTC';
-                
+
                 $timezone = new \DateTimeZone($timezone);
+
             }
-            
+
             parent::__construct($datetime, $timezone);
+
         }
-    
+
     }
 
     public function setFormat($format) {
 
         $this->instance_format = $format;
-    
+
     }
 
     /**
@@ -181,35 +196,35 @@ class Date extends \Datetime {
      *            representation of a timezone, an offset in the format hh:mm, or a numeric value
      *            of the timezone returned by timezone_identifiers_list(). If it is left null, then
      *            the default system timezone is used.
-     *            
+     *
      * @return boolean Returns the result of the parent [[DateTime::setTimezone]] call.
      */
     public function setTimezone($timezone = NULL) {
 
         if ($timezone === NULL)
             $timezone = date_default_timezone_get();
-        
+
         if (is_numeric($timezone))
             $timezone = timezone_identifiers_list()[(int) $timezone];
-        
+
         if (!$timezone instanceof \Datetimezone) {
-            
+
             if (is_numeric($timezone)) {
-                
+
                 $timezone = timezone_name_from_abbr('', $timezone, FALSE);
             } elseif (preg_match('/([+-])?(\d+):(\d+)/', $timezone, $matches)) {
-                
+
                 if (!$matches[1])
                     $matches[1] = '+';
-                
+
                 $timezone = timezone_name_from_abbr('', ((int) ($matches[1] . (($matches[2] * 3600) + $matches[3]))), FALSE);
             }
-            
+
             $timezone = new \Datetimezone($timezone);
         }
-        
+
         return parent::setTimezone($timezone);
-    
+
     }
 
     /**
@@ -217,24 +232,24 @@ class Date extends \Datetime {
      *
      * @param string $format
      *            A standard date format string
-     *            
+     *
      * @param string $timezone
      *            The timezone to use to convert the date time value.
-     *            
+     *
      * @return string The date time string in the target timezone and format.
      */
     public function formatTZ($format, $timezone = 'UTC') {
 
         $timezoneBackup = date_default_timezone_get();
-        
+
         date_default_timezone_set($timezone);
-        
+
         $date = date($format, $this->getTimestamp());
-        
+
         date_default_timezone_set($timezoneBackup);
-        
+
         return $date;
-    
+
     }
 
     /**
@@ -246,7 +261,7 @@ class Date extends \Datetime {
     public function __tostring() {
 
         return $this->format(($this->instance_format ? $this->instance_format : Date::$default_format));
-    
+
     }
 
     /**
@@ -257,7 +272,7 @@ class Date extends \Datetime {
     public function getSQLDate() {
 
         return $this->format('Y-m-d G:i:s') . '.' . $this->usec;
-    
+
     }
 
     /**
@@ -268,7 +283,7 @@ class Date extends \Datetime {
     public function sec() {
 
         return (int) parent::getTimestamp();
-    
+
     }
 
     /**
@@ -281,7 +296,7 @@ class Date extends \Datetime {
     public function usec() {
 
         return $this->usec;
-    
+
     }
 
     /**
@@ -292,9 +307,9 @@ class Date extends \Datetime {
     public function date() {
 
         $format = Date::$date_format;
-        
+
         return parent::format($format);
-    
+
     }
 
     /**
@@ -305,9 +320,9 @@ class Date extends \Datetime {
     public function time() {
 
         $format = Date::$time_format;
-        
+
         return parent::format($format);
-    
+
     }
 
     /**
@@ -320,9 +335,9 @@ class Date extends \Datetime {
     public function datetime() {
 
         $format = Date::$date_format . ' ' . Date::$time_format;
-        
+
         return parent::format($format);
-    
+
     }
 
     /**
@@ -335,7 +350,7 @@ class Date extends \Datetime {
     public function timestamp() {
 
         return parent::format('c');
-    
+
     }
 
     /**
@@ -343,13 +358,13 @@ class Date extends \Datetime {
      *
      * @param integer $precision
      *            The number of digits to round an age to. Default: 0
-     *            
+     *
      * @return integer The number of years passed since the date value.
      */
     public function age($precision = 0) {
 
         return round(years(time() - $this->sec()), $precision);
-    
+
     }
 
     /**
@@ -361,40 +376,40 @@ class Date extends \Datetime {
      *
      * @param \DateTime $timestamp
      *            The timestamp to compare the current date/time to.
-     *            
+     *
      * @param bool $return_seconds
      *            If TRUE then the return value will be an integer indicating the difference in whole seconds.
-     *            
+     *
      * @return \DateInterval|int
      */
     public function diff($timestamp, $return_seconds = FALSE) {
 
         if ($return_seconds) {
-            
+
             $diff = parent::diff($timestamp);
-            
+
             $seconds = 0;
-            
+
             if ($diff->days > 0)
                 $seconds += $diff->days * 86400;
-            
+
             if ($diff->h > 0)
                 $seconds += $diff->h * 3600;
-            
+
             if ($diff->i > 0)
                 $seconds += $diff->i * 60;
-            
+
             if ($diff->s > 0)
                 $seconds += $diff->s;
-            
+
             if ($diff->invert == 0)
                 $seconds = -($seconds);
-            
+
             return $seconds;
         }
-        
+
         return parent::diff($timestamp);
-    
+
     }
 
     /**
@@ -403,7 +418,7 @@ class Date extends \Datetime {
     public function year() {
 
         return (int) $this->format('Y');
-    
+
     }
 
     /**
@@ -412,7 +427,7 @@ class Date extends \Datetime {
     public function month() {
 
         return (int) $this->format('m');
-    
+
     }
 
     /**
@@ -421,7 +436,7 @@ class Date extends \Datetime {
     public function day() {
 
         return (int) $this->format('d');
-    
+
     }
 
     /**
@@ -430,7 +445,7 @@ class Date extends \Datetime {
     public function hour() {
 
         return (int) $this->format('H');
-    
+
     }
 
     /**
@@ -439,7 +454,7 @@ class Date extends \Datetime {
     public function minute() {
 
         return (int) $this->format('i');
-    
+
     }
 
     /**
@@ -448,7 +463,7 @@ class Date extends \Datetime {
     public function second() {
 
         return (int) $this->format('s');
-    
+
     }
 
     /**
@@ -458,29 +473,29 @@ class Date extends \Datetime {
      *
      * @param mixed $interval
      *            Can be either a \DateInterval object or a string representing an interval, such as P1H to specify 1 hour.
-     *            
+     *
      * @param bool $return_new
      *            Doesn't update the current \Hazaar\Date object and instead returns a new object with the interval applied.
-     *            
+     *
      * @return Date
      */
     public function add($interval, $return_new = FALSE) {
 
         if (!$interval instanceof \DateInterval)
             $interval = new \DateInterval($interval);
-        
+
         if ($return_new) {
-            
+
             $new = new Date($this, $this->getTimezone());
-            
+
             return $new->add($interval);
         }
-        
+
         if (parent::add($interval))
             return $this;
-        
+
         return FALSE;
-    
+
     }
 
     /**
@@ -490,29 +505,29 @@ class Date extends \Datetime {
      *
      * @param mixed $interval
      *            Can be either a \DateInterval object or a string representing an interval, such as P1H to specify 1 hour.
-     *            
+     *
      * @param bool $return_new
      *            Doesn't update the current \Hazaar\Date object and instead returns a new object with the interval applied.
-     *            
+     *
      * @return Date
      */
     public function sub($interval, $return_new = FALSE) {
 
         if (!$interval instanceof \DateInterval)
             $interval = new \DateInterval($interval);
-        
+
         if ($return_new) {
-            
+
             $new = new Date($this, $this->getTimezone());
-            
+
             return $new->sub($interval);
         }
-        
+
         if (parent::sub($interval))
             return $this;
-        
+
         return FALSE;
-    
+
     }
 
     /**
@@ -521,12 +536,12 @@ class Date extends \Datetime {
     public function compare($date, $include_time = FALSE) {
 
         $format = 'Y-m-d' . ($include_time ? ' H:i:s' : NULL);
-        
+
         if (!$date instanceof Date)
             $date = new Date($date, $this->getTimezone());
-        
+
         return ($this->format($format) == $date->format($format));
-    
+
     }
 
     /**
@@ -537,7 +552,7 @@ class Date extends \Datetime {
     public function daysInMonth() {
 
         return cal_days_in_month(Date::$calendar, $this->month(), $this->year());
-    
+
     }
 
     /**
@@ -548,7 +563,7 @@ class Date extends \Datetime {
     public function start() {
 
         return new Date($this->format('Y-m-d 00:00:00'), $this->getTimezone());
-    
+
     }
 
     /**
@@ -559,7 +574,7 @@ class Date extends \Datetime {
     public function end() {
 
         return new Date($this->format('Y-m-d 23:59:59'), $this->getTimezone());
-    
+
     }
 
     /**
@@ -570,7 +585,7 @@ class Date extends \Datetime {
     public function firstOfWeek() {
 
         return $this->sub('P' . ($this->format('N') - 1) . 'D', TRUE)->setTime(0, 0, 0);
-    
+
     }
 
     /**
@@ -581,7 +596,7 @@ class Date extends \Datetime {
     public function lastOfWeek() {
 
         return $this->add('P' . (7 - $this->format('N')) . 'D', TRUE)->setTime(23, 59, 59);
-    
+
     }
 
     /**
@@ -592,7 +607,7 @@ class Date extends \Datetime {
     public function firstOfMonth() {
 
         return new Date($this->format('Y-m-01 00:00:00'), $this->getTimezone());
-    
+
     }
 
     /**
@@ -603,7 +618,7 @@ class Date extends \Datetime {
     public function lastOfMonth() {
 
         return new Date($this->format('Y-m-' . $this->daysInMonth() . ' 23:59:59'), $this->getTimezone());
-    
+
     }
 
     /**
@@ -614,7 +629,7 @@ class Date extends \Datetime {
     public function firstOfYear() {
 
         return new Date($this->format('Y-01-01 00:00:00'), $this->getTimezone());
-    
+
     }
 
     /**
@@ -625,53 +640,53 @@ class Date extends \Datetime {
     public function lastOfYear() {
 
         return new Date($this->format('Y-12-31 23:59:59'), $this->getTimezone());
-    
+
     }
 
     public function __export() {
 
         return $this->sec();
-    
+
     }
 
     /**
      * Return a fuzzy diff between the current time and the Date value.
      *
-     * @param bool $precise            
+     * @param bool $precise
      *
      * @return string
      */
     public function fuzzy($precise = FALSE) {
 
         $diff = $this->diff(new Date());
-        
+
         if ($diff->days == 0) {
-            
+
             if ($diff->h > 0) {
-                
+
                 $msg = $diff->h . ' hour' . (($diff->h > 1) ? 's' : NULL);
             } elseif ($diff->i > 0) {
-                
+
                 $msg = $diff->i . ' minute' . (($diff->i > 1) ? 's' : NULL);
             } elseif ($precise == FALSE && $diff->s < 30) {
-                
+
                 $msg = 'A few seconds';
             } else {
-                
+
                 $msg = $diff->s . ' seconds';
             }
-            
+
             $msg .= ' ago';
         } elseif ($diff->days == 1) {
-            
+
             $msg = 'Yesterday at ' . $this->format('g:ia');
         } else {
-            
+
             $msg = $this->format('j F \a\t g:ia');
         }
-        
+
         return $msg;
-    
+
     }
 
 }
