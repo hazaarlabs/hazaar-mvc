@@ -52,6 +52,8 @@ class File {
 
             $this->source_file = $meta['uri'];
 
+            $this->resource = $file;
+
         } else {
 
             if(empty($file))
