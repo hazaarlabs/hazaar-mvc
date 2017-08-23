@@ -605,4 +605,23 @@ class BrowserConnector {
 
     }
 
+    public function search($target, $query){
+
+        $source = $this->source($target);
+
+        $path = $this->path($target);
+
+        $list = $source->find($query, $path);
+
+        if(!is_array($list))
+            throw new \Exception('Search failed!');
+
+        foreach($list as &$item)
+            $item = $this->info($source, $source->get($item));
+
+        return $list;
+
+    }
+
 }
+
