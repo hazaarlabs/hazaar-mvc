@@ -219,9 +219,9 @@ class Manager {
 
     /**
      * Return a directory object for a pgiven path.
-     * 
+     *
      * @param mixed $path The path to create a directory object for
-     * 
+     *
      * @return Dir The directory object.
      */
     public function dir($path = '/') {
@@ -231,6 +231,9 @@ class Manager {
     }
 
     public function find($search = NULL, $path = '/') {
+
+        if(method_exists($this->backend, 'find'))
+            return $this->backend->find($search, $path);
 
         $dir = $this->dir($path);
 
@@ -248,7 +251,10 @@ class Manager {
 
                 if($search) {
 
-                    if(substr($search, 0, 1) == substr($search, -1, 1)) {
+                    $first = substr($search, 0, 1);
+
+                    if((ctype_alnum($first) || $first == '\\') == false 
+                        && $first == substr($search, -1, 1)) {
 
                         if(! preg_match($search, $file->basename()))
                             continue;
