@@ -339,6 +339,16 @@ var fbConnector = function (browser, url, filter, with_meta) {
         };
         return this._send(packet);
     };
+    this.search = function (target, query) {
+        if (!target)
+            return;
+        var packet = {
+            'cmd': 'search',
+            'target': target,
+            'query': query
+        }
+        return this._send(packet);
+    }
 };
 
 $.fn.fileBrowser = function (arg1, arg2, arg3) {
@@ -387,7 +397,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
         };
         host.selected = function (returnObjects) {
             var selected = [];
-            var selectedItems = host.mainDIV.children('.selected');
+            var selectedItems = host.itemsDIV.children('.selected');
             if (returnObjects === true)
                 return selectedItems;
             selectedItems.each(function (index, item) {
@@ -403,7 +413,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             return selected;
         };
         host.selectItem = function (target) {
-            var item = host.mainDIV.children().removeClass('selected').filter('#' + target);
+            var item = host.itemsDIV.children().removeClass('selected').filter('#' + target);
             if (item.length > 0) {
                 var file = $(item).data('file');
                 if (file.previewLink) {
@@ -547,6 +557,16 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 });
         };
         host._render = function (viewMode) {
+            host.mainDIV = $('<div class="fb-main">').addClass(viewMode);
+            host.layoutDIV = $('<div class="fb-layout">').appendTo(host.mainDIV);
+            host.headerDIV = $('<div class="fb-hdr">').appendTo(host.layoutDIV).html([
+                $('<div class="fb-hdr-item">'),
+                $('<div class="fb-hdr-item">').html('Name'),
+                $('<div class="fb-hdr-item">').html('Type'),
+                $('<div class="fb-hdr-item">').html('Size'),
+                $('<div class="fb-hdr-item">').html('Date')
+            ]);
+            host.itemsDIV = $('<div class="fb-items">').appendTo(host.layoutDIV);
             host.menuDIV = $('<div class="fb-context-menu">');
             host.titleDIV = $('<div class="fb-topbar-title">').html(host.settings.title);
             host.searchINPUT = $('<input type="text" placeholder="Search...">');
@@ -574,7 +594,6 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             ]);
             host.treeDIV = $('<div class="fb-tree">')
                 .append($('<div class="fb-tree-control">').html(host.newBUTTON), $('<div class="fb-tree-content">'), host.uploadDIV);
-            host.mainDIV = $('<div class="fb-main">');
             $(host).addClass('fb-container')
                 .append(host.menuDIV, host.topbarDIV, host.treeDIV, host.mainDIV)
                 .css({ width: host.settings.width, height: host.settings.height });
@@ -640,18 +659,18 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             });
             host.mainDIV.click(function (event) {
                 if (event.target == this && !event.ctrlKey)
-                    host.mainDIV.find('.selected').removeClass('selected');
+                    host.itemsDIV.find('.selected').removeClass('selected');
             }).on('contextmenu', function () {
                 if (event.ctrlKey)
                     return;
                 if (event.target == this) {
                     var options = [];
-                    if (host.mainDIV.children().length > 0) {
+                    if (host.itemsDIV.children().length > 0) {
                         options.push({
                             icon: 'check-square-o',
                             label: 'Select All',
                             action: function () {
-                                host.mainDIV.children().addClass('selected');
+                                host.itemsDIV.children().addClass('selected');
                             }
                         });
                     }
@@ -659,7 +678,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                         icon: 'refresh',
                         label: 'Refresh',
                         action: function () {
-                            host.conn.open(host.mainDIV.attr('data-id'));
+                            host.conn.open(host.itemsDIV.attr('data-id'));
                         }
                     });
                     if (host.clipboard.length > 0) {
@@ -668,7 +687,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                             icon: 'paste',
                             label: 'Paste',
                             action: function () {
-                                host.paste(host.mainDIV);
+                                host.paste(host.itemsDIV);
                             }
                         });
                     }
@@ -688,6 +707,13 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                     host.infoDIV.css('bottom', userDIV.height())
                 }
             }
+            host.searchBUTTON.click(function () {
+                host._search(host.searchINPUT.val());
+            });
+            host.searchINPUT.keypress(function (e) {
+                if (e.keyCode == 13)
+                    host._search($(this).val());
+            });
         };
         host._dir = function (item) {
             if ($('#' + item.id).length == 0) {
@@ -721,7 +747,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 itemDIV.children('.fb-tree-item-content').click(function () {
                     host.treeDIV.find('.selected').removeClass('selected');
                     $(this).parent().addClass('selected');
-                    host.mainDIV.html($('<div class="fb-grid-items-loading">'));
+                    host.itemsDIV.html($('<div class="fb-items-loading">'));
                     host.conn.open($(this).parent().attr('id'), false, 0).done(function () {
                         if (host.settings.autoexpand && !chevronDIV.hasClass('expanded') && itemChildrenDIV.children().length > 0)
                             chevronDIV.click();
@@ -868,24 +894,73 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             host.focus = null;
             host.cwd = cwd;
             host._expand_dir(cwd.id);
-            host.mainDIV.empty().attr('data-id', host.conn.cwd.id);
+            host.itemsDIV.empty().attr('data-id', host.conn.cwd.id);
             host.treeDIV.find('.selected').removeClass('selected');
             $('#' + cwd.id).addClass('selected');
             $.each(items, function (index, item) {
-                host._file(item);
+                host._item(item);
             });
             $(host).trigger('chdir', [cwd]);
         };
-        host._file = function (item) {
-            if (item.kind != 'file')
+        host._date = function (date) {
+            var d = new Date(date * 1000);
+            return d.toUTCString();
+        };
+        host._size = function (bytes, type, precision, exclude_suffix) {
+            if (typeof type == 'undefined') {
+                if (bytes < Math.pow(2, 10))
+                    $type = 'B';
+                else if (bytes < Math.pow(2, 20))
+                    type = 'K';
+                else if (bytes < Math.pow(2, 30))
+                    type = 'M';
+                else
+                    type = 'G';
+            }
+            var value = bytes;
+            var type = type.toUpperCase();
+            var suffix = 'bytes';
+            var prec = 0;
+            switch (type) {
+                case 'K':
+                    value = bytes / Math.pow(2, 10);
+                    suffix = 'KB';
+                    break;
+                case 'M':
+                    value = bytes / Math.pow(2, 20);
+                    suffix = 'MB';
+                    prec = 2;
+                    break;
+                case 'G':
+                    value = bytes / Math.pow(2, 30);
+                    suffix = 'GB';
+                    prec = 2;
+                    break;
+                case 'T':
+                    value = bytes / Math.pow(2, 40);
+                    suffix = 'TB';
+                    prec = 2;
+                    break;
+            }
+            if (typeof precision != 'undefined')
+                prec = precision;
+            return value.toLocaleString('en', { maximumFractionDigits: prec }) + (exclude_suffix === true ? '' : ' ' + suffix);
+        };
+        host._item = function (item) {
+            if (item.kind != 'file') {
+                console.log('Skipping non-file: ' + item.name);
                 return;
+            }
             var dataType = item.mime ? item.mime.replace(/\./g, '_').replace(/\//g, '-') : null;
             var thumbDIV = $('<div class="fb-item-thumb fileicon">').attr('data-type', dataType);
-            var itemDIV = $('<div class="fb-item fb-grid-item">').append([
+            var itemDIV = $('<div class="fb-item">').append([
                 thumbDIV,
-                $('<div class="fb-item-label">').html(item.name)
+                $('<div class="fb-item-label">').html(item.name),
+                $('<div class="fb-item-type">').html(item.mime),
+                $('<div class="fb-item-size">').html(host._size(item.size)),
+                $('<div class="fb-item-date">').html(host._date(item.modified))
             ]).attr('draggable', true).attr('id', item.id).data('file', item);
-            host.mainDIV.append(itemDIV);
+            host.itemsDIV.append(itemDIV);
             if (item.downloadLink)
                 itemDIV.attr('data-uri', item.downloadLink);
             if (item.previewLink) {
@@ -901,21 +976,21 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                     return params[sub];
                 });
             }
-            host.mainDIV.append(host.mainDIV.children('div.fb-item').sort(function (a, b) {
+            host.itemsDIV.append(host.itemsDIV.children('div.fb-item').sort(function (a, b) {
                 return (a.lastChild.innerHTML > b.lastChild.innerHTML) - (a.lastChild.innerHTML < b.lastChild.innerHTML);
             }));
             itemDIV.click(function (event) {
                 if (event.ctrlKey && host.settings.allowmultiple) {
                     host.focus = $(this).toggleClass('selected');
                 } else if (event.shiftKey && host.focus && host.settings.allowmultiple) {
-                    var start = host.mainDIV.children('.fb-item').index(host.focus);
-                    var end = host.mainDIV.children('.fb-item').index(this);
-                    host.mainDIV.children('.fb-item').slice((end > start ? start + 1 : end), (start > end ? start : end + 1)).addClass('selected');
+                    var start = host.itemsDIV.children('.fb-item').index(host.focus);
+                    var end = host.itemsDIV.children('.fb-item').index(this);
+                    host.itemsDIV.children('.fb-item').slice((end > start ? start + 1 : end), (start > end ? start : end + 1)).addClass('selected');
                 } else {
-                    host.mainDIV.find('.selected').removeClass('selected');
+                    host.itemsDIV.find('.selected').removeClass('selected');
                     host.focus = $(this).addClass('selected');
                 }
-                var selected = host.mainDIV.children('.fb-item.selected');
+                var selected = host.itemsDIV.children('.fb-item.selected');
                 if (host.infoDIV) {
                     if (selected.length > 1) {
                         host.infoDIV.html($('<div class="fb-info-label">').html(selected.length + ' items selected'));
@@ -964,7 +1039,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                         icon: 'copy',
                         label: 'Copy',
                         action: function () {
-                            host.copy(host.mainDIV.children('.selected'));
+                            host.copy(host.itemsDIV.children('.selected'));
                         }
                     });
                 }
@@ -973,7 +1048,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                         icon: 'scissors',
                         label: 'Cut',
                         action: function () {
-                            host.cut(host.mainDIV.children('.selected'));
+                            host.cut(host.itemsDIV.children('.selected'));
                         }
                     });
                     options.push('spacer');
@@ -1029,10 +1104,10 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 var selected = [];
                 if (!event.ctrlKey) {
                     if (!$(event.target).hasClass('selected'))
-                        host.mainDIV.children('.selected').removeClass('selected');
+                        host.itemsDIV.children('.selected').removeClass('selected');
                     $(event.target).addClass('selected');
                 }
-                host.mainDIV.children('.selected').each(function (index, item) {
+                host.itemsDIV.children('.selected').each(function (index, item) {
                     selected.push(item.id);
                 });
                 event.originalEvent.dataTransfer.setData('text', selected);
@@ -1041,6 +1116,15 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
         };
         host._rmfile = function (target) {
             $('#' + target).remove();
+        };
+        host._search = function (query) {
+            if (!host.cwd)
+                return;
+            this.conn.search(host.cwd.id, query)
+                .done(function (items) {
+                    for (x in items)
+                        host._item(items[x]);
+                });
         };
         host.rename = function (obj) {
             var file = $(obj).data('file');
@@ -1079,7 +1163,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             renameINPUT.focus();
         };
         host.delete = function () {
-            var selected = host.mainDIV.find('.selected');
+            var selected = host.itemsDIV.find('.selected');
             if (selected.length > 0) {
                 $('<div>').html('Really delete ' + selected.length + ' selected item(s).')
                     .browserDialog({
@@ -1153,6 +1237,15 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 }, 3000);
             }
         };
+        host._mode = function (defmode) {
+            var ca = document.cookie.split(';');
+            for (x in ca) {
+                var item = ca[x].trim().split('=');
+                if (item[0] == 'filebrowser.mode')
+                    return item[1];
+            }
+            return defmode;
+        };
         host.settings = $.extend(true, {
             title: 'File Browser',
             width: '800px',
@@ -1172,35 +1265,39 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             tools: [],
             monthNames: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
         }, arg1);
+        host.settings.mode = host._mode(host.settings.mode);
         if (host.settings.defaulttools) {
             host.settings.tools.unshift({
                 icon: (host.settings.mode == 'grid') ? 'th-large' : 'th-list',
                 click: function () {
                     if (host.settings.mode == 'list') {
                         host.settings.mode = 'grid';
+                        host.mainDIV.removeClass('list').addClass('grid');
                         $(this).children().removeClass('fa-th-list').addClass('fa-th-large');
                     } else {
                         host.settings.mode = 'list';
+                        host.mainDIV.removeClass('grid').addClass('list');
                         $(this).children().removeClass('fa-th-large').addClass('fa-th-list');
                     }
+                    document.cookie = 'filebrowser.mode=' + host.settings.mode;
                 }
             });
         }
         host.conn = new fbConnector(this, host.settings.connect, host.settings.mimeFilter, host.settings.useMeta);
         host.conn.on('mkdir', host._dir)
             .on('rmdir', host._rmdir)
-            .on('file', host._file)
+            .on('file', host._item)
             .on('unlink', host._rmfile)
             .on('open', host._open)
             .on('rename', host._rename)
             .on('upload', function (file) {
-                host._file(file);
-                host.mainDIV.children('#' + file.id).children('.fb-item-thumb').append($('<div class="fb-item-upload-pct">'));
+                host._item(file);
+                host.itemsDIV.children('#' + file.id).children('.fb-item-thumb').append($('<div class="fb-item-upload-pct">'));
             }).on('uploadProgress', function (file, pct) {
-                var progressDIV = host.mainDIV.children('#' + file.id).find('.fb-item-upload-pct');
+                var progressDIV = host.itemsDIV.children('#' + file.id).find('.fb-item-upload-pct');
                 progressDIV.css('height', ((1 - pct) * 100) + '%');
             }).on('uploadDone', function (file, data) {
-                var itemDIV = host.mainDIV.children('#' + file.id);
+                var itemDIV = host.itemsDIV.children('#' + file.id);
                 if (data.previewLink) {
                     var thumbDIV = itemDIV.children('.fb-item-thumb');
                     var image = new Image();
@@ -1218,7 +1315,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 itemDIV.data('file', data).find('.fb-item-upload-pct').remove();
                 host.progress();
             }).on('uploadError', function (file) {
-                host.mainDIV.children('#' + file.id).addClass('uploadError').find('.fb-item-upload-pct').removeAttr('style');
+                host.itemsDIV.children('#' + file.id).addClass('uploadError').find('.fb-item-upload-pct').removeAttr('style');
             }).on('progress', function (packet) {
                 if (packet.data.init) {
                     host.initProgress(packet.data.init);
@@ -1228,7 +1325,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                     }
                 }
             });
-        host._render([host.settings.mode]);
+        host._render(host.settings.mode);
         host.conn.tree(null, 0).done(function () {
             var startDir;
             if (host.settings.startDirectory) {
@@ -1268,16 +1365,16 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 switch (event.keyCode) {
                     case 65:
                         if (host.settings.allowmultiple)
-                            host.mainDIV.children().addClass('selected');
+                            host.itemsDIV.children().addClass('selected');
                         break;
                     case 67:
-                        host.copy(host.mainDIV.children('.selected'));
+                        host.copy(host.itemsDIV.children('.selected'));
                         break;
                     case 86:
-                        host.paste(host.mainDIV);
+                        host.paste(host.itemsDIV);
                         break;
                     case 88:
-                        host.cut(host.mainDIV.children('.selected'));
+                        host.cut(host.itemsDIV.children('.selected'));
                         break;
                 }
                 return false;
