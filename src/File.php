@@ -687,19 +687,26 @@ class File {
      */
     private function filter($content){
 
-        $bom = pack('H*','BADA55');
+        $bom = substr($content, 0, 3);
 
         //Check if we are encrypted
-        if(substr($content, 0, 3) !== $bom)
-            return $content;
+        if($bom === pack('H*','BADA55')){  //Hazaar Encryption
 
-        $this->encrypted = true;
+            $this->encrypted = true;
 
-        $cipher_len = openssl_cipher_iv_length(File::$default_cipher);
+            $cipher_len = openssl_cipher_iv_length(File::$default_cipher);
 
-        $iv = substr($content, 3, $cipher_len);
+            $iv = substr($content, 3, $cipher_len);
 
-        return openssl_decrypt(substr($content, 3 + $cipher_len), File::$default_cipher, $this->getEncryptionKey(), OPENSSL_RAW_DATA, $iv);
+            $content = openssl_decrypt(substr($content, 3 + $cipher_len), File::$default_cipher, $this->getEncryptionKey(), OPENSSL_RAW_DATA, $iv);
+
+        }elseif($bom === pack('H*','EFBBBF')){  //UTF-8
+
+            $content = utf8_decode(substr($content, 3));
+
+        }
+
+        return $content;
 
     }
 
