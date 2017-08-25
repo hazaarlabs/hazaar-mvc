@@ -702,7 +702,7 @@ class File {
 
         }elseif($bom === pack('H*','EFBBBF')){  //UTF-8
 
-            $content = utf8_decode(substr($content, 3));
+            $content = substr($content, 3);  //Just strip the BOM
 
         }
 
