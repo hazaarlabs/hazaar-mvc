@@ -200,6 +200,10 @@ function humanFileSize(bytes, si) {
     return bytes.toFixed(1) + ' ' + units[u];
 }
 
+Number.prototype.toBytes = function (si) {
+    return humanFileSize(this, si);
+}
+
 var dataBinder = function (data, name, parent) {
     this._jquery = jQuery({});
     this._name = name;
