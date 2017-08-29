@@ -104,15 +104,18 @@
     }
 
     .popup-window .popup-buttons button {
-        padding: 10px 15px;
         margin: 0 5px;
         min-width: 100px;
-        border: 1px solid #ddd;
-        background: #eee;
-        cursor: pointer;
     }
 
-        .popup-window .popup-buttons button:hover {
-            border-color: #ccc;
-            background-color: #ddd;
+        .popup-window .popup-buttons button.popup-button {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            background: #eee;
+            cursor: pointer;
         }
+
+            .popup-window .popup-buttons button.popup-button:hover {
+                border-color: #ccc;
+                background-color: #ddd;
+            }
