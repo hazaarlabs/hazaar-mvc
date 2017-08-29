@@ -117,8 +117,9 @@
                     for (x in this.props.buttons) {
                         if (typeof this.props.buttons[x] == 'string')
                             this.props.buttons[x] = { label: this.props.buttons[x], action: 'close' };
-                        var btn = $.extend({ label: 'Button', action: 'close' }, this.props.buttons[x]);
-                        this.__buttons.append($('<button>').html(btn.label).data('btn', btn).click(this.btnAction));
+                        var btn = $.extend({ label: 'Button', action: 'close', 'class': 'popup-button' }, this.props.buttons[x]);
+                        var button = $('<button>').attr('class', btn.class).html(btn.label).data('btn', btn).click(this.btnAction);
+                        this.__buttons.append(button);
                     }
                 }
                 $(this).addClass('popup-content');
