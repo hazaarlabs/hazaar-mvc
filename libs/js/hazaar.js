@@ -1,13 +1,16 @@
 ﻿function HazaarJSHelper(base_url, data) {
     this.__base_url = base_url;
     this.__data = (typeof data == 'undefined') ? {} : data;
-    this.http_build_query = function (array) {
-        var parts = [];
+    this.http_build_query = function (array, encode) {
+        var parts = [], qs = '';
         for (x in array)
             parts.push(x + '=' + array[x]);
-        return parts.join('&');
+        qs = parts.join('&');
+        if (encode === true)
+            qs = 'hzqs=' + btoa(qs);
+        return qs;
     }
-    this.url = function (controller, action, params) {
+    this.url = function (controller, action, params, encode) {
         var url = this.__base_url;
         if (url.charAt(url.length - 1) != '/')
             url += '/';
@@ -19,7 +22,7 @@
         url += '/' + action;
         if (typeof params != 'object' || params == null || Object.keys(params).length == 0)
             return url;
-        return url + '?' + this.http_build_query(params);
+        return url + '?' + this.http_build_query(params, encode);
     }
     this.set = function (key, value) {
         this.__data[key] = value;

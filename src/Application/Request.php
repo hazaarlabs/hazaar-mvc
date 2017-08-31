@@ -301,6 +301,14 @@ abstract class Request implements Request\_Interface {
 
         }
 
+        if(array_key_exists('hzqs', $this->params)){
+
+            $this->params = array_merge($this->params, array_unflatten(base64_decode($this->params['hzqs']), '=', '&'));
+
+            unset($this->params['hzqs']);
+
+        }
+
     }
 
     public function count() {
