@@ -95,7 +95,7 @@ var dataBinder = function (data, name, parent) {
         jQuery('[data-bind="' + attr_name + '"]').each(function () {
             var o = jQuery(this);
             if (o.is("input, textarea, select"))
-                o.val(attr_value);
+                (o.attr('type') == 'checkbox') ? o.prop('checked', attr_value) : o.val(attr_value);
             else
                 o.html(attr_value);
         });
