@@ -64,7 +64,7 @@
             host.__setIcon = function (name, color) {
                 var icon = 'font-awesome', color = '#000';
                 if (!this.__icon)
-                    this.__icon = $('<div class="popup-window-icon">').appendTo(this.__container);
+                    this.__icon = $('<div class="modal-content-icon">').appendTo(this.__container);
                 switch (name) {
                     case 'working':
                         icon = 'circle-o-notch fa-spin';
@@ -104,16 +104,16 @@
             }
             host.render = function () {
                 this.__overlay = $('<div class="popup-overlay">').appendTo(document.body).toggleClass('modal', this.props.modal);
-                this.__window = $('<div class="popup-window">').appendTo(this.__overlay);
-                this.__title = $('<div class="popup-window-title">').html(this.props.title).appendTo(this.__window);
-                this.__container = $('<div class="popup-container">').appendTo(this.__window);
-                this.__close = $('<div class="popup-window-close">').html('X').appendTo(this.__title);
+                this.__window = $('<div class="modal-content">').appendTo(this.__overlay);
+                this.__title = $('<div class="modal-header">').html(this.props.title).appendTo(this.__window);
+                this.__container = $('<div class="modal-body">').appendTo(this.__window);
+                this.__close = $('<button type="button" class="close">').html('x').appendTo(this.__title);
                 if (this.props.icon)
                     this.__setIcon(this.props.icon, this.props.iconColor);
                 this.props.hideOnClose = ($(this).parent().length > 0);
                 this.__container.append(this);
                 if (this.props.buttons.length > 0) {
-                    this.__buttons = $('<div class="popup-buttons">').appendTo(this.__window);
+                    this.__buttons = $('<div class="modal-footer">').appendTo(this.__window);
                     for (x in this.props.buttons) {
                         if (typeof this.props.buttons[x] == 'string')
                             this.props.buttons[x] = { label: this.props.buttons[x], action: 'close' };
@@ -122,7 +122,7 @@
                         this.__buttons.append(button);
                     }
                 }
-                $(this).addClass('popup-content');
+                //$(this).addClass('modal-body');
                 if (this.props.width)
                     this.__window.addClass('static').css({ width: this.props.width });
                 if (this.props.height)
