@@ -104,7 +104,7 @@ var dataBinder = function (data, name, parent) {
         _binder: this,
         _attributes: data,
         save: function () {
-            return $.extend(true, {}, this._attributes);
+            return Object.assign(this._attributes);
         }
     }
     for (var key in data) {
