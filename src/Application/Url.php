@@ -149,9 +149,11 @@ class Url {
      *
      * @param array $params Override the default params with parameters in this array.
      *
+     * @param boolean $encode Encode the URL as a Hazaar MVC encoded query string URL.
+     *
      * @return      string The resulting URL based on the constructor arguments.
      */
-    public function renderObject($inc_path = TRUE, $params = NULL) {
+    public function renderObject($inc_path = TRUE, $params = NULL, $encode = false) {
 
         $path = ($this->base_path ? $this->base_path . '/' : null) . $this->controller . ($this->method ? '/' . $this->method : NULL);
 
@@ -195,8 +197,16 @@ class Url {
             if(! is_array($params))
                 $params = $this->params;
 
-            if($params)
-                $url .= '?' . http_build_query($params);
+            if($params){
+
+                $params = http_build_query($params);
+
+                if($encode)
+                    $params = 'hzqs=' . base64_encode($params);
+
+                $url .= '?' . $params;
+
+            }
 
         }
 
@@ -272,6 +282,12 @@ class Url {
 
         else
             $this->params = $params;
+
+    }
+
+    public function encode(){
+
+        return $this->renderObject(true, null, true);
 
     }
 
