@@ -20,7 +20,6 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     private static $known_types = array(
         'boolean',
-        'bool',
         'integer',
         'int',
         'float',
@@ -33,6 +32,12 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         'NULL',
         'model',
         'mixed'
+    );
+
+    private static $type_aliases = array(
+        'bool' => 'boolean',
+        'number' => 'float',
+        'text' => 'string'
     );
 
     protected $fields = array();
@@ -155,8 +160,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                                 if (\Hazaar\Map::is_array($value) && count($value) == 0)
                                     $value = NULL;
 
-                                if (!settype($value, $definition['type']))
-                                    throw new Exception\InvalidDataType($field, $definition['type'], get_class($value));
+                                $value = $this->convertType($value, $definition['type']);
 
                             } elseif (class_exists($definition['type']) && !is_a($value, $definition['type'])) {
 
@@ -299,7 +303,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
         $type = $this->getType($key);
 
-        if($type == 'object' || !in_array($type, Strict::$known_types))
+        if($type == 'object' || !(in_array($type, Strict::$known_types) || array_key_exists($type, Strict::$type_aliases)))
             return true;
 
         return false;
@@ -323,6 +327,9 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     protected function convertType(&$value, $type) {
 
+        if(array_key_exists($type, Strict::$type_aliases))
+            $type = Strict::$type_aliases[$type];
+
         if (in_array($type, Strict::$known_types)) {
 
             /*
@@ -334,12 +341,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
             if (\Hazaar\Map::is_array($value) && count($value) == 0)
                 $value = NULL;
 
-            $bools = array(
-                'bool',
-                'boolean'
-            );
-
-            if (in_array($type, $bools)) {
+            if ($type == 'boolean') {
 
                 $value = boolify($value);
 
