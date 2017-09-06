@@ -143,11 +143,8 @@ class Money {
 
                     $infoline = array();
 
-                    foreach($headers as $index => $key) {
-
+                    foreach($headers as $index => $key)
                         $infoline[$key] = $line[$index];
-
-                    };
 
                     $lines[$line[3]] = $infoline;
 
