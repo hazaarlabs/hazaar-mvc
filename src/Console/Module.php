@@ -36,8 +36,6 @@ abstract class Module extends \Hazaar\Controller\Action {
 
         $this->view->addHelper('fontawesome', array('version' => '4.7.0'));
 
-        $this->view->addHelper('extra');
-
         $this->view->requires($this->application->url('hazaar/file/console/js/popup.js'));
 
         $this->view->requires($this->application->url('hazaar/file/console/js/console.js'));
