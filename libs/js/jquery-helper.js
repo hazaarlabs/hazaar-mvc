@@ -85,6 +85,7 @@ var dataBinder = function (data, name, parent) {
                 var attr_name = this._binder._attr_name(key);
                 this._attributes[key] = value;
                 this._binder._jquery.trigger(attr_name + ':change', [this._binder, attr_name, value]);
+                this._trigger(attr_name, value);
             },
             get: function () {
                 return this._attributes[key];
@@ -103,8 +104,26 @@ var dataBinder = function (data, name, parent) {
     var object = {
         _binder: this,
         _attributes: data,
+        _watches: {},
+        _trigger: function (key, value) {
+            if (key in this._watches) {
+                for (x in this._watches[key])
+                    this._watches[key][x][0](key, value, this._watches[key][x][1]);
+            }
+        },
         save: function () {
             return Object.assign(this._attributes);
+        },
+        watch: function (key, callback, args) {
+            if (!(key in this._watches))
+                this._watches[key] = [];
+            this._watches[key].push([callback, args]);
+        },
+        unwatch: function (key) {
+            if (typeof key == 'undefined')
+                this._watches = {};
+            else if (key in this._watches)
+                delete this._watches[key];
         }
     }
     for (var key in data) {
