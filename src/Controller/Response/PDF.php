@@ -4,8 +4,6 @@ namespace Hazaar\Controller\Response;
 
 class PDF extends \Hazaar\Controller\Response\HTTP\OK {
 
-    private $html       = '';
-
     private $source_url = NULL;
 
     private $tmp        = '';
@@ -205,15 +203,11 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
 
     }
 
-    /**
-     * Set html content.
-     * @param string $html New html content. It *replaces* any previous content.
-     */
-    public function setHtml($html) {
-
-        $this->html = $html;
+    public function setContent($content){
 
         $this->source_url = NULL;
+
+        return parent::setContent($content);
 
     }
 
@@ -223,9 +217,9 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
      */
     public function setSource($url) {
 
-        $this->source_url = $url;
+        parent::setContent(null);
 
-        $this->html = '';
+        $this->source_url = $url;
 
     }
 
@@ -250,7 +244,7 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
 
         } else {
 
-            file_put_contents($this->tmp, $this->html);
+            file_put_contents($this->tmp, $this->content);
 
             $web = $this->tmp;
 
