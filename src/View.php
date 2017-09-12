@@ -528,7 +528,7 @@ class View {
     public function render() {
 
         if ($this->_rendering)
-            return NULL;
+            return $this->__call('render', func_get_args());
 
         $this->_rendering = TRUE;
 
