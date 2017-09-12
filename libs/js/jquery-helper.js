@@ -69,78 +69,101 @@ $.stream = function (url, options) {
  * HTML elements with automatic updates on change.
  */
 var dataBinder = function (data, name, parent) {
-    if (this == window)
-        throw 'DataBinder is not a new object!';
+    if (this === window)
+        return new dataBinder(data);
+    this._init(data, name, parent);
+}
+
+dataBinder.prototype._attributes = {};
+
+dataBinder.prototype._watchers = {};
+
+dataBinder.prototype._init = function (data, name, parent) {
     this._jquery = jQuery({});
     this._name = name;
     this._parent = parent;
-    this._attr_name = function (attr_name) {
-        if (this._parent)
-            attr_name = this._parent._attr_name(this._name + '.' + attr_name);
-        return attr_name;
+    if (Object.keys(data).length > 0) {
+        for (var key in data)
+            this.add(key, data[key]);
     }
-    this._defineProperty = function (object, key) {
-        Object.defineProperty(object, key, {
-            set: function (value) {
-                var attr_name = this._binder._attr_name(key);
-                this._attributes[key] = value;
-                this._binder._jquery.trigger(attr_name + ':change', [this._binder, attr_name, value]);
-                this._trigger(attr_name, value);
-            },
-            get: function () {
-                return this._attributes[key];
-            }
+};
+
+dataBinder.prototype.add = function (key, value) {
+    return this._defineProperty(key, value);
+};
+
+dataBinder.prototype.remove = function (key) {
+    if (!(key in this._attributes))
+        return;
+    this._jquery.off(this._attr_name(key) + ':change');
+    delete this[key];
+}
+
+dataBinder.prototype._attr_name = function (attr_name) {
+    if (this._parent)
+        attr_name = this._parent._attr_name(this._name + '.' + attr_name);
+    return attr_name;
+}
+
+dataBinder.prototype._defineProperty = function (key, value) {
+    if (Array.isArray(value)) {
+        var array_len = value.length;
+        object[key] = [];
+        for (var i = 0; i < array_len; i++)
+            object[key][i] = new dataBinder(value[i], key + '[' + i + ']', this);
+    } else if (typeof value == 'object' && value !== null) {
+        value = new dataBinder(value, key, this);
+    } else {
+        this._jquery.on(this._attr_name(key) + ':change', function (event, binder, attr_name, attr_value) {
+            binder._update(attr_name, attr_value);
         });
+        this._update(this._attr_name(key), value);
     }
-    this._update = function (attr_name, attr_value) {
-        jQuery('[data-bind="' + attr_name + '"]').each(function () {
-            var o = jQuery(this);
-            if (o.is("input, textarea, select"))
-                (o.attr('type') == 'checkbox') ? o.prop('checked', attr_value) : o.val(attr_value);
-            else
-                o.html(attr_value);
-        });
-    }
-    var object = {
-        _binder: this,
-        _attributes: data,
-        _watches: {},
-        _trigger: function (key, value) {
-            if (key in this._watches) {
-                for (x in this._watches[key])
-                    this._watches[key][x][0](key, value, this._watches[key][x][1]);
-            }
+    console.log('Defining: ' + key);
+    this._attributes[key] = value;
+    Object.defineProperty(this, key, {
+        set: function (value) {
+            var attr_name = this._attr_name(key);
+            this._attributes[key] = value;
+            this._jquery.trigger(attr_name + ':change', [this, attr_name, value]);
+            this._trigger(attr_name, value);
         },
-        save: function () {
-            return Object.assign(this._attributes);
-        },
-        watch: function (key, callback, args) {
-            if (!(key in this._watches))
-                this._watches[key] = [];
-            this._watches[key].push([callback, args]);
-        },
-        unwatch: function (key) {
-            if (typeof key == 'undefined')
-                this._watches = {};
-            else if (key in this._watches)
-                delete this._watches[key];
+        get: function () {
+            return this._attributes[key];
         }
+    });
+}
+
+dataBinder.prototype._update = function (attr_name, attr_value) {
+    jQuery('[data-bind="' + attr_name + '"]').each(function () {
+        var o = jQuery(this);
+        if (o.is("input, textarea, select"))
+            (o.attr('type') == 'checkbox') ? o.prop('checked', attr_value) : o.val(attr_value);
+        else
+            o.html(attr_value);
+    });
+}
+
+dataBinder.prototype._trigger = function (key, value) {
+    if (key in this._watchers) {
+        for (x in this._watchers[key])
+            this._watchers[key][x][0](key, value, this._watchers[key][x][1]);
     }
-    for (var key in data) {
-        if (Array.isArray(data[key])) {
-            var array_len = data[key].length;
-            object[key] = [];
-            for (var i = 0; i < array_len; i++)
-                object[key][i] = new dataBinder(data[key][i], key + '[' + i + ']', this);
-        } else if (typeof data[key] == 'object' && data[key] != null) {
-            object[key] = new dataBinder(data[key], key, this);
-        } else {
-            this._jquery.on(this._attr_name(key) + ':change', function (event, binder, attr_name, attr_value) {
-                binder._update(attr_name, attr_value);
-            });
-            this._defineProperty(object, key);
-            this._update(this._attr_name(key), data[key]);
-        }
-    }
-    return object;
+};
+
+dataBinder.prototype.save = function () {
+    return Object.assign(this._attributes);
+};
+
+dataBinder.prototype.watch = function (key, callback, args) {
+    if (!(key in this._watchers))
+        this._watchers[key] = [];
+    this._watchers[key].push([callback, args]);
+};
+
+dataBinder.prototype.unwatch = function (key) {
+    if (typeof key == 'undefined')
+        this._watchers = {};
+    else if (key in this._watchers)
+        delete this._watchers[key];
 };
