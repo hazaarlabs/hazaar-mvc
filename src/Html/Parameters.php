@@ -182,5 +182,11 @@ class Parameters implements \Countable {
 
     }
 
+    public function toArray(){
+
+        return $this->params;
+
+    }
+
 }
 

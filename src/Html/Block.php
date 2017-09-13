@@ -177,9 +177,15 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     }
 
-    public function children() {
+    public function children($selector = null) {
 
-        return $this->content;
+        return new ElementCollection($this->content, $selector);
+
+    }
+
+    public function find($selector = null) {
+
+        return new ElementCollection($this->content, $selector);
 
     }
 
