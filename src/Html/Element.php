@@ -56,6 +56,12 @@ abstract class Element implements _Interface {
 
     }
 
+    public function getTypeName(){
+
+        return strtoupper($this->type);
+
+    }
+
     /**
      * @detail      Magic method to allow getting of parameters by property access.
      *

@@ -119,7 +119,6 @@ dataBinder.prototype._defineProperty = function (key, value) {
         });
         this._update(this._attr_name(key), value);
     }
-    console.log('Defining: ' + key);
     this._attributes[key] = value;
     Object.defineProperty(this, key, {
         set: function (value) {
