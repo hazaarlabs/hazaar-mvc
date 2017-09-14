@@ -16,17 +16,16 @@ class ElementCollection {
 
     private $original_selector;
 
-    function __construct($objects, $selector = null){
+    function __construct(&$objects = null, $selector = null, $recursive = false){
 
         $this->original_selector = $selector;
 
-        $this->elements = $this->match($objects, $this->original_selector);
+        if(is_array($objects) && count($objects) > 0)
+            $this->elements = $this->match($objects, $this->original_selector,$recursive);
 
     }
 
-    static private function match($objects, $selector = null){
-
-        $collection = array();
+    static private function match(&$objects, $selector = null, $recursive = false){
 
         $parts = explode(',', $selector);
 
@@ -75,10 +74,21 @@ class ElementCollection {
 
         }
 
+        return ElementCollection::find($objects, $rules, $recursive);
+
+    }
+
+    static private function find(&$objects, &$rules, $recursive = false){
+
+        $collection = array();
+
         foreach($objects as $object){
 
             if(!$object instanceof Element)
                 continue;
+
+            if($recursive && $object instanceof Block)
+                $collection += ElementCollection::find($object->get(), $rules, $recursive);
 
             if(!($id = $object->attr('id')))
                 $id = uniqid();
