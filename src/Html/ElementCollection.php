@@ -74,11 +74,11 @@ class ElementCollection {
 
         }
 
-        return ElementCollection::find($objects, $rules, $recursive);
+        return ElementCollection::apply($objects, $rules, $recursive);
 
     }
 
-    static private function find(&$objects, &$rules, $recursive = false){
+    static private function apply(&$objects, &$rules, $recursive = false){
 
         $collection = array();
 
@@ -88,7 +88,7 @@ class ElementCollection {
                 continue;
 
             if($recursive && $object instanceof Block)
-                $collection += ElementCollection::find($object->get(), $rules, $recursive);
+                $collection += ElementCollection::apply($object->get(), $rules, $recursive);
 
             if(!($id = $object->attr('id')))
                 $id = uniqid();
@@ -140,6 +140,38 @@ class ElementCollection {
     public function count(){
 
         return count($this->elements);
+
+    }
+
+    public function add($elements){
+
+        if($elements instanceof ElementCollection)
+            $elements = $elements->elements;
+        elseif(!is_array($elements))
+            return $this;
+
+        $collection = new ElementCollection(null, $this->original_selector);
+
+        $collection->elements = $this->elements + $elements;
+
+        return $collection;
+
+    }
+
+    public function children($selector = null){
+
+        $elements = array();
+
+        foreach($this->elements as $element)
+            $elements += $element->get();
+
+        return new ElementCollection($elements, $selector);
+
+    }
+
+    public function find($selector = null){
+
+        return new ElementCollection($this->elements, $selector, true);
 
     }
 
