@@ -10,7 +10,7 @@ namespace Hazaar\Html;
  * @version 1.0
  * @author jamiec
  */
-class ElementCollection {
+class ElementCollection implements \ArrayAccess, \Iterator {
 
     private $elements = array();
 
@@ -90,13 +90,10 @@ class ElementCollection {
             if($recursive && $object instanceof Block)
                 $collection += ElementCollection::apply($object->get(), $rules, $recursive);
 
-            if(!($id = $object->attr('id')))
-                $id = uniqid();
-
             if($rules['type'] && $rules['type'] != $object->getTypeName())
                 continue;
 
-            if($rules['id'] && $rules['id'] != $id)
+            if($rules['id'] && $rules['id'] != $object->attr('id'))
                 continue;
 
             if(count($rules['classes']) > 0 && count(array_diff($rules['classes'], explode(' ', $object->attr('class')))) > 0)
@@ -116,7 +113,7 @@ class ElementCollection {
 
             }
 
-            $collection[$id] = $object;
+            $collection[] = $object;
 
         }
 
@@ -196,6 +193,73 @@ class ElementCollection {
             $output .= $element;
 
         return $output;
+
+    }
+
+    public function get($index){
+
+        return ake($this->elements, $index);
+
+    }
+
+    public function offsetExists($offset){
+
+        return array_key_exists($offset, $this->elements);
+
+    }
+
+    public function offsetGet($offset){
+
+        if(array_key_exists($offset, $this->elements))
+            return $this->elements[$offset];
+
+        return null;
+
+    }
+
+    public function offsetSet($offset, $value){
+
+        if(!$value instanceof Element)
+            return;
+
+        $this->elements[$offset] = $value;
+
+    }
+
+    public function offsetUnset($offset){
+
+        if(array_key_exists($offset, $this->elements))
+            unset($this->elements[$offset]);
+
+    }
+
+    public function current(){
+
+        return current($this->elements);
+
+    }
+
+    public function next(){
+
+        return next($this->elements);
+
+    }
+
+    public function key(){
+
+        return key($this->elements);
+
+    }
+
+    public function valid(){
+
+        return (current($this->elements));
+
+    }
+
+    public function rewind(){
+
+        return reset($this->elements);
 
     }
 
