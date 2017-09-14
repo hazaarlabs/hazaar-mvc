@@ -152,11 +152,8 @@ class Block extends Element implements \ArrayAccess, \Iterator {
      */
     public function add() {
 
-        foreach(func_get_args() as $arg) {
-
+        foreach(func_get_args() as $arg)
             $this->content[] = $arg;
-
-        }
 
         return $this;
 

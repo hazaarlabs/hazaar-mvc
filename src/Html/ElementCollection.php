@@ -135,8 +135,12 @@ class ElementCollection {
 
     public function __call($method, $args){
 
-        if($element = current($this->elements))
-            return call_user_func_array(array($element, $method), $args);
+        if(is_array($this->elements)){
+
+            foreach($this->elements as $element)
+                call_user_func_array(array($element, $method), $args);
+
+        }
 
         return $this;
 
@@ -148,6 +152,7 @@ class ElementCollection {
 
         foreach($this->elements as $element)
             $output .= $element;
+
         return $output;
 
     }
