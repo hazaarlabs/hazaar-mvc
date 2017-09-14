@@ -169,7 +169,11 @@ class Parameters implements \Countable {
 
     public function has($key) {
 
-        return array_key_exists($key, $this->params);
+        /**
+         * Some magic here.  We look for attributes as array keys and if that doesn't exist we look for properties,
+         * where a property is a key in the array as a value with a numeric index.
+         */
+        return array_key_exists($key, $this->params) || is_int(array_search($key, $this->params, true));
 
     }
 
