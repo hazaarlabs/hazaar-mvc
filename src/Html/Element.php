@@ -281,9 +281,7 @@ abstract class Element implements _Interface {
 
     public function style() {
 
-        $argc = func_num_args();
-
-        if($argc == 0)
+        if(func_num_args() == 0)
             return $this->style;
 
         if(! $this->style instanceof Style)
@@ -291,9 +289,7 @@ abstract class Element implements _Interface {
 
         $this->parameters->set('style', $this->style);
 
-        $args = func_get_args();
-
-        call_user_func_array(array($this->style, 'set'), $args);
+        call_user_func_array(array($this->style, 'set'), func_get_args());
 
         return $this;
 
@@ -311,6 +307,24 @@ abstract class Element implements _Interface {
     public function data($key, $value){
 
         return $this->attr('data-' . trim($key), $value);
+
+    }
+
+    /**
+     * Shorthand method to set an element visible
+     */
+    public function show(){
+
+        $this->style('display', 'block');
+
+    }
+
+    /**
+     * Shorthand method to set an element not visible
+     */
+    public function hide(){
+
+        $this->style('display', 'none');
 
     }
 
