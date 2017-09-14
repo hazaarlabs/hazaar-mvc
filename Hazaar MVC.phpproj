@@ -178,6 +178,7 @@
     <Compile Include="src\Html\Doctype.php" />
     <Compile Include="src\Html\Dt.php" />
     <Compile Include="src\Html\Element.php" />
+    <Compile Include="src\Html\ElementCollection.php" />
     <Compile Include="src\Html\Em.php" />
     <Compile Include="src\Html\Embed.php" />
     <Compile Include="src\Html\Fieldset.php" />
