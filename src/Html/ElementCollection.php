@@ -33,9 +33,16 @@ class ElementCollection implements \ArrayAccess, \Iterator {
         $ruleset = array();
 
         //Compile all the selector rules.
-        foreach($parts as $part){
+        foreach($parts as $part)
+            $ruleset[] = ElementCollection::compileRules($part, count($objects));
 
-            $rules = array(
+        return ElementCollection::applyRuleset($objects, $ruleset, $recursive);
+
+    }
+
+    static private function compileRules($selector, $count){
+
+        $rules = array(
                 'type' => null,
                 'id' => null,
                 'classes' => array(),
@@ -43,51 +50,72 @@ class ElementCollection implements \ArrayAccess, \Iterator {
                     'match' => array(),
                     'exists' => array()
                 ),
-                'modifiers' => array()
+                'pseudo-class' => array(),
+                'func' => array(),
+                'not' => array()
             );
 
-            //Match element type references (single)
-            if(preg_match('/^(\w+)/', $part, $matches))
-                $rules['type'] = strtoupper($matches[1]);
+        $selectors = preg_split('/\:/', $selector);
 
-            //Match ID reference (single)
-            if(preg_match('/\#([\w-]*)/', $part, $matches))
-                $rules['id'] = $matches[1];
+        $primary = array_shift($selectors);
 
-            //Match class references (multi)
-            if(preg_match_all('/\.([\w-]*)/', $part, $matches)){
+        //Match element type references (single)
+        if(preg_match('/^(\w+)/', $primary, $matches))
+            $rules['type'] = strtoupper($matches[1]);
 
-                foreach($matches[1] as $match)
-                    $rules['classes'][] = $match;
+        //Match ID reference (single)
+        if(preg_match('/\#([\w-]*)/', $primary, $matches))
+            $rules['id'] = $matches[1];
+
+        //Match class references (multi)
+        if(preg_match_all('/\.([\w-]*)/', $primary, $matches)){
+
+            foreach($matches[1] as $match)
+                $rules['classes'][] = $match;
+
+        }
+
+        //Match attribute references (multi)
+        if(preg_match_all('/\[(.+)\]/U', $primary, $matches)){
+
+            foreach($matches[1] as $match){
+
+                if(preg_match('/(\w+)=[\'"]?([\s\w]+)[\'"]?/', $match, $pair))
+                    $rules['attributes']['match'][$pair[1]] = $pair[2];
+                else
+                    $rules['attributes']['exists'][] = $match;
 
             }
 
-            //Match attribute references (multi)
-            if(preg_match_all('/\[(.+)\]/U', $part, $matches)){
+        }
 
-                foreach($matches[1] as $match){
+        if(count($selectors) > 0){
 
-                    if(preg_match('/(\w+)=[\'"]?([\s\w]+)[\'"]?/', $match, $pair))
-                        $rules['attributes']['match'][$pair[1]] = $pair[2];
-                    else
-                        $rules['attributes']['exists'][] = $match;
+            foreach($selectors as $modifier){
+
+                if(preg_match('/([\w\-]+)\((.*)\)/', $modifier, $func)){
+
+                    if($func[1] == 'not'){
+
+                        $rules['not'][] = ElementCollection::compileRules($func[2], $count);
+
+                    }else{
+
+                        throw new \Exception('Unsupported complex pseudo-class: ' . $func[1]);
+
+                    }
+
+                }else{
+
+                    $rules['pseudo-class'][] = $modifier;
 
                 }
 
             }
 
-            if(preg_match_all('/\:([\w\-]+)/', $part, $matches)){
-
-                foreach($matches[1] as $match)
-                    $rules['modifiers'][] = $match;
-
-            }
-
-            $ruleset[] = $rules;
-
         }
 
-        return ElementCollection::applyRuleset($objects, $ruleset, $recursive);
+        return $rules;
 
     }
 
@@ -95,7 +123,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
         $collection = array();
 
-        foreach($objects as $object){
+        foreach($objects as $index => $object){
 
             if(!$object instanceof Element)
                 continue;
@@ -105,36 +133,78 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
             foreach($ruleset as $rules){
 
-                if($rules['type'] && $rules['type'] != $object->getTypeName())
-                    continue;
-
-                if($rules['id'] && $rules['id'] != $object->attr('id'))
-                    continue;
-
-                if(count($rules['classes']) > 0 && count(array_diff($rules['classes'], explode(' ', $object->attr('class')))) > 0)
-                    continue;
-
-                if(count($rules['attributes']['exists']) > 0 && count(array_diff($rules['attributes']['exists'], array_keys($object->parameters()->toArray()))) > 0)
-                    continue;
-
-                if(count($rules['attributes']['match']) > 0){
-
-                    foreach($rules['attributes']['match'] as $key => $value){
-
-                        if($object->attr($key) != $value)
-                            continue 2;
-
-                    }
-
-                }
-
-                $collection[] = $object;
+                if(ElementCollection::matchElement($object, $rules, $index, count($objects)))
+                    $collection[] = $object;
 
             }
 
         }
 
         return $collection;
+
+    }
+
+    static private function matchElement($element, $rules, $index, $count){
+
+        if($rules['type'] && $rules['type'] != $element->getTypeName())
+            return false;
+
+        if($rules['id'] && $rules['id'] != $element->attr('id'))
+            return false;
+
+        if(count($rules['classes']) > 0 && count(array_diff($rules['classes'], explode(' ', $element->attr('class')))) > 0)
+            return false;
+
+        if(count($rules['attributes']['exists']) > 0 && count(array_diff($rules['attributes']['exists'], array_keys($element->parameters()->toArray()))) > 0)
+            return false;
+
+        if(count($rules['attributes']['match']) > 0){
+
+            foreach($rules['attributes']['match'] as $key => $value){
+
+                if($element->attr($key) != $value)
+                    return false;
+
+            }
+
+        }
+
+        if(count($rules['pseudo-class']) > 0){
+
+            $group_classes = array('first-child', 'last-child');
+
+            foreach($rules['pseudo-class'] as $pseudo){
+
+                if(in_array($pseudo, $group_classes)){
+
+                    if($pseudo == 'first-child' && $index !== 0)
+                        return false;
+                    elseif($pseudo == 'last-child' && $index !== ($count - 1))
+                        return false;
+
+                }elseif(!$element->attr()->has($pseudo))
+                    return false;
+
+            }
+
+        }
+
+        if(count($rules['not']) > 0){
+
+            foreach($rules['not'] as $rule){
+
+                if(ElementCollection::matchElement($element, $rule, $index, $count))
+                    return false;
+
+            }
+
+        }
+
+        return true;
+
+    }
+
+    static function applyFunction(&$object, $name, $args){
 
     }
 
