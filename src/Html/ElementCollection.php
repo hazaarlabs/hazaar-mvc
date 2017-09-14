@@ -27,20 +27,24 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
     static private function match(&$objects, $selector = null, $recursive = false){
 
-        $parts = explode(',', $selector);
+        //Split on a comma and any amount of adjacent white space
+        $parts = preg_split('/\s*,\s*/', $selector);
 
-        $rules = array(
-            'type' => null,
-            'id' => null,
-            'classes' => array(),
-            'attributes' => array(
-                'match' => array(),
-                'exists' => array()
-            )
-        );
+        $ruleset = array();
 
         //Compile all the selector rules.
         foreach($parts as $part){
+
+            $rules = array(
+                'type' => null,
+                'id' => null,
+                'classes' => array(),
+                'attributes' => array(
+                    'match' => array(),
+                    'exists' => array()
+                ),
+                'modifiers' => array()
+            );
 
             //Match element type references (single)
             if(preg_match('/^(\w+)/', $part, $matches))
@@ -72,13 +76,22 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
             }
 
+            if(preg_match_all('/\:([\w\-]+)/', $part, $matches)){
+
+                foreach($matches[1] as $match)
+                    $rules['modifiers'][] = $match;
+
+            }
+
+            $ruleset[] = $rules;
+
         }
 
-        return ElementCollection::apply($objects, $rules, $recursive);
+        return ElementCollection::applyRuleset($objects, $ruleset, $recursive);
 
     }
 
-    static private function apply(&$objects, &$rules, $recursive = false){
+    static private function applyRuleset(&$objects, &$ruleset, $recursive = false){
 
         $collection = array();
 
@@ -88,32 +101,36 @@ class ElementCollection implements \ArrayAccess, \Iterator {
                 continue;
 
             if($recursive && $object instanceof Block)
-                $collection += ElementCollection::apply($object->get(), $rules, $recursive);
+                $collection += ElementCollection::applyRuleset($object->get(), $ruleset, $recursive);
 
-            if($rules['type'] && $rules['type'] != $object->getTypeName())
-                continue;
+            foreach($ruleset as $rules){
 
-            if($rules['id'] && $rules['id'] != $object->attr('id'))
-                continue;
+                if($rules['type'] && $rules['type'] != $object->getTypeName())
+                    continue;
 
-            if(count($rules['classes']) > 0 && count(array_diff($rules['classes'], explode(' ', $object->attr('class')))) > 0)
-                continue;
+                if($rules['id'] && $rules['id'] != $object->attr('id'))
+                    continue;
 
-            if(count($rules['attributes']['exists']) > 0 && count(array_diff($rules['attributes']['exists'], array_keys($object->parameters()->toArray()))) > 0)
-                continue;
+                if(count($rules['classes']) > 0 && count(array_diff($rules['classes'], explode(' ', $object->attr('class')))) > 0)
+                    continue;
 
-            if(count($rules['attributes']['match']) > 0){
+                if(count($rules['attributes']['exists']) > 0 && count(array_diff($rules['attributes']['exists'], array_keys($object->parameters()->toArray()))) > 0)
+                    continue;
 
-                foreach($rules['attributes']['match'] as $key => $value){
+                if(count($rules['attributes']['match']) > 0){
 
-                    if($object->attr($key) != $value)
-                        continue 2;
+                    foreach($rules['attributes']['match'] as $key => $value){
+
+                        if($object->attr($key) != $value)
+                            continue 2;
+
+                    }
 
                 }
 
-            }
+                $collection[] = $object;
 
-            $collection[] = $object;
+            }
 
         }
 
