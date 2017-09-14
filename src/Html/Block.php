@@ -137,7 +137,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
      *
      * @return      array
      */
-    public function get() {
+    public function & get() {
 
         return $this->content;
 
@@ -182,7 +182,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     public function find($selector = null) {
 
-        return new ElementCollection($this->content, $selector);
+        return new ElementCollection($this->content, $selector, true);
 
     }
 
