@@ -93,7 +93,7 @@ abstract class Element implements _Interface {
     public function attr() {
 
         if(func_num_args() == 0)
-            return null;
+            return $this->parameters;
 
         if(func_num_args() == 1)
             return $this->parameters->get(func_get_arg(0));
