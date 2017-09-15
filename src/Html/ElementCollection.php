@@ -50,6 +50,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
                     'match' => array(),
                     'exists' => array()
                 ),
+                'ranges' => array(),
                 'pseudo-class' => array(),
                 'func' => array(),
                 'not' => array()
@@ -91,13 +92,64 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
         if(count($selectors) > 0){
 
-            foreach($selectors as $modifier){
+            foreach($selectors as $pseudo_class){
 
-                if(preg_match('/([\w\-]+)\((.*)\)/', $modifier, $func)){
+                if(preg_match('/([\w\-]+)\((.*)\)/', $pseudo_class, $func)){
 
                     if($func[1] == 'not'){
 
                         $rules['not'][] = ElementCollection::compileRules($func[2], $count);
+
+                    }elseif(substr($func[1], 0, 4) == 'nth-'){
+
+                        if($func[2] == 'even')
+                            $func[2] = '2n+0';
+                        elseif($func[2] == 'odd')
+                            $func[2] = '2n+1';
+
+                        if(preg_match('/^(([\+\-]?\d*)n)?([\+\-]?\d*)$/', $func[2], $bits)){
+
+                            $a = intval($bits[2]);
+
+                            $b = intval($bits[3]);
+
+                            $range = array();
+
+                            switch($func[1]){
+                                case 'nth-child':
+
+                                    if($a > 0){
+
+                                        $i = 0;
+
+                                        while(($pos = (($a * $i++) + $b)) <= $count){
+
+                                            if($pos > 0)
+                                                $range[] = $pos - 1;
+
+                                        }
+
+                                    }elseif($b < 0){
+
+                                        $range[] = $count + $b;
+
+                                    }else{
+
+                                        $range[] = $b - 1;
+
+                                    }
+
+                                    break;
+
+                                default:
+
+                                    throw new \Exception('Unsupported nth pseudo class class selector: ' . $pseudo_class);
+
+                            }
+
+                            $rules['ranges'][] = $range;
+
+                        }
 
                     }else{
 
@@ -107,7 +159,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
                 }else{
 
-                    $rules['pseudo-class'][] = $modifier;
+                    $rules['pseudo-class'][] = $pseudo_class;
 
                 }
 
@@ -163,6 +215,17 @@ class ElementCollection implements \ArrayAccess, \Iterator {
             foreach($rules['attributes']['match'] as $key => $value){
 
                 if($element->attr($key) != $value)
+                    return false;
+
+            }
+
+        }
+
+        if(count($rules['ranges']) > 0){
+
+            foreach($rules['ranges'] as $range){
+
+                if(!in_array($index, $range))
                     return false;
 
             }
