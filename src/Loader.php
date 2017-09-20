@@ -423,6 +423,32 @@ class Loader {
 
 	}
 
+    static public function getModuleFilePath($search_file = null, $module = null, $case_insensitive = false){
+
+        $match_path = ROOT_PATH
+            . DIRECTORY_SEPARATOR . 'vendor'
+            . DIRECTORY_SEPARATOR . 'hazaarlabs' . DIRECTORY_SEPARATOR;
+
+        if($module === null){
+
+            $calling_file = debug_backtrace()[1]['file'];
+
+            if(substr($calling_file, 0, strlen($match_path)) !== $match_path)
+                return false;
+
+            if(!preg_match('/^hazaar\-(\w+)/', substr($calling_file, strlen($match_path)), $matches))
+                return false;
+
+            $module = $matches[1];
+
+        }
+
+        $path = $match_path . 'hazaar-' . $module . DIRECTORY_SEPARATOR . 'libs';
+
+        return Loader::resolveRealPath($path . DIRECTORY_SEPARATOR . $search_file);
+
+    }
+
 	/**
      * @detail Resolve a filename within any of the search paths
      *
