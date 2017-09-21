@@ -40,6 +40,11 @@ function ake($array, $key, $default = NULL, $non_empty = FALSE) {
     if ($array instanceof \Hazaar\Model\Strict)
         return $array->ake($key, $default, $non_empty);
 
+    if(is_object($array)
+        && property_exists($array, $key)
+        && (!$non_empty || ($non_empty && trim($array->$key) !== NULL)))
+        return $array->$key;
+
     return $default;
 
 }
@@ -817,11 +822,11 @@ function uptime($seconds) {
 
 /**
  * Return a string interval in a nice readable format.
- * 
+ *
  * Similar to uptime() this extends the format into a complete string in a nice, friendly readable format.
- * 
+ *
  * @param mixed $seconds The interval to convert in seconds.
- * 
+ *
  * @return string A friendly string.
  */
 function interval($seconds){
