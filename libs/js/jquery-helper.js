@@ -63,6 +63,22 @@ $.stream = function (url, options) {
 };
 
 /**
+ * jQuery Remove Event
+ *
+ * This event will be fired when an element is removed from the DOM using jQuery.remove();
+ *
+ * To bind: $('#elemnt').on('remove', function(){ 'do the things' });
+ */
+(function ($) {
+    var oldClean = jQuery.cleanData;
+    $.cleanData = function (elems) {
+        for (var i = 0, elem; (elem = elems[i]) !== undefined; i++)
+            $(elem).triggerHandler("remove");
+        return oldClean(elems);
+    }
+})(jQuery);
+
+/**
  * The Hazaar MVC Data binder
  *
  * This is a simple JavaScript/jQuery data bindering function to bind object data to
