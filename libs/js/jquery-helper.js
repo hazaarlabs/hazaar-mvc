@@ -90,18 +90,27 @@ var dataBinder = function (data, name, parent) {
     this._init(data, name, parent);
 }
 
-dataBinder.prototype._attributes = {};
-
-dataBinder.prototype._watchers = {};
+var dataBinderArray = function (data, name) {
+    if (this === window)
+        return new dataBinderArray(data, name);
+    this._init(data, name);
+}
 
 dataBinder.prototype._init = function (data, name, parent) {
     this._jquery = jQuery({});
     this._name = name;
     this._parent = parent;
+    this._attributes = {};
+    this._watchers = {};
     if (Object.keys(data).length > 0) {
         for (var key in data)
             this.add(key, data[key]);
     }
+    Object.defineProperty(this, 'length', {
+        get: function () {
+            return Object.keys(this._attributes).length;
+        }
+    });
 };
 
 dataBinder.prototype.add = function (key, value) {
@@ -123,17 +132,15 @@ dataBinder.prototype._attr_name = function (attr_name) {
 
 dataBinder.prototype._defineProperty = function (key, value) {
     if (Array.isArray(value)) {
-        var array_len = value.length;
-        object[key] = [];
-        for (var i = 0; i < array_len; i++)
-            object[key][i] = new dataBinder(value[i], key + '[' + i + ']', this);
+        value = new dataBinderArray(value, key);
     } else if (typeof value == 'object' && value !== null) {
         value = new dataBinder(value, key, this);
     } else {
-        this._jquery.on(this._attr_name(key) + ':change', function (event, binder, attr_name, attr_value) {
+        var attr_name = this._attr_name(key);
+        this._jquery.on(attr_name + ':change', function (event, binder, attr_name, attr_value) {
             binder._update(attr_name, attr_value);
         });
-        this._update(this._attr_name(key), value);
+        this._update(attr_name, value);
     }
     this._attributes[key] = value;
     Object.defineProperty(this, key, {
@@ -182,3 +189,82 @@ dataBinder.prototype.unwatch = function (key) {
     else if (key in this._watchers)
         delete this._watchers[key];
 };
+
+dataBinder.prototype.keys = function () {
+    return Object.keys(this._attributes);
+}
+
+dataBinderArray.prototype._elements = [];
+
+dataBinderArray.prototype._init = function (data, name) {
+    this._name = name;
+    this._template = jQuery('[data-bind="' + name + '"]').children('template');
+    if (this._template.length > 0)
+        this._template.detach();
+    if (data.length > 0)
+        for (x in data) this.push(data[x]);
+    Object.defineProperty(this, 'length', {
+        get: function () {
+            return this._elements.length;
+        }
+    });
+}
+
+dataBinderArray.prototype._attr_name = dataBinder.prototype._attr_name;
+
+dataBinderArray.prototype.pop = function (element) {
+    var index = this._elements.length - 1;
+    var element = this._elements[index];
+    this.remove(index);
+    return element;
+}
+
+dataBinderArray.prototype.push = function (element) {
+    var key = this._elements.length, e = this._elements;
+    var attr_name = this._name + '[' + key + ']';
+    this._elements[key] = new dataBinder(element, attr_name, this);
+    var newitem;
+    if (this._template.length > 0) {
+        newitem = $('<div>').html(this._template.html());
+        newitem.on('remove', function () {
+            var index = Array.from(this.parentNode.children).indexOf(this);
+            if (index >= 0) e.splice(index, 1);
+        }).children().each(function (index, item) {
+            var key = item.attributes['data-bind'].value;
+            item.innerHTML = element[key];
+            item.attributes['data-bind'].value = attr_name + '.' + key;
+        });
+    }
+    jQuery('[data-bind="' + this._name + '"]').append(newitem);
+    if (!Object.getOwnPropertyDescriptor(this, key)) {
+        Object.defineProperty(this, key, {
+            set: function (value) {
+                var attr_name = this._attr_name(key);
+                this._elements[key] = value;
+                this._jquery.trigger(attr_name + ':change', [this, attr_name, value]);
+                this._trigger(attr_name, value);
+            },
+            get: function () {
+                return this._elements[key];
+            }
+        });
+    }
+    this.length = this._elements.length;
+    return key;
+}
+
+dataBinderArray.prototype.remove = function (index) {
+    jQuery('[data-bind="' + this._name + '"]').children().eq(index).remove();
+    return this._elements.splice(index, 1);
+}
+
+dataBinderArray.prototype.save = function () {
+    var elements = [];
+    for (x in this._elements) {
+        var e = this._elements[x];
+        if (e instanceof dataBinder)
+            e = e.save();
+        elements.push(e);
+    }
+    return elements;
+}
