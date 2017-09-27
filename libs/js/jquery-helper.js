@@ -180,7 +180,12 @@ dataBinder.prototype.resync = function (name) {
 }
 
 dataBinder.prototype.save = function () {
-    return Object.assign(this._attributes);
+    var attrs = $.extend({}, this._attributes);
+    for (x in attrs) {
+        if (attrs[x] instanceof dataBinder || attrs[x] instanceof dataBinderArray)
+            attrs[x] = attrs[x].save();
+    }
+    return attrs;
 };
 
 dataBinder.prototype.watch = function (key, callback, args) {
@@ -266,14 +271,12 @@ dataBinderArray.prototype.remove = function (index) {
 }
 
 dataBinderArray.prototype.save = function () {
-    var elements = [];
-    for (x in this._elements) {
-        var e = this._elements[x];
-        if (e instanceof dataBinder)
-            e = e.save();
-        elements.push(e);
+    var elems = this._elements.slice();
+    for (x in elems) {
+        if (elems[x] instanceof dataBinder || elems[x] instanceof dataBinderArray)
+            elems[x] = elems[x].save();
     }
-    return elements;
+    return elems;
 }
 
 dataBinderArray.prototype._cleanupItem = function (index) {
