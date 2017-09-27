@@ -90,10 +90,10 @@ var dataBinder = function (data, name, parent) {
     this._init(data, name, parent);
 }
 
-var dataBinderArray = function (data, name) {
+var dataBinderArray = function (data, name, parent) {
     if (this === window)
-        return new dataBinderArray(data, name);
-    this._init(data, name);
+        return new dataBinderArray(data, name, parent);
+    this._init(data, name, parent);
 }
 
 dataBinder.prototype._init = function (data, name, parent) {
@@ -114,7 +114,29 @@ dataBinder.prototype._init = function (data, name, parent) {
 };
 
 dataBinder.prototype.add = function (key, value) {
-    return this._defineProperty(key, value);
+    var attr_name = this._attr_name(key);
+    var trigger = attr_name.replace(/[\[\]]/g, '_') + ':change';
+    if (Array.isArray(value)) {
+        value = new dataBinderArray(value, key, this);
+    } else if (typeof value == 'object' && value !== null) {
+        value = new dataBinder(value, key, this);
+    } else {
+        this._jquery.on(trigger, function (event, binder, attr_name, attr_value) {
+            binder._update(attr_name, attr_value);
+        });
+        this._update(attr_name, value);
+    }
+    this._attributes[key] = value;
+    Object.defineProperty(this, key, {
+        set: function (value) {
+            this._attributes[key] = value;
+            this._jquery.trigger(trigger, [this, attr_name, value]);
+            this._trigger(attr_name, value);
+        },
+        get: function () {
+            return this._attributes[key];
+        }
+    });
 };
 
 dataBinder.prototype.remove = function (key) {
@@ -125,35 +147,8 @@ dataBinder.prototype.remove = function (key) {
 }
 
 dataBinder.prototype._attr_name = function (attr_name) {
-    if (this._parent)
-        attr_name = this._parent._attr_name(this._name + '.' + attr_name);
-    return attr_name;
-}
-
-dataBinder.prototype._defineProperty = function (key, value) {
-    if (Array.isArray(value)) {
-        value = new dataBinderArray(value, key);
-    } else if (typeof value == 'object' && value !== null) {
-        value = new dataBinder(value, key, this);
-    } else {
-        var attr_name = this._attr_name(key);
-        this._jquery.on(attr_name + ':change', function (event, binder, attr_name, attr_value) {
-            binder._update(attr_name, attr_value);
-        });
-        this._update(attr_name, value);
-    }
-    this._attributes[key] = value;
-    Object.defineProperty(this, key, {
-        set: function (value) {
-            var attr_name = this._attr_name(key);
-            this._attributes[key] = value;
-            this._jquery.trigger(attr_name + ':change', [this, attr_name, value]);
-            this._trigger(attr_name, value);
-        },
-        get: function () {
-            return this._attributes[key];
-        }
-    });
+    if (!this._parent) return attr_name;
+    return this._parent._attr_name(this._name) + (typeof attr_name == 'undefined' ? '' : '.' + attr_name);
 }
 
 dataBinder.prototype._update = function (attr_name, attr_value) {
@@ -205,11 +200,11 @@ dataBinder.prototype.keys = function () {
     return Object.keys(this._attributes);
 }
 
-dataBinderArray.prototype._elements = [];
-
-dataBinderArray.prototype._init = function (data, name) {
+dataBinderArray.prototype._init = function (data, name, parent) {
     this._name = name;
-    this._template = jQuery('[data-bind="' + name + '"]').children('template');
+    this._parent = parent;
+    this._elements = [];
+    this._template = jQuery('[data-bind="' + this._attr_name() + '"]').children('template');
     if (this._template.length > 0)
         this._template.detach();
     if (data.length > 0)
@@ -221,7 +216,10 @@ dataBinderArray.prototype._init = function (data, name) {
     });
 }
 
-dataBinderArray.prototype._attr_name = dataBinder.prototype._attr_name;
+dataBinderArray.prototype._attr_name = function (attr_name) {
+    if (!this._parent) return attr_name;
+    return this._parent._attr_name(this._name) + (typeof attr_name == 'undefined' ? '' : '[' + attr_name + ']');
+}
 
 dataBinderArray.prototype.pop = function (element) {
     var index = this._elements.length - 1;
@@ -232,11 +230,11 @@ dataBinderArray.prototype.pop = function (element) {
 
 dataBinderArray.prototype.push = function (element) {
     var key = this._elements.length, a = this;
-    var attr_name = this._name + '[' + key + ']';
-    this._elements[key] = new dataBinder(element, attr_name, this);
+    var attr_name = this._attr_name(key);
+    this._elements[key] = new dataBinder(element, key, this);
     var newitem;
     if (this._template.length > 0) {
-        newitem = $(this._template.html()).attr('data-bind', this._name + '[' + key + ']');
+        newitem = $(this._template.html()).attr('data-bind', attr_name);
         newitem.on('remove', function () {
             var index = Array.from(this.parentNode.children).indexOf(this);
             if (index >= 0) a._cleanupItem(index);
@@ -247,7 +245,7 @@ dataBinderArray.prototype.push = function (element) {
             item.attributes['data-bind'].value = attr_name + '.' + key;
         });
     }
-    jQuery('[data-bind="' + this._name + '"]').append(newitem);
+    jQuery('[data-bind="' + this._attr_name() + '"]').append(newitem);
     if (!Object.getOwnPropertyDescriptor(this, key)) {
         Object.defineProperty(this, key, {
             set: function (value) {
@@ -266,7 +264,7 @@ dataBinderArray.prototype.push = function (element) {
 }
 
 dataBinderArray.prototype.remove = function (index) {
-    jQuery('[data-bind="' + this._name + '"]').children().eq(index).remove();
+    jQuery('[data-bind="' + this._attr_name() + '"]').children().eq(index).remove();
     return this._cleanupItem(index);
 }
 
@@ -283,11 +281,11 @@ dataBinderArray.prototype._cleanupItem = function (index) {
     if (!index in this._elements) return;
     var reg = new RegExp("(" + this._name + ")\\[(\\d+)\\]");
     for (var i = (index + 1); i < this._elements.length; i++) {
-        $('[data-bind^="' + this._name + '[' + i + ']"]').each(function (index, item) {
+        $('[data-bind^="' + this._attr_name(i) + ']"]').each(function (index, item) {
             this.attributes['data-bind'].value = this.attributes['data-bind'].value.replace(reg, '$1[' + (i - 1) + ']');
         });
     }
     var elem = this._elements.splice(index, 1);
-    if (index in this._elements) this._elements[index].resync(this._name + '[' + index + ']');
+    if (index in this._elements) this._elements[index].resync(index);
     return elem;
 }
