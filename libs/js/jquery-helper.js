@@ -220,18 +220,19 @@ dataBinderArray.prototype.pop = function (element) {
 }
 
 dataBinderArray.prototype.push = function (element) {
-    var key = this._elements.length, e = this._elements;
+    var key = this._elements.length, a = this;
     var attr_name = this._name + '[' + key + ']';
     this._elements[key] = new dataBinder(element, attr_name, this);
     var newitem;
     if (this._template.length > 0) {
-        newitem = $('<div>').html(this._template.html());
+        newitem = $(this._template.html()).attr('data-bind', this._name + '[' + key + ']');
         newitem.on('remove', function () {
             var index = Array.from(this.parentNode.children).indexOf(this);
-            if (index >= 0) e.splice(index, 1);
+            if (index >= 0) a._cleanupItem(index);
         }).children().each(function (index, item) {
+            if (!item.attributes['data-bind']) return;
             var key = item.attributes['data-bind'].value;
-            item.innerHTML = element[key];
+            if (key in element) item.innerHTML = element[key];
             item.attributes['data-bind'].value = attr_name + '.' + key;
         });
     }
@@ -255,7 +256,7 @@ dataBinderArray.prototype.push = function (element) {
 
 dataBinderArray.prototype.remove = function (index) {
     jQuery('[data-bind="' + this._name + '"]').children().eq(index).remove();
-    return this._elements.splice(index, 1);
+    return this._cleanupItem(index);
 }
 
 dataBinderArray.prototype.save = function () {
@@ -267,4 +268,15 @@ dataBinderArray.prototype.save = function () {
         elements.push(e);
     }
     return elements;
+}
+
+dataBinderArray.prototype._cleanupItem = function (index) {
+    if (!index in this._elements) return;
+    var reg = new RegExp("(" + this._name + ")\\[(\\d+)\\]");
+    for (var i = (index + 1); i < this._elements.length; i++) {
+        $('[data-bind^="' + this._name + '[' + i + ']"]').each(function (index, item) {
+            this.attributes['data-bind'].value = this.attributes['data-bind'].value.replace(reg, '$1[' + (i - 1) + ']');
+        });
+    }
+    return this._elements.splice(index, 1);
 }
