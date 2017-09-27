@@ -173,6 +173,12 @@ dataBinder.prototype._trigger = function (key, value) {
     }
 };
 
+dataBinder.prototype.resync = function (name) {
+    if (typeof name !== 'undefined') this._name = name;
+    for (x in this._attributes)
+        this._update(this._attr_name(x), this._attributes[x]);
+}
+
 dataBinder.prototype.save = function () {
     return Object.assign(this._attributes);
 };
@@ -278,5 +284,7 @@ dataBinderArray.prototype._cleanupItem = function (index) {
             this.attributes['data-bind'].value = this.attributes['data-bind'].value.replace(reg, '$1[' + (i - 1) + ']');
         });
     }
-    return this._elements.splice(index, 1);
+    var elem = this._elements.splice(index, 1);
+    if (index in this._elements) this._elements[index].resync(this._name + '[' + index + ']');
+    return elem;
 }
