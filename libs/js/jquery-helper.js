@@ -139,7 +139,7 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
     Object.defineProperty(this, key, {
         configurable: true,
         set: function (value) {
-            this._attributes[key] = value;
+            this._attributes[key] = (Array.isArray(value) ? new dataBinderArray(value, key, this) : value);
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
             this._trigger(attr_name, value);
         },
@@ -227,9 +227,7 @@ dataBinderArray.prototype._init = function (data, name, parent) {
     this._name = name;
     this._parent = parent;
     this._elements = [];
-    this._template = jQuery('[data-bind="' + this._attr_name() + '"]').children('template');
-    if (this._template.length > 0)
-        this._template.detach();
+    this.resync();
     if (data.length > 0)
         for (x in data) this.push(data[x]);
     Object.defineProperty(this, 'length', {
@@ -272,18 +270,21 @@ dataBinderArray.prototype.push = function (element) {
         var trigger_name = this._trigger_name(this._attr_name(key));
         Object.defineProperty(this, key, {
             set: function (value) {
-                alert('Array item assignment is not implemented!');
+                if (Array.isArray(value))
+                    value = new dataBinderArray(value, key, this);
+                else if (typeof element == 'object')
+                    value = new dataBinder(value, key, this);
+                this._elements[key] = value;
             },
             get: function () {
                 return this._elements[key];
             }
         });
     }
-    if (Array.isArray(element)) {
+    if (Array.isArray(element))
         element = new dataBinderArray(element, key, this);
-    } else if (typeof element == 'object') {
+    else if (typeof element == 'object')
         element = new dataBinder(element, key, this);
-    }
     this._elements[key] = element;
     return key;
 };
@@ -303,7 +304,12 @@ dataBinderArray.prototype.save = function () {
 };
 
 dataBinderArray.prototype.resync = function () {
-    console.warn('Resync of dataBinderArray not currently supported.');
+    if (!this._template) {
+        console.warn('Resync of dataBinderArray is EXPERIMENTAL. ' + this._attr_name());
+        this._template = jQuery('[data-bind="' + this._attr_name() + '"]').children('template');
+        if (this._template.length > 0)
+            this._template.detach();
+    }
 };
 
 dataBinderArray.prototype._cleanupItem = function (index) {
