@@ -251,20 +251,24 @@ dataBinderArray.prototype.pop = function (element) {
     return element;
 };
 
+dataBinderArray.prototype._newitem = function (index) {
+    var attr_name = this._attr_name(index);
+    var a = this, newitem = jQuery(this._template.html()).attr('data-bind', attr_name);
+    newitem.on('remove', function () {
+        var index = Array.from(this.parentNode.children).indexOf(this);
+        if (index >= 0) a._cleanupItem(index);
+    }).find('[data-bind]').each(function (idx, item) {
+        var key = item.attributes['data-bind'].value;
+        if (index in a._elements) console.log(a._elements[index]);
+        item.attributes['data-bind'].value = attr_name + '.' + key;
+    });
+    return newitem;
+};
+
 dataBinderArray.prototype.push = function (element) {
-    var key = this._elements.length, a = this, newitem;
-    var attr_name = this._attr_name(key);
-    if (this._template.length > 0) {
-        newitem = jQuery(this._template.html()).attr('data-bind', attr_name);
-        newitem.on('remove', function () {
-            var index = Array.from(this.parentNode.children).indexOf(this);
-            if (index >= 0) a._cleanupItem(index);
-        }).children().each(function (index, item) {
-            if (!item.attributes['data-bind']) return;
-            var key = item.attributes['data-bind'].value;
-            item.attributes['data-bind'].value = attr_name + '.' + key;
-        });
-    }
+    var key = this._elements.length, newitem;
+    if (this._template.length > 0)
+        newitem = this._newitem(key);
     jQuery('[data-bind="' + this._attr_name() + '"]').append(newitem);
     if (!Object.getOwnPropertyDescriptor(this, key)) {
         var trigger_name = this._trigger_name(this._attr_name(key));
@@ -304,11 +308,22 @@ dataBinderArray.prototype.save = function () {
 };
 
 dataBinderArray.prototype.resync = function () {
-    if (!this._template) {
-        console.warn('Resync of dataBinderArray is EXPERIMENTAL. ' + this._attr_name());
+    if (!this._template || this._template.length == 0) {
         this._template = jQuery('[data-bind="' + this._attr_name() + '"]').children('template');
         if (this._template.length > 0)
             this._template.detach();
+    }
+    if (this._template && this._template.length > 0) {
+        var parent = jQuery('[data-bind="' + this._attr_name() + '"]');
+        for (x in this._elements) {
+            var attr_name = this._attr_name(x);
+            var item = parent.children('[data-bind="' + attr_name + '"]');
+            if (item.length == 0)
+                parent.append(this._newitem(x));
+            if (this._elements[x] instanceof dataBinder || this._elements[x] instanceof dataBinderArray)
+                this._elements[x].resync();
+        }
+
     }
 };
 
