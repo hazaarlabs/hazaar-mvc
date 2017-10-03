@@ -285,9 +285,10 @@ function array_unflatten($items, $delim = '=', $section_delim = ';') {
  * @param mixed $array The array to collate.
  * @param mixed $key_item The value to use as the key.
  * @param mixed $value_item The value to use as the value.
+ * @param mixed $group_item Optional value to group items by.
  * @return array
  */
-function array_collate($array, $key_item, $value_item){
+function array_collate($array, $key_item, $value_item, $group_item = null){
 
     $result = array();
 
@@ -296,7 +297,10 @@ function array_collate($array, $key_item, $value_item){
         if(!array_key_exists($key_item, $item))
             continue;
 
-        $result[$item[$key_item]] = ake($item, $value_item);
+        if($group_item !== null)
+            $result[ake($item, $group_item)][$item[$key_item]] = ake($item, $value_item);
+        else
+            $result[$item[$key_item]] = ake($item, $value_item);
 
     }
 
