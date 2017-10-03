@@ -259,7 +259,7 @@ dataBinderArray.prototype._newitem = function (index) {
         if (index >= 0) a._cleanupItem(index);
     }).find('[data-bind]').each(function (idx, item) {
         var key = item.attributes['data-bind'].value;
-        if (index in a._elements) item.attributes['data-bind'].value = attr_name + '.' + key;
+        if (idx in a._elements) item.attributes['data-bind'].value = attr_name + '.' + key;
     });
     return newitem;
 };
