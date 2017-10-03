@@ -51,10 +51,18 @@ class Select extends Block {
 
                 foreach($arg as $value => $label){
 
-                    if($this->use_options_index_as_value)
-                        $this->addOption($label, $value);
-                    else
-                        $this->addOption($label);
+                    if(is_array($label)){
+
+                        $this->addOptgroup($value, $label);
+
+                    }else{
+
+                        if($this->use_options_index_as_value)
+                            $this->addOption($label, $value);
+                        else
+                            $this->addOption($label);
+
+                    }
 
                 }
 
@@ -78,7 +86,7 @@ class Select extends Block {
 
     public function addOptgroup($label, $options = array()) {
 
-        return self::add(array('label' => $label, 'items' => $options));
+        return self::addOption(array('label' => $label, 'items' => $options));
 
     }
 
