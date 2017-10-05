@@ -139,6 +139,7 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
     Object.defineProperty(this, key, {
         configurable: true,
         set: function (value) {
+            if (this._attributes[key] == value) return;
             this._attributes[key] = (Array.isArray(value) ? new dataBinderArray(value, key, this) : value);
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
             this._trigger(attr_name, value);
