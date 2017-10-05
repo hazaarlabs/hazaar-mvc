@@ -25,10 +25,6 @@ abstract class Helper implements Helper\_Interface {
 
     }
 
-    public function import() {
-
-    }
-
     public function initialise($args = NULL) {
 
         if(! $args)
@@ -71,10 +67,6 @@ abstract class Helper implements Helper\_Interface {
 
     }
 
-    public function init($view, $args = array()) {
-
-    }
-
     public function requires($helper, $args = array()) {
 
         if($this->view && ! $this->view->hasHelper($helper)) {
@@ -91,6 +83,19 @@ abstract class Helper implements Helper\_Interface {
             return $this->view->__get($method);
 
         return NULL;
+
+    }
+
+    //Placeholder functions
+    public function import() {
+
+        //Do nothing by default.
+
+    }
+
+    public function init($view, $args = array()) {
+
+        //Do nothing by default.
 
     }
 
