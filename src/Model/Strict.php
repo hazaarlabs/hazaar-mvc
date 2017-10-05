@@ -495,7 +495,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                         break;
 
                     case 'with' :
-                        if (!preg_match($data, $value))
+                        if (!preg_match('/' . $data . '/', strval($value)))
                             return FALSE;
 
                         break;
@@ -507,14 +507,32 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                         break;
 
                     case 'minlen' :
-                        if (strlen($value) < $data)
-                            return FALSE;
+                        if($def['type'] == 'array'){
+
+                            if(count($value) < $data)
+                                return false;
+
+                        }else{
+
+                            if (strlen($value) < $data)
+                                return FALSE;
+                        }
 
                         break;
 
                     case 'maxlen' :
-                        if (strlen($value) > $data)
-                            return FALSE;
+
+                        if($def['type'] == 'array'){
+
+                            if(count($value) > $data)
+                                return false;
+
+                        }else{
+
+                            if (strlen($value) > $data)
+                                return FALSE;
+
+                        }
 
                         break;
 
