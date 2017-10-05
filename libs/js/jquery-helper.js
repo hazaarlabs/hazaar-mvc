@@ -163,10 +163,10 @@ dataBinder.prototype._attr_name = function (attr_name) {
 };
 
 dataBinder.prototype._update = function (attr_name, attr_value) {
-    jQuery('[data-bind="' + attr_name + '"]').each(function () {
-        var o = jQuery(this);
+    jQuery('[data-bind="' + attr_name + '"]').each(function (index, item) {
+        var o = jQuery(item);
         if (o.is("input, textarea, select"))
-            (o.attr('type') == 'checkbox') ? o.prop('checked', attr_value) : o.val(attr_value);
+            ((o.attr('type') == 'checkbox') ? o.prop('checked', attr_value) : o.val(attr_value)).change();
         else
             o.html(attr_value);
     });
