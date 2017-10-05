@@ -293,6 +293,10 @@ dataBinderArray.prototype.push = function (element) {
     return key;
 };
 
+dataBinderArray.prototype.indexOf = function (searchString) {
+    return this._elements.indexOf(searchString);
+};
+
 dataBinderArray.prototype.remove = function (index) {
     jQuery('[data-bind="' + this._attr_name() + '"]').children().eq(index).remove();
     return this._cleanupItem(index);
@@ -335,7 +339,8 @@ dataBinderArray.prototype._cleanupItem = function (index) {
         jQuery('[data-bind^="' + this._attr_name(i) + '"]').each(function (index, item) {
             this.attributes['data-bind'].value = this.attributes['data-bind'].value.replace(reg, '$1[' + new_i + ']');
         });
-        if (i in this._elements) this._elements[i].resync(new_i);
+        if (i in this._elements && (this._elements[i] instanceof dataBinder || this._elements[i] instanceof dataBinderArray))
+            this._elements[i].resync(new_i);
     }
     var elem = this._elements.splice(index, 1);
     return elem;
