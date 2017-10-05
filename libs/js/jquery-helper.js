@@ -166,7 +166,7 @@ dataBinder.prototype._update = function (attr_name, attr_value) {
     jQuery('[data-bind="' + attr_name + '"]').each(function (index, item) {
         var o = jQuery(item);
         if (o.is("input, textarea, select"))
-            ((o.attr('type') == 'checkbox') ? o.prop('checked', attr_value) : o.val(attr_value)).change();
+            ((o.attr('type') == 'checkbox') ? o.prop('checked', attr_value) : o.val(attr_value)).trigger('update');
         else
             o.html(attr_value);
     });
