@@ -279,7 +279,7 @@ class Config extends \Hazaar\Map {
      *              app.layout = application
      *              app.theme.name = test
      *              app.defaultController = Index
-     *              app.compress =
+     *              app.compress = false
      *              app.debug = 1
      *              paths.model = models
      *              paths.view = views

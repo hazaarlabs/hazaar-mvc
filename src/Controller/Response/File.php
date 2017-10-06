@@ -30,12 +30,6 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
 
     }
 
-    public function modified() {
-
-        return ($this->getStatus() == 304);
-
-    }
-
     public function load($file, $backend = NULL) {
 
         if(! $backend)
@@ -48,8 +42,7 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
 
         $this->setContentType($this->file->mime_content_type());
 
-        if(!$this->modified())
-            $this->setLastModified($this->file->mtime());
+        $this->setLastModified($this->file->mtime());
 
         return TRUE;
 
@@ -100,15 +93,6 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
             return ($this->file->size() > 0);
 
         return FALSE;
-
-    }
-
-    public function __writeOutput() {
-
-        if($this->file)
-            $this->content = $this->file->get_contents();
-
-        return parent::__writeOutput();
 
     }
 

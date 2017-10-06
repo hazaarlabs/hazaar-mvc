@@ -80,11 +80,8 @@ class Json extends \Hazaar\Controller\Response implements \ArrayAccess {
 
         $data = json_encode($this->content);
 
-        if($this->callback) {
-
+        if($this->callback)
             $data = $this->callback . "($data)";
-
-        }
 
         return $data;
 

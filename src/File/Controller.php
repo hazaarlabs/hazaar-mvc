@@ -2,8 +2,6 @@
 
 namespace Hazaar\File;
 
-use \Hazaar\Controller\Response\File;
-
 class Controller extends \Hazaar\Controller\Basic {
 
     private $path;
@@ -36,17 +34,43 @@ class Controller extends \Hazaar\Controller\Basic {
 
         $response = NULL;
 
-        $file = $this->request->getRawPath();
+        $target = $this->request->getRawPath();
 
         if($this->path)
-            $source = $this->path . DIRECTORY_SEPARATOR . $file;
+            $filename = $this->path . DIRECTORY_SEPARATOR . $target;
         else
-            $source = \Hazaar\Loader::getInstance()->getFilePath(FILE_PATH_SUPPORT, $file);
+            $filename = \Hazaar\Loader::getInstance()->getFilePath(FILE_PATH_SUPPORT, $target);
 
-        if(!file_exists($source))
-            throw new Exception\InternalFileNotFound($file);
+        if(!file_exists($filename))
+            throw new Exception\InternalFileNotFound($target);
 
-        $response = new File($source);
+        $source = new \Hazaar\File($filename);
+
+        $response = null;
+
+        switch($source->mime_content_type()){
+            case 'text/css':
+
+                $response = new \Hazaar\Controller\Response\Style($source);
+
+                break;
+
+            case 'application/javascript':
+
+                $response = new \Hazaar\Controller\Response\Javascript($source);
+
+                break;
+
+            default:
+
+                $response = new \Hazaar\Controller\Response\File($source);
+
+                break;
+
+        }
+
+        if(!$response instanceof \Hazaar\Controller\Response\File)
+            throw new \Exception('An error ocurred constructing a response object.');
 
         $response->setUnmodified($this->request->getHeader('If-Modified-Since'));
 
