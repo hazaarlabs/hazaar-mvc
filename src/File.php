@@ -647,6 +647,157 @@ class File {
     }
 
     /**
+     * Seeks to a position in the file
+     *
+     * @param mixed $offset The offset. To move to a position before the end-of-file, you need to pass a negative value in offset and set whence to SEEK_END.
+     * @param mixed $whence whence values are:
+     *                      SEEK_SET - Set position equal to offset bytes.
+     *                      SEEK_CUR - Set position to current location plus offset.
+     *                      SEEK_END - Set position to end-of-file plus offset.
+     * @return \boolean|integer
+     */
+    public function seek($offset, $whence = SEEK_SET){
+
+        if(!$this->handle)
+            return false;
+
+        return fseek($this->handle, $offset, $whence);
+
+    }
+
+    /**
+     * Returns the current position of the file read/write pointer
+     *
+     * @return \boolean|integer
+     */
+    public function tell(){
+
+        if(!$this->handle)
+            return false;
+
+        return ftell($this->handle);
+
+    }
+
+    /**
+     * Portable advisory file locking
+     *
+     * @param mixed $operation operation is one of the following:
+     *                          LOCK_SH to acquire a shared lock (reader).
+     *                          LOCK_EX to acquire an exclusive lock (writer).
+     *                          LOCK_UN to release a lock (shared or exclusive).
+     *                          It is also possible to add LOCK_NB as a bitmask to one of the above operations if you don't want flock() to block while locking.
+     * @param mixed $wouldblock The optional third argument is set to 1 if the lock would block (EWOULDBLOCK errno condition).
+     *
+     * @return boolean
+     */
+    public function lock($operation, &$wouldblock = NULL){
+
+        if(!$this->handle)
+            return false;
+
+        return flock($this->handle, $operation, $wouldblock);
+
+    }
+
+    /**
+     * Truncates a file to a given length
+     *
+     * @param mixed $size The size to truncate to.
+     *
+     * @return boolean
+     */
+    public function truncate($size){
+
+        if(!$this->handle)
+            return false;
+
+        return ftruncate($this->handle, $size);
+
+    }
+
+    /**
+     * Binary-safe file read
+     *
+     * File::read() reads up to length bytes from the file pointer referenced by handle. Reading stops as soon as one of the following conditions is met:
+     *
+     * * length bytes have been read
+     * * EOF (end of file) is reached
+     * * a packet becomes available or the socket timeout occurs (for network streams)
+     * * if the stream is read buffered and it does not represent a plain file, at most one read of up to a number
+     *   of bytes equal to the chunk size (usually 8192) is made; depending on the previously buffered data, the
+     *   size of the returned data may be larger than the chunk size.
+     *
+     * @param mixed $length Up to length number of bytes read.
+     *
+     * @return \boolean|string
+     */
+    public function read($length){
+
+        if(!$this->handle)
+            return false;
+
+        return fread($this->handle, $length);
+
+    }
+
+    /**
+     * Binary-safe file write
+     *
+     * File::write() writes the contents of string to the file stream pointed to by handle.
+     *
+     * @param mixed $string The string that is to be written.
+     * @param mixed $length If the length argument is given, writing will stop after length bytes have been written or the end
+     *                      of string is reached, whichever comes first.
+     *
+     *                      Note that if the length argument is given, then the magic_quotes_runtime configuration option
+     *                      will be ignored and no slashes will be stripped from string.
+     * @return \boolean|integer
+     */
+    public function write($string, $length = NULL){
+
+        if(!$this->handle)
+            return false;
+
+        return fwrite($this->handle, $string, $length);
+
+    }
+
+    /**
+     * Flushes the output to a file
+     *
+     * @return boolean
+     */
+    public function flush(){
+
+        if(!$this->handle)
+            return false;
+
+        return fflush($this->handle);
+
+    }
+
+    /**
+     * Renames a file or directory
+     *
+     * NOTE: This will not work if the file is currently opened by another process.
+     *
+     * @param mixed $newname The new name.
+     *
+     * @return boolean
+     */
+    public function rename($newname){
+
+        if(!rename($this->source_file, $newname))
+            return false;
+
+        $this->source_file = $newname;
+
+        return true;
+
+    }
+
+    /**
      * Check if a file is encrypted using the built-in Hazaar encryption method
      *
      * @return boolean
