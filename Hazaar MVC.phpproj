@@ -58,6 +58,7 @@
     <Compile Include="src\Controller\Exception\BrowserRootNotFound.php" />
     <Compile Include="src\Controller\Exception\HeadersSent.php" />
     <Compile Include="src\Extender.php" />
+    <Compile Include="src\Btree.php" />
     <Compile Include="src\File\GZFile.php" />
     <Compile Include="src\File\Exception\InvalidBackend.php" />
     <Compile Include="src\File\Exception\InternalFileNotFound.php" />
