@@ -3,7 +3,7 @@
 namespace Hazaar;
 
 /**
- * B-Tree Database file access class
+ * B-Tree key/value database file access class
  *
  * This class provides a high performance key/value storage mechanism that stores data to file. A B-tree is
  * a self-balancing tree data structure that keeps data sorted and allows searches, sequential access,
@@ -11,7 +11,7 @@ namespace Hazaar;
  *
  * @since 2.3.17
  */
-final class Btree {
+class Btree {
 
     /**
      * Size of header
@@ -65,14 +65,49 @@ final class Btree {
      */
     public function __construct($file) {
 
-        if(!$file instanceof \Hazaar\File)
-            $file = new \Hazaar\File($file);
+        if($file){
 
-        $this->file = $file;
+            if(!$this->open($file))
+                throw new \Exception('Unable to open file: ' . $file);
+
+        }
+
+    }
+
+    /**
+     * Open the file for access
+     *
+     * @param mixed $file Either a string file name, or a Hazaar\File object.
+     *
+     * @throws \Exception
+     *
+     * @return boolean
+     */
+    public function open($file = null) {
+
+        if($file === null){
+
+            if(!$this->file)
+                throw new \Exception('No file specified!');
+
+            if($this->file->isOpen())
+                return true;
+
+        }else{
+
+            if($this->file)
+                $this->file->close();
+
+            if(!$file instanceof \Hazaar\File)
+                $file = new \Hazaar\File($file);
+
+            $this->file = $file;
+
+        }
 
         //Check if the file is too big.  The file size will be negative if PHP doesn't support the file.
         if($this->file->exists() && $this->file->size() < 0)
-            throw new \Exception('File it too large.  On 32-bit PHP only files up to 2GB in size are supported.');
+            throw new \Exception('File is too large.  On 32-bit PHP only files up to 2GB in size are supported.');
 
         $this->file->open('a+b');
 
@@ -110,6 +145,23 @@ final class Btree {
             }
 
         }
+
+        return true;
+
+    }
+
+    /**
+     * The the B-Tree source file.
+     *
+     * @return boolean
+     */
+    public function reset_btree_file(){
+
+        $this->file->close();
+
+        $this->file->unlink();
+
+        return $this->open($this->file);
 
     }
 
@@ -200,7 +252,7 @@ final class Btree {
      */
     public function set($key, $value) {
 
-        // lock
+        // Obtain an exclusive file lock
         if (!$this->file->lock(LOCK_EX))
             return false;
 
@@ -379,6 +431,9 @@ final class Btree {
      * @return array traversed nodes
      */
     private function lookup($key, $node_type = null, $node = null) {
+
+        if(!$this->file->lock(LOCK_SH))
+            return false;
 
         if ($node_type === null || $node === null)
             list($node_type, $node) = $this->root();

@@ -556,6 +556,19 @@ class File {
     }
 
     /**
+     * Check if the file is currently opened for access by this class
+     * 
+     * NOTE: This does not include checking if the file is opened by another process or even another Hazaar\File instance.
+     * 
+     * @return boolean
+     */
+    public function isOpen(){
+
+        return is_resource($this->handle);
+
+    }
+
+    /**
      * Returns a character from the file pointer
      *
      * @return string
