@@ -522,14 +522,13 @@ class Application {
             if(!($this->response instanceof Controller\Response))
                 throw new Application\Exception\ResponseInvalid();
 
-            if($this->config->app->has('tidy'))
-                $this->response->enableTidy($this->config->app['tidy']);
-
             /*
              * If the controller has specifically requested a return status code, set it now.
              */
             if($controller->statusCode)
                 $this->response->setStatusCode($controller->statusCode);
+
+            $this->response->setCompression($this->config->app->get('compress', false));
 
             /*
              * Finally, write the response to the output buffer.

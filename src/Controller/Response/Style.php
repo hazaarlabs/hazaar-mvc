@@ -38,9 +38,22 @@ class Style extends File {
 
             }
 
-             $this->setContent($cache_file, 'text/css');
+            $this->setContent($cache_file, 'text/css');
 
         }
+
+    }
+
+    public function getContent() {
+
+        if($content = parent::getContent()) {
+
+            if($this->compress)
+                $content = Packer\CSS::minify($content);
+
+        }
+
+        return $content;
 
     }
 

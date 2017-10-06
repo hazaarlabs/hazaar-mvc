@@ -12,4 +12,17 @@ class Javascript extends File {
 
     }
 
+    public function getContent() {
+
+        if($output = parent::getContent()) {
+
+            if($this->compress)
+                $output = Packer\JavaScript::minify($output);
+
+        }
+
+        return $output;
+
+    }
+
 }

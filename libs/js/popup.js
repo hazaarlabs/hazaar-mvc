@@ -12,7 +12,7 @@
             host.center = function () {
                 var x = (window.innerWidth / 2) - (this.__window.width() / 2), y = (window.innerHeight / 2) - (this.__window.height() / 2);
                 this.__window.css({ top: y, left: x });
-            }
+            };
             host.close = function () {
                 $(this).trigger('beforeClose');
                 this.__overlay.fadeOut(function () {
@@ -101,7 +101,7 @@
                 this.__icon.html($('<i class="fa fa-' + icon + '">'));
                 if (color)
                     this.__icon.css({ color: color });
-            }
+            };
             host.render = function () {
                 this.__overlay = $('<div class="popup-overlay">').appendTo(document.body).toggleClass('modal', this.props.modal);
                 this.__window = $('<div class="modal-content">').appendTo(this.__overlay);

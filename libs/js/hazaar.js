@@ -9,7 +9,7 @@
         if (encode === true)
             qs = 'hzqs=' + btoa(qs);
         return qs;
-    }
+    };
     this.url = function (controller, action, params, encode) {
         var url = this.__base_url;
         if (url.charAt(url.length - 1) != '/')
@@ -23,13 +23,13 @@
         if (typeof params != 'object' || params == null || Object.keys(params).length == 0)
             return url;
         return url + '?' + this.http_build_query(params, encode);
-    }
+    };
     this.set = function (key, value) {
         this.__data[key] = value;
-    }
+    };
     this.get = function (key, def) {
         return (typeof this.__data[key] == 'undefined') ? def : this.__data[key];
-    }
+    };
     this.queryString = function (retVal) {
         var queryString = {};
         var parts = document.location.search.substr(1).split('&');
@@ -43,7 +43,7 @@
             }
         }
         return queryString;
-    }
+    };
 }
 
 /*

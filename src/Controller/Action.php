@@ -163,7 +163,8 @@ abstract class Action extends \Hazaar\Controller\Basic {
                      */
                     $this->_helper->execAllHelpers($this, $response);
 
-
+                    if($this->application->config->app->has('tidy'))
+                        $response->enableTidy($this->application->config->app->get('tidy', false));
 
                 }
 

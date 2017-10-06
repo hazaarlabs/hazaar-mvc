@@ -19,6 +19,8 @@ abstract class Response implements Response\_Interface {
 
     protected $controller;
 
+    protected $compress     = false;
+
     protected $tidy         = FALSE;
 
     function __construct($type = "text/html", $status = 501) {
@@ -85,6 +87,12 @@ abstract class Response implements Response\_Interface {
 
     }
 
+    public function setCompression($toggle) {
+
+        $this->compress = boolify($toggle);
+
+    }
+
     public function setStatusCode($code) {
 
         $this->status_code = intval($code);
@@ -94,6 +102,12 @@ abstract class Response implements Response\_Interface {
     public function getStatusCode() {
 
         return $this->status_code;
+
+    }
+
+    public function modified() {
+
+        return ($this->status_code !== 304);
 
     }
 
@@ -230,27 +244,31 @@ abstract class Response implements Response\_Interface {
         if(method_exists($this, '__prepare'))
             $this->__prepare($this->controller);
 
-        if($this->tidy && substr($this->content_type, 0, 4) == 'text') {
+        if($this->modified()){
 
-            $tidy = new \tidy();
+            if($this->tidy && substr($this->content_type, 0, 4) == 'text') {
 
-            $config = array(
-                'indent'         => TRUE,
-                'vertical-space' => 'no',
-                'doctype'        => 'auto',
-                'wrap'           => 0
-            );
+                $tidy = new \tidy();
 
-            $content = $tidy->repairString($this->getContent(), $config);
+                $config = array(
+                    'indent'         => TRUE,
+                    'vertical-space' => 'no',
+                    'doctype'        => 'auto',
+                    'wrap'           => 0
+                );
 
-        } else {
+                $content = $tidy->repairString($this->getContent(), $config);
 
-            $content = $this->getContent();
+            } else {
+
+                $content = $this->getContent();
+
+            }
+
+            if(! $content)
+                $content = '';
 
         }
-
-        if(! $content)
-            $content = '';
 
         if(!$this->headers_set) {
 

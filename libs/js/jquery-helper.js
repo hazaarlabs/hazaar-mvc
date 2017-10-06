@@ -88,13 +88,13 @@ var dataBinder = function (data, name, parent) {
     if (this === window)
         return new dataBinder(data);
     this._init(data, name, parent);
-}
+};
 
 var dataBinderArray = function (data, name, parent) {
     if (this === window)
         return new dataBinderArray(data, name, parent);
     this._init(data, name, parent);
-}
+};
 
 dataBinder.prototype._init = function (data, name, parent) {
     this._jquery = jQuery({});
@@ -132,7 +132,7 @@ dataBinder.prototype.add = function (key, value) {
 
 dataBinder.prototype._trigger_name = function (attr_name) {
     return attr_name.replace(/[\[\]]/g, '_') + ':change';
-}
+};
 
 dataBinder.prototype._defineProperty = function (trigger_name, key) {
     var attr_name = this._attr_name(key);
