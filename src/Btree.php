@@ -438,7 +438,7 @@ final class Btree {
      */
     public function has($key){
 
-        return array_key_exists($key, $this->keys());
+        return in_array($key, $this->keys());
 
     }
 
