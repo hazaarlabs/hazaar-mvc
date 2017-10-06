@@ -57,6 +57,8 @@
     <Compile Include="src\Controller\Exception\BrowserRootNotDefined.php" />
     <Compile Include="src\Controller\Exception\BrowserRootNotFound.php" />
     <Compile Include="src\Controller\Exception\HeadersSent.php" />
+    <Compile Include="src\Controller\Response\Packer\CSS.php" />
+    <Compile Include="src\Controller\Response\Packer\JavaScript.php" />
     <Compile Include="src\Extender.php" />
     <Compile Include="src\Btree.php" />
     <Compile Include="src\File\GZFile.php" />
@@ -428,6 +430,7 @@
     <Folder Include="src\Controller\Response\" />
     <Folder Include="src\Controller\Response\Exception\" />
     <Folder Include="src\Controller\Response\HTTP\" />
+    <Folder Include="src\Controller\Response\Packer\" />
     <Folder Include="src\Exception\" />
     <Folder Include="src\File\" />
     <Folder Include="src\File\Backend\" />
