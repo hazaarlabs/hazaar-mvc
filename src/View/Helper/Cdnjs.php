@@ -26,7 +26,7 @@ class Cdnjs extends \Hazaar\View\Helper {
 
         $this->requires('html');
 
-        $this->cache = new \Hazaar\Cache('file', array('use_pragma' => false), 'cdnjs');
+        $this->cache = new \Hazaar\Btree(\Hazaar\Application::getInstance()->runtimePath('cdnjs.db'));
 
     }
 
@@ -99,8 +99,8 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     public function getLibraryInfo($name){
 
-        if($this->cache->has($name))
-            return $this->cache->get($name);
+        if(($info = $this->cache->get($name)) !== null)
+            return $info;
 
         if(!($data = json_decode(file_get_contents('https://api.cdnjs.com/libraries/' . $name), true)))
             throw new \Exception('CDNJS: Error parsing package info!');
