@@ -26,8 +26,6 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     public function import() {
 
-        $this->requires('html');
-
         if(!self::$cache instanceof \Hazaar\Btree)
             self::$cache = new \Hazaar\Btree(\Hazaar\Application::getInstance()->runtimePath('cdnjs.db'));
 
