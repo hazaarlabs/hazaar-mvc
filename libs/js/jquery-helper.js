@@ -122,9 +122,9 @@ dataBinder.prototype.add = function (key, value) {
         value = new dataBinder(value, key, this);
     } else {
         this._jquery.on(trigger_name, function (event, binder, attr_name, attr_value) {
-            binder._update(attr_name, attr_value);
+            binder._update(attr_name, attr_value, true);
         });
-        this._update(attr_name, value);
+        this._update(attr_name, value, false);
     }
     this._attributes[key] = value;
     this._defineProperty(trigger_name, key);
@@ -139,7 +139,7 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
     Object.defineProperty(this, key, {
         configurable: true,
         set: function (value) {
-            if (this._attributes[key] == value) return;
+            if (this._attributes[key] === value) return;
             this._attributes[key] = (Array.isArray(value) ? new dataBinderArray(value, key, this) : value);
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
             this._trigger(attr_name, value);
@@ -162,12 +162,13 @@ dataBinder.prototype._attr_name = function (attr_name) {
     return this._parent._attr_name(this._name) + (typeof attr_name == 'undefined' ? '' : '.' + attr_name);
 };
 
-dataBinder.prototype._update = function (attr_name, attr_value) {
+dataBinder.prototype._update = function (attr_name, attr_value, do_update) {
     jQuery('[data-bind="' + attr_name + '"]').each(function (index, item) {
         var o = jQuery(item);
-        if (o.is("input, textarea, select"))
-            ((o.attr('type') == 'checkbox') ? o.prop('checked', attr_value) : o.val(attr_value)).trigger('update');
-        else
+        if (o.is("input, textarea, select")) {
+            ((o.attr('type') == 'checkbox') ? o.prop('checked', attr_value) : o.val(attr_value));
+            if (do_update === true) o.trigger('update');
+        } else
             o.html(attr_value);
     });
 };
@@ -186,13 +187,13 @@ dataBinder.prototype.resync = function (name) {
     for (x in this._attributes) {
         var trigger_name = this._trigger_name(this._attr_name(x));
         this._jquery.on(trigger_name, function (event, binder, attr_name, attr_value) {
-            binder._update(attr_name, attr_value);
+            binder._update(attr_name, attr_value, true);
         });
         this._defineProperty(trigger_name, x);
         if (x in this._attributes) {
             if (this._attributes[x] instanceof dataBinder || this._attributes[x] instanceof dataBinderArray)
                 this._attributes[x].resync();
-            else this._update(this._attr_name(x), this._attributes[x]);
+            else this._update(this._attr_name(x), this._attributes[x], false);
         }
     }
     return this;
@@ -334,7 +335,7 @@ dataBinderArray.prototype.resync = function () {
 dataBinderArray.prototype._cleanupItem = function (index) {
     if (!index in this._elements) return;
     var reg = new RegExp("(" + this._attr_name() + ")\\[(\\d+)\\]");
-    for (var i = (index + 1); i < this._elements.length; i++) {
+    for (var i = (index + 1) ; i < this._elements.length; i++) {
         var new_i = i - 1;
         jQuery('[data-bind^="' + this._attr_name(i) + '"]').each(function (index, item) {
             this.attributes['data-bind'].value = this.attributes['data-bind'].value.replace(reg, '$1[' + new_i + ']');
