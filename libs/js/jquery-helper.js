@@ -266,11 +266,25 @@ dataBinderArray.prototype._newitem = function (index) {
     return newitem;
 };
 
+dataBinderArray.prototype._update = function (attr_name, attr_element) {
+    var remove = (this.indexOf(attr_element) < 0);
+    jQuery('[data-bind="' + attr_name + '"]').each(function (index, item) {
+        var o = $(item);
+        if (o.is('[data-toggle]')) {
+            o.find('[data-bind-value="' + attr_element + '"]')
+                .toggleClass('active', !remove)
+                .children('input[type=checkbox]').prop('checked', !remove);
+        } else {
+            if (remove)
+                o.children().eq(index).remove();
+            else if (this._template.length > 0)
+                o.append(this._newitem(key));
+        }
+    });
+};
+
 dataBinderArray.prototype.push = function (element) {
-    var key = this._elements.length, newitem;
-    if (this._template.length > 0)
-        newitem = this._newitem(key);
-    jQuery('[data-bind="' + this._attr_name() + '"]').append(newitem);
+    var key = this._elements.length;
     if (!Object.getOwnPropertyDescriptor(this, key)) {
         var trigger_name = this._trigger_name(this._attr_name(key));
         Object.defineProperty(this, key, {
@@ -291,6 +305,7 @@ dataBinderArray.prototype.push = function (element) {
     else if (typeof element == 'object')
         element = new dataBinder(element, key, this);
     this._elements[key] = element;
+    this._update(this._attr_name(), element);
     return key;
 };
 
@@ -299,8 +314,14 @@ dataBinderArray.prototype.indexOf = function (searchString) {
 };
 
 dataBinderArray.prototype.remove = function (index) {
-    jQuery('[data-bind="' + this._attr_name() + '"]').children().eq(index).remove();
-    return this._cleanupItem(index);
+    if (typeof index == 'string')
+        index = this.indexOf(index);
+    if (index < 0)
+        return;
+    var element = this._elements[index];
+    this._cleanupItem(index);
+    this._update(this._attr_name(), element);
+    return element;
 };
 
 dataBinderArray.prototype.save = function () {
@@ -335,10 +356,11 @@ dataBinderArray.prototype.resync = function () {
 dataBinderArray.prototype._cleanupItem = function (index) {
     if (!index in this._elements) return;
     var reg = new RegExp("(" + this._attr_name() + ")\\[(\\d+)\\]");
-    for (var i = (index + 1) ; i < this._elements.length; i++) {
+    for (var i = (index + 1); i < this._elements.length; i++) {
         var new_i = i - 1;
         jQuery('[data-bind^="' + this._attr_name(i) + '"]').each(function (index, item) {
-            this.attributes['data-bind'].value = this.attributes['data-bind'].value.replace(reg, '$1[' + new_i + ']');
+            if (!('data-toggle' in this.attributes))
+                this.attributes['data-bind'].value = this.attributes['data-bind'].value.replace(reg, '$1[' + new_i + ']');
         });
         if (i in this._elements && (this._elements[i] instanceof dataBinder || this._elements[i] instanceof dataBinderArray))
             this._elements[i].resync(new_i);
