@@ -155,6 +155,7 @@ dataBinder.prototype.remove = function (key) {
         return;
     this._jquery.off(this._attr_name(key) + ':change');
     delete this[key];
+    delete this._attributes[key];
 };
 
 dataBinder.prototype._attr_name = function (attr_name) {
@@ -223,6 +224,31 @@ dataBinder.prototype.unwatch = function (key) {
 
 dataBinder.prototype.keys = function () {
     return Object.keys(this._attributes);
+};
+
+dataBinder.prototype.populate = function (items) {
+    for (x in this._attributes) {
+        if (!(x in items))
+            this.remove(x);
+    }
+    for (x in items) {
+        if (items[x] instanceof dataBinder || items[x] instanceof dataBinderArray || !(x in this._attributes))
+            this.add(items[x]);
+    }
+};
+
+dataBinder.prototype.extend = function (items) {
+    for (x in items) {
+        if (x in this._attributes) {
+            if (this._attributes[x] instanceof dataBinder)
+                this[x].extend(items[x]);
+            else if (this._attributes[x] instanceof dataBinderArray)
+                this[x].populate(items[x]);
+            else
+                this[x] = items[x];
+        } else
+            this.add(x, items[x]);
+    }
 };
 
 dataBinderArray.prototype._init = function (data, name, parent) {
@@ -368,3 +394,17 @@ dataBinderArray.prototype._cleanupItem = function (index) {
     var elem = this._elements.splice(index, 1);
     return elem;
 };
+
+dataBinderArray.prototype.populate = function (elements) {
+    if (!Array.isArray(elements))
+        elements = Object.values(elements);
+    for (x in elements) {
+        var removed_items = this._elements.filter(function (e) {
+            return (this.indexOf(e) < 0);
+        }, elements);
+        for (x in removed_items)
+            this.remove(removed_items[x]);
+        if (elements[x] instanceof dataBinder || elements[x] instanceof dataBinderArray || (this._elements.indexOf(elements[x]) < 0))
+            this.push(elements[x]);
+    }
+}
