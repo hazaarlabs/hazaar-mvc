@@ -9,7 +9,7 @@ namespace Hazaar\Parser;
  * of tags and their values.
  *
  * @since 2.0.0
- * 
+ *
  * @package     Parser
  *
  */
@@ -26,8 +26,8 @@ class DocBlock {
         'param'     => array(
             'key'    => 'var',
             'fields' => array(
-                'type',
                 'var',
+                'type',
                 'desc'
             )
         ),
