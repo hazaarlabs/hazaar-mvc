@@ -38,13 +38,6 @@ class Http extends \Hazaar\Application\Request {
      */
     private $body;
 
-    private $accept_methods = array(
-        'GET',
-        'POST',
-        'PUT',
-        'DELETE'
-    );
-
     /**
      * @detail      The HTTP init method takes only a single optional argument which is the
      *              request array provided by PHP ($_REQUEST).
@@ -63,9 +56,6 @@ class Http extends \Hazaar\Application\Request {
             $request = $_REQUEST;
 
         $this->method = $_SERVER['REQUEST_METHOD'];
-
-        if(! in_array($this->method, $this->accept_methods))
-            throw new \Exception('Request method not supported: ' . $this->method, 802);
 
         $this->headers = hazaar_request_headers();
 
