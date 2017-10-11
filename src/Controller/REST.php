@@ -201,7 +201,7 @@ abstract class REST extends \Hazaar\Controller {
                         $response->setHeader('allow', $endpoint['args']['method']);
 
                         if($this->allow_directory)
-                            $response->populate($this->__describe_endpoint($route, $endpoint, $this->describe_full));
+                            $response->populate($this->__describe_endpoint($route, $endpoint, $version, $this->describe_full));
 
                         return $response;
 
@@ -246,20 +246,20 @@ abstract class REST extends \Hazaar\Controller {
         );
 
         foreach($this->endpoints[$version] as $route => $endpoint)
-            $this->__describe_endpoint($route, $endpoint, $this->describe_full, $api['endpoints']);
+            $this->__describe_endpoint($route, $endpoint, $version, $this->describe_full, $api['endpoints']);
 
         return $api;
 
     }
 
-    private function __describe_endpoint($route, $endpoint, $describe_full = false, &$api = null){
+    private function __describe_endpoint($route, $endpoint, $version, $describe_full = false, &$api = null){
 
         if(!$api) $api = array();
 
         foreach($endpoint['args']['method'] as $method){
 
             $info = array(
-                'url' => (string)$this->url() . $route,
+                'url' => (string)$this->url('v' . $version) . $route,
                 'httpMethod' => $method
             );
 
