@@ -50,6 +50,7 @@
     <Compile Include="src\Controller\Action\Helper\Exception\InvalidActionController.php" />
     <Compile Include="src\Controller\Action\Helper\Exception\NoContent.php" />
     <Compile Include="src\Controller\Action\Helper\ViewRenderer.php" />
+    <Compile Include="src\Controller\REST.php" />
     <Compile Include="src\Controller\Basic.php" />
     <Compile Include="src\Controller\Error.php" />
     <Compile Include="src\Controller\Exception\ActionNotFound.php" />

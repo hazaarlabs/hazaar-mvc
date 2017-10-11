@@ -22,7 +22,7 @@ class DocBlock {
      *
      * @type Array
      */
-    public static $vectors = array(
+    private static $vectors = array(
         'param'     => array(
             'key'    => 'var',
             'fields' => array(
@@ -54,14 +54,14 @@ class DocBlock {
      *
      * @type string
      */
-    public $brief;
+    private $brief;
 
     /**
      * The long detailed description from the docblock
      *
      * @type string
      */
-    public $detail;
+    private $detail;
 
     /**
      * The tags defined in the docblock.
@@ -75,21 +75,21 @@ class DocBlock {
      *
      * @type Array
      */
-    public $tags;
+    private $tags;
 
     /**
      * The entire DocBlock comment that was parsed.
      *
      * @type String
      */
-    public $comment;
+    private $comment;
 
     /**
      * CONSTRUCTOR.
      *
      * @param String $comment The text of the docblock
      */
-    public function __construct($comment = NULL) {
+    function __construct($comment = NULL) {
 
         if($comment)
             $this->setComment($comment);
@@ -238,11 +238,8 @@ class DocBlock {
 
         if(preg_match('/^\s*/', $string, $matches)) {
 
-            if(($indent = strlen($matches[0])) > 0) {
-
+            if(($indent = strlen($matches[0])) > 0)
                 $string = preg_replace('/^ {1,' . $indent . '}/m', '', $string);
-
-            }
 
         }
 
@@ -266,11 +263,8 @@ class DocBlock {
 
             $this->brief = trim($split[0]);
 
-            if(count($split) > 1) {
-
+            if(count($split) > 1)
                 $this->detail = trim($split[1]);
-
-            }
 
         }
 
@@ -330,10 +324,6 @@ class DocBlock {
 
     }
 
-    /*
-     * ==================================
-     */
-
     /**
      * Whether or not a string begins with a @tag
      *
@@ -341,7 +331,7 @@ class DocBlock {
      *
      * @return bool
      */
-    public static function isTagged($str) {
+    private static function isTagged($str) {
 
         return isset($str[1]) && $str[0] == '@' && ctype_alpha($str[1]);
 
@@ -354,7 +344,7 @@ class DocBlock {
      *
      * @return String|null
      */
-    public static function strTag($str) {
+    private static function strTag($str) {
 
         if(preg_match('/^@[a-z0-9_]+/', $str, $matches))
             return $matches[0];
@@ -363,6 +353,11 @@ class DocBlock {
 
     }
 
+    /**
+     * Return the parsed DocBlock as a nice friendly array
+     *
+     * @return array
+     */
     public function toArray() {
 
         return array(
@@ -371,6 +366,28 @@ class DocBlock {
             'tags'    => $this->tags,
             'comment' => $this->comment
         );
+
+    }
+
+    /**
+     * Return the brief comment if set
+     *
+     * @return string
+     */
+    public function brief(){
+
+        return $this->brief;
+
+    }
+
+    /**
+     * Return the detailed comment if set
+     *
+     * @return string
+     */
+    public function detail(){
+
+        return $this->detail;
 
     }
 
