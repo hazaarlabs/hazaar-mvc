@@ -20,7 +20,7 @@ class Style extends \Hazaar\Controller {
 
     private $filename;
 
-    public function __initialize($request) {
+    public function __initialize(\Hazaar\Application\Request $request) {
 
         $action = $request->getActionName();
 

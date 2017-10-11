@@ -75,7 +75,7 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
     }
 
-    public function __initialize($request) {
+    public function __initialize(\Hazaar\Application\Request $request) {
 
         if(! ($this->action = $request->getActionName()))
             $this->action = 'index';

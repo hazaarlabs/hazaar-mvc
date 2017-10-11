@@ -6,7 +6,7 @@ abstract class Server extends \Hazaar\Controller {
 
     protected $registered_methods = array();
 
-    public function __initialize($request) {
+    public function __initialize(\Hazaar\Application\Request $request) {
 
         $auto_register = true;
 

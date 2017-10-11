@@ -19,7 +19,7 @@ namespace Hazaar\Controller;
  */
 interface _Interface {
 
-    public function __initialize($request);
+    public function __initialize(\Hazaar\Application\Request $request);
 
     public function __tostring();
 

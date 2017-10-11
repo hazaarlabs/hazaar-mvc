@@ -87,7 +87,9 @@ abstract class REST extends \Hazaar\Controller {
 
     protected $allow_directory = true;
 
-    public function __initialize($request) {
+    public function __initialize(\Hazaar\Application\Request $request) {
+
+        $request->setResponseType('json');
 
         try{
 
