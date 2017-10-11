@@ -20,7 +20,7 @@ class Script extends \Hazaar\Controller {
 
     private $filename;
 
-    public function __initialize($request) {
+    public function __initialize(\Hazaar\Application\Request $request) {
 
         $this->filename = $request->getRawPath();
 
