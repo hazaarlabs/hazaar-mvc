@@ -14,13 +14,78 @@ namespace Hazaar\Controller;
  *
  * @detail      This controller can be used to create RESTful API endpoints.  It automatically handles
  *              HTTP request methods and can send appropriate responses for invalid requests.  It can
- *              also provide an intelligent API endpoint directory.
+ *              also provide an intelligent API endpoint directory as well as allows for a simple method
+ *              to version control your API.
+ *
+ *              ## Overview
+ *              Unlike other controllers, the rest controller works using annotations.  Such as:
+ *
+ *              <code>
+ *              class ApiController extends \Hazaar\Controller\REST {
+ *
+ *                  /**
+ *                   * @route('/dothething/<int:thingstodo>', method=['GET'])
+ *                  **\/
+ *                  protected function do_the_thing($thingstodo){
+ *
+ *                      return array('things' => 'Array of things');
+ *
+ *                  }
+ *
+ *              }
+ *              </code>
+ *
+ *              This API will be accessible at the URL: http://yourhost.com/api/v1/dothething/1234
+ *
+ *              ## Versions
+ *              The version node of the URL path will always exist.  If no version is specified then the
+ *              version will ALWAYS be 'v1'.  Using versions allows you to easily update your API without
+ *              removing backwards compatibility.  New versions should be used when there is a major change
+ *              to either the input or output of your endpoint and renaming it is not reasonable.
+ *
+ *              Do define another version of the above example:
+ *
+ *              <code>
+ *              class ApiController extends \Hazaar\Controller\REST {
+ *
+ *                  /**
+ *                   * @route('/dothething/<date:when>/<int:thingstodo>', method=['GET'])
+ *                   * @version 2
+ *                  **\/
+ *                  protected function do_the_thing_v2($thingstodo, $when){
+ *
+ *                      if($when->year() >= 2023)
+ *                          return array('things' => 'Array of FUTURE things');
+ *
+ *                      return array('things' => 'Array of things');
+ *
+ *                  }
+ *
+ *              }
+ *              </code>
+ *
+ *              This API will be accessible at the URL: http://yourhost.com/api/v1/dothething/2040-01-01/1234
+ *
+ *              ### Endpoints on multipl versions
+ *              To allow an endpoint to be available on multiple versions of your API, simply list the versions
+ *              in the @version tag separated by a comma.  Such as:
+ *
+ *              <code>
+ *              /**
+ *                * @version 1,2
+ *              **\/
+ *
+ *              ## Endpoint Directories
+ *              Endpoint directories are simply a list of the available endpoints with some basic information
+ *              about how they operate such as the HTTP method, parameter description and a brief description.
  */
 abstract class REST extends \Hazaar\Controller {
 
     private $endpoints = array();
 
-    protected $describe_full = false;
+    protected $describe_full = true;
+
+    protected $allow_directory = true;
 
     public function __initialize($request) {
 
@@ -45,7 +110,7 @@ abstract class REST extends \Hazaar\Controller {
                     if(!preg_match('/\(\"([\w\<\>\:\/]+)\"\s*,?\s*(.+)*\)/', $tag, $matches))
                         continue;
 
-                    $version = ($doc->hasTag('version') ? $doc->tag('version')[0] : 1);
+                    $versions = preg_split('/\s*,\s*/', ($doc->hasTag('version') ? $doc->tag('version')[0] : 1));
 
                     $route = '/' . ltrim($matches[1], '/');
 
@@ -65,11 +130,15 @@ abstract class REST extends \Hazaar\Controller {
 
                     }
 
-                    $this->endpoints[$version][$route] = array(
-                        'func' => $method,
-                        'doc' => $doc,
-                        'args' => $args
-                    );
+                    foreach($versions as $version){
+
+                        $this->endpoints[$version][$route] = array(
+                            'func' => $method,
+                            'doc' => $doc,
+                            'args' => $args
+                        );
+
+                    }
 
                 }
 
@@ -85,6 +154,8 @@ abstract class REST extends \Hazaar\Controller {
 
         }
 
+        return null;
+
     }
 
     public function __run() {
@@ -93,8 +164,14 @@ abstract class REST extends \Hazaar\Controller {
 
             $full_path = '/' . $this->request->getRawPath();
 
-            if($full_path == '/')
+            if($full_path == '/'){
+
+                if(!$this->allow_directory)
+                    throw new \Exception('Directory listing is not allowed', 403);
+
                 return new \Hazaar\Controller\Response\Json($this->__describe_api());
+
+            }
 
             if(!preg_match('/\/v(\d+)(\/?.*)/', $full_path, $matches))
                 throw new \Exception('API version is required', 400);
@@ -104,8 +181,14 @@ abstract class REST extends \Hazaar\Controller {
             if(!($path = $matches[2]))
                 $path = '/';
 
-            if($path == '/')
-                return new \Hazaar\Controller\Response\Json($this->__describe_version($version));
+            if($path == '/'){
+
+                if(!$this->allow_directory)
+                    throw new \Exception('Directory listing is not allowed', 403);
+
+                return new \Hazaar\Controller\Response\Json(ake($this->__describe_version($version), 'endpoints'));
+
+            }
 
             foreach($this->endpoints[$version] as $route => $endpoint){
 
@@ -117,7 +200,8 @@ abstract class REST extends \Hazaar\Controller {
 
                         $response->setHeader('allow', $endpoint['args']['method']);
 
-                        $response->populate($this->__describe_endpoint($route, $endpoint));
+                        if($this->allow_directory)
+                            $response->populate($this->__describe_endpoint($route, $endpoint, $this->describe_full));
 
                         return $response;
 
@@ -144,10 +228,7 @@ abstract class REST extends \Hazaar\Controller {
         $api = array();
 
         foreach(array_keys($this->endpoints) as $version)
-            $api[] = array(
-                'version' => $version,
-                'endpoints' => $this->__describe_version($version)
-            );
+            $api[] = $this->__describe_version($version);
 
         return $api;
 
@@ -158,10 +239,14 @@ abstract class REST extends \Hazaar\Controller {
         if(!array_key_exists($version, $this->endpoints))
             throw new \Exception('No endpoints exist on version ' . $version, 404);
 
-        $api = array();
+        $api = array(
+            'version' => $version,
+            'directory' => $this->url() . '/v' . $version,
+            'endpoints' => array()
+        );
 
         foreach($this->endpoints[$version] as $route => $endpoint)
-            $this->__describe_endpoint($route, $endpoint, $this->describe_full, $api);
+            $this->__describe_endpoint($route, $endpoint, $this->describe_full, $api['endpoints']);
 
         return $api;
 
@@ -194,6 +279,9 @@ abstract class REST extends \Hazaar\Controller {
                     }
 
                 }
+
+                if($brief = $doc->brief())
+                    $info['description'] = $brief;
 
             }
 
@@ -261,7 +349,7 @@ abstract class REST extends \Hazaar\Controller {
 
         try{
 
-            $http_methods = ake($endpoint, 'method', array('GET'));
+            $http_methods = ake(ake($endpoint, 'args'), 'method', array('GET'));
 
             if(!in_array($this->request->method(), $http_methods))
                 throw new \Exception('Method, ' . $this->request->method() . ', is not allowed!', 403);
