@@ -493,7 +493,7 @@ class Btree {
      */
     public function has($key){
 
-        return in_array($key, $this->keys());
+        return ($this->get($key) !== null);
 
     }
 
