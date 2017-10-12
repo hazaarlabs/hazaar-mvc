@@ -57,7 +57,7 @@ class File {
         } else {
 
             if(empty($file))
-                $file = Application::getInstance()->runtimePath('tmp', true) . '/' . uniqid();
+                $file = Application::getInstance()->runtimePath('tmp', true) . DIRECTORY_SEPARATOR . uniqid();
 
             $this->source_file = $file;
 
@@ -488,9 +488,15 @@ class File {
 
     }
 
-    public function unzip($filename){
+    public function unzip($filenames = null, $target = null){
 
-        $file = false;
+        if(!is_array($filenames))
+            $filenames = array($filenames);
+
+        if($target !== null && !$target instanceof \Hazaar\File\Dir)
+            $target = new \Hazaar\File\Dir($target, $this->backend);
+
+        $files = array();
 
         $zip = zip_open($this->source_file);
 
@@ -501,21 +507,52 @@ class File {
 
             $name = zip_entry_name($zip_entry);
 
-            if(preg_match('/' . $filename . '/', $name)){
+            if(!in_array(basename($name), $filenames))
+                continue;
 
-                $file = new File($filename, $this->backend);
+            if($target === null){
 
-                $file->set_contents(zip_entry_read($zip_entry, zip_entry_filesize($zip_entry)));
+                $file = new \Hazaar\File(basename($name));
 
-                break;
+            }else{
+
+                $file = $target->get($name);
+
+                $dir = new \Hazaar\File\Dir($file->dirname());
+
+                if(!$dir->exists())
+                    $dir->create();
 
             }
+
+            if($target)
+                $file->put_contents(zip_entry_read($zip_entry, zip_entry_filesize($zip_entry)));
+            else
+                $file->set_contents(zip_entry_read($zip_entry, zip_entry_filesize($zip_entry)));
+
+            $files[] = $file;
 
         }
 
         zip_close($zip);
 
-        return $file;
+        return $files;
+
+    }
+
+    public function ziplist(){
+
+        $list = array();
+
+        $zip = zip_open($this->source_file);
+
+        if(!is_resource($zip))
+            return false;
+
+        while($zip_entry = zip_read($zip))
+            $list[] = zip_entry_name($zip_entry);
+
+        return $list;
 
     }
 
@@ -557,9 +594,9 @@ class File {
 
     /**
      * Check if the file is currently opened for access by this class
-     * 
+     *
      * NOTE: This does not include checking if the file is opened by another process or even another Hazaar\File instance.
-     * 
+     *
      * @return boolean
      */
     public function isOpen(){
