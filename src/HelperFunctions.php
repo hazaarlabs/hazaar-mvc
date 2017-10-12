@@ -357,7 +357,7 @@ function array_build_html($array, $root = true){
  *
  * @return      array
  */
-function array_to_dot_notation($array) {
+function array_to_dot_notation($array, $separator = '.') {
 
     if(!is_array($array))
         return false;
@@ -372,7 +372,7 @@ function array_to_dot_notation($array) {
 
             foreach($children as $childkey => $child) {
 
-                $new_key = $key . '.' . $childkey;
+                $new_key = $key . $separator . $childkey;
 
                 $rows[$new_key] = $child;
 
