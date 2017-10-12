@@ -180,6 +180,9 @@ abstract class REST extends \Hazaar\Controller {
 
             $version = intval($matches);
 
+            if(!array_key_exists($version, $this->endpoints))
+                throw new \Exception('API version(' . $version . ') does not exist!', 404);
+
             if(!($path = $matches[2]))
                 $path = '/';
 
