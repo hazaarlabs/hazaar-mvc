@@ -109,7 +109,7 @@ abstract class REST extends \Hazaar\Controller {
 
                 foreach($doc->tag('route') as $tag){
 
-                    if(!preg_match('/\(\"([\w\<\>\:\/]+)\"\s*,?\s*(.+)*\)/', $tag, $matches))
+                    if(!preg_match('/\([\'\"]([\w\<\>\:\/]+)[\'\"]\s*,?\s*(.+)*\)/', $tag, $matches))
                         continue;
 
                     $versions = preg_split('/\s*,\s*/', ($doc->hasTag('version') ? $doc->tag('version')[0] : 1));
