@@ -109,7 +109,7 @@ abstract class REST extends \Hazaar\Controller {
 
                 foreach($doc->tag('route') as $tag){
 
-                    if(!preg_match('/\(\"([\w\<\>\:\/]+)\"\s*,?\s*(.+)*\)/', $tag, $matches))
+                    if(!preg_match('/\([\'\"]([\w\<\>\:\/]+)[\'\"]\s*,?\s*(.+)*\)/', $tag, $matches))
                         continue;
 
                     $versions = preg_split('/\s*,\s*/', ($doc->hasTag('version') ? $doc->tag('version')[0] : 1));
@@ -179,6 +179,9 @@ abstract class REST extends \Hazaar\Controller {
                 throw new \Exception('API version is required', 400);
 
             $version = intval($matches);
+
+            if(!array_key_exists($version, $this->endpoints))
+                throw new \Exception('API version(' . $version . ') does not exist!', 404);
 
             if(!($path = $matches[2]))
                 $path = '/';
