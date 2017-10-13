@@ -105,7 +105,7 @@ var dataBinderValue = function (name, value, label, parent) {
         "value": {
             set: function (value) {
                 this._value = value;
-                this._parent._update(this.name);
+                this._parent._update(this.name, true);
             },
             get: function () {
                 return this._value;
@@ -114,7 +114,7 @@ var dataBinderValue = function (name, value, label, parent) {
         "label": {
             set: function (value) {
                 this._label = value;
-                this._parent._update(this.name);
+                this._parent._update(this.name, true);
             },
             get: function () {
                 return this._label;
@@ -131,26 +131,12 @@ dataBinderValue.prototype.toString = function () {
 dataBinderValue.prototype.set = function (value, label) {
     this._value = value;
     this._label = label;
-    this._parent._update(this.name);
+    this._parent._update(this.name, true);
     return this;
 };
 
-dataBinderValue.prototype.setLabel = function (label) {
-    if (typeof label == 'undefined') return this.label;
-    this.label = label;
-    this._parent._update(this.name);
-    return this;
-};
-
-dataBinderValue.prototype.setValue = function (value) {
-    if (typeof value == 'undefined') return this.value;
-    this.value = value;
-    this._parent._update(this.name);
-    return this;
-};
-
-dataBinderValue.prototype.save = function () {
-    if (this.label)
+dataBinderValue.prototype.save = function (no_label) {
+    if (this.label && !no_label)
         return { "value": this.value, "label": this.label };
     return this.value;
 };
@@ -205,6 +191,8 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
                 || value instanceof dataBinderArray
                 || value instanceof dataBinderValue))
                 value = new dataBinderValue(key, value, null, this);
+            else if (typeof value == 'object' && 'value' in value && 'label' in value)
+                value = new dataBinderValue(key, value.value, value.label, this);
             this._attributes[key] = value;
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
             this._trigger(attr_name, value);
@@ -269,13 +257,13 @@ dataBinder.prototype.resync = function (name) {
     return this;
 };
 
-dataBinder.prototype.save = function () {
+dataBinder.prototype.save = function (no_label) {
     var attrs = jQuery.extend({}, this._attributes);
     for (x in attrs) {
         if (attrs[x] instanceof dataBinder
             || attrs[x] instanceof dataBinderArray
             || attrs[x] instanceof dataBinderValue)
-            attrs[x] = attrs[x].save();
+            attrs[x] = attrs[x].save(no_label);
     }
     return attrs;
 };
@@ -423,11 +411,11 @@ dataBinderArray.prototype.remove = function (index) {
     return element;
 };
 
-dataBinderArray.prototype.save = function () {
+dataBinderArray.prototype.save = function (no_label) {
     var elems = this._elements.slice();
     for (x in elems) {
         if (elems[x] instanceof dataBinder || elems[x] instanceof dataBinderArray)
-            elems[x] = elems[x].save();
+            elems[x] = elems[x].save(no_label);
     }
     return elems;
 };
