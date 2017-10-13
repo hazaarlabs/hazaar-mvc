@@ -191,12 +191,14 @@ class GeoData {
 
         $list = array();
 
-        $country = $this->db->get(strtoupper($country_code));
+        if($country = $this->db->get(strtoupper($country_code))){
 
-        foreach(ake($country, 'states') as $code => $state)
-            $list[$code] = $state['name'];
+            foreach(ake($country, 'states') as $code => $state)
+                $list[$code] = $state['name'];
 
-        asort($list);
+            asort($list);
+
+        }
 
         return $list;
 
@@ -206,20 +208,22 @@ class GeoData {
 
         $list = array();
 
-        $country = $this->db->get(strtoupper($country_code));
+        if($country = $this->db->get(strtoupper($country_code))){
 
-        $cities = ake(ake(ake($country, 'states'), $state_code), 'cities', array());
+            $cities = ake(ake(ake($country, 'states'), $state_code), 'cities', array());
 
-        foreach($cities as $id){
+            foreach($cities as $id){
 
-            if(!($city = $country['cities'][$id]))
-                continue;
+                if(!($city = $country['cities'][$id]))
+                    continue;
 
-            $list[] = $city['name'];
+                $list[] = $city['name'];
+
+            }
+
+            sort($list);
 
         }
-
-        sort($list);
 
         return $list;
 
