@@ -330,7 +330,20 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         if(array_key_exists($type, Strict::$type_aliases))
             $type = Strict::$type_aliases[$type];
 
-        if (in_array($type, Strict::$known_types)) {
+        if($value instanceof \Iterator
+            || $value instanceof \ArrayIterator
+            || $value instanceof \IteratorAggregate)
+            $value = iterator_to_array($value);
+
+        if(is_array($value) && array_key_exists('__hz_value', $value) && array_key_exists('__hz_label', $value)){
+
+            $value = new dataBinderValue(ake($value, '__hz_value'), ake($value, '__hz_label'));
+
+            $this->convertType($value->value, $type);
+
+            return $value;
+
+        }elseif (in_array($type, Strict::$known_types)) {
 
             /*
              * The special type 'mixed' specifically allow
@@ -789,6 +802,10 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                 if ($value instanceof Strict) {
 
                     $value = $value->toArray($disable_callbacks, $next, $show_hidden);
+
+                } elseif ($value instanceof dataBinderValue) {
+
+                    $value = $value->toArray();
 
                 } elseif (is_array($value)) {
 
