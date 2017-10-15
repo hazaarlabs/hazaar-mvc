@@ -100,12 +100,13 @@ var dataBinderValue = function (name, value, label, parent) {
     this._parent = parent;
     this._value = null;
     this._label = null;
-    this.name = name;
+    this._name = name;
     Object.defineProperties(this, {
         "value": {
             set: function (value) {
                 this._value = value;
-                this._parent._update(this.name, true);
+                this._parent._update(this._name, true);
+                this._parent._trigger(this._name, this._value);
             },
             get: function () {
                 return this._value;
@@ -114,7 +115,7 @@ var dataBinderValue = function (name, value, label, parent) {
         "label": {
             set: function (value) {
                 this._label = value;
-                this._parent._update(this.name, true);
+                this._parent._update(this._name, true);
             },
             get: function () {
                 return this._label;
@@ -131,13 +132,14 @@ dataBinderValue.prototype.toString = function () {
 dataBinderValue.prototype.set = function (value, label) {
     this._value = value;
     this._label = label;
-    this._parent._update(this.name, true);
+    this._parent._update(this._name, true);
+    this._parent._trigger(this._name, this._value);
     return this;
 };
 
 dataBinderValue.prototype.save = function (no_label) {
     if (this.label && !no_label)
-        return { "value": this.value, "label": this.label };
+        return { "__hz_value": this.value, "__hz_label": this.label };
     return this.value;
 };
 
@@ -187,12 +189,12 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
             if (this._attributes[key] === value) return;
             if (Array.isArray(value))
                 value = new dataBinderArray(value, key, this);
+            else if (value !== null && typeof value == 'object' && '__hz_value' in value && '__hz_label' in value)
+                value = new dataBinderValue(key, value.__hz_value, value.__hz_label, this);
             else if (!(value instanceof dataBinder
-                || value instanceof dataBinderArray
-                || value instanceof dataBinderValue))
+               || value instanceof dataBinderArray
+               || value instanceof dataBinderValue))
                 value = new dataBinderValue(key, value, null, this);
-            else if (typeof value == 'object' && 'value' in value && 'label' in value)
-                value = new dataBinderValue(key, value.value, value.label, this);
             this._attributes[key] = value;
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
             this._trigger(attr_name, value);
@@ -224,7 +226,12 @@ dataBinder.prototype._update = function (attr_name, do_update) {
         var o = jQuery(item);
         if (o.is("input, textarea, select")) {
             var attr_value = (attr_item ? attr_item.value : null);
-            ((o.attr('type') == 'checkbox') ? o.prop('checked', attr_value) : o.val(attr_value));
+            if (o.attr('type') == 'checkbox')
+                o.prop('checked', attr_value)
+            else if (o.attr('data-bind-label') == 'true')
+                o.val((attr_item ? attr_item.label : null));
+            else
+                o.val(attr_value);
             if (do_update === true) o.trigger('update');
         } else
             o.html((attr_item ? attr_item.toString() : null));
@@ -374,9 +381,12 @@ dataBinderArray.prototype.push = function (element) {
         var trigger_name = this._trigger_name(this._attr_name(key));
         Object.defineProperty(this, key, {
             set: function (value) {
-                if (Array.isArray(value))
-                    value = new dataBinderArray(value, key, this);
-                else if (typeof element == 'object')
+                if (Array.isArray(value)) {
+                    if ('__hz_value' in value && '__hz_label' in value)
+                        value = new dataBinderValue(key, value.__hz_value, value.__hz_label, this);
+                    else
+                        value = new dataBinderArray(value, key, this);
+                } else if (typeof element == 'object')
                     value = new dataBinder(value, key, this);
                 else
                     value = new dataBinderValue(key, value, null, this);
@@ -443,7 +453,7 @@ dataBinderArray.prototype.resync = function () {
 dataBinderArray.prototype._cleanupItem = function (index) {
     if (!index in this._elements) return;
     var reg = new RegExp("(" + this._attr_name() + ")\\[(\\d+)\\]");
-    for (var i = (index + 1); i < this._elements.length; i++) {
+    for (var i = (index + 1) ; i < this._elements.length; i++) {
         var new_i = i - 1;
         jQuery('[data-bind^="' + this._attr_name(i) + '"]').each(function (index, item) {
             if (!('data-toggle' in this.attributes))
