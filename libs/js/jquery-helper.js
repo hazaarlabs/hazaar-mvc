@@ -192,8 +192,8 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
             else if (value !== null && typeof value == 'object' && '__hz_value' in value && '__hz_label' in value)
                 value = new dataBinderValue(key, value.__hz_value, value.__hz_label, this);
             else if (!(value instanceof dataBinder
-               || value instanceof dataBinderArray
-               || value instanceof dataBinderValue))
+                || value instanceof dataBinderArray
+                || value instanceof dataBinderValue))
                 value = new dataBinderValue(key, value, null, this);
             this._attributes[key] = value;
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
@@ -227,7 +227,7 @@ dataBinder.prototype._update = function (attr_name, do_update) {
         if (o.is("input, textarea, select")) {
             var attr_value = (attr_item ? attr_item.value : null);
             if (o.attr('type') == 'checkbox')
-                o.prop('checked', attr_value)
+                o.prop('checked', attr_value);
             else if (o.attr('data-bind-label') == 'true')
                 o.val((attr_item ? attr_item.label : null));
             else
@@ -453,7 +453,7 @@ dataBinderArray.prototype.resync = function () {
 dataBinderArray.prototype._cleanupItem = function (index) {
     if (!index in this._elements) return;
     var reg = new RegExp("(" + this._attr_name() + ")\\[(\\d+)\\]");
-    for (var i = (index + 1) ; i < this._elements.length; i++) {
+    for (var i = (index + 1); i < this._elements.length; i++) {
         var new_i = i - 1;
         jQuery('[data-bind^="' + this._attr_name(i) + '"]').each(function (index, item) {
             if (!('data-toggle' in this.attributes))
