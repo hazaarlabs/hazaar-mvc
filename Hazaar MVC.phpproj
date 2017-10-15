@@ -294,6 +294,7 @@
     <Compile Include="src\Logger\Exception\NoBackend.php" />
     <Compile Include="src\Logger\Frontend.php" />
     <Compile Include="src\Map.php" />
+    <Compile Include="src\Model\dataBinderValue.php" />
     <Compile Include="src\Model\Email.php" />
     <Compile Include="src\Model\Exception\BadFieldDefinition.php" />
     <Compile Include="src\Model\Exception\FieldUndefined.php" />
