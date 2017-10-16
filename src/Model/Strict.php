@@ -335,15 +335,23 @@ abstract class Strict implements \ArrayAccess, \Iterator {
             || $value instanceof \IteratorAggregate)
             $value = iterator_to_array($value);
 
-        if(is_array($value) && array_key_exists('__hz_value', $value) && array_key_exists('__hz_label', $value)){
+        if (in_array($type, Strict::$known_types)) {
 
-            $value = new dataBinderValue(ake($value, '__hz_value'), ake($value, '__hz_label'));
+            if(is_array($value) && array_key_exists('__hz_value', $value) && array_key_exists('__hz_label', $value)){
 
-            $this->convertType($value->value, $type);
+                if($type !== 'array'){
 
-            return $value;
+                    $value = new dataBinderValue(ake($value, '__hz_value'), ake($value, '__hz_label'));
 
-        }elseif (in_array($type, Strict::$known_types)) {
+                    $this->convertType($value->value, $type);
+
+                    return $value;
+
+                }
+
+                $value = null;
+
+            }
 
             /*
              * The special type 'mixed' specifically allow
