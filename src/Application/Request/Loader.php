@@ -44,7 +44,7 @@ class Loader {
                 break;
 
             default :
-                $request = new Http($config, $_REQUEST);
+                $request = new Http($config);
 
                 break;
         }

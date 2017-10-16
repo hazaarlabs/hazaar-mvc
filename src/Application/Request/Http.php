@@ -52,19 +52,22 @@ class Http extends \Hazaar\Application\Request {
      */
     function init($request = NULL) {
 
-        if(! $request)
+        if($request === NULL){
+
             $request = $_REQUEST;
 
-        $this->method = $_SERVER['REQUEST_METHOD'];
+            $this->method = $_SERVER['REQUEST_METHOD'];
 
-        $this->headers = hazaar_request_headers();
+            $this->headers = hazaar_request_headers();
 
-        $this->body = @file_get_contents('php://input');
+            $this->body = @file_get_contents('php://input');
 
-        if($content_type = explode(';', $this->getHeader('Content-Type'))){
+            if($content_type = explode(';', $this->getHeader('Content-Type'))){
 
-            if($content_type[0] == 'application/json' && $this->body && ($json = json_decode($this->body, true)) !== false)
-                $request = array_merge($request, $json);
+                if($content_type[0] == 'application/json' && $this->body && ($json = json_decode($this->body, true)) !== false)
+                    $request = array_merge($request, $json);
+
+            }
 
         }
 
