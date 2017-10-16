@@ -122,7 +122,8 @@ var dataBinderValue = function (name, value, label, parent) {
             }
         }
     });
-    this.set(value, label);
+    this._value = value;
+    this._label = label;
 };
 
 dataBinderValue.prototype.toString = function () {
@@ -149,10 +150,8 @@ dataBinder.prototype._init = function (data, name, parent) {
     this._parent = parent;
     this._attributes = {};
     this._watchers = {};
-    if (Object.keys(data).length > 0) {
-        for (var key in data)
-            this.add(key, data[key]);
-    }
+    if (Object.keys(data).length > 0)
+        for (var key in data) this.add(key, data[key]);
     Object.defineProperty(this, 'length', {
         get: function () {
             return Object.keys(this._attributes).length;
@@ -160,20 +159,26 @@ dataBinder.prototype._init = function (data, name, parent) {
     });
 };
 
+dataBinder.prototype.__convert_type = function (key, value) {
+    if (typeof value == 'string' && value == '')
+        value = null;
+    else if (Array.isArray(value))
+        value = new dataBinderArray(value, key, this);
+    else if (value !== null && typeof value == 'object' && '__hz_value' in value && '__hz_label' in value) {
+        if (typeof value.__hz_value == 'string' && value.__hz_value == '') value = null;
+        else value = new dataBinderValue(key, value.__hz_value, value.__hz_label, this);
+    } else if (value !== null && !(value instanceof dataBinder
+        || value instanceof dataBinderArray
+        || value instanceof dataBinderValue)) {
+        value = new dataBinderValue(key, value, null, this);
+    }
+    return value;
+}
 dataBinder.prototype.add = function (key, value) {
     var attr_name = this._attr_name(key);
     var trigger_name = this._trigger_name(attr_name);
-    if (Array.isArray(value)) {
-        this._attributes[key] = new dataBinderArray(value, key, this);
-    } else if (typeof value == 'object' && value !== null) {
-        this._attributes[key] = new dataBinder(value, key, this);
-    } else {
-        this._jquery.on(trigger_name, function (event, binder, attr_name, attr_value) {
-            binder._update(attr_name, true);
-        });
-        this._attributes[key] = value;
-        this._update(attr_name, false);
-    }
+    this._attributes[key] = this.__convert_type(key, value);
+    this._update(attr_name, false);
     this._defineProperty(trigger_name, key);
 };
 
@@ -186,16 +191,7 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
     Object.defineProperty(this, key, {
         configurable: true,
         set: function (value) {
-            if (this._attributes[key] === value) return;
-            if (Array.isArray(value))
-                value = new dataBinderArray(value, key, this);
-            else if (value !== null && typeof value == 'object' && '__hz_value' in value && '__hz_label' in value)
-                value = new dataBinderValue(key, value.__hz_value, value.__hz_label, this);
-            else if (!(value instanceof dataBinder
-                || value instanceof dataBinderArray
-                || value instanceof dataBinderValue))
-                value = new dataBinderValue(key, value, null, this);
-            this._attributes[key] = value;
+            this._attributes[key] = this.__convert_type(key, value);
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
             this._trigger(attr_name, value);
         },
@@ -358,6 +354,10 @@ dataBinderArray.prototype._newitem = function (index) {
     return newitem;
 };
 
+dataBinderArray.prototype.__convert_type = function (key, value) {
+    return this._parent.__convert_type(key, value);
+};
+
 dataBinderArray.prototype._update = function (attr_name, attr_element) {
     var remove = (this.indexOf(attr_element) < 0);
     jQuery('[data-bind="' + attr_name + '"]').each(function (index, item) {
@@ -381,27 +381,14 @@ dataBinderArray.prototype.push = function (element) {
         var trigger_name = this._trigger_name(this._attr_name(key));
         Object.defineProperty(this, key, {
             set: function (value) {
-                if (Array.isArray(value)) {
-                    if ('__hz_value' in value && '__hz_label' in value)
-                        value = new dataBinderValue(key, value.__hz_value, value.__hz_label, this);
-                    else
-                        value = new dataBinderArray(value, key, this);
-                } else if (typeof element == 'object')
-                    value = new dataBinder(value, key, this);
-                else
-                    value = new dataBinderValue(key, value, null, this);
-                this._elements[key] = value;
+                this._elements[key] = this.__convert_type(key, value);
             },
             get: function () {
                 return this._attributes[key];
             }
         });
     }
-    if (Array.isArray(element))
-        element = new dataBinderArray(element, key, this);
-    else if (typeof element == 'object')
-        element = new dataBinder(element, key, this);
-    this._elements[key] = element;
+    this._elements[key] = this.__convert_type(key, element);
     this._update(this._attr_name(), element);
     return key;
 };
