@@ -7,7 +7,7 @@ class Request extends \Hazaar\Map {
     public  $method  = 'GET';
 
     private $headers = array(
-        'User-Agent'   => 'hazaarmvc-php/1.0 (PHP)',
+        'User-Agent'   => 'hazaarmvc-php/' . HAZAAR_VERSION . ' (PHP)',
         'Content-Type' => 'text/html',
         'Connection'   => 'close'
     );
