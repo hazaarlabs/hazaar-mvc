@@ -394,7 +394,9 @@ dataBinderArray.prototype.push = function (element) {
 };
 
 dataBinderArray.prototype.indexOf = function (searchString) {
-    return this._elements.indexOf(searchString);
+    for (i in this._elements)
+        if (this._elements[i].value == searchString) return parseInt(i);
+    return -1;
 };
 
 dataBinderArray.prototype.remove = function (index) {
