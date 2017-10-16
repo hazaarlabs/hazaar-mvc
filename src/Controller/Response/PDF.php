@@ -385,7 +385,7 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
 
             $client = new \Hazaar\Http\Client();
 
-            $request = new \Hazaar\Http\Request('http://api.github.com/repos/wkhtmltopdf/wkhtmltopdf/releases/latest');
+            $request = new \Hazaar\Http\Request('https://api.github.com/repos/wkhtmltopdf/wkhtmltopdf/releases/latest');
 
             if(!($response = $client->send($request)))
                 throw new \Exception('No response returned from Github API call!');
