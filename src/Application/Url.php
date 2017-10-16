@@ -38,6 +38,8 @@ class Url {
 
     public $base_path;
 
+    private $encoded = false;
+
     function __construct() {
 
         /*
@@ -222,7 +224,7 @@ class Url {
      */
     public function __tostring() {
 
-        return $this->renderObject();
+        return $this->toString();
 
     }
 
@@ -261,11 +263,11 @@ class Url {
                 $params[$key] = $value;
             }
 
-            return $this->renderObject(TRUE, $params);
+            return $this->renderObject(TRUE, $params, $this->encoded);
 
         }
 
-        return $this->renderObject();
+        return $this->renderObject(true, null, $this->encoded);
 
     }
 
@@ -285,9 +287,11 @@ class Url {
 
     }
 
-    public function encode(){
+    public function encode($encode = true){
 
-        return $this->renderObject(true, null, true);
+        $this->encoded = $encode;
+
+        return $this;
 
     }
 
