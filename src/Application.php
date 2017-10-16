@@ -15,7 +15,7 @@ namespace Hazaar;
 
 define('HAZAAR_EXEC_START', microtime(TRUE));
 
-define('HAZAAR_VERSION', '2.1.0');
+define('HAZAAR_VERSION', '2.3');
 
 defined('APPLICATION_PATH') || define('APPLICATION_PATH', realpath(getcwd() . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'application'));
 
