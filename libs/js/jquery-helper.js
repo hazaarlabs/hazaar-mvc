@@ -413,7 +413,9 @@ dataBinderArray.prototype.remove = function (index) {
 dataBinderArray.prototype.save = function (no_label) {
     var elems = this._elements.slice();
     for (x in elems) {
-        if (elems[x] instanceof dataBinder || elems[x] instanceof dataBinderArray)
+        if (elems[x] instanceof dataBinder
+            || elems[x] instanceof dataBinderArray
+            || elems[x] instanceof dataBinderValue)
             elems[x] = elems[x].save(no_label);
     }
     return elems;
