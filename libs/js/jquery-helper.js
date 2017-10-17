@@ -97,14 +97,14 @@ var dataBinderArray = function (data, name, parent) {
 };
 
 var dataBinderValue = function (name, value, label, parent) {
-    this._parent = parent;
-    this._value = null;
-    this._label = null;
     this._name = name;
+    this._value = parent.__nullify(value);
+    this._label = label;
+    this._parent = parent;
     Object.defineProperties(this, {
         "value": {
             set: function (value) {
-                this._value = value;
+                this._value = this._parent.__nullify(value);
                 this._parent._update(this._name, true);
                 this._parent._trigger(this._name, this._value);
             },
@@ -122,8 +122,6 @@ var dataBinderValue = function (name, value, label, parent) {
             }
         }
     });
-    this._value = value;
-    this._label = label;
 };
 
 dataBinderValue.prototype.toString = function () {
@@ -131,7 +129,7 @@ dataBinderValue.prototype.toString = function () {
 };
 
 dataBinderValue.prototype.set = function (value, label) {
-    this._value = value;
+    this._value = this._parent.__nullify(value);
     this._label = label;
     this._parent._update(this._name, true);
     this._parent._trigger(this._name, this._value);
@@ -159,10 +157,15 @@ dataBinder.prototype._init = function (data, name, parent) {
     });
 };
 
-dataBinder.prototype.__convert_type = function (key, value) {
-    if (typeof value == 'string' && value == '')
+dataBinder.prototype.__nullify = function (value) {
+    if (typeof value === 'string' && value === '')
         value = null;
-    else if (Array.isArray(value))
+    return value;
+};
+
+dataBinder.prototype.__convert_type = function (key, value) {
+    value = this.__nullify(value);
+    if (Array.isArray(value))
         value = new dataBinderArray(value, key, this);
     else if (value !== null && typeof value == 'object' && '__hz_value' in value && '__hz_label' in value) {
         if (typeof value.__hz_value == 'string' && value.__hz_value == '') value = null;
@@ -173,7 +176,8 @@ dataBinder.prototype.__convert_type = function (key, value) {
         value = new dataBinderValue(key, value, null, this);
     }
     return value;
-}
+};
+
 dataBinder.prototype.add = function (key, value) {
     var attr_name = this._attr_name(key);
     var trigger_name = this._trigger_name(attr_name);
