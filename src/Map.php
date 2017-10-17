@@ -1376,7 +1376,7 @@ class Map implements \ArrayAccess, \Iterator {
      */
     public function & findOne($criteria, $field = null) {
 
-        if($criteria instanceof \MongoId)
+        if($criteria instanceof \MongoDB\BSON\ObjectID)
             $criteria = array('_id' => $criteria);
 
         if(! Map::is_array($criteria))
