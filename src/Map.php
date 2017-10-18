@@ -198,7 +198,10 @@ class Map implements \ArrayAccess, \Iterator {
      */
     static public function is_array($array) {
 
-        return (is_array($array) || $array instanceof \ArrayAccess);
+        return (is_array($array)
+            || $array instanceof \ArrayAccess
+            || $array instanceof \ArrayIterator
+            || $array instanceof \Iterator);
 
     }
 
