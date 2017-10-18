@@ -87,20 +87,30 @@ abstract class Request implements Request\_Interface {
 
         $this->action = 'index';
 
-        $nodes = explode('/', $string);
+        //First, split off any query string
+        $url = parse_url($string);
 
-        /* Pull out the first path node and use it to find the controller */
-        if(count($nodes) > 0)
-            $this->setControllerName(array_shift($nodes));
+        if(array_key_exists('path', $url)){
 
-        /* Keep what we have left so far as the RAW path */
-        $this->raw_path = implode('/', $nodes);
+            $nodes = explode('/', $url['path']);
 
-        if(count($nodes) > 0)
-            $this->setActionName(array_shift($nodes));
+            /* Pull out the first path node and use it to find the controller */
+            if(count($nodes) > 0)
+                $this->setControllerName(array_shift($nodes));
 
-        /* Keep the rest as a path off the controller */
-        $this->path = implode('/', $nodes);
+            /* Keep what we have left so far as the RAW path */
+            $this->raw_path = implode('/', $nodes);
+
+            if(count($nodes) > 0)
+                $this->setActionName(array_shift($nodes));
+
+            /* Keep the rest as a path off the controller */
+            $this->path = implode('/', $nodes);
+
+        }
+
+        if(array_key_exists('query', $url))
+            parse_str($url['query'], $this->params);
 
     }
 
