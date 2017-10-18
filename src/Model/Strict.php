@@ -487,6 +487,15 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
             }
 
+        }elseif($def['type'] == 'array' && is_array($value)){
+
+            foreach($value as & $subValue){
+
+                if(is_array($subValue) && array_key_exists('__hz_value', $subValue) && array_key_exists('__hz_label', $subValue))
+                    $subValue = new dataBinderValue(ake($subValue, '__hz_value'), ake($subValue, '__hz_label'));
+
+            }
+
         }
 
         /*
