@@ -421,8 +421,8 @@ class View {
 
             krsort($this->_links);
 
-            foreach ($this->_links as $req)
-                $out .= implode("\n", $req) . "\n";
+            foreach ($this->_links as $link)
+                $out .= implode("\n", $link) . "\n";
 
             $out .= "\n";
 
