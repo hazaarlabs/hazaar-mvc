@@ -475,4 +475,13 @@ dataBinderArray.prototype.populate = function (elements) {
         if (elements[x] instanceof dataBinder || elements[x] instanceof dataBinderArray || (this._elements.indexOf(elements[x]) < 0))
             this.push(elements[x]);
     }
-}
+};
+
+dataBinderArray.prototype.filter = function (cb, saved) {
+    var list = [];
+    for (x in this.elements) {
+        var value = (this.elements[x] instanceof dataBinderValue ? this.elements[x].value : this.elements[x]);
+        if (cb(value)) list.push(this.elements[x]);
+    }
+    return list;
+};
