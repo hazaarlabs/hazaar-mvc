@@ -395,7 +395,7 @@ dataBinderArray.prototype.push = function (element) {
         });
     }
     this._elements[key] = this.__convert_type(key, element);
-    this._update(this._attr_name(), element);
+    this._update(this._attr_name(), this._elements[key]);
     return key;
 };
 
