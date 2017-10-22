@@ -403,7 +403,7 @@ class Application {
         if($this->config->app->has('locale'))
             $locale = $this->config->app['locale'];
 
-        //Fix locates on windows
+        //Fix locales on windows
         if(substr(PHP_OS, 0, 3) == 'WIN'){
 
             //Remove any charset specs
