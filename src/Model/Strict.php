@@ -794,6 +794,11 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
         foreach($array as $key => $value) {
 
+            $def = ake($this->fields, $key, ake($this->fields, '*'));
+
+            if (!is_array($def))
+                $def = array('type' => $def);
+
             /*
              * Hiding fields
              *
@@ -811,6 +816,12 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                 if ($hide === TRUE)
                     continue;
             }
+
+            /*
+             * Run any toArray callbacks
+             */
+            if (!$disable_callbacks && array_key_exists('toArray', $def))
+                $value = $this->execCallback($def['toArray'], $value, $key);
 
             if ($depth === NULL || $depth > 0) {
 
