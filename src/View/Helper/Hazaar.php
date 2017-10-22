@@ -8,6 +8,8 @@ class Hazaar extends \Hazaar\View\Helper {
 
     function init($view, $args = array()){
 
+        $view->setImportPriority(100);
+
         if(!($url = ake($args, 'base_url')))
             $url = $this->application->url();
 
