@@ -54,10 +54,37 @@ class Cdnjs extends \Hazaar\View\Helper {
 
                 $url = 'https://cdnjs.cloudflare.com/ajax/libs/' . $name . '/' . $info['version'] . '/' . $file;
 
+                if($this->cache_local){
+
+                    $path = \Hazaar\Application::getInstance()->runtimePath('cdnjs' . DIRECTORY_SEPARATOR . $name, true);
+
+                    $cacheFile = $path . DIRECTORY_SEPARATOR . $file;
+
+                    if(!file_exists($cacheFile)){
+
+                        $filePath = dirname($cacheFile);
+
+                        if(!file_exists($filePath))
+                            mkdir($filePath, 0775, TRUE);
+
+                        file_put_contents($cacheFile, file_get_contents($url));
+
+                    }
+
+                    $info = array(
+                        'lib' => $name,
+                        'file' => $file
+                    );
+
+                    $url = $this->application->url('hazaar', 'view/helper/cdnjs/file', $info)->encode();
+
+                }
+
                 if(strtolower(substr($file, -3)) == '.js')
                     $view->requires($url);
                 else
                     $view->link($url);
+
 
             }
 
@@ -131,6 +158,25 @@ class Cdnjs extends \Hazaar\View\Helper {
         self::$cache->set($name, $data);
 
         return $data;
+
+    }
+
+    public function file($args){
+
+        $path = \Hazaar\Application::getInstance()->runtimePath('cdnjs' . DIRECTORY_SEPARATOR . ake($args, 'lib'));
+
+        $file = new \Hazaar\File($path . DIRECTORY_SEPARATOR . ake($args, 'file'));
+
+        if(!$file->exists())
+            throw new \Exception('File not found!', 404);
+
+        $response = new \Hazaar\Controller\Response\File();
+        
+        $response->setContent($file->get_contents());
+
+        $response->setContentType($file->mime_content_type());
+
+        return $response;
 
     }
 
