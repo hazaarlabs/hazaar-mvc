@@ -27,6 +27,13 @@ class Bootstrap extends \Hazaar\View\Helper {
 
         $this->requires('JQuery');
 
+        $this->requires('cdnjs');
+
+        if($theme = ake($this->args, 'theme'))
+            $this->cdnjs->load('bootswatch', '3.3.7', array($theme . '/bootstrap.min.css'));
+        else
+            $this->cdnjs->load('twitter-bootstrap', '3.3.7', array('css/bootstrap.min.css'));
+
     }
 
     /**
@@ -35,14 +42,14 @@ class Bootstrap extends \Hazaar\View\Helper {
      */
     public function init($view, $args = array()) {
 
-        $cdn = ake($args, 'cdn', 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7');
+        //$cdn = ake($args, 'cdn', 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7');
 
-        $view->link($cdn . '/css/bootstrap.min.css');
+        //$view->link($cdn . '/css/bootstrap.min.css');
 
-        $view->requires($cdn . '/js/bootstrap.min.js');
+        //$view->requires($cdn . '/js/bootstrap.min.js');
 
-        if($theme = ake($args, 'theme'))
-            $view->link('https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/' . $theme . '/bootstrap.min.css');
+        //if($theme = ake($args, 'theme'))
+        //    $view->link('https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/' . $theme . '/bootstrap.min.css');
 
     }
 

@@ -26,7 +26,11 @@ class Fontawesome extends \Hazaar\View\Helper {
 
     public function import() {
 
+        $this->requires('cdnjs');
+
         $this->requires('html');
+
+        $this->cdnjs->load('font-awesome');
 
     }
 
@@ -36,12 +40,6 @@ class Fontawesome extends \Hazaar\View\Helper {
      * @since       1.0.0
      */
     public function init($view, $args = array()) {
-
-        $version = ake($args, 'version', '4.6.3');
-
-        $this->css_include = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/' . $version . '/css/font-awesome.min.css';
-
-        $view->link($this->css_include);
 
     }
 
