@@ -9,19 +9,43 @@
 
 namespace Hazaar\View\Helper;
 
-if(!defined('JQUERY_CURRENT_VER'))
-    define('JQUERY_CURRENT_VER', '2.2.4');
-
-if(!defined('JQUERY_CURRENT_UI_VER'))
-    define('JQUERY_CURRENT_UI_VER', '1.12.0');
-
 class JQuery extends \Hazaar\View\Helper {
 
     private $jquery;
 
     public function import() {
 
+        $this->requires('cdnjs');
+
         $this->jquery = \Hazaar\Html\jQuery::getInstance();
+
+        $settings = new \Hazaar\Map(array('noload' => FALSE), $this->args);
+
+        if($settings['noload'] !== TRUE) {
+
+            /**
+             * Optionally we can set a version which will use the Google hosted library as we only ship the latest
+             * version
+             * with Hazaar.
+             */
+            $version = $settings->has('version') ? $settings->get('version') : null;
+
+            $this->cdnjs->load('jquery', $version, null, 100);
+
+            if($settings->has('ui') && $settings->ui === TRUE) {
+
+                $ui_version = $settings->has('ui-version') ? $settings->get('ui-version') : null;
+
+                $files = array('jquery-ui.min.js');
+
+                if($settings->has('ui-theme'))
+                    $files[] = 'themes/' . $settings->get('ui-theme') . '/jquery-ui.min.css';
+
+                $this->cdnjs->load('jqueryui', $ui_version, $files);
+
+            }
+
+        }
 
     }
 
@@ -39,37 +63,9 @@ class JQuery extends \Hazaar\View\Helper {
      */
     public function init($view, $args = array()) {
 
-        $settings = new \Hazaar\Map(array('noload' => FALSE), $args);
+        $view->setImportPriority(99);
 
-        if($settings['noload'] !== TRUE) {
-
-            /**
-             * Optionally we can set a version which will use the Google hosted library as we only ship the latest
-             * version
-             * with Hazaar.
-             */
-            $version = $settings->has('version') ? $settings->get('version') : JQUERY_CURRENT_VER;
-
-            $view->requires('https://cdnjs.cloudflare.com/ajax/libs/jquery/' . $version . '/jquery.min.js');
-
-            if($settings->has('ui') && $settings->ui === TRUE) {
-
-                $ui_version = $settings->has('ui-version') ? $settings->get('ui-version') : JQUERY_CURRENT_UI_VER;
-
-                $view->requires('https://cdnjs.cloudflare.com/ajax/libs/jqueryui/' . $ui_version . '/jquery-ui.min.js');
-
-                $theme = null;
-
-                if($settings->has('ui-theme'))
-                    $theme = '/themes/' . $settings->get('ui-theme');
-
-                $view->link('https://cdnjs.cloudflare.com/ajax/libs/jqueryui/' . $ui_version . $theme . '/jquery-ui.min.css');
-
-            }
-
-            $view->requires($this->application->url('hazaar/file/js/jquery-helper.js'));
-
-        }
+        $view->requires($this->application->url('hazaar/file/js/jquery-helper.js'));
 
     }
 
