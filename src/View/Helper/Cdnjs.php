@@ -161,7 +161,9 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     }
 
-    public function file($args){
+    public function file($request){
+
+        $args = $request->getParams();
 
         $path = \Hazaar\Application::getInstance()->runtimePath('cdnjs' . DIRECTORY_SEPARATOR . ake($args, 'lib'));
 
@@ -170,11 +172,9 @@ class Cdnjs extends \Hazaar\View\Helper {
         if(!$file->exists())
             throw new \Exception('File not found!', 404);
 
-        $response = new \Hazaar\Controller\Response\File();
-        
-        $response->setContent($file->get_contents());
+        $response = new \Hazaar\Controller\Response\File($file);
 
-        $response->setContentType($file->mime_content_type());
+        $response->setUnmodified($request->getHeader('If-Modified-Since'));
 
         return $response;
 

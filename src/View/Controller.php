@@ -49,7 +49,7 @@ class Controller extends \Hazaar\Controller {
         if(!method_exists($this->helper, $this->method))
             throw new \Exception('Method not found!', 404);
 
-        $response = call_user_func(array($this->helper, $this->method), $this->params);
+        $response = call_user_func(array($this->helper, $this->method), $this->request);
 
         return $response;
 
