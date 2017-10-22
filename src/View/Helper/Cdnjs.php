@@ -18,6 +18,8 @@ namespace Hazaar\View\Helper;
  */
 class Cdnjs extends \Hazaar\View\Helper {
 
+    private $cache_local = false;
+
     private $libraries = array();
 
     static private $cache;
@@ -33,7 +35,20 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     public function init($view, $args = array()) {
 
+        $this->cache_local = ake($args, 'cache_local', false);
+
+        $view->setImportPriority(ake($args, 'priority', 100));
+
+        uasort($this->libraries, function($a, $b){
+            if ($a['priority'] == $b['priority'])
+                return 0;
+            return ($a['priority'] > $b['priority']) ? -1 : 1;
+        });
+
         foreach($this->libraries as $name => &$info){
+
+            if(!array_key_exists('files', $info))
+                continue;
 
             foreach($info['files'] as &$file){
 
@@ -50,7 +65,7 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     }
 
-    public function load($name, $version = null, $additional_files = array()){
+    public function load($name, $version = null, $files = null, $priority = 0){
 
         if(in_array($name, $this->libraries))
             return false;
@@ -61,31 +76,38 @@ class Cdnjs extends \Hazaar\View\Helper {
         if(!array_key_exists('assets', $info))
             throw new \Exception('CDNJS: Package info for ' . $name . ' does not contain any assets!');
 
+        $info['priority'] = $priority;
+
         if($version)
             $info['version'] = $version;
 
-        $info['files'] = array($info['filename']);
-
-        if(!is_array($additional_files))
-            $additional_files = array($additional_files);
-
         $version_found = false;
 
-        foreach($info['assets'] as &$asset){
+        if($files && is_array($files)){
 
-            if($asset['version'] != $info['version'])
-                continue;
+            foreach($info['assets'] as &$asset){
 
-            $version_found = true;
+                if($asset['version'] != $info['version'])
+                    continue;
 
-            foreach($additional_files as $file){
+                $version_found = true;
 
-                if(in_array($file, $asset['files']))
-                    $info['files'][] = $file;
+                foreach($files as $file){
+
+                    if(in_array($file, $asset['files']))
+                        $info['files'][] = $file;
+
+                }
+
+                break;
 
             }
 
-            break;
+        }else{
+
+            $version_found = true;
+
+            $info['files'] = array($info['filename']);
 
         }
 

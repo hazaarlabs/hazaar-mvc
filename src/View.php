@@ -499,12 +499,12 @@ class View {
 
     public function initHelpers() {
 
-        $this->_priority = 1;
-
         foreach ($this->_helpers as $helper) {
 
             if ($helper instanceof \Hazaar\View\Helper) {
 
+                $this->_priority = 0;
+                
                 $name = get_class($helper);
 
                 if (! in_array($name, $this->_helpers_init)) {
@@ -695,7 +695,7 @@ class View {
 
     /**
      * Render a partial view multiple times on an array
-     * 
+     *
      * @param mixed $view The partial view to render
      * @param array $data A data array.  Usually multi-dimensional
      * @return string
@@ -704,7 +704,7 @@ class View {
 
         $output = '';
 
-        foreach ($data as $d) 
+        foreach ($data as $d)
             $output .= $this->partial($view, $d);
 
         return $output;
