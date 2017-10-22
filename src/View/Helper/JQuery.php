@@ -9,12 +9,6 @@
 
 namespace Hazaar\View\Helper;
 
-if(!defined('JQUERY_CURRENT_VER'))
-    define('JQUERY_CURRENT_VER', '2.2.4');
-
-if(!defined('JQUERY_CURRENT_UI_VER'))
-    define('JQUERY_CURRENT_UI_VER', '1.12.0');
-
 class JQuery extends \Hazaar\View\Helper {
 
     private $jquery;
@@ -34,13 +28,13 @@ class JQuery extends \Hazaar\View\Helper {
              * version
              * with Hazaar.
              */
-            $version = $settings->has('version') ? $settings->get('version') : JQUERY_CURRENT_VER;
+            $version = $settings->has('version') ? $settings->get('version') : null;
 
             $this->cdnjs->load('jquery', $version, null, 100);
 
             if($settings->has('ui') && $settings->ui === TRUE) {
 
-                $ui_version = $settings->has('ui-version') ? $settings->get('ui-version') : JQUERY_CURRENT_UI_VER;
+                $ui_version = $settings->has('ui-version') ? $settings->get('ui-version') : null;
 
                 $files = array('jquery-ui.min.js');
 
