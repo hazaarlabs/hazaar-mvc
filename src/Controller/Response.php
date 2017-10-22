@@ -241,6 +241,8 @@ abstract class Response implements Response\_Interface {
      */
     public function __writeOutput() {
 
+        $content = '';
+
         if(method_exists($this, '__prepare'))
             $this->__prepare($this->controller);
 
