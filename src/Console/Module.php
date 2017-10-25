@@ -24,7 +24,7 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     }
 
-    public function __initialize($request){
+    public function __initialize(\Hazaar\Application\Request $request){
 
         $this->view->link($this->application->url('hazaar/file/console/css/popup.css'));
 
