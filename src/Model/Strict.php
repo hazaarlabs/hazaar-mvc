@@ -487,7 +487,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
             }
 
-        }elseif($def['type'] == 'array' && is_array($value)){
+        }elseif(array_key_exists('type', $def) && $def['type'] == 'array' && is_array($value)){
 
             foreach($value as & $subValue){
 
