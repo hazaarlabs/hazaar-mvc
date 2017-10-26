@@ -56,6 +56,9 @@ class Cdnjs extends \Hazaar\View\Helper {
 
                 if($this->cache_local){
 
+                    //Create the directory here so that we know later that it is OK to load this library
+                    \Hazaar\Application::getInstance()->runtimePath('cdnjs' . DIRECTORY_SEPARATOR . $name . DIRECTORY_SEPARATOR . $info['version'], true);
+
                     $url = $this->application->url('hazaar', 'view/helper/cdnjs/lib/' . $name . '/' . $info['version'] . '/' . $file)->encode();
 
                 }else{
@@ -152,9 +155,19 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     public function lib($request){
 
+        $app = \Hazaar\Application::getInstance();
+
+        $app_url = (string)$app->url();
+
+        if(!substr($request->referer(), 0, strlen($app_url)) == $app_url)
+            throw new \Exception('You are not allowed to access this resource!', 401);
+
         list($name, $version, $file) = explode('/', $request->getPath(), 3);
 
-        $path = \Hazaar\Application::getInstance()->runtimePath('cdnjs' . DIRECTORY_SEPARATOR . $name . DIRECTORY_SEPARATOR . $version, true);
+        $path = $app->runtimePath('cdnjs' . DIRECTORY_SEPARATOR . $name . DIRECTORY_SEPARATOR . $version);
+
+        if(!file_exists($path))
+            throw new \Exception('This library is not currently accessible!', 401);
 
         $cacheFile = new \Hazaar\File($path . DIRECTORY_SEPARATOR . $file);
 
