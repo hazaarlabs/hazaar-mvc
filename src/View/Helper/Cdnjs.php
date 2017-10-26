@@ -160,14 +160,14 @@ class Cdnjs extends \Hazaar\View\Helper {
         $app_url = (string)$app->url();
 
         if(!substr($request->referer(), 0, strlen($app_url)) == $app_url)
-            throw new \Exception('You are not allowed to access this resource!', 401);
+            throw new \Exception('You are not allowed to access this resource!', 403);
 
         list($name, $version, $file) = explode('/', $request->getPath(), 3);
 
         $path = $app->runtimePath('cdnjs' . DIRECTORY_SEPARATOR . $name . DIRECTORY_SEPARATOR . $version);
 
         if(!file_exists($path))
-            throw new \Exception('This library is not currently accessible!', 401);
+            throw new \Exception('This library is not currently accessible!', 404);
 
         $cacheFile = new \Hazaar\File($path . DIRECTORY_SEPARATOR . $file);
 
