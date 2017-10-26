@@ -19,6 +19,22 @@ class JQuery extends \Hazaar\View\Helper {
 
         $this->jquery = \Hazaar\Html\jQuery::getInstance();
 
+    }
+
+    /**
+     * @detail      Initialise the jQuery view helper.  This view helper includes the jQuery JavaScript library that is
+     *              shipped with Hazaar.  Optionally you can specify a version and that version will be downloaded from
+     *              the Google APIs hosted libraries.
+     *
+     * @since       1.0.0
+     *
+     * @param       \\Hazaar\\View $view The view the helper is being added to.
+     *
+     * @param       string $version (Optional) version of the jQuery library to use from the Google hosted libraries
+     *              server.
+     */
+    public function init($view, $args = array()) {
+
         $settings = new \Hazaar\Map(array('noload' => FALSE), $this->args);
 
         if($settings['noload'] !== TRUE) {
@@ -46,23 +62,7 @@ class JQuery extends \Hazaar\View\Helper {
             }
 
         }
-
-    }
-
-    /**
-     * @detail      Initialise the jQuery view helper.  This view helper includes the jQuery JavaScript library that is
-     *              shipped with Hazaar.  Optionally you can specify a version and that version will be downloaded from
-     *              the Google APIs hosted libraries.
-     *
-     * @since       1.0.0
-     *
-     * @param       \\Hazaar\\View $view The view the helper is being added to.
-     *
-     * @param       string $version (Optional) version of the jQuery library to use from the Google hosted libraries
-     *              server.
-     */
-    public function init($view, $args = array()) {
-
+        
         $view->setImportPriority(99);
 
         $view->requires($this->application->url('hazaar/file/js/jquery-helper.js'));

@@ -18,17 +18,18 @@ class Datatables extends \Hazaar\View\Helper {
 
     public function import() {
 
-        $this->requires('html');
-
-        $this->requires('JQuery');
+        $this->requires('cdnjs');
 
     }
 
     public function init($view, $args = array()) {
 
-        $view->link('https://cdn.datatables.net/1.10.12/css/jquery.dataTables.min.css');
+        $files = array(
+            'js/jquery.dataTables.min.js',
+            'css/jquery.dataTables.min.css'
+        );
 
-        $view->requires('https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js');
+        $this->cdnjs->load('datatables', null, $files);
 
     }
 
