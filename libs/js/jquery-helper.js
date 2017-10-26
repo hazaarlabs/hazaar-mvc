@@ -400,18 +400,15 @@ dataBinderArray.prototype.push = function (element) {
 };
 
 dataBinderArray.prototype.indexOf = function (searchString) {
-    if (searchString instanceof dataBinderValue)
-        searchString = searchString.value;
-    for (i in this._elements)
-        if (this._elements[i].value == searchString) return parseInt(i);
+    if (searchString instanceof dataBinderValue) searchString = searchString.value;
+    for (i in this._elements) if (this._elements[i].value == searchString) return parseInt(i);
     return -1;
 };
 
 dataBinderArray.prototype.remove = function (index) {
-    if (typeof index == 'string')
-        index = this.indexOf(index);
-    if (index < 0)
-        return;
+    if (index instanceof dataBinderValue) index = index.value;
+    if (typeof index == 'string') index = this.indexOf(index);
+    if (index < 0 || typeof index == 'undefined') return;
     var element = this._elements[index];
     this._cleanupItem(index);
     this._update(this._attr_name(), element);
