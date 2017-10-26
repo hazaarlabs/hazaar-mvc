@@ -35,10 +35,6 @@ abstract class Helper implements Helper\_Interface {
 
     }
 
-    public function run($view) {
-
-    }
-
     public function extendArgs($args) {
 
         if(! is_array($args))
@@ -98,6 +94,12 @@ abstract class Helper implements Helper\_Interface {
     }
 
     public function init($view, $args = array()) {
+
+        //Do nothing by default.
+
+    }
+
+    public function run($view) {
 
         //Do nothing by default.
 
