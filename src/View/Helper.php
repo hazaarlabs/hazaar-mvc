@@ -99,4 +99,10 @@ abstract class Helper implements Helper\_Interface {
 
     }
 
+    public function run($view) {
+
+        //Do nothing by default.
+
+    }
+
 }

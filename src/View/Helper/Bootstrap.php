@@ -29,11 +29,6 @@ class Bootstrap extends \Hazaar\View\Helper {
 
         $this->requires('cdnjs');
 
-        if($theme = ake($this->args, 'theme'))
-            $this->cdnjs->load('bootswatch', '3.3.7', array($theme . '/bootstrap.min.css'));
-        else
-            $this->cdnjs->load('twitter-bootstrap', '3.3.7', array('css/bootstrap.min.css'));
-
     }
 
     /**
@@ -42,14 +37,26 @@ class Bootstrap extends \Hazaar\View\Helper {
      */
     public function init($view, $args = array()) {
 
-        //$cdn = ake($args, 'cdn', 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7');
+        $version = null;
 
-        //$view->link($cdn . '/css/bootstrap.min.css');
+        $files = array('js/bootstrap.min.js');
 
-        //$view->requires($cdn . '/js/bootstrap.min.js');
+        if($theme = ake($this->args, 'theme')){
 
-        //if($theme = ake($args, 'theme'))
-        //    $view->link('https://maxcdn.bootstrapcdn.com/bootswatch/3.3.7/' . $theme . '/bootstrap.min.css');
+            //Limit to version 3.3.7 which is the latest bootswatch supports.
+            $version = ake($args, 'version', '3.3.7');
+
+            $this->cdnjs->load('bootswatch', $version, array($theme . '/bootstrap.min.css'));
+
+        }else{
+
+            $version = ake($args, 'version');
+
+            $files[] = 'css/bootstrap.min.css';
+
+        }
+
+        $this->cdnjs->load('twitter-bootstrap', $version, $files);
 
     }
 
