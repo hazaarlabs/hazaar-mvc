@@ -54,31 +54,13 @@ class Cdnjs extends \Hazaar\View\Helper {
 
             foreach($info['files'] as &$file){
 
-                $url = 'https://cdnjs.cloudflare.com/ajax/libs/' . $name . '/' . $info['version'] . '/' . $file;
-
                 if($this->cache_local){
 
-                    $path = \Hazaar\Application::getInstance()->runtimePath('cdnjs' . DIRECTORY_SEPARATOR . $name, true);
+                    $url = $this->application->url('hazaar', 'view/helper/cdnjs/lib/' . $name . '/' . $info['version'] . '/' . $file)->encode();
 
-                    $cacheFile = $path . DIRECTORY_SEPARATOR . $file;
+                }else{
 
-                    if(!file_exists($cacheFile)){
-
-                        $filePath = dirname($cacheFile);
-
-                        if(!file_exists($filePath))
-                            mkdir($filePath, 0775, TRUE);
-
-                        file_put_contents($cacheFile, file_get_contents($url));
-
-                    }
-
-                    $info = array(
-                        'lib' => $name,
-                        'file' => $file
-                    );
-
-                    $url = $this->application->url('hazaar', 'view/helper/cdnjs/file', $info)->encode();
+                    $url =  $this->url($name, $info['version'], $file);
 
                 }
 
@@ -162,18 +144,36 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     }
 
-    public function file($request){
+    private function url($name, $version, $path){
 
-        $args = $request->getParams();
+        return 'https://cdnjs.cloudflare.com/ajax/libs/' . $name . '/' . $version . '/' . ltrim($path, '/');
 
-        $path = \Hazaar\Application::getInstance()->runtimePath('cdnjs' . DIRECTORY_SEPARATOR . ake($args, 'lib'));
+    }
 
-        $file = new \Hazaar\File($path . DIRECTORY_SEPARATOR . ake($args, 'file'));
+    public function lib($request){
 
-        if(!$file->exists())
-            throw new \Exception('File not found!', 404);
+        list($name, $version, $file) = explode('/', $request->getPath(), 3);
 
-        $response = new \Hazaar\Controller\Response\File($file);
+        $path = \Hazaar\Application::getInstance()->runtimePath('cdnjs' . DIRECTORY_SEPARATOR . $name . DIRECTORY_SEPARATOR . $version, true);
+
+        $cacheFile = new \Hazaar\File($path . DIRECTORY_SEPARATOR . $file);
+
+        if(!$cacheFile->exists()){
+
+            $filePath = $cacheFile->dirname();
+
+            if(!file_exists($filePath))
+                mkdir($filePath, 0775, TRUE);
+
+            $url = $this->url($name, $version, $file);
+
+            $cacheFile->set_contents(file_get_contents($url));
+
+            $cacheFile->save();
+
+        }
+
+        $response = new \Hazaar\Controller\Response\File($cacheFile);
 
         $response->setUnmodified($request->getHeader('If-Modified-Since'));
 
