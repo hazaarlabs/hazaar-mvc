@@ -27,7 +27,9 @@ class Dropzone extends \Hazaar\View\Helper {
     public function import() {
 
         $this->requires('html');
-        
+
+        $this->requires('cdnjs');
+
         $this->options = new \Hazaar\Map( array(
             'stylesheet' => false,
             'default_class' => 'dropzone'
@@ -42,17 +44,12 @@ class Dropzone extends \Hazaar\View\Helper {
      */
     public function init($view, $args = array()) {
 
-        $view->requires($this->application->url('hazaar', 'dropzone/dropzone.js'));
+        $files = array(
+            'min/dropzone.min.js',
+            'min/dropzone.min.css'
+        );
 
-        $this->options->extend($args);
-
-        if($this->options->stylesheet === true) {
-
-            $this->options->default_class = 'dropzone';
-
-            $view->link($this->application->url('hazaar', 'dropzone/css/dropzone.css'));
-
-        }
+        $this->cdnjs->load('dropzone', ake($args, 'version'), $files);
 
     }
 
