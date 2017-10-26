@@ -504,7 +504,7 @@ class View {
             if ($helper instanceof \Hazaar\View\Helper) {
 
                 $this->_priority = 0;
-                
+
                 $name = get_class($helper);
 
                 if (! in_array($name, $this->_helpers_init)) {
@@ -512,8 +512,31 @@ class View {
                     $helper->initialise();
 
                     $this->_helpers_init[] = $name;
+
                 }
+
             }
+
+        }
+
+        $this->_priority = 0;
+
+        return TRUE;
+
+    }
+
+    public function runHelpers() {
+
+        foreach ($this->_helpers as $helper) {
+
+            if ($helper instanceof \Hazaar\View\Helper) {
+
+                $this->_priority = 0;
+
+                $helper->run($this);
+
+            }
+
         }
 
         $this->_priority = 0;

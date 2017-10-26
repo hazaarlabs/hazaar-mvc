@@ -206,6 +206,8 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
         $view->initHelpers();
 
+        $view->runHelpers();
+
         if(is_array($this->_requires)) {
 
             $view->setRequiresParam($this->_requires_param);
