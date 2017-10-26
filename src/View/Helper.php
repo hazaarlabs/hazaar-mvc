@@ -35,6 +35,10 @@ abstract class Helper implements Helper\_Interface {
 
     }
 
+    public function run($view) {
+
+    }
+
     public function extendArgs($args) {
 
         if(! is_array($args))
