@@ -30,8 +30,6 @@ class Fontawesome extends \Hazaar\View\Helper {
 
         $this->requires('html');
 
-        $this->cdnjs->load('font-awesome');
-
     }
 
     /**
@@ -41,6 +39,8 @@ class Fontawesome extends \Hazaar\View\Helper {
      */
     public function init($view, $args = array()) {
 
+        $this->cdnjs->load('font-awesome', ake($args, 'version'));
+    
     }
 
     /**

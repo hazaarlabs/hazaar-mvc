@@ -24,8 +24,6 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     static private $cache;
 
-    private $count = 0;
-
     public function import() {
 
         if(!self::$cache instanceof \Hazaar\Btree)
@@ -37,7 +35,11 @@ class Cdnjs extends \Hazaar\View\Helper {
 
         $this->cache_local = ake($args, 'cache_local', false);
 
-        $view->setImportPriority(ake($args, 'priority', 100));
+    }
+
+    public function run($view) {
+
+        $view->setImportPriority(100);
 
         uasort($this->libraries, function($a, $b){
             if ($a['priority'] == $b['priority'])
@@ -84,7 +86,6 @@ class Cdnjs extends \Hazaar\View\Helper {
                     $view->requires($url);
                 else
                     $view->link($url);
-
 
             }
 
