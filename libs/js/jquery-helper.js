@@ -400,6 +400,8 @@ dataBinderArray.prototype.push = function (element) {
 };
 
 dataBinderArray.prototype.indexOf = function (searchString) {
+    if (searchString instanceof dataBinderValue)
+        searchString = searchString.value;
     for (i in this._elements)
         if (this._elements[i].value == searchString) return parseInt(i);
     return -1;
