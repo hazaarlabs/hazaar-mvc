@@ -17,15 +17,11 @@ define('HAZAAR_EXEC_START', microtime(TRUE));
 
 define('HAZAAR_VERSION', '2.3');
 
-defined('APPLICATION_PATH') || define('APPLICATION_PATH', realpath((array_key_exists('DOCUMENT_ROOT', $_SERVER)
-    ? $_SERVER['DOCUMENT_ROOT']
-    : getcwd() . DIRECTORY_SEPARATOR . '..') . DIRECTORY_SEPARATOR . 'application'));
+defined('APPLICATION_PATH') || define('APPLICATION_PATH', realpath(getcwd() . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'application'));
 
 defined('APPLICATION_ENV') || define('APPLICATION_ENV', (getenv('APPLICATION_ENV') ? getenv('APPLICATION_ENV') : 'development'));
 
 putenv('HOME=' . APPLICATION_PATH);
-
-if(strtolower(substr($_SERVER['SCRIPT_NAME'], -4)) !== '.php') $_SERVER['SCRIPT_NAME'] = '/index.php';
 
 /**
  * Change the current working directory to the application path so that all paths are relative to it.
@@ -78,7 +74,7 @@ class Application {
 
     private static $instance;
 
-    public static $root;
+    private static $root;
 
     private $protocol;
 
@@ -243,7 +239,7 @@ class Application {
 
     static public function setRoot($value){
 
-        Application::$root = rtrim($value, '/\\') . '/';
+        Application::$root = rtrim($value, '/') . '/';
 
     }
 
