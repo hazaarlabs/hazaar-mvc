@@ -414,8 +414,10 @@ dataBinderArray.prototype.remove = function (index) {
     var element = this._elements[index];
     if (element instanceof dataBinder)
         jQuery('[data-bind="' + this._attr_name() + '"]').children().eq(index).remove();
-    else
+    else {
+        this._cleanupItem(index);
         this._update(this._attr_name(), element);
+    }
     return element;
 };
 
