@@ -173,7 +173,10 @@ dataBinder.prototype.__convert_type = function (key, value) {
     } else if (value !== null && !(value instanceof dataBinder
         || value instanceof dataBinderArray
         || value instanceof dataBinderValue)) {
-        value = new dataBinderValue(key, value, null, this);
+        if (typeof value == 'object')
+            value = new dataBinder(value, key, this);
+        else
+            value = new dataBinderValue(key, value, null, this);
     }
     return value;
 };
@@ -347,7 +350,7 @@ dataBinderArray.prototype.pop = function (element) {
     return element;
 };
 
-dataBinderArray.prototype._newitem = function (index) {
+dataBinderArray.prototype._newitem = function (index, element) {
     var attr_name = this._attr_name(index);
     var a = this, newitem = jQuery(this._template.html()).attr('data-bind', attr_name);
     newitem.on('remove', function () {
@@ -355,7 +358,8 @@ dataBinderArray.prototype._newitem = function (index) {
         if (index >= 0) a._cleanupItem(index);
     }).find('[data-bind]').each(function (idx, item) {
         var key = item.attributes['data-bind'].value;
-        if (idx in a._elements) item.attributes['data-bind'].value = attr_name + '.' + key;
+        item.innerHTML = element[key];
+        item.attributes['data-bind'].value = attr_name + '.' + key;
     });
     return newitem;
 };
@@ -372,11 +376,6 @@ dataBinderArray.prototype._update = function (attr_name, attr_element) {
             o.find('[data-bind-value="' + attr_element.value + '"]')
                 .toggleClass('active', !remove)
                 .children('input[type=checkbox]').prop('checked', !remove);
-        } else {
-            if (remove)
-                o.children().eq(index).remove();
-            else if (this._template && this._template.length > 0)
-                o.append(this._newitem(key));
         }
     });
 };
@@ -390,12 +389,15 @@ dataBinderArray.prototype.push = function (element) {
                 this._elements[key] = this.__convert_type(key, value);
             },
             get: function () {
-                return this._attributes[key];
+                return this._elements[key];
             }
         });
     }
     this._elements[key] = this.__convert_type(key, element);
-    this._update(this._attr_name(), this._elements[key]);
+    if (this._elements[key] instanceof dataBinder)
+        jQuery('[data-bind="' + this._attr_name() + '"]').append(this._newitem(key, this._elements[key]));
+    else
+        this._update(this._attr_name(), this._elements[key]);
     return key;
 };
 
@@ -410,8 +412,10 @@ dataBinderArray.prototype.remove = function (index) {
     if (typeof index == 'string') index = this.indexOf(index);
     if (index < 0 || typeof index == 'undefined') return;
     var element = this._elements[index];
-    this._cleanupItem(index);
-    this._update(this._attr_name(), element);
+    if (element instanceof dataBinder)
+        jQuery('[data-bind="' + this._attr_name() + '"]').children().eq(index).remove();
+    else
+        this._update(this._attr_name(), element);
     return element;
 };
 
@@ -438,7 +442,7 @@ dataBinderArray.prototype.resync = function () {
             var attr_name = this._attr_name(x);
             var item = parent.children('[data-bind="' + attr_name + '"]');
             if (item.length == 0)
-                parent.append(this._newitem(x));
+                parent.append(this._newitem(x, this._elements[x]));
             if (this._elements[x] instanceof dataBinder || this._elements[x] instanceof dataBinderArray)
                 this._elements[x].resync();
         }
@@ -448,7 +452,8 @@ dataBinderArray.prototype.resync = function () {
 
 dataBinderArray.prototype._cleanupItem = function (index) {
     if (!index in this._elements) return;
-    var reg = new RegExp("(" + this._attr_name() + ")\\[(\\d+)\\]");
+    var attr_name = this._attr_name();
+    var reg = new RegExp("(" + attr_name + ")\\[(\\d+)\\]");
     for (var i = (index + 1); i < this._elements.length; i++) {
         var new_i = i - 1;
         jQuery('[data-bind^="' + this._attr_name(i) + '"]').each(function (index, item) {
