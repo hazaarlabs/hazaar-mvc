@@ -35,6 +35,22 @@ class Cdnjs extends \Hazaar\View\Helper {
 
         $this->cache_local = ake($args, 'cache_local', false);
 
+        if($libs = ake($args, 'libs')){
+
+            foreach($libs as $lib){
+
+                if(!is_array($lib))
+                    $lib = array('name' => $lib);
+
+                if(!array_key_exists('name', $lib))
+                    continue;
+
+                $this->load(ake($lib, 'name'), ake($lib, 'version'), ake($lib, 'files'), ake($lib, 'priority'));
+
+            }
+
+        }
+    
     }
 
     public function run($view) {
