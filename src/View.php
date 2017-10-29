@@ -51,8 +51,13 @@ class View {
 
         $this->load($view);
 
-        if ($init_default_helpers)
+        if ($init_default_helpers){
+
             $this->addHelper('hazaar');
+
+            $this->addHelper('html');
+
+        }
 
         if ($use_app_config && $this->application->config->has('view')) {
 
