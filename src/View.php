@@ -51,19 +51,21 @@ class View {
 
         $this->load($view);
 
-        if ($init_default_helpers) {
-
+        if ($init_default_helpers)
             $this->addHelper('hazaar');
-
-            $this->addHelper('html');
-
-        }
 
         if ($use_app_config && $this->application->config->has('view')) {
 
-            if ($this->application->config->view->has('require')) {
+            if ($this->application->config->view->has('link')) {
 
-                foreach ($this->application->config->view->require as $req)
+                foreach ($this->application->config->view->link as $link)
+                    $this->link($link);
+
+            }
+
+            if ($this->application->config->view->has('requires')) {
+
+                foreach ($this->application->config->view->requires as $req)
                     $this->requires($req);
 
             }
@@ -642,7 +644,7 @@ class View {
 
             }
 
-            $script = $this->html->script()->src($script);
+            $script = (new Html\Script())->src($script);
 
             if ($charset)
                 $script->charset($charset);
@@ -670,8 +672,7 @@ class View {
 
         }
 
-        $link = $this->html->inline('link')
-            ->rel($rel);
+        $link = (new Html\Inline('link'))->rel($rel);
 
         if (! preg_match('/^http[s]?:\/\//', $href)) {
 
@@ -712,7 +713,7 @@ class View {
 
     public function script($code) {
 
-        $this->_scripts[] = $this->html->script($code);
+        $this->_scripts[] = new Html\Script($code);
 
     }
 
@@ -814,7 +815,7 @@ class View {
         if($default)
             $url .= '?d=' . urlencode($default);
 
-        return $this->html->img($url, $address);
+        return new Html\Img($url, $address);
 
     }
 
