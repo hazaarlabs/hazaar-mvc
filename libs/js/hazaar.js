@@ -44,6 +44,14 @@
         }
         return queryString;
     };
+    this.load = function (scriptFile) {
+        var body = document.getElementsByTagName('body')[0];
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.async = false;
+        script.src = scriptFile;
+        body.appendChild(script);
+    }
 }
 
 /*
