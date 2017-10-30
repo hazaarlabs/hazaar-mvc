@@ -137,7 +137,7 @@ dataBinderValue.prototype.set = function (value, label) {
 };
 
 dataBinderValue.prototype.save = function (no_label) {
-    if (this.label && !no_label)
+    if (this.value && this.label && !no_label)
         return { "__hz_value": this.value, "__hz_label": this.label };
     return this.value;
 };
