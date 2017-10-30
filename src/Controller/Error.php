@@ -398,7 +398,7 @@ class Error extends \Hazaar\Controller\Action {
 
         $response = new Response\Html($this->code);
 
-        $view = new \Hazaar\View('@error/error');
+        $view = new \Hazaar\View\Layout('@error/error');
 
         $view->registerMethodHandler($this);
 
