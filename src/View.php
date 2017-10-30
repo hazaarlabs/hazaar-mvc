@@ -16,6 +16,8 @@ class View {
     private $_viewfile;
 
     protected $_data = array();
+    
+    protected $_scripts = array();
 
     /**
      * View Helpers
@@ -30,18 +32,6 @@ class View {
     private $_rendering = FALSE;
 
     protected $_methodHandler;
-
-    protected $_links = array();
-
-    protected $_requires = array();
-
-    protected $_priority = 0;
-
-    protected $_requires_param = array();
-
-    protected $_scripts = array();
-
-    protected $_postItems = array();
 
     public function __construct($view, $init_default_helpers = true, $use_app_config = true) {
 
@@ -59,21 +49,7 @@ class View {
 
         }
 
-        if ($use_app_config && $this->application->config->has('view')) {
-
-            if ($this->application->config->view->has('link')) {
-
-                foreach ($this->application->config->view->link as $link)
-                    $this->link($link);
-
-            }
-
-            if ($this->application->config->view->has('requires')) {
-
-                foreach ($this->application->config->view->requires as $req)
-                    $this->requires($req);
-
-            }
+        if ($this->application->config->has('view')) {
 
             if ($this->application->config->view->has('helper')) {
 
@@ -391,119 +367,6 @@ class View {
 
     }
 
-    public function setImportPriority($priority) {
-
-        $this->_priority = $priority;
-
-    }
-
-    public function import() {
-
-        $out = '';
-
-        $local = (string) $this->application->url();
-
-        if (count($this->_links) > 0) {
-
-            if ($this->_requires_param) {
-
-                foreach ($this->_links as $priority => & $req) {
-
-                    foreach ($req as $r) {
-
-                        $uri = new \Hazaar\Http\Uri($r->parameters()->get('href'));
-
-                        if (substr((string) $uri, 0, strlen($local)) != $local)
-                            continue;
-
-                        $uri->setParams($this->_requires_param);
-
-                        $r->parameters()->set('href', $uri);
-
-                    }
-
-                }
-
-            }
-
-            krsort($this->_links);
-
-            foreach ($this->_links as $link)
-                $out .= implode("\n", $link) . "\n";
-
-            $out .= "\n";
-
-        }
-
-        return $out;
-
-    }
-
-    public function post() {
-
-        $out = '';
-
-        if (count($this->_requires) > 0) {
-
-            if ($this->_requires_param) {
-
-                $local = (string) $this->application->url();
-
-                foreach ($this->_requires as &$req) {
-
-                    foreach ($req as $r) {
-
-                        $uri = new \Hazaar\Http\Uri($r->parameters()->get('src'));
-
-                        if (substr((string) $uri, 0, strlen($local)) != $local)
-                            continue;
-
-                        $uri->setParams($this->_requires_param);
-
-                        $r->parameters()->set('src', $uri);
-                    }
-                }
-            }
-
-            krsort($this->_requires);
-
-            foreach ($this->_requires as &$req)
-                $out .= implode("\n", $req) . "\n";
-
-            $out .= "\n";
-
-        }
-
-        foreach ($this->_postItems as $item) {
-
-            if ($item instanceof View)
-                $out .= $item->render();
-
-            elseif ($item instanceof \Hazaar\Html\Script)
-                $out .= $item->renderObject();
-
-        }
-
-        if (count($this->_scripts) > 0)
-            $out .= implode("\n", $this->_scripts) . "\n";
-
-        foreach ($this->_helpers as $helper) {
-
-            if (method_exists($helper, 'post'))
-                $out .= $helper->post();
-
-        }
-
-        return $out;
-
-    }
-
-    public function addPost($item) {
-
-        $this->_postItems[] = $item;
-
-    }
-
     public function initHelpers() {
 
         foreach ($this->_helpers as $helper) {
@@ -620,99 +483,6 @@ class View {
     public function setRequiresParam($array) {
 
         $this->_requires_param = array_merge($this->_requires_param, $array);
-
-    }
-
-    public function requires($script, $charset = NULL) {
-
-        if (is_array($script)) {
-
-            foreach ($script as $s)
-                $this->requires($s, $charset);
-
-            return;
-        }
-
-        if (! $script instanceof \Hazaar\Html\Script) {
-
-            if (! preg_match('/^http[s]?:\/\//', $script)){
-
-                if($this->_methodHandler instanceof \Hazaar\Controller
-                    && $this->_methodHandler->base_path)
-                    $script = $this->_methodHandler->base_path . '/'
-                        . $this->_methodHandler->getName()
-                        . '/file/' . $script;
-                else
-                    $script = 'script/' . $script;
-
-                $script = $this->application->url($script);
-
-            }
-
-            $script = (new Html\Script())->src($script);
-
-            if ($charset)
-                $script->charset($charset);
-        }
-
-        $this->_requires[$this->_priority][] = $script;
-
-    }
-
-    public function link($href, $rel = NULL) {
-
-        if (! $rel) {
-
-            $info = pathinfo($href);
-
-            if ((array_key_exists('extension', $info) && ( $info['extension'] == 'css' || $info['extension'] == 'less')) || ! array_key_exists('extension', $info)) {
-
-                $rel = 'stylesheet';
-
-            } elseif ($info['filename'] == 'favicon') {
-
-                $rel = 'shortcut icon';
-
-            }
-
-        }
-
-        $link = (new Html\Inline('link'))->rel($rel);
-
-        if (! preg_match('/^http[s]?:\/\//', $href)) {
-
-            switch ($rel) {
-                case 'stylesheet':
-
-                    if($this->_methodHandler instanceof \Hazaar\Controller
-                    && $this->_methodHandler->base_path)
-                        $href = $this->_methodHandler->base_path . '/'
-                            . $this->_methodHandler->getName()
-                            . '/file/' . $href;
-                    else
-                        $href = 'style/' . $href;
-
-                    $link->href($this->application->url($href));
-
-                    break;
-
-                case 'shortcut icon':
-
-                    $link->href($this->application->url($href))
-                        ->id('favicon');
-
-                    break;
-            }
-
-        }else{
-
-            $link->href($href);
-
-        }
-
-        $this->_links[$this->_priority][] = $link;
-
-        return $link;
 
     }
 
