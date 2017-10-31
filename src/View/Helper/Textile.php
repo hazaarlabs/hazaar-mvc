@@ -36,10 +36,6 @@ class Textile extends \Hazaar\View\Helper {
         if(!class_exists('Hazaar\Parser\Textile'))
             throw new \Exception('Textile module not available.  Please install hazaarlabs/hazaar-parser with Composer.');
 
-    }
-
-    public function init($view, $args = array()) {
-
         $this->parser = new \Hazaar\Parser\Textile();
 
     }

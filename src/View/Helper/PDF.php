@@ -11,7 +11,7 @@ namespace Hazaar\View\Helper;
 
 class PDF extends \Hazaar\View\Helper {
 
-    public function init($view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = array()) {
 
         $view->requires($this->application->url() . '/hazaar/js/pdfobject.js');
 
@@ -20,9 +20,9 @@ class PDF extends \Hazaar\View\Helper {
     }
 
     public function render($source, $params = array()) {
-        
+
         return new \Hazaar\Html\Div(new \Hazaar\Html\PDF($source), $params);
-        
+
     }
 
     public function script($id, $source, $width = null, $height = null) {
