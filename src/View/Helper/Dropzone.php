@@ -42,12 +42,9 @@ class Dropzone extends \Hazaar\View\Helper {
      *
      * @since       2.0.0
      */
-    public function init($view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = array()) {
 
-        $files = array(
-            'min/dropzone.min.js',
-            'min/dropzone.min.css'
-        );
+        $files = array('min/dropzone.min.js', 'min/dropzone.min.css');
 
         $this->cdnjs->load('dropzone', ake($args, 'version'), $files);
 
