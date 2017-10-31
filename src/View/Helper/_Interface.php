@@ -19,6 +19,6 @@ interface _Interface {
 
     function import();
 
-    function init($view, $args = array());
+    function init(\Hazaar\View\Layout $view, $args = array());
 
 }
