@@ -278,10 +278,27 @@ class MongoDB implements _Interface {
     }
 
     //Returns the file modification time
+    public function filectime($path) {
+
+        if($info = $this->info($path))
+            return ake($info, 'uploadDate')->sec;
+
+        return FALSE;
+
+    }
+
+    //Returns the file modification time
     public function filemtime($path) {
 
         if($info = $this->info($path))
             return ake($info, 'modifiedDate', $info['uploadDate'], TRUE)->sec;
+
+        return FALSE;
+
+    }
+
+    //Returns the file modification time
+    public function fileatime($path) {
 
         return FALSE;
 

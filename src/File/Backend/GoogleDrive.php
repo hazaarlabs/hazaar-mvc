@@ -526,12 +526,29 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
     }
 
     //Returns the file modification time
+    public function filectime($path) {
+
+        if(! ($item = $this->resolvePath($path)))
+            return FALSE;
+
+        return strtotime($item['createdDate']);
+
+    }
+
+    //Returns the file modification time
     public function filemtime($path) {
 
         if(! ($item = $this->resolvePath($path)))
             return FALSE;
 
         return strtotime($item['modifiedDate']);
+
+    }
+
+    //Returns the file modification time
+    public function fileatime($path) {
+
+        return false;
 
     }
 

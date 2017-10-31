@@ -36,7 +36,7 @@ class Local implements _Interface {
 
     }
 
-    private function resolvePath($path, $file = NULL) {
+    public function resolvePath($path, $file = NULL) {
 
         $path = \Hazaar\Loader::fixDirectorySeparator($path);
 
@@ -456,10 +456,24 @@ class Local implements _Interface {
 
     }
 
+    //Returns the file create time
+    public function filectime($path) {
+
+        return filectime($this->resolvePath($path));
+
+    }
+
     //Returns the file modification time
     public function filemtime($path) {
 
         return filemtime($this->resolvePath($path));
+
+    }
+
+    //Returns the file access time
+    public function fileatime($path) {
+
+        return fileatime($this->resolvePath($path));
 
     }
 

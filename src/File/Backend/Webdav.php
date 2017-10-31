@@ -202,12 +202,29 @@ class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
     }
 
     //Returns the file modification time
+    public function filectime($path) {
+
+        if(! ($info = $this->info($path)))
+            return false;
+
+        return strtotime($info['getcreated']);
+
+    }
+
+    //Returns the file modification time
     public function filemtime($path) {
 
         if(! ($info = $this->info($path)))
-            return NULL;
+            return false;
 
         return strtotime($info['getlastmodified']);
+
+    }
+
+    //Returns the file modification time
+    public function fileatime($path) {
+
+        return false;
 
     }
 

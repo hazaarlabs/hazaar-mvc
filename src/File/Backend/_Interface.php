@@ -30,8 +30,14 @@ interface _Interface {
     //Returns the file type
     public function filetype($path);
 
+    //Returns the file create time
+    public function filectime($path);
+
     //Returns the file modification time
     public function filemtime($path);
+
+    //Returns the file access time
+    public function fileatime($path);
 
     public function filesize($path);
 
