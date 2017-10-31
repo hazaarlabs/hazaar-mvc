@@ -17,12 +17,12 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
         parent::__construct();
 
         $this->options = new \Hazaar\Map(array(
-                                             'oauth2_method' => 'POST',
-                                             'oauth_version' => '2.0',
-                                             'file_limit'    => 1000,
-                                             'cache_backend' => 'file',
-                                             'oauth2'        => array('access_token' => NULL)
-                                         ), $options);
+            'oauth2_method' => 'POST',
+            'oauth_version' => '2.0',
+            'file_limit'    => 1000,
+            'cache_backend' => 'file',
+            'oauth2'        => array('access_token' => NULL)
+        ), $options);
 
         if(! ($this->options->has('app_key') && $this->options->has('app_secret')))
             throw new Exception\DropboxError('Dropbox filesystem backend requires both app_key and app_secret.');
@@ -332,12 +332,29 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
     }
 
     //Returns the file modification time
+    public function filectime($path) {
+
+        if(! ($info = $this->info($path)))
+            return false;
+
+        return strtotime($info['created']);
+
+    }
+
+    //Returns the file modification time
     public function filemtime($path) {
 
         if(! ($info = $this->info($path)))
-            return NULL;
+            return false;
 
         return strtotime($info['modified']);
+
+    }
+
+    //Returns the file modification time
+    public function fileatime($path) {
+
+        return false;
 
     }
 

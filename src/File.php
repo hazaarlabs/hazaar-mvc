@@ -79,6 +79,12 @@ class File {
 
     }
 
+    public function backend(){
+
+        return strtolower((new \ReflectionClass($this->backend))->getShortName());
+
+    }
+
     public function set_meta($values) {
 
         return $this->backend->set_meta($this->source_file, $values);
@@ -217,9 +223,21 @@ class File {
 
     }
 
+    public function ctime() {
+
+        return $this->backend->filectime($this->source_file);
+
+    }
+
     public function mtime() {
 
         return $this->backend->filemtime($this->source_file);
+
+    }
+
+    public function atime() {
+
+        return $this->backend->fileatime($this->source_file);
 
     }
 
@@ -570,7 +588,7 @@ class File {
         if($this->handle)
             return $this->handle;
 
-        return $this->handle = fopen($this->source_file, $mode);
+        return $this->handle = fopen($this->backend->resolvePath($this->source_file), $mode);
 
     }
 
