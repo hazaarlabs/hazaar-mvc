@@ -54,6 +54,17 @@ class Http extends \Hazaar\Application\Request {
 
         if($request === NULL){
 
+            /*
+             * Check if we require SSL and if so, redirect here.
+             */
+            if($this->config->app->has('require_ssl') && boolify($_SERVER['HTTPS']) !== boolify($this->config->app->require_ssl)){
+
+                header("Location: https://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]);
+
+                exit;
+
+            }
+
             $request = $_REQUEST;
 
             $this->method = $_SERVER['REQUEST_METHOD'];
