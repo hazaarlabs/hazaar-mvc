@@ -12,7 +12,7 @@ class View extends \Hazaar\Controller\Response\Html {
 
     private $_requires = array();
 
-    function __construct($view, $init_default_helpers = TRUE) {
+    function __construct($view) {
 
         parent::__construct();
 
@@ -26,7 +26,7 @@ class View extends \Hazaar\Controller\Response\Html {
 
             $this->_view_name = $view;
 
-            $this->_view = new \Hazaar\View($view, $init_default_helpers);
+            $this->_view = new \Hazaar\View($view, array('html'));
 
         }
 
@@ -58,17 +58,12 @@ class View extends \Hazaar\Controller\Response\Html {
 
     protected function __prepare($controller) {
 
-        if(! ($this->_view instanceof \Hazaar\View)) {
-
+        if(! ($this->_view instanceof \Hazaar\View))
             $this->_view = new \Hazaar\View($this->_view_name);
-
-        }
 
         $this->_view->registerMethodHandler($controller);
 
         $this->_view->populate($this->_data);
-
-        $this->_view->initHelpers();
 
         if(is_array($this->_requires)) {
 
