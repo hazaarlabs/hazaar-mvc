@@ -35,7 +35,7 @@ class Bootstrap extends \Hazaar\View\Helper {
      * @detail      Initialise the view helper and include the buttons.css file.  Adds a requirement for the HTML view
      *              helper.
      */
-    public function init($view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = array()) {
 
         $version = null;
 

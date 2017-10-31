@@ -16,7 +16,7 @@ class View {
     private $_viewfile;
 
     protected $_data = array();
-    
+
     protected $_scripts = array();
 
     /**
@@ -33,19 +33,18 @@ class View {
 
     protected $_methodHandler;
 
-    public function __construct($view, $init_default_helpers = true, $use_app_config = true) {
-
-        $this->_helpers['application'] = Application::getInstance();
+    public function __construct($view, $init_helpers = array()) {
 
         $this->name = $view;
 
         $this->load($view);
 
-        if ($init_default_helpers){
+        $this->_helpers['application'] = Application::getInstance();
 
-            $this->addHelper('hazaar');
+        if (is_array($init_helpers) && count($init_helpers) > 0){
 
-            $this->addHelper('html');
+            foreach($init_helpers as $helper)
+                $this->addHelper($helper);
 
         }
 
@@ -76,14 +75,7 @@ class View {
 
                                 if($arg = trim($arg)) {
 
-                                    if (in_array(strtolower($arg), array(
-                                        'yes',
-                                        'no',
-                                        'true',
-                                        'false',
-                                        'on',
-                                        'off'
-                                    ))) {
+                                    if (in_array(strtolower($arg), array('yes','no','true','false','on','off'))) {
 
                                         $arg = boolify($arg);
 

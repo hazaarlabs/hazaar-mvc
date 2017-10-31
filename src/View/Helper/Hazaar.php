@@ -6,7 +6,10 @@ class Hazaar extends \Hazaar\View\Helper {
 
     private $data = array();
 
-    function init($view, $args = array()){
+    function init(\Hazaar\View\Layout $view, $args = array()){
+
+        if(!$view instanceof \Hazaar\View\Layout)
+            return;
 
         $view->setImportPriority(100);
 

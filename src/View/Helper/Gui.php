@@ -26,7 +26,7 @@ class Gui extends \Hazaar\View\Helper {
 
     }
 
-    public function init($view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = array()) {
 
         $view->requires($this->application->url('hazaar', 'file/js/popup.js'));
 

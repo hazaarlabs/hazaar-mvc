@@ -33,7 +33,7 @@ class JQuery extends \Hazaar\View\Helper {
      * @param       string $version (Optional) version of the jQuery library to use from the Google hosted libraries
      *              server.
      */
-    public function init($view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = array()) {
 
         $settings = new \Hazaar\Map(array('noload' => FALSE), $this->args);
 

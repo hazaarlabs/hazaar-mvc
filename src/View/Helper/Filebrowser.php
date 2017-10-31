@@ -42,17 +42,14 @@ class Filebrowser extends \Hazaar\View\Helper {
      *
      * @since       2.0.0
      */
-    public function init($view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = array()) {
 
         $view->requires($this->application->url('hazaar', 'file/js/filebrowser.js'));
 
         $this->options->extend($args);
 
-        if($this->options->stylesheet === TRUE) {
-
+        if($this->options->stylesheet === TRUE)
             $view->link($this->application->url('hazaar', 'file/css/filebrowser.css'));
-
-        }
 
     }
 

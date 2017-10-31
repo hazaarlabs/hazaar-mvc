@@ -31,7 +31,7 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     }
 
-    public function init($view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = array()) {
 
         $this->cache_local = ake($args, 'cache_local', false);
 
@@ -50,7 +50,7 @@ class Cdnjs extends \Hazaar\View\Helper {
             }
 
         }
-    
+
     }
 
     public function run($view) {
