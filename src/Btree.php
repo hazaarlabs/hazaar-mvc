@@ -65,12 +65,8 @@ class Btree {
      */
     public function __construct($file) {
 
-        if($file){
-
-            if(!$this->open($file))
-                throw new \Exception('Unable to open file: ' . $file);
-
-        }
+        if(!$this->open($file))
+            throw new \Exception('Unable to open file: ' . $file);
 
     }
 
@@ -104,6 +100,9 @@ class Btree {
             $this->file = $file;
 
         }
+
+        if($file->backend() !== 'local')
+            throw new \Exception('The BTree file class currently only supports the local file manager backend!', 400);
 
         //Check if the file is too big.  The file size will be negative if PHP doesn't support the file.
         if($this->file->exists() && $this->file->size() < 0)
