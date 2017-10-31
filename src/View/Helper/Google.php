@@ -21,14 +21,10 @@ class Google extends \Hazaar\View\Helper {
 
         $this->requires('html');
 
-    }
-
-    public function init($view, $args = array()) {
-
         $this->settings = new \Hazaar\Map( array(
             'api_key' => null,
             'gmaps_source' => "http://maps.googleapis.com/maps/api/js?sensor=false"
-        ), $args);
+        ), $this->args);
 
     }
 
@@ -78,7 +74,7 @@ class Google extends \Hazaar\View\Helper {
 
     public function analytics($tracking_id) {
 
-        $code = " 
+        $code = "
             var _gaq = _gaq || [];
             _gaq.push(['_setAccount', '$tracking_id']);
             _gaq.push(['_trackPageview']);

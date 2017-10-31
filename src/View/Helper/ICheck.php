@@ -34,11 +34,9 @@ class iCheck extends \Hazaar\View\Helper {
      * @detail      Initialise the view helper and include the buttons.css file.  Adds a requirement for the HTML view
      *              helper.
      */
-    public function init($view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = array()) {
 
-        $view->link('https://cdnjs.cloudflare.com/ajax/libs/iCheck/1.0.2/skins/all.css');
-
-        $view->requires('https://cdnjs.cloudflare.com/ajax/libs/iCheck/1.0.2/icheck.min.js');
+        $this->cdnjs->load('iCheck', array('skins/all.css', 'icheck.min.js'));
 
         $this->theme = ake($args, 'theme', 'minimal');
 
@@ -52,7 +50,6 @@ class iCheck extends \Hazaar\View\Helper {
             checkboxClass: 'icheckbox_{$this->theme}-{$this->colour}',
             radioClass: 'iradio_{$this->theme}-{$this->colour}'
         });");
-
 
     }
 
