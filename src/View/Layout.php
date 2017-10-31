@@ -27,12 +27,12 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
 
     protected $_postItems = array();
 
-    public function __construct($view = NULL, $init_default_helpers = true, $use_app_config = true) {
+    public function __construct($view = NULL) {
 
         if(! $view)
             $view = 'application';
 
-        parent::__construct($view, $init_default_helpers, $use_app_config);
+        parent::__construct($view, array('html', 'hazaar'));
 
         if ($this->application->config->has('view')) {
 
