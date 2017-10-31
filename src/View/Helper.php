@@ -15,13 +15,13 @@ abstract class Helper implements Helper\_Interface {
 
     protected $args;
 
-    function __construct($view = NULL, $args = array()) {
+    final function __construct($view = NULL, $args = array()) {
 
         $this->view = $view;
 
         $this->args = $args;
 
-        $this->import();
+        $this->import($args);
 
     }
 
@@ -93,7 +93,7 @@ abstract class Helper implements Helper\_Interface {
 
     }
 
-    public function init($view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = array()) {
 
         //Do nothing by default.
 
