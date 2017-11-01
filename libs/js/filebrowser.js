@@ -909,7 +909,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
         host._size = function (bytes, type, precision, exclude_suffix) {
             if (typeof type == 'undefined') {
                 if (bytes < Math.pow(2, 10))
-                    $type = 'B';
+                    type = 'B';
                 else if (bytes < Math.pow(2, 20))
                     type = 'K';
                 else if (bytes < Math.pow(2, 30))
