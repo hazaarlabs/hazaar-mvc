@@ -84,6 +84,19 @@ class Http extends \Hazaar\Application\Request {
 
         $this->setParams($request);
 
+        if(array_key_exists('hzqs', $this->params)){
+
+            parse_str(base64_decode($this->params['hzqs']), $params);
+
+            $this->params = array_merge($this->params, $params);
+
+            unset($this->params['hzqs']);
+
+        }
+
+        if(array_key_exists('path', $this->params))
+            return trim($this->params['path'], '/');
+
         $request_uri = urldecode(ake($_SERVER, 'REQUEST_URI', '/'));
 
         /*

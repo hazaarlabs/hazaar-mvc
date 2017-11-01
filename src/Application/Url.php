@@ -40,6 +40,10 @@ class Url {
 
     private $encoded = false;
 
+    public static $base = null;
+
+    public static $rewrite = true;
+
     function __construct() {
 
         /*
@@ -157,13 +161,29 @@ class Url {
      */
     public function renderObject($inc_path = TRUE, $params = NULL, $encode = false) {
 
-        $path = ($this->base_path ? $this->base_path . '/' : null) . $this->controller . ($this->method ? '/' . $this->method : NULL);
+        $path = ($this->base_path ? $this->base_path . '/' : null);
 
-        $app = \Hazaar\Application::getInstance();
+        if(!is_array($params))
+            $params = array();
 
-        if($app->config->app->has('base') && $app->config->app['base']) {
+        if(Url::$rewrite){
 
-            $url = trim($app->config->app['base']);
+            $path .= $this->controller . ($this->method ? '/' . $this->method : NULL);
+
+        }elseif($this->controller){
+
+
+
+            $params['path'] = $this->controller . ($this->method ? '/' . $this->method : NULL);
+
+        }
+
+        if(is_array($this->params))
+            $params = array_merge($this->params, $params);
+
+        if(Url::$base){
+
+            $url = trim(Url::$base);
 
             if(substr($url, -1, 1) == '/') $url = substr($url, 0, strlen($url) - 1);
 
@@ -196,10 +216,7 @@ class Url {
 
             }
 
-            if(! is_array($params))
-                $params = $this->params;
-
-            if($params){
+            if(count($params) > 0){
 
                 $params = http_build_query($params);
 
