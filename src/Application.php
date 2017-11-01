@@ -125,6 +125,7 @@ class Application {
                 'defaultController' => 'Index',
                 'favicon' => 'favicon.png',
                 'timezone' => 'UTC',
+                'rewrite' => true,
                 'files' => array(
                     'bootstrap' => 'bootstrap.php',
                     'shutdown' => 'shutdown.php',
@@ -149,6 +150,10 @@ class Application {
          * it silently.
          */
         $this->config = new Application\Config('application', $env, $defaults);
+
+        Application\Url::$base = $this->config->app->get('base');
+
+        Application\Url::$rewrite = $this->config->app->get('rewrite');
 
         //Allow the root to be configured but the default absolutely has to be set so here we double
         $this->config->app->addInputFilter(function($value){

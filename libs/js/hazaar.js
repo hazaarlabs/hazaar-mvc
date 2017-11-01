@@ -1,5 +1,6 @@
-﻿function HazaarJSHelper(base_url, data) {
+﻿function HazaarJSHelper(base_url, data, rewrite) {
     this.__base_url = base_url;
+    this.__rewrite = rewrite;
     this.__data = (typeof data == 'undefined') ? {} : data;
     this.http_build_query = function (array, encode) {
         var parts = [], qs = '';
@@ -10,17 +11,34 @@
             qs = 'hzqs=' + btoa(qs);
         return qs;
     };
+    this.parseStr = function (query) {
+        var vars = query.split('&'), params = {};
+        for (var i = 0; i < vars.length; i++) {
+            var pair = vars[i].split('=');
+            params[pair[0]] = pair[1];
+        }
+        return params;
+    };
     this.url = function (controller, action, params, encode) {
         var url = this.__base_url;
-        if (url.charAt(url.length - 1) != '/')
-            url += '/';
-        if (typeof controller == 'undefined')
-            return url;
-        url += controller;
-        if (typeof action == 'undefined')
-            return url;
-        url += '/' + action;
-        if (typeof params != 'object' || params == null || Object.keys(params).length == 0)
+        if (controller && (i = controller.indexOf('?')) !== -1) {
+            params = this.parseStr(controller.substr(i + 1));
+            controller = controller.substr(0, i);
+        } else if (typeof params != 'object' || params == null)
+            params = {};
+        if (this.__rewrite) {
+            if (url.charAt(url.length - 1) != '/')
+                url += '/';
+            if (typeof controller == 'undefined')
+                return url;
+            url += controller;
+            if (typeof action == 'undefined')
+                return url;
+            url += '/' + action;
+        } else if (typeof controller !== 'undefined') {
+            params.path = controller + ((typeof action !== 'undefined') ? '/' + action : '');
+        }
+        if (Object.keys(params).length == 0)
             return url;
         return url + '?' + this.http_build_query(params, encode);
     };
