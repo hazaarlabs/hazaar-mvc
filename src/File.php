@@ -436,11 +436,21 @@ class File {
 
     public function copyTo($destination, $create_dest = FALSE, $dstBackend = NULL) {
 
-        if(! $this->exists())
-            throw new File\Exception\SourceNotFound($this->source_file, $destination);
-
         if(! $dstBackend)
             $dstBackend = $this->backend;
+
+        if($this->contents){
+
+            $this->backend = $dstBackend;
+
+            $this->source_file = $destination . '/' . $this->basename();
+
+            return $this->save();
+
+        }
+
+        if(! $this->exists())
+            throw new File\Exception\SourceNotFound($this->source_file, $destination);
 
         if(! $dstBackend->exists($destination)) {
 
