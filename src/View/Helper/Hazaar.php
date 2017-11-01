@@ -18,7 +18,7 @@ class Hazaar extends \Hazaar\View\Helper {
 
         $view->requires($this->application->url('hazaar/file/js/hazaar.js'));
 
-        $script = 'var hazaar = new HazaarJSHelper("' . $url . '", ' . json_encode($this->data) . ');';
+        $script = 'var hazaar = new HazaarJSHelper("' . $url . '", ' . json_encode($this->data) . ', ' . strbool($this->application->config->app->get('rewrite')) . ');';
 
         $view->requires($this->html->script($script));
 
