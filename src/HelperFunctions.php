@@ -390,6 +390,64 @@ function array_to_dot_notation($array, $separator = '.') {
 
 }
 
+/**
+ * @brief           Convert a single dimension array in dot notation into a multi-dimensional array.
+ *
+ * @detail          Inverse to the above function, array_to_dot_notation().
+ *
+ * @param           mixed $array
+ * 
+ * @since           2.3.27
+ *
+ * @return          array
+ */
+function array_from_dot_notation($array) {
+
+    if(!is_array($array))
+        return array();
+
+    $new = array();
+
+    foreach($array as $idx => $value) {
+
+        if(is_array($value)) {
+
+            $new[$idx] = array_from_dot_notation($value);
+
+        } else {
+
+            $parts = explode('.', $idx);
+
+            if(count($parts) > 1) {
+
+                $cur =& $new;
+
+                foreach($parts as $part) {
+
+                    if(! array_key_exists($part, $cur))
+                        $cur[$part] = array();
+
+                    if(is_array($cur))
+                        $cur =& $cur[$part];
+
+                }
+
+                $cur = $value;
+
+            } else {
+
+                $new[$idx] = $value;
+
+            }
+
+        }
+
+    }
+
+    return $new;
+
+}
+
 function base64url_encode($data) {
 
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
