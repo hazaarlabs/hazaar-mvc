@@ -139,11 +139,42 @@ class Upload {
      *
      * @return Array
      */
-    public function get($key) {
+    public function get($key = null) {
 
-        if(array_key_exists($key, $this->files)) {
+        if($key === null){
 
-            return $this->files[$key];
+            $files = array();
+
+            foreach($this->keys() as $key)
+                $files[$key] = $this->get($key);
+
+            return $files;
+
+        }elseif(($pos = strpos($key, '.')) > 0){
+
+            $sub_key = substr($key, $pos + 1);
+
+            $files = array_to_dot_notation($this->get(substr($key, 0, $pos)), '.', substr_count($sub_key, '.') + 1);
+
+            return ake($files, $sub_key);
+
+        }
+
+        if($info = ake($this->files, $key)) {
+
+            if(!is_array($info['name']))
+                return $info;
+
+            $files = array();
+
+            foreach($info as $item => $item_info){
+
+                foreach(array_to_dot_notation($item_info) as $name => $data)
+                    $files[$name . '.' . $item] = $data;
+
+            }
+
+            return array_from_dot_notation($files);
 
         }
 
@@ -186,25 +217,24 @@ class Upload {
      */
     public function saveAll($destination, $overwrite = FALSE, \Closure $callback = NULL) {
 
-        foreach($this->files as $key => $file) {
+        foreach($this->keys() as $key) {
 
-            $save = TRUE;
+            $files = $this->getFile($key);
 
-            if($callback instanceof \Closure) {
+            if(!is_array($files))
+                $files = array($files);
 
-                $info = $file;
+            foreach($files as $file){
 
-                unset($info['tmp_name']);
+                $save = TRUE;
 
-                $save = $callback($key, $info['name'], $info['size'], $info['type']);
+                if($callback instanceof \Closure)
+                    $save = $callback($key, $file);
 
-                if($save && trim($info['name']))
-                    $this->files[$key]['name'] = $info['name'];
+                if($save === TRUE)
+                    $file->copyTo($destination, $overwrite);
 
             }
-
-            if($save === TRUE)
-                $this->save($key, $destination, $overwrite);
 
         }
 
@@ -223,35 +253,16 @@ class Upload {
      */
     public function save($key, $destination, $overwrite = FALSE) {
 
-        if(! array_key_exists($key, $this->files)) {
-
+        if(!($files = $this->getFile($key)))
             return FALSE;
 
-        }
+        if(!is_array($files))
+            $files = array($files);
 
-        if(is_dir(realpath($destination))) {
+        foreach($files as $file)
+            $file->copyTo($destination, $overwrite);
 
-            $dest_file = $destination . '/' . $this->files[$key]['name'];
-
-        } else {
-
-            $dest_file = $destination;
-
-        }
-
-        if(! $overwrite && file_exists($dest_file)) {
-
-            return FALSE;
-
-        }
-
-        if(move_uploaded_file($this->files[$key]['tmp_name'], $dest_file)) {
-
-            unset($this->files[$key]);
-
-        }
-
-        return TRUE;
+        return true;
 
     }
 
@@ -285,14 +296,35 @@ class Upload {
      *
      * @param mixed $key
      *
-     * @return \Hazaar\File
+     * @return \Hazaar\File|array
      */
-    public function getFile($key){
+    public function getFile($key = null){
 
         if(!($file = $this->get($key)))
             return false;
 
-        return new \Hazaar\File($file['tmp_name']);
+        return $this->resolveFiles($file);
+
+    }
+
+    private function resolveFiles($array){
+
+        if(array_key_exists('tmp_name', $array)){
+
+            $file = new \Hazaar\File($array['name']);
+
+            $file->set_contents(file_get_contents($array['tmp_name']));
+
+            return $file;
+
+        }
+
+        $files = array();
+
+        foreach($array as $key => $info)
+            $files[$key] = $this->resolveFiles($info);
+
+        return $files;
 
     }
 
