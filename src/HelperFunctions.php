@@ -353,22 +353,29 @@ function array_build_html($array, $root = true){
  *
  * @detail      Converts/reduces a multidimensional array into a single dimensional array with keys in dot-notation.
  *
+ * @param mixed $array The array to convert.
+ * @param mixed $separator The separater to use between keys.  Defaults to '.', hence the name of the functions.
+ * @param mixed $depth Limit to the specified depth. Starting at 1, this is the number of levels to return.  Essentially, this is the number of dots, plus one.
+ *
  * @since       2.0.0
  *
- * @return      array
+ * @return array|boolean
  */
-function array_to_dot_notation($array, $separator = '.') {
+function array_to_dot_notation($array, $separator = '.', $depth = null) {
 
     if(!is_array($array))
         return false;
+
+    if(!($depth === null || $depth > 1))
+        return $array;
 
     $rows = array();
 
     foreach($array as $key => $value) {
 
-        if(is_array($value)) {
+        if(is_array($value)){
 
-            $children = array_to_dot_notation($value);
+            $children = array_to_dot_notation($value, $separator, (is_null($depth) ? $depth : ($depth - 1)));
 
             foreach($children as $childkey => $child) {
 
@@ -396,7 +403,7 @@ function array_to_dot_notation($array, $separator = '.') {
  * @detail          Inverse to the above function, array_to_dot_notation().
  *
  * @param           mixed $array
- * 
+ *
  * @since           2.3.27
  *
  * @return          array
