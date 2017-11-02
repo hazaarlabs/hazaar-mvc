@@ -443,6 +443,17 @@ class File {
 
             $this->backend = $dstBackend;
 
+            $dir = new File\Dir($destination, $dstBackend);
+
+            if(!$dir->exists($destination)){
+
+                if(!$create_dest)
+                    throw new \Exception('Destination does not exist!');
+
+                $dir->create(true);
+
+            }
+
             $this->source_file = $destination . '/' . $this->basename();
 
             return $this->save();
