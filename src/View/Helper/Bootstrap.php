@@ -37,24 +37,14 @@ class Bootstrap extends \Hazaar\View\Helper {
      */
     public function init(\Hazaar\View\Layout $view, $args = array()) {
 
-        $version = null;
+        $version = ake($args, 'version');
 
         $files = array('js/bootstrap.min.js');
 
-        if($theme = ake($this->args, 'theme')){
-
-            //Limit to version 3.3.7 which is the latest bootswatch supports.
-            $version = ake($args, 'version', '3.3.7');
-
+        if($theme = ake($this->args, 'theme'))
             $this->cdnjs->load('bootswatch', $version, array($theme . '/bootstrap.min.css'));
-
-        }else{
-
-            $version = ake($args, 'version');
-
+        else
             $files[] = 'css/bootstrap.min.css';
-
-        }
 
         $this->cdnjs->load('twitter-bootstrap', $version, $files);
 
