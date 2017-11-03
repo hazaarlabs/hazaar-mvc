@@ -10,61 +10,19 @@ support issue so they can be fixed.
 Hazaar MVC is installed with [Composer](http://getcomposer.org) and available via
 [Packagist](http://packagist.org). 
 
-## Composer? Huh??
+## Installing with Composer
 
 Composer is a popular dependency management tool for PHP, created mainly to facilitate
 installation and updates for project dependencies. It will check which other packages
 a specific project depends on and install them for you, using the appropriate versions
 according to the project requirements.
 
-# Linux Installation
+Composer runs on any system that supports PHP.  Please see the composer documentation at
+http://www.getcomposer.org for details on how to install composer on your system.
 
-This is just a generic installation process on an Debian/Ubuntu based system.  Seeing
-as you are a super smart developer you can translate these commands to other systems
-like Redhat/CentOS, etc.
 
-## Step 1 — Installing the Dependencies
 
-Before we download and install Composer, we need to make sure our server has all
-dependencies installed.
-
-First, update the package manager cache by running:
-
-```
-$ sudo apt-get update
-```
-
-Now, let's install the dependencies. We'll need curl in order to download Composer
-and php5-cli for installing and running it. git is used by Composer for downloading
-project dependencies. Everything can be installed with the following command:
-
-```
-$ sudo apt-get install curl php5-cli git
-```
-
-You can now proceed to the next step.
-
-## Step 2 — Downloading and Installing Composer
-
-Composer installation is really simple and can be done with a single command:
-
-```
-$ curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
-```
-
-This will download and install Composer as a system-wide command named composer, under
- ```/usr/local/bin```. The output should look like this:
-
-```
-#!/usr/bin/env php
-All settings correct for using Composer
-Downloading...
-
-Composer successfully installed to: /usr/local/bin/composer
-Use it: php /usr/local/bin/composer
-```
-
-To test your installation, run:
+To test your installation you can run the composer command from your command line:
 
 ```
 $ composer
@@ -100,34 +58,39 @@ Options:
 
 This means Composer was succesfully installed on your system.
 
+## Install the Example Application
 
-If you prefer to have separate Composer executables for each project you might host on
-this server, you can simply install it locally, on a per-project basis. This method is
-also useful when your system user doesn't have permission to install software
-system-wide. In this case, installation can be done with 
-```curl -sS https://getcomposer.org/installer | php - this will generate a composer.phar```
-file in your current directory, which can be executed with php composer.phar [command].
-
-## Step 3 - Install the example application
-
-Because Hazaar MVC is a library, you need to create project that depends on it for composer
-to download it.  The easiest way to do this is to install the example application.  This will
+Because Hazaar MVC is a library, you need to create a project that depends on it for composer
+to download it.  The easiest way to do this is to install the example skeleton application.  This will
 also give you a starting point for development.
 
 You can do this with one command using composer:
 
 ```
-$ composer create-project hazaarlabs/example
+$ composer create-project hazaarlabs/example path/to/install
 ```
 
 That's it.  You should now have the example application and Hazaar MVC downloaded and ready
-to go. Now all you need to do is set up your web server and you're good to go.
+to go. Now all you need to do is set up your web server and you're good to go.  
 
-# Windows Installation
+You can now have a read of our [Online Documentation](http://hazaarmvc.com/docs) for tips
+on setting up a web server to run your new application.
 
-Coming soon...
+## Test your new project
 
-# Getting Started
+Because I'm a nice guy, i've made it super simple to test your new project without installing
+any further programs.  You can start up the application using the PHP built-in web server
+by executing the composer `serve` command
+
+```
+$ composer serve
+```
+
+At this point the application will be accessible from your web browser by navigating to
+http://localhost:8080.
+
+
+# Getting Started with Development
 
 A great place to get up to speed quickly on Hazaar MVC is by reading the
 [Hazaar MVC Quickstar Guide](http://hazaarmvc.com/quickstart).
