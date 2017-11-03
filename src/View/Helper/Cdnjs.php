@@ -94,13 +94,28 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     }
 
+    /**
+     * Load a library hosted on CDNJS
+     *
+     * @param mixed $name       The name of the library to load
+     * @param mixed $version    Optionally specify the version to load.  If not specified the latest
+     *                          available version will be used.
+     * @param mixed $files      Optionally define the files to load.  If not specified, CDNJS profides
+     *                          the name of the file to load.  This is restricted to a single file and
+     *                          is not always accurate, hence the option to specify the files.
+     * @param mixed $priority   Import priority.  The higher this number to soon things will be loaded
+     *                          compared to other libraries being loaded.
+     * @throws \Exception
+     * @return \Hazaar\Version  Returns a Hazaar\Version object detailing the version of the library 
+     *                          that was loaded.
+     */
     public function load($name, $version = null, $files = null, $priority = 0){
 
         if(in_array($name, $this->libraries))
-            return false;
+            return null;
 
         if(!($info = $this->getLibraryInfo($name)))
-            return false;
+            return null;
 
         if(!array_key_exists('assets', $info))
             throw new \Exception('CDNJS: Package info for ' . $name . ' does not contain any assets!');
@@ -145,7 +160,7 @@ class Cdnjs extends \Hazaar\View\Helper {
 
         $this->libraries[$name] = $info;
 
-        return true;
+        return new \Hazaar\Version($info['version']);
 
     }
 
