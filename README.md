@@ -93,7 +93,7 @@ http://localhost:8080.
 # Getting Started with Development
 
 A great place to get up to speed quickly on Hazaar MVC is by reading the
-[Hazaar MVC Quickstar Guide](http://hazaarmvc.com/quickstart).
+[Hazaar MVC Getting Started Guide](http://hazaarmvc.com/docs/getting-started).
 
 The QuickStart covers some of the most commonly used components of Hazaar MVC.
 
