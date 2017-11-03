@@ -37,20 +37,19 @@ class Bootstrap extends \Hazaar\View\Helper {
      */
     public function init(\Hazaar\View\Layout $view, $args = array()) {
 
-        if($version = ake($args, 'version'))
-            $version = new \Hazaar\Version($version);
+        $version = ake($args, 'version');
 
         $files = array('js/bootstrap.min.js');
 
         if($theme = ake($this->args, 'theme'))
-            $this->cdnjs->load('bootswatch', $version, array($theme . '/bootstrap.min.css'));
+            $version = $this->cdnjs->load('bootswatch', $version, array($theme . '/bootstrap.min.css'));
         else
             $files[] = 'css/bootstrap.min.css';
 
-        $v = $this->cdnjs->load('twitter-bootstrap', $version, $files);
+        $version = $this->cdnjs->load('twitter-bootstrap', $version, $files);
 
         //Check if we are
-        if($v->compareTo('4.0') >= 0)
+        if($version->compareTo('4.0') >= 0)
             $this->cdnjs->load('popper.js', null, array('umd/popper.min.js'), 1);
 
     }
