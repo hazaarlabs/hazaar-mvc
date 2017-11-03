@@ -29,12 +29,11 @@
         if (this.__rewrite) {
             if (url.charAt(url.length - 1) != '/')
                 url += '/';
-            if (typeof controller == 'undefined')
-                return url;
-            url += controller;
-            if (typeof action == 'undefined')
-                return url;
-            url += '/' + action;
+            if (typeof controller !== 'undefined') {
+                url += controller;
+                if (typeof action !== 'undefined')
+                    url += '/' + action;
+            }
         } else if (typeof controller !== 'undefined') {
             params.path = controller + ((typeof action !== 'undefined') ? '/' + action : '');
         }

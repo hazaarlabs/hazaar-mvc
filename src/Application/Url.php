@@ -172,8 +172,6 @@ class Url {
 
         }elseif($this->controller){
 
-
-
             $params['path'] = $this->controller . ($this->method ? '/' . $this->method : NULL);
 
         }
@@ -278,6 +276,7 @@ class Url {
                     $value = ake($values, $matches[1]);
 
                 $params[$key] = $value;
+
             }
 
             return $this->renderObject(TRUE, $params, $this->encoded);
