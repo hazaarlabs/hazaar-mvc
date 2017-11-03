@@ -17,7 +17,7 @@ define('HAZAAR_EXEC_START', microtime(TRUE));
 
 define('HAZAAR_VERSION', '2.3');
 
-defined('APPLICATION_PATH') || define('APPLICATION_PATH', realpath(getcwd() . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'application'));
+defined('APPLICATION_PATH') || define('APPLICATION_PATH', realpath(dirname($_SERVER['SCRIPT_FILENAME']) . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'application'));
 
 defined('APPLICATION_ENV') || define('APPLICATION_ENV', (getenv('APPLICATION_ENV') ? getenv('APPLICATION_ENV') : 'development'));
 
