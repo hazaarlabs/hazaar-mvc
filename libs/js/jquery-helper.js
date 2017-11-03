@@ -323,11 +323,12 @@ dataBinder.prototype.extend = function (items) {
 };
 
 dataBinderArray.prototype._init = function (data, name, parent) {
+    if (!parent) throw "dataBinderArray requires a parent!";
     this._name = name;
     this._parent = parent;
     this._elements = [];
     this.resync();
-    if (data.length > 0)
+    if (Array.isArray(data) && data.length > 0)
         for (x in data) this.push(data[x]);
     Object.defineProperty(this, 'length', {
         get: function () {
