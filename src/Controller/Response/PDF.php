@@ -22,8 +22,6 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
 
     private $title      = 'PDF Document';
 
-    private $filename   = 'PDF Document.pdf';
-
     /**
      * PDF generated as landscape (vertical).
      */
@@ -205,12 +203,6 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
 
     }
 
-    public function setFilename($string){
-
-        $this->filename = $string;
-
-    }
-
     public function setContent($content){
 
         $this->source_url = NULL;
@@ -337,7 +329,7 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
                 $this->setHeader('Content-Type', 'application/pdf', FALSE);
 
                 // use the Content-Disposition header to supply a recommended filename
-                $this->setHeader('Content-Disposition', 'attachment; filename="' . $this->filename . '";');
+                $this->setHeader('Content-Disposition', 'attachment; filename="' . $this->title . '.pdf";');
 
                 $this->setHeader('Content-Transfer-Encoding', 'binary');
 
@@ -363,7 +355,7 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
 
                 $this->setHeader('Last-Modified', gmdate('D, d M Y H:i:s') . ' GMT');
 
-                $this->setHeader('Content-Disposition', 'inline; filename="' . $this->filename . '";');
+                $this->setHeader('Content-Disposition', 'inline; filename="' . $this->title . '.pdf";');
 
                 break;
         }
