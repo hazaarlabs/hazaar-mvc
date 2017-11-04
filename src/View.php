@@ -277,6 +277,7 @@ class View {
                 $this->_methodHandler,
                 $method
             ), $args);
+
         } elseif (array_key_exists($method, $this->_helpers) && method_exists($this->_helpers[$method], '__default')) {
 
             return call_user_func_array(array(
