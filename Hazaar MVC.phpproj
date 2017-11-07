@@ -459,6 +459,7 @@
     <Content Include="libs\console\login\main.css" />
     <Content Include="libs\console\profile.phtml" />
     <Content Include="libs\console\settings.phtml" />
+    <Content Include="libs\css\fileicons.css" />
     <Content Include="libs\css\filebrowser.css" />
     <Content Include="libs\css\images\fileicon\archive.png" />
     <Content Include="libs\css\images\fileicon\audio.png" />
