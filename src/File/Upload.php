@@ -311,6 +311,9 @@ class Upload {
 
         if(array_key_exists('tmp_name', $array)){
 
+            if($array['error'] > 0)
+                throw new \Exception('Upload error processing ' . $array['name']);
+
             $file = new \Hazaar\File($array['name']);
 
             $file->set_contents(file_get_contents($array['tmp_name']));
@@ -328,6 +331,10 @@ class Upload {
 
     }
 
+    static public function getMaxUploadSize(){
+
+        dump(bytes(ini_get('post_max_size')));
+
+    }
+
 }
-
-

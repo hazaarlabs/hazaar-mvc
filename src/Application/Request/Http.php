@@ -23,6 +23,10 @@ namespace Hazaar\Application\Request;
  */
 class Http extends \Hazaar\Application\Request {
 
+    static public $pathParam = 'hz_path';
+
+    static public $queryParam = 'hzqs';
+
     /**
      * Request method
      */
@@ -84,18 +88,18 @@ class Http extends \Hazaar\Application\Request {
 
         $this->setParams($request);
 
-        if(array_key_exists('hzqs', $this->params)){
+        if(array_key_exists(Http::$queryParam, $this->params)){
 
-            parse_str(base64_decode($this->params['hzqs']), $params);
+            parse_str(base64_decode($this->params[Http::$queryParam]), $params);
 
             $this->params = array_merge($this->params, $params);
 
-            unset($this->params['hzqs']);
+            unset($this->params[Http::$queryParam]);
 
         }
 
-        if(array_key_exists('path', $this->params))
-            return trim($this->params['path'], '/');
+        if(\Hazaar\Application\Url::$rewrite === false && array_key_exists(Http::$pathParam, $this->params))
+            return trim($this->params[Http::$pathParam], '/');
 
         $request_uri = urldecode(ake($_SERVER, 'REQUEST_URI', '/'));
 
