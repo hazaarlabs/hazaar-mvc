@@ -109,8 +109,13 @@ abstract class Request implements Request\_Interface {
 
         }
 
-        if(array_key_exists('query', $url))
-            parse_str($url['query'], $this->params);
+        if(array_key_exists('query', $url)){
+
+            parse_str($url['query'], $params);
+
+            $this->params = array_merge($this->params, $params);
+
+        }
 
     }
 
