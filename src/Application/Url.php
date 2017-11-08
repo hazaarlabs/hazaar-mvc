@@ -172,7 +172,7 @@ class Url {
 
         }elseif($this->controller){
 
-            $params['path'] = $this->controller . ($this->method ? '/' . $this->method : NULL);
+            $params[Request\Http::$pathParam] = $this->controller . ($this->method ? '/' . $this->method : NULL);
 
         }
 
@@ -219,7 +219,7 @@ class Url {
                 $params = http_build_query($params);
 
                 if($encode)
-                    $params = 'hzqs=' . base64_encode($params);
+                    $params = Request\Http::$queryParam . '=' . base64_encode($params);
 
                 $url .= '?' . $params;
 
