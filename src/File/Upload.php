@@ -333,7 +333,17 @@ class Upload {
 
     static public function getMaxUploadSize(){
 
-        dump(bytes(ini_get('post_max_size')));
+        $max_size = -1;
+
+        if(($post_max_size = bytes_str(ini_get('post_max_size'))) > 0)
+            $max_size = $post_max_size;
+
+        $upload_max_filesize = bytes_str(ini_get('upload_max_filesize'));
+
+        if($upload_max_filesize > 0 && $upload_max_filesize < $max_size)
+            $max_size = $upload_max_filesize;
+
+        return $max_size;
 
     }
 
