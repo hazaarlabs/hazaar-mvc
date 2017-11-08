@@ -60,7 +60,7 @@ class Money {
 
     private         $local_currency = NULL;
 
-    private         $cache;
+    static private  $cache;
 
     static private  $exchange_rates = array();
 
@@ -88,19 +88,19 @@ class Money {
 
             if(class_exists('Hazaar\Cache')){
 
-                $backend = (in_array('apc', get_loaded_extensions()) ? 'apc' : 'file');
+                $backend = (in_array('apuc', get_loaded_extensions()) ? 'apcu' : 'file');
 
-                $this->cache = new \Hazaar\Cache($backend);
+                Money::$cache = new \Hazaar\Cache($backend);
 
-                if($this->cache->has('currency_info')){
+                if(Money::$cache->has('currency_info')){
 
-                    Money::$currency_info = $this->cache->get('currency_info');
+                    Money::$currency_info = Money::$cache->get('currency_info');
 
                 }else{
 
                     Money::$currency_info = $this->loadCurrencyInfo();
 
-                    $this->cache->set('currency_info', Money::$currency_info);
+                    Money::$cache->set('currency_info', Money::$currency_info);
 
                 }
 
@@ -288,35 +288,30 @@ class Money {
         if(strcasecmp($this->local_currency, $foreign_currency) == 0)
             return 1;
 
-        $code = strtoupper(trim($this->local_currency) . trim($foreign_currency));
+        $base = strtoupper(trim($this->local_currency));
 
-        if(!ake(Money::$exchange_rates, $code)){
+        $foreign_currency = strtoupper(trim($foreign_currency));
 
-            $key = 'exchange_rate_' . $code;
+        if(!ake(Money::$exchange_rates, $base)){
 
-            if(!$this->cache || (Money::$exchange_rates[$code] = $this->cache->get($key)) == FALSE){
+            $key = 'exchange_rate_' . $base;
 
-                $url = 'http://finance.yahoo.com/d/quotes.csv?f=l1&s=' . $code . '=X';
+            if(!Money::$cache || (Money::$exchange_rates[$base] = Money::$cache->get($key)) == FALSE){
 
-                $handle = fopen($url, 'r');
+                $url = 'https://api.fixer.io/latest?base=' . $base;
 
-                if(!$handle)
-                    return false;
+                $result = json_decode(file_get_contents($url), true);
 
-                $result = fgetcsv($handle);
+                Money::$exchange_rates[$base] = $result;
 
-                fclose($handle);
-
-                Money::$exchange_rates[$code] = (float)$result[0];
-
-                if($this->cache)
-                    $this->cache->set($key, Money::$exchange_rates[$code]);
+                if(Money::$cache)
+                    Money::$cache->set($key, Money::$exchange_rates[$base]);
 
             }
 
         }
 
-        return Money::$exchange_rates[$code];
+        return ake(Money::$exchange_rates[$base]['rates'], $foreign_currency);
 
     }
 
@@ -390,7 +385,7 @@ class Money {
      */
     public function toFloat($precision = 2) {
 
-        return (float)money_format('%.' . $precision . 'n', $this->value);
+        return round($this->value, $precision);
 
     }
 
