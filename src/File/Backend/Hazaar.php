@@ -4,6 +4,8 @@ namespace Hazaar\File\Backend;
 
 class Hazaar implements _Interface {
 
+    public  $separator  = '/';
+    
     private $options;
 
     private $pathCache = array();

@@ -4,6 +4,8 @@ namespace Hazaar\File\Backend;
 
 class Dropbox extends \Hazaar\Http\Client implements _Interface {
 
+    public  $separator  = '/';
+    
     private $options;
 
     private $cache;

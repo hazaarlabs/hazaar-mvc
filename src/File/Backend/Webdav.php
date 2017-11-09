@@ -4,6 +4,8 @@ namespace Hazaar\File\Backend;
 
 class Webdav extends \Hazaar\Http\WebDAV implements _Interface {
 
+    public  $separator  = '/';
+    
     private $options;
 
     private $cache;

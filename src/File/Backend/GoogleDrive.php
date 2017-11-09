@@ -4,6 +4,8 @@ namespace Hazaar\File\Backend;
 
 class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
+    public  $separator  = '/';
+    
     private $scope      = array(
         'https://www.googleapis.com/auth/drive'
     );
