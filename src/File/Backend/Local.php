@@ -4,6 +4,8 @@ namespace Hazaar\File\Backend;
 
 class Local implements _Interface {
 
+    public  $separator  = DIRECTORY_SEPARATOR;
+
     private $options;
 
     static  $mime_types = NULL;

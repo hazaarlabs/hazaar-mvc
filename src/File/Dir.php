@@ -17,18 +17,20 @@ class Dir {
         if(! $backend)
             $backend = new Backend\Local(array('root' => '/'));
 
-        $this->path = $this->fixPath($path);
-
         $this->backend = $backend;
+
+        $this->path = $this->fixPath($path);
 
     }
 
     public function fixPath($path, $file = NULL) {
 
         if($file)
-            $path .= ((strlen($path) > 1) ? '/' : NULL) . $file;
+            $path .= ((strlen($path) > 1) ? $this->backend->separator : NULL) . $file;
 
-        return $path;
+        $sep = (($this->backend->separator === '/') ? '\\' : '/');
+
+        return str_replace($sep, $this->backend->separator, $path);
 
     }
 
@@ -83,7 +85,7 @@ class Dir {
 
             $last = dirname($last);
 
-            if($last == '/')
+            if($last == $this->backend->separator)
                 break;
 
         }
@@ -203,7 +205,7 @@ class Dir {
         if(! $start)
             $start = $this->path;
 
-        $start = rtrim($start, '/') . '/';
+        $start = rtrim($start, $this->backend->separator) . $this->backend->separator;
 
         $list = array();
 
@@ -231,7 +233,7 @@ class Dir {
             } elseif(! fnmatch($pattern, $file))
                 continue;
 
-            $list[] = $start . $file;
+            $list[] = new \Hazaar\File($start . $file, $this->backend);
 
         }
 
