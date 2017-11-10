@@ -6,7 +6,7 @@ as Hazaar has been developed on Ubuntu so it will work with it.  I have made som
 to ensure that Hazaar is cross-platform compatible, particularly with Windows support, and
 I am now developing under Windows daily so Hazaar MVC has become quite stable under Windows.
 
-If your hit any problems, please feel free to create a support issue so they can be fixed
+If you hit any problems, please feel free to create a support issue so they can be fixed
 at https://git.hazaarlabs.com/hazaar/hazaar-mvc/issues.
 
 Hazaar MVC is installed with [Composer](http://getcomposer.org) and available via
