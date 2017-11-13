@@ -66,9 +66,11 @@ class jQuery extends Script {
 
     }
 
-    public function exec($code) {
+    public function exec($code, $priority = 0) {
 
-        $this->exec[] = $code;
+        settype($priority, 'int');
+
+        $this->exec[$priority][] = $code;
 
     }
 
@@ -86,7 +88,10 @@ class jQuery extends Script {
 
             $out .= implode("\n", $this->pre_exec);
 
-            $out .= implode("\n", $this->exec);
+            krsort($this->exec);
+
+            foreach($this->exec as $priority => $exec)
+                $out .= implode("\n", $exec);
 
             $out .= implode("\n", $this->post_exec);
 

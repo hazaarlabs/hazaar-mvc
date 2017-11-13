@@ -62,45 +62,58 @@
                 }
             };
             host.__setIcon = function (name, color) {
-                var icon = 'font-awesome', color = '#000';
+                var icon_class = 'font-awesome';
                 if (!this.__icon)
                     this.__icon = $('<div class="modal-content-icon">').appendTo(this.__container);
-                switch (name) {
-                    case 'working':
-                        icon = 'circle-o-notch fa-spin';
-                        color = '#333';
-                        break;
-                    case 'error':
-                    case 'danger':
-                        icon = 'times-circle';
-                        color = '#cf3838';
-                        break;
-                    case 'info':
-                    case 'notice':
-                        icon = 'info-circle';
-                        color = '#3A85CF';
-                        break;
-                    case 'warn':
-                    case 'warning':
-                        icon = 'exclamation-circle';
-                        color = '#FF9900';
-                        break;
-                    case 'question':
-                        icon = 'question-circle';
-                        color = '#3A85CF';
-                        break;
-                    case 'user':
-                        icon = 'user-circle';
-                        color = '#00B36B';
-                        break;
-                    case 'success':
-                        icon = 'check-circle';
-                        color = '#00B36B';
-                        break;
+                var icons = {
+                    "working": {
+                        "icon": "circle-o-notch fa-spin",
+                        "color": "#333"
+                    },
+                    "error": {
+                        "icon": "times-circle",
+                        "color": "#cf3838"
+                    },
+                    "danger": {
+                        "icon": "times-circle",
+                        "color": "#cf3838"
+                    },
+                    "info": {
+                        "icon": "info-circle",
+                        "color": "#3A85CF"
+                    },
+                    "notice": {
+                        "icon": "info-circle",
+                        "color": "#3A85CF"
+                    },
+                    "warn": {
+                        "icon": "exclamation-circle",
+                        "color": "#FF9900"
+                    },
+                    "warning": {
+                        "icon": "exclamation-circle",
+                        "color": "#FF9900",
+                    },
+                    "question": {
+                        "icon": "question-circle",
+                        "color": "#3A85CF"
+                    },
+                    "user": {
+                        "icon": "user-circle",
+                        "color": "#00B36B"
+                    },
+                    "success": {
+                        "icon": "check-circle",
+                        "color": "#00B36B"
+                    }
                 }
-                this.__icon.html($('<i class="fa fa-' + icon + '">'));
-                if (color)
-                    this.__icon.css({ color: color });
+                var icon_class = 'fa-font-awesome';
+                if (name in icons) {
+                    icon_class = icons[name].icon;
+                    if (!color) color = icons[name].color;
+                } else icon_class = name;
+                this.__icon.html($('<i class="fa fa-' + icon_class + '">'));
+                if (color) this.__icon.css({ color: color });
             };
             host.render = function () {
                 this.__overlay = $('<div class="popup-overlay">').appendTo(document.body).toggleClass('modal', this.props.modal);
