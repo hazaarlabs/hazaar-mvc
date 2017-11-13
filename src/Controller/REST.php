@@ -178,7 +178,7 @@ abstract class REST extends \Hazaar\Controller {
             if(!preg_match('/\/v(\d+)(\/?.*)/', $full_path, $matches))
                 throw new \Exception('API version is required', 400);
 
-            $version = intval($matches);
+            $version = intval($matches[1]);
 
             if(!array_key_exists($version, $this->endpoints))
                 throw new \Exception('API version(' . $version . ') does not exist!', 404);
