@@ -115,7 +115,7 @@ var dataBinderValue = function (name, value, label, parent) {
         "label": {
             set: function (value) {
                 this._label = value;
-                this._parent._update(this._name, true);
+                this._parent._update(this._name, false);
             },
             get: function () {
                 return this._label;
