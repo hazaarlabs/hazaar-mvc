@@ -235,7 +235,9 @@ dataBinder.prototype._update = function (attr_name, do_update) {
                 o.prop('checked', attr_value);
             else if (o.attr('data-bind-label') == 'true')
                 o.val((attr_item ? attr_item.label : null));
-            else
+            else if (o.is("select")) {
+                if (o.find('option[value="' + attr_value + '"]').length > 0) o.val(attr_value);
+            } else
                 o.val(attr_value);
             if (do_update === true) o.trigger('update');
         } else
