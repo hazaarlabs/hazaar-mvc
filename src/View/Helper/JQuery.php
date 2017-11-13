@@ -62,16 +62,16 @@ class JQuery extends \Hazaar\View\Helper {
             }
 
         }
-        
+
         $view->setImportPriority(99);
 
         $view->requires($this->application->url('hazaar/file/js/jquery-helper.js'));
 
     }
 
-    public function exec($code) {
+    public function exec($code, $priority = 0) {
 
-        return $this->jquery->exec($code);
+        return $this->jquery->exec($code, $priority);
 
     }
 

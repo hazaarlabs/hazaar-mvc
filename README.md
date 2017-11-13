@@ -3,9 +3,11 @@
 Getting up and running with HazaarMVC is really easy and is done in only a few basic
 steps, depending on the operating system you are working with.  I suggest Ubuntu Linux
 as Hazaar has been developed on Ubuntu so it will work with it.  I have made some effort
-to ensure that Hazaar is cross-platform compatible, particularly with Windows support, but
-as I do not develop under Windows daily, some bugs may arise.  If so, please create a
-support issue so they can be fixed.
+to ensure that Hazaar is cross-platform compatible, particularly with Windows support, and
+I am now developing under Windows daily so Hazaar MVC has become quite stable under Windows.
+
+If you hit any problems, please feel free to create a support issue so they can be fixed
+at https://git.hazaarlabs.com/hazaar/hazaar-mvc/issues.
 
 Hazaar MVC is installed with [Composer](http://getcomposer.org) and available via
 [Packagist](http://packagist.org). 
@@ -80,7 +82,7 @@ on setting up a web server to run your new application.
 
 Because I'm a nice guy, i've made it super simple to test your new project without installing
 any further programs.  You can start up the application using the PHP built-in web server
-by executing the composer `serve` command
+by executing the composer `serve` command from your new project directory:
 
 ```
 $ composer serve

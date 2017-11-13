@@ -125,7 +125,7 @@ class Application {
                 'defaultController' => 'Index',
                 'favicon' => 'favicon.png',
                 'timezone' => 'UTC',
-                'rewrite' => true,
+                'rewrite' => (php_sapi_name() !== 'cli-server'),
                 'files' => array(
                     'bootstrap' => 'bootstrap.php',
                     'shutdown' => 'shutdown.php',
