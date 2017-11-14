@@ -5,19 +5,33 @@ namespace Hazaar\Model;
 abstract class Strict implements \ArrayAccess, \Iterator {
 
     /**
-     *
-     * @param
-     *            Undefined values will be ignored. This is checked first.
+     * Undefined values will be ignored. This is checked first.
+     * @var bool
      */
-    protected $ignore_undefined = TRUE;
+    protected $ignore_undefined = true;
 
     /**
-     *
-     * @param
-     *            Undefined values will be automatically added and their type will be detected
+     * Undefined values will be automatically added and their type will be detected.
+     * @var bool
      */
-    protected $allow_undefined = FALSE;
+    protected $allow_undefined = false;
 
+    /**
+     * Disable all callbacks while this is true.
+     * @var bool
+     */
+    protected $disable_callbacks = false;
+
+    /**
+     * Automatically convert null values to empty strings if the field is of type string.
+     * @var bool
+     */
+    protected $convert_nulls = false;
+
+    /**
+     * The list of known variable types that are supported by strict models.
+     * @var mixed
+     */
     private static $known_types = array(
         'boolean',
         'integer',
@@ -29,34 +43,58 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         'list',
         'object',
         'resource',
-        'NULL',
+        'null',
         'model',
         'mixed'
     );
 
+    /**
+     * Aliases for any special variable types that we support that will be used for system functions.
+     * @var mixed
+     */
     private static $type_aliases = array(
         'bool' => 'boolean',
         'number' => 'float',
         'text' => 'string'
     );
 
-    protected $fields = array();
-
-    protected $values = array();
-
-    protected $disable_callbacks = FALSE;
-
-    protected $convert_nulls = FALSE;
-
-    private $loaded = FALSE;
+    /**
+     * The field definition.
+     * @var mixed
+     */
+    private $fields = array();
 
     /**
-     * The current value for array access returned by each()
+     * The current values of all defined fields.
+     * @var mixed
+     */
+    private $values = array();
+
+    /**
+     * Internal loaded flag.  This allows read only fields to be set during startup.
+     * @var mixed
+     */
+    private $loaded = false;
+
+    /**
+     * The current value for array access returned by each().
+     * @var mixed
      */
     protected $current;
 
-    protected $__label;
-
+    /**
+     * Strict model constructor
+     *
+     * The constructor has optional parameters that can vary depending on the implementation.  The first parameter is
+     * an array containing the initial data to be loaded into the model.  Any subsequent arguments are passed directly
+     * and "as is" to the Hazaar\Model\Strict::construct() method implemented by the extending class.
+     *
+     * @param $data array Initial data to be loaded into the model.
+     *
+     * @throws Exception\InitMissing
+     *
+     * @throws Exception\BadFieldDefinition
+     */
     function __construct() {
 
         $args = func_get_args();
@@ -81,13 +119,18 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         if (is_array($data) && count($data) > 0)
             $this->populate($data);
 
-        $this->loaded = TRUE;
+        $this->loaded = true;
 
         if (method_exists($this, 'construct'))
             call_user_func_array(array($this, 'construct'), $args);
 
     }
 
+    /**
+     * Strict model destructor
+     *
+     * The destructor calls the shutdown method to allow the extending class to do any cleanup functions.
+     */
     function __destruct() {
 
         if (method_exists($this, 'shutdown'))
@@ -99,18 +142,32 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     }
 
-    public function populate($data, $exec_filters = FALSE) {
+    /**
+     * Populate the model with data contained in the supplied array.
+     *
+     * @param mixed $data The array of data.
+     *
+     * @param mixed $exec_filters Execute any callback filters.  For populate this is disabled by default.
+     *
+     * @return boolean
+     */
+    public function populate($data, $exec_filters = false) {
 
         if (!\Hazaar\Map::is_array($data))
-            return FALSE;
+            return false;
 
         foreach($data as $key => $value)
             $this->set($key, $value, $exec_filters);
 
-        return TRUE;
+        return true;
 
     }
 
+    /**
+     * Loads the provided field definition into the model.
+     *
+     * @param array $field_definition
+     */
     public function loadDefinition(array $field_definition) {
 
         $this->fields = $field_definition;
@@ -126,7 +183,12 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                 if (is_array($definition)) {
 
-                    if (array_key_exists('type', $definition) && ($definition['type'] == 'array' || $definition['type'] == 'list' || $definition['type'] == 'model') && !array_key_exists('default', $definition)) {
+                    /*
+                     * If a type is defined and it is an array, list, or model, then prepare the value as an empty array.
+                     */
+                    if (array_key_exists('type', $definition)
+                        && ($definition['type'] == 'array' || $definition['type'] == 'list' || $definition['type'] == 'model')
+                        && !array_key_exists('default', $definition)) {
 
                         if (array_key_exists('items', $definition)) {
 
@@ -140,11 +202,14 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                         }
 
+                        /*
+                         * If a default value is defined then set the current field value to that.
+                         */
                     } elseif (array_key_exists('default', $definition)) {
 
                         $value = $definition['default'];
 
-                        if ($value !== NULL && array_key_exists('type', $definition)) {
+                        if ($value !== null && array_key_exists('type', $definition)) {
 
                             if ($definition['type'] == 'model') {
 
@@ -158,7 +223,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                             } elseif (in_array($definition['type'], Strict::$known_types)) {
 
                                 if (\Hazaar\Map::is_array($value) && count($value) == 0)
-                                    $value = NULL;
+                                    $value = null;
 
                                 $value = $this->convertType($value, $definition['type']);
 
@@ -170,9 +235,9 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                         }
 
-                    } else {
+                    } else { //Otherwise set it to null
 
-                        $value = NULL;
+                        $value = null;
 
                     }
 
@@ -183,7 +248,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                     if ($definition == 'array' || $definition == 'list')
                         $value = array();
                     else
-                        $value = NULL;
+                        $value = null;
 
                     $this->values[$field] = $value;
 
@@ -195,6 +260,13 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     }
 
+    /**
+     * Return the field definition for the requested field.
+     *
+     * @param mixed $key The key of the field to return the definition for.
+     *
+     * @return array
+     */
     public function getDefinition($key){
 
         $def = ake($this->fields, $key);
@@ -246,11 +318,11 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     }
 
-    public function ake($key, $default = NULL, $non_empty = FALSE) {
+    public function ake($key, $default = null, $non_empty = false) {
 
         $value = $this->get($key);
 
-        if ($value !== NULL && (!$non_empty || ($non_empty && trim($value))))
+        if ($value !== null && (!$non_empty || ($non_empty && trim($value))))
             return $value;
 
         return $default;
@@ -263,11 +335,11 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     }
 
-    public function &get($key, $run_callbacks = TRUE) {
+    public function &get($key, $run_callbacks = true) {
 
         if (!array_key_exists($key, $this->values)) {
 
-            $null = NULL;
+            $null = null;
 
             return $null;
 
@@ -360,7 +432,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                 return $value;
 
             if (\Hazaar\Map::is_array($value) && count($value) == 0)
-                $value = NULL;
+                $value = null;
 
             if ($type == 'boolean') {
 
@@ -375,7 +447,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
             } elseif ($type == 'string' && is_object($value) && method_exists($value, '__tostring')) {
 
-                if ($value !== NULL)
+                if ($value !== null)
                     $value = (string) $value;
 
             } elseif ($type !== 'string' && ($value === '' || $value === 'null')){
@@ -399,7 +471,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                 }
                 catch(\Exception $e) {
 
-                    $value = NULL;
+                    $value = null;
 
                 }
 
@@ -411,7 +483,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     }
 
-    public function set($key, $value, $run_callbacks = TRUE) {
+    public function set($key, $value, $run_callbacks = true) {
 
         /*
          * Keep the field definition handy
@@ -423,10 +495,10 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
         if (!$def) {
 
-            if ($this->ignore_undefined === TRUE)
-                return NULL;
+            if ($this->ignore_undefined === true)
+                return null;
 
-            elseif ($this->allow_undefined === FALSE)
+            elseif ($this->allow_undefined === false)
                 throw new Exception\FieldUndefined($key);
 
             $this->fields[$key] = gettype($value);
@@ -441,8 +513,9 @@ abstract class Strict implements \ArrayAccess, \Iterator {
          *
          * If a value is static then updates to it are not allowed and are silently ignored
          */
-        if ((array_key_exists('static', $def) && $def['static'] === TRUE) || (array_key_exists('readonly', $def) && $def['readonly'] && $this->loaded))
-            return FALSE;
+        if ((array_key_exists('static', $def) && $def['static'] === true)
+            || (array_key_exists('readonly', $def) && $def['readonly'] && $this->loaded))
+            return false;
 
         /*
          * Run any pre-update callbacks
@@ -457,19 +530,19 @@ abstract class Strict implements \ArrayAccess, \Iterator {
          *
          * NOTE: Nulls are not converted as they may have special meaning.
          */
-        if ($value !== NULL && array_key_exists('type', $def))
+        if ($value !== null && array_key_exists('type', $def))
             $this->convertType($value, $def['type']);
 
         /*
-         * NULL value check.
+         * null value check.
          */
 
-        if ($value === NULL && array_key_exists('nulls', $def) && $def['nulls'] == FALSE) {
+        if ($value === null && array_key_exists('nulls', $def) && $def['nulls'] == false) {
 
             if (array_key_exists('default', $def))
                 $value = $def['default'];
             else
-                return FALSE;
+                return false;
 
         }
 
@@ -514,25 +587,25 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                 switch ($type) {
                     case 'min' :
                         if ($value < $data)
-                            return FALSE;
+                            return false;
 
                         break;
 
                     case 'max' :
                         if ($value > $data)
-                            return FALSE;
+                            return false;
 
                         break;
 
                     case 'with' :
                         if (!preg_match('/' . $data . '/', strval($value)))
-                            return FALSE;
+                            return false;
 
                         break;
 
                     case 'equals' :
                         if ($value !== $data)
-                            return FALSE;
+                            return false;
 
                         break;
 
@@ -545,7 +618,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                         }else{
 
                             if (strlen($value) < $data)
-                                return FALSE;
+                                return false;
                         }
 
                         break;
@@ -560,7 +633,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                         }else{
 
                             if (strlen($value) > $data)
-                                return FALSE;
+                                return false;
 
                         }
 
@@ -603,7 +676,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
         }
 
-        $old_value = NULL;
+        $old_value = null;
 
         if (ake($def, 'type') == 'model') {
 
@@ -703,7 +776,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     }
 
-    public function extend($values, $run_callbacks = TRUE, $ignore_keys = null) {
+    public function extend($values, $run_callbacks = true, $ignore_keys = null) {
 
         if (\Hazaar\Map::is_array($values)) {
 
@@ -767,7 +840,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
         }
 
-        return TRUE;
+        return true;
 
     }
 
@@ -778,13 +851,13 @@ abstract class Strict implements \ArrayAccess, \Iterator {
      *
      * @since 1.0.0
      */
-    public function toArray($disable_callbacks = FALSE, $depth = NULL, $show_hidden = true) {
+    public function toArray($disable_callbacks = false, $depth = null, $show_hidden = true) {
 
         return $this->resolveArray($this, $disable_callbacks, $depth, $show_hidden);
 
     }
 
-    private function resolveArray($array, $disable_callbacks = FALSE, $depth = NULL, $show_hidden = FALSE) {
+    private function resolveArray($array, $disable_callbacks = false, $depth = null, $show_hidden = false) {
 
         $result = array();
 
@@ -806,14 +879,14 @@ abstract class Strict implements \ArrayAccess, \Iterator {
              * this value.
              */
 
-            if ($show_hidden === FALSE && array_key_exists($key, $this->fields) && is_array($this->fields[$key]) && array_key_exists('hide', $this->fields[$key])) {
+            if ($show_hidden === false && array_key_exists($key, $this->fields) && is_array($this->fields[$key]) && array_key_exists('hide', $this->fields[$key])) {
 
                 $hide = $this->fields[$key]['hide'];
 
                 if ($hide instanceof \Closure)
                     $hide = $hide($value);
 
-                if ($hide === TRUE)
+                if ($hide === true)
                     continue;
             }
 
@@ -823,9 +896,9 @@ abstract class Strict implements \ArrayAccess, \Iterator {
             if (!$disable_callbacks && array_key_exists('toArray', $def))
                 $value = $this->execCallback($def['toArray'], $value, $key);
 
-            if ($depth === NULL || $depth > 0) {
+            if ($depth === null || $depth > 0) {
 
-                $next = $depth ? $depth - 1 : NULL;
+                $next = $depth ? $depth - 1 : null;
 
                 if ($value instanceof Strict) {
 
@@ -924,9 +997,9 @@ abstract class Strict implements \ArrayAccess, \Iterator {
     public function next() {
 
         if ($this->current = each($this->values))
-            return TRUE;
+            return true;
 
-        return FALSE;
+        return false;
 
     }
 
@@ -951,9 +1024,9 @@ abstract class Strict implements \ArrayAccess, \Iterator {
     public function valid() {
 
         if ($this->current)
-            return TRUE;
+            return true;
 
-        return FALSE;
+        return false;
 
     }
 
@@ -970,16 +1043,10 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     }
 
-    public function label(){
-
-        return $this->__label;
-
-    }
-
     /**
      * Export the mdel in HazaarModelView format for easy display in views.
      *
-     * @return array The array of values stored in the model in key => (label, value) tuples.  Returns NULL if model is empty.
+     * @return array The array of values stored in the model in key => (label, value) tuples.  Returns null if model is empty.
      *
      * @since 2.0.0
      */
@@ -999,7 +1066,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
      *
      * @param mixed $def   The strict model definition.
      *
-     * @return array       The array of values in key => (label, value) tuples.  Returns NULL if first parameter is not an array.
+     * @return array       The array of values in key => (label, value) tuples.  Returns null if first parameter is not an array.
      *
      * @since 2.0.0
      */
