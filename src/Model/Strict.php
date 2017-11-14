@@ -335,7 +335,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     }
 
-    public function &get($key, $run_callbacks = true) {
+    public function &get($key, $exec_filters = true) {
 
         if (!array_key_exists($key, $this->values)) {
 
@@ -352,7 +352,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         /*
          * Run any pre-read callbacks
          */
-        if ($run_callbacks && is_array($def) && array_key_exists('read', $def)){
+        if ($exec_filters && is_array($def) && array_key_exists('read', $def)){
 
             $value = $this->execCallback($def['read'], $value, $key);
 
@@ -483,7 +483,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     }
 
-    public function set($key, $value, $run_callbacks = true) {
+    public function set($key, $value, $exec_filters = true) {
 
         /*
          * Keep the field definition handy
@@ -520,7 +520,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         /*
          * Run any pre-update callbacks
          */
-        if ($run_callbacks && array_key_exists('update', $def) && array_key_exists('pre', $def['update']))
+        if ($exec_filters && array_key_exists('update', $def) && array_key_exists('pre', $def['update']))
             $value = $this->execCallback($def['update']['pre'], $value, $key);
 
         /*
@@ -580,7 +580,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
          * * with - string regular expression matching
          */
 
-        if (array_key_exists('validate', $def)) {
+        if ($exec_filters === true && array_key_exists('validate', $def)) {
 
             foreach($def['validate'] as $type => $data) {
 
@@ -700,7 +700,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         /*
          * Run any post-update callbacks
          */
-        if ($run_callbacks && array_key_exists('update', $def) && array_key_exists('post', $def['update']))
+        if ($exec_filters && array_key_exists('update', $def) && array_key_exists('post', $def['update']))
             $this->execCallback($def['update']['post'], $old_value, $key);
 
         return $value;
@@ -776,7 +776,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     }
 
-    public function extend($values, $run_callbacks = true, $ignore_keys = null) {
+    public function extend($values, $exec_filters = true, $ignore_keys = null) {
 
         if (\Hazaar\Map::is_array($values)) {
 
@@ -790,7 +790,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                 if ($this->values[$key] instanceof Strict) {
 
-                    $this->values[$key]->extend($value, $run_callbacks, $ignore_keys);
+                    $this->values[$key]->extend($value, $exec_filters, $ignore_keys);
 
                 } else {
 
@@ -810,7 +810,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                                 foreach($value as $subKey => $subValue){
 
                                     if(ake($this->values[$key], $subKey) instanceof Strict)
-                                        $this->values[$key][$subKey]->extend($subValue, $run_callbacks, $ignore_keys);
+                                        $this->values[$key][$subKey]->extend($subValue, $exec_filters, $ignore_keys);
 
                                     else
                                         $this->values[$key][$subKey] = $this->convertType($subValue, $type);
@@ -824,13 +824,13 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                             if(is_array($this->values[$key]))
                                 $value = array_merge($this->values[$key], $value);
 
-                            $this->set($key, $value, $run_callbacks);
+                            $this->set($key, $value, $exec_filters);
 
                         }
 
                     }else{
 
-                        $this->set($key, $value, $run_callbacks);
+                        $this->set($key, $value, $exec_filters);
 
                     }
 
