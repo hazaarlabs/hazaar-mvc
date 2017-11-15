@@ -62,13 +62,13 @@ abstract class Strict implements \ArrayAccess, \Iterator {
      * The field definition.
      * @var mixed
      */
-    private $fields = array();
+    protected $fields = array();
 
     /**
      * The current values of all defined fields.
      * @var mixed
      */
-    private $values = array();
+    protected $values = array();
 
     /**
      * Internal loaded flag.  This allows read only fields to be set during startup.
