@@ -43,7 +43,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         'list',
         'object',
         'resource',
-        'null',
+        'NULL',
         'model',
         'mixed'
     );
