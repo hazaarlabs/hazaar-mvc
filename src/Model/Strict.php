@@ -550,8 +550,16 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
             if (is_array($value)) {
 
-                foreach($value as & $subValue)
-                    $this->convertType($subValue, $def['arrayOf']);
+                foreach($value as & $subValue){
+
+                    $arrayOf = $def['arrayOf'];
+
+                    if(is_array($arrayOf))
+                        $subValue = new SubModel($arrayOf, $subValue);
+                    else
+                        $this->convertType($subValue, $arrayOf);
+
+                }
 
             } else {
 
@@ -710,8 +718,10 @@ abstract class Strict implements \ArrayAccess, \Iterator {
     /**
      * Append an element to an array item
      *
-     * @param mixed $key
-     * @param mixed $item
+     * @param mixed $key The name of the array field to append to.
+     * @param mixed $item The item to append on to the end of the array.
+     *
+     * @return mixed The item that was just appended.
      */
     public function append($key, $item){
 
@@ -723,8 +733,14 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         if(strtolower($type) != 'array' && strtolower($type) != 'list')
             return null;
 
-        if($arrayOf = ake($def, 'arrayOf'))
-            $this->convertType($item, $arrayOf);
+        if($arrayOf = ake($def, 'arrayOf')){
+
+            if(is_array($arrayOf))
+                $item = new SubModel($arrayOf, $item);
+            else
+                $this->convertType($item, $arrayOf);
+
+        }
 
         if(! (array_key_exists($key, $this->values) && is_array($this->values[$key])))
             $this->values[$key] = array();
@@ -732,6 +748,22 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         array_push($this->values[$key], $item);
 
         return $item;
+
+    }
+
+    /**
+     * Alias for Hazaar\Model\Strict::append()
+     *
+     * Added to help remove some confusion as to appends purpose.
+     *
+     * @param string $key The name of the array field to push to.
+     * @param mixed $item The item to push on to the end of the array.
+     *
+     * @return mixed The item that was just pushed.
+     */
+    public function push($key, $item){
+
+        return self::append($key, $item);
 
     }
 
