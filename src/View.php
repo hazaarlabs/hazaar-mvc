@@ -293,37 +293,39 @@ class View {
     /*
      * Dealing with Helpers
      */
-    public function addHelper($helper, $args = array()) {
+    public function addHelper($helper, $args = array(), $alias = null) {
 
         if(is_array($helper)) {
 
-            foreach ($helper as $h)
-                self::addHelper($h);
+            foreach ($helper as $alias => $h)
+                self::addHelper($h, array(), $alias);
 
         } elseif(is_object($helper)) {
 
             if (! $helper instanceof View\Helper)
                 return NULL;
 
-            $id = strtolower($helper->getName());
+            if($alias === null)
+                $alias = strtolower($helper->getName());
 
-            $this->_helpers[$id] = $helper;
+            $this->_helpers[$alias] = $helper;
 
-        } else {
+        } elseif($helper !== null) {
 
-            $id = strtolower($helper);
+            if($alias === null)
+                $alias = strtolower($helper);
 
-            if(! array_key_exists($id, $this->_helpers)) {
+            if(! array_key_exists($alias, $this->_helpers)) {
 
                 $class = '\\Hazaar\\View\\Helper\\' . ucfirst($helper);
 
                 $obj = new $class($this, $args);
 
-                $this->_helpers[$id] = $obj;
+                $this->_helpers[$alias] = $obj;
 
             } else {
 
-                if (($obj = $this->_helpers[$id]) instanceof View\Helper)
+                if (($obj = $this->_helpers[$alias]) instanceof View\Helper)
                     $obj->extendArgs($args);
 
             }
