@@ -12,6 +12,8 @@ namespace Hazaar\Model;
  */
 class dataBinderValue {
 
+    public $name;
+
     public $value;
 
     public $label;
@@ -25,6 +27,9 @@ class dataBinderValue {
     }
 
     public function __toString(){
+
+        if($this->name)
+            return (string)new \Hazaar\Html\Span(coalesce($this->label, $this->value), array('data-bind' => $this->name));
 
         return coalesce($this->label, $this->value);
 
