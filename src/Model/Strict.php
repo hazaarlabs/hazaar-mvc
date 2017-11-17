@@ -151,78 +151,37 @@ abstract class Strict extends DataTyper implements \ArrayAccess, \Iterator {
                 if ($field == '*')
                     continue;
 
-                if (is_array($definition)) {
+                if (!is_array($definition))
+                    $definition = array('type' => $definition);
+
+                $value = ake($definition, 'default');
+
+                if ($type = ake($definition, 'type')){
 
                     /*
-                     * If a type is defined and it is an array, list, or model, then prepare the value as an empty array.
+                     * If a type is an array, list, or model, then prepare the value as an empty Strict\Map class.
                      */
-                    if (array_key_exists('type', $definition)
-                        && ($definition['type'] == 'array' || $definition['type'] == 'list' || $definition['type'] == 'model')
-                        && !array_key_exists('default', $definition)) {
+                    if ($type == 'array' || $type == 'list' ) {
 
-                        if (array_key_exists('items', $definition)) {
+                        if (array_key_exists('arrayOf', $definition)) {
 
-                            $value = new SubModel($definition['items']);
-
-                            $definition['type'] = 'model';
+                            $value = new Map($definition['arrayOf'], $value);
 
                         } else {
 
-                            $value = array();
+                            $value = DataTyper::convertType($value, $type);
 
                         }
 
-                        /*
-                         * If a default value is defined then set the current field value to that.
-                         */
-                    } elseif (array_key_exists('default', $definition)) {
+                    }elseif($type == 'model' && array_key_exists('items', $definition)) {
 
-                        $value = $definition['default'];
-
-                        if ($value !== null && array_key_exists('type', $definition)) {
-
-                            if ($definition['type'] == 'model') {
-
-                                $def = array();
-
-                                if ($arrayOf = ake($definition, 'arrayOf'))
-                                    $def = array('*' => array('type' => $arrayOf));
-
-                                $value = new SubModel($def, $value);
-
-                            } elseif (in_array($definition['type'], DataTyper::$known_types)) {
-
-                                if (\Hazaar\Map::is_array($value) && count($value) == 0)
-                                    $value = null;
-
-                                $value = $this->convertType($value, $definition['type']);
-
-                            } elseif (class_exists($definition['type']) && !is_a($value, $definition['type'])) {
-
-                                $value = new $definition['type']($value);
-
-                            }
-
-                        }
-
-                    } else { //Otherwise set it to null
-
-                        $value = null;
+                        $value = new SubModel($definition['items'], $value);
 
                     }
 
-                    $this->values[$field] = $value;
-
-                } else {
-
-                    if ($definition == 'array' || $definition == 'list')
-                        $value = array();
-                    else
-                        $value = null;
-
-                    $this->values[$field] = $value;
-
                 }
+
+                $this->values[$field] = $value;
 
             }
 
@@ -415,7 +374,7 @@ abstract class Strict extends DataTyper implements \ArrayAccess, \Iterator {
          * NOTE: Nulls are not converted as they may have special meaning.
          */
         if ($value !== null && array_key_exists('type', $def))
-            $this->convertType($value, $def['type']);
+            DataTyper::convertType($value, $def['type']);
 
         /*
          * null value check.
