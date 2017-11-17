@@ -10,7 +10,7 @@ namespace Hazaar\Model;
  * @version 1.0
  * @author JamieCarl
  */
-class Map extends DataTyper implements \ArrayAccess, \Iterator {
+class ChildArray extends DataTyper implements \ArrayAccess, \Iterator {
 
     private $type;
 
@@ -46,7 +46,7 @@ class Map extends DataTyper implements \ArrayAccess, \Iterator {
     public function offsetSet($offset, $value){
 
         if(is_array($this->type))
-            $value = new SubModel($this->type, $value);
+            $value = new ChildModel($this->type, $value);
         else
             DataTyper::convertType($value, $this->type);
 
