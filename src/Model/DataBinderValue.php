@@ -3,14 +3,14 @@
 namespace Hazaar\Model;
 
 /**
- * dataBinderValue short summary.
+ * DataBinderValue short summary.
  *
- * dataBinderValue description.
+ * DataBinderValue description.
  *
  * @version 1.0
  * @author jamie
  */
-class dataBinderValue {
+class DataBinderValue {
 
     public $name;
 

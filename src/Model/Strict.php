@@ -2,7 +2,7 @@
 
 namespace Hazaar\Model;
 
-abstract class Strict implements \ArrayAccess, \Iterator {
+abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterator {
 
     /**
      * Undefined values will be ignored. This is checked first.
@@ -27,36 +27,6 @@ abstract class Strict implements \ArrayAccess, \Iterator {
      * @var bool
      */
     protected $convert_nulls = false;
-
-    /**
-     * The list of known variable types that are supported by strict models.
-     * @var mixed
-     */
-    private static $known_types = array(
-        'boolean',
-        'integer',
-        'int',
-        'float',
-        'double',  // for historical reasons "double" is returned in case of a float, and not simply "float"
-        'string',
-        'array',
-        'list',
-        'object',
-        'resource',
-        'NULL',
-        'model',
-        'mixed'
-    );
-
-    /**
-     * Aliases for any special variable types that we support that will be used for system functions.
-     * @var mixed
-     */
-    private static $type_aliases = array(
-        'bool' => 'boolean',
-        'number' => 'float',
-        'text' => 'string'
-    );
 
     /**
      * The field definition.
@@ -181,78 +151,37 @@ abstract class Strict implements \ArrayAccess, \Iterator {
                 if ($field == '*')
                     continue;
 
-                if (is_array($definition)) {
+                if (!is_array($definition))
+                    $definition = array('type' => $definition);
+
+                $value = ake($definition, 'default');
+
+                if ($type = ake($definition, 'type')){
 
                     /*
-                     * If a type is defined and it is an array, list, or model, then prepare the value as an empty array.
+                     * If a type is an array, list, or model, then prepare the value as an empty Strict\ChildArray class.
                      */
-                    if (array_key_exists('type', $definition)
-                        && ($definition['type'] == 'array' || $definition['type'] == 'list' || $definition['type'] == 'model')
-                        && !array_key_exists('default', $definition)) {
+                    if ($type == 'array' || $type == 'list' ) {
 
-                        if (array_key_exists('items', $definition)) {
+                        if (array_key_exists('arrayOf', $definition)) {
 
-                            $value = new SubModel($definition['items']);
-
-                            $definition['type'] = 'model';
+                            $value = new ChildArray($definition['arrayOf'], $value);
 
                         } else {
 
-                            $value = array();
+                            $value = DataTypeConverter::convertType($value, $type);
 
                         }
 
-                        /*
-                         * If a default value is defined then set the current field value to that.
-                         */
-                    } elseif (array_key_exists('default', $definition)) {
+                    }elseif($type == 'model' && array_key_exists('items', $definition)) {
 
-                        $value = $definition['default'];
-
-                        if ($value !== null && array_key_exists('type', $definition)) {
-
-                            if ($definition['type'] == 'model') {
-
-                                $def = array();
-
-                                if ($arrayOf = ake($definition, 'arrayOf'))
-                                    $def = array('*' => array('type' => $arrayOf));
-
-                                $value = new SubModel($def, $value);
-
-                            } elseif (in_array($definition['type'], Strict::$known_types)) {
-
-                                if (\Hazaar\Map::is_array($value) && count($value) == 0)
-                                    $value = null;
-
-                                $value = $this->convertType($value, $definition['type']);
-
-                            } elseif (class_exists($definition['type']) && !is_a($value, $definition['type'])) {
-
-                                $value = new $definition['type']($value);
-
-                            }
-
-                        }
-
-                    } else { //Otherwise set it to null
-
-                        $value = null;
+                        $value = new ChildModel($definition['items'], $value);
 
                     }
 
-                    $this->values[$field] = $value;
-
-                } else {
-
-                    if ($definition == 'array' || $definition == 'list')
-                        $value = array();
-                    else
-                        $value = null;
-
-                    $this->values[$field] = $value;
-
                 }
+
+                $this->values[$field] = $value;
 
             }
 
@@ -375,7 +304,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
         $type = $this->getType($key);
 
-        if($type == 'object' || !(in_array($type, Strict::$known_types) || array_key_exists($type, Strict::$type_aliases)))
+        if($type == 'object' || !(in_array($type, DataTypeConverter::$known_types) || array_key_exists($type, DataTypeConverter::$type_aliases)))
             return true;
 
         return false;
@@ -394,92 +323,6 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         }
 
         return gettype(ake($this->values, $key, false));
-
-    }
-
-    protected function convertType(&$value, $type) {
-
-        if(array_key_exists($type, Strict::$type_aliases))
-            $type = Strict::$type_aliases[$type];
-
-        if($value instanceof \Iterator
-            || $value instanceof \ArrayIterator
-            || $value instanceof \IteratorAggregate)
-            $value = iterator_to_array($value);
-
-        if (in_array($type, Strict::$known_types)) {
-
-            if(is_array($value) && array_key_exists('__hz_value', $value) && array_key_exists('__hz_label', $value)){
-
-                if($type !== 'array'){
-
-                    $value = new dataBinderValue(ake($value, '__hz_value'), ake($value, '__hz_label'));
-
-                    $this->convertType($value->value, $type);
-
-                    return $value;
-
-                }
-
-                $value = null;
-
-            }
-
-            /*
-             * The special type 'mixed' specifically allow
-             */
-            if ($type == 'mixed' || $type == 'model')
-                return $value;
-
-            if (\Hazaar\Map::is_array($value) && count($value) == 0)
-                $value = null;
-
-            if ($type == 'boolean') {
-
-                $value = boolify($value);
-
-            }elseif($type == 'list'){
-
-                if(!is_array($value))
-                    @settype($value, 'array');
-                else
-                    $value = array_values($value);
-
-            } elseif ($type == 'string' && is_object($value) && method_exists($value, '__tostring')) {
-
-                if ($value !== null)
-                    $value = (string) $value;
-
-            } elseif ($type !== 'string' && ($value === '' || $value === 'null')){
-
-                $value = null;
-
-            } elseif (!@settype($value, $type)) {
-
-                throw new Exception\InvalidDataType($type, get_class($value));
-
-            }
-
-        } elseif (class_exists($type)) {
-
-            if (!is_a($value, $type)) {
-
-                try {
-
-                    $value = new $type($value);
-
-                }
-                catch(\Exception $e) {
-
-                    $value = null;
-
-                }
-
-            }
-
-        }
-
-        return $value;
 
     }
 
@@ -531,12 +374,11 @@ abstract class Strict implements \ArrayAccess, \Iterator {
          * NOTE: Nulls are not converted as they may have special meaning.
          */
         if ($value !== null && array_key_exists('type', $def))
-            $this->convertType($value, $def['type']);
+            DataTypeConverter::convertType($value, $def['type']);
 
         /*
          * null value check.
          */
-
         if ($value === null && array_key_exists('nulls', $def) && $def['nulls'] == false) {
 
             if (array_key_exists('default', $def))
@@ -546,26 +388,18 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
         }
 
-        if (\Hazaar\Map::is_array($value) && array_key_exists('arrayOf', $def)) {
+        if (\Hazaar\Map::is_array($value)
+            && array_key_exists('arrayOf', $def)
+            && !$value instanceof ChildArray) {
 
-            if (is_array($value)) {
-
-                foreach($value as & $subValue)
-                    $this->convertType($subValue, $def['arrayOf']);
-
-            } else {
-
-                foreach($value as $subKey => $subValue)
-                    $value[$subKey] = $this->convertType($subValue, $def['arrayOf']);
-
-            }
+            $value = new ChildArray($def['arrayOf'], $value);
 
         }elseif(array_key_exists('type', $def) && $def['type'] == 'array' && is_array($value)){
 
             foreach($value as & $subValue){
 
                 if(is_array($subValue) && array_key_exists('__hz_value', $subValue) && array_key_exists('__hz_label', $subValue))
-                    $subValue = new dataBinderValue(ake($subValue, '__hz_value'), ake($subValue, '__hz_label'));
+                    $subValue = new DataBinderValue(ake($subValue, '__hz_value'), ake($subValue, '__hz_label'));
 
             }
 
@@ -680,7 +514,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
         if (ake($def, 'type') == 'model') {
 
-            if ($this->values[$key] instanceof SubModel)
+            if ($this->values[$key] instanceof ChildModel)
                 $this->values[$key]->populate($value);
 
         } else {
@@ -710,8 +544,10 @@ abstract class Strict implements \ArrayAccess, \Iterator {
     /**
      * Append an element to an array item
      *
-     * @param mixed $key
-     * @param mixed $item
+     * @param mixed $key The name of the array field to append to.
+     * @param mixed $item The item to append on to the end of the array.
+     *
+     * @return mixed The item that was just appended.
      */
     public function append($key, $item){
 
@@ -723,15 +559,37 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         if(strtolower($type) != 'array' && strtolower($type) != 'list')
             return null;
 
-        if($arrayOf = ake($def, 'arrayOf'))
-            $this->convertType($item, $arrayOf);
+        if($arrayOf = ake($def, 'arrayOf')){
+
+            if(is_array($arrayOf))
+                $item = new ChildModel($arrayOf, $item);
+            else
+                $this->convertType($item, $arrayOf);
+
+        }
 
         if(! (array_key_exists($key, $this->values) && is_array($this->values[$key])))
             $this->values[$key] = array();
 
-        array_push($this->values[$key], $item);
+        $this->values[$key][] = $item;
 
         return $item;
+
+    }
+
+    /**
+     * Alias for Hazaar\Model\Strict::append()
+     *
+     * Added to help remove some confusion as to appends purpose.
+     *
+     * @param string $key The name of the array field to push to.
+     * @param mixed $item The item to push on to the end of the array.
+     *
+     * @return mixed The item that was just pushed.
+     */
+    public function push($key, $item){
+
+        return self::append($key, $item);
 
     }
 
@@ -904,11 +762,11 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                     $value = $value->toArray($disable_callbacks, $next, $show_hidden);
 
-                } elseif ($value instanceof dataBinderValue) {
+                } elseif ($value instanceof DataBinderValue) {
 
                     $value = $value->toArray();
 
-                } elseif (is_array($value)) {
+                } elseif (is_array($value) || $value instanceof ChildArray) {
 
                     $value = $this->resolveArray($value, $disable_callbacks, $next, $show_hidden);
 
@@ -956,7 +814,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
     }
 
     /**
-     * @detail Return the current element in the Map
+     * @detail Return the current element in the model
      *
      * @since 1.0.0
      */
@@ -979,7 +837,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
     }
 
     /**
-     * @detail Return the current key from the Map
+     * @detail Return the current key from the model
      *
      * @since 1.0.0
      */
@@ -990,7 +848,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
     }
 
     /**
-     * @detail Move to the next element in the Map
+     * @detail Move to the next element in the model
      *
      * @since 1.0.0
      */
@@ -1180,18 +1038,47 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
     }
 
-}
+    public function matchItem($item, $criteria){
 
-class SubModel extends Strict {
+        foreach($criteria as $key => $value){
 
-    function __construct($field_definition, $values = array()) {
+            $parts = explode('.', $key);
 
-        parent::loadDefinition($field_definition);
+            foreach($parts as $part){
 
-        if ($values)
-            $this->populate($values);
+                if(!isset($item[$part]))
+                    return false;
+
+                $item =& $item[$part];
+
+            }
+
+            if($item !== $value)
+                return false;
+
+        }
+
+        return true;
+
+    }
+
+    public function find($field, $criteria = array()){
+
+        if(!(array_key_exists($field, $this->values) && \Hazaar\Map::is_array($this->values[$field])))
+            return false;
+
+        foreach($this->values[$field] as $value){
+
+            if(!\Hazaar\Map::is_array($value))
+                continue;
+
+            if($this->matchItem($value, $criteria))
+                return $value;
+
+        }
+
+        return null;
 
     }
 
 }
-
