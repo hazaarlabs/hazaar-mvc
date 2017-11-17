@@ -60,8 +60,9 @@
     <Compile Include="src\Controller\Exception\HeadersSent.php" />
     <Compile Include="src\Controller\Response\Packer\CSS.php" />
     <Compile Include="src\Controller\Response\Packer\JavaScript.php" />
-    <Compile Include="src\Model\Map.php" />
-    <Compile Include="src\Model\DataTyper.php" />
+    <Compile Include="src\Model\ChildArray.php" />
+    <Compile Include="src\Model\ChildModel.php" />
+    <Compile Include="src\Model\DataTypeConverter.php" />
     <Compile Include="src\View\Controller.php" />
     <Compile Include="src\GeoData.php" />
     <Compile Include="src\Extender.php" />
@@ -297,7 +298,7 @@
     <Compile Include="src\Logger\Exception\NoBackend.php" />
     <Compile Include="src\Logger\Frontend.php" />
     <Compile Include="src\Map.php" />
-    <Compile Include="src\Model\dataBinderValue.php" />
+    <Compile Include="src\Model\DataBinderValue.php" />
     <Compile Include="src\Model\Email.php" />
     <Compile Include="src\Model\Exception\BadFieldDefinition.php" />
     <Compile Include="src\Model\Exception\FieldUndefined.php" />
