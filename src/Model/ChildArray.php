@@ -20,14 +20,14 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator {
 
     /**
      * ChildArray Constructor
-     * 
+     *
      * The constructor simply takes the data type to use to convert all the items
      * stored in this array.  This is any known data type (int, bool, etc) or even
      * an object class.  We use the same DataTypeConverter class as a strict model.
-     * 
+     *
      * @param mixed $type The data type to convert items to.
      * @param mixed $values The initial array of items to populate the object with.
-     * @throws \Exception 
+     * @throws \Exception
      */
     function __construct($type, $values = array()){
 
@@ -41,6 +41,28 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator {
 
         foreach($values as $index => $value)
             $this->offsetSet($index, $value);
+
+    }
+
+    /**
+     * Apply a user supplied function to every member of an array
+     *
+     * Applies the user-defined callback function to each element of the array array.
+     *
+     * ChildArray::walk() is not affected by the internal array pointer of array. ChildArray::walk() will
+     * walk through the entire array regardless of pointer position.
+     * 
+     * For more information on this method see PHP's array_walk() function.
+     *
+     * @param mixed $callback   Typically, callback takes on two parameters. The array parameter's value being
+     *                          the first, and the key/index second.
+     * @param mixed $userdata   If the optional userdata parameter is supplied, it will be passed as the third
+     *                          parameter to the callback.
+     */
+    public function walk($callback, $userdata = NULL){
+
+        foreach($this->values as $key => &$value)
+            $callback($value, $key, $userdata);
 
     }
 
