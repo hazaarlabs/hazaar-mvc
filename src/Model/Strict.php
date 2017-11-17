@@ -2,7 +2,7 @@
 
 namespace Hazaar\Model;
 
-abstract class Strict extends DataTyper implements \ArrayAccess, \Iterator {
+abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterator {
 
     /**
      * Undefined values will be ignored. This is checked first.
@@ -169,7 +169,7 @@ abstract class Strict extends DataTyper implements \ArrayAccess, \Iterator {
 
                         } else {
 
-                            $value = DataTyper::convertType($value, $type);
+                            $value = DataTypeConverter::convertType($value, $type);
 
                         }
 
@@ -304,7 +304,7 @@ abstract class Strict extends DataTyper implements \ArrayAccess, \Iterator {
 
         $type = $this->getType($key);
 
-        if($type == 'object' || !(in_array($type, DataTyper::$known_types) || array_key_exists($type, DataTyper::$type_aliases)))
+        if($type == 'object' || !(in_array($type, DataTypeConverter::$known_types) || array_key_exists($type, DataTypeConverter::$type_aliases)))
             return true;
 
         return false;
@@ -374,7 +374,7 @@ abstract class Strict extends DataTyper implements \ArrayAccess, \Iterator {
          * NOTE: Nulls are not converted as they may have special meaning.
          */
         if ($value !== null && array_key_exists('type', $def))
-            DataTyper::convertType($value, $def['type']);
+            DataTypeConverter::convertType($value, $def['type']);
 
         /*
          * null value check.
