@@ -2,7 +2,7 @@
 
 namespace Hazaar\Model;
 
-abstract class Strict implements \ArrayAccess, \Iterator {
+abstract class Strict extends DataTyper implements \ArrayAccess, \Iterator {
 
     /**
      * Undefined values will be ignored. This is checked first.
@@ -27,36 +27,6 @@ abstract class Strict implements \ArrayAccess, \Iterator {
      * @var bool
      */
     protected $convert_nulls = false;
-
-    /**
-     * The list of known variable types that are supported by strict models.
-     * @var mixed
-     */
-    private static $known_types = array(
-        'boolean',
-        'integer',
-        'int',
-        'float',
-        'double',  // for historical reasons "double" is returned in case of a float, and not simply "float"
-        'string',
-        'array',
-        'list',
-        'object',
-        'resource',
-        'NULL',
-        'model',
-        'mixed'
-    );
-
-    /**
-     * Aliases for any special variable types that we support that will be used for system functions.
-     * @var mixed
-     */
-    private static $type_aliases = array(
-        'bool' => 'boolean',
-        'number' => 'float',
-        'text' => 'string'
-    );
 
     /**
      * The field definition.
@@ -220,7 +190,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                                 $value = new SubModel($def, $value);
 
-                            } elseif (in_array($definition['type'], Strict::$known_types)) {
+                            } elseif (in_array($definition['type'], DataTyper::$known_types)) {
 
                                 if (\Hazaar\Map::is_array($value) && count($value) == 0)
                                     $value = null;
@@ -375,7 +345,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
         $type = $this->getType($key);
 
-        if($type == 'object' || !(in_array($type, Strict::$known_types) || array_key_exists($type, Strict::$type_aliases)))
+        if($type == 'object' || !(in_array($type, DataTyper::$known_types) || array_key_exists($type, DataTyper::$type_aliases)))
             return true;
 
         return false;
@@ -394,92 +364,6 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         }
 
         return gettype(ake($this->values, $key, false));
-
-    }
-
-    protected function convertType(&$value, $type) {
-
-        if(array_key_exists($type, Strict::$type_aliases))
-            $type = Strict::$type_aliases[$type];
-
-        if($value instanceof \Iterator
-            || $value instanceof \ArrayIterator
-            || $value instanceof \IteratorAggregate)
-            $value = iterator_to_array($value);
-
-        if (in_array($type, Strict::$known_types)) {
-
-            if(is_array($value) && array_key_exists('__hz_value', $value) && array_key_exists('__hz_label', $value)){
-
-                if($type !== 'array'){
-
-                    $value = new dataBinderValue(ake($value, '__hz_value'), ake($value, '__hz_label'));
-
-                    $this->convertType($value->value, $type);
-
-                    return $value;
-
-                }
-
-                $value = null;
-
-            }
-
-            /*
-             * The special type 'mixed' specifically allow
-             */
-            if ($type == 'mixed' || $type == 'model')
-                return $value;
-
-            if (\Hazaar\Map::is_array($value) && count($value) == 0)
-                $value = null;
-
-            if ($type == 'boolean') {
-
-                $value = boolify($value);
-
-            }elseif($type == 'list'){
-
-                if(!is_array($value))
-                    @settype($value, 'array');
-                else
-                    $value = array_values($value);
-
-            } elseif ($type == 'string' && is_object($value) && method_exists($value, '__tostring')) {
-
-                if ($value !== null)
-                    $value = (string) $value;
-
-            } elseif ($type !== 'string' && ($value === '' || $value === 'null')){
-
-                $value = null;
-
-            } elseif (!@settype($value, $type)) {
-
-                throw new Exception\InvalidDataType($type, get_class($value));
-
-            }
-
-        } elseif (class_exists($type)) {
-
-            if (!is_a($value, $type)) {
-
-                try {
-
-                    $value = new $type($value);
-
-                }
-                catch(\Exception $e) {
-
-                    $value = null;
-
-                }
-
-            }
-
-        }
-
-        return $value;
 
     }
 
@@ -536,7 +420,6 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         /*
          * null value check.
          */
-
         if ($value === null && array_key_exists('nulls', $def) && $def['nulls'] == false) {
 
             if (array_key_exists('default', $def))
@@ -546,27 +429,11 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
         }
 
-        if (\Hazaar\Map::is_array($value) && array_key_exists('arrayOf', $def)) {
+        if (\Hazaar\Map::is_array($value)
+            && array_key_exists('arrayOf', $def)
+            && !$value instanceof Map) {
 
-            if (is_array($value)) {
-
-                foreach($value as & $subValue){
-
-                    $arrayOf = $def['arrayOf'];
-
-                    if(is_array($arrayOf))
-                        $subValue = new SubModel($arrayOf, $subValue);
-                    else
-                        $this->convertType($subValue, $arrayOf);
-
-                }
-
-            } else {
-
-                foreach($value as $subKey => $subValue)
-                    $value[$subKey] = $this->convertType($subValue, $def['arrayOf']);
-
-            }
+            $value = new Map($def['arrayOf'], $value);
 
         }elseif(array_key_exists('type', $def) && $def['type'] == 'array' && is_array($value)){
 
@@ -940,7 +807,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
 
                     $value = $value->toArray();
 
-                } elseif (is_array($value)) {
+                } elseif (is_array($value) || $value instanceof Map) {
 
                     $value = $this->resolveArray($value, $disable_callbacks, $next, $show_hidden);
 
