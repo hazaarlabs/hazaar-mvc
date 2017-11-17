@@ -1038,4 +1038,47 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     }
 
+    public function matchItem($item, $criteria){
+
+        foreach($criteria as $key => $value){
+
+            $parts = explode('.', $key);
+
+            foreach($parts as $part){
+
+                if(!isset($item[$part]))
+                    return false;
+
+                $item =& $item[$part];
+
+            }
+
+            if($item !== $value)
+                return false;
+
+        }
+
+        return true;
+
+    }
+
+    public function find($field, $criteria = array()){
+
+        if(!(array_key_exists($field, $this->values) && \Hazaar\Map::is_array($this->values[$field])))
+            return false;
+
+        foreach($this->values[$field] as $value){
+
+            if(!\Hazaar\Map::is_array($value))
+                continue;
+
+            if($this->matchItem($value, $criteria))
+                return $value;
+
+        }
+
+        return null;
+
+    }
+
 }
