@@ -745,7 +745,7 @@ abstract class Strict implements \ArrayAccess, \Iterator {
         if(! (array_key_exists($key, $this->values) && is_array($this->values[$key])))
             $this->values[$key] = array();
 
-        array_push($this->values[$key], $item);
+        $this->values[$key][] = $item;
 
         return $item;
 
