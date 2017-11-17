@@ -39,11 +39,6 @@ abstract class DataTypeConverter  {
         if(array_key_exists($type, DataTypeConverter::$type_aliases))
             $type = DataTypeConverter::$type_aliases[$type];
 
-        if($value instanceof \Iterator
-            || $value instanceof \ArrayIterator
-            || $value instanceof \IteratorAggregate)
-            $value = iterator_to_array($value);
-
         if (in_array($type, DataTypeConverter::$known_types)) {
 
             if(is_array($value) && array_key_exists('__hz_value', $value) && array_key_exists('__hz_label', $value)){
