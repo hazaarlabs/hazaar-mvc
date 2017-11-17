@@ -159,13 +159,13 @@ abstract class Strict extends DataTyper implements \ArrayAccess, \Iterator {
                 if ($type = ake($definition, 'type')){
 
                     /*
-                     * If a type is an array, list, or model, then prepare the value as an empty Strict\Map class.
+                     * If a type is an array, list, or model, then prepare the value as an empty Strict\ChildArray class.
                      */
                     if ($type == 'array' || $type == 'list' ) {
 
                         if (array_key_exists('arrayOf', $definition)) {
 
-                            $value = new Map($definition['arrayOf'], $value);
+                            $value = new ChildArray($definition['arrayOf'], $value);
 
                         } else {
 
@@ -175,7 +175,7 @@ abstract class Strict extends DataTyper implements \ArrayAccess, \Iterator {
 
                     }elseif($type == 'model' && array_key_exists('items', $definition)) {
 
-                        $value = new SubModel($definition['items'], $value);
+                        $value = new ChildModel($definition['items'], $value);
 
                     }
 
@@ -390,9 +390,9 @@ abstract class Strict extends DataTyper implements \ArrayAccess, \Iterator {
 
         if (\Hazaar\Map::is_array($value)
             && array_key_exists('arrayOf', $def)
-            && !$value instanceof Map) {
+            && !$value instanceof ChildArray) {
 
-            $value = new Map($def['arrayOf'], $value);
+            $value = new ChildArray($def['arrayOf'], $value);
 
         }elseif(array_key_exists('type', $def) && $def['type'] == 'array' && is_array($value)){
 
@@ -514,7 +514,7 @@ abstract class Strict extends DataTyper implements \ArrayAccess, \Iterator {
 
         if (ake($def, 'type') == 'model') {
 
-            if ($this->values[$key] instanceof SubModel)
+            if ($this->values[$key] instanceof ChildModel)
                 $this->values[$key]->populate($value);
 
         } else {
@@ -562,7 +562,7 @@ abstract class Strict extends DataTyper implements \ArrayAccess, \Iterator {
         if($arrayOf = ake($def, 'arrayOf')){
 
             if(is_array($arrayOf))
-                $item = new SubModel($arrayOf, $item);
+                $item = new ChildModel($arrayOf, $item);
             else
                 $this->convertType($item, $arrayOf);
 
@@ -766,7 +766,7 @@ abstract class Strict extends DataTyper implements \ArrayAccess, \Iterator {
 
                     $value = $value->toArray();
 
-                } elseif (is_array($value) || $value instanceof Map) {
+                } elseif (is_array($value) || $value instanceof ChildArray) {
 
                     $value = $this->resolveArray($value, $disable_callbacks, $next, $show_hidden);
 
@@ -814,7 +814,7 @@ abstract class Strict extends DataTyper implements \ArrayAccess, \Iterator {
     }
 
     /**
-     * @detail Return the current element in the Map
+     * @detail Return the current element in the model
      *
      * @since 1.0.0
      */
@@ -837,7 +837,7 @@ abstract class Strict extends DataTyper implements \ArrayAccess, \Iterator {
     }
 
     /**
-     * @detail Return the current key from the Map
+     * @detail Return the current key from the model
      *
      * @since 1.0.0
      */
@@ -848,7 +848,7 @@ abstract class Strict extends DataTyper implements \ArrayAccess, \Iterator {
     }
 
     /**
-     * @detail Move to the next element in the Map
+     * @detail Move to the next element in the model
      *
      * @since 1.0.0
      */
@@ -1039,17 +1039,3 @@ abstract class Strict extends DataTyper implements \ArrayAccess, \Iterator {
     }
 
 }
-
-class SubModel extends Strict {
-
-    function __construct($field_definition, $values = array()) {
-
-        parent::loadDefinition($field_definition);
-
-        if ($values)
-            $this->populate($values);
-
-    }
-
-}
-
