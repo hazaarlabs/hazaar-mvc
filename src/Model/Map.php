@@ -16,12 +16,15 @@ class Map extends DataTyper implements \ArrayAccess, \Iterator {
 
     private $values = array();
 
-    function __construct($type, $values){
+    function __construct($type, $values = array()){
 
         if(!(is_array($type) || in_array($type, DataTyper::$known_types) || class_exists($type)))
             throw new \Exception('Unknown/Unsupported data type: ' . $type);
 
         $this->type = $type;
+
+        if(!is_array($values))
+            $values = ($values === null) ? array() : array($values);
 
         foreach($values as $index => $value)
             $this->offsetSet($index, $value);
