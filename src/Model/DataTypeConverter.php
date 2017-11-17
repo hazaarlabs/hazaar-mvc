@@ -2,7 +2,7 @@
 
 namespace Hazaar\Model;
 
-abstract class DataTyper  {
+abstract class DataTypeConverter  {
 
     /**
      * The list of known variable types that are supported by strict models.
@@ -36,23 +36,23 @@ abstract class DataTyper  {
 
     protected static function convertType(&$value, $type) {
 
-        if(array_key_exists($type, DataTyper::$type_aliases))
-            $type = DataTyper::$type_aliases[$type];
+        if(array_key_exists($type, DataTypeConverter::$type_aliases))
+            $type = DataTypeConverter::$type_aliases[$type];
 
         if($value instanceof \Iterator
             || $value instanceof \ArrayIterator
             || $value instanceof \IteratorAggregate)
             $value = iterator_to_array($value);
 
-        if (in_array($type, DataTyper::$known_types)) {
+        if (in_array($type, DataTypeConverter::$known_types)) {
 
             if(is_array($value) && array_key_exists('__hz_value', $value) && array_key_exists('__hz_label', $value)){
 
                 if($type !== 'array'){
 
-                    $value = new dataBinderValue(ake($value, '__hz_value'), ake($value, '__hz_label'));
+                    $value = new DataBinderValue(ake($value, '__hz_value'), ake($value, '__hz_label'));
 
-                    DataTyper::convertType($value->value, $type);
+                    DataTypeConverter::convertType($value->value, $type);
 
                     return $value;
 

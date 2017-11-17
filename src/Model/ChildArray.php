@@ -10,7 +10,7 @@ namespace Hazaar\Model;
  * @version 1.0
  * @author JamieCarl
  */
-class ChildArray extends DataTyper implements \ArrayAccess, \Iterator {
+class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator {
 
     private $type;
 
@@ -18,7 +18,7 @@ class ChildArray extends DataTyper implements \ArrayAccess, \Iterator {
 
     function __construct($type, $values = array()){
 
-        if(!(is_array($type) || in_array($type, DataTyper::$known_types) || class_exists($type)))
+        if(!(is_array($type) || in_array($type, DataTypeConverter::$known_types) || class_exists($type)))
             throw new \Exception('Unknown/Unsupported data type: ' . $type);
 
         $this->type = $type;
@@ -48,7 +48,7 @@ class ChildArray extends DataTyper implements \ArrayAccess, \Iterator {
         if(is_array($this->type))
             $value = new ChildModel($this->type, $value);
         else
-            DataTyper::convertType($value, $this->type);
+            DataTypeConverter::convertType($value, $this->type);
 
         if($offset === null)
             $this->values[] = $value;
