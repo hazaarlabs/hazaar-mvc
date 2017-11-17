@@ -3,9 +3,11 @@
 namespace Hazaar\Model;
 
 /**
- * Array short summary.
+ * Strict model child array
  *
- * Array description.
+ * The ChildArray class is designed to simple wrap the standard functions of a
+ * PHP array with the difference that it is instantiated with a data type that
+ * all the values it contains will be converted to.
  *
  * @version 1.0
  * @author JamieCarl
@@ -16,6 +18,17 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator {
 
     private $values = array();
 
+    /**
+     * ChildArray Constructor
+     * 
+     * The constructor simply takes the data type to use to convert all the items
+     * stored in this array.  This is any known data type (int, bool, etc) or even
+     * an object class.  We use the same DataTypeConverter class as a strict model.
+     * 
+     * @param mixed $type The data type to convert items to.
+     * @param mixed $values The initial array of items to populate the object with.
+     * @throws \Exception 
+     */
     function __construct($type, $values = array()){
 
         if(!(is_array($type) || in_array($type, DataTypeConverter::$known_types) || class_exists($type)))
