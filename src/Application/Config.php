@@ -27,7 +27,7 @@ class Config extends \Hazaar\Map {
 
     private $source;
 
-    private $loaded = FALSE;
+    private $loaded = false;
 
     /**
      * @detail      The application configuration constructor loads the settings from the configuration file specified
@@ -57,8 +57,13 @@ class Config extends \Hazaar\Map {
 
         $this->env = $env;
 
-        if($this->source = trim($source_file))
+        if($this->source = trim($source_file)){
+
             $config = $this->load($this->source, $defaults, $path_type, $override_paths);
+
+            $this->loaded = ($config->count() > 0);
+
+        }
 
         parent::__construct($config);
 
@@ -151,7 +156,7 @@ class Config extends \Hazaar\Map {
         $cache_key = null;
 
         //Check if APCu is available for caching and load the config file from cache if it exists.
-        if(!in_array('apcu', get_loaded_extensions())){
+        if(in_array('apcu', get_loaded_extensions())){
 
             $cache_key = md5(gethostname() . ':' . $source);
 
@@ -237,13 +242,8 @@ class Config extends \Hazaar\Map {
                     if(!($file = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $import_file)))
                         continue;
 
-                    $source = new \Hazaar\File($file);
-
-                    if($source->extension() == 'json')
-                        $config->fromJSON($source->get_contents(), true);
-
-                    elseif($source->extension() == 'ini')
-                        $config->fromDotNotation(parse_ini_string($source->get_contents(), true, INI_SCANNER_RAW), true);
+                    if($options = $this->loadSourceFile($file))
+                        $config->extend($options);
 
                 }
 
