@@ -57,14 +57,16 @@ class Config extends \Hazaar\Map {
 
         $this->env = $env;
 
-        if($source_file = trim($source_file))
-            $config = $this->load($source_file, $defaults, $path_type, $override_paths);
+        if($this->source = trim($source_file))
+            $config = $this->load($this->source, $defaults, $path_type, $override_paths);
 
         parent::__construct($config);
 
     }
 
     public function load($source, $defaults = array(), $path_type = FILE_PATH_CONFIG, $override_paths = null) {
+
+        $options = array();
 
         $sources = array($source);
 
@@ -79,7 +81,7 @@ class Config extends \Hazaar\Map {
 
         }
 
-        foreach($sources as &$source){
+        foreach($sources as $index => &$source){
 
             $info = pathinfo($source);
 
@@ -109,71 +111,99 @@ class Config extends \Hazaar\Map {
             }
 
             //If the file doesn't exist, then skip it.
-            if(!$source) continue;
+            if(!$source){
 
-            $cache_key = null;
+                unset($sources[$index]);
 
-            //Check if APCu is available for caching and load the config file from cache if it exists.
-            if(in_array('apcu', get_loaded_extensions())){
-
-                $cache_key = md5(gethostname() . ':' . $source);
-
-                if(apcu_exists($cache_key)) {
-
-                    $info = apcu_cache_info();
-
-                    $mtime = 0;
-
-                    foreach($info['cache_list'] as $cache) {
-
-                        if(array_key_exists('info', $cache) && $cache['info'] == $cache_key) {
-
-                            $mtime = ake($cache, 'mtime');
-
-                            break;
-
-                        }
-
-                    }
-
-                    if($mtime > filemtime($source))
-                        $source = apcu_fetch($cache_key);
-
-                }
+                continue;
 
             }
 
-            //If we have loaded this config file, continue on to the next
-            if(!is_string($source)) continue;
-
-            if($info['extension'] == 'json'){
-
-                if(!$source = json_decode(file_get_contents($source), true))
-                    throw new \Exception('Failed to parse JSON config file: ' . $source);
-
-            }elseif($info['extension'] == 'ini'){
-
-                if(!$source = array_to_dot_notation(parse_ini_string(file_get_contents($source), TRUE, INI_SCANNER_TYPED)))
-                    throw new \Exception('Failed to parse INI config file: ' . $source);
-
-            }
-
-            //Store the config file in cache
-            if($cache_key !== null) apcu_store($cache_key, $source);
+            $options[] = $this->loadSourceFile($source);
 
         }
 
-        if(!count($sources) > 0) return false;
+        if(!count($options) > 0) return false;
 
         $config = new \Hazaar\Map($defaults);
 
         //Load the main configuration file
-        if(!$this->loadConfigOptions(array_shift($sources), $config))
+        if(!$this->loadConfigOptions(array_shift($options), $config))
             return false;
 
         //Load any override files we have found
-        foreach($sources as $source)
-            $this->loadConfigOptions(array($this->env => $source), $config);
+        foreach($options as $o){
+
+            if(!$o) continue;
+
+            $this->loadConfigOptions(array($this->env => $o), $config);
+
+        }
+
+        return $config;
+
+    }
+
+    private function loadSourceFile($source){
+
+        $config = array();
+
+        $cache_key = null;
+
+        //Check if APCu is available for caching and load the config file from cache if it exists.
+        if(!in_array('apcu', get_loaded_extensions())){
+
+            $cache_key = md5(gethostname() . ':' . $source);
+
+            if(apcu_exists($cache_key)) {
+
+                $cache_info = apcu_cache_info();
+
+                $mtime = 0;
+
+                foreach($cache_info['cache_list'] as $cache) {
+
+                    if(array_key_exists('info', $cache) && $cache['info'] == $cache_key) {
+
+                        $mtime = ake($cache, 'mtime');
+
+                        break;
+
+                    }
+
+                }
+
+                if($mtime > filemtime($source))
+                    $source = apcu_fetch($cache_key);
+
+            }
+
+        }
+
+        //If we have loaded this config file, continue on to the next
+        if(!is_string($source))
+            return $source;
+
+        $extention = substr($source, strrpos($source, '.') + 1);
+
+        if($extention == 'json'){
+
+            if(!$config = json_decode(file_get_contents($source), true))
+                throw new \Exception('Failed to parse JSON config file: ' . $source);
+
+        }elseif($extention == 'ini'){
+
+            if(!$config = array_to_dot_notation(parse_ini_string(file_get_contents($source), TRUE, INI_SCANNER_TYPED)))
+                throw new \Exception('Failed to parse INI config file: ' . $source);
+
+        }else{
+
+            throw new \Exception('Unknown file format: ' . $source);
+
+        }
+
+        //Store the config file in cache
+        if($cache_key !== null) apcu_store($cache_key, $config);
 
         return $config;
 
