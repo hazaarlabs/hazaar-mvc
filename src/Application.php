@@ -219,10 +219,14 @@ class Application {
      */
     function __destruct() {
 
-        $shutdown = APPLICATION_PATH . DIRECTORY_SEPARATOR . ake($this->config->app->files, 'shutdown', 'shutdown.php');
+        if($this->config){
 
-        if(file_exists($shutdown))
-            include ($shutdown);
+            $shutdown = APPLICATION_PATH . DIRECTORY_SEPARATOR . ake($this->config->app->files, 'shutdown', 'shutdown.php');
+
+            if(file_exists($shutdown))
+                include ($shutdown);
+
+        }
 
     }
 

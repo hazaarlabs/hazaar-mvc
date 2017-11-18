@@ -20,7 +20,9 @@ register_shutdown_function('shutdown_handler');
  */
 function errorAndDie() {
 
-    if($app = \Hazaar\Application::getInstance()) {
+    $app = \Hazaar\Application::getInstance();
+
+    if($app instanceof Hazaar\Application && $app->config) {
 
         if($app->request)
             $app->request->resetAction();
