@@ -876,4 +876,10 @@ class Btree {
 
     }
 
+    public function dropCache(){
+        
+        $this->nodecache = array();
+
+    }
+
 }
