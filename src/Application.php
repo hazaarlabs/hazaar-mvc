@@ -145,11 +145,11 @@ class Application {
         );
 
         /*
-         * Load it with a config object. ifthe file doesn't exist
+         * Load it with a config object. if the file doesn't exist
          * it will just be an empty object that will handle calls to
          * it silently.
          */
-        $this->config = new Application\Config('application', $env, $defaults);
+        $this->config = new Application\Config('application', $env, $defaults, FILE_PATH_CONFIG, 'local');
 
         Application\Url::$base = $this->config->app->get('base');
 
