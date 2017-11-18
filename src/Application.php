@@ -145,11 +145,11 @@ class Application {
         );
 
         /*
-         * Load it with a config object. ifthe file doesn't exist
+         * Load it with a config object. if the file doesn't exist
          * it will just be an empty object that will handle calls to
          * it silently.
          */
-        $this->config = new Application\Config('application', $env, $defaults);
+        $this->config = new Application\Config('application', $env, $defaults, FILE_PATH_CONFIG, 'local');
 
         Application\Url::$base = $this->config->app->get('base');
 
@@ -219,10 +219,14 @@ class Application {
      */
     function __destruct() {
 
-        $shutdown = APPLICATION_PATH . DIRECTORY_SEPARATOR . ake($this->config->app->files, 'shutdown', 'shutdown.php');
+        if($this->config){
 
-        if(file_exists($shutdown))
-            include ($shutdown);
+            $shutdown = APPLICATION_PATH . DIRECTORY_SEPARATOR . ake($this->config->app->files, 'shutdown', 'shutdown.php');
+
+            if(file_exists($shutdown))
+                include ($shutdown);
+
+        }
 
     }
 
