@@ -430,7 +430,13 @@ class File {
      */
     public function parseJSON($assoc = FALSE) {
 
-        return json_decode($this->get_contents(), $assoc);
+        $json = $this->get_contents();
+
+        $bom = pack('H*','EFBBBF');
+
+        $json = preg_replace("/^$bom/", '', $json);
+
+        return json_decode($json, $assoc);
 
     }
 
