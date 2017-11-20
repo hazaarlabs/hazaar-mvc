@@ -2,7 +2,7 @@
 
 namespace Hazaar\Model;
 
-abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterator {
+abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterator, \Countable {
 
     /**
      * Undefined values will be ignored. This is checked first.
