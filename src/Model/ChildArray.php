@@ -12,7 +12,7 @@ namespace Hazaar\Model;
  * @version 1.0
  * @author JamieCarl
  */
-class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator {
+class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \Countable {
 
     private $type;
 
@@ -51,7 +51,7 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator {
      *
      * ChildArray::walk() is not affected by the internal array pointer of array. ChildArray::walk() will
      * walk through the entire array regardless of pointer position.
-     * 
+     *
      * For more information on this method see PHP's array_walk() function.
      *
      * @param mixed $callback   Typically, callback takes on two parameters. The array parameter's value being
@@ -125,6 +125,12 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator {
     public function rewind(){
 
         return reset($this->values);
+
+    }
+
+    public function count(){
+
+        return count($this->values);
 
     }
 

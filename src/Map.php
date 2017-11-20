@@ -82,7 +82,7 @@ namespace Hazaar;
  *
  * @since       1.0.0
  */
-class Map implements \ArrayAccess, \Iterator {
+class Map implements \ArrayAccess, \Iterator, \Countable {
 
     /**
      * Holds the original child objects and values
@@ -387,22 +387,19 @@ class Map implements \ArrayAccess, \Iterator {
 
     public function count($ignorenulls = FALSE) {
 
-        if($ignorenulls) {
+        if($ignorenulls == false)
+            return count($this->elements);
 
-            $count = 0;
+        $count = 0;
 
-            foreach($this->elements as $elem) {
+        foreach($this->elements as $elem) {
 
-                if($elem !== NULL)
-                    $count++;
-
-            }
-
-            return $count;
+            if($elem !== NULL)
+                $count++;
 
         }
 
-        return count($this->elements);
+        return $count;
 
     }
 
