@@ -88,10 +88,8 @@ class Config extends \Hazaar\Map {
 
         foreach($sources as $index => &$source){
 
-            $info = pathinfo($source);
-
             //If we have an extension, just use that file.
-            if(array_key_exists('extension', $info)){
+            if(strrpos($source, '.') !== false){
 
                 $source = \Hazaar\Loader::getFilePath($path_type, $source);
 
@@ -103,13 +101,8 @@ class Config extends \Hazaar\Map {
 
                     $filename = $source . '.' . $ext;
 
-                    if($source = \Hazaar\Loader::getFilePath($path_type, $filename)){
-
-                        $info['extension'] = $ext;
-
+                    if($source = \Hazaar\Loader::getFilePath($path_type, $filename))
                         break;
-
-                    }
 
                 }
 
@@ -189,16 +182,18 @@ class Config extends \Hazaar\Map {
         if(!is_string($source))
             return $source;
 
-        $extention = substr($source, strrpos($source, '.') + 1);
+        $file = new \Hazaar\File($source);
+
+        $extention = $file->extension();
 
         if($extention == 'json'){
 
-            if(!$config = json_decode(file_get_contents($source), true))
+            if(!$config = $file->parseJSON(true))
                 throw new \Exception('Failed to parse JSON config file: ' . $source);
 
         }elseif($extention == 'ini'){
 
-            if(!$config = array_to_dot_notation(parse_ini_string(file_get_contents($source), TRUE, INI_SCANNER_TYPED)))
+            if(!$config = array_to_dot_notation(parse_ini_string($file->get_contents(), TRUE, INI_SCANNER_TYPED)))
                 throw new \Exception('Failed to parse INI config file: ' . $source);
 
         }else{
