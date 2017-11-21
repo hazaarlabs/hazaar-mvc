@@ -980,7 +980,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                 }
 
-            }elseif(is_array($value)){
+            }elseif(is_array($value) || $value instanceof ChildArray){
 
                 if(count($value) == 0 && ($hide_empty || ake($key_def, 'force_hide_empty') == true))
                     continue;
@@ -1006,7 +1006,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                         }
 
-                    }elseif(is_array($subValue)){
+                    }elseif(is_array($subValue) || $subValue instanceof ChildArray){
 
                         $subDef = $key_def;
 
