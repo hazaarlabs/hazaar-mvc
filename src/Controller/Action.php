@@ -198,10 +198,17 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
         }
 
-        if(is_array($value))
+        $type = 's';
+
+        if(is_array($value)){
+
             $value = json_encode($value);
 
-        echo dechex(strlen($value)) . "\0" . $value;
+            $type = 'a';
+
+        }
+
+        echo dechex(strlen($value)) . "\0" . $type . $value;
 
         flush();
 

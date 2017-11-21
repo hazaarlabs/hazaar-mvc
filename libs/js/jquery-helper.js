@@ -11,15 +11,24 @@ XMLHttpRequest.prototype.read = function () {
     if (this.response.length <= this.readOffset)
         return null;
     var pos = this.response.substr(this.readOffset).indexOf("\0");
-    if (pos < 0)
+    if (pos <= 0)
         return null;
     var len = parseInt('0x' + this.response.substr(this.readOffset, pos));
-    var part = this.response.substr(this.readOffset + pos + 1, len);
+    var type = this.response.substr(this.readOffset + pos + 1, 1);
+    var part = this.response.substr(this.readOffset + pos + 2, len);
     if (part.length < len)
         return null;
-    this.readOffset += (part.length + pos + 1);
+    this.readOffset += (part.length + pos + 2);
+    if (type == 'a') part = JSON.parse(part);
     return part;
 };
+
+XMLHttpRequest.prototype.last = function () {
+    var type = this.response.substr(this.readOffset + 1, 1);
+    var part = this.response.substr(this.readOffset + 2);
+    if (type == 'a') part = JSON.parse(part);
+    return part;
+}
 
 /**
  * jQuery Ajax Stream Support
@@ -40,7 +49,9 @@ jQuery.stream = function (url, options) {
         },
         xhr: function () {
             var xhr = new XMLHttpRequest();
-            xhr.upload.onprogress = function (event) { if (typeof callbacks.uploadProgress == 'function') callbacks.uploadProgress(event); };
+            xhr.upload.onprogress = function (event) {
+                if (typeof callbacks.uploadProgress == 'function') callbacks.uploadProgress(event);
+            };
             xhr.onprogress = function (event) {
                 var response;
                 while (response = this.read()) {
@@ -49,9 +60,8 @@ jQuery.stream = function (url, options) {
                 }
             };
             xhr.onloadend = function (event) {
-                var response = this.read();
                 if (typeof callbacks.done == 'function')
-                    callbacks.done(response, event.statusText, ajax);
+                    callbacks.done(this.last(), event.statusText, ajax);
             };
             return xhr;
         }
