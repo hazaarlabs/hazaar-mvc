@@ -440,6 +440,28 @@ class File {
 
     }
 
+    public function moveTo($destination, $create_dest = FALSE, $dstBackend = NULL) {
+
+        $move = $this->exists();
+
+        if(!$this->copyTo($destination, $create_dest, $dstBackend))
+            return false;
+
+        if($move){
+
+            $this->backend->unlink($this->source_file);
+
+            $this->source_file = $destination . '/' . $this->basename();
+
+            if($dstBackend)
+                $this->backend = $dstBackend;
+
+        }
+
+        return true;
+
+    }
+
     public function copyTo($destination, $create_dest = FALSE, $dstBackend = NULL) {
 
         if(! $dstBackend)
