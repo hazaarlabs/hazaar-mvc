@@ -34,6 +34,12 @@ class Dir {
 
     }
 
+    public function __toString(){
+
+        return $this->path();
+
+    }
+
     public function path($suffix = NULL) {
 
         return $this->fixPath($this->path, $suffix);
