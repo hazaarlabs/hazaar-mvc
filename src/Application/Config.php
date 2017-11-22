@@ -23,6 +23,8 @@ namespace Hazaar\Application;
  */
 class Config extends \Hazaar\Map {
 
+    static public $override_paths = array('local');
+
     private $env;
 
     private $source;
@@ -47,8 +49,7 @@ class Config extends \Hazaar\Map {
      *
      * @param       mixed   $override_paths An array of subdirectory names to look for overrides.
      */
-    function __construct($source_file = null, $env = NULL,
-        $defaults = array(), $path_type = FILE_PATH_CONFIG, $override_paths = null) {
+    function __construct($source_file = null, $env = NULL, $defaults = array(), $path_type = FILE_PATH_CONFIG) {
 
         $config = null;
 
@@ -59,7 +60,7 @@ class Config extends \Hazaar\Map {
 
         if($this->source = trim($source_file)){
 
-            $config = $this->load($this->source, $defaults, $path_type, $override_paths);
+            $config = $this->load($this->source, $defaults, $path_type, Config::$override_paths);
 
             $this->loaded = ($config->count() > 0);
 
