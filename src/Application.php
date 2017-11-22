@@ -149,7 +149,7 @@ class Application {
          * it will just be an empty object that will handle calls to
          * it silently.
          */
-        $this->config = new Application\Config('application', $env, $defaults, FILE_PATH_CONFIG, 'local');
+        $this->config = new Application\Config('application', $env, $defaults, FILE_PATH_CONFIG);
 
         Application\Url::$base = $this->config->app->get('base');
 
