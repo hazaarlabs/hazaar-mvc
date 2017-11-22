@@ -23,10 +23,14 @@ XMLHttpRequest.prototype.read = function () {
     return part;
 };
 
+XMLHttpRequest.prototype.lastType = function () {
+    return this.response.substr(this.readOffset + 1, 1);
+};
+
 XMLHttpRequest.prototype.last = function () {
     var type = this.response.substr(this.readOffset + 1, 1);
     var part = this.response.substr(this.readOffset + 2);
-    if (type == 'a') part = JSON.parse(part);
+    if (type == 'a' || type == 'e') part = JSON.parse(part);
     return part;
 }
 
@@ -60,15 +64,24 @@ jQuery.stream = function (url, options) {
                 }
             };
             xhr.onloadend = function (event) {
-                if (typeof callbacks.done == 'function')
+                if (this.lastType() == 'e') {
+                    ajax.responseJSON = this.last();
+                    if (typeof callbacks.error == 'function')
+                        callbacks.error(ajax, 'error', 'Internal Error');
+                } else if (typeof callbacks.done == 'function')
                     callbacks.done(this.last(), event.statusText, ajax);
             };
             return xhr;
         }
     }));
-    ajax.uploadProgress = function (callback) { callbacks.uploadProgress = callback; return this; };
-    ajax.progress = function (callback) { callbacks.progress = callback; return this; };
-    ajax.done = function (callback) { callbacks.done = callback; return this; };
+    ajax.uploadProgress = function (cb) { callbacks.uploadProgress = cb; return this; };
+    ajax.progress = function (cb) { callbacks.progress = cb; return this; };
+    ajax.done = function (cb) { callbacks.done = cb; return this; };
+    ajax.error = function (cb) { callbacks.error = cb; return this; };
+    ajax.fail(function (xhr, status, statusText) {
+        if (typeof callbacks.error == 'function')
+            callbacks.error(xhr, status, statusText);
+    });
     return ajax;
 };
 
