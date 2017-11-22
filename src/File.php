@@ -876,6 +876,9 @@ class File {
         if(!$this->handle)
             return false;
 
+        if($length === null)
+            return fwrite($this->handle, $string);
+
         return fwrite($this->handle, $string, $length);
 
     }
