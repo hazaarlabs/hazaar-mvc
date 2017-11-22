@@ -24,7 +24,7 @@ function errorAndDie() {
 
     $headers = array_unflatten(headers_list(), ':', "\n");
 
-    if($headers['X-Response-Type'] == 'stream'){
+    if(ake($headers, 'X-Response-Type') == 'stream'){
 
         $stream = new \Hazaar\Controller\Response\Stream(func_get_arg(0));
 
