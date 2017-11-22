@@ -291,7 +291,7 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
-    protected function json(){
+    public function json(){
 
         $error = array(
             'ok' => FALSE,
@@ -320,7 +320,7 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
-    protected function xmlrpc(){
+    public function xmlrpc(){
 
         $xml = new \SimpleXMLElement('<xml/>');
 
@@ -360,7 +360,7 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
-    protected function text(){
+    public function text(){
 
         $out = "*****************************\n\tEXCEPTION\n*****************************\n\n";
 
@@ -394,7 +394,7 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
-    protected function html(){
+    public function html(){
 
         $response = new Response\Html($this->code);
 

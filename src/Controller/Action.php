@@ -190,6 +190,8 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
             header('X-Accel-Buffering: no');
 
+            header('X-Response-Type: stream');
+
             header('Content-Type: application/octet-stream;charset=ISO-8859-1');
 
             flush();

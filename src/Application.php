@@ -552,7 +552,7 @@ class Application {
         }
         catch(Controller\Exception\HeadersSent $e) {
 
-            die('HEADERS SENT');
+            die("HEADERS SENT");
 
         }
         catch(Exception $e) {
