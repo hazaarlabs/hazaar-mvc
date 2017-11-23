@@ -59,10 +59,73 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
      * @param mixed $userdata   If the optional userdata parameter is supplied, it will be passed as the third
      *                          parameter to the callback.
      */
-    public function walk($callback, $userdata = NULL){
+    public function array_walk($callback, $userdata = NULL){
 
         foreach($this->values as $key => &$value)
             $callback($value, $key, $userdata);
+
+    }
+
+    /**
+     * Magic method for calling array_* functions on the ChildArray class.
+     *
+     * @param mixed $func
+     *
+     * @param mixed $argv
+     *
+     * @throws BadMethodCallException
+     *
+     * @return mixed
+     */
+    public function __call($func, $argv){
+
+        if (!is_callable($func) || substr($func, 0, 6) !== 'array_')
+            throw new \BadMethodCallException(__CLASS__.'->'.$func);
+
+        $args =  array_merge(array($this->values), $argv);
+
+        return call_user_func_array($func, $args);
+
+    }
+
+    /**
+     * ChildArray implementation of the implode function
+     *
+     * @param mixed $glue   The delimeter.  Defaults to an empty string.
+     *
+     * @return string
+     */
+    public function implode($glue){
+
+        return implode($glue, $this->values);
+
+    }
+
+    /**
+     * ChildArray implementation of the explode function.
+     *
+     * This operates mostly the same as the built-in PHP explode function except that
+     * it requires a type.  The purpose of a ChildArray is to maintain data type of
+     * it's elements so a type is required.
+     *
+     * @param mixed $type   The data type of enforce on this ChildArray.
+     *
+     * @param mixed $glue   The boundary string.
+     *
+     * @param mixed $string The input string.
+     *
+     * @param mixed $limit  If limit is set and positive, the returned array will contain a maximum of limit
+     *                      elements with the last element containing the rest of string.
+     *
+     *                      If the limit parameter is negative, all components except the last -limit are returned.
+     *
+     *                      If the limit parameter is zero, then this is treated as 1.
+     *
+     * @return ChildArray
+     */
+    static function explode($type, $glue, $string, $limit = PHP_INT_MAX){
+
+        return new ChildArray($type, explode($glue, $string, $limit));
 
     }
 
