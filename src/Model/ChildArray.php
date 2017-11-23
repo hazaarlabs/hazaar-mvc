@@ -82,9 +82,7 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
         if (!is_callable($func) || substr($func, 0, 6) !== 'array_')
             throw new \BadMethodCallException(__CLASS__.'->'.$func);
 
-        $args =  array_merge(array($this->values), $argv);
-
-        return call_user_func_array($func, $args);
+        return call_user_func_array($func, array_merge(array($this->values), $argv));
 
     }
 
