@@ -61,7 +61,7 @@ jQuery.stream = function (url, options) {
                     if (typeof callbacks.error == 'function')
                         callbacks.error(ajax, 'error', 'Internal Error');
                 } else if (typeof callbacks.done == 'function')
-                    callbacks.done(this.last(), event.statusText, ajax);
+                    callbacks.done(worker.last(), event.statusText, ajax);
             };
             return worker.xhr;
         }
