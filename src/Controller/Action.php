@@ -186,17 +186,26 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
         if(! headers_sent()) {
 
-            ob_end_flush();
+            if(count(ob_get_status()) > 0)
+                ob_end_clean();
 
             header('X-Accel-Buffering: no');
 
             header('X-Response-Type: stream');
+
+            header("Cache-Control: no-cache");
+
+            header("Cache-Control: private");
+
+            header("Pragma: no-cache");
 
             header('Content-Type: application/octet-stream;charset=ISO-8859-1');
 
             flush();
 
             $this->stream = TRUE;
+
+            ob_implicit_flush();
 
         }
 
@@ -211,8 +220,6 @@ abstract class Action extends \Hazaar\Controller\Basic {
         }
 
         echo dechex(strlen($value)) . "\0" . $type . $value;
-
-        flush();
 
         return TRUE;
 
