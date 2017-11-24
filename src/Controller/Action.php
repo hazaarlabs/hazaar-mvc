@@ -191,6 +191,8 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
             header('Content-Type: application/octet-stream;charset=ISO-8859-1');
 
+            header('Content-Encoding: none');
+
             header("Cache-Control: no-cache, must-revalidate");
 
             header("Pragma: no-cache");
