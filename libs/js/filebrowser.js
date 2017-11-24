@@ -77,8 +77,7 @@ var fbConnector = function (browser, url, filter, with_meta) {
             url: this.url,
             type: 'POST',
             data: packet
-        }).progress(function (data, textStatus, jqXHR) {
-            var response = JSON.parse(data);
+        }).progress(function (response, textStatus, jqXHR) {
             if (response.error) {
                 conn._error(response.error);
                 deferred.reject(this, 'error');
