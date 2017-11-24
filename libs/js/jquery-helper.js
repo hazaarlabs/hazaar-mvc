@@ -1,40 +1,4 @@
 /**
- * XHR HTTP Stream Support
- *
- * This function allows streamed HTTP response data to be read incrementally from the responseText.
- *
- * @returns {string}
- */
-XMLHttpRequest.prototype.read = function () {
-    if (typeof this.readOffset == 'undefined')
-        this.readOffset = 0;
-    if (this.response.length <= this.readOffset)
-        return null;
-    var pos = this.response.substr(this.readOffset).indexOf("\0");
-    if (pos <= 0)
-        return null;
-    var len = parseInt('0x' + this.response.substr(this.readOffset, pos));
-    var type = this.response.substr(this.readOffset + pos + 1, 1);
-    var part = this.response.substr(this.readOffset + pos + 2, len);
-    if (part.length < len)
-        return null;
-    this.readOffset += (part.length + pos + 2);
-    if (type == 'a') part = JSON.parse(part);
-    return part;
-};
-
-XMLHttpRequest.prototype.lastType = function () {
-    return this.response.substr(this.readOffset + 1, 1);
-};
-
-XMLHttpRequest.prototype.last = function () {
-    var type = this.response.substr(this.readOffset + 1, 1);
-    var part = this.response.substr(this.readOffset + 2);
-    if (type == 'a' || type == 'e') part = JSON.parse(part);
-    return part;
-}
-
-/**
  * jQuery Ajax Stream Support
  *
  * This jQuery function extends the standard AJAX function to allow progress events for streaming over HTTP.
@@ -47,31 +11,59 @@ jQuery.stream = function (url, options) {
         options = url;
         url = options.url;
     }
+    var worker = {
+        readOffset: 0,
+        xhr: null,
+        read: function () {
+            if (this.xhr.response.length <= this.readOffset)
+                return null;
+            var pos = this.xhr.response.substr(this.readOffset).indexOf("\0");
+            if (pos <= 0)
+                return null;
+            var len = parseInt('0x' + this.xhr.response.substr(this.readOffset, pos));
+            var type = this.xhr.response.substr(this.readOffset + pos + 1, 1);
+            var part = this.xhr.response.substr(this.readOffset + pos + 2, len);
+            if (part.length < len)
+                return null;
+            this.readOffset += (part.length + pos + 2);
+            if (type == 'a') part = JSON.parse(part);
+            return part;
+        },
+        lastType: function (xhr) {
+            return this.xhr.response.substr(this.readOffset + 1, 1);
+        },
+        last: function (xhr) {
+            var type = this.xhr.response.substr(this.readOffset + 1, 1);
+            var part = this.xhr.response.substr(this.readOffset + 2);
+            if (type == 'a' || type == 'e') part = JSON.parse(part);
+            return part;
+        }
+    }
     var ajax = jQuery.ajax(url, jQuery.extend(options, {
         beforeSend: function (request) {
             request.setRequestHeader("X-Request-Type", "stream");
         },
         xhr: function () {
-            var xhr = new XMLHttpRequest();
-            xhr.upload.onprogress = function (event) {
+            worker.xhr = new XMLHttpRequest();
+            worker.xhr.upload.onprogress = function (event) {
                 if (typeof callbacks.uploadProgress == 'function') callbacks.uploadProgress(event);
             };
-            xhr.onprogress = function (event) {
+            worker.xhr.onprogress = function (event) {
                 var response;
-                while (response = this.read()) {
+                while (response = worker.read()) {
                     if (typeof callbacks.progress == 'function')
                         callbacks.progress(response, event.statusText, ajax);
                 }
             };
-            xhr.onloadend = function (event) {
-                if (this.lastType() == 'e') {
-                    ajax.responseJSON = this.last();
+            worker.xhr.onloadend = function (event) {
+                if (worker.lastType() == 'e') {
+                    ajax.responseJSON = worker.last();
                     if (typeof callbacks.error == 'function')
                         callbacks.error(ajax, 'error', 'Internal Error');
                 } else if (typeof callbacks.done == 'function')
                     callbacks.done(this.last(), event.statusText, ajax);
             };
-            return xhr;
+            return worker.xhr;
         }
     }));
     ajax.uploadProgress = function (cb) { callbacks.uploadProgress = cb; return this; };
