@@ -124,9 +124,22 @@ abstract class REST extends \Hazaar\Controller {
 
                         foreach($parts as $part){
 
-                            list($key, $value) = explode('=', $part, 2);
+                            //If there is no equals sign, skip this one.
+                            if(strpos($part, '=') > 0){
 
-                            $args[$key] = eval('return ' . $value . ';');
+                                list($key, $value) = explode('=', $part, 2);
+
+                                if($value = json_decode($value, true))
+                                    $args[$key] = $value;
+
+                            }else{
+
+                                if(!array_key_exists('properties', $args))
+                                    $args['properties'] = array();
+
+                                $args['properties'][] = trim($part);
+
+                            }
 
                         }
 
@@ -364,8 +377,24 @@ abstract class REST extends \Hazaar\Controller {
 
             $params = array();
 
-            foreach($method->getParameters() as $p)
-                $params[$p->getPosition()] = ake($args, $p->getName(), ($p->isDefaultValueAvailable() ? $p->getDefaultValue() : null));
+            foreach($method->getParameters() as $p){
+
+                $key = $p->getName();
+
+                $value = null;
+
+                if(array_key_exists($key, $args))
+                    $value = $args[$key];
+                elseif(array_key_exists('defaults', $endpoint['args']) && array_key_exists($key, $endpoint['args']['defaults']))
+                    $value = $endpoint['args']['defaults'][$key];
+                elseif($p->isDefaultValueAvailable())
+                    $value = $p->getDefaultValue();
+                else
+                    throw new \Exception("Missing value for parameter '$key'.", 400);
+
+                $params[$p->getPosition()] = $value;
+
+            }
 
             $response = new \Hazaar\Controller\Response\Json();
 
