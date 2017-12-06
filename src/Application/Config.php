@@ -60,9 +60,8 @@ class Config extends \Hazaar\Map {
 
         if($this->source = trim($source_file)){
 
-            $config = $this->load($this->source, $defaults, $path_type, Config::$override_paths);
-
-            $this->loaded = ($config->count() > 0);
+            if($config = $this->load($this->source, $defaults, $path_type, Config::$override_paths))
+                $this->loaded = ($config->count() > 0);
 
         }
 
