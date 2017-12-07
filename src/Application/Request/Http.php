@@ -38,9 +38,16 @@ class Http extends \Hazaar\Application\Request {
     private $headers = array();
 
     /**
-     * Request body.  This is only used in certain circumstances such as with XML-RPC.
+     * Request body.  This is only used in certain circumstances such as with XML-RPC or REST.
+     * @var string The request body
      */
-    private $body;
+    public $body;
+
+    /**
+     * In the case where the request is of content-type application/json this is the decoded JSON body.
+     * @var object|array Body decoded with json_decode()
+     */
+    public $bodyJSON;
 
     /**
      * @detail      The HTTP init method takes only a single optional argument which is the
@@ -79,10 +86,10 @@ class Http extends \Hazaar\Application\Request {
 
             if($content_type = explode(';', $this->getHeader('Content-Type'))){
 
-                $json = json_decode($this->body, true);
+                $this->bodyJSON = json_decode($this->body, true);
 
-                if($content_type[0] == 'application/json' && $this->body && $json)
-                    $request = array_merge($request, $json);
+                if($content_type[0] == 'application/json' && $this->body && $this->bodyJSON)
+                    $request = array_merge($request, $this->bodyJSON);
 
             }
 
