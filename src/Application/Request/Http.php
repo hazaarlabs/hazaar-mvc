@@ -79,7 +79,9 @@ class Http extends \Hazaar\Application\Request {
 
             if($content_type = explode(';', $this->getHeader('Content-Type'))){
 
-                if($content_type[0] == 'application/json' && $this->body && ($json = json_decode($this->body, true)) !== false)
+                $json = json_decode($this->body, true);
+
+                if($content_type[0] == 'application/json' && $this->body && $json)
                     $request = array_merge($request, $json);
 
             }
