@@ -34,7 +34,7 @@ function ake($array, $key, $default = NULL, $non_empty = FALSE) {
     if ((is_array($array) || $array instanceof \ArrayAccess)
         && isset($array[$key])
         && $array[$key] !== NULL
-        && (!$non_empty || ($non_empty && is_string($array[$key]) && trim($array[$key]) !== NULL)))
+        && (!$non_empty || ($non_empty && ((is_string($array[$key] && trim($array[$key])) || $array[$key])) !== NULL)))
         return $array[$key];
 
     if ($array instanceof \Hazaar\Model\Strict)
@@ -1081,7 +1081,7 @@ function dump($data = NULL) {
 
         $app = Hazaar\Application::getInstance();
 
-        if($app && !($response = $app->request->getResponseType())){
+        if($app && $app->request && !($response = $app->request->getResponseType())){
 
             if (function_exists('apache_request_headers')) {
 

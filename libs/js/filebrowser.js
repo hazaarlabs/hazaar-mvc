@@ -77,8 +77,7 @@ var fbConnector = function (browser, url, filter, with_meta) {
             url: this.url,
             type: 'POST',
             data: packet
-        }).progress(function (data, textStatus, jqXHR) {
-            var response = JSON.parse(data);
+        }).progress(function (response, textStatus, jqXHR) {
             if (response.error) {
                 conn._error(response.error);
                 deferred.reject(this, 'error');
@@ -708,11 +707,12 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 }
             }
             host.searchBUTTON.click(function () {
+                host.itemsDIV.empty();
                 host._search(host.searchINPUT.val());
             });
             host.searchINPUT.keypress(function (e) {
                 if (e.keyCode == 13)
-                    host._search($(this).val());
+                    host.searchBUTTON.click();
             });
         };
         host._dir = function (item) {

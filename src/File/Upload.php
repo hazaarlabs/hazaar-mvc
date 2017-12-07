@@ -316,6 +316,8 @@ class Upload {
 
             $file = new \Hazaar\File($array['name']);
 
+            $file->set_mime_content_type($array['type']);
+
             $file->set_contents(file_get_contents($array['tmp_name']));
 
             return $file;

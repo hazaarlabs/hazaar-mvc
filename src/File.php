@@ -430,7 +430,35 @@ class File {
      */
     public function parseJSON($assoc = FALSE) {
 
-        return json_decode($this->get_contents(), $assoc);
+        $json = $this->get_contents();
+
+        $bom = pack('H*','EFBBBF');
+
+        $json = preg_replace("/^$bom/", '', $json);
+
+        return json_decode($json, $assoc);
+
+    }
+
+    public function moveTo($destination, $create_dest = FALSE, $dstBackend = NULL) {
+
+        $move = $this->exists();
+
+        if(!$this->copyTo($destination, $create_dest, $dstBackend))
+            return false;
+
+        if($move){
+
+            $this->backend->unlink($this->source_file);
+
+            $this->source_file = $destination . '/' . $this->basename();
+
+            if($dstBackend)
+                $this->backend = $dstBackend;
+
+        }
+
+        return true;
 
     }
 
@@ -847,6 +875,9 @@ class File {
 
         if(!$this->handle)
             return false;
+
+        if($length === null)
+            return fwrite($this->handle, $string);
 
         return fwrite($this->handle, $string, $length);
 

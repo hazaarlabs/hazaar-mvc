@@ -2,7 +2,7 @@
 
 namespace Hazaar\Model;
 
-abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterator {
+abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterator, \Countable {
 
     /**
      * Undefined values will be ignored. This is checked first.
@@ -159,23 +159,22 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                 if ($type = ake($definition, 'type')){
 
                     /*
-                     * If a type is an array, list, or model, then prepare the value as an empty Strict\ChildArray class.
+                     * If a type is an array or list, then prepare the value as an empty Strict\ChildArray class.
                      */
                     if ($type == 'array' || $type == 'list' ) {
 
-                        if (array_key_exists('arrayOf', $definition)) {
-
+                        if (array_key_exists('arrayOf', $definition))
                             $value = new ChildArray($definition['arrayOf'], $value);
 
-                        } else {
-
-                            $value = DataTypeConverter::convertType($value, $type);
-
-                        }
-
+                        //If the type is a model then we use the ChildModel class
                     }elseif($type == 'model' && array_key_exists('items', $definition)) {
 
                         $value = new ChildModel($definition['items'], $value);
+
+                        //Otherwise, just convert the type
+                    } elseif($value !== null) {
+
+                        $value = DataTypeConverter::convertType($value, $type);
 
                     }
 
@@ -980,7 +979,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                 }
 
-            }elseif(is_array($value)){
+            }elseif(is_array($value) || $value instanceof ChildArray){
 
                 if(count($value) == 0 && ($hide_empty || ake($key_def, 'force_hide_empty') == true))
                     continue;
@@ -1006,7 +1005,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                         }
 
-                    }elseif(is_array($subValue)){
+                    }elseif(is_array($subValue) || $subValue instanceof ChildArray){
 
                         $subDef = $key_def;
 

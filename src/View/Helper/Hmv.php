@@ -290,7 +290,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                 }
 
-            }elseif(is_array($item)){
+            }elseif(is_array($item) || $item instanceof \Hazaar\Model\ChildArray){
 
                 $labelTD = $this->html->td($this->html->block($this->section_tag, $label));
 

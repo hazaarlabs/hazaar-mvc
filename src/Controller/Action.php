@@ -186,24 +186,40 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
         if(! headers_sent()) {
 
-            ob_end_flush();
+            if(count(ob_get_status()) > 0)
+                ob_end_clean();
+
+            header('Content-Type: application/octet-stream;charset=ISO-8859-1');
+
+            header('Content-Encoding: none');
+
+            header("Cache-Control: no-cache, must-revalidate");
+
+            header("Pragma: no-cache");
 
             header('X-Accel-Buffering: no');
 
-            header('Content-Type: application/octet-stream;charset=ISO-8859-1');
+            header('X-Response-Type: stream');
 
             flush();
 
             $this->stream = TRUE;
 
+            ob_implicit_flush();
+
         }
 
-        if(is_array($value))
+        $type = 's';
+
+        if(is_array($value)){
+
             $value = json_encode($value);
 
-        echo dechex(strlen($value)) . "\0" . $value;
+            $type = 'a';
 
-        flush();
+        }
+
+        echo dechex(strlen($value)) . "\0" . $type . $value;
 
         return TRUE;
 

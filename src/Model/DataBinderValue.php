@@ -26,6 +26,33 @@ class DataBinderValue {
 
     }
 
+    /**
+     * Get a new dataBinderValue object if the supplied value is valid and non-null
+     * 
+     * If the value is NULL, then a new dataBinderValue will not be returned.  This method is useful for
+     * executing code conditionally if the value is a valid dataBinderValue value.
+     * 
+     * @param mixed $value 
+     * @param mixed $label 
+     * @return DataBinderValue|null
+     */
+    static function create($value, $label = null){
+
+        if($value === null)
+            return null;
+
+        if(is_array($value) && array_key_exists('__hz_value', $value) && array_key_exists('__hz_label', $value)){
+
+            $label = $value['__hz_label'];
+
+            $value = $value['__hz_value'];
+
+        }
+
+        return new DataBinderValue($value, $label);
+
+    }
+
     public function __toString(){
 
         if($this->name)

@@ -23,11 +23,13 @@ namespace Hazaar\Application;
  */
 class Config extends \Hazaar\Map {
 
+    static public $override_paths = array('local');
+
     private $env;
 
     private $source;
 
-    private $loaded = FALSE;
+    private $loaded = false;
 
     /**
      * @detail      The application configuration constructor loads the settings from the configuration file specified
@@ -36,10 +38,16 @@ class Config extends \Hazaar\Map {
      *
      * @since       1.0.0
      *
-     * @param       string $source The absolute path to the config file
+     * @param       string $source_file The absolute path to the config file
      *
-     * @param       string $env The application environment to read settings for.  Usually 'development' or
-     *                             'production'.
+     * @param       string $env         The application environment to read settings for.  Usually 'development' or
+     *                                  'production'.
+     *
+     * @param       mixed   $defaults   Initial defaut values.
+     *
+     * @param       mixed   $path_type  The search path type to look for configuration files.
+     *
+     * @param       mixed   $override_paths An array of subdirectory names to look for overrides.
      */
     function __construct($source_file = null, $env = NULL, $defaults = array(), $path_type = FILE_PATH_CONFIG) {
 
@@ -50,77 +58,10 @@ class Config extends \Hazaar\Map {
 
         $this->env = $env;
 
-        if($source_file = trim($source_file)) {
+        if($this->source = trim($source_file)){
 
-            $info = pathinfo($source_file);
-
-            //If we have an extension, just use that file.
-            if(array_key_exists('extension', $info)){
-
-                $this->source = \Hazaar\Loader::getFilePath($path_type, $source_file);
-
-            }else{ //Otherwise, search for files with supported extensions
-
-                $extensions = array('json', 'ini'); //Ordered by preference
-
-                foreach($extensions as $ext){
-
-                    $filename = $source_file . '.' . $ext;
-
-                    if($this->source = \Hazaar\Loader::getFilePath($path_type, $filename))
-                        break;
-
-                }
-
-            }
-
-            if($this->source){
-
-                //Check if APCu is available for caching and load the config from cache.
-                if(in_array('apcu', get_loaded_extensions())){
-
-                    $apc_key = md5(gethostname() . ':' . $this->source);
-
-                    if(apcu_exists($apc_key)) {
-
-                        $info = apcu_cache_info();
-
-                        $mtime = 0;
-
-                        foreach($info['cache_list'] as $cache) {
-
-                            if(array_key_exists('info', $cache) && $cache['info'] == $apc_key) {
-
-                                $mtime = ake($cache, 'mtime');
-
-                                break;
-
-                            }
-
-                        }
-
-                        if($mtime > filemtime($this->source)){
-
-                            $config = apcu_fetch($apc_key);
-
-                            $this->loaded = true;
-
-                        }
-
-                    }
-
-                }
-
-                if(!$this->loaded){
-
-                    $config = $this->load($this->source, $defaults);
-
-                    if(isset($apc_key))
-                        apcu_store($apc_key, $config->toArray());
-
-                }
-
-            }
+            if($config = $this->load($this->source, $defaults, $path_type, Config::$override_paths))
+                $this->loaded = ($config->count() > 0);
 
         }
 
@@ -128,59 +69,153 @@ class Config extends \Hazaar\Map {
 
     }
 
-    public function load($source, $defaults = array()) {
+    public function load($source, $defaults = array(), $path_type = FILE_PATH_CONFIG, $override_paths = null) {
 
-        $options = new \Hazaar\Map();
+        $options = array();
 
-        if(file_exists($source)) {
+        $sources = array($source);
 
-            if($options->isEmpty()) {
+        if($override_paths){
 
-                $info = pathinfo($source);
+            if(!is_array($override_paths))
+                $override_paths = array($override_paths);
 
-                if($extension = ake($info, 'extension')){
+            foreach($override_paths as $override)
+                $sources[] = $override . DIRECTORY_SEPARATOR . $source;
 
-                    $source = new \Hazaar\File($source);
 
-                    if($extension == 'json'){
+        }
 
-                        if(!$options->fromJSON($source->get_contents()))
-                            throw new \Exception('Failed to parse JSON config file: ' . $source);
+        foreach($sources as $index => &$source){
 
-                    }elseif($extension == 'ini'){
+            //If we have an extension, just use that file.
+            if(strrpos($source, '.') !== false){
 
-                        if(!$options->fromDotNotation(parse_ini_string($source->get_contents(), TRUE, INI_SCANNER_TYPED)))
-                            throw new \Exception('Failed to parse INI config file: ' . $source);
+                $source = \Hazaar\Loader::getFilePath($path_type, $source);
+
+            }else{ //Otherwise, search for files with supported extensions
+
+                $extensions = array('json', 'ini'); //Ordered by preference
+
+                foreach($extensions as $ext){
+
+                    $filename = $source . '.' . $ext;
+
+                    if($source = \Hazaar\Loader::getFilePath($path_type, $filename))
+                        break;
+
+                }
+
+            }
+
+            //If the file doesn't exist, then skip it.
+            if(!$source){
+
+                unset($sources[$index]);
+
+                continue;
+
+            }
+
+            $options[] = $this->loadSourceFile($source);
+
+        }
+
+        if(!count($options) > 0) return false;
+
+        $config = new \Hazaar\Map($defaults);
+
+        //Load the main configuration file
+        if(!$this->loadConfigOptions(array_shift($options), $config))
+            return false;
+
+        //Load any override files we have found
+        foreach($options as $o){
+
+            if(!$o) continue;
+
+            $this->loadConfigOptions(array($this->env => $o), $config);
+
+        }
+
+        return $config;
+
+    }
+
+    private function loadSourceFile($source){
+
+        $config = array();
+
+        $cache_key = null;
+
+        //Check if APCu is available for caching and load the config file from cache if it exists.
+        if(in_array('apcu', get_loaded_extensions())){
+
+            $cache_key = md5(gethostname() . ':' . $source);
+
+            if(apcu_exists($cache_key)) {
+
+                $cache_info = apcu_cache_info();
+
+                $mtime = 0;
+
+                foreach($cache_info['cache_list'] as $cache) {
+
+                    if(array_key_exists('info', $cache) && $cache['info'] == $cache_key) {
+
+                        $mtime = ake($cache, 'mtime');
+
+                        break;
 
                     }
 
                 }
 
-                if(isset($apc_key))
-                    apcu_store($apc_key, $options);
+                if($mtime > filemtime($source))
+                    $source = apcu_fetch($cache_key);
 
             }
 
-            $this->loaded = TRUE;
+        }
+
+        //If we have loaded this config file, continue on to the next
+        if(!is_string($source))
+            return $source;
+
+        $file = new \Hazaar\File($source);
+
+        $extention = $file->extension();
+
+        if($extention == 'json'){
+
+            if(!$config = $file->parseJSON(true))
+                throw new \Exception('Failed to parse JSON config file: ' . $source);
+
+        }elseif($extention == 'ini'){
+
+            if(!$config = array_to_dot_notation(parse_ini_string($file->get_contents(), TRUE, INI_SCANNER_TYPED)))
+                throw new \Exception('Failed to parse INI config file: ' . $source);
+
+        }else{
+
+            throw new \Exception('Unknown file format: ' . $source);
 
         }
 
-        if(! $options->has($this->env))
-            $options[$this->env] = array();
+        //Store the config file in cache
+        if($cache_key !== null) apcu_store($cache_key, $config);
 
-        $config = new \Hazaar\Map($defaults);
-
-        if($this->loadConfigOptions($options, $config))
-            return $config;
-
-        return false;
+        return $config;
 
     }
 
-    private function loadConfigOptions(\Hazaar\Map $options, \Hazaar\Map $config, $env = null){
+    private function loadConfigOptions($options, \Hazaar\Map $config, $env = null){
 
         if(!$env)
             $env = $this->env;
+
+        if(!(\Hazaar\Map::is_array($options) && array_key_exists($env, $options)))
+            return false;
 
         foreach($options[$env] as $key => $values) {
 
@@ -202,13 +237,8 @@ class Config extends \Hazaar\Map {
                     if(!($file = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $import_file)))
                         continue;
 
-                    $source = new \Hazaar\File($file);
-
-                    if($source->extension() == 'json')
-                        $config->fromJSON($source->get_contents(), true);
-
-                    elseif($source->extension() == 'ini')
-                        $config->fromDotNotation(parse_ini_string($source->get_contents(), true, INI_SCANNER_RAW), true);
+                    if($options = $this->loadSourceFile($file))
+                        $config->extend($options);
 
                 }
 
