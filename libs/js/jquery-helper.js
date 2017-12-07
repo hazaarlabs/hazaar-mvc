@@ -3,11 +3,13 @@
  *
  * This jQuery function extends the standard AJAX function to allow progress events for streaming over HTTP.
  *
- * @returns {string}
+ * @param {string} url The URL
+ * @param {object} options Stream options
+ * @returns {object} The object itself
  */
 jQuery.stream = function (url, options) {
     var callbacks = {};
-    if (typeof url == 'object') {
+    if (typeof url === 'object') {
         options = url;
         url = options.url;
     }
@@ -25,8 +27,8 @@ jQuery.stream = function (url, options) {
             var part = this.xhr.response.substr(this.readOffset + pos + 2, len);
             if (part.length < len)
                 return null;
-            this.readOffset += (part.length + pos + 2);
-            if (type == 'a') part = JSON.parse(part);
+            this.readOffset += part.length + pos + 2;
+            if (type === 'a') part = JSON.parse(part);
             return part;
         },
         lastType: function (xhr) {
@@ -35,10 +37,10 @@ jQuery.stream = function (url, options) {
         last: function (xhr) {
             var type = this.xhr.response.substr(this.readOffset + 1, 1);
             var part = this.xhr.response.substr(this.readOffset + 2);
-            if (type == 'a' || type == 'e') part = JSON.parse(part);
+            if (type === 'a' || type === 'e') part = JSON.parse(part);
             return part;
         }
-    }
+    };
     var ajax = jQuery.ajax(url, jQuery.extend(options, {
         beforeSend: function (request) {
             request.setRequestHeader("X-Request-Type", "stream");
@@ -46,21 +48,21 @@ jQuery.stream = function (url, options) {
         xhr: function () {
             worker.xhr = new XMLHttpRequest();
             worker.xhr.upload.onprogress = function (event) {
-                if (typeof callbacks.uploadProgress == 'function') callbacks.uploadProgress(event);
+                if (typeof callbacks.uploadProgress === 'function') callbacks.uploadProgress(event);
             };
             worker.xhr.onprogress = function (event) {
                 var response;
-                while (response = worker.read()) {
-                    if (typeof callbacks.progress == 'function')
+                while ((response = worker.read())) {
+                    if (typeof callbacks.progress === 'function')
                         callbacks.progress(response, event.statusText, ajax);
                 }
             };
             worker.xhr.onloadend = function (event) {
-                if (worker.lastType() == 'e') {
+                if (worker.lastType() === 'e') {
                     ajax.responseJSON = worker.last();
-                    if (typeof callbacks.error == 'function')
+                    if (typeof callbacks.error === 'function')
                         callbacks.error(ajax, 'error', 'Internal Error');
-                } else if (typeof callbacks.done == 'function')
+                } else if (typeof callbacks.done === 'function')
                     callbacks.done(worker.last(), event.statusText, ajax);
             };
             return worker.xhr;
@@ -71,7 +73,7 @@ jQuery.stream = function (url, options) {
     ajax.done = function (cb) { callbacks.done = cb; return this; };
     ajax.error = function (cb) { callbacks.error = cb; return this; };
     ajax.fail(function (xhr, status, statusText) {
-        if (typeof callbacks.error == 'function')
+        if (typeof callbacks.error === 'function')
             callbacks.error(xhr, status, statusText);
     });
     return ajax;
@@ -90,7 +92,7 @@ jQuery.stream = function (url, options) {
         for (var i = 0, elem; (elem = elems[i]) !== undefined; i++)
             $(elem).triggerHandler("remove");
         return oldClean(elems);
-    }
+    };
 })(jQuery);
 
 /**
@@ -98,6 +100,11 @@ jQuery.stream = function (url, options) {
  *
  * This is a simple JavaScript/jQuery data bindering function to bind object data to
  * HTML elements with automatic updates on change.
+ * 
+ * @param {object} data Object data
+ * @param {string} name The name of the object (used internally for recursion)
+ * @param {object} parent Parent object reference (used internally for recursion)
+ * @returns {object} A new dataBinder object.
  */
 var dataBinder = function (data, name, parent) {
     if (this === window)
@@ -182,13 +189,13 @@ dataBinder.prototype.__convert_type = function (key, value) {
     value = this.__nullify(value);
     if (Array.isArray(value))
         value = new dataBinderArray(value, key, this);
-    else if (value !== null && typeof value == 'object' && '__hz_value' in value && '__hz_label' in value) {
-        if (typeof value.__hz_value == 'string' && value.__hz_value == '') value = null;
+    else if (value !== null && typeof value === 'object' && '__hz_value' in value && '__hz_label' in value) {
+        if (typeof value.__hz_value === 'string' && value.__hz_value === '') value = null;
         else value = new dataBinderValue(key, value.__hz_value, value.__hz_label, this);
     } else if (value !== null && !(value instanceof dataBinder
         || value instanceof dataBinderArray
         || value instanceof dataBinderValue)) {
-        if (typeof value == 'object')
+        if (typeof value === 'object')
             value = new dataBinder(value, key, this);
         else
             value = new dataBinderValue(key, value, null, this);
@@ -213,8 +220,8 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
     Object.defineProperty(this, key, {
         configurable: true,
         set: function (value) {
-            var value = this.__convert_type(key, value);
-            if ((this._attributes[key] instanceof dataBinderValue ? this._attributes[key].value : this._attributes[key]) == (value instanceof dataBinderArray ? value.value : value)) return;
+            value = this.__convert_type(key, value);
+            if ((this._attributes[key] instanceof dataBinderValue ? this._attributes[key].value : this._attributes[key]) === (value instanceof dataBinderArray ? value.value : value)) return;
             this._attributes[key] = value;
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
             this._trigger(attr_name, value);
@@ -237,7 +244,7 @@ dataBinder.prototype.remove = function (key) {
 
 dataBinder.prototype._attr_name = function (attr_name) {
     if (!this._parent) return attr_name;
-    return this._parent._attr_name(this._name) + (typeof attr_name == 'undefined' ? '' : '.' + attr_name);
+    return this._parent._attr_name(this._name) + (typeof attr_name === 'undefined' ? '' : '.' + attr_name);
 };
 
 dataBinder.prototype._update = function (attr_name, do_update) {
@@ -245,18 +252,18 @@ dataBinder.prototype._update = function (attr_name, do_update) {
     jQuery('[data-bind="' + attr_name + '"]').each(function (index, item) {
         var o = jQuery(item);
         if (o.is("input, textarea, select")) {
-            var attr_value = (attr_item ? attr_item.value : null);
-            if (o.attr('type') == 'checkbox')
+            var attr_value = attr_item ? attr_item.value : null;
+            if (o.attr('type') === 'checkbox')
                 o.prop('checked', attr_value);
-            else if (o.attr('data-bind-label') == 'true')
-                o.val((attr_item ? attr_item.label : null));
+            else if (o.attr('data-bind-label') === 'true')
+                o.val(attr_item ? attr_item.label : null);
             else if (o.is("select")) {
                 if (o.find('option[value="' + attr_value + '"]').length > 0) o.val(attr_value);
             } else
                 o.val(attr_value);
             if (do_update === true) o.trigger('update');
         } else
-            o.html((attr_item ? attr_item.toString() : null));
+            o.html(attr_item ? attr_item.toString() : null);
     });
 };
 
@@ -304,7 +311,7 @@ dataBinder.prototype.watch = function (key, callback, args) {
 };
 
 dataBinder.prototype.unwatch = function (key) {
-    if (typeof key == 'undefined')
+    if (typeof key === 'undefined')
         this._watchers = {};
     else if (key in this._watchers)
         delete this._watchers[key];
@@ -358,10 +365,10 @@ dataBinderArray.prototype._trigger_name = dataBinder.prototype._trigger_name;
 
 dataBinderArray.prototype._attr_name = function (attr_name) {
     if (!this._parent) return attr_name;
-    return this._parent._attr_name(this._name) + (typeof attr_name == 'undefined' ? '' : '[' + attr_name + ']');
+    return this._parent._attr_name(this._name) + (typeof attr_name === 'undefined' ? '' : '[' + attr_name + ']');
 };
 
-dataBinderArray.prototype.pop = function (element) {
+dataBinderArray.prototype.pop = function () {
     var index = this._elements.length - 1;
     var element = this._elements[index];
     this.remove(index);
@@ -387,7 +394,7 @@ dataBinderArray.prototype.__convert_type = function (key, value) {
 };
 
 dataBinderArray.prototype._update = function (attr_name, attr_element) {
-    var remove = (this.indexOf(attr_element) < 0);
+    var remove = this.indexOf(attr_element) < 0;
     jQuery('[data-bind="' + attr_name + '"]').each(function (index, item) {
         var o = $(item);
         if (o.is('[data-toggle]')) {
@@ -421,14 +428,14 @@ dataBinderArray.prototype.push = function (element) {
 
 dataBinderArray.prototype.indexOf = function (searchString) {
     if (searchString instanceof dataBinderValue) searchString = searchString.value;
-    for (i in this._elements) if (this._elements[i].value == searchString) return parseInt(i);
+    for (i in this._elements) if (this._elements[i].value === searchString) return parseInt(i);
     return -1;
 };
 
 dataBinderArray.prototype.remove = function (index) {
     if (index instanceof dataBinderValue) index = index.value;
-    if (typeof index == 'string') index = this.indexOf(index);
-    if (index < 0 || typeof index == 'undefined') return;
+    if (typeof index === 'string') index = this.indexOf(index);
+    if (index < 0 || typeof index === 'undefined') return;
     var element = this._elements[index];
     if (element instanceof dataBinder)
         jQuery('[data-bind="' + this._attr_name() + '"]').children().eq(index).remove();
@@ -451,7 +458,7 @@ dataBinderArray.prototype.save = function (no_label) {
 };
 
 dataBinderArray.prototype.resync = function () {
-    if (!this._template || this._template.length == 0) {
+    if (!this._template || this._template.length === 0) {
         this._template = jQuery('[data-bind="' + this._attr_name() + '"]').children('template');
         if (this._template.length > 0)
             this._template.detach();
@@ -461,7 +468,7 @@ dataBinderArray.prototype.resync = function () {
         for (x in this._elements) {
             var attr_name = this._attr_name(x);
             var item = parent.children('[data-bind="' + attr_name + '"]');
-            if (item.length == 0)
+            if (item.length === 0)
                 parent.append(this._newitem(x, this._elements[x]));
             if (this._elements[x] instanceof dataBinder || this._elements[x] instanceof dataBinderArray)
                 this._elements[x].resync();
@@ -471,10 +478,10 @@ dataBinderArray.prototype.resync = function () {
 };
 
 dataBinderArray.prototype._cleanupItem = function (index) {
-    if (!index in this._elements) return;
+    if (!(index in this._elements)) return;
     var attr_name = this._attr_name();
     var reg = new RegExp("(" + attr_name + ")\\[(\\d+)\\]");
-    for (var i = (index + 1); i < this._elements.length; i++) {
+    for (var i = index + 1; i < this._elements.length; i++) {
         var new_i = i - 1;
         jQuery('[data-bind^="' + this._attr_name(i) + '"]').each(function (index, item) {
             if (!('data-toggle' in this.attributes))
@@ -492,11 +499,11 @@ dataBinderArray.prototype.populate = function (elements) {
         elements = Object.values(elements);
     for (x in elements) {
         var removed_items = this._elements.filter(function (e) {
-            return (this.indexOf(e) < 0);
+            return this.indexOf(e) < 0;
         }, elements);
         for (x in removed_items)
             this.remove(removed_items[x]);
-        if (elements[x] instanceof dataBinder || elements[x] instanceof dataBinderArray || (this._elements.indexOf(elements[x]) < 0))
+        if (elements[x] instanceof dataBinder || elements[x] instanceof dataBinderArray || this._elements.indexOf(elements[x]) < 0)
             this.push(elements[x]);
     }
 };
@@ -504,7 +511,7 @@ dataBinderArray.prototype.populate = function (elements) {
 dataBinderArray.prototype.filter = function (cb, saved) {
     var list = [];
     for (x in this.elements) {
-        var value = (this.elements[x] instanceof dataBinderValue ? this.elements[x].value : this.elements[x]);
+        var value = this.elements[x] instanceof dataBinderValue ? this.elements[x].value : this.elements[x];
         if (cb(value)) list.push(this.elements[x]);
     }
     return list;

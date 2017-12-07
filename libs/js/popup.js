@@ -106,7 +106,7 @@
                         "icon": "check-circle",
                         "color": "#00B36B"
                     }
-                }
+                };
                 var icon_class = 'fa-font-awesome';
                 if (name in icons) {
                     icon_class = icons[name].icon;

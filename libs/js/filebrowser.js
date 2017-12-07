@@ -2,17 +2,17 @@ $.fn.browserDialog = function (params) {
     if (!params.title)
         params.title = 'Dialog box';
     var host = this.get(0);
-    if (this.parent().length == 0)
+    if (this.parent().length === 0)
         this.appendTo('body');
     host.winDIV = $('<div class="dialog">').attr('data-close', 'true');
     host.titleDIV = $('<div class="title">').html(params.title);
     host.contentDIV = $('<div class="content">');
     host._close = function (event, action) {
-        if (typeof params.onClose == 'function') {
+        if (typeof params.onClose === 'function') {
             params.onClose(action);
         }
         host.winDIV.fadeOut(function () {
-            if ($(this).attr('data-close') == 'true')
+            if ($(this).attr('data-close') === 'true')
                 $(this).remove();
         });
     };
@@ -38,7 +38,7 @@ $.fn.browserDialog = function (params) {
             meta.class = 'default';
         var button = $('<button>').html(meta.label).addClass(meta.class);
         host.buttonsDIV.append(button);
-        if (typeof meta.action == 'function') {
+        if (typeof meta.action === 'function') {
             button.click($.proxy(meta.action, this)).click(function (event) {
                 host._close(event, this.action);
             });
@@ -52,7 +52,7 @@ $.fn.browserDialog = function (params) {
             button.attr('data-default', true).focus();
     }
     host.winDIV.keypress(function (event) {
-        if (event.keyCode == 13)
+        if (event.keyCode === 13)
             host.buttonsDIV.children('[data-default]').click();
     });
     return host.winDIV;
@@ -97,7 +97,7 @@ var fbConnector = function (browser, url, filter, with_meta) {
                 }
                 if (response.items) {
                     $.each(response.items, function (index, item) {
-                        if (item.parent == conn.cwd.id)
+                        if (item.parent === conn.cwd.id)
                             conn._trigger('file', [item]);
                     });
                 }
@@ -211,7 +211,7 @@ var fbConnector = function (browser, url, filter, with_meta) {
         return raw.substr(raw.indexOf(':') + 1);
     };
     this.on = function (event, callback) {
-        if (!(typeof callback == 'function'))
+        if (!(typeof callback === 'function'))
             return false;
         if (!this.events[event])
             this.events[event] = [];
@@ -249,7 +249,7 @@ var fbConnector = function (browser, url, filter, with_meta) {
     this.open = function (target, tree, depth) {
         var packet = {
             'cmd': 'open',
-            'tree': (typeof tree == 'undefined' ? false : tree)
+            'tree': (typeof tree === 'undefined' ? false : tree)
         };
         if (this.filter)
             packet.filter = this.filter;
@@ -278,7 +278,7 @@ var fbConnector = function (browser, url, filter, with_meta) {
             'recurse': true
         };
         return this._send(packet).done(function (data) {
-            if (data.ok == true)
+            if (data.ok === true)
                 conn._trigger('rmdir', [target]);
         });
     };
@@ -345,9 +345,9 @@ var fbConnector = function (browser, url, filter, with_meta) {
             'cmd': 'search',
             'target': target,
             'query': query
-        }
+        };
         return this._send(packet);
-    }
+    };
 };
 
 $.fn.fileBrowser = function (arg1, arg2, arg3) {
@@ -390,7 +390,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
         host.datetime = function (time) {
             if (!time)
                 return;
-            if (typeof time == 'number')
+            if (typeof time === 'number')
                 time = new Date(time * 1000);
             return host.monthNames[time.getMonth()] + ' ' + time.getDay() + ', ' + time.getFullYear() + ' ' + time.getHours() + ':' + time.getMinutes();
         };
@@ -431,7 +431,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             if (host.settings.userpanel) {
                 var userData = {};
                 $(host.settings.userpanel).find('[name]').each(function (index, item) {
-                    if (item.type == 'checkbox') {
+                    if (item.type === 'checkbox') {
                         userData[item.name] = item.checked;
                     } else if (item.value) {
                         userData[item.name] = item.value;
@@ -480,7 +480,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             host.menuDIV.empty();
             $.each(options, function (index, item) {
                 var itemDIV = $('<div class="fb-menu-item">');
-                if (item == 'spacer') {
+                if (item === 'spacer') {
                     itemDIV.addClass('spacer');
                 } else {
                     itemDIV.append([
@@ -572,7 +572,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             host.searchBUTTON = $('<button>').html('Search');
             host.topbarDIV = $('<div class="fb-topbar">')
                 .append(host.titleDIV, $('<div class="fb-search">').append(host.searchINPUT, host.searchBUTTON));
-            if (typeof host.settings.tools == 'object') {
+            if (typeof host.settings.tools === 'object') {
                 host.topbarToolsDIV = $('<div class="fb-topbar-tools">');
                 for (x in host.settings.tools) {
                     var toolDIV = $('<div class="fb-topbar-tool">');
@@ -657,12 +657,12 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 return host._contextMenu(event, options);
             });
             host.mainDIV.click(function (event) {
-                if (event.target == this && !event.ctrlKey)
+                if (event.target === this && !event.ctrlKey)
                     host.itemsDIV.find('.selected').removeClass('selected');
             }).on('contextmenu', function () {
                 if (event.ctrlKey)
                     return;
-                if (event.target == this) {
+                if (event.target === this) {
                     var options = [];
                     if (host.itemsDIV.children().length > 0) {
                         options.push({
@@ -711,12 +711,12 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 host._search(host.searchINPUT.val());
             });
             host.searchINPUT.keypress(function (e) {
-                if (e.keyCode == 13)
+                if (e.keyCode === 13)
                     host.searchBUTTON.click();
             });
         };
         host._dir = function (item) {
-            if ($('#' + item.id).length == 0) {
+            if ($('#' + item.id).length === 0) {
                 var chevronDIV = $('<div class="fb-tree-item-chevron">');
                 var itemChildrenDIV = $('<div class="fb-tree-item-children">');
                 var itemIconI = $('<i class="fa fa-folder">');
@@ -859,16 +859,16 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                         var selected = event.originalEvent.dataTransfer.getData('text').split(',');
                         var to = $(this).parent().attr('id');
                         $.each(selected, function (index, from) {
-                            if (!from || !to || from == to)
+                            if (!from || !to || from === to)
                                 return;
-                            if (event.originalEvent.dataTransfer.dropEffect == 'copy')
+                            if (event.originalEvent.dataTransfer.dropEffect === 'copy')
                                 host.conn.copy(from, to);
                             else
                                 host.conn.move(from, to);
                         });
                     });
             }
-            if (host.cwd && item.id == host.cwd.id)
+            if (host.cwd && item.id === host.cwd.id)
                 host._expand_dir(item.id);
         };
         host._expand_dir = function (id) {
@@ -884,10 +884,10 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             var item = $('#' + target);
             var container = item.parent();
             var parent = container.parent();
-            if (target == host.conn.cwd.id)
+            if (target === host.conn.cwd.id)
                 host.conn.open(parent.attr('id'));
             item.remove();
-            if (container.children().length == 0)
+            if (container.children().length === 0)
                 parent.children('.fb-tree-item-chevron').removeClass('expanded').addClass('childless');
         };
         host._open = function (cwd, items) {
@@ -907,7 +907,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             return d.toUTCString();
         };
         host._size = function (bytes, type, precision, exclude_suffix) {
-            if (typeof type == 'undefined') {
+            if (typeof type === 'undefined') {
                 if (bytes < Math.pow(2, 10))
                     type = 'B';
                 else if (bytes < Math.pow(2, 20))
@@ -1099,8 +1099,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                     });
                 }
                 return host._contextMenu(event, options);
-            }
-            ).on('dragstart', function (event) {
+            }).on('dragstart', function (event) {
                 var selected = [];
                 if (!event.ctrlKey) {
                     if (!$(event.target).hasClass('selected'))
@@ -1140,7 +1139,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             }).on('focus', function (event) {
                 event.target.select();
             }).on('keypress', function (event) {
-                if (event.which == 13) {
+                if (event.which === 13) {
                     host.conn.rename($(this).data('target').id, $(event.target).val()).done(function (data) {
                         if (data.ok)
                             renameINPUT.blur();
@@ -1206,7 +1205,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             if (host.clipboard.length > 0) {
                 var target = $(target).attr('data-id');
                 while (item = host.clipboard.pop()) {
-                    if (item[0] == 'cut') {
+                    if (item[0] === 'cut') {
                         host.conn.move(item[1], target);
                     } else {
                         host.conn.copy(item[1], target);
@@ -1225,7 +1224,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
         };
         host.progress = function (done) {
             var total = parseInt(host.uploadTotalSPAN.html());
-            if (typeof done == 'undefined')
+            if (typeof done === 'undefined')
                 done = parseInt(host.uploadDoneSPAN.html()) + 1;
             var pct = (done / total) * 100;
             host.uploadDoneSPAN.html(done);
@@ -1241,7 +1240,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             var ca = document.cookie.split(';');
             for (x in ca) {
                 var item = ca[x].trim().split('=');
-                if (item[0] == 'filebrowser.mode')
+                if (item[0] === 'filebrowser.mode')
                     return item[1];
             }
             return defmode;
@@ -1268,9 +1267,9 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
         host.settings.mode = host._mode(host.settings.mode);
         if (host.settings.defaulttools) {
             host.settings.tools.unshift({
-                icon: (host.settings.mode == 'grid') ? 'th-large' : 'th-list',
+                icon: (host.settings.mode === 'grid') ? 'th-large' : 'th-list',
                 click: function () {
-                    if (host.settings.mode == 'list') {
+                    if (host.settings.mode === 'list') {
                         host.settings.mode = 'grid';
                         host.mainDIV.removeClass('list').addClass('grid');
                         $(this).children().removeClass('fa-th-list').addClass('fa-th-large');
@@ -1282,7 +1281,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                     document.cookie = 'filebrowser.mode=' + host.settings.mode;
                 }
             });
-        }
+        };
         host.conn = new fbConnector(this, host.settings.connect, host.settings.mimeFilter, host.settings.useMeta);
         host.conn.on('mkdir', host._dir)
             .on('rmdir', host._rmdir)
@@ -1355,11 +1354,11 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             if (event.keyCode === 114 || (event.ctrlKey && event.keyCode === 70)) {
                 host.searchINPUT.focus();
                 event.preventDefault();
-            } else if (event.keyCode == 113) {
+            } else if (event.keyCode === 113) {
                 var selected = host.selected(true);
                 if (selected.length > 0)
                     host.rename(selected[0]);
-            } else if (event.keyCode == 27) {
+            } else if (event.keyCode === 27) {
                 $(host).find('input').blur();
             } else if (event.ctrlKey) {
                 switch (event.keyCode) {
@@ -1378,7 +1377,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                         break;
                 }
                 return false;
-            } else if (event.keyCode == 46) {
+            } else if (event.keyCode === 46) {
                 host.delete();
             }
         });
