@@ -73,10 +73,10 @@
         script.async = false;
         script.src = scriptFile;
         body.appendChild(script);
-    }
+    };
     this.__options = this.extend(options, { "url": "", "data": {}, "rewrite": true });
     if (typeof this.__options.data !== 'object' || this.__options.data === null) this.__options.data = {};
-}
+};
 
 /*
  * Date Format 1.2.3
@@ -214,8 +214,8 @@ function humanFileSize(bytes, si) {
         ++u;
     } while (bytes >= thresh);
     return bytes.toFixed(1) + ' ' + units[u];
-}
+};
 
 Number.prototype.toBytes = function (si) {
     return humanFileSize(this, si);
-}
+};
