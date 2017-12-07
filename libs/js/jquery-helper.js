@@ -1,27 +1,4 @@
 /**
- * XHR HTTP Stream Support
- *
- * This function allows streamed HTTP response data to be read incrementally from the responseText.
- *
- * @returns {string} Returns the next packet
- */
-XMLHttpRequest.prototype.read = function () {
-    if (typeof this.readOffset === 'undefined')
-        this.readOffset = 0;
-    if (this.response.length <= this.readOffset)
-        return null;
-    var pos = this.response.substr(this.readOffset).indexOf("\0");
-    if (pos < 0)
-        return null;
-    var len = parseInt('0x' + this.response.substr(this.readOffset, pos));
-    var part = this.response.substr(this.readOffset + pos + 1, len);
-    if (part.length < len)
-        return null;
-    this.readOffset += (part.length + pos + 1);
-    return part;
-};
-
-/**
  * jQuery Ajax Stream Support
  *
  * This jQuery function extends the standard AJAX function to allow progress events for streaming over HTTP.
@@ -36,31 +13,69 @@ jQuery.stream = function (url, options) {
         options = url;
         url = options.url;
     }
+    var worker = {
+        readOffset: 0,
+        xhr: null,
+        read: function () {
+            if (this.xhr.response.length <= this.readOffset)
+                return null;
+            var pos = this.xhr.response.substr(this.readOffset).indexOf("\0");
+            if (pos <= 0)
+                return null;
+            var len = parseInt('0x' + this.xhr.response.substr(this.readOffset, pos));
+            var type = this.xhr.response.substr(this.readOffset + pos + 1, 1);
+            var part = this.xhr.response.substr(this.readOffset + pos + 2, len);
+            if (part.length < len)
+                return null;
+            this.readOffset += part.length + pos + 2;
+            if (type === 'a') part = JSON.parse(part);
+            return part;
+        },
+        lastType: function (xhr) {
+            return this.xhr.response.substr(this.readOffset + 1, 1);
+        },
+        last: function (xhr) {
+            var type = this.xhr.response.substr(this.readOffset + 1, 1);
+            var part = this.xhr.response.substr(this.readOffset + 2);
+            if (type === 'a' || type === 'e') part = JSON.parse(part);
+            return part;
+        }
+    };
     var ajax = jQuery.ajax(url, jQuery.extend(options, {
         beforeSend: function (request) {
             request.setRequestHeader("X-Request-Type", "stream");
         },
         xhr: function () {
-            var xhr = new XMLHttpRequest();
-            xhr.upload.onprogress = function (event) { if (typeof callbacks.uploadProgress === 'function') callbacks.uploadProgress(event); };
-            xhr.onprogress = function (event) {
+            worker.xhr = new XMLHttpRequest();
+            worker.xhr.upload.onprogress = function (event) {
+                if (typeof callbacks.uploadProgress === 'function') callbacks.uploadProgress(event);
+            };
+            worker.xhr.onprogress = function (event) {
                 var response;
-                while ((response = this.read())) {
+                while ((response = worker.read())) {
                     if (typeof callbacks.progress === 'function')
                         callbacks.progress(response, event.statusText, ajax);
                 }
             };
-            xhr.onloadend = function (event) {
-                var response = this.read();
-                if (typeof callbacks.done === 'function')
-                    callbacks.done(response, event.statusText, ajax);
+            worker.xhr.onloadend = function (event) {
+                if (worker.lastType() === 'e') {
+                    ajax.responseJSON = worker.last();
+                    if (typeof callbacks.error === 'function')
+                        callbacks.error(ajax, 'error', 'Internal Error');
+                } else if (typeof callbacks.done === 'function')
+                    callbacks.done(worker.last(), event.statusText, ajax);
             };
-            return xhr;
+            return worker.xhr;
         }
     }));
-    ajax.uploadProgress = function (callback) { callbacks.uploadProgress = callback; return this; };
-    ajax.progress = function (callback) { callbacks.progress = callback; return this; };
-    ajax.done = function (callback) { callbacks.done = callback; return this; };
+    ajax.uploadProgress = function (cb) { callbacks.uploadProgress = cb; return this; };
+    ajax.progress = function (cb) { callbacks.progress = cb; return this; };
+    ajax.done = function (cb) { callbacks.done = cb; return this; };
+    ajax.error = function (cb) { callbacks.error = cb; return this; };
+    ajax.fail(function (xhr, status, statusText) {
+        if (typeof callbacks.error === 'function')
+            callbacks.error(xhr, status, statusText);
+    });
     return ajax;
 };
 
@@ -237,18 +252,18 @@ dataBinder.prototype._update = function (attr_name, do_update) {
     jQuery('[data-bind="' + attr_name + '"]').each(function (index, item) {
         var o = jQuery(item);
         if (o.is("input, textarea, select")) {
-            var attr_value = (attr_item ? attr_item.value : null);
+            var attr_value = attr_item ? attr_item.value : null;
             if (o.attr('type') === 'checkbox')
                 o.prop('checked', attr_value);
             else if (o.attr('data-bind-label') === 'true')
-                o.val((attr_item ? attr_item.label : null));
+                o.val(attr_item ? attr_item.label : null);
             else if (o.is("select")) {
                 if (o.find('option[value="' + attr_value + '"]').length > 0) o.val(attr_value);
             } else
                 o.val(attr_value);
             if (do_update === true) o.trigger('update');
         } else
-            o.html((attr_item ? attr_item.toString() : null));
+            o.html(attr_item ? attr_item.toString() : null);
     });
 };
 
@@ -379,7 +394,7 @@ dataBinderArray.prototype.__convert_type = function (key, value) {
 };
 
 dataBinderArray.prototype._update = function (attr_name, attr_element) {
-    var remove = (this.indexOf(attr_element) < 0);
+    var remove = this.indexOf(attr_element) < 0;
     jQuery('[data-bind="' + attr_name + '"]').each(function (index, item) {
         var o = $(item);
         if (o.is('[data-toggle]')) {
@@ -466,7 +481,7 @@ dataBinderArray.prototype._cleanupItem = function (index) {
     if (!(index in this._elements)) return;
     var attr_name = this._attr_name();
     var reg = new RegExp("(" + attr_name + ")\\[(\\d+)\\]");
-    for (var i = (index + 1); i < this._elements.length; i++) {
+    for (var i = index + 1; i < this._elements.length; i++) {
         var new_i = i - 1;
         jQuery('[data-bind^="' + this._attr_name(i) + '"]').each(function (index, item) {
             if (!('data-toggle' in this.attributes))
@@ -484,11 +499,11 @@ dataBinderArray.prototype.populate = function (elements) {
         elements = Object.values(elements);
     for (x in elements) {
         var removed_items = this._elements.filter(function (e) {
-            return (this.indexOf(e) < 0);
+            return this.indexOf(e) < 0;
         }, elements);
         for (x in removed_items)
             this.remove(removed_items[x]);
-        if (elements[x] instanceof dataBinder || elements[x] instanceof dataBinderArray || (this._elements.indexOf(elements[x]) < 0))
+        if (elements[x] instanceof dataBinder || elements[x] instanceof dataBinderArray || this._elements.indexOf(elements[x]) < 0)
             this.push(elements[x]);
     }
 };
@@ -496,7 +511,7 @@ dataBinderArray.prototype.populate = function (elements) {
 dataBinderArray.prototype.filter = function (cb, saved) {
     var list = [];
     for (x in this.elements) {
-        var value = (this.elements[x] instanceof dataBinderValue ? this.elements[x].value : this.elements[x]);
+        var value = this.elements[x] instanceof dataBinderValue ? this.elements[x].value : this.elements[x];
         if (cb(value)) list.push(this.elements[x]);
     }
     return list;

@@ -277,7 +277,7 @@ class Local implements _Interface {
 
         $info = pathinfo($path);
 
-        if($extension = ake($info, 'extension')) {
+        if($extension = strtolower(ake($info, 'extension'))) {
 
             if(! is_array(Local::$mime_types)) {
 

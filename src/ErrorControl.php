@@ -20,7 +20,17 @@ register_shutdown_function('shutdown_handler');
  */
 function errorAndDie() {
 
-    if($app = \Hazaar\Application::getInstance()) {
+    $app = \Hazaar\Application::getInstance();
+
+    $headers = array_unflatten(headers_list(), ':', "\n");
+
+    if(ake($headers, 'X-Response-Type') == 'stream'){
+
+        $stream = new \Hazaar\Controller\Response\Stream(func_get_arg(0));
+
+        $stream->__writeOutput();
+
+    }elseif($app instanceof Hazaar\Application && $app->config) {
 
         if($app->request)
             $app->request->resetAction();
