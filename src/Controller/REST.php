@@ -147,7 +147,13 @@ abstract class REST extends \Hazaar\Controller {
 
                     foreach($versions as $version){
 
-                        $this->endpoints[$version][$route] = array(
+                        if(!array_key_exists($version, $this->endpoints))
+                            $this->endpoints[$version] = array();
+
+                        if(!array_key_exists($route, $this->endpoints[$version]))
+                            $this->endpoints[$version][$route] = array();
+
+                        $this->endpoints[$version][$route][] = array(
                             'func' => $method,
                             'doc' => $doc,
                             'args' => $args
@@ -208,23 +214,27 @@ abstract class REST extends \Hazaar\Controller {
 
             }
 
-            foreach($this->endpoints[$version] as $route => $endpoint){
+            foreach($this->endpoints[$version] as $route => $routes){
 
-                if($this->__match_route($path, $route, $args)){
+                foreach($routes as $endpoint){
 
-                    if($this->request->method() == 'OPTIONS'){
+                    if($this->__match_route($path, $route, $endpoint, $args)){
 
-                        $response = new \Hazaar\Controller\Response\Json();
+                        if($this->request->method() == 'OPTIONS'){
 
-                        $response->setHeader('allow', $endpoint['args']['method']);
+                            $response = new \Hazaar\Controller\Response\Json();
 
-                        if($this->allow_directory)
-                            $response->populate($this->__describe_endpoint($route, $endpoint, $version, $this->describe_full));
+                            $response->setHeader('allow', $endpoint['args']['method']);
 
-                        return $response;
+                            if($this->allow_directory)
+                                $response->populate($this->__describe_endpoint($route, $endpoint, $version, $this->describe_full));
 
-                    }else
-                        return $this->__exec_endpoint($endpoint, $args);
+                            return $response;
+
+                        }else
+                            return $this->__exec_endpoint($endpoint, $args);
+
+                    }
 
                 }
 
@@ -311,7 +321,7 @@ abstract class REST extends \Hazaar\Controller {
 
     }
 
-    private function __match_route($path, $route, &$args = null){
+    private function __match_route($path, $route, $endpoint, &$args = null){
 
         $args = array();
 
@@ -359,6 +369,11 @@ abstract class REST extends \Hazaar\Controller {
 
         }
 
+        $http_methods = ake(ake($endpoint, 'args'), 'method', array('GET'));
+
+        if(!in_array($this->request->method(), $http_methods))
+            return false;
+
         return true;
 
     }
@@ -366,11 +381,6 @@ abstract class REST extends \Hazaar\Controller {
     private function __exec_endpoint($endpoint, $args){
 
         try{
-
-            $http_methods = ake(ake($endpoint, 'args'), 'method', array('GET'));
-
-            if(!in_array($this->request->method(), $http_methods))
-                throw new \Exception('Method, ' . $this->request->method() . ', is not allowed!', 403);
 
             if(!($method = $endpoint['func']) instanceof \ReflectionMethod)
                 throw new \Exception('Method is no longer a method!?', 500);
