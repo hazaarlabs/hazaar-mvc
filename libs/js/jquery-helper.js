@@ -346,6 +346,11 @@ dataBinder.prototype.extend = function (items) {
     }
 };
 
+dataBinder.prototype.get = function (key) {
+    if (key in this._attributes)
+        return this._attributes[key];
+};
+
 dataBinderArray.prototype._init = function (data, name, parent) {
     if (!parent) throw "dataBinderArray requires a parent!";
     this._name = name;
