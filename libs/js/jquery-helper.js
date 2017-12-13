@@ -122,11 +122,13 @@ var dataBinderValue = function (name, value, label, parent) {
     this._name = name;
     this._value = parent.__nullify(value);
     this._label = label;
+    this._other = null;
     this._parent = parent;
     Object.defineProperties(this, {
         "value": {
             set: function (value) {
                 this._value = this._parent.__nullify(value);
+                this._other = null;
                 this._parent._update(this._name, true);
                 this._parent._trigger(this._name, this._value);
             },
@@ -142,12 +144,21 @@ var dataBinderValue = function (name, value, label, parent) {
             get: function () {
                 return this._label;
             }
+        },
+        "other": {
+            set: function (value) {
+                this._other = value;
+                this._parent._update(this._name, false);
+            },
+            get: function () {
+                return this._other;
+            }
         }
     });
 };
 
 dataBinderValue.prototype.toString = function () {
-    return this.label || this.value;
+    return this.label || this.value || this.other;
 };
 
 dataBinderValue.prototype.set = function (value, label) {
@@ -159,8 +170,8 @@ dataBinderValue.prototype.set = function (value, label) {
 };
 
 dataBinderValue.prototype.save = function (no_label) {
-    if (this.value && this.label && !no_label)
-        return { "__hz_value": this.value, "__hz_label": this.label };
+    if ((this.value && this.label) || (this.value === null && this.other) && !no_label)
+        return { "__hz_value": this.value, "__hz_label": this.label, "__hz_other": this.other };
     return this.value;
 };
 
