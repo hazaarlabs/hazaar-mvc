@@ -397,8 +397,16 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             foreach($value as & $subValue){
 
-                if(is_array($subValue) && array_key_exists('__hz_value', $subValue) && array_key_exists('__hz_label', $subValue))
-                    $subValue = new DataBinderValue(ake($subValue, '__hz_value'), ake($subValue, '__hz_label'));
+                if(is_array($subValue) && array_key_exists('__hz_value', $subValue) && array_key_exists('__hz_label', $subValue)){
+
+                    $dba = new DataBinderValue(ake($subValue, '__hz_value'), ake($subValue, '__hz_label'));
+
+                    if(array_key_exists('__hz_other', $subValue))
+                        $dba->other = $subValue['__hz_other'];
+
+                    $subValue = $dba;
+
+                }
 
             }
 

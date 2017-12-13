@@ -18,6 +18,8 @@ class DataBinderValue {
 
     public $label;
 
+    public $other;
+
     function __construct($value, $label = null){
 
         $this->value = $value;
