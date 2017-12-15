@@ -2,7 +2,7 @@
 
 namespace Hazaar\Model;
 
-abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterator, \Countable {
+abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable {
 
     /**
      * Undefined values will be ignored. This is checked first.
@@ -706,6 +706,12 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         }
 
         return true;
+
+    }
+
+    public function jsonSerialize(){
+
+        return $this->resolveArray($this);
 
     }
 
