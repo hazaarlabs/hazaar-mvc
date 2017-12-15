@@ -10,7 +10,7 @@ namespace Hazaar\Model;
  * @version 1.0
  * @author jamie
  */
-class DataBinderValue {
+class DataBinderValue implements \JsonSerializable {
 
     public $name;
 
@@ -30,12 +30,12 @@ class DataBinderValue {
 
     /**
      * Get a new dataBinderValue object if the supplied value is valid and non-null
-     * 
+     *
      * If the value is NULL, then a new dataBinderValue will not be returned.  This method is useful for
      * executing code conditionally if the value is a valid dataBinderValue value.
-     * 
-     * @param mixed $value 
-     * @param mixed $label 
+     *
+     * @param mixed $value
+     * @param mixed $label
      * @return DataBinderValue|null
      */
     static function create($value, $label = null){
@@ -61,6 +61,12 @@ class DataBinderValue {
             return (string)new \Hazaar\Html\Span(coalesce($this->label, $this->value), array('data-bind' => $this->name));
 
         return coalesce($this->label, $this->value);
+
+    }
+
+    public function jsonSerialize(){
+
+        return $this->toArray();
 
     }
 

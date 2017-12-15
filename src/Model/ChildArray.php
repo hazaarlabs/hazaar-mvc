@@ -12,7 +12,7 @@ namespace Hazaar\Model;
  * @version 1.0
  * @author JamieCarl
  */
-class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \Countable {
+class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable {
 
     private $type;
 
@@ -192,6 +192,18 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
     public function count(){
 
         return count($this->values);
+
+    }
+
+    public function toArray(){
+
+        return $this->values;
+
+    }
+
+    public function jsonSerialize(){
+
+        return $this->values;
 
     }
 
