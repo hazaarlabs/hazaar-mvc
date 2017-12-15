@@ -53,43 +53,47 @@ abstract class DataTypeConverter  {
                     if(array_key_exists('__hz_other', $value))
                         $dba->other = $value['__hz_other'];
 
-                    return $dba;
+                    $value = $dba;
+
+                }else{
+
+                    $value = null;
 
                 }
 
-                $value = null;
+            }else{
 
-            }
+                /*
+                 * The special type 'mixed' specifically allow
+                 */
+                if ($type == 'mixed' || $type == 'model')
+                    return $value;
 
-            /*
-             * The special type 'mixed' specifically allow
-             */
-            if ($type == 'mixed' || $type == 'model')
-                return $value;
+                if ($type == 'boolean') {
 
-            if ($type == 'boolean') {
+                    $value = boolify($value);
 
-                $value = boolify($value);
+                }elseif($type == 'list'){
 
-            }elseif($type == 'list'){
+                    if(!is_array($value))
+                        @settype($value, 'array');
+                    else
+                        $value = array_values($value);
 
-                if(!is_array($value))
-                    @settype($value, 'array');
-                else
-                    $value = array_values($value);
+                } elseif ($type == 'string' && is_object($value) && method_exists($value, '__tostring')) {
 
-            } elseif ($type == 'string' && is_object($value) && method_exists($value, '__tostring')) {
+                    if ($value !== null)
+                        $value = (string) $value;
 
-                if ($value !== null)
-                    $value = (string) $value;
+                } elseif ($type !== 'string' && ($value === '' || $value === 'null')){
 
-            } elseif ($type !== 'string' && ($value === '' || $value === 'null')){
+                    $value = null;
 
-                $value = null;
+                } elseif (!@settype($value, $type)) {
 
-            } elseif (!@settype($value, $type)) {
+                    throw new Exception\InvalidDataType($type, get_class($value));
 
-                throw new Exception\InvalidDataType($type, get_class($value));
+                }
 
             }
 
