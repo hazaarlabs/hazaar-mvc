@@ -146,30 +146,30 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         if (is_array($this->fields) && count($this->fields) > 0) {
 
-            foreach($this->fields as $field => & $definition) {
+            foreach($this->fields as $field => &$def) {
 
                 if ($field == '*')
                     continue;
 
-                if (!is_array($definition))
-                    $definition = array('type' => $definition);
+                if (!is_array($def))
+                    $def = array('type' => $def);
 
-                $value = ake($definition, 'default');
+                $value = (array_key_exists('value', $def) ? $def['value'] : ake($def, 'default'));
 
-                if ($type = ake($definition, 'type')){
+                if ($type = ake($def, 'type')){
 
                     /*
                      * If a type is an array or list, then prepare the value as an empty Strict\ChildArray class.
                      */
                     if ($type == 'array' || $type == 'list' ) {
 
-                        if (array_key_exists('arrayOf', $definition))
-                            $value = new ChildArray($definition['arrayOf'], $value);
+                        if (array_key_exists('arrayOf', $def))
+                            $value = new ChildArray($def['arrayOf'], $value);
 
                         //If the type is a model then we use the ChildModel class
-                    }elseif($type == 'model' && array_key_exists('items', $definition)) {
+                    }elseif($type == 'model' && array_key_exists('items', $def)) {
 
-                        $value = new ChildModel($definition['items'], $value);
+                        $value = new ChildModel($def['items'], $value);
 
                         //Otherwise, just convert the type
                     } elseif($value !== null) {
@@ -273,9 +273,23 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         }
 
-        $value = &$this->values[$key];
-
         $def = ake($this->fields, $key, ake($this->fields, '*'));
+
+        if (!is_array($def))
+            $def = array('type' => $def);
+
+        if(array_key_exists('value', $def)){
+
+            $value = $def['value'];
+
+            if($type = ake($def, 'type'))
+                DataTypeConverter::convertType($value, $type);
+
+        }else{
+
+            $value = &$this->values[$key];
+
+        }
 
         /*
          * Run any pre-read callbacks
@@ -365,6 +379,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         if ($exec_filters && array_key_exists('update', $def) && array_key_exists('pre', $def['update']))
             $value = $this->execCallback($def['update']['pre'], $value, $key);
 
+        if(array_key_exists('value', $def))
+            $value = $def['value'];
+
         /*
          * Type check
          *
@@ -378,7 +395,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         /*
          * null value check.
          */
-        if ($value === null && array_key_exists('nulls', $def) && $def['nulls'] == false) {
+        if ($value === null && array_key_exists('nulls', $def) && $def['nulls'] == false && !array_key_exists('value', $def)) {
 
             if (array_key_exists('default', $def))
                 $value = $def['default'];
@@ -743,13 +760,15 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             if (!is_array($def))
                 $def = array('type' => $def);
 
+            if(array_key_exists('value', $def))
+                $value = $def['value'];
+
             /*
              * Hiding fields
              *
              * If the definition for this field has the 'hide' attribute, we check if the value matches and if so we skip
              * this value.
              */
-
             if ($show_hidden === false && array_key_exists($key, $this->fields) && is_array($this->fields[$key]) && array_key_exists('hide', $this->fields[$key])) {
 
                 $hide = $this->fields[$key]['hide'];
