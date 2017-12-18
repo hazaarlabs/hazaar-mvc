@@ -234,7 +234,7 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
         configurable: true,
         set: function (value) {
             value = this.__convert_type(key, value);
-            if (value === null && this._attributes[key] instanceof dataBinderValue) this._attributes[key].other = null;
+            //if (value === null && this._attributes[key] instanceof dataBinderValue) this._attributes[key]._other = null;
             if ((this._attributes[key] instanceof dataBinderValue ? this._attributes[key].value : this._attributes[key]) === (value instanceof dataBinderArray ? value.value : value)) return;
             this._attributes[key] = value;
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
@@ -274,7 +274,7 @@ dataBinder.prototype._update = function (attr_name, do_update) {
             else if (o.attr('data-bind-other') === 'true')
                 o.val(attr_item ? attr_item.other : null);
             else if (o.is("select")) {
-                if (o.find('option[value="' + attr_value + '"]').length > 0) o.val(attr_value);
+                if (o.find('option[value="' + (attr_value === null ? '' : attr_value) + '"]').length > 0) o.val(attr_value);
             } else
                 o.val(attr_value);
             if (do_update === true) o.trigger('update');
