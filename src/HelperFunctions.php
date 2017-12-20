@@ -1322,3 +1322,63 @@ if (!function_exists('str_putcsv')) {
     }
 
 }
+
+/**
+ * Replaces elements from passed arrays or objects into the first array or object recursively
+ *
+ * NOTE: This function is almost identical to the PHP function array_replace_recursive() except that it
+ * also works with stdClass objects.
+ *
+ * replace_recursive() replaces the values of item1 with the same values from all the following
+ * items. If a key from the first item exists in the second item, its value will be replaced by
+ * the value from the second item. If the key exists in the second item, and not the first, it will
+ * be created in the first item. If a key only exists in the first item, it will be left as is. If
+ * several items are passed for replacement, they will be processed in order, the later item overwriting
+ * the previous values.
+ *
+ * replace_recursive() is recursive : it will recurse into item and apply the same process to the inner value.
+ *
+ * When the value in item1 is scalar, it will be replaced by the value in item2, may it be scalar, array
+ * or stdClass. When the value in item1 and item2 are both arrays or objects, replace_recursive() will replace
+ * their respective value recursively.
+ *
+ * @since 2.3.41
+ * @return mixed
+ */
+function replace_recursive(){
+
+    $items = func_get_args();
+
+    $target = array_shift($items);
+
+    foreach($items as $item){
+
+        if(!((is_array($item) && count($item) > 0)
+            || ($item instanceof stdClass && count(get_object_vars($item))) > 0))
+            continue;
+
+        foreach($item as $key => $value){
+
+            if(is_array($target)){
+
+                if(array_key_exists($key, $target) && gettype($target[$key]) == gettype($value))
+                    $target[$key] = replace_recursive($target[$key], $value);
+                else
+                    $target[$key] = $value;
+
+            }elseif($target instanceof stdClass){
+
+                if(property_exists($target, $key) && gettype($target->$key) == gettype($value))
+                    $target->$key = replace_recursive($target->$key, $value);
+                else
+                    $target->$key = $value;
+
+            }
+
+        }
+
+    }
+
+    return $target;
+
+}
