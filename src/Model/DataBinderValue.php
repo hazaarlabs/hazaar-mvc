@@ -20,38 +20,45 @@ class DataBinderValue implements \JsonSerializable {
 
     public $other;
 
-    function __construct($value, $label = null){
+    function __construct($value, $label = null, $other = null){
 
         $this->value = $value;
 
         $this->label = $label;
 
+        $this->other = $other;
+
     }
 
     /**
-     * Get a new dataBinderValue object if the supplied value is valid and non-null
+     * Get a new DataBinderValue object if the supplied value is valid and non-null
      *
-     * If the value is NULL, then a new dataBinderValue will not be returned.  This method is useful for
-     * executing code conditionally if the value is a valid dataBinderValue value.
+     * If the value is NULL, then a new DataBinderValue will not be returned.  This method is useful for
+     * executing code conditionally if the value is a valid DataBinderValue value.
      *
      * @param mixed $value
      * @param mixed $label
      * @return DataBinderValue|null
      */
-    static function create($value, $label = null){
+    static function create($value, $label = null, $other = null){
 
         if($value === null)
             return null;
 
-        if(is_array($value) && array_key_exists('__hz_value', $value) && array_key_exists('__hz_label', $value)){
+        if(is_array($value)){
 
-            $label = $value['__hz_label'];
+            if( array_key_exists('__hz_other', $value))
+                $other = $value['__hz_other'];
 
-            $value = $value['__hz_value'];
+            if(array_key_exists('__hz_value', $value))
+                $label = $value['__hz_label'];
+
+            if(array_key_exists('__hz_label', $value))
+                $value = $value['__hz_value'];
 
         }
 
-        return new DataBinderValue($value, $label);
+        return new DataBinderValue($value, $label, $other);
 
     }
 
@@ -72,7 +79,11 @@ class DataBinderValue implements \JsonSerializable {
 
     public function toArray(){
 
-        return array('__hz_value' => $this->value, '__hz_label' => $this->label);
+        $array = array('__hz_value' => $this->value, '__hz_label' => $this->label);
+
+        if($this->other) $array['__hz_other'] = $this->other;
+
+        return $array;
 
     }
 
