@@ -1134,6 +1134,37 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
     }
 
     /**
+     * Apply a user supplied function to every member of an array
+     *
+     * Applies the user-defined callback function to each element of the array array.
+     *
+     * ChildArray::walk() is not affected by the internal array pointer of array. ChildArray::walk() will
+     * walk through the entire array regardless of pointer position.
+     *
+     * For more information on this method see PHP's array_walk() function.
+     *
+     * @param mixed $callback   Typically, callback takes on two parameters. The array parameter's value being
+     *                          the first, and the key/index second.
+     * @param mixed $userdata   If the optional userdata parameter is supplied, it will be passed as the third
+     *                          parameter to the callback.
+     */
+    public function array_walk_recursive($callback, $userdata = NULL){
+
+        foreach($this->values as $key => $value){
+
+            if($value instanceof Strict || $value instanceof ChildArray)
+                $value->array_walk_recursive($callback, $userdata);
+            else
+                $callback($value, $key, $userdata);
+
+            if($value != $this->values[$key])
+                $this->set($key, $value);
+
+        }
+
+    }
+
+    /**
      * Magic method for calling array_* functions on the \Hazaar\Model\Strict class.
      *
      * @param mixed $func
