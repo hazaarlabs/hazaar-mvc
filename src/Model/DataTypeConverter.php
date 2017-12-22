@@ -41,19 +41,14 @@ abstract class DataTypeConverter  {
 
         if (in_array($type, DataTypeConverter::$known_types)) {
 
-            if(is_array($value) && array_key_exists('__hz_value', $value) && array_key_exists('__hz_label', $value)){
+            if(is_array($value) && array_key_exists('__hz_value', $value)){
 
                 if($type !== 'array'){
 
-                    $dba = new DataBinderValue(ake($value, '__hz_value'), ake($value, '__hz_label'));
+                    $value = DataBinderValue::create($value);
 
-                    if($dba->value !== null)
-                        DataTypeConverter::convertType($dba->value, $type);
-
-                    if(array_key_exists('__hz_other', $value))
-                        $dba->other = $value['__hz_other'];
-
-                    $value = $dba;
+                    if($value->value !== null)
+                        DataTypeConverter::convertType($value->value, $type);
 
                 }else{
 

@@ -200,11 +200,13 @@ dataBinder.prototype.__convert_type = function (key, value) {
     value = this.__nullify(value);
     if (Array.isArray(value))
         value = new dataBinderArray(value, key, this);
-    else if (value !== null && typeof value === 'object' && '__hz_value' in value && '__hz_label' in value) {
+    else if (value !== null && typeof value === 'object' && '__hz_value' in value) {
         if (typeof value.__hz_value === 'string' && value.__hz_value === '') value = null;
-        else dba = new dataBinderValue(key, value.__hz_value, value.__hz_label, this);
-        if (dba.value === null && '__hz_other' in value) dba.other = value.__hz_other;
-        value = dba;
+        else {
+            var dba = new dataBinderValue(key, value.__hz_value, value.__hz_label, this);
+            if ('__hz_other' in value) dba.other = value.__hz_other;
+            value = dba;
+        }
     } else if (value !== null && !(value instanceof dataBinder
         || value instanceof dataBinderArray
         || value instanceof dataBinderValue)) {
