@@ -35,8 +35,6 @@ class View {
 
     public function __construct($view, $init_helpers = array()) {
 
-        $this->name = $view;
-
         $this->load($view);
 
         $this->_helpers['application'] = Application::getInstance();
@@ -120,6 +118,10 @@ class View {
 
     public function load($view) {
 
+        $parts = pathinfo($view);
+
+        $this->name = (($parts['dirname'] !== '.') ? $parts['dirname'] . '/' : '') . $parts['filename'];
+
         if(Loader::isAbsolutePath($view)){
 
             $this->_viewfile = $view;
@@ -140,10 +142,25 @@ class View {
 
             }
 
-            $viewFile = $view . '.phtml';
+            if(array_key_exists('extension', $parts)){
 
-            if (! ($this->_viewfile = Loader::getFilePath($type, $viewFile)))
-                throw new \Exception('File not found or permission denied accessing ' . $viewFile);
+                $this->_viewfile = Loader::getFilePath($type, $this->name . '.' . $parts['extension']);
+
+            }else{
+
+                $extensions = array('phtml', 'tpl');
+
+                foreach($extensions as $extension){
+
+                    if($this->_viewfile = Loader::getFilePath($type, $this->name . '.' . $extension))
+                        break;
+
+                }
+
+            }
+
+            if (! $this->_viewfile)
+                throw new \Exception("File not found or permission denied accessing view '{$this->name}'.");
 
         }
 
