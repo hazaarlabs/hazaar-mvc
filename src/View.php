@@ -140,11 +140,15 @@ class View {
 
                 $type = FILE_PATH_SUPPORT;
 
+            }else{
+
+                $view = $this->name;
+
             }
 
             if(array_key_exists('extension', $parts)){
 
-                $this->_viewfile = Loader::getFilePath($type, $this->name . '.' . $parts['extension']);
+                $this->_viewfile = Loader::getFilePath($type, $view . '.' . $parts['extension']);
 
             }else{
 
@@ -152,7 +156,7 @@ class View {
 
                 foreach($extensions as $extension){
 
-                    if($this->_viewfile = Loader::getFilePath($type, $this->name . '.' . $extension))
+                    if($this->_viewfile = Loader::getFilePath($type, $view . '.' . $extension))
                         break;
 
                 }
@@ -439,18 +443,30 @@ class View {
 
         $output = '';
 
-        ob_start();
+        $parts = pathinfo($this->_viewfile);
 
-        if (! ($file = $this->getViewFile()) || ! file_exists($file)) {
+        if(ake($parts, 'extension') == 'tpl'){
 
-            throw new \Exception("View does not exist ($this->name)", 404);
+            $template = new View\Template(file_get_contents($this->_viewfile));
+
+            $output = $template->parse($this->_data);
+
+        }else{
+
+            ob_start();
+
+            if (! ($file = $this->getViewFile()) || ! file_exists($file)) {
+
+                throw new \Exception("View does not exist ($this->name)", 404);
+            }
+
+            include ($file);
+
+            $output = ob_get_contents();
+
+            ob_end_clean();
+
         }
-
-        include ($file);
-
-        $output = ob_get_contents();
-
-        ob_end_clean();
 
         $this->_rendering = FALSE;
 
