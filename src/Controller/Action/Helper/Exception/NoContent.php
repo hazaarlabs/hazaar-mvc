@@ -1,5 +1,5 @@
 <?php
-namespace Hazaar\Controller\Exception;
+namespace Hazaar\Controller\Action\Helper\Exception;
 
 class NoContent extends \Hazaar\Exception {
 
