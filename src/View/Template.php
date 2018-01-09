@@ -23,20 +23,14 @@ class Template {
 
     protected $content   = null;
 
-    protected $regex     = '/\$\{(.*?)\}/';
-
     public    $nullvalue = 'NULL';
+
+    static private $tags = array('if', 'else', 'elseif', 'endif');
 
     function __construct($content = null){
 
         if($content)
             $this->content = $content;
-
-    }
-
-    public function setPlaceholderRegex($regex) {
-
-        $this->regex = $regex;
 
     }
 
@@ -54,8 +48,6 @@ class Template {
 
     public function parse($params = array(), $use_defaults = true) {
 
-        $output = $this->content;
-
         if($use_defaults){
 
             $default_params = array(
@@ -65,6 +57,7 @@ class Template {
                 '_POST' => $_POST,
                 '_REQUEST' => $_REQUEST,
                 '_SERVER' => $_SERVER,
+                'config' => \Hazaar\Application::getInstance()->config->toArray(),
                 'now' => new \Hazaar\Date()
             );
 
@@ -72,77 +65,21 @@ class Template {
 
         }
 
-        $params = array_to_dot_notation($params);
+        $id = '_template_' . md5(uniqid());
 
-        $count = 0;
+        $compiled = $this->compile($id, $this->content);
 
-        while(preg_match_all($this->regex, $output, $matches)){
+        dump($compiled);
 
-            if($count++ > 5)
-                break;
+        eval($compiled);
 
-            $replaced = array();
+        $obj = new $id;
 
-            foreach($matches[1] as $match) {
+        ob_start();
 
-                if(in_array($match, $replaced))
-                    continue;
+        $obj->render($params);
 
-                if(substr($match, 0, 1) == '"'){ //It's a URL
-
-                    $parts = explode(':', $match, 2); //Split on the first colon
-
-                    $url = ake($parts, 1);
-
-                    //Check if it's a proper URL and if not, make it application relative.
-                    if(!preg_match('/^\w+\:\/\//', $url))
-                        $url = new \Hazaar\Application\Url($url);
-
-                    $replacement = (string)new \Hazaar\Html\A($url, trim(ake($parts, 0), '"'));
-
-                }else{
-
-                    $args = null;
-
-                    if(strpos($match, ':') !== false){
-
-                        $parts = explode(':', $match, 3);
-
-                        list($key, $modifier, $args) = array(
-                            ake($parts, 0),
-                            ake($parts, 1),
-                            ake($parts, 2)
-                        );
-
-                    }else{
-
-                        $key = $match;
-
-                        $modifier = 'string';
-
-                    }
-
-                    if(array_key_exists($key, $params)) {
-
-                        $replacement = $this->setType($params[$key], $modifier, $args);
-
-                    } else {
-
-                        $replacement = $this->nullvalue;
-
-                    }
-
-                }
-
-                $output = preg_replace('/\$\{' . preg_quote($match, '/') . '\}/', $replacement, $output);
-
-                $replaced[] = $match;
-
-            }
-
-        }
-
-        return $output;
+        return ob_get_clean();
 
     }
 
@@ -170,5 +107,160 @@ class Template {
 
     }
 
+    private function compile($id, $text){
+
+        $compiled_text = $text;
+
+        $funcs = array('if', 'elseif', 'else', 'foreach', 'section');
+
+        while(preg_match_all('/\{(\$[\w\.\[\]]+|\/?\w+)\s*(.*)\}/', $compiled_text, $matches)){
+
+            foreach($matches[0] as $idx => $match){
+
+                $replacement = '';
+
+                //It matched a variable
+                if(substr($matches[1][$idx], 0, 1) === '$'){
+
+                    $replacement = $this->replaceVAR($matches[1][$idx]);
+
+                }elseif((substr($matches[1][$idx], 0, 1) == '/' && in_array(substr($matches[1][$idx], 1), $funcs))
+                    || in_array($matches[1][$idx], $funcs)){
+
+                    $func = 'compile' . str_replace('/', 'END', strtoupper($matches[1][$idx]));
+
+                    $replacement = $this->$func($matches[2][$idx]);
+
+                }else{
+
+                    $replacement = $this->compileSECTIONVAR($matches[1][$idx]);
+
+                }
+
+                $compiled_text = str_replace($match, $replacement, $compiled_text);
+
+            }
+
+        }
+
+        dump($compiled_text);
+
+        return "class $id {\n\tpublic function render(\$params){\n\textract(\$params);?>\n$compiled_text\n\t<?php }\n}";
+
+    }
+
+    private function compileVAR($name){
+
+        $parts = preg_split('/(\.|->|\[)/', $name);
+
+        $name = array_shift($parts);
+
+        if(count($parts) > 0){
+
+            foreach($parts as $part){
+
+                if(!$part) continue;
+
+                if(substr($part, 0, 1) == '$')
+                    $name .= "[$part]";
+                elseif(substr($part, -1) == ']')
+                    $name .= '[$__section_' . substr($part, 0, -1) . ']';
+                else
+                    $name .= "['$part']";
+
+            }
+
+        }
+
+        return $name;
+
+    }
+
+    private function replaceVAR($name){
+
+        return '<?php echo ' . $this->compileVAR($name) . ';?>';
+
+    }
+
+    private function compilePARAMS($params){
+
+        if(preg_match_all('/\$\w[\w\.\$]+/', $params, $matches)){
+
+            foreach($matches[0] as $match)
+                $params = str_replace($match, $this->compileVAR($match), $params);
+
+        }
+
+        return $params;
+
+    }
+
+    private function compileIF($params){
+
+        return '<?php if(' . $this->compilePARAMS($params) . '): ?>';
+
+    }
+
+    private function compileELSEIF($params){
+
+        return '<?php elseif(' . $this->compilePARAMS($params) . '): ?>';
+
+    }
+
+    private function compileELSE($params){
+
+        return '<?php else: ?>';
+
+    }
+
+    private function compileENDIF($tag){
+
+        return '<?php endif; ?>';
+
+    }
+
+    private function compileSECTIONVAR($name){
+
+        dump($name);
+
+    }
+
+    private function compileSECTION($params){
+
+        $parts = preg_split('/\s+/', $params);
+
+        $params = array();
+
+        foreach($parts as $part)
+            $params += array_unflatten($part);
+
+        //Make sure we have the name and loop required parameters.
+        if(!(($name = ake($params, 'name')) && $loop = ake($params, 'loop')))
+            return '';
+
+        $var = '$__section_' . $name;
+
+        $count = '$__count_' . $name;
+
+        $code = '<?php for(' . $count . '=1, ' . $var . '=' . ake($params, 'start', 0) . '; ';
+
+        $code .= $var . '<' . (is_numeric($loop) ? $loop : 'count(' . $loop . ')') . '; ';
+
+        $code .= $count . '++, ' . $var . '+=' . ake($params, 'step', 1) . '): ';
+
+        if($max = ake($params, 'max'))
+            $code .= 'if(' . $count . '>' . $max . ') break; ';
+
+        $code .= '?>';
+
+        return $code;
+
+    }
+
+    private function compileENDSECTION($tag){
+
+        return '<?php endfor; ?>';
+
+    }
 
 }
