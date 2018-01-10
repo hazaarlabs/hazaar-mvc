@@ -274,7 +274,7 @@ class File {
      *
      * @param mixed $overwrite Overwrite data if it exists
      */
-    public function put_contents($data, $overwrite = FALSE) {
+    public function put_contents($data, $overwrite = true) {
 
         $content_type = null;
 

@@ -35,8 +35,6 @@ class View {
 
     public function __construct($view, $init_helpers = array()) {
 
-        $this->name = $view;
-
         $this->load($view);
 
         $this->_helpers['application'] = Application::getInstance();
@@ -120,6 +118,10 @@ class View {
 
     public function load($view) {
 
+        $parts = pathinfo($view);
+
+        $this->name = (($parts['dirname'] !== '.') ? $parts['dirname'] . '/' : '') . $parts['filename'];
+
         if(Loader::isAbsolutePath($view)){
 
             $this->_viewfile = $view;
@@ -138,12 +140,31 @@ class View {
 
                 $type = FILE_PATH_SUPPORT;
 
+            }else{
+
+                $view = $this->name;
+
             }
 
-            $viewFile = $view . '.phtml';
+            if(array_key_exists('extension', $parts)){
 
-            if (! ($this->_viewfile = Loader::getFilePath($type, $viewFile)))
-                throw new \Exception('File not found or permission denied accessing ' . $viewFile);
+                $this->_viewfile = Loader::getFilePath($type, $view . '.' . $parts['extension']);
+
+            }else{
+
+                $extensions = array('phtml', 'tpl');
+
+                foreach($extensions as $extension){
+
+                    if($this->_viewfile = Loader::getFilePath($type, $view . '.' . $extension))
+                        break;
+
+                }
+
+            }
+
+            if (! $this->_viewfile)
+                throw new \Exception("File not found or permission denied accessing view '{$this->name}'.");
 
         }
 
@@ -422,18 +443,30 @@ class View {
 
         $output = '';
 
-        ob_start();
+        $parts = pathinfo($this->_viewfile);
 
-        if (! ($file = $this->getViewFile()) || ! file_exists($file)) {
+        if(ake($parts, 'extension') == 'tpl'){
 
-            throw new \Exception("View does not exist ($this->name)", 404);
+            $template = new View\Template($this->_viewfile);
+
+            $output = $template->render($this->_data);
+
+        }else{
+
+            ob_start();
+
+            if (! ($file = $this->getViewFile()) || ! file_exists($file)) {
+
+                throw new \Exception("View does not exist ($this->name)", 404);
+            }
+
+            include ($file);
+
+            $output = ob_get_contents();
+
+            ob_end_clean();
+
         }
-
-        include ($file);
-
-        $output = ob_get_contents();
-
-        ob_end_clean();
 
         $this->_rendering = FALSE;
 

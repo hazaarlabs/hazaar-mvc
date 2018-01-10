@@ -21,128 +21,82 @@ namespace Hazaar\View;
  */
 class Template {
 
-    protected $content   = null;
+    static private $tags = array('if', 'elseif', 'else', 'section', 'sectionelse', 'url');
 
-    protected $regex     = '/\$\{(.*?)\}/';
+    static public $cache_enabled = true;
 
-    public    $nullvalue = 'NULL';
+    private $__source_file = null;
 
-    function __construct($content = null){
+    private $__cache_enabled = false;
 
-        if($content)
-            $this->content = $content;
+    private $__content = null;
 
-    }
+    private $__compiled_content = null;
 
-    public function setPlaceholderRegex($regex) {
+    private $__section_stack = array();
 
-        $this->regex = $regex;
+    function __construct($file = null, $cache_enabled = null){
+
+        if($file)
+            $this->loadFromFile($file);
+
+        if($cache_enabled === null)
+            $cache_enabled = Template::$cache_enabled;
+
+        $this->__cache_enabled = $cache_enabled;
 
     }
 
     public function loadFromString($content) {
 
-        $this->content = (string)$content;
+        $this->__content = (string)$content;
 
     }
 
-    public function loadFromFile($filename) {
+    public function loadFromFile($file) {
 
-        $this->content = file_get_contents($filename);
+        if(!$file instanceof \Hazaar\File)
+            $file = new \Hazaar\File($file);
+
+        if(!$file->exists())
+            throw new \Exception('Template file not found!');
+
+        $this->__source_file = $file;
 
     }
 
-    public function parse($params = array(), $use_defaults = true) {
+    public function render($params = array()) {
 
-        $output = $this->content;
+        $default_params = array(
+            '_COOKIE' => $_COOKIE,
+            '_ENV' => $_ENV,
+            '_GET' => $_GET,
+            '_POST' => $_POST,
+            '_REQUEST' => $_REQUEST,
+            '_SERVER' => $_SERVER,
+            'config' => \Hazaar\Application::getInstance()->config->toArray(),
+            'now' => new \Hazaar\Date(),
+            'smarty' => array('sections' => array())
+        );
 
-        if($use_defaults){
+        $params = array_merge($default_params, $params);
 
-            $default_params = array(
-                '_COOKIE' => $_COOKIE,
-                '_ENV' => $_ENV,
-                '_GET' => $_GET,
-                '_POST' => $_POST,
-                '_REQUEST' => $_REQUEST,
-                '_SERVER' => $_SERVER,
-                'now' => new \Hazaar\Date()
-            );
+        $id = '_template_' . md5(uniqid());
 
-            $params = array_merge($default_params, $params);
+        if(!$this->__compiled_content)
+            $this->compile();
 
-        }
+        $code = "class $id {\n\tpublic function render(\$params){\n\textract(\$params);?>\n{$this->__compiled_content}\n\t<?php }\n}";
 
-        $params = array_to_dot_notation($params);
+        eval($code);
 
-        $count = 0;
+        $obj = new $id;
 
-        while(preg_match_all($this->regex, $output, $matches)){
+        ob_start();
 
-            if($count++ > 5)
-                break;
+        $obj->render($params);
 
-            $replaced = array();
-
-            foreach($matches[1] as $match) {
-
-                if(in_array($match, $replaced))
-                    continue;
-
-                if(substr($match, 0, 1) == '"'){ //It's a URL
-
-                    $parts = explode(':', $match, 2); //Split on the first colon
-
-                    $url = ake($parts, 1);
-
-                    //Check if it's a proper URL and if not, make it application relative.
-                    if(!preg_match('/^\w+\:\/\//', $url))
-                        $url = new \Hazaar\Application\Url($url);
-
-                    $replacement = (string)new \Hazaar\Html\A($url, trim(ake($parts, 0), '"'));
-
-                }else{
-
-                    $args = null;
-
-                    if(strpos($match, ':') !== false){
-
-                        $parts = explode(':', $match, 3);
-
-                        list($key, $modifier, $args) = array(
-                            ake($parts, 0),
-                            ake($parts, 1),
-                            ake($parts, 2)
-                        );
-
-                    }else{
-
-                        $key = $match;
-
-                        $modifier = 'string';
-
-                    }
-
-                    if(array_key_exists($key, $params)) {
-
-                        $replacement = $this->setType($params[$key], $modifier, $args);
-
-                    } else {
-
-                        $replacement = $this->nullvalue;
-
-                    }
-
-                }
-
-                $output = preg_replace('/\$\{' . preg_quote($match, '/') . '\}/', $replacement, $output);
-
-                $replaced[] = $match;
-
-            }
-
-        }
-
-        return $output;
+        return ob_get_clean();
 
     }
 
@@ -170,5 +124,207 @@ class Template {
 
     }
 
+    private function compile(){
+
+        $cache_file = null;
+
+        if(!$this->__content){
+
+            if(!$this->__source_file instanceof \Hazaar\File)
+                throw new \Exception('Template compilation failed! No source file or template content has been loaded!');
+
+            if($this->__cache_enabled){
+
+                $cache_id = md5($this->__source_file->fullpath());
+
+                $cache_dir = new \Hazaar\File\Dir(\Hazaar\Application::getInstance()->runtimePath('template_cache', true));
+
+                $cache_file = $cache_dir->get($cache_id . '.tpl');
+
+                if($cache_file->exists() && $cache_file->mtime() > $this->__source_file->mtime())
+                    $this->__content = $cache_file->get_contents();
+
+            }
+
+            if(!$this->__content)
+                $this->__content = $this->__source_file->get_contents();
+
+        }
+
+        $this->__compiled_content = $this->__content;
+
+        while(preg_match_all('/\{(\$.+|(\/?\w+)\s*(.*))\}/', $this->__compiled_content, $matches)){
+
+            foreach($matches[0] as $idx => $match){
+
+                $replacement = '';
+
+                //It matched a variable
+                if(substr($matches[1][$idx], 0, 1) === '$'){
+
+                    $replacement = $this->replaceVAR($matches[1][$idx]);
+
+                    //Must be a function so we exec the internal function handler
+                }elseif((substr($matches[2][$idx], 0, 1) == '/' && in_array(substr($matches[2][$idx], 1), Template::$tags))
+                    || in_array($matches[2][$idx], Template::$tags)){
+
+                    $func = 'compile' . str_replace('/', 'END', strtoupper($matches[2][$idx]));
+
+                    $replacement = $this->$func($matches[3][$idx]);
+
+                }
+
+                $this->__compiled_content = preg_replace('/' . preg_quote($match, '/') . '/', $replacement, $this->__compiled_content, 1);
+
+            }
+
+        }
+
+        if($cache_file)
+            $cache_file->put_contents($this->__compiled_content);
+
+        return true;
+
+    }
+
+    private function compileVAR($name){
+
+        $parts = preg_split('/(\.|->|\[)/', $name, -1, PREG_SPLIT_DELIM_CAPTURE);
+
+        $name = array_shift($parts);
+
+        if(count($parts) > 0){
+
+            foreach($parts as $idx => $part){
+
+                if(!$part || $part == '.' || $part == '->' || $part == '[') continue;
+
+                if(ake($parts, $idx-1) == '->')
+                    $name .= '->' . $part;
+                elseif(substr($part, 0, 1) == '$')
+                    $name .= "[$part]";
+                elseif(substr($part, -1) == ']'){
+                    if(substr($part, 0, 1) == "'" && substr($part, -2, 1) == substr($part, 0, 1))
+                        $name .= '[' . $part;
+                    else
+                        $name .= '[$smarty[\'section\'][\'' . substr($part, 0, -1) . "']['index']]";
+                }else
+                    $name .= "['$part']";
+
+            }
+
+        }
+
+        return $name;
+
+    }
+
+    private function replaceVAR($name){
+
+        return '<?php echo ' . $this->compileVAR($name) . ';?>';
+
+    }
+
+    private function compilePARAMS($params){
+
+        if(preg_match_all('/\$\w[\w\.\$]+/', $params, $matches)){
+
+            foreach($matches[0] as $match)
+                $params = str_replace($match, $this->compileVAR($match), $params);
+
+        }
+
+        return $params;
+
+    }
+
+    private function compileIF($params){
+
+        return '<?php if(' . $this->compilePARAMS($params) . '): ?>';
+
+    }
+
+    private function compileELSEIF($params){
+
+        return '<?php elseif(' . $this->compilePARAMS($params) . '): ?>';
+
+    }
+
+    private function compileELSE($params){
+
+        return '<?php else: ?>';
+
+    }
+
+    private function compileENDIF($tag){
+
+        return '<?php endif; ?>';
+
+    }
+
+    private function compileSECTION($params){
+
+        $parts = preg_split('/\s+/', $params);
+
+        $params = array();
+
+        foreach($parts as $part)
+            $params += array_unflatten($part);
+
+        //Make sure we have the name and loop required parameters.
+        if(!(($name = ake($params, 'name')) && ($loop = ake($params, 'loop'))))
+            return '';
+
+        $this->__section_stack[] = array('name' => $name, 'else' => false);
+
+        $var = $this->compileVAR($loop);
+
+        $index = '$smarty[\'section\'][\'' . $name . '\'][\'index\']';
+
+        $count = '$__count_' . $name;
+
+        $code = "<?php \$smarty['section']['$name'] = []; if(count($var)>0): ";
+
+        $code .= "for($count=1, $index=" . ake($params, 'start', 0) . '; ';
+
+        $code .= "$index<" . (is_numeric($loop) ? $loop : 'count(' . $this->compileVAR($loop) . ')') . '; ';
+
+        $code .= "$count++, $index+=" . ake($params, 'step', 1) . '): ';
+
+        if($max = ake($params, 'max'))
+            $code .= 'if(' . $count . '>' . $max . ') break; ';
+
+        $code .= "?>";
+
+        return $code;
+
+    }
+
+    private function compileSECTIONELSE($tag){
+
+        end($this->__section_stack);
+
+        $this->__section_stack[key($this->__section_stack)]['else'] = true;
+
+        return '<?php endfor; else: ?>';
+
+    }
+
+    private function compileENDSECTION($tag){
+
+        $section = array_pop($this->__section_stack);
+
+        if($section['else'] === true)
+            return '<?php endif; ?>';
+
+        return '<?php endfor; endif; array_pop($smarty[\'section\']); ?>';
+
+    }
+
+    private function compileURL($tag){
+
+        return new \Hazaar\Application\Url(trim($tag, "'"));
+
+    }
 
 }
