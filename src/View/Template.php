@@ -21,7 +21,7 @@ namespace Hazaar\View;
  */
 class Template {
 
-    static private $tags = array('if', 'elseif', 'else', 'section', 'sectionelse', 'url');
+    static private $tags = array('if', 'elseif', 'else', 'section', 'sectionelse', 'url', 'foreach', 'foreachelse');
 
     static public $cache_enabled = true;
 
@@ -34,6 +34,8 @@ class Template {
     private $__compiled_content = null;
 
     private $__section_stack = array();
+
+    private $__foreach_stack = array();
 
     function __construct($file = null, $cache_enabled = null){
 
@@ -76,7 +78,7 @@ class Template {
             '_SERVER' => $_SERVER,
             'config' => \Hazaar\Application::getInstance()->config->toArray(),
             'now' => new \Hazaar\Date(),
-            'smarty' => array('sections' => array())
+            'smarty' => array('sections' => array(), 'foreach' => array())
         );
 
         $params = array_merge($default_params, $params);
@@ -153,7 +155,7 @@ class Template {
 
         $this->__compiled_content = $this->__content;
 
-        while(preg_match_all('/\{(\$.+|(\/?\w+)\s*(.*))\}/', $this->__compiled_content, $matches)){
+        while(preg_match_all('/\{(\$[^\}]+|(\/?\w+)\s*([^\}]*))\}/', $this->__compiled_content, $matches)){
 
             foreach($matches[0] as $idx => $match){
 
@@ -283,7 +285,7 @@ class Template {
 
         $count = '$__count_' . $name;
 
-        $code = "<?php \$smarty['section']['$name'] = []; if(count($var)>0): ";
+        $code = "<?php \$smarty['section']['$name'] = []; if(isset($var) && is_array($var) && count($var)>0): ";
 
         $code .= "for($count=1, $index=" . ake($params, 'start', 0) . '; ';
 
@@ -324,6 +326,58 @@ class Template {
     private function compileURL($tag){
 
         return new \Hazaar\Application\Url(trim($tag, "'"));
+
+    }
+
+    public function compileFOREACH($params){
+
+        $parts = preg_split('/\s+/', $params);
+
+        $params = array();
+
+        foreach($parts as $part)
+            $params += array_unflatten($part);
+
+        //Make sure we have the name and loop required parameters.
+        if(!(($from = ake($params, 'from')) && ($item = ake($params, 'item'))))
+            return '';
+
+        $name = ake($params, 'name', 'foreach_' . uniqid());
+
+        $var = $this->compileVAR($from);
+
+        $this->__foreach_stack[] = array('name' => $name, 'else' => false);
+
+        $target = (($key = ake($params, 'key')) ? '$' . $key . ' => ' : '' ) . '$' . $item;
+
+        $code = "<?php \$smarty['foreach']['$name'] = ['index' => -1, 'total' => count($var)]; ";
+
+        $code .= "if(isset($var) && is_array($var) && count($var)>0): ";
+
+        $code .= "foreach($var as $target): \$smarty['foreach']['$name']['index']++; ?>";
+
+        return $code;
+
+    }
+
+    public function compileFOREACHELSE($tag){
+
+        end($this->__foreach_stack);
+
+        $this->__foreach_stack[key($this->__foreach_stack)]['else'] = true;
+
+        return '<?php endforeach; else: ?>';
+
+    }
+
+    public function compileENDFOREACH($tag){
+
+        $loop = array_pop($this->__foreach_stack);
+
+        if($loop['else'] === true)
+            return '<?php endif; ?>';
+
+        return '<?php endforeach; endif; ?>';
 
     }
 
