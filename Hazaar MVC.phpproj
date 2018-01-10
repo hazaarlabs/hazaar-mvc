@@ -334,14 +334,6 @@
     <Compile Include="src\View\Template.php" />
     <Compile Include="src\View\Viewable.php" />
     <Compile Include="src\View\ViewableObject.php" />
-    <Compile Include="src\View\Widgets\Button\Base.php" />
-    <Compile Include="src\View\Widgets\Button\DropDown.php" />
-    <Compile Include="src\View\Widgets\Button\Group.php" />
-    <Compile Include="src\View\Widgets\Button\Link.php" />
-    <Compile Include="src\View\Widgets\Button\Radio.php" />
-    <Compile Include="src\View\Widgets\Button\Repeat.php" />
-    <Compile Include="src\View\Widgets\Button\SwitchButton.php" />
-    <Compile Include="src\View\Widgets\Button\Toggle.php" />
     <Compile Include="src\View\Widgets\FileBrowser.php" />
     <Compile Include="src\View\Widgets\JavaScript.php" />
     <Compile Include="src\View\Widgets\JSONObject.php" />
@@ -424,7 +416,6 @@
     <Folder Include="src\View\" />
     <Folder Include="src\View\Helper\" />
     <Folder Include="src\View\Widgets\" />
-    <Folder Include="src\View\Widgets\Button\" />
     <Folder Include="src\Xml\" />
     <Folder Include="src\Xml\Rpc\" />
     <Folder Include="src\Xml\Rpc\Exception\" />
