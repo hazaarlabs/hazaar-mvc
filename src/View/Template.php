@@ -69,6 +69,8 @@ class Template {
 
     public function render($params = array()) {
 
+        $app = \Hazaar\Application::getInstance();
+
         $default_params = array(
             '_COOKIE' => $_COOKIE,
             '_ENV' => $_ENV,
@@ -76,7 +78,8 @@ class Template {
             '_POST' => $_POST,
             '_REQUEST' => $_REQUEST,
             '_SERVER' => $_SERVER,
-            'config' => \Hazaar\Application::getInstance()->config->toArray(),
+            'config' => $app->config->toArray(),
+            'hazaar' => array('version' => HAZAAR_VERSION),
             'now' => new \Hazaar\Date(),
             'smarty' => array('sections' => array(), 'foreach' => array())
         );
