@@ -146,17 +146,21 @@ class Template {
 
                 $cache_file = $cache_dir->get($cache_id . '.tpl');
 
-                if($cache_file->exists() && $cache_file->mtime() > $this->__source_file->mtime())
+                if($cache_file->exists() && $cache_file->mtime() > $this->__source_file->mtime()){
+
                     $this->__content = $cache_file->get_contents();
+
+                    return true;
+
+                }
 
             }
 
-            if(!$this->__content)
-                $this->__content = $this->__source_file->get_contents();
+            $this->__content = $this->__source_file->get_contents();
 
         }
 
-        $this->__compiled_content = $this->__content;
+        $this->__compiled_content = preg_replace(array('/\<\?/', '/\?\>/'), array('&lt;?','?&gt;'), $this->__content);
 
         while(preg_match_all('/\{(\$[^\}]+|(\/?\w+)\s*([^\}]*))\}/', $this->__compiled_content, $matches)){
 
