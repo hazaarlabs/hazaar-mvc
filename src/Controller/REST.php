@@ -240,7 +240,7 @@ abstract class REST extends \Hazaar\Controller {
 
             }
 
-            throw new \Exception('Not found', 404);
+            throw new \Exception('REST API Endpoint not found: ' . $path, 404);
 
         }
         catch(\Exception $e){
@@ -424,8 +424,13 @@ abstract class REST extends \Hazaar\Controller {
     private function __exception(\Exception $e){
 
         $error = array(
-            'code' => $e->getCode(),
-            'message' => $e->getMessage()
+            'ok' => false,
+            'error' => array(
+                'type' => $e->getCode(),
+                'status' => 'REST API ERROR',
+                'str' => $e->getMessage(),
+                'file' => $e->getFile()
+            )
         );
 
         $out = new \Hazaar\Controller\Response\Json($error, $e->getCode());
