@@ -969,7 +969,14 @@ class File {
 
             $iv = substr($content, 3, $cipher_len);
 
-            $content = openssl_decrypt(substr($content, 3 + $cipher_len), File::$default_cipher, $this->getEncryptionKey(), OPENSSL_RAW_DATA, $iv);
+            $data = openssl_decrypt(substr($content, 3 + $cipher_len), File::$default_cipher, $this->getEncryptionKey(), OPENSSL_RAW_DATA, $iv);
+
+            $hash = substr($data, 0, 8);
+
+            $content = substr($data, 8);
+
+            if($hash !== hash('crc32', $content))
+                throw new \Exception('Failed to decrypt file: ' . $this->source_file . '. Bad key?');
 
         }elseif($bom === pack('H*','EFBBBF')){  //UTF-8
 
@@ -992,7 +999,7 @@ class File {
 
         $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(File::$default_cipher));
 
-        $data = openssl_encrypt($content, File::$default_cipher, $this->getEncryptionKey(), OPENSSL_RAW_DATA, $iv);
+        $data = openssl_encrypt(hash('crc32', $content) . $content, File::$default_cipher, $this->getEncryptionKey(), OPENSSL_RAW_DATA, $iv);
 
         $this->contents = $bom . $iv . $data;
 
