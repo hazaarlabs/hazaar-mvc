@@ -331,7 +331,7 @@
     <Compile Include="src\View\Helper\Textile.php" />
     <Compile Include="src\View\Helper\_Interface.php" />
     <Compile Include="src\View\Layout.php" />
-    <Compile Include="src\View\Template.php" />
+    <Compile Include="src\Text\Template.php" />
     <Compile Include="src\View\Viewable.php" />
     <Compile Include="src\View\ViewableObject.php" />
     <Compile Include="src\View\Widgets\FileBrowser.php" />
@@ -412,6 +412,7 @@
     <Folder Include="src\Model\Exception\" />
     <Folder Include="src\Console\" />
     <Folder Include="src\Net\" />
+    <Folder Include="src\Text\" />
     <Folder Include="src\Parser\" />
     <Folder Include="src\View\" />
     <Folder Include="src\View\Helper\" />
