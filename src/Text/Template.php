@@ -1,9 +1,9 @@
 <?php
 
-namespace Hazaar\View;
+namespace Hazaar\Text;
 
 /**
- * The View\Template class
+ * The Text\Template class
  *
  * Templates are used to separate view content from application logic.  These templates use a simple
  * tag substitution technique to apply data to templates to generate content.  Data can be applied
@@ -23,29 +23,17 @@ class Template {
 
     static private $tags = array('if', 'elseif', 'else', 'section', 'sectionelse', 'url', 'foreach', 'foreachelse');
 
-    static public $cache_enabled = true;
+    protected $__content = null;
 
-    private $__source_file = null;
-
-    private $__cache_enabled = false;
-
-    private $__content = null;
-
-    private $__compiled_content = null;
+    protected $__compiled_content = null;
 
     private $__section_stack = array();
 
     private $__foreach_stack = array();
 
-    function __construct($file = null, $cache_enabled = null){
+    function __construct($content){
 
-        if($file)
-            $this->loadFromFile($file);
-
-        if($cache_enabled === null)
-            $cache_enabled = Template::$cache_enabled;
-
-        $this->__cache_enabled = $cache_enabled;
+        $this->__content = (string)$content;
 
     }
 
@@ -53,17 +41,7 @@ class Template {
 
         $this->__content = (string)$content;
 
-    }
-
-    public function loadFromFile($file) {
-
-        if(!$file instanceof \Hazaar\File)
-            $file = new \Hazaar\File($file);
-
-        if(!$file->exists())
-            throw new \Exception('Template file not found!');
-
-        $this->__source_file = $file;
+        $this->__compiled_content = null;
 
     }
 
@@ -91,7 +69,7 @@ class Template {
         if(!$this->__compiled_content)
             $this->compile();
 
-        $code = "class $id {\n\tpublic function render(\$params){\n\textract(\$params);?>\n{$this->__compiled_content}\n\t<?php }\n}";
+        $code = "class $id {\n\tpublic function render(\$params){\n\textract(\$params);?>\n{$this->__compiled_content}<?php }\n}";
 
         eval($code);
 
@@ -129,36 +107,7 @@ class Template {
 
     }
 
-    private function compile(){
-
-        $cache_file = null;
-
-        if(!$this->__content){
-
-            if(!$this->__source_file instanceof \Hazaar\File)
-                throw new \Exception('Template compilation failed! No source file or template content has been loaded!');
-
-            if($this->__cache_enabled){
-
-                $cache_id = md5($this->__source_file->fullpath());
-
-                $cache_dir = new \Hazaar\File\Dir(\Hazaar\Application::getInstance()->runtimePath('template_cache', true));
-
-                $cache_file = $cache_dir->get($cache_id . '.tpl');
-
-                if($cache_file->exists() && $cache_file->mtime() > $this->__source_file->mtime()){
-
-                    $this->__content = $cache_file->get_contents();
-
-                    return true;
-
-                }
-
-            }
-
-            $this->__content = $this->__source_file->get_contents();
-
-        }
+    protected function compile(){
 
         $this->__compiled_content = preg_replace(array('/\<\?/', '/\?\>/'), array('&lt;?','?&gt;'), $this->__content);
 
@@ -188,9 +137,6 @@ class Template {
             }
 
         }
-
-        if($cache_file)
-            $cache_file->put_contents($this->__compiled_content);
 
         return true;
 

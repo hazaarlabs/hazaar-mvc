@@ -447,7 +447,7 @@ class View {
 
         if(ake($parts, 'extension') == 'tpl'){
 
-            $template = new View\Template($this->_viewfile);
+            $template = new File\Template($this->_viewfile);
 
             $output = $template->render($this->_data);
 
