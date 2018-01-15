@@ -63,6 +63,7 @@
     <Compile Include="src\Model\ChildArray.php" />
     <Compile Include="src\Model\ChildModel.php" />
     <Compile Include="src\Model\DataTypeConverter.php" />
+    <Compile Include="src\Text\Template\Modifier.php" />
     <Compile Include="src\View\Controller.php" />
     <Compile Include="src\GeoData.php" />
     <Compile Include="src\Extender.php" />
@@ -414,6 +415,7 @@
     <Folder Include="src\Net\" />
     <Folder Include="src\Text\" />
     <Folder Include="src\Parser\" />
+    <Folder Include="src\Text\Template\" />
     <Folder Include="src\View\" />
     <Folder Include="src\View\Helper\" />
     <Folder Include="src\View\Widgets\" />
