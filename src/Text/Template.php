@@ -69,7 +69,23 @@ class Template {
         if(!$this->__compiled_content)
             $this->compile();
 
-        $code = "class $id {\n\tpublic function render(\$params){\n\textract(\$params);?>\n{$this->__compiled_content}<?php }\n}";
+        $code = "class $id {
+
+            public function render(\$params){
+
+                extract(\$params);
+
+                ?>{$this->__compiled_content}<?php
+
+            }
+
+            private function url(\$path = null){
+
+                return new \Hazaar\Application\Url(\$path);
+
+            }
+
+        }";
 
         eval($code);
 
@@ -171,6 +187,19 @@ class Template {
         }
 
         return $name;
+
+    }
+
+    private function compileVARS($string){
+
+        if(preg_match_all('/\$[\w\.\[\]]+/', $string, $matches)){
+
+            foreach($matches[0] as $match)
+                $string = str_replace($match, '\' . ' . $this->compileVAR($match) . ' . \'', $string);
+
+        }
+
+        return $string;
 
     }
 
@@ -278,7 +307,7 @@ class Template {
 
     private function compileURL($tag){
 
-        return new \Hazaar\Application\Url(trim($tag, "'"));
+        return '<?php echo $this->url(\'' .$this->compileVARS(trim($tag, "'")) . '\');?>';
 
     }
 
