@@ -85,7 +85,7 @@ class Template {
 
             }
 
-            private function url(\$path = null){ return new \Hazaar\Application\Url(\$path); }
+            private function url(\$path = null){ return new \Hazaar\Application\Url(urldecode(\$path)); }
 
         }";
 
