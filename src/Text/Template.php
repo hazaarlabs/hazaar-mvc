@@ -23,6 +23,8 @@ class Template {
 
     static private $tags = array('if', 'elseif', 'else', 'section', 'sectionelse', 'url', 'foreach', 'foreachelse');
 
+    static private $modifiers = array('date_format', 'capitalize');
+
     protected $__content = null;
 
     protected $__compiled_content = null;
@@ -71,6 +73,10 @@ class Template {
 
         $code = "class $id {
 
+            private \$modify;
+
+            function __construct(){ \$this->modify = new \Hazaar\Text\Template\Modifier; }
+
             public function render(\$params){
 
                 extract(\$params);
@@ -79,11 +85,7 @@ class Template {
 
             }
 
-            private function url(\$path = null){
-
-                return new \Hazaar\Application\Url(\$path);
-
-            }
+            private function url(\$path = null){ return new \Hazaar\Application\Url(\$path); }
 
         }";
 
@@ -93,7 +95,7 @@ class Template {
 
         ob_start();
 
-        $obj->render($params);
+        @$obj->render($params);
 
         return ob_get_clean();
 
@@ -160,6 +162,40 @@ class Template {
 
     private function compileVAR($name){
 
+        $modifiers = array();
+
+        if($pos = strpos($name, '|')){
+
+            $c_part = '';
+
+            $quote = null;
+
+            for($i = 0; $i<strlen($name); $i++){
+
+                if($name[$i] === '|' && $quote === null){
+
+                    $modifiers[] = $c_part;
+
+                    $c_part = '';
+
+                    continue;
+
+                }elseif($name[$i] === '"' || $name[$i] == "'"){
+
+                    $quote = ($quote == $name[$i]) ? null : $name[$i];
+
+                }
+
+                $c_part .= $name[$i];
+
+            }
+
+            $modifiers[] = $c_part;
+
+            $name = array_shift($modifiers);
+
+        }
+
         $parts = preg_split('/(\.|->|\[)/', $name, -1, PREG_SPLIT_DELIM_CAPTURE);
 
         $name = array_shift($parts);
@@ -181,6 +217,21 @@ class Template {
                         $name .= '[$smarty[\'section\'][\'' . substr($part, 0, -1) . "']['index']]";
                 }else
                     $name .= "['$part']";
+
+            }
+
+        }
+
+        if(count($modifiers) > 0){
+
+            foreach($modifiers as $modifier){
+
+                $params = explode(':', $modifier);
+
+                $func = array_shift($params);
+
+                if(Template\Modifier::has_function($func))
+                    $name = '$this->modify->' . $func . '(' . $name . ((count($params) > 0) ? ', ' . implode(', ', $params) : '') . ')';
 
             }
 
