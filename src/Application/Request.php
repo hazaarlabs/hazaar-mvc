@@ -98,14 +98,30 @@ abstract class Request implements Request\_Interface {
             if(count($nodes) > 0)
                 $this->setControllerName(array_shift($nodes));
 
+            foreach($nodes as &$node){
+
+                if(substr($node, 0, 1) == '$'){
+
+                    $mod = substr($node, 1);
+
+                    if($mod === 'path')
+                        $node = $this->raw_path;
+
+                }
+
+            }
+
             /* Keep what we have left so far as the RAW path */
             $this->raw_path = implode('/', $nodes);
 
+            if(!($pos = strpos($this->raw_path, '/')))
+                $pos = strlen($this->raw_path);
+
             if(count($nodes) > 0)
-                $this->setActionName(array_shift($nodes));
+                $this->setActionName(substr($this->raw_path, 0, $pos));
 
             /* Keep the rest as a path off the controller */
-            $this->path = implode('/', $nodes);
+            $this->path = substr($this->raw_path, $pos + 1);
 
         }
 
