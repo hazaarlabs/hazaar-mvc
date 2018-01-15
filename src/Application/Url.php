@@ -44,6 +44,8 @@ class Url {
 
     public static $rewrite = true;
 
+    public static $aliases;
+
     function __construct() {
 
         /*
@@ -148,6 +150,34 @@ class Url {
 
     }
 
+    private function renderPath(){
+
+        $controller = $this->controller;
+
+        if(Url::$aliases instanceof \Hazaar\Map){
+
+            foreach(Url::$aliases as $alias_controller => $alias){
+
+                $pos = strpos($alias, '/');
+
+                $target = ($pos > 0) ? substr($alias, 0, $pos) : $alias;
+
+                if(strcasecmp($target, $controller) === 0){
+
+                    $controller = $alias_controller;
+
+                    break;
+
+                }
+
+            }
+
+        }
+
+        return $controller . ($this->method ? '/' . $this->method : NULL);
+
+    }
+
     /**
      * Write the URL as a string
      *
@@ -166,15 +196,11 @@ class Url {
         if(!is_array($params))
             $params = array();
 
-        if(Url::$rewrite){
+        if(Url::$rewrite)
+            $path .= $this->renderPath();
 
-            $path .= $this->controller . ($this->method ? '/' . $this->method : NULL);
-
-        }elseif($this->controller){
-
-            $params[Request\Http::$pathParam] = $this->controller . ($this->method ? '/' . $this->method : NULL);
-
-        }
+        elseif($this->controller)
+            $params[Request\Http::$pathParam] = $this->renderPath();
 
         if(is_array($this->params))
             $params = array_merge($this->params, $params);
