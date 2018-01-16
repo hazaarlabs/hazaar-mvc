@@ -181,6 +181,7 @@ dataBinder.prototype._init = function (data, name, parent) {
     this._parent = parent;
     this._attributes = {};
     this._watchers = {};
+    this._watchID = 0;
     if (Object.keys(data).length > 0)
         for (var key in data) this.add(key, data[key]);
     Object.defineProperty(this, 'length', {
@@ -324,15 +325,23 @@ dataBinder.prototype.save = function (no_label) {
 
 dataBinder.prototype.watch = function (key, callback, args) {
     if (!(key in this._watchers))
-        this._watchers[key] = [];
-    this._watchers[key].push([callback, args]);
+        this._watchers[key] = {};
+    var id = "" + this._watchID++;
+    this._watchers[key][id] = [callback, args];
+    return id;
 };
 
-dataBinder.prototype.unwatch = function (key) {
-    if (typeof key === 'undefined')
+dataBinder.prototype.unwatch = function (key, id) {
+    if (typeof key === 'undefined') {
         this._watchers = {};
-    else if (key in this._watchers)
-        delete this._watchers[key];
+        return;
+    }
+    if (!(key in this._watchers))
+        return;
+    if (typeof id !== 'undefined') {
+        if (id in this._watchers[key])
+            delete this._watchers[key][id];
+    } else delete this._watchers[key];
 };
 
 dataBinder.prototype.keys = function () {
