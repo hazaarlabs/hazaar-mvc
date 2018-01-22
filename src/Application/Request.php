@@ -240,6 +240,23 @@ abstract class Request implements Request\_Interface {
 
     }
 
+    /**
+     * Retrieve a request value.
+     *
+     * These values can be sent in a number of ways.
+     * * In a query string.  eg: http://youhost.com/controller?key=value
+     * * As form POST data.
+     * * As JSON encoded request body.
+     *
+     * Only JSON encoded request bodies support data typing.  All other request values will be
+     * strings.
+     *
+     * @since 2.3.44
+     *
+     * @param mixed $key The data key to retrieve
+     * @param mixed $default If the value is not set, use this default value.
+     * @return string|mixed Most of the time this will return a string, unless data-typing is available when using JSON requests.
+     */
     public function get($key, $default = NULL) {
 
         if(array_key_exists($key, $this->params)){
@@ -259,6 +276,75 @@ abstract class Request implements Request\_Interface {
 
     }
 
+    /**
+     * Retrieve an integer value from the request
+     *
+     * The most common requests will not provide data typing and data value will always be a string.  This method
+     * will automatically return the requested value as an integer unless it is NULL or not set.  In which case
+     * either NULL or the default value will be returned.
+     *
+     * @since 2.3.44
+     *
+     * @param mixed $key The key of the request value to return.
+     * @param mixed $default A default value to use if the value is NULL or not set.
+     * @return int
+     */
+    public function get_int($key, $default = NULL) {
+
+        $value = $this->get($key, $default);
+
+        return ($value === null) ? $value : intval($value);
+
+    }
+
+    /**
+     * Retrieve an float value from the request
+     *
+     * The most common requests will not provide data typing and data value will always be a string.  This method
+     * will automatically return the requested value as an float unless it is NULL or not set.  In which case
+     * either NULL or the default value will be returned.
+     *
+     * @since 2.3.44
+     *
+     * @param mixed $key The key of the request value to return.
+     * @param mixed $default A default value to use if the value is NULL or not set.
+     * @return float
+     */
+    public function get_float($key, $default = NULL) {
+
+        $value = $this->get($key, $default);
+
+        return ($value === null) ? $value : floatval($value);
+
+    }
+
+    /**
+     * Retrieve an boolean value from the request
+     *
+     * The most common requests will not provide data typing and data value will always be a string.  This method
+     * will automatically return the requested value as an boolean unless it is NULL or not set.  In which case
+     * either NULL or the default value will be returned.
+     *
+     * This internally uses the boolify() function so the usual bool strings are supported (t, f, true, false, 0, 1, on, off, etc).
+     *
+     * @since 2.3.44
+     *
+     * @param mixed $key The key of the request value to return.
+     * @param mixed $default A default value to use if the value is NULL or not set.
+     * @return boolean
+     */
+    public function get_bool($key, $default = NULL) {
+
+        return boolify($this->get($key, $default));
+
+    }
+
+    /**
+     * Check to see if a request value has been set
+     *
+     * @param mixed $keys The key of the request value to check for.
+     * @return boolean True if the value is set, False otherwise.
+     */
     public function has($keys) {
 
         /**
@@ -282,6 +368,17 @@ abstract class Request implements Request\_Interface {
 
     }
 
+    /**
+     * Set a request value.
+     *
+     * This would not normally be used and has no internal implications on how the application will function
+     * as this data is not processed in any way.  However setting request data may be useful in your application
+     * when reusing/repurposing controller actions so that they may be called from somewhere else in your
+     * application.
+     *
+     * @param mixed $key The key value to set.
+     * @param mixed $value The new value.
+     */
     public function set($key, $value) {
 
         $this->params[$key] = $value;
