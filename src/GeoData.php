@@ -10,21 +10,27 @@ namespace Hazaar;
  *
  * Data is obtained via the publicly available GeoLite2 databases provided by MaxMind.
  *
- * See: https://dev.maxmind.com/geoip/geoip2/geolite2/
+ * See the "MaxMind GeoLite2 Pages":https://dev.maxmind.com/geoip/geoip2/geolite2/ for more information.
  *
- * NOTE:  Currently, IP information is not stored and only country/state/city level data is
+ * p(notice). Currently, IP information is not stored and only country/state/city level data is
  * searchable.
  *
- * @version 1.0
- * @author jamiec
+ * p(notice warning). The first time the \Hazaar\GeoData class is used it needs to download some files
+ * and construct an internal B-Tree database.  This requires HTTP access to the internet and depending
+ * on the speed of the connection can take some time (usually around 10-15 seconds).  Once the B-Tree
+ * database is constructed then data access speeds are extremely fast.
+ *
+ * @since 2.3.44
+ *
+ * @author Jamie Carl <jamie@hazaarlabs.com>
  */
 class GeoData {
 
-    static private $version = 2;
-
-    private $db;
-
-    private $sources = array(
+    /**
+     * The publicly available GeoData database data sources.
+     * @var array
+     */
+    static private $sources = array(
         'city' => array(
             'url' => 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip',
             'md5' => 'http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip.md5',
@@ -34,6 +40,22 @@ class GeoData {
             'url' => 'https://countrycode.org/customer/countryCode/downloadCountryCodes'
         )
     );
+
+    /**
+     * The current GeoData database format version.
+     *
+     * Changing this triggers a re-initialisation of the internal database.
+     *
+     * @var int
+     */
+    static private $version = 2;
+
+    /**
+     * The internal B-Tree database adapter
+     *
+     * @var \Hazaar\Btree
+     */
+    private $db;
 
     function __construct(){
 
@@ -48,6 +70,11 @@ class GeoData {
 
     }
 
+    /**
+     * Initialises the internal B-Tree database with all available data
+     * @throws \Exception
+     * @return boolean
+     */
     private function __initialise(){
 
         $extra = array(
@@ -229,18 +256,24 @@ class GeoData {
 
     }
 
-    private function __list($db, $field){
+    /**
+     * Obtains a list of all countries indexed by code
+     * @param mixed $db
+     * @param mixed $field
+     * @return array
+     */
+    private function __list(\Hazaar\Btree $db, $field = 'name'){
 
         $list = array();
 
-        $codes = $this->db->keys();
+        $codes = $db->range("\x00", "\xff");
 
-        foreach($codes as $code){
+        foreach($codes as $code => $info){
 
             if(substr($code, 0, 2) == '__')
                 continue;
 
-            $list[$code] = ake($this->db->get($code), 'name');
+            $list[$code] = ake($info, $field);
 
         }
 
@@ -260,7 +293,7 @@ class GeoData {
      */
     public function countries(){
 
-        return $this->__list('country', 'country_name');
+        return $this->__list($this->db, 'name');
 
     }
 
@@ -268,17 +301,17 @@ class GeoData {
      * Retrieve information about a country by it's ISO code.
      *
      * This method will return an array that contains:
-     * # id - The GeoNamesID
-     * # code - Two character ISO country code
-     * # name - Country name
-     * # continent - Continent info containing the continent ISO code and name.
-     * # phone_code - Two digit telephone dialing code (E164)
-     * # languages - Array of languages used in this country
-     * # capital - Name of the capital city
-     * # capital_timezone - The timezone in the capital city
-     * # area - Physical area in KM/2
-     * # hosts - Estimated number of active internet hosts
-     * # users - Estimated number of active internet users
+     * - id := The GeoNamesID
+     * - code := Two character ISO country code
+     * - name := Country name
+     * - continent := Continent info containing the continent ISO code and name.
+     * - phone_code := Two digit telephone dialing code (E164)
+     * - languages := Array of languages used in this country
+     * - capital := Name of the capital city
+     * - capital_timezone := The timezone in the capital city
+     * - area := Physical area in KM/2
+     * - hosts := Estimated number of active internet hosts
+     * - users := Estimated number of active internet users
      *
      * @param string $code The two character ISO country code to get information for.
      *
