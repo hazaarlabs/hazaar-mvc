@@ -25,7 +25,7 @@ namespace Hazaar\Controller;
  *
  *                  /**
  *                   * @route('/dothething/<int:thingstodo>', method=['GET'])
- *                  **\/
+ *                   **/
  *                  protected function do_the_thing($thingstodo){
  *
  *                      return array('things' => 'Array of things');
@@ -51,7 +51,7 @@ namespace Hazaar\Controller;
  *                  /**
  *                   * @route('/dothething/<date:when>/<int:thingstodo>', method=['GET'])
  *                   * @version 2
- *                  **\/
+ *                   **/
  *                  protected function do_the_thing_v2($thingstodo, $when){
  *
  *                      if($when->year() >= 2023)
@@ -73,7 +73,7 @@ namespace Hazaar\Controller;
  *              <code>
  *              /**
  *                * @version 1,2
- *              **\/
+ *               **/
  *
  *              ## Endpoint Directories
  *              Endpoint directories are simply a list of the available endpoints with some basic information
