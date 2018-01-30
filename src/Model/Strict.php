@@ -584,8 +584,8 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         }
 
-        if(! (array_key_exists($key, $this->values) && is_array($this->values[$key])))
-            $this->values[$key] = array();
+        if(! (array_key_exists($key, $this->values) && $this->values[$key] instanceof ChildArray))
+            $this->values[$key] = new ChildArray($type);
 
         $this->values[$key][] = $item;
 
@@ -1062,46 +1062,12 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     }
 
-    public function matchItem($item, $criteria){
-
-        foreach($criteria as $key => $value){
-
-            $parts = explode('.', $key);
-
-            foreach($parts as $part){
-
-                if(!isset($item[$part]))
-                    return false;
-
-                $item =& $item[$part];
-
-            }
-
-            if($item !== $value)
-                return false;
-
-        }
-
-        return true;
-
-    }
-
     public function find($field, $criteria = array()){
 
-        if(!(array_key_exists($field, $this->values) && \Hazaar\Map::is_array($this->values[$field])))
+        if(!(array_key_exists($field, $this->values) && $this->values[$field] instanceof ChildArray))
             return false;
 
-        foreach($this->values[$field] as $value){
-
-            if(!\Hazaar\Map::is_array($value))
-                continue;
-
-            if($this->matchItem($value, $criteria))
-                return $value;
-
-        }
-
-        return null;
+        return $this->values[$field]->find($criteria);
 
     }
 
