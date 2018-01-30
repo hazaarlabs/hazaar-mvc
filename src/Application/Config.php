@@ -86,12 +86,14 @@ class Config extends \Hazaar\Map {
 
         }
 
-        foreach($sources as $index => &$source){
+        foreach($sources as &$source){
+
+            $source_file = null;
 
             //If we have an extension, just use that file.
             if(strrpos($source, '.') !== false){
 
-                $source = \Hazaar\Loader::getFilePath($path_type, $source);
+                $source_file = \Hazaar\Loader::getFilePath($path_type, $source);
 
             }else{ //Otherwise, search for files with supported extensions
 
@@ -101,7 +103,7 @@ class Config extends \Hazaar\Map {
 
                     $filename = $source . '.' . $ext;
 
-                    if($source = \Hazaar\Loader::getFilePath($path_type, $filename))
+                    if($source_file = \Hazaar\Loader::getFilePath($path_type, $filename))
                         break;
 
                 }
@@ -109,15 +111,8 @@ class Config extends \Hazaar\Map {
             }
 
             //If the file doesn't exist, then skip it.
-            if(!$source){
-
-                unset($sources[$index]);
-
-                continue;
-
-            }
-
-            $options[] = $this->loadSourceFile($source);
+            if($source_file)
+                $options[] = $this->loadSourceFile($source_file);
 
         }
 
@@ -130,11 +125,15 @@ class Config extends \Hazaar\Map {
             return false;
 
         //Load any override files we have found
-        foreach($options as $o){
+        if(count($options) > 0){
 
-            if(!$o) continue;
+            foreach($options as $o){
 
-            $this->loadConfigOptions(array($this->env => $o), $config);
+                if(!$o) continue;
+
+                $this->loadConfigOptions(array($this->env => $o), $config);
+
+            }
 
         }
 
@@ -193,8 +192,11 @@ class Config extends \Hazaar\Map {
 
         }elseif($extention == 'ini'){
 
-            if(!$config = array_to_dot_notation(parse_ini_string($file->get_contents(), TRUE, INI_SCANNER_TYPED)))
+            if(!$config = parse_ini_string($file->get_contents(), true, INI_SCANNER_TYPED))
                 throw new \Exception('Failed to parse INI config file: ' . $source);
+
+            foreach($config as &$array)
+                $array = array_from_dot_notation($array);
 
         }else{
 
