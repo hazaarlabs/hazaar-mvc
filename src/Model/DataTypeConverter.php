@@ -36,6 +36,8 @@ abstract class DataTypeConverter  {
 
     protected static function convertType(&$value, $type) {
 
+        if($value === null) return $value;
+
         if(array_key_exists($type, DataTypeConverter::$type_aliases))
             $type = DataTypeConverter::$type_aliases[$type];
 
