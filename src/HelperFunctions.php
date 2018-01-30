@@ -417,35 +417,27 @@ function array_from_dot_notation($array) {
 
     foreach($array as $idx => $value) {
 
-        if(is_array($value)) {
+        $parts = explode('.', $idx);
 
-            $new[$idx] = array_from_dot_notation($value);
+        if(count($parts) > 1) {
+
+            $cur =& $new;
+
+            foreach($parts as $part) {
+
+                if(! array_key_exists($part, $cur))
+                    $cur[$part] = array();
+
+                if(is_array($cur))
+                    $cur =& $cur[$part];
+
+            }
+
+            $cur = $value;
 
         } else {
 
-            $parts = explode('.', $idx);
-
-            if(count($parts) > 1) {
-
-                $cur =& $new;
-
-                foreach($parts as $part) {
-
-                    if(! array_key_exists($part, $cur))
-                        $cur[$part] = array();
-
-                    if(is_array($cur))
-                        $cur =& $cur[$part];
-
-                }
-
-                $cur = $value;
-
-            } else {
-
-                $new[$idx] = $value;
-
-            }
+            $new[$idx] = $value;
 
         }
 
