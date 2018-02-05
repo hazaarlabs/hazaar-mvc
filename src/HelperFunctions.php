@@ -1356,7 +1356,7 @@ function replace_recursive(){
                 if(array_key_exists($key, $target)
                     && gettype($target[$key]) == gettype($value)
                     && (is_array($target[$key]) || $target[$key] instanceof stdClass))
-                    $target[$key] = replace_recursive($target[$key], $value);
+                    $target[$key] = replace_recursive(ake($target, $key), $value);
                 else
                     $target[$key] = $value;
 
@@ -1364,7 +1364,7 @@ function replace_recursive(){
 
                 if(property_exists($target, $key)
                     && gettype($target->$key) == gettype($value)
-                    && (is_array($target[$key]) || $target[$key] instanceof stdClass))
+                    && (is_array(ake($target, $key)) || ake($target, $key) instanceof stdClass))
                     $target->$key = replace_recursive($target->$key, $value);
                 else
                     $target->$key = $value;
