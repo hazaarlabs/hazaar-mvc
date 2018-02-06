@@ -65,10 +65,10 @@ class Cdnjs extends \Hazaar\View\Helper {
 
         foreach($this->libraries as $name => &$info){
 
-            if(!array_key_exists('files', $info))
+            if(!array_key_exists('load', $info))
                 continue;
 
-            foreach($info['files'] as &$file){
+            foreach($info['load'] as &$file){
 
                 if($this->cache_local){
 
@@ -114,27 +114,28 @@ class Cdnjs extends \Hazaar\View\Helper {
         if(in_array($name, $this->libraries))
             return null;
 
-        $assets = array();
+        $info = null;
 
+        //Load library info and retry at most once.  This will simply trigger a forced load from CDNjs on the second attempt.
         for($i = 0; $i < 2; $i++){
 
-            if(!($info = $this->getLibraryInfo($name, ($i > 0))))
+            if(!($library_info = $this->getLibraryInfo($name, ($i > 0))))
                 return null;
 
-            if(!array_key_exists('assets', $info))
+            if(!array_key_exists('assets', $library_info))
                 throw new \Exception('CDNJS: Package info for ' . $name . ' does not contain any assets!');
 
             if($version === null)
-                $version = $info['version'];
+                $version = $library_info['version'];
 
-            $info['priority'] = $priority;
+            foreach($library_info['assets'] as $assets){
 
-            foreach($info['assets'] as $asset){
-
-                if($asset['version'] != $version)
+                if($assets['version'] != $version)
                     continue;
 
-                $assets = $asset['files'];
+                $info = $assets;
+
+                $info['default'] = $library_info['filename'];
 
                 break 2;
 
@@ -142,27 +143,23 @@ class Cdnjs extends \Hazaar\View\Helper {
 
         }
 
-        if(!count($assets) > 0)
+        if(!is_array($info) > 0)
             throw new \Exception('CDNJS: Version ' . $version . ' is not available in package ' . $name);
 
-        $info['files'] = array();
+        $info['priority'] = $priority;
 
         if($files && is_array($files)){
 
+            $info['load'] = array();
+
             foreach($files as $file){
 
-                if(in_array($file, $asset['files']))
-                    $info['files'][] = $file;
+                if(in_array($file, $info['files']))
+                    $info['load'][] = $file;
 
             }
 
-        }else{
-
-            $version_found = true;
-
-            $info['files'] = array($info['filename']);
-
-        }
+        }else $info['load'] = array($info['default']);
 
         $this->libraries[$name] = $info;
 
