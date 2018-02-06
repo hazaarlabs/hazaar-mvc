@@ -106,7 +106,7 @@ class Cdnjs extends \Hazaar\View\Helper {
      * @param mixed $priority   Import priority.  The higher this number to soon things will be loaded
      *                          compared to other libraries being loaded.
      * @throws \Exception
-     * @return \Hazaar\Version  Returns a Hazaar\Version object detailing the version of the library 
+     * @return \Hazaar\Version  Returns a Hazaar\Version object detailing the version of the library
      *                          that was loaded.
      */
     public function load($name, $version = null, $files = null, $priority = 0){
@@ -114,36 +114,45 @@ class Cdnjs extends \Hazaar\View\Helper {
         if(in_array($name, $this->libraries))
             return null;
 
-        if(!($info = $this->getLibraryInfo($name)))
-            return null;
+        $assets = array();
 
-        if(!array_key_exists('assets', $info))
-            throw new \Exception('CDNJS: Package info for ' . $name . ' does not contain any assets!');
+        for($i = 0; $i < 2; $i++){
 
-        $info['priority'] = $priority;
+            if(!($info = $this->getLibraryInfo($name, ($i > 0))))
+                return null;
 
-        if($version)
-            $info['version'] = $version;
+            if(!array_key_exists('assets', $info))
+                throw new \Exception('CDNJS: Package info for ' . $name . ' does not contain any assets!');
 
-        $version_found = false;
+            if($version === null)
+                $version = $info['version'];
+
+            $info['priority'] = $priority;
+
+            foreach($info['assets'] as $asset){
+
+                if($asset['version'] != $version)
+                    continue;
+
+                $assets = $asset['files'];
+
+                break 2;
+
+            }
+
+        }
+
+        if(!count($assets) > 0)
+            throw new \Exception('CDNJS: Version ' . $version . ' is not available in package ' . $name);
+
+        $info['files'] = array();
 
         if($files && is_array($files)){
 
-            foreach($info['assets'] as &$asset){
+            foreach($files as $file){
 
-                if($asset['version'] != $info['version'])
-                    continue;
-
-                $version_found = true;
-
-                foreach($files as $file){
-
-                    if(in_array($file, $asset['files']))
-                        $info['files'][] = $file;
-
-                }
-
-                break;
+                if(in_array($file, $asset['files']))
+                    $info['files'][] = $file;
 
             }
 
@@ -155,26 +164,23 @@ class Cdnjs extends \Hazaar\View\Helper {
 
         }
 
-        if($version_found === false)
-            throw new \Exception('CDNJS: Version ' . $info['version'] . ' is not available in package ' . $name);
-
         $this->libraries[$name] = $info;
 
-        return new \Hazaar\Version($info['version']);
+        return new \Hazaar\Version($version);
 
     }
 
-    public function getLibraryInfo($name){
+    public function getLibraryInfo($name, $force_reload = false){
 
-        if(($info = self::$cache->get($name)) !== null)
+        if($force_reload === false && ($info = self::$cache->get($name)) !== null)
             return $info;
 
-        if(!($data = json_decode(file_get_contents('https://api.cdnjs.com/libraries/' . $name), true)))
+        if(!($info = json_decode(file_get_contents('https://api.cdnjs.com/libraries/' . $name), true)))
             throw new \Exception('CDNJS: Error parsing package info!');
 
-        self::$cache->set($name, $data);
+        self::$cache->set($name, $info);
 
-        return $data;
+        return $info;
 
     }
 
