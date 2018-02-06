@@ -98,17 +98,17 @@ class GeoData {
         /*
          * Download the city database ZIP file and check it's MD5 signature
          */
-        $city_zipfile->put_contents(file_get_contents($this->sources['city']['url']));
+        $city_zipfile->put_contents(file_get_contents(GeoData::$sources['city']['url']));
 
         if(!$city_zipfile->size() > 0)
             throw new \Exception('Unable to download city info source file!');
 
-        $md5 = file_get_contents($this->sources['city']['md5']);
+        $md5 = file_get_contents(GeoData::$sources['city']['md5']);
 
         if($city_zipfile->md5() !== $md5)
             throw new \Exception('City info source file MD5 signature does not match!');
 
-        $files = $city_zipfile->unzip($this->sources['city']['csv'], $tmpdir);
+        $files = $city_zipfile->unzip(GeoData::$sources['city']['csv'], $tmpdir);
 
         $city_zipfile->unlink(); //Cleanup now
 
@@ -117,7 +117,7 @@ class GeoData {
          */
         $codes = array();
 
-        $codes_file = explode("\n", file_get_contents($this->sources['code']['url']));
+        $codes_file = explode("\n", file_get_contents(GeoData::$sources['code']['url']));
 
         $headers = str_getcsv(array_shift($codes_file));
 
