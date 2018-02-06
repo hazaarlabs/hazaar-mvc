@@ -225,9 +225,8 @@ class Dir {
 
             if(is_dir($start . $file)) {
 
-                $subdir = $this->find($pattern, $show_hidden, $case_sensitive, $start . $file);
-
-                $list = array_merge($list, $subdir);
+                if($subdir = $this->find($pattern, $show_hidden, $case_sensitive, $start . $file))
+                    $list = array_merge($list, $subdir);
 
             }
 
