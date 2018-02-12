@@ -369,25 +369,44 @@ class Template {
         $params = array();
 
         foreach($parts as $part)
-            $params += array_unflatten($part);
+            $params = array_merge($params, array_unflatten($part));
+
+        $code = '';
 
         //Make sure we have the name and loop required parameters.
-        if(!(($from = ake($params, 'from')) && ($item = ake($params, 'item'))))
-            return '';
+        if(($from = ake($params, 'from')) && ($item = ake($params, 'item'))){
 
-        $name = ake($params, 'name', 'foreach_' . uniqid());
+            $name = ake($params, 'name', 'foreach_' . uniqid());
 
-        $var = $this->compileVAR($from);
+            $var = $this->compileVAR($from);
 
-        $this->__foreach_stack[] = array('name' => $name, 'else' => false);
+            $this->__foreach_stack[] = array('name' => $name, 'else' => false);
 
-        $target = (($key = ake($params, 'key')) ? '$' . $key . ' => ' : '' ) . '$' . $item;
+            $target = (($key = ake($params, 'key')) ? '$' . $key . ' => ' : '' ) . '$' . $item;
 
-        $code = "<?php \$smarty['foreach']['$name'] = ['index' => -1, 'total' => count($var)]; ";
+            $code = "<?php \$smarty['foreach']['$name'] = ['index' => -1, 'total' => count($var)]; ";
 
-        $code .= "if(isset($var) && is_array($var) && count($var)>0): ";
+            $code .= "if(isset($var) && is_array($var) && count($var)>0): ";
 
-        $code .= "foreach($var as $target): \$smarty['foreach']['$name']['index']++; ?>";
+            $code .= "foreach($var as $target): \$smarty['foreach']['$name']['index']++; ?>";
+
+        }elseif(ake($params, 1) === 'as'){ //Smarty 3 support
+
+            $name = ake($params, 'name', 'foreach_' . uniqid());
+
+            $var = $this->compileVAR(ake($params, 0));
+
+            $target = $this->compileVAR(ake($params, 2));
+
+            $this->__foreach_stack[] = array('name' => $name, 'else' => false);
+
+            $code = "<?php \$smarty['foreach']['$name'] = ['index' => -1, 'total' => count($var)]; ";
+
+            $code .= "if(isset($var) && is_array($var) && count($var)>0): ";
+
+            $code .= "foreach($var as $target): \$smarty['foreach']['$name']['index']++; ?>";
+
+        }
 
         return $code;
 
