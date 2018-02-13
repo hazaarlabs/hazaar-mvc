@@ -237,8 +237,8 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
         configurable: true,
         set: function (value) {
             value = this.__convert_type(key, value);
-            //if (value === null && this._attributes[key] instanceof dataBinderValue) this._attributes[key]._other = null;
-            if ((this._attributes[key] instanceof dataBinderValue ? this._attributes[key].value : this._attributes[key]) === (value instanceof dataBinderArray ? value.value : value)) return;
+            if (value === null && this._attributes[key] && this._attributes[key].other) this._attributes[key].other = null; 
+            else if ((this._attributes[key] instanceof dataBinderValue ? this._attributes[key].value : this._attributes[key]) === (value instanceof dataBinderArray ? value.value : value)) return;
             this._attributes[key] = value;
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
             this._trigger(attr_name, value);
@@ -280,7 +280,7 @@ dataBinder.prototype._update = function (attr_name, do_update) {
                 if (o.find('option[value="' + (attr_value === null ? '' : attr_value) + '"]').length > 0) o.val(attr_value);
             } else
                 o.val(attr_value);
-            if (do_update === true) o.trigger('update');
+            if (do_update === true) o.trigger('update', [attr_name, attr_value]);
         } else
             o.html(attr_item ? attr_item.toString() : null);
     });
