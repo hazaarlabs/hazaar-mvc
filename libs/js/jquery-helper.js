@@ -113,8 +113,7 @@ var dataBinder = function (data, name, parent) {
 };
 
 var dataBinderArray = function (data, name, parent) {
-    if (this === window)
-        return new dataBinderArray(data, name, parent);
+    if (this === window) return new dataBinderArray(data, name, parent);
     this._init(data, name, parent);
 };
 
@@ -386,6 +385,7 @@ dataBinderArray.prototype._init = function (data, name, parent) {
     this._name = name;
     this._parent = parent;
     this._elements = [];
+    this._template = null;
     this.resync();
     if (Array.isArray(data) && data.length > 0)
         for (x in data) this.push(data[x]);
@@ -411,8 +411,10 @@ dataBinderArray.prototype.pop = function () {
 };
 
 dataBinderArray.prototype._newitem = function (index, element) {
-    var attr_name = this._attr_name(index);
-    var a = this, newitem = jQuery(this._template.html()).attr('data-bind', attr_name);
+    var attr_name = this._attr_name(index), a = this;
+    var newitem = (this._template.prop('tagName') === 'TEMPLATE')
+        ? jQuery(this._template.html()).attr('data-bind', attr_name)
+        : this._template.clone(true).attr('data-bind', attr_name);
     newitem.on('remove', function () {
         var index = Array.from(this.parentNode.children).indexOf(this);
         if (index >= 0) a._cleanupItem(index);
@@ -494,9 +496,13 @@ dataBinderArray.prototype.save = function (no_label) {
 
 dataBinderArray.prototype.resync = function () {
     if (!this._template || this._template.length === 0) {
-        this._template = jQuery('[data-bind="' + this._attr_name() + '"]').children('template');
-        if (this._template.length > 0)
-            this._template.detach();
+        var host = jQuery('[data-bind="' + this._attr_name() + '"]');
+        if (host.attr('data-bind-template') === 'o')
+            this._template = host.data('template');
+        else {
+            this._template = host.children('template');
+            if (this._template.length > 0) this._template.detach();
+        }
     }
     if (this._template && this._template.length > 0) {
         var parent = jQuery('[data-bind="' + this._attr_name() + '"]');
@@ -508,7 +514,6 @@ dataBinderArray.prototype.resync = function () {
             if (this._elements[x] instanceof dataBinder || this._elements[x] instanceof dataBinderArray)
                 this._elements[x].resync();
         }
-
     }
 };
 
