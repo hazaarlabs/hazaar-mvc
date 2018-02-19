@@ -421,9 +421,8 @@ dataBinderArray.prototype._newitem = function (index, element) {
         if (index >= 0) a._cleanupItem(index);
     }).find('[data-bind]').each(function (idx, item) {
         var key = item.attributes['data-bind'].value;
-        item.innerHTML = element[key];
         item.attributes['data-bind'].value = attr_name + '.' + key;
-        });
+    });
     if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x](newitem);
     return newitem;
 };
@@ -458,10 +457,10 @@ dataBinderArray.prototype.push = function (element) {
         });
     }
     this._elements[key] = this.__convert_type(key, element);
-    if (this._elements[key] instanceof dataBinder)
+    if (this._elements[key] instanceof dataBinder) {
         jQuery('[data-bind="' + this._attr_name() + '"]').append(this._newitem(key, this._elements[key]));
-    else
-        this._update(this._attr_name(), this._elements[key]);
+        this.resync();
+    } else this._update(this._attr_name(), this._elements[key]);
     return key;
 };
 
