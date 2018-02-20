@@ -86,14 +86,16 @@ jQuery.stream = function (url, options) {
  *
  * To bind: jQuery('#elemnt').on('remove', function(){ 'do the things' });
  */
-(function ($) {
-    var oldClean = jQuery.cleanData;
-    $.cleanData = function (elems) {
-        for (var i = 0, elem; (elem = elems[i]) !== undefined; i++)
-            $(elem).triggerHandler("remove");
-        return oldClean(elems);
-    };
-})(jQuery);
+if (jQuery.cleanData.toString().search(/triggerHandler\(["\']remove["\']\)/) < 0) {
+    (function ($) {
+        var oldClean = jQuery.cleanData;
+        $.cleanData = function (elems) {
+            for (var i = 0, elem; (elem = elems[i]) !== undefined; i++)
+                $(elem).triggerHandler("remove");
+            return oldClean(elems);
+        };
+    })(jQuery);
+}
 
 /**
  * The Hazaar MVC Data binder
@@ -466,7 +468,7 @@ dataBinderArray.prototype.push = function (element) {
 
 dataBinderArray.prototype.indexOf = function (searchString) {
     if (searchString instanceof dataBinderValue) searchString = searchString.value;
-    for (let i in this._elements) if (this._elements[i].value == searchString) return parseInt(i);
+    for (let i in this._elements) if (this._elements[i].value === searchString) return parseInt(i);
     return -1;
 };
 
