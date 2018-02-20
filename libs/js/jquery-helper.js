@@ -560,6 +560,10 @@ dataBinderArray.prototype.filter = function (cb, saved) {
     return list;
 };
 
+dataBinderArray.prototype.__nullify = function (value) {
+    return this._parent.__nullify(value);
+}
+
 dataBinderArray.prototype.watch = function (cb) {
     if (typeof cb === 'function') this._watchers.push(cb);
 }
