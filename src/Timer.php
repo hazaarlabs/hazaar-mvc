@@ -11,9 +11,9 @@
 namespace Hazaar;
 
 /**
- * @brief       Timer class
+ * Timer class for measuring how long things take
  *
- * @detail      Used for timing things
+ * The timer class can be used to time one or more events and returns how long it took in milliseconds.
  *
  * @since       1.0.0
  */
@@ -27,12 +27,17 @@ class Timer {
     /**
      * Timer Precision
      *
-     * This sets the precision of the output.  By default it is 1000 which means output in milliseconds.
+     * This sets the precision of the output.  By default it is 2 which means output is 1/10th of a millisecond.
      */
     private $precision = 2;
 
     /**
-     * @brief       Start the timer
+     * Timer class constructor
+     *
+     * The timer class has an implicit timer that is always active called the 'global' timer.  This is simply
+     * used to record how long the timer class itself has been active.
+     *
+     * @param mixed $precision The precision to use when returning timer values.
      */
     function __construct($precision = 2) {
 
@@ -41,7 +46,18 @@ class Timer {
         $this->start('global', HAZAAR_EXEC_START);
 
     }
-    
+
+    /**
+     * Start a new timer.
+     *
+     * A timer is nothing more than a named point in time.  When a timer starts, no long running code is executed
+     * or anything like that and simply the current system time in microseconds is recorded against the timer name.
+     * This allows us to later query that timer name and return the difference which will give you the number
+     * of milliseconds between two points in time.
+     *
+     * @param mixed $name A name for the timer.
+     * @param mixed $when Optionally allow the start time to be overriden.  Defaults to PHP's microtime(true) value.
+     */
     public function start($name = 'default', $when = null) {
 
         if(!$when)
@@ -51,42 +67,52 @@ class Timer {
 
     }
 
+    /**
+     * Stop a currently running timer and return it's value
+     *
+     * @param mixed $name The name of the timer to stop.  If the timer does not exist an exception is thrown.
+     *
+     * @throws Exception
+     *
+     * @return float The difference, in milliseconds, between when the timer was started and when it was stopped.
+     */
     public function stop($name = 'default') {
 
-        if(!array_key_exists($name, $this->timers)) {
-
+        if(!array_key_exists($name, $this->timers))
             throw new Exception("Error trying to stop non-existent timer '$name'.");
 
-        }
-
-        if($name == 'global') {
-
+        if($name == 'global')
             throw new Exception('You can not stop the global timer!');
 
-        }
-
-        if(!array_key_exists('stop', $this->timers[$name])) {
-
+        if(!array_key_exists('stop', $this->timers[$name]))
             $this->timers[$name]['stop'] = microtime(true);
-
-        }
 
         return $this->get($name);
 
     }
 
+    /**
+     * Magic toString method
+     *
+     * This will return a string representation of the current state of the default timer object.
+     *
+     * @return string
+     */
     public function __tostring() {
 
         return (string)$this->get();
 
     }
 
+    /**
+     * Get the current state of a timer.
+     *
+     * @return float
+     */
     public function get($name = 'default', $precision = null) {
 
-        if(!array_key_exists($name, $this->timers)) {
-
+        if(!array_key_exists($name, $this->timers))
             throw new Exception("Unable to return current value of non-existent timer '$name'.");
-        }
 
         if(!$precision)
             $precision = $this->precision;
@@ -101,15 +127,23 @@ class Timer {
 
     }
 
+    /**
+     * Get an array of all timers and their current state
+     *
+     * If a timer is currently running, then it's value will be the difference between when it started
+     * and 'now'.
+     *
+     * If a timer has stopped, it's value will be the difference between when it was started and when
+     * it stopped.
+     *
+     * @return string[]
+     */
     public function all() {
 
         $results = array();
 
-        foreach(array_keys($this->timers) as $name) {
-
+        foreach(array_keys($this->timers) as $name)
             $results[$name] = $this->get($name);
-
-        }
 
         return $results;
 
