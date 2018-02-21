@@ -14,8 +14,7 @@ namespace Hazaar\Controller;
  *
  * @detail      This controller can be used to create RESTful API endpoints.  It automatically handles
  *              HTTP request methods and can send appropriate responses for invalid requests.  It can
- *              also provide an intelligent API endpoint directory as well as allows for a simple method
- *              to version control your API.
+ *              also provide an intelligent API endpoint directory.
  *
  *              ## Overview
  *              Unlike other controllers, the rest controller works using annotations.  Such as:
@@ -38,19 +37,27 @@ namespace Hazaar\Controller;
  *              This API will be accessible at the URL: http://yourhost.com/api/v1/dothething/1234
  *
  *              ## Versions
- *              The version node of the URL path will always exist.  If no version is specified then the
- *              version will ALWAYS be 'v1'.  Using versions allows you to easily update your API without
+ *              It is possible to add your own "version control" to the REST api by defining multiple
+ *              functions for the same route.  Using versions allows you to easily update your API without
  *              removing backwards compatibility.  New versions should be used when there is a major change
  *              to either the input or output of your endpoint and renaming it is not reasonable.
  *
- *              Do define another version of the above example:
+ *              Do define another version of the above example using versions you could:
  *
  *              <code>
  *              class ApiController extends \Hazaar\Controller\REST {
  *
  *                  /**
- *                   * @route('/dothething/<date:when>/<int:thingstodo>', method=['GET'])
- *                   * @version 2
+ *                   * @route('/v1/dothething/<int:thingstodo>', method=['GET'])
+ *                   **\/
+ *                  protected function do_the_thing($thingstodo){
+ *
+ *                      return array('things' => 'Array of things');
+ *
+ *                  }
+ *
+ *                  /**
+ *                   * @route('/v2/dothething/<date:when>/<int:thingstodo>', method=['GET'])
  *                   **\/
  *                  protected function do_the_thing_v2($thingstodo, $when){
  *
@@ -66,13 +73,15 @@ namespace Hazaar\Controller;
  *
  *              This API will be accessible at the URL: http://yourhost.com/api/v1/dothething/2040-01-01/1234
  *
- *              ### Endpoints on multipl versions
- *              To allow an endpoint to be available on multiple versions of your API, simply list the versions
- *              in the @version tag separated by a comma.  Such as:
+ *              ### Endpoints on multiple versions
+ *              To allow an endpoint to be available on multiple versions of your API, simply add multple @routes
+ *
+ *              Such as:
  *
  *              <code>
  *              /**
- *                * @version 1,2
+ *                * @route('/v1/dothething/<date:when>/<int:thingstodo>', method=['GET'])
+ *                * @route('/v2/dothething/<date:when>/<int:thingstodo>', method=['GET'])
  *               **\/
  *
  *              ## Endpoint Directories
@@ -112,8 +121,6 @@ abstract class REST extends \Hazaar\Controller {
                     if(!preg_match('/\([\'\"]([\w\<\>\:\/]+)[\'\"]\s*,?\s*(.+)*\)/', $tag, $matches))
                         continue;
 
-                    $versions = preg_split('/\s*,\s*/', ($doc->hasTag('version') ? $doc->tag('version')[0] : 1));
-
                     $route = '/' . ltrim($matches[1], '/');
 
                     $args = array('method' => array('GET'));
@@ -145,21 +152,14 @@ abstract class REST extends \Hazaar\Controller {
 
                     }
 
-                    foreach($versions as $version){
+                    if(!array_key_exists($route, $this->endpoints))
+                        $this->endpoints[$route] = array();
 
-                        if(!array_key_exists($version, $this->endpoints))
-                            $this->endpoints[$version] = array();
-
-                        if(!array_key_exists($route, $this->endpoints[$version]))
-                            $this->endpoints[$version][$route] = array();
-
-                        $this->endpoints[$version][$route][] = array(
-                            'func' => $method,
-                            'doc' => $doc,
-                            'args' => $args
-                        );
-
-                    }
+                    $this->endpoints[$route][] = array(
+                        'func' => $method,
+                        'doc' => $doc,
+                        'args' => $args
+                    );
 
                 }
 
@@ -194,31 +194,11 @@ abstract class REST extends \Hazaar\Controller {
 
             }
 
-            if(!preg_match('/\/v(\d+)(\/?.*)/', $full_path, $matches))
-                throw new \Exception('API version is required', 400);
-
-            $version = intval($matches[1]);
-
-            if(!array_key_exists($version, $this->endpoints))
-                throw new \Exception('API version(' . $version . ') does not exist!', 404);
-
-            if(!($path = $matches[2]))
-                $path = '/';
-
-            if($path == '/'){
-
-                if(!$this->allow_directory)
-                    throw new \Exception('Directory listing is not allowed', 403);
-
-                return new \Hazaar\Controller\Response\Json(ake($this->__describe_version($version), 'endpoints'));
-
-            }
-
-            foreach($this->endpoints[$version] as $route => $routes){
+            foreach($this->endpoints as $route => $routes){
 
                 foreach($routes as $endpoint){
 
-                    if($this->__match_route($path, $route, $endpoint, $args)){
+                    if($this->__match_route($full_path, $route, $endpoint, $args)){
 
                         if($this->request->method() == 'OPTIONS'){
 
@@ -227,7 +207,7 @@ abstract class REST extends \Hazaar\Controller {
                             $response->setHeader('allow', $endpoint['args']['method']);
 
                             if($this->allow_directory)
-                                $response->populate($this->__describe_endpoint($route, $endpoint, $version, $this->describe_full));
+                                $response->populate($this->__describe_endpoint($route, $endpoint, $this->describe_full));
 
                             return $response;
 
@@ -240,7 +220,7 @@ abstract class REST extends \Hazaar\Controller {
 
             }
 
-            throw new \Exception('REST API Endpoint not found: ' . $path, 404);
+            throw new \Exception('REST API Endpoint not found: ' . $full_path, 404);
 
         }
         catch(\Exception $e){
@@ -255,39 +235,25 @@ abstract class REST extends \Hazaar\Controller {
 
         $api = array();
 
-        foreach(array_keys($this->endpoints) as $version)
-            $api[] = $this->__describe_version($version);
+        foreach($this->endpoints as $route => $routes){
+
+            foreach($routes as $endpoint)
+                $this->__describe_endpoint($route, $endpoint, $this->describe_full, $api);
+
+        }
 
         return $api;
 
     }
 
-    private function __describe_version($version){
-
-        if(!array_key_exists($version, $this->endpoints))
-            throw new \Exception('No endpoints exist on version ' . $version, 404);
-
-        $api = array(
-            'version' => $version,
-            'directory' => $this->url() . '/v' . $version,
-            'endpoints' => array()
-        );
-
-        foreach($this->endpoints[$version] as $route => $endpoint)
-            $this->__describe_endpoint($route, $endpoint, $version, $this->describe_full, $api['endpoints']);
-
-        return $api;
-
-    }
-
-    private function __describe_endpoint($route, $endpoint, $version, $describe_full = false, &$api = null){
+    private function __describe_endpoint($route, $endpoint, $describe_full = false, &$api = null){
 
         if(!$api) $api = array();
 
         foreach($endpoint['args']['method'] as $method){
 
             $info = array(
-                'url' => (string)$this->url('v' . $version) . $route,
+                'url' => $this->url() . $route,
                 'httpMethod' => $method
             );
 
