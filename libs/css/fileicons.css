@@ -64,6 +64,8 @@
     background-image: url(images/fileicon/doc.png);
 }
 
+.fileicon[data-type=application-vnd_openxmlformats-officedocument_spreadsheetml_sheet],
+.fileicon[data-type=application-vnd_ms-excel],
 .fileicon[data-type=application-vnd_oasis_opendocument_spreadsheet] {
     background-image: url(images/fileicon/xls.png);
 }
