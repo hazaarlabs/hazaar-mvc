@@ -150,11 +150,7 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
             if(! ($response instanceof Response)) {
 
-                if(is_array($response)) {
-
-                    $response = new Response\Json($response);
-
-                } else {
+                if($response === NULL) {
 
                     $response = new Response\Html();
 
@@ -165,6 +161,10 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
                     if($this->application->config->app->has('tidy'))
                         $response->enableTidy($this->application->config->app->get('tidy', false));
+
+                }else{
+
+                    $response = new Response\Json($response);
 
                 }
 
