@@ -87,6 +87,8 @@ abstract class Request implements Request\_Interface {
 
         $this->action = 'index';
 
+        $this->path = null;
+
         //First, split off any query string
         $url = parse_url($string);
 
