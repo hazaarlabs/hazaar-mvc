@@ -16,19 +16,7 @@ class View extends \Hazaar\Controller\Response\Html {
 
         parent::__construct();
 
-        if($view instanceof \Hazaar\View) {
-
-            $this->_view = $view;
-
-            $this->_view_name = $view->getName();
-
-        } else {
-
-            $this->_view_name = $view;
-
-            $this->_view = new \Hazaar\View($view, array('html'));
-
-        }
+        $this->load($view);
 
     }
 
@@ -52,7 +40,19 @@ class View extends \Hazaar\Controller\Response\Html {
 
     public function load($view, $backend = NULL) {
 
-        $this->_view = $view;
+        if($view instanceof \Hazaar\View) {
+
+            $this->_view = $view;
+
+            $this->_view_name = $view->getName();
+
+        } else {
+
+            $this->_view_name = $view;
+
+            $this->_view = new \Hazaar\View($view, array('html'));
+
+        }
 
     }
 
