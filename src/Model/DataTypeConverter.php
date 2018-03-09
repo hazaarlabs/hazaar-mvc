@@ -66,6 +66,14 @@ abstract class DataTypeConverter  {
                 if ($type == 'mixed' || $type == 'model')
                     return $value;
 
+                if($value instanceof DataBinderValue){
+
+                    $o = $value;
+
+                    $value = $o->value;
+
+                }
+
                 if ($type == 'boolean') {
 
                     $value = boolify($value);
@@ -89,6 +97,14 @@ abstract class DataTypeConverter  {
                 } elseif (!@settype($value, $type)) {
 
                     throw new Exception\InvalidDataType($type, get_class($value));
+
+                }
+
+                if(isset($o)){
+
+                    $o->value = $value;
+
+                    $value = $o;
 
                 }
 
