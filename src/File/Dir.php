@@ -123,6 +123,15 @@ class Dir {
 
     }
 
+
+    public function isEmpty(){
+
+        $files = $this->backend->scandir($this->path);
+
+        return (count($files) === 0);
+
+    }
+
     /**
      * Empty a directory of all it's contents.
      *
