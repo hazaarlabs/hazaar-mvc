@@ -286,7 +286,7 @@ dataBinder.prototype._update = function (attr_name, do_update) {
                 o.val(attr_value);
             if (do_update === true) o.trigger('update', [attr_name, attr_value]);
         } else
-            o.html(attr_item ? attr_item.toString() : 'none');
+            o.html(attr_item ? attr_item.toString() : '');
     });
 };
 
