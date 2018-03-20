@@ -128,10 +128,11 @@ var dataBinderValue = function (name, value, label, parent) {
     Object.defineProperties(this, {
         "value": {
             set: function (value) {
+                var attr_name = this._parent._attr_name(this._name);
                 this._value = this._parent.__nullify(value);
                 this._other = null;
-                this._parent._update(this._name, true);
-                this._parent._trigger(this._name, this._value);
+                this._parent._update(attr_name, true);
+                this._parent._trigger(attr_name, this._value);
             },
             get: function () {
                 return this._value;
@@ -140,7 +141,7 @@ var dataBinderValue = function (name, value, label, parent) {
         "label": {
             set: function (value) {
                 this._label = value;
-                this._parent._update(this._name, false);
+                this._parent._update(this._parent._attr_name(this._name), false);
             },
             get: function () {
                 return this._label;
@@ -149,7 +150,7 @@ var dataBinderValue = function (name, value, label, parent) {
         "other": {
             set: function (value) {
                 this._other = value;
-                this._parent._update(this._name, false);
+                this._parent._update(this._parent._attr_name(this._name), false);
             },
             get: function () {
                 return this._other;
@@ -163,10 +164,11 @@ dataBinderValue.prototype.toString = function () {
 };
 
 dataBinderValue.prototype.set = function (value, label) {
+    var attr_name = this._parent._attr_name(this._name);
     this._value = this._parent.__nullify(value);
     this._label = label;
-    this._parent._update(this._name, true);
-    this._parent._trigger(this._name, this._value);
+    this._parent._update(attr_name, true);
+    this._parent._trigger(attr_name, this._value);
     return this;
 };
 
@@ -240,7 +242,8 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
         set: function (value) {
             value = this.__convert_type(key, value);
             if (value === null && this._attributes[key] && this._attributes[key].other) this._attributes[key].other = null;
-            else if ((this._attributes[key] instanceof dataBinderValue ? this._attributes[key].value : this._attributes[key]) === (value instanceof dataBinderValue ? value.value : value)) return;
+            else if ((value === null && this._attributes[key] instanceof dataBinder)
+                || (this._attributes[key] instanceof dataBinderValue ? this._attributes[key].value : this._attributes[key]) === (value instanceof dataBinderValue ? value.value : value)) return;
             this._attributes[key] = value;
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
             this._trigger(attr_name, value);
