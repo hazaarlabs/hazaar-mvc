@@ -116,26 +116,26 @@
                 if (color) this.__icon.css({ color: color });
             };
             host.render = function () {
-                this.__overlay = $('<div class="hz-popup-overlay">').appendTo(document.body).toggleClass('hz-modal', this.props.modal);
-                this.__window = $('<div class="hz-modal-content">').appendTo(this.__overlay);
-                this.__title = $('<div class="hz-modal-header">').html(this.props.title).appendTo(this.__window);
-                this.__container = $('<div class="hz-modal-body">').appendTo(this.__window);
-                this.__close = $('<button type="button" class="hz-close">').html('x').appendTo(this.__title);
+                this.__overlay = $('<div class="popup-overlay">').appendTo(document.body).toggleClass('modal', this.props.modal);
+                this.__window = $('<div class="modal-content">').appendTo(this.__overlay);
+                this.__title = $('<div class="modal-header">').html(this.props.title).appendTo(this.__window);
+                this.__container = $('<div class="modal-body">').appendTo(this.__window);
+                this.__close = $('<button type="button" class="close">').html('x').appendTo(this.__title);
                 if (this.props.icon)
                     this.__setIcon(this.props.icon, this.props.iconColor);
                 this.props.hideOnClose = ($(this).parent().length > 0);
                 this.__container.append(this);
                 if (this.props.buttons.length > 0) {
-                    this.__buttons = $('<div class="hz-modal-footer">').appendTo(this.__window);
+                    this.__buttons = $('<div class="modal-footer">').appendTo(this.__window);
                     for (x in this.props.buttons) {
                         if (typeof this.props.buttons[x] == 'string')
                             this.props.buttons[x] = { label: this.props.buttons[x], action: 'close' };
-                        var btn = $.extend({ label: 'Button', action: 'close', 'class': 'hz-popup-button' }, this.props.buttons[x]);
+                        var btn = $.extend({ label: 'Button', action: 'close', 'class': 'popup-button' }, this.props.buttons[x]);
                         var button = $('<button>').attr('class', btn.class).html(btn.label).data('btn', btn).click(this.btnAction);
                         this.__buttons.append(button);
                     }
                 }
-                //$(this).addClass('hz-modal-body');
+                //$(this).addClass('modal-body');
                 if (this.props.width)
                     this.__window.addClass('static').css({ width: this.props.width });
                 if (this.props.height)
