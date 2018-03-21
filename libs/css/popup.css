@@ -1,4 +1,4 @@
-﻿.popup-overlay.modal {
+﻿.hz-popup-overlay.modal {
     position: fixed;
     top: 0;
     right: 0;
@@ -9,7 +9,7 @@
     z-index: 9998;
 }
 
-.modal-content {
+.hz-modal-content {
     display: none;
     position: absolute;
     max-height: 90%;
@@ -17,7 +17,7 @@
     z-index: 9999;
 }
 
-.popup-window.static .popup-container {
+.hz-popup-window.static .hz-popup-container {
     position: absolute;
     margin-top: 0;
     top: 51px;
@@ -26,66 +26,66 @@
     bottom: 65px;
 }
 
-    .popup-window.static .popup-container:last-child {
+    .hz-popup-window.static .hz-popup-container:last-child {
         bottom: 0;
     }
 
-.modal-body {
+.hz-modal-body {
     position: relative;
     min-height: 85px;
 }
 
-    .modal-body .modal-content-icon {
+    .hz-modal-body .hz-modal-content-icon {
         font-size: 4em;
         position: absolute;
         top: 0;
         left: 15px;
     }
 
-        .modal-body .modal-content-icon + div {
+        .hz-modal-body .hz-modal-content-icon + div {
             margin-left: 65px;
         }
 
-.popup-window .popup-window-icon .fa {
+.hz-popup-window .hz-popup-window-icon .fa {
     display: block;
 }
 
 
-.popup-window .popup-container .popup-content {
+.hz-popup-window .hz-popup-container .hz-popup-content {
     display: block;
     text-align: center;
     padding: 15px;
 }
 
-.popup-window .popup-window-icon + .popup-content {
+.hz-popup-window .hz-popup-window-icon + .hz-popup-content {
     margin-left: 75px;
 }
 
-.popup-window .popup-buttons {
+.hz-popup-window .hz-popup-buttons {
     margin: 15px 0;
     text-align: center;
 }
 
-.popup-window.static .popup-buttons {
+.hz-popup-window.static .hz-popup-buttons {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
 }
 
-.popup-window .popup-buttons button {
+.hz-popup-window .hz-popup-buttons button {
     margin: 0 5px;
     min-width: 100px;
 }
 
-    .popup-window .popup-buttons button.popup-button {
+    .hz-popup-window .hz-popup-buttons button.hz-popup-button {
         padding: 10px 15px;
         border: 1px solid #ddd;
         background: #eee;
         cursor: pointer;
     }
 
-        .popup-window .popup-buttons button.popup-button:hover {
+        .hz-popup-window .hz-popup-buttons button.hz-popup-button:hover {
             border-color: #ccc;
             background-color: #ddd;
         }
