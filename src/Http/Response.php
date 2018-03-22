@@ -308,22 +308,10 @@ class Response {
 
     public function getStatusMessage($code = NULL) {
 
-        if($file = \Hazaar\Loader::resolve('Support/Http_Status.dat')) {
+        if(!$code)
+            $code = $this->status_code;
 
-            if(! $code)
-                $code = $this->status_code;
-
-            $codes = file_get_contents($file);
-
-            if(preg_match('/^' . $code . '\s(.*)$/m', $codes, $matches)) {
-
-                return $matches[1];
-
-            }
-
-        }
-
-        return 'Unknown Status';
+        return http_response_text($code);
 
     }
 
