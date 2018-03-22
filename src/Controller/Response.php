@@ -93,18 +93,6 @@ abstract class Response implements Response\_Interface {
 
     }
 
-    public function setStatusCode($code) {
-
-        $this->status_code = intval($code);
-
-    }
-
-    public function getStatusCode() {
-
-        return $this->status_code;
-
-    }
-
     public function modified() {
 
         return ($this->status_code !== 304);
@@ -173,13 +161,19 @@ abstract class Response implements Response\_Interface {
 
     public function setStatus($status) {
 
-        $this->status_code = $status;
+        $this->status_code = intval($status);
 
     }
 
     public function getStatus() {
 
         return $this->status_code;
+
+    }
+
+    public function getStatusMessage() {
+
+        return http_response_text($this->status_code);
 
     }
 
