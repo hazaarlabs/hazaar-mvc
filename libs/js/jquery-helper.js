@@ -80,24 +80,6 @@ jQuery.stream = function (url, options) {
 };
 
 /**
- * jQuery Remove Event
- *
- * This event will be fired when an element is removed from the DOM using jQuery.remove();
- *
- * To bind: jQuery('#elemnt').on('remove', function(){ 'do the things' });
- */
-if (jQuery.cleanData.toString().search(/triggerHandler\(["\']remove["\']\)/) < 0) {
-    (function ($) {
-        var oldClean = jQuery.cleanData;
-        $.cleanData = function (elems) {
-            for (var i = 0, elem; (elem = elems[i]) !== undefined; i++)
-                $(elem).triggerHandler("remove");
-            return oldClean(elems);
-        };
-    })(jQuery);
-}
-
-/**
  * The Hazaar MVC Data binder
  *
  * This is a simple JavaScript/jQuery data bindering function to bind object data to
@@ -109,8 +91,7 @@ if (jQuery.cleanData.toString().search(/triggerHandler\(["\']remove["\']\)/) < 0
  * @returns {object} A new dataBinder object.
  */
 var dataBinder = function (data, name, parent) {
-    if (this === window)
-        return new dataBinder(data);
+    if (this === window) return new dataBinder(data);
     this._init(data, name, parent);
 };
 
@@ -177,7 +158,7 @@ dataBinderValue.prototype.set = function (value, label) {
 };
 
 dataBinderValue.prototype.save = function (no_label) {
-    if (((this.value && this.label) || (this.value === null && this.other)) && no_label !== true)
+    if (((this.value !== null && this.label !== null) || (this.value === null && this.other !== null)) && no_label !== true)
         return { "__hz_value": this.value, "__hz_label": this.label, "__hz_other": this.other };
     return this.value;
 };
@@ -211,17 +192,15 @@ dataBinder.prototype.__convert_type = function (key, value, parent) {
     else if (value !== null && typeof value === 'object' && '__hz_value' in value) {
         if (typeof value.__hz_value === 'string' && value.__hz_value === '') value = null;
         else {
-            var dba = new dataBinderValue(key, value.__hz_value, value.__hz_label, parent);
+            let dba = new dataBinderValue(key, value.__hz_value, value.__hz_label, parent);
             if ('__hz_other' in value) dba.other = value.__hz_other;
             value = dba;
         }
     } else if (value !== null && !(value instanceof dataBinder
         || value instanceof dataBinderArray
         || value instanceof dataBinderValue)) {
-        if (typeof value === 'object')
-            value = new dataBinder(value, key, parent);
-        else
-            value = new dataBinderValue(key, value, null, parent);
+        if (typeof value === 'object') value = new dataBinder(value, key, parent);
+        else value = new dataBinderValue(key, value, null, parent);
     }
     return value;
 };
@@ -424,10 +403,7 @@ dataBinderArray.prototype._newitem = function (index, element) {
     var newitem = (this._template.prop('tagName') === 'TEMPLATE')
         ? jQuery(this._template.html()).attr('data-bind', attr_name)
         : this._template.clone(true).attr('data-bind', attr_name);
-    newitem.on('remove', function () {
-        var index = Array.from(this.parentNode.children).indexOf(this);
-        if (index >= 0) a._cleanupItem(index);
-    }).find('[data-bind]').each(function (idx, item) {
+    newitem.find('[data-bind]').each(function (idx, item) {
         var key = item.attributes['data-bind'].value;
         item.attributes['data-bind'].value = attr_name + '.' + key;
     });
@@ -483,12 +459,9 @@ dataBinderArray.prototype.remove = function (index) {
     if (typeof index === 'string') index = this.indexOf(index);
     if (index < 0 || typeof index === 'undefined') return;
     var element = this._elements[index];
-    if (element instanceof dataBinder)
-        jQuery('[data-bind="' + this._attr_name() + '"]').children().eq(index).remove();
-    else {
-        this._cleanupItem(index);
-        this._update(this._attr_name(), element);
-    }
+    if (element instanceof dataBinder) jQuery('[data-bind="' + this._attr_name() + '"]').children().eq(index).remove();
+    this._cleanupItem(index);
+    this._update(this._attr_name(), element);
     return element;
 };
 
@@ -568,8 +541,8 @@ dataBinderArray.prototype.filter = function (cb, saved) {
 
 dataBinderArray.prototype.__nullify = function (value) {
     return this._parent.__nullify(value);
-}
+};
 
 dataBinderArray.prototype.watch = function (cb) {
     if (typeof cb === 'function') this._watchers.push(cb);
-}
+};
