@@ -408,7 +408,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             && array_key_exists('arrayOf', $def)
             && !$value instanceof ChildArray) {
 
-            $value = new ChildArray($def['arrayOf'], $value);
+            $value = new ChildArray(ake($def, 'arrayOf', 'string'), $value);
 
         }elseif(array_key_exists('type', $def) && $def['type'] == 'array' && is_array($value)){
 
