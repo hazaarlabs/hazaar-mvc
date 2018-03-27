@@ -271,8 +271,8 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
         // title
         $cmd .= (($this->title != '') ? ' --title "' . $this->title . '"' : '');
 
-        // URL and optional to write to STDOUT
-        $cmd .= ' -l "' . $web . '" -';
+        // URL and optional to write to STDOUT (with quiet)
+        $cmd .= ' -q -l "' . $web . '" -';
 
         $this->content = self::_pipeExec($cmd);
 
