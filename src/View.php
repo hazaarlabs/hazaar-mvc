@@ -116,11 +116,54 @@ class View {
 
     }
 
-    public function load($view) {
+    static function getViewPath($view, &$name){
+
+        $viewfile = null;
 
         $parts = pathinfo($view);
 
-        $this->name = (($parts['dirname'] !== '.') ? $parts['dirname'] . '/' : '') . $parts['filename'];
+        $name = (($parts['dirname'] !== '.') ? $parts['dirname'] . '/' : '') . $parts['filename'];
+
+        $type = FILE_PATH_VIEW;
+
+        /*
+         * If the name begins with an @ symbol then we are trying to load the view from a
+         * support file path, not the application path
+         */
+        if (substr($view, 0, 1) == '@') {
+
+            $view = substr($view, 1);
+
+            $type = FILE_PATH_SUPPORT;
+
+        }else{
+
+            $view = $name;
+
+        }
+
+        if(array_key_exists('extension', $parts)){
+
+            $viewfile = Loader::getFilePath($type, $view . '.' . $parts['extension']);
+
+        }else{
+
+            $extensions = array('phtml', 'tpl');
+
+            foreach($extensions as $extension){
+
+                if($viewfile = Loader::getFilePath($type, $view . '.' . $extension))
+                    break;
+
+            }
+
+        }
+
+        return $viewfile;
+
+    }
+
+    public function load($view) {
 
         if(Loader::isAbsolutePath($view)){
 
@@ -128,42 +171,9 @@ class View {
 
         }else{
 
-            $type = FILE_PATH_VIEW;
+            $this->_viewfile = View::getViewPath($view, $this->name);
 
-            /*
-             * If the name begins with an @ symbol then we are trying to load the view from a
-             * support file path, not the application path
-             */
-            if (substr($view, 0, 1) == '@') {
-
-                $view = substr($view, 1);
-
-                $type = FILE_PATH_SUPPORT;
-
-            }else{
-
-                $view = $this->name;
-
-            }
-
-            if(array_key_exists('extension', $parts)){
-
-                $this->_viewfile = Loader::getFilePath($type, $view . '.' . $parts['extension']);
-
-            }else{
-
-                $extensions = array('phtml', 'tpl');
-
-                foreach($extensions as $extension){
-
-                    if($this->_viewfile = Loader::getFilePath($type, $view . '.' . $extension))
-                        break;
-
-                }
-
-            }
-
-            if (! $this->_viewfile)
+            if (!$this->_viewfile)
                 throw new \Exception("File not found or permission denied accessing view '{$this->name}'.");
 
         }

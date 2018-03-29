@@ -31,25 +31,15 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
         /*
          * This helper has a method available to the controller so we register it
          */
-        $controller->__registerMethod('view', array(
-            $this,
-            'view'
-        ));
+        $controller->__registerMethod('hasView', array($this, 'hasView'));
 
-        $controller->__registerMethod('layout', array(
-            $this,
-            'layout'
-        ));
+        $controller->__registerMethod('view', array($this, 'view'));
 
-        $controller->__registerMethod('setNoLayout', array(
-            $this,
-            'setNoLayout'
-        ));
+        $controller->__registerMethod('layout', array($this, 'layout'));
 
-        $controller->__registerMethod('post', array(
-            $this,
-            'post'
-        ));
+        $controller->__registerMethod('setNoLayout', array($this, 'setNoLayout'));
+
+        $controller->__registerMethod('post', array($this, 'post'));
 
     }
 
@@ -112,6 +102,12 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
     public function extend(array $array) {
 
         $this->_data = array_merge($this->_data, $array);
+
+    }
+
+    public function hasView($view){
+
+        return (\Hazaar\View::getViewPath($view, $name) !== null);
 
     }
 
