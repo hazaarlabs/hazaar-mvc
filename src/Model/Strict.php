@@ -1137,7 +1137,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @param mixed $argv
      *
-     * @throws BadMethodCallException
+     * @throws Exception\BadMethodCall
      *
      * @return mixed
      */

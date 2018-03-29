@@ -47,7 +47,7 @@ class DataBinderValue implements \JsonSerializable {
 
         if(is_array($value)){
 
-            if( array_key_exists('__hz_other', $value))
+            if(array_key_exists('__hz_other', $value))
                 $other = $value['__hz_other'];
 
             if(array_key_exists('__hz_value', $value))
@@ -82,6 +82,31 @@ class DataBinderValue implements \JsonSerializable {
         $array = array('__hz_value' => $this->value, '__hz_label' => $this->label);
 
         if($this->other) $array['__hz_other'] = $this->other;
+
+        return $array;
+
+    }
+
+    /**
+     * Resolve an array and look for saved value/label arrays and convert them.
+     *
+     * @param array $array The array to resolve
+     * @param boolean $recursive Recurse into normal arrays.  Defaults to TRUE.
+     * @return array
+     */
+    static function resolve($array, $recursive = true){
+
+        foreach($array as &$value){
+
+            if(!is_array($value))
+                continue;
+
+            if(array_key_exists('__hz_value', $value))
+                $value = (DataBinderValue::create($value))->value;
+            elseif($recursive === true)
+                $value = DataBinderValue::resolve($value);
+
+        }
 
         return $array;
 
