@@ -80,10 +80,7 @@ class View extends \Hazaar\Controller\Response\Html {
 
     public function __call($method, $param_arr) {
 
-        call_user_func_array(array(
-                                 $this->_view,
-                                 $method
-                             ), $param_arr);
+        return call_user_func_array(array($this->_view, $method), $param_arr);
 
     }
 
