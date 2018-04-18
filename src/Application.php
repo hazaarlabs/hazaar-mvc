@@ -199,6 +199,8 @@ class Application {
 
         }
 
+        if(!defined('RUNTIME_PATH')) define('RUNTIME_PATH', $this->runtimePath(null, true));
+
         $this->request = Application\Request\Loader::load($this->config);
 
         /*
@@ -295,21 +297,16 @@ class Application {
 
         $path = realpath($path);
 
-        if($suffix = trim($suffix)) {
+        if(!($suffix = trim($suffix)))
+            return $path;
 
-            if($suffix && substr($suffix, 0, 1) != DIRECTORY_SEPARATOR)
-                $suffix = DIRECTORY_SEPARATOR . $suffix;
+        if($suffix && substr($suffix, 0, 1) != DIRECTORY_SEPARATOR)
+            $suffix = DIRECTORY_SEPARATOR . $suffix;
 
-            $full_path = $path . $suffix;
+        $full_path = $path . $suffix;
 
-            if(!file_exists($full_path) && $create_dir)
-                mkdir($full_path, 0775, TRUE);
-
-        } else {
-
-            $full_path = $path;
-
-        }
+        if(!file_exists($full_path) && $create_dir)
+            mkdir($full_path, 0775, TRUE);
 
         return $full_path;
 
