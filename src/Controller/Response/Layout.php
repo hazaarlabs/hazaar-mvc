@@ -44,6 +44,8 @@ class Layout extends \Hazaar\Controller\Response\Html implements \ArrayAccess {
 
         $this->_layout->initHelpers();
 
+        $this->_layout->runHelpers();
+
         $content = $this->_layout->render();
 
         $this->setContent($content);
