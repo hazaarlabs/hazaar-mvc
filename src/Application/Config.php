@@ -65,7 +65,16 @@ class Config extends \Hazaar\Map {
 
         }
 
-        parent::__construct($config);
+        $filters = array(
+            'out' => array(
+                array(
+                    'field' => null,
+                    'callback' => array($this, 'parseString')
+                )
+            )
+        );
+
+        parent::__construct($config, null, $filters);
 
     }
 
@@ -402,6 +411,24 @@ class Config extends \Hazaar\Map {
             return FALSE;
 
         return TRUE;
+
+    }
+
+    public function parseString($elem, $key){
+
+        if(is_string($elem) && preg_match_all('/%(\w*)%/', $elem, $matches)){
+
+            foreach($matches[0] as $index => $match){
+
+                $value = defined($matches[1][$index]) ? constant($matches[1][$index]) : '';
+
+                $elem = preg_replace('/' . preg_quote($match) . '/', $value, $elem, 1);
+
+            }
+
+        }
+
+        return $elem;
 
     }
 
