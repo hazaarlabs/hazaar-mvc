@@ -177,6 +177,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
             }
 
         }
+
         $this->filter = $filter_def;
 
         $this->populate($defaults);
@@ -1898,6 +1899,12 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
         }
 
         return TRUE;
+
+    }
+
+    public function __sleep(){
+
+        return array('defaults', 'elements', 'current', 'locked');
 
     }
 
