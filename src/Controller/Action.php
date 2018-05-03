@@ -89,7 +89,7 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
         }
 
-        if($path = $this->application->request->getPath())
+        if($path = $request->getPath())
             $this->actionArgs = explode('/', $path);
 
     }
