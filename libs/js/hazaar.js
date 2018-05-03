@@ -78,6 +78,14 @@
     if (typeof this.__options.data !== 'object' || this.__options.data === null) this.__options.data = {};
 };
 
+var delay = (function () {
+    var timer = 0;
+    return function (callback, ms) {
+        clearTimeout(timer);
+        timer = setTimeout(callback, ms);
+    };
+})();
+
 /*
  * Date Format 1.2.3
  * (c) 2007-2009 Steven Levithan <stevenlevithan.com>
