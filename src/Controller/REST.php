@@ -100,6 +100,12 @@ abstract class REST extends \Hazaar\Controller {
 
     private $__rest_cache_enable_global = false;
 
+    protected function enableEndpointCaching($boolean){
+
+        $this->__rest_cache_enable_global = boolify($boolean);
+
+    }
+
     public function __construct($name, $application, $use_app_config = true) {
 
         parent::__construct($name, $application, $use_app_config);
