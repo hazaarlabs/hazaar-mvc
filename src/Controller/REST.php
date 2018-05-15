@@ -403,18 +403,24 @@ abstract class REST extends \Hazaar\Controller {
             $cache_key = ($this->__rest_cache instanceof \Hazaar\Cache
                 && ($endpoint['cache'] === true
                 || ($this->__rest_cache_enable_global === true && $endpoint['cache'] !== false))
-                ? 'test' : null);
+                ? 'rest_endpoint_' . md5(serialize(array($method, $params, $this->request->getParams()))) : null);
 
             $response = new \Hazaar\Controller\Response\Json();
 
             //Try extracting from cache first if caching is enabled
-            if($cache_key !== null) $result = $this->__rest_cache->get($cache_key);
+            if($cache_key !== null)
+                $result = $this->__rest_cache->get($cache_key);
 
             //If there is no result yet, execute the endpoint
-            if(!$result) $result = $method->invokeArgs($this, $params);
+            if(!$result){
 
-            //Save the result if caching is enabled.
-            if($cache_key !== null) $this->__rest_cache->set($cache_key, $result);
+                $result = $method->invokeArgs($this, $params);
+
+                //Save the result if caching is enabled.
+                if($cache_key !== null)
+                    $this->__rest_cache->set($cache_key, $result);
+
+            }
 
             $response->populate($result);
 
