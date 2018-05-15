@@ -90,11 +90,30 @@ namespace Hazaar\Controller;
  */
 abstract class REST extends \Hazaar\Controller {
 
-    private $endpoints = array();
-
     protected $describe_full = true;
 
     protected $allow_directory = true;
+
+    private $__rest_endpoints = array();
+
+    private $__rest_cache;
+
+    private $__rest_cache_enable_global = false;
+
+    protected function enableEndpointCaching($boolean){
+
+        $this->__rest_cache_enable_global = boolify($boolean);
+
+    }
+
+    public function __construct($name, $application, $use_app_config = true) {
+
+        parent::__construct($name, $application, $use_app_config);
+
+        if(class_exists('Hazaar\Cache'))
+            $this->__rest_cache = new \Hazaar\Cache();
+
+    }
 
     public function __initialize(\Hazaar\Application\Request $request) {
 
@@ -152,13 +171,14 @@ abstract class REST extends \Hazaar\Controller {
 
                     }
 
-                    if(!array_key_exists($route, $this->endpoints))
-                        $this->endpoints[$route] = array();
+                    if(!array_key_exists($route, $this->__rest_endpoints))
+                        $this->__rest_endpoints[$route] = array();
 
-                    $this->endpoints[$route][] = array(
+                    $this->__rest_endpoints[$route][] = array(
                         'func' => $method,
                         'doc' => $doc,
-                        'args' => $args
+                        'args' => $args,
+                        'cache' => $doc->hasTag('cache') ? boolify($doc->tag('cache')[0]) : false
                     );
 
                 }
@@ -194,7 +214,7 @@ abstract class REST extends \Hazaar\Controller {
 
             }
 
-            foreach($this->endpoints as $route => $routes){
+            foreach($this->__rest_endpoints as $route => $routes){
 
                 foreach($routes as $endpoint){
 
@@ -235,7 +255,7 @@ abstract class REST extends \Hazaar\Controller {
 
         $api = array();
 
-        foreach($this->endpoints as $route => $routes){
+        foreach($this->__rest_endpoints as $route => $routes){
 
             foreach($routes as $endpoint)
                 $this->__describe_endpoint($route, $endpoint, $this->describe_full, $api);
@@ -372,9 +392,37 @@ abstract class REST extends \Hazaar\Controller {
 
             }
 
+            $result = null;
+
+            /*
+             * Enable caching if:
+             * * The cache object has been created (ie: the cache library is available)
+             * * This endpoint has enabled caching specifically
+             * * Global cache is enabled and this endpoint has not disabled caching
+             */
+            $cache_key = ($this->__rest_cache instanceof \Hazaar\Cache
+                && ($endpoint['cache'] === true
+                || ($this->__rest_cache_enable_global === true && $endpoint['cache'] !== false))
+                ? 'rest_endpoint_' . md5(serialize(array($method, $params, $this->request->getParams()))) : null);
+
             $response = new \Hazaar\Controller\Response\Json();
 
-            $response->populate($method->invokeArgs($this, $params));
+            //Try extracting from cache first if caching is enabled
+            if($cache_key !== null)
+                $result = $this->__rest_cache->get($cache_key);
+
+            //If there is no result yet, execute the endpoint
+            if(!$result){
+
+                $result = $method->invokeArgs($this, $params);
+
+                //Save the result if caching is enabled.
+                if($cache_key !== null)
+                    $this->__rest_cache->set($cache_key, $result);
+
+            }
+
+            $response->populate($result);
 
             return $response;
 
