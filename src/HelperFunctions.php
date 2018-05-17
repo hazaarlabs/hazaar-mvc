@@ -12,29 +12,24 @@
  * @brief Array value normalizer
  *
  * @detail Returns a value from an array if it exists. If it doesn't exist a default value can be specified.
- * Otherwise
- * null is returned.
+ * Otherwise null is returned.
  *
  * This helps prevent array key not found errors in the PHP interpreter.
  *
  * @since 1.0.0
  *
- * @param mixed $array
- *            The array to search.
- * @param mixed $key
- *            The array key value to look for.
- * @param mixed $default
- *            An optional default value to return if the key does not exist.
+ * @param mixed $array      The array to search.
+ * @param mixed $key        The array key value to look for.
+ * @param mixed $default    An optional default value to return if the key does not exist.
  *
- * @return mixed The value if it exists in the array. Returns the default if it does not. Default is null if not
- *         specified.
+ * @return mixed The value if it exists in the array. Returns the default if it does not. Default is null if not specified.
  */
 function ake($array, $key, $default = NULL, $non_empty = FALSE) {
 
     if ((is_array($array) || $array instanceof \ArrayAccess)
         && isset($array[$key])
         && $array[$key] !== NULL
-        && (!$non_empty || ($non_empty && ((is_string($array[$key] && trim($array[$key])) || $array[$key])) !== NULL)))
+        && (!$non_empty || ($non_empty && (is_string($array[$key]) ? trim($array[$key]) : $array[$key]))))
         return $array[$key];
 
     if ($array instanceof \Hazaar\Model\Strict)
