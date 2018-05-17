@@ -44,19 +44,26 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function find($criteria = array()){
+    public function find($criteria = array(), $multiple = false){
+
+        $values = array();
 
         foreach($this->values as $value){
 
             if(!\Hazaar\Map::is_array($value))
                 continue;
 
-            if($this->matchItem($value, $criteria))
-                return $value;
+            if($this->matchItem($value, $criteria)){
+
+                if(!$multiple) return $value;
+
+                $values[] = $value;
+
+            }
 
         }
 
-        return null;
+        return $multiple ? $values : null;
 
     }
 
