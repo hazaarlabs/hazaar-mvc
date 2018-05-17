@@ -230,8 +230,14 @@ class Hmv extends \Hazaar\View\Helper {
 
             }
 
-            if(!$item && $object->isObject($key))
-                $item = $object->set($key, array());
+            if(!$item && $object->isObject($key)){
+
+                $newItem = $object->set($key, array());
+
+                if($newItem instanceof \Hazaar\Model\Strict)
+                    $item = $newItem;
+
+            }
 
             $input = null;
 
@@ -373,6 +379,8 @@ class Hmv extends \Hazaar\View\Helper {
                     case 'array':
                         $input = $this->html->select($name, $values, $item);
                         break;
+                    case 'date':
+                        if($item instanceof \Hazaar\Date) $item = $item->format('Y-m-d');
                     case 'checkbox':
                     case 'text':
                     default:
