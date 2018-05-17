@@ -55,9 +55,13 @@ function ake($array, $key, $default = NULL, $non_empty = FALSE) {
  */
 function akr(&$array, $key_from, $key_to){
 
-    $array[$key_to] = $array[$key_from];
+    if(array_key_exists($key_from, $array)){
 
-    unset($array[$key_from]);
+        $array[$key_to] = $array[$key_from];
+
+        unset($array[$key_from]);
+
+    }
 
     return $array;
 
