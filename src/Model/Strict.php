@@ -376,7 +376,10 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         /*
          * Run any pre-update callbacks
          */
-        if ($exec_filters && array_key_exists('update', $def) && array_key_exists('pre', $def['update']))
+        if ($exec_filters 
+            && array_key_exists('update', $def) 
+            && is_array($def['update'])
+            && array_key_exists('pre', $def['update']))
             $value = $this->execCallback($def['update']['pre'], $value, $key);
 
         if(array_key_exists('value', $def))
@@ -550,7 +553,10 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         /*
          * Run any post-update callbacks
          */
-        if ($exec_filters && array_key_exists('update', $def) && array_key_exists('post', $def['update']))
+        if ($exec_filters 
+            && array_key_exists('update', $def) 
+            && is_array($def['update'])
+            && array_key_exists('post', $def['update']))
             $this->execCallback($def['update']['post'], $old_value, $key);
 
         return $value;
