@@ -69,20 +69,22 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     public function matchItem($item, $criteria){
 
-        foreach($criteria as $key => $value){
+        foreach($criteria as $key => $criteriaValue){
 
             $parts = explode('.', $key);
 
+            $value =& $item;
+
             foreach($parts as $part){
 
-                if(!isset($item[$part]))
+                if(!isset($value[$part]))
                     return false;
 
-                $item =& $item[$part];
+                $value =& $value[$part];
 
             }
 
-            if($item !== $value)
+            if($value !== $criteriaValue)
                 return false;
 
         }
@@ -280,6 +282,12 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
     public function jsonSerialize(){
 
         return $this->values;
+
+    }
+
+    public function empty(){
+
+        $this->values = array();
 
     }
 
