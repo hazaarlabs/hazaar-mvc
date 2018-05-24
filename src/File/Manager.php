@@ -213,7 +213,7 @@ class Manager {
      */
     public function get($path) {
 
-        return new \Hazaar\File($path, $this->backend);
+        return new \Hazaar\File($path, $this->backend, $this);
 
     }
 
@@ -226,7 +226,7 @@ class Manager {
      */
     public function dir($path = '/') {
 
-        return new Dir($this->fixPath($path), $this->backend);
+        return new Dir($this->fixPath($path), $this->backend, $this);
 
     }
 
@@ -253,7 +253,7 @@ class Manager {
 
                     $first = substr($search, 0, 1);
 
-                    if((ctype_alnum($first) || $first == '\\') == false 
+                    if((ctype_alnum($first) || $first == '\\') == false
                         && $first == substr($search, -1, 1)) {
 
                         if(! preg_match($search, $file->basename()))
@@ -327,7 +327,7 @@ class Manager {
         if(! $this->exists($dstPath))
             $this->mkdir($dstPath);
 
-        $dir = new Dir($src, $srcBackend);
+        $dir = new Dir($src, $srcBackend, $this);
 
         while(($f = $dir->read()) != FALSE) {
 
@@ -356,7 +356,7 @@ class Manager {
 
         if($srcBackend !== $this->backend) {
 
-            $file = new \Hazaar\File($src, $srcBackend);
+            $file = new \Hazaar\File($src, $srcBackend, $this);
 
             switch($file->type()) {
                 case 'file':
@@ -501,6 +501,12 @@ class Manager {
     public function set_meta($path, $values) {
 
         return $this->backend->set_meta($path, $values);
+
+    }
+
+    public function uri($path = null){
+
+        return new \Hazaar\Application\Url('media', $this->name . ($path ? '/' . ltrim($path, '/') : ''));
 
     }
 
