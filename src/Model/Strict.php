@@ -265,6 +265,34 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     public function &get($key, $exec_filters = true) {
 
+        if(strpos($key, '.') !== false){
+
+            $value = $this;
+
+            $parts = explode('.', $key);
+
+            end($parts);
+
+            $lastKey = key($parts);
+
+            foreach($parts as $key => $part){
+
+                if(!$value instanceof Strict){
+
+                    $null = null;
+
+                    return $null;
+
+                }
+
+                $value = $value->get($part, (($lastKey === $key) ? $exec_filters : false));
+
+            }
+
+            return $value;
+
+        }
+
         if (!array_key_exists($key, $this->values)) {
 
             $null = null;
@@ -376,8 +404,8 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         /*
          * Run any pre-update callbacks
          */
-        if ($exec_filters 
-            && array_key_exists('update', $def) 
+        if ($exec_filters
+            && array_key_exists('update', $def)
             && is_array($def['update'])
             && array_key_exists('pre', $def['update']))
             $value = $this->execCallback($def['update']['pre'], $value, $key);
@@ -553,8 +581,8 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         /*
          * Run any post-update callbacks
          */
-        if ($exec_filters 
-            && array_key_exists('update', $def) 
+        if ($exec_filters
+            && array_key_exists('update', $def)
             && is_array($def['update'])
             && array_key_exists('post', $def['update']))
             $this->execCallback($def['update']['post'], $old_value, $key);
