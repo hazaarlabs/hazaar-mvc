@@ -8,16 +8,20 @@ class Dir {
 
     private $backend;
 
+    private $manager;
+
     private $files;
 
     private $allow_hidden = FALSE;
 
-    function __construct($path, $backend = NULL) {
+    function __construct($path, Backend\_Interface $backend = NULL, Manager $manager = null) {
 
         if(! $backend)
             $backend = new Backend\Local(array('root' => '/'));
 
         $this->backend = $backend;
+
+        $this->manager = $manager;
 
         $this->path = $this->fixPath($path);
 
@@ -190,7 +194,7 @@ class Dir {
 
         }
 
-        return new \Hazaar\File($this->fixPath($this->path, $file), $this->backend);
+        return new \Hazaar\File($this->fixPath($this->path, $file), $this->backend, $this->manager);
 
     }
 
@@ -247,7 +251,7 @@ class Dir {
             } elseif(! fnmatch($pattern, $file))
                 continue;
 
-            $list[] = new \Hazaar\File($start . $file, $this->backend);
+            $list[] = new \Hazaar\File($start . $file, $this->backend, $this->manager);
 
         }
 
@@ -294,7 +298,7 @@ class Dir {
 
                 if($recursive) {
 
-                    $dir = new Dir($sourcePath, $this->backend);
+                    $dir = new Dir($sourcePath, $this->backend, $this->manager);
 
                     $dir->copyTo($targetPath, $recursive, $transport_callback);
 
@@ -318,13 +322,13 @@ class Dir {
 
     public function get($child) {
 
-        return new \Hazaar\File($this->path($child), $this->backend);
+        return new \Hazaar\File($this->path($child), $this->backend, $this->manager);
 
     }
 
     public function dir($child) {
 
-        return new \Hazaar\File\Dir($this->path($child), $this->backend);
+        return new \Hazaar\File\Dir($this->path($child), $this->backend, $this->manager);
 
     }
 

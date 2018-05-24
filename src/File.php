@@ -6,6 +6,8 @@ class File {
 
     protected $backend;
 
+    protected $manager;
+
     public    $source_file;
 
     protected $info;
@@ -32,11 +34,13 @@ class File {
 
     private $encrypted = false;
 
-    function __construct($file = null, $backend = NULL) {
+    function __construct($file = null, File\Backend\_Interface $backend = NULL, File\Manager $manager = null) {
 
         if($file instanceof \Hazaar\File) {
 
             $this->backend = $file->backend;
+
+            $this->manager = $file->manager;
 
             $this->source_file = $file->source_file;
 
@@ -68,6 +72,8 @@ class File {
                 throw new \Exception('Can not create new file object without a valid file backend!');
 
             $this->backend = $backend;
+
+            $this->manager = $manager;
 
         }
 
@@ -193,7 +199,7 @@ class File {
     public function dir() {
 
         if($this->is_dir())
-            return new File\Dir($this->source_file, $this->backend);
+            return new File\Dir($this->source_file, $this->backend, $this->manager);
 
         return FALSE;
 
@@ -213,7 +219,7 @@ class File {
 
     public function parent() {
 
-        return new File\Dir($this->dirname(), $this->backend);
+        return new File\Dir($this->dirname(), $this->backend, $this->manager);
 
     }
 
@@ -471,7 +477,7 @@ class File {
 
             $this->backend = $dstBackend;
 
-            $dir = new File\Dir($destination, $dstBackend);
+            $dir = new File\Dir($destination, $dstBackend, $this->manager);
 
             if(!$dir->exists($destination)){
 
@@ -538,6 +544,15 @@ class File {
 
     }
 
+    public function media_uri(){
+
+        if(!$this->manager)
+            return null;
+
+        return $this->manager->uri($this->fullpath());
+
+    }
+
     public function toArray($delimiter = "\n"){
 
         return explode($delimiter, $this->get_contents());
@@ -561,7 +576,7 @@ class File {
             $filenames = array($filenames);
 
         if($target !== null && !$target instanceof \Hazaar\File\Dir)
-            $target = new \Hazaar\File\Dir($target, $this->backend);
+            $target = new \Hazaar\File\Dir($target, $this->backend, $this->manager);
 
         $files = array();
 
