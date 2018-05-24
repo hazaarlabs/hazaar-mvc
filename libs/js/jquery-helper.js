@@ -224,8 +224,7 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
         set: function (value) {
             value = this.__convert_type(key, value);
             if (value === null && this._attributes[key] && this._attributes[key].other) this._attributes[key].other = null;
-            else if ((value === null && this._attributes[key] instanceof dataBinder)
-                || (this._attributes[key] instanceof dataBinderValue ? this._attributes[key].value : this._attributes[key]) === (value instanceof dataBinderValue ? value.value : value)) return;
+            else if ((value === null && this._attributes[key] instanceof dataBinder) || ((this._attributes[key] instanceof dataBinderValue ? this._attributes[key].value : this._attributes[key]) === (value instanceof dataBinderValue ? value.value : value) && (this._attributes[key] instanceof dataBinderValue ? this._attributes[key].label : true) === (value instanceof dataBinderValue ? value.label : true))) return; //If the value or label has not changed, then bugger off.
             this._attributes[key] = value;
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
             this._trigger(attr_name, value);
