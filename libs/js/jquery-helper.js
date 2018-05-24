@@ -148,7 +148,7 @@ dataBinderValue.prototype.toString = function () {
 };
 
 dataBinderValue.prototype.set = function (value, label) {
-    if (typeof value === 'object') return;
+    if (value !== null && typeof value === 'object') return;
     var attr_name = this._parent._attr_name(this._name);
     this._value = this._parent.__nullify(value);
     this._label = label;
