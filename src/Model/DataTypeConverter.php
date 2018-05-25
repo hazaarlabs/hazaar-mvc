@@ -15,6 +15,7 @@ abstract class DataTypeConverter  {
         'float',
         'double',  // for historical reasons "double" is returned in case of a float, and not simply "float"
         'string',
+        'text',
         'array',
         'list',
         'object',
@@ -63,8 +64,11 @@ abstract class DataTypeConverter  {
                 /*
                  * The special type 'mixed' specifically allow
                  */
-                if ($type == 'mixed' || $type == 'model')
+                if ($type === 'mixed' || $type === 'model')
                     return $value;
+
+                if($type === 'text' )
+                    $type = 'string';
 
                 if($value instanceof DataBinderValue){
 
