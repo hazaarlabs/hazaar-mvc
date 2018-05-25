@@ -109,7 +109,7 @@ var dataBinderValue = function (name, value, label, parent) {
     Object.defineProperties(this, {
         "value": {
             set: function (value) {
-                if (typeof value === 'object') return;
+                if (value !== null && typeof value === 'object') return;
                 var attr_name = this._parent._attr_name(this._name);
                 this._value = this._parent.__nullify(value);
                 this._other = null;
@@ -132,7 +132,7 @@ var dataBinderValue = function (name, value, label, parent) {
         },
         "other": {
             set: function (value) {
-                if (typeof value === 'object') return;
+                if (value !== null && typeof value === 'object') return;
                 this._other = value;
                 this._parent._update(this._parent._attr_name(this._name), false);
             },
@@ -147,11 +147,12 @@ dataBinderValue.prototype.toString = function () {
     return this.label || this.value || this.other;
 };
 
-dataBinderValue.prototype.set = function (value, label) {
+dataBinderValue.prototype.set = function (value, label, other) {
     if (value !== null && typeof value === 'object') return;
     var attr_name = this._parent._attr_name(this._name);
     this._value = this._parent.__nullify(value);
     this._label = label;
+    if (typeof other !== 'undefined') this._other = other;
     this._parent._update(attr_name, true);
     this._parent._trigger(attr_name, this._value);
     return this;
@@ -199,7 +200,7 @@ dataBinder.prototype.__convert_type = function (key, value, parent) {
     } else if (value !== null && !(value instanceof dataBinder
         || value instanceof dataBinderArray
         || value instanceof dataBinderValue)) {
-        if (typeof value === 'object') value = new dataBinder(value, key, parent);
+        if (value !== null && typeof value === 'object') value = new dataBinder(value, key, parent);
         else value = new dataBinderValue(key, value, null, parent);
     }
     return value;
@@ -227,7 +228,7 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
             if (value === null && attr && attr.other) attr.other = null;
             else if ((value === null && attr instanceof dataBinder)
                 || ((attr instanceof dataBinderValue ? attr.value : attr) === (value instanceof dataBinderValue ? value.value : value)
-                    && (!(attr instanceof dataBinderValue) || !(value instanceof dataBinderValue) || attr.label === value.label)))
+                    && (attr && (!(attr instanceof dataBinderValue) || !(value instanceof dataBinderValue) || (attr.label === value.label && attr.other === value.other)))))
                 return; //If the value or label has not changed, then bugger off.
             this._attributes[key] = value;
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
