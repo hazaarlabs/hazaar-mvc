@@ -64,7 +64,7 @@
             host.__setIcon = function (name, color) {
                 var icon_class = 'font-awesome';
                 if (!this.__icon)
-                    this.__icon = $('<div class="modal-content-icon">').appendTo(this.__container);
+                    this.__icon = $('<div class="hazaar modal-content-icon">').appendTo(this.__container);
                 var icons = {
                     "working": {
                         "icon": "circle-o-notch fa-spin",
@@ -116,17 +116,17 @@
                 if (color) this.__icon.css({ color: color });
             };
             host.render = function () {
-                this.__overlay = $('<div class="popup-overlay">').appendTo(document.body).toggleClass('modal', this.props.modal);
-                this.__window = $('<div class="modal-content">').appendTo(this.__overlay);
-                this.__title = $('<div class="modal-header">').html(this.props.title).appendTo(this.__window);
-                this.__container = $('<div class="modal-body">').appendTo(this.__window);
+                this.__overlay = $('<div class="hazaar popup-overlay">').appendTo(document.body).toggleClass('modal', this.props.modal);
+                this.__window = $('<div class="hazaar modal-content">').appendTo(this.__overlay);
+                this.__title = $('<div class="hazaar modal-header">').html(this.props.title).appendTo(this.__window);
+                this.__container = $('<div class="hazaar modal-body">').appendTo(this.__window);
                 this.__close = $('<button type="button" class="close">').html('x').appendTo(this.__title);
                 if (this.props.icon)
                     this.__setIcon(this.props.icon, this.props.iconColor);
                 this.props.hideOnClose = ($(this).parent().length > 0);
                 this.__container.append(this);
                 if (this.props.buttons.length > 0) {
-                    this.__buttons = $('<div class="modal-footer">').appendTo(this.__window);
+                    this.__buttons = $('<div class="hazaar modal-footer">').appendTo(this.__window);
                     for (x in this.props.buttons) {
                         if (typeof this.props.buttons[x] == 'string')
                             this.props.buttons[x] = { label: this.props.buttons[x], action: 'close' };

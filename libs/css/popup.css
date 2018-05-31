@@ -1,4 +1,4 @@
-﻿.popup-overlay.modal {
+﻿.popup-overlay.hazaar.modal {
     position: fixed;
     top: 0;
     right: 0;
@@ -9,7 +9,7 @@
     z-index: 9998;
 }
 
-.modal-content {
+.modal-content.hazaar {
     display: none;
     position: absolute;
     max-height: 90%;
@@ -17,7 +17,7 @@
     z-index: 9999;
 }
 
-.popup-window.static .popup-container {
+.popup-window.hazaar.static .popup-container.hazaar {
     position: absolute;
     margin-top: 0;
     top: 51px;
@@ -26,66 +26,66 @@
     bottom: 65px;
 }
 
-    .popup-window.static .popup-container:last-child {
+    .popup-window.hazaar.static .popup-container.hazaar:last-child {
         bottom: 0;
     }
 
-.modal-body {
+.modal-body.hazaar {
     position: relative;
     min-height: 85px;
 }
 
-    .modal-body .modal-content-icon {
+    .modal-body.hazaar .modal-content-icon.hazaar {
         font-size: 4em;
         position: absolute;
         top: 0;
         left: 15px;
     }
 
-        .modal-body .modal-content-icon + div {
+        .modal-body.hazaar .modal-content-icon.hazaar + div {
             margin-left: 65px;
         }
 
-.popup-window .popup-window-icon .fa {
+.popup-window.hazaar .popup-window-icon.hazaar .fa {
     display: block;
 }
 
 
-.popup-window .popup-container .popup-content {
+.popup-window.hazaar .popup-container.hazaar .popup-content.hazaar {
     display: block;
     text-align: center;
     padding: 15px;
 }
 
-.popup-window .popup-window-icon + .popup-content {
+.popup-window.hazaar .popup-window-icon.hazaar + .popup-content.hazaar {
     margin-left: 75px;
 }
 
-.popup-window .popup-buttons {
+.popup-window.hazaar .popup-buttons.hazaar {
     margin: 15px 0;
     text-align: center;
 }
 
-.popup-window.static .popup-buttons {
+.popup-window.hazaar.static .popup-buttons.hazaar {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
 }
 
-.popup-window .popup-buttons button {
+.popup-window.hazaar .popup-buttons.hazaar button {
     margin: 0 5px;
     min-width: 100px;
 }
 
-    .popup-window .popup-buttons button.popup-button {
+    .popup-window.hazaar .popup-buttons.hazaar button.popup-button {
         padding: 10px 15px;
         border: 1px solid #ddd;
         background: #eee;
         cursor: pointer;
     }
 
-        .popup-window .popup-buttons button.popup-button:hover {
+        .popup-window.hazaar .popup-buttons.hazaar button.popup-button:hover {
             border-color: #ccc;
             background-color: #ddd;
         }
