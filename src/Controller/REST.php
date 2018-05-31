@@ -447,7 +447,9 @@ abstract class REST extends \Hazaar\Controller {
             )
         );
 
-        $out = new \Hazaar\Controller\Response\Json($error, $e->getCode());
+        if(!($code = $e->getCode()) > 0) $code = 500;
+
+        $out = new \Hazaar\Controller\Response\Json($error, $code);
 
         return $out;
 
