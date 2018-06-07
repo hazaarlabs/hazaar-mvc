@@ -369,6 +369,25 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     public function set($key, $value, $exec_filters = true) {
 
+        if(strpos($key, '.') !== false){
+
+            $item = $this;
+
+            $parts = explode('.', $key);
+
+            $key = array_pop($parts);
+
+            foreach($parts as $part){
+
+                if(!($item = $item->get($part, false)) instanceof Strict)
+                    return false;
+
+            }
+
+            return $item->set($key, $value, $exec_filters);
+
+        }
+
         /*
          * Keep the field definition handy
          *
