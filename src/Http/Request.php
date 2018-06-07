@@ -43,28 +43,14 @@ class Request extends \Hazaar\Map {
 
         $this->uri($uri);
 
-        //Check for cached cookies
-        if($this->uri){
-
-            if($path = \Hazaar\Application::getInstance()->runtimePath('cache')){
-
-                $cache_file = $path . DIRECTORY_SEPARATOR . 'http_cookie_' . $this->uri->host();
-
-                if(file_exists($cache_file)){
-
-                    $cookie = file_get_contents($cache_file);
-
-                    if($this->useCookie($cookie))
-                        $this->setHeader('Cookie', $cookie);
-
-                }
-
-            }
-
-        }
-
     }
 
+    /**
+     * Summary of uri
+     * @param mixed $uri
+     * @throws Exception\HostNotFound
+     * @return \Hazaar\Http\Uri
+     */
     public function uri($uri = null){
 
         if($uri === NULL)
@@ -97,45 +83,6 @@ class Request extends \Hazaar\Map {
         $this->setHeader('Host', $this->uri->host());
 
         return $this->uri;
-
-    }
-
-    private function useCookie($cookie) {
-
-        $cookie_vars = preg_split('/;\s?/', $cookie);
-
-        foreach($cookie_vars as $var) {
-
-            if(preg_match('/(\w*)[=]?(.*)/', $var, $matches)) {
-
-                $key = strtolower($matches[1]);
-
-                switch($key) {
-
-                    case 'httponly' :
-                        if(substr($this->uri->scheme(), 0, 4) != 'http') {
-
-                            return FALSE;
-
-                        }
-
-                        break;
-
-                    case 'secure' :
-                        if(! $this->uri->isSecure()) {
-
-                            return FALSE;
-
-                        }
-
-                        break;
-                }
-
-            }
-
-        }
-
-        return TRUE;
 
     }
 
@@ -187,13 +134,24 @@ class Request extends \Hazaar\Map {
 
     public function getHeader($key) {
 
-        return $this->headers[$key];
+        return ake($this->headers, $key);
 
     }
 
-    public function setHeader($key, $value) {
+    public function setHeader($key, $value, $allow_multiple = false) {
 
-        $this->headers[$key] = $value;
+        if($allow_multiple === true && array_key_exists($key, $this->headers)){
+
+            if(!is_array($this->headers[$key]))
+                $this->headers[$key] = array($this->headers[$key]);
+
+            $this->headers[$key][] = $value;
+
+        }else{
+
+            $this->headers[$key] = $value;
+
+        }
 
     }
 
@@ -226,6 +184,9 @@ class Request extends \Hazaar\Map {
                     }
 
                     $content_type = $this->getHeader('Content-Type');
+
+                    if(($pos = strpos($content_type, ';')) > 0)
+                        $content_type = substr($content_type, 0, $pos);
 
                     switch($content_type) {
 
@@ -282,6 +243,9 @@ class Request extends \Hazaar\Map {
                                 $part[0] = array('Content-Type' => $part[0]);
 
                             if($content_type = ake($part[0], 'Content-Type')) {
+
+                                if(($pos = strpos($content_type, ';')) > 0)
+                                    $content_type = substr($content_type, 0, $pos);
 
                                 switch($content_type) {
 
@@ -340,7 +304,12 @@ class Request extends \Hazaar\Map {
 
             } elseif($this->count() > 0) {
 
-                switch($this->getHeader('Content-Type')) {
+                $content_type = $this->getHeader('Content-Type');
+
+                if(($pos = strpos($content_type, ';')) > 0)
+                    $content_type = substr($content_type, 0, $pos);
+
+                switch($content_type) {
 
                     case 'text/json' :
 
@@ -377,8 +346,15 @@ class Request extends \Hazaar\Map {
 
         $http_request = "{$this->method} {$access_uri} HTTP/1.1\r\n";
 
-        foreach($this->headers as $header => $value)
-            $http_request .= $header . ': ' . $value . "\r\n";
+        foreach($this->headers as $header => $value){
+
+            if(!is_array($value))
+                $value = array($value);
+
+            foreach($value as $hdr)
+                $http_request .= $header . ': ' . $hdr . "\r\n";
+
+        }
 
         $http_request .= "\r\n" . $body;
 
@@ -386,13 +362,19 @@ class Request extends \Hazaar\Map {
 
     }
 
-    public function authorise($username, $password, $method = 'basic') {
+    /**
+     * Add Basic HTTP authentication
+     *
+     * Basic authentication should ONLY be used over HTTPS.
+     *
+     * Other methods are not yet supported, however Bearer is implemented using Request::authorization() method.
+     *
+     * @param mixed $username The username to send
+     * @param mixed $password The password to send
+     */
+    public function authorise($username, $password) {
 
-        if($method = 'basic') {
-
-            $auth = ucfirst($method) . ' ' . base64_encode($username . ':' . $password);
-
-        }
+        $auth = 'Basic ' . base64_encode($username . ':' . $password);
 
         $this->setHeader('Authorization', $auth);
 

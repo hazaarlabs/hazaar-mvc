@@ -32,17 +32,10 @@ class Response {
 
     private $chunk_offset = 0;
 
-    //Used for storing cookie information
-    private $cache;
-
     //Public variables
     public $content_length  = 0;
 
     public $bytes_remaining = -1;
-
-    //Optional source uri object.  REQUIRED FOR COOKIES TO WORK.  This WILL be set by the Http\Client class so it will
-    // support cookies.
-    private $source;
 
     function __construct(int $status = NULL, array $headers = array(), $version = 'HTTP/1.1') {
 
@@ -56,12 +49,6 @@ class Response {
 
         if(count($this->headers) > 0)
             $this->headers_parsed = TRUE;
-
-    }
-
-    public function setSource(Uri $source) {
-
-        $this->source = $source;
 
     }
 
@@ -135,15 +122,6 @@ class Response {
 
                             break;
 
-                        case 'set-cookie' :
-                            if($this->source instanceof Uri) {
-
-                                if($path = \Hazaar\Application::getInstance()->runtimePath('cache', true))
-                                    file_put_contents($path . DIRECTORY_SEPARATOR . 'http_cookie_' . $this->source->host, $value);
-
-                            }
-
-                            break;
                     }
 
                 } else {
@@ -329,14 +307,15 @@ class Response {
 
     }
 
-    public function body(){
+    public function body($raw = false){
 
-        switch($this->getContentType()){
+        if($raw === true)
+            return $this->body;
 
-            case 'application/json':
-                return json_decode($this->body, true);
+        $content_type = $this->getContentType();
 
-        }
+        if($content_type == 'application/json')
+            return json_decode($this->body);
 
         return $this->body;
 
