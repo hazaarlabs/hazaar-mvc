@@ -14,7 +14,7 @@ class Client {
 
     private $headers            = array();
 
-    private $cookie             = NULL;
+    private $cookies            = array();
 
     private $context            = NULL;
 
@@ -85,21 +85,13 @@ class Client {
 
     public function options($uri) {
 
-        $request = new Request($uri, 'OPTIONS');
-
-        if($this->cookie)
-            $request->setHeader('Cookie', $this->cookie);
-
-        return $this->send($request);
+        return $this->send(new Request($uri, 'OPTIONS'));
 
     }
 
     public function get($uri, $redirect_limit = 10, $offset = -1, $maxlen = NULL) {
 
         $request = new Request($uri, 'GET');
-
-        if($this->cookie)
-            $request->setHeader('Cookie', $this->cookie);
 
         if($offset >= 0) {
 
@@ -118,12 +110,7 @@ class Client {
 
     public function head($uri, $redirect_limit = 10) {
 
-        $request = new Request($uri, 'HEAD');
-
-        if($this->cookie)
-            $request->setHeader('Cookie', $this->cookie);
-
-        return $this->send($request, $redirect_limit);
+        return $this->send(new Request($uri, 'HEAD'), $redirect_limit);
 
     }
 
@@ -139,9 +126,6 @@ class Client {
 
         if($datatype)
             $request->setHeader('Content-Type', $datatype);
-
-        if($this->cookie)
-            $request->setHeader('Cookie', $this->cookie);
 
         return $this->send($request, $redirect_limit);
 
@@ -160,32 +144,19 @@ class Client {
         if($datatype)
             $request->setHeader('Content-Type', $datatype);
 
-        if($this->cookie)
-            $request->setHeader('Cookie', $this->cookie);
-
         return $this->send($request);
 
     }
 
     public function delete($url) {
 
-        $request = new Request($url, 'DELETE');
-
-        if($this->cookie)
-            $request->setHeader('Cookie', $this->cookie);
-
-        return $this->send($request);
+        return $this->send(new Request($url, 'DELETE'));
 
     }
 
     public function trace($url) {
 
-        $request = new Request($url, 'TRACE');
-
-        if($this->cookie)
-            $request->setHeader('Cookie', $this->cookie);
-
-        return $this->send($request);
+        return $this->send(new Request($url, 'TRACE'));
 
     }
 
@@ -207,6 +178,8 @@ class Client {
         elseif($this->username)
             $request->authorise($this->username, $this->password);
 
+        $this->applyCookies($request);
+
         $sck_fd = @stream_socket_client($request->getHost(), $errno, $errstr, $this->connection_timeout, STREAM_CLIENT_CONNECT, $this->context);
 
         if($sck_fd) {
@@ -216,8 +189,6 @@ class Client {
             fputs($sck_fd, $http_request, strlen($http_request));
 
             $response = new Response();
-
-            $response->setSource($request->uri());
 
             $buffer_size = $this->buffer_size;
 
@@ -294,6 +265,9 @@ class Client {
 
         }
 
+        if($cookie = $response->getHeader('set-cookie'))
+            $this->setCookie($cookie);
+
         return $response;
 
     }
@@ -304,18 +278,140 @@ class Client {
 
     }
 
-    public function setCookie($cookie) {
+    public function setCookie($cookie){
 
-        $this->cookie = $cookie;
+        if(is_array($cookie)){
+
+            $cookies = array();
+
+            foreach($cookie as $c)
+                $cookies[] = $this->setCookie($c);
+
+            return $cookies;
+
+        }
+
+        $parts = explode(';', $cookie);
+
+        list($name, $value) = explode('=', array_shift($parts));
+
+        $data = array(
+            'name' => $name,
+            'value' => $value,
+            'domain' => null,
+            'path' => '/',
+            'expires' => null,
+            'secure' => false,
+            'httponly' => false
+        );
+
+        foreach($parts as $part){
+
+            if(strpos($part, '=') !== false){
+
+                list($arg_k, $arg_v) = explode('=', $part);
+
+                $arg_k = strtolower(trim($arg_k));
+
+                if($arg_k === 'expires')
+                    $arg_v = new \Hazaar\Date($arg_v);
+                elseif($arg_k === 'max-age')
+                    $arg_v = (new \Hazaar\Date())->add('P' . $arg_v . 'S');
+
+                $data[$arg_k] = $arg_v;
+
+            }else{
+
+                $data[strtolower(trim($part))] = true;
+
+            }
+
+        }
+
+        $key = md5($name . ake($data, 'domain') . ake($data, 'path'));
+
+        return $this->cookies[$key] = $data;
 
     }
 
-    public function cacheCookie(\Hazaar\Cache $cache) {
+    private function applyCookies(Request $request){
 
-        if(! $this->cookie)
+        if(!(is_array($this->cookies) && count($this->cookies) > 0))
+            return $request;
+
+        $uri = $request->uri();
+
+        $path = explode('/', trim($uri->path(), '/'));
+
+        $cookies = array();
+
+        foreach($this->cookies as $cookie_key => $cookie_data){
+
+            if($expires = ake($cookie_data, 'expires', null, true)){
+
+                if($expires->getTimestamp() < time()){
+
+                    unset($this->cookies[$cookie_key]);
+
+                    continue;
+
+                }
+
+            }
+
+            if($domain = ake($cookie_data, 'domain')){
+
+                $domain = array_reverse(explode('.', $domain));
+
+                if(!(array_slice(array_reverse(explode('.', $uri->host())), 0, count($domain)) === $domain))
+                    continue;
+
+            }
+
+            if($cookie_path = trim($cookie_data['path'], '/'))
+                $cookie_path = explode('/', $cookie_path);
+            else $cookie_path = array();
+
+            if(!(array_slice($path, 0, count($cookie_path)) === $cookie_path))
+                continue;
+
+            if($cookie_data['secure'] === true && $uri->scheme() !== 'https')
+                continue;
+
+            $cookies[] = $cookie_data['name'] . '=' . ake($cookie_data, 'value');
+
+        }
+
+        $request->setHeader('Cookie', implode(';', $cookies), true);
+
+        return $request;
+
+    }
+
+    public function cacheCookie(\Hazaar\Cache $cache, $cache_all = false) {
+
+        if(!count($this->cookies) > 0)
             return FALSE;
 
-        $cache->set('xmlrpc-cookie', $this->cookie);
+        if($cache_all === true){
+
+            $cache->set('hazaar-http-client-cookies', $this->cookies);
+
+        }else{
+
+            $cachable = array();
+
+            foreach($this->cookies as $key => $cookie){
+
+                if($cookie['expires'] instanceof \Hazaar\Date
+                    && $cookie['expires']->getTimestamp() > time())
+                    $cachable[$key] = $cookie;
+
+            }
+
+            $cache->set('hazaar-http-client-cookies', $cachable);
+
+        }
 
         return TRUE;
 
@@ -323,11 +419,10 @@ class Client {
 
     public function uncacheCookie(\Hazaar\Cache $cache) {
 
-        if($this->cookie = $cache->get('xmlrpc-cookie')) {
-
+        if($this->cookies = $cache->get('hazaar-http-client-cookies'))
             return TRUE;
 
-        }
+        $this->cookies = array();
 
         return FALSE;
 
