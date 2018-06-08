@@ -86,6 +86,13 @@ class Request extends \Hazaar\Map {
 
     }
 
+    public function enableMultipart(){
+
+        if($this->body === null)
+            $this->body = array();
+
+    }
+
     public function addMultipart($data, $content_type = NULL) {
 
         if(! $content_type) {
@@ -171,11 +178,11 @@ class Request extends \Hazaar\Map {
 
         } else {
 
-            if($this->body) {
+            if($this->body !== null) {
 
                 if(count($this->elements) > 0) {
 
-                    if(! is_array($this->body)) {
+                    if(!is_array($this->body)) {
 
                         $saved_body = $this->body;
 
@@ -191,8 +198,6 @@ class Request extends \Hazaar\Map {
                     switch($content_type) {
 
                         case 'text/json' :
-
-
                         case 'application/json' :
                         case 'application/javascript' :
                         case 'application/x-javascript' :
@@ -207,7 +212,7 @@ class Request extends \Hazaar\Map {
 
                             $elements = array();
 
-                            foreach($this->elements as $key => $value) {
+                            foreach(array_build_html($this->toArray()) as $key => $value) {
 
                                 $elements[] = array(
                                     array('Content-Disposition' => 'form-data; name="' . $key . '"'),
@@ -250,8 +255,6 @@ class Request extends \Hazaar\Map {
                                 switch($content_type) {
 
                                     case 'text/json' :
-
-
                                     case 'application/json' :
 
                                         $data = json_encode($part[1]);
@@ -312,8 +315,6 @@ class Request extends \Hazaar\Map {
                 switch($content_type) {
 
                     case 'text/json' :
-
-
                     case 'application/json' :
                     case 'application/javascript' :
                     case 'application/x-javascript' :
