@@ -278,6 +278,49 @@ class Client {
 
     }
 
+    public function getCookies(){
+
+        $list = array();
+
+        foreach($this->cookies as $cookie)
+            $list[] = $cookie['name'] . '=' . $cookie['value'];
+
+        if(count($list) > 1)
+            return $list;
+
+        return array_pop($list);
+
+    }
+
+    public function getCookie($name){
+
+        $list = array();
+
+        foreach($this->cookies as $cookie){
+
+            if($cookie['name'] === $name)
+                $list[] = $cookie['name'] . '=' . $cookie['value'];
+
+        }
+
+        if(count($list) > 1)
+            return $list;
+
+        return array_pop($list);
+
+    }
+
+    public function deleteCookie($name){
+
+        foreach($this->cookies as $index => $cookie){
+
+            if($cookie['name'] === $name)
+                unset($this->cookies[$index]);
+
+        }
+
+    }
+
     public function setCookie($cookie){
 
         if(is_array($cookie)){
@@ -382,7 +425,7 @@ class Client {
 
         }
 
-        $request->setHeader('Cookie', implode(';', $cookies), true);
+        $request->setHeader('Cookie', implode(';', $cookies), false);
 
         return $request;
 
