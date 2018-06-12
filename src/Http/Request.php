@@ -242,7 +242,7 @@ class Request extends \Hazaar\Map {
 
                         foreach($this->body as $part) {
 
-                            $body .= "--$boundary\n";
+                            $body .= "--$boundary\r\n";
 
                             if(! is_array($part[0]))
                                 $part[0] = array('Content-Type' => $part[0]);
@@ -283,13 +283,13 @@ class Request extends \Hazaar\Map {
                             }
 
                             foreach($part[0] as $key => $value)
-                                $body .= $key . ': ' . $value . "\n";
+                                $body .= $key . ': ' . $value . "\r\n";
 
-                            $body .= "\n$data\n";
+                            $body .= "\r\n$data\r\n";
 
                         }
 
-                        $body .= "--$boundary--\n";
+                        $body .= "--$boundary--\r\n";
 
                     } else {
 
