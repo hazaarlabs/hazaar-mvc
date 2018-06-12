@@ -187,3 +187,25 @@
     });
     return this;
 };
+
+var handleError = function (response, status, xhr) {
+    if (typeof status === 'object') {
+        response = status;
+        status = xhr;
+    }
+    if (status === 'error') {
+        var error = response.responseJSON.error;
+        var content = [$('<div class="adm-error-msg">').html(error.str)];
+        if (error.line)
+            content.push($('<div class="adm-error-line">').html([$('<label>').html('Line:'), $('<span>').html('#' + error.line)]));
+        if (error.file)
+            content.push($('<div class="adm-error-file">').html([$('<label>').html('File:'), $('<span>').html(error.file)]));
+        $('<div>').html($('<div class="adm-error">').html(content)).popup({
+            title: "Server Error",
+            icon: "error",
+            buttons: [
+                { label: "OK", action: "close" }
+            ]
+        });
+    }
+};
