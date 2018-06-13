@@ -352,15 +352,22 @@ function array_build_html($array, $root = true){
  *
  * @detail      Converts/reduces a multidimensional array into a single dimensional array with keys in dot-notation.
  *
- * @param mixed $array The array to convert.
- * @param mixed $separator The separater to use between keys.  Defaults to '.', hence the name of the functions.
- * @param mixed $depth Limit to the specified depth. Starting at 1, this is the number of levels to return.  Essentially, this is the number of dots, plus one.
+ * @param array   $array The array to convert.
+ * @param string  $separator The separater to use between keys.  Defaults to '.', hence the name of the functions.
+ * @param integer $depth Limit to the specified depth. Starting at 1, this is the number of levels to return.
+ *                Essentially, this is the number of dots, plus one.
+ * @param string  $numeric_array_separators This parameter is used to display numeric arrays. It defaults to '[]' which
+ *                means that numeric arrays will appear as "item[index].key".  This argument must be at least two
+ *                characters.  The first character is the left side and the second character is the right side.  Any
+ *                non-string values or string values less than 2 characters long will be ignored and numeric arrays
+ *                will not be used.  To disable numeric arrays and cause elements with a numeric key to be output
+ *                the same as other string key elements, simply set this to NULL.
  *
  * @since       2.0.0
  *
  * @return array|boolean
  */
-function array_to_dot_notation($array, $separator = '.', $depth = null) {
+function array_to_dot_notation($array, $separator = '.', $depth = null, $numeric_array_separators = '[]') {
 
     if(!is_array($array))
         return false;
@@ -370,15 +377,34 @@ function array_to_dot_notation($array, $separator = '.', $depth = null) {
 
     $rows = array();
 
+    $numeric_array = (is_string($numeric_array_separators) && strlen($numeric_array_separators) >= 2);
+
     foreach($array as $key => $value) {
 
         if(is_array($value)){
 
-            $children = array_to_dot_notation($value, $separator, (is_null($depth) ? $depth : ($depth - 1)));
+            $children = array_to_dot_notation($value, $separator, (is_null($depth) ? $depth : ($depth - 1)), $numeric_array_separators);
 
             foreach($children as $childkey => $child) {
 
-                $new_key = $key . $separator . $childkey;
+                if($numeric_array && is_numeric($key))
+                    $new_key = $numeric_array_separators[0] . $key . $numeric_array_separators[1];
+                else
+                    $new_key = $key;
+
+                if($numeric_array && is_numeric($childkey)){
+
+                    $new_key .= $numeric_array_separators[0] . $childkey . $numeric_array_separators[1];
+
+                }elseif($numeric_array && $childkey[0] === $numeric_array_separators[0]){
+
+                    $new_key .= $childkey;
+
+                }else{
+
+                    $new_key .= $separator . $childkey;
+
+                }
 
                 $rows[$new_key] = $child;
 
