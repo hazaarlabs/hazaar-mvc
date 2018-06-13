@@ -1091,12 +1091,14 @@ function dump($data = NULL) {
 
     }
 
+    $exec_time = round((microtime(true) - HAZAAR_EXEC_START) * 1000, 2);
+
     if($response == 'json'){
 
         $dump = array(
             'data' => $data,
             'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
-            'exec' => microtime(true) - HAZAAR_EXEC_START
+            'exec' => $exec_time
         );
 
         header('Content-Type: application/json');
@@ -1128,8 +1130,6 @@ pre { margin: 30px; }
 </style>";
 
         echo "<html>\n\n<head>\n\t<title>Hazaar Dump</title>\n$style</head>\n\n<body>\n\n";
-
-        $exec_time = round((microtime(true) - HAZAAR_EXEC_START) * 1000, 2);
 
         $speed_class = ($exec_time > 250) ? (($exec_time > 500) ? 'bad' : 'ok') : 'good';
 
