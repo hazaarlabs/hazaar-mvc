@@ -416,11 +416,48 @@ class Config extends \Hazaar\Map {
 
     public function parseString($elem, $key){
 
-        if(is_string($elem) && preg_match_all('/%(\w*)%/', $elem, $matches)){
+        $allowed_values = array(
+            'GLOBALS' => &$GLOBALS,
+            '_SERVER' => &$_SERVER,
+            '_GET' => &$_GET,
+            '_POST' => &$_POST,
+            '_FILES' => &$_FILES,
+            '_COOKIE' => &$_COOKIE,
+            '_SESSION' => &$_SESSION,
+            '_REQUEST' => &$_REQUEST,
+            '_ENV' => &$_ENV,
+            '_APP' => &\Hazaar\Application::getInstance()->GLOBALS,
+        );
+
+        if(is_string($elem) && preg_match_all('/%([\w\[\]]*)%/', $elem, $matches)){
 
             foreach($matches[0] as $index => $match){
 
-                $value = defined($matches[1][$index]) ? constant($matches[1][$index]) : '';
+                if(strpos($matches[1][$index], '[') !== false){
+
+                    parse_str($matches[1][$index], $result);
+
+                    $parts = explode('.', key(array_to_dot_notation($result)));
+
+                    if(!array_key_exists($parts[0], $allowed_values))
+                        return '';
+
+                    $value =& $allowed_values;
+
+                    foreach($parts as $part){
+
+                        if(!($value && array_key_exists($part, $value)))
+                            return '';
+
+                        $value =& $value[$part];
+
+                    }
+
+                }else{
+
+                    $value = defined($matches[1][$index]) ? constant($matches[1][$index]) : '';
+
+                }
 
                 $elem = preg_replace('/' . preg_quote($match) . '/', $value, $elem, 1);
 
