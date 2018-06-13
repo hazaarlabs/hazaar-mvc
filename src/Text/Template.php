@@ -129,7 +129,7 @@ class Template {
 
         $this->__compiled_content = preg_replace(array('/\<\?/', '/\?\>/'), array('&lt;?','?&gt;'), $this->__content);
 
-        while(preg_match_all('/\{(\$[^\}]+|(\/?\w+)\s*([^\}]*))\}/', $this->__compiled_content, $matches)){
+        while(preg_match_all('/\{(\$[^\}]+|(\/?\w+)\s*([^\}]*))\}(\r?\n)?/', $this->__compiled_content, $matches, PREG_PATTERN_ORDER)){
 
             foreach($matches[0] as $idx => $match){
 
@@ -149,6 +149,9 @@ class Template {
                     $replacement = $this->$func($matches[3][$idx]);
 
                 }
+
+                if($matches[4][$idx])
+                    $replacement .= " \r\n";
 
                 $this->__compiled_content = preg_replace('/' . preg_quote($match, '/') . '/', $replacement, $this->__compiled_content, 1);
 
