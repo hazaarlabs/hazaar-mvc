@@ -95,7 +95,7 @@ class Template {
 
         ob_start();
 
-        @$obj->render($params);
+        $obj->render($params);
 
         return ob_get_clean();
 
@@ -259,7 +259,7 @@ class Template {
 
     private function replaceVAR($name){
 
-        return '<?php echo ' . $this->compileVAR($name) . ';?>';
+        return '<?php echo @' . $this->compileVAR($name) . ';?>';
 
     }
 
@@ -278,13 +278,13 @@ class Template {
 
     private function compileIF($params){
 
-        return '<?php if(' . $this->compilePARAMS($params) . '): ?>';
+        return '<?php if(@' . $this->compilePARAMS($params) . '): ?>';
 
     }
 
     private function compileELSEIF($params){
 
-        return '<?php elseif(' . $this->compilePARAMS($params) . '): ?>';
+        return '<?php elseif(@' . $this->compilePARAMS($params) . '): ?>';
 
     }
 
@@ -361,7 +361,7 @@ class Template {
 
     private function compileURL($tag){
 
-        return '<?php echo $this->url(\'' .$this->compileVARS(trim($tag, "'")) . '\');?>';
+        return '<?php echo @$this->url(\'' .$this->compileVARS(trim($tag, "'")) . '\');?>';
 
     }
 
