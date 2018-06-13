@@ -360,7 +360,7 @@ function array_build_html($array, $root = true){
  *
  * @return array|boolean
  */
-function array_to_dot_notation($array, $separator = '.', $depth = null) {
+function array_to_dot_notation($array, $separator = '.', $depth = null, $numeric_arrays = true) {
 
     if(!is_array($array))
         return false;
@@ -374,11 +374,28 @@ function array_to_dot_notation($array, $separator = '.', $depth = null) {
 
         if(is_array($value)){
 
-            $children = array_to_dot_notation($value, $separator, (is_null($depth) ? $depth : ($depth - 1)));
+            $children = array_to_dot_notation($value, $separator, (is_null($depth) ? $depth : ($depth - 1)), $numeric_arrays);
 
             foreach($children as $childkey => $child) {
 
-                $new_key = $key . $separator . $childkey;
+                if($numeric_arrays === true && is_numeric($key))
+                    $new_key = '[' . $key . ']';
+                else
+                    $new_key = $key;
+
+                if($numeric_arrays && is_numeric($childkey)){
+
+                    $new_key .= '[' . $childkey . ']';
+
+                }elseif($childkey[0] === '['){
+
+                    $new_key .= $childkey;
+
+                }else{
+
+                    $new_key .= $separator . $childkey;
+
+                }
 
                 $rows[$new_key] = $child;
 
