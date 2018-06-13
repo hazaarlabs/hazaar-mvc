@@ -54,45 +54,6 @@ define('FILE_PATH_LIB', 'library');
  */
 define('FILE_PATH_PUBLIC', 'public');
 
-/**
- * @brief Constant containing the absolute filesystem path to the application configuration directory
- */
-define('ROOT_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..'));
-
-/**
- * @brief Constant containing the absolute filesystem path to the application configuration directory
- */
-define('CONFIG_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'configs'));
-
-/**
- * @brief Constant containing the absolute filesystem path to the application public directory
- */
-define('PUBLIC_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'public'));
-
-/**
- * @brief Constant containing the absolute filesystem path to the HazaarMVC library
- */
-define('LIBRARY_PATH', realpath(dirname(__FILE__)));
-
-/**
- * @brief Constant containing the absolute filesystem path to the HazaarMVC support library
- */
-define('SUPPORT_PATH', realpath(LIBRARY_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs'));
-
-/**
- * @brief Constant containing the detected 'name' of the application.
- * Essentially this is the name of the
- * directory the application is stored in.
- */
-$parts = explode(DIRECTORY_SEPARATOR, realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..'));
-
-define('APPLICATION_NAME', array_pop($parts));
-
-/**
- * @brief Constant containing the application base path relative to the document root.
- */
-define('APPLICATION_BASE', dirname($_SERVER['SCRIPT_NAME']));
-
 define('LINE_BREAK', ((substr(PHP_OS, 0, 3) == 'WIN')?"\r\n":"\n"));
 
 /**

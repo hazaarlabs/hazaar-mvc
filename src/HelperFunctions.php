@@ -1108,11 +1108,14 @@ function dump($data = NULL) {
 
     }
 
+    $exec_time = round((microtime(true) - HAZAAR_EXEC_START) * 1000, 2);
+
     if($response == 'json'){
 
         $dump = array(
             'data' => $data,
-            'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS)
+            'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
+            'exec' => $exec_time
         );
 
         header('Content-Type: application/json');
@@ -1134,12 +1137,20 @@ function dump($data = NULL) {
     } else {
 
         $style = "<style>
-    body { padding: 0; margin: 0; }
-    h2 { background: #554D7C; color: #fff; padding: 15px; }
-    pre { margin: 30px; }
-    </style>";
+body { padding: 0; margin: 0; font-family: Arial, Helvetica, sans-serif; }
+.exec_time { float: right; padding: 0 15px; font-size: 22px; line-height: 50px; color: #fff; }
+.exec_time.good { background-color: #33bb33; }
+.exec_time.ok { background-color: gold; color: #333; }
+.exec_time.bad { background-color: #ea4040; }
+h2 { background: #554D7C; color: #fff; padding: 0 15px; line-height: 50px; }
+pre { margin: 30px; }
+</style>";
 
         echo "<html>\n\n<head>\n\t<title>Hazaar Dump</title>\n$style</head>\n\n<body>\n\n";
+
+        $speed_class = ($exec_time > 250) ? (($exec_time > 500) ? 'bad' : 'ok') : 'good';
+
+        echo "<div class=\"exec_time $speed_class\">{$exec_time}ms</div>";
 
         echo "<h2>Dump</h2>\n\n";
 
@@ -1152,6 +1163,7 @@ function dump($data = NULL) {
         print_r(str_replace('/path/to/code/', '', $e->getTraceAsString()));
 
         echo "\n</pre>\n\n</body>\n\n</html>\n\n";
+
     }
 
     exit();
