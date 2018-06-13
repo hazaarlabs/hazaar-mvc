@@ -95,7 +95,7 @@ class Template {
 
         ob_start();
 
-        @$obj->render($params);
+        $obj->render($params);
 
         return ob_get_clean();
 
@@ -129,7 +129,7 @@ class Template {
 
         $this->__compiled_content = preg_replace(array('/\<\?/', '/\?\>/'), array('&lt;?','?&gt;'), $this->__content);
 
-        while(preg_match_all('/\{(\$[^\}]+|(\/?\w+)\s*([^\}]*))\}/', $this->__compiled_content, $matches)){
+        while(preg_match_all('/\{(\$[^\}]+|(\/?\w+)\s*([^\}]*))\}(\r?\n)?/', $this->__compiled_content, $matches, PREG_PATTERN_ORDER)){
 
             foreach($matches[0] as $idx => $match){
 
@@ -149,6 +149,9 @@ class Template {
                     $replacement = $this->$func($matches[3][$idx]);
 
                 }
+
+                if($matches[4][$idx])
+                    $replacement .= " \r\n";
 
                 $this->__compiled_content = preg_replace('/' . preg_quote($match, '/') . '/', $replacement, $this->__compiled_content, 1);
 
@@ -256,7 +259,7 @@ class Template {
 
     private function replaceVAR($name){
 
-        return '<?php echo ' . $this->compileVAR($name) . ';?>';
+        return '<?php echo @' . $this->compileVAR($name) . ';?>';
 
     }
 
@@ -275,13 +278,13 @@ class Template {
 
     private function compileIF($params){
 
-        return '<?php if(' . $this->compilePARAMS($params) . '): ?>';
+        return '<?php if(@' . $this->compilePARAMS($params) . '): ?>';
 
     }
 
     private function compileELSEIF($params){
 
-        return '<?php elseif(' . $this->compilePARAMS($params) . '): ?>';
+        return '<?php elseif(@' . $this->compilePARAMS($params) . '): ?>';
 
     }
 
@@ -358,7 +361,7 @@ class Template {
 
     private function compileURL($tag){
 
-        return '<?php echo $this->url(\'' .$this->compileVARS(trim($tag, "'")) . '\');?>';
+        return '<?php echo @$this->url(\'' .$this->compileVARS(trim($tag, "'")) . '\');?>';
 
     }
 
