@@ -26,12 +26,12 @@ class Image extends File {
 
     }
 
-    public function setContent($data) {
+    public function setContent($data, $content_type = NULL) {
 
         if(! $this->file)
             $this->file = new \Hazaar\File\Image(NULL);
 
-        return parent::setContent($data);
+        return parent::setContent($data, $content_type);
 
     }
 
