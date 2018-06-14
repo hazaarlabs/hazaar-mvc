@@ -26,27 +26,38 @@ class Protocol {
     private $encoded   = true;
 
     private $typeCodes = array(
+        //SYSTEM MESSAGES
         0x00 => 'NOOP',         //Null Opperation
         0x01 => 'SYNC',         //Sync client
         0x02 => 'OK',           //OK response
         0x03 => 'ERROR',        //Error response
         0x04 => 'STATUS',       //Status request/response
         0x05 => 'SHUTDOWN',     //Shutdown request
-        0x06 => 'DELAY',        //Execute code after a period
-        0x07 => 'SCHEDULE',     //Execute code at a set time
-        0x08 => 'CANCEL',       //Cancel a pending code execution
-        0x09 => 'ENABLE',       //Start a service
-        0x0A => 'DISABLE',      //Stop a service
-        0x0B => 'SERVICE',      //Service status
-        0x0C => 'SUBSCRIBE',    //Subscribe to an event
-        0x0D => 'UNSUBSCRIBE',  //Unsubscribe from an event
-        0x0E => 'TRIGGER',      //Trigger an event
-        0x0F => 'EVENT',        //An event
-        0x10 => 'EXEC',         //Execute some code in the Warlock Runner.
-        0x11 => 'PING',         //Typical PING
-        0x12 => 'PONG',         //Typical PONG
-        0x13 => 'LOG',          //Generic log message
-        0x99 => 'DEBUG'
+        0x06 => 'PING',         //Typical PING
+        0x07 => 'PONG',         //Typical PONG
+
+        //CODE EXECUTION MESSAGES
+        0x10 => 'DELAY',        //Execute code after a period
+        0x11 => 'SCHEDULE',     //Execute code at a set time
+        0x12 => 'EXEC',         //Execute some code in the Warlock Runner.
+        0x13 => 'CANCEL',       //Cancel a pending code execution
+
+        //SIGNALLING MESSAGES
+        0x20 => 'SUBSCRIBE',    //Subscribe to an event
+        0x21 => 'UNSUBSCRIBE',  //Unsubscribe from an event
+        0x22 => 'TRIGGER',      //Trigger an event
+        0x23 => 'EVENT',        //An event
+
+        //SERVICE MESSAGES
+        0x30 => 'ENABLE',       //Start a service
+        0x31 => 'DISABLE',      //Stop a service
+        0x32 => 'SERVICE',      //Service status
+        0x33 => 'SPAWN',        //Spawn a dynamic service
+        0x34 => 'KILL',         //Kill a dynamic service instance
+
+        //LOGGING/OUTPUT MESSAGES
+        0x90 => 'LOG',          //Generic log message
+        0x91 => 'DEBUG'
     );
 
     private $id;
