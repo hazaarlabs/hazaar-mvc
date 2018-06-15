@@ -205,6 +205,8 @@ class DocBlock {
 
                     if(isset(self::$vectors[$tag]['key']) && $key = $array[self::$vectors[$tag]['key']]) {
 
+                        if($key[0] === '$') $key = substr($key, 1);
+
                         $this->tags[$tag][$key] = $array;
 
                     } else {
