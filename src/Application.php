@@ -39,30 +39,9 @@ define('APPLICATION_BASE', dirname($_SERVER['SCRIPT_NAME']));
  */
 define('APPLICATION_NAME', array_values(array_slice(explode(DIRECTORY_SEPARATOR, realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..')), -1))[0]);
 
-/**
- * @brief Constant containing the absolute filesystem path that contains the whole project.
- */
-define('ROOT_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..'));
+require_once('ErrorControl.php');
 
-/**
- * @brief Constant containing the absolute filesystem path to the default configuration directory.
- */
-define('CONFIG_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'configs'));
-
-/**
- * @brief Constant containing the absolute filesystem path to the application public directory.
- */
-define('PUBLIC_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'public'));
-
-/**
- * @brief Constant containing the absolute filesystem path to the HazaarMVC library
- */
-define('LIBRARY_PATH', realpath(dirname(__FILE__)));
-
-/**
- * @brief Constant containing the absolute filesystem path to the HazaarMVC support library
- */
-define('SUPPORT_PATH', realpath(LIBRARY_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs'));
+require_once('HelperFunctions.php');
 
 putenv('HOME=' . APPLICATION_PATH);
 
@@ -70,10 +49,6 @@ putenv('HOME=' . APPLICATION_PATH);
  * Change the current working directory to the application path so that all paths are relative to it.
  */
 chdir(APPLICATION_PATH);
-
-require_once ('ErrorControl.php');
-
-require_once('HelperFunctions.php');
 
 /**
  * @brief The Application
@@ -106,14 +81,7 @@ class Application {
         'env' => APPLICATION_ENV,
         'path' => APPLICATION_PATH,
         'base' => APPLICATION_BASE,
-        'name' => APPLICATION_NAME,
-        'paths' => array(
-            'root' => ROOT_PATH,
-            'config' => CONFIG_PATH,
-            'public' => PUBLIC_PATH,
-            'library' => LIBRARY_PATH,
-            'support' => SUPPORT_PATH
-        )
+        'name' => APPLICATION_NAME
     );
 
     public $request;
@@ -173,6 +141,9 @@ class Application {
         $this->loader = Loader::getInstance($this);
 
         $this->loader->register();
+
+        //Store the search paths in the GLOBALS container so they can be used in config includes.
+        $this->GLOBALS['paths'] = $this->loader->getSearchPaths();
 
         /**
          * Set up some default config properties.
@@ -261,7 +232,7 @@ class Application {
 
             define('RUNTIME_PATH', $this->runtimePath(null, true));
 
-            $this->GLOBALS['paths']['runtime'] = RUNTIME_PATH;
+            $this->GLOBALS['runtime'] = RUNTIME_PATH;
 
         }
 
