@@ -131,14 +131,14 @@ class Protocol {
         if(($type = $this->check($type)) === false)
             return false;
 
-        $packet = array(
+        $packet = (object) array(
             'TYP' => $type,
             'SID' => $this->id,
             'TME' => time()
         );
 
         if($payload)
-            $packet['PLD'] = $payload;
+            $packet->PLD = $payload;
 
         $packet = json_encode($packet);
 
@@ -150,26 +150,26 @@ class Protocol {
 
         $payload = null;
 
-        if(! ($packet = json_decode(($this->encoded ? base64_decode($packet) : $packet), true)))
+        if(!($packet = json_decode(($this->encoded ? base64_decode($packet) : $packet))))
             return $this->error('Packet decode failed');
 
-        if(! is_array($packet))
+        if(!$packet instanceof \stdClass)
             return $this->error('Invalid packet format');
 
-        if(! array_key_exists('TYP', $packet))
+        if(!property_exists($packet, 'TYP'))
             return $this->error('No packet type');
 
         //This is a security thing to ensure that the client is connecting to the correct instance of Warlock
-        if(! array_key_exists('SID', $packet) || $packet['SID'] != $this->id)
+        if(! property_exists($packet, 'SID') || $packet->SID != $this->id)
             return $this->error('Packet decode rejected due to bad SID.');
 
-        if(array_key_exists('PLD', $packet))
-            $payload = $packet['PLD'];
+        if(property_exists($packet, 'PLD'))
+            $payload = $packet->PLD;
 
-        if(array_key_exists('TME', $packet))
-            $time = $packet['TME'];
+        if(property_exists($packet, 'TME'))
+            $time = $packet->TME;
 
-        return $this->getTypeName($packet['TYP']);
+        return $this->getTypeName($packet->TYP);
 
     }
 
