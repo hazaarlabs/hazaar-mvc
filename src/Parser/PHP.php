@@ -242,7 +242,7 @@ class PHP {
 
                     $this->db_parser->setComment($token['value']);
 
-                    if(!array_key_exists('file', $this->db_parser)) {
+                    if(!$this->db_parser->hasTag('file')) {
 
                         $doc = $this->db_parser->toArray();
 
@@ -280,11 +280,8 @@ class PHP {
                 'line' => $token['line']
             );
 
-            if($comment = $this->checkDocComment($ar)) {
-
+            if($comment = $this->checkDocComment($ar))
                 $namespace['comment'] = $comment;
-
-            }
 
             while($token = next($ar)) {
 
@@ -322,11 +319,8 @@ class PHP {
                 'line' => $token['line']
             );
 
-            if($comment = $this->checkDocComment($ar, true)) {
-
+            if($comment = $this->checkDocComment($ar, true))
                 $const['comment'] = $comment;
-
-            }
 
             $token = next($ar);
 
@@ -379,11 +373,8 @@ class PHP {
             for($i = 0; $i < $count; $i++)
                 next($ar);
 
-            if($comment = $this->checkDocComment($ar, ($count > 1))) {
-
+            if($comment = $this->checkDocComment($ar, ($count > 1)))
                 $prop['comment'] = $comment;
-
-            }
 
             $token = next($ar);
 
@@ -454,11 +445,8 @@ class PHP {
             for($i = 0; $i < $count; $i++)
                 next($ar);
 
-            if($comment = $this->checkDocComment($ar, ($count > 1))) {
-
+            if($comment = $this->checkDocComment($ar, ($count > 1)))
                 $func['comment'] = $comment;
-
-            }
 
             $token = next($ar);
 
@@ -577,11 +565,8 @@ class PHP {
 
             $token = next($ar);
 
-            if($comment = $this->checkDocComment($ar, $class_info['abstract'])) {
-
+            if($comment = $this->checkDocComment($ar, $class_info['abstract']))
                 $class_info['comment'] = $comment;
-
-            }
 
             if(is_array($ns))
                 $class_info['namespace'] = $ns;
