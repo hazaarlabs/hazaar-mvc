@@ -701,7 +701,7 @@ class Application {
                         if($service->connect($payload->application_name, '127.0.0.1',
                             $payload->server_port, $payload->job_id, $payload->access_key)){
 
-                            $code = call_user_func(array($service, 'main'));
+                            $code = call_user_func(array($service, 'main'), ake($payload, 'params'));
 
                         }else{
 
