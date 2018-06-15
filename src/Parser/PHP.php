@@ -72,7 +72,7 @@ class PHP {
 
                                 $this->db_parser->setComment($token['value']);
 
-                                if(array_key_exists('file', $this->db_parser->tags))
+                                if($this->db_parser->hasTag('file'))
                                     $this->comment = $this->db_parser->toArray();
 
                             } else {
