@@ -57,6 +57,31 @@ define('FILE_PATH_PUBLIC', 'public');
 define('LINE_BREAK', ((substr(PHP_OS, 0, 3) == 'WIN')?"\r\n":"\n"));
 
 /**
+ * @brief Constant containing the absolute filesystem path that contains the whole project.
+ */
+define('ROOT_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..'));
+
+/**
+ * @brief Constant containing the absolute filesystem path to the default configuration directory.
+ */
+define('CONFIG_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'configs'));
+
+/**
+ * @brief Constant containing the absolute filesystem path to the application public directory.
+ */
+define('PUBLIC_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'public'));
+
+/**
+ * @brief Constant containing the absolute filesystem path to the HazaarMVC library
+ */
+define('LIBRARY_PATH', realpath(dirname(__FILE__)));
+
+/**
+ * @brief Constant containing the absolute filesystem path to the HazaarMVC support library
+ */
+define('SUPPORT_PATH', realpath(LIBRARY_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs'));
+
+/**
  * @brief Global class file loader
  *
  * @detail This class contains methods for auto-loading classes from files in the Hazaar library path. Ordinarily
