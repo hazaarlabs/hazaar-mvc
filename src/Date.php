@@ -9,10 +9,8 @@
  */
 namespace Hazaar;
 
-if (!ini_get('date.timezone')) {
-
+if (!ini_get('date.timezone'))
     ini_set('date.timezone', 'UTC');
-}
 
 /**
  * @brief The date/time class
@@ -79,6 +77,9 @@ class Date extends \Datetime {
      *            timezone is used.
      */
     public function __construct($datetime = NULL, $timezone = NULL) {
+
+        if(is_object($datetime))
+            $datetime = (array)$datetime;
 
         if (is_null($datetime)) {
 
