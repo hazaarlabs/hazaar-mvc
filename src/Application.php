@@ -652,15 +652,19 @@ class Application {
 
         if($type = $protocol->decode($line, $payload)){
 
+            if(!$payload instanceof \stdClass)
+                throw new \Exception('Got Hazaar protocol packet without payload!');
+
             switch ($type) {
 
                 case 'EXEC' :
 
                     $container = new \Hazaar\Warlock\Container($this, $protocol);
 
-                    if($container->connect($payload['application_name'], '127.0.0.1', $payload['server_port'], $payload['job_id'], $payload['access_key'])){
+                    if($container->connect($payload->application_name, '127.0.0.1',
+                        $payload->server_port, $payload->job_id, $payload->access_key)){
 
-                        $code = $container->exec($payload['function'], ake($payload, 'params'));
+                        $code = $container->exec($payload->function, ake($payload, 'params'));
 
                     }else{
 
@@ -672,7 +676,7 @@ class Application {
 
                 case 'SERVICE' :
 
-                    if(!array_key_exists('name', $payload)) {
+                    if(!property_exists($payload, 'name')) {
 
                         $code = 3;
 
@@ -680,7 +684,7 @@ class Application {
 
                     }
 
-                    $serviceClass = ucfirst($payload['name']) . 'Service';
+                    $serviceClass = ucfirst($payload->name) . 'Service';
 
                     if(class_exists($serviceClass)) {
 
@@ -694,7 +698,8 @@ class Application {
 
                         $service = new $serviceClass($this, $protocol);
 
-                        if($service->connect($payload['application_name'], '127.0.0.1', $payload['server_port'], $payload['job_id'], $payload['access_key'])){
+                        if($service->connect($payload->application_name, '127.0.0.1',
+                            $payload->server_port, $payload->job_id, $payload->access_key)){
 
                             $code = call_user_func(array($service, 'main'));
 
