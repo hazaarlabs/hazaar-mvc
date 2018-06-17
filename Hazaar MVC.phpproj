@@ -16,8 +16,6 @@
     <IncludeDebugInformation>false</IncludeDebugInformation>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="libs\text\classTextile.php" />
-    <Compile Include="libs\text\markdown.php" />
     <Compile Include="src\Application.php" />
     <Compile Include="src\Application\Config.php" />
     <Compile Include="src\Application\Exception\BadTimezone.php" />
@@ -309,9 +307,6 @@
     <Compile Include="src\Model\Strict.php" />
     <Compile Include="src\Money.php" />
     <Compile Include="src\Net\LDAP.php" />
-    <Compile Include="src\Parser\DocBlock.php" />
-    <Compile Include="src\Parser\PHP.php" />
-    <Compile Include="src\Parser\Textile.php" />
     <Compile Include="src\Timer.php" />
     <Compile Include="src\Version.php" />
     <Compile Include="src\View.php" />
@@ -379,7 +374,6 @@
     <Folder Include="libs\error\" />
     <Folder Include="libs\js\" />
     <Folder Include="libs\media\" />
-    <Folder Include="libs\text\" />
     <Folder Include="src\" />
     <Folder Include="src\Application\" />
     <Folder Include="src\Application\Exception\" />
@@ -415,7 +409,6 @@
     <Folder Include="src\Console\" />
     <Folder Include="src\Net\" />
     <Folder Include="src\Text\" />
-    <Folder Include="src\Parser\" />
     <Folder Include="src\Text\Template\" />
     <Folder Include="src\View\" />
     <Folder Include="src\View\Helper\" />
