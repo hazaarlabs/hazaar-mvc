@@ -17,14 +17,14 @@ if (!ini_get('date.timezone'))
  *
  * @detail This class can be used to manage date and time values and perform date arithmetic.
  *
- * h3. Example
+ * ### Example
  *
  * <code class="php">
  * $date = new Hazaar\Date('next tuesday');
  * echo $date; //Echo's a timestamp such as '2013-01-15 11:00:00.0'
  * </code>
  *
- * h2. Timezones
+ * ## Timezones
  *
  * It is possible to set the timezone globally for all date/time functions and classes.
  *

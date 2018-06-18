@@ -1,11 +1,10 @@
 <?php
 /**
- * Created by PhpStorm.
- * Author: Jamie Carl
- * Date: 25/09/14
- * Time: 9:21 AM
+ * @file        Hazaar/Application/Protocol.php
  *
- * @package     Core
+ * @author      Jamie Carl <jamie@hazaarlabs.com>
+ *
+ * @copyright   Copyright (c) 2018 Jamie Carl (http://www.hazaarlabs.com)
  */
 
 namespace Hazaar\Application;

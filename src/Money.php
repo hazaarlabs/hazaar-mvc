@@ -15,7 +15,7 @@ namespace Hazaar;
  * @detail      This class is used to extend a normal integer value by adding currency related features such as the
  *              currency type (AUD, USD, JPY, etc) and realtime currency conversion using Yahoo Quotes.
  *
- *              h3. Example
+ *              ### Example
  *
  *              <code class="php">
  *              $aud = new Money(500, 'AUD');
@@ -32,7 +32,7 @@ namespace Hazaar;
  *              It is recommended that these be set in your bootstrap file so that they are consistent across the whole
  *              application.
  *
- *              h3. Example bootstrap.php
+ *              ### Example bootstrap.php
  *
  *              <code class="php">
  *              Hazaar\Money::$money_format = '%.0n';
@@ -220,7 +220,7 @@ class Money {
      *              Optionally, if a country parameter is specified, this method can be used to look up the currency code
      *              for that country.
      *
-     *              h3. Example
+     *              ### Example
      *
      *              <code class="php">
      *              echo $currency->getCode('au');  //This will echo the string 'AUD'.
@@ -405,7 +405,7 @@ class Money {
      *              a numeric value or another Money object.  If the parameter is a Money object then the value
      *              will be automatically converted using the current exchange rate before it is added.
      *
-     *              h3. Parameters
+     *              ### Parameters
      *
      *              Any number of numeric or Money objects parameters.
      *

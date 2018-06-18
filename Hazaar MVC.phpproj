@@ -58,6 +58,7 @@
     <Compile Include="src\Controller\Exception\HeadersSent.php" />
     <Compile Include="src\Controller\Response\Packer\CSS.php" />
     <Compile Include="src\Controller\Response\Packer\JavaScript.php" />
+    <Compile Include="src\File\TempDir.php" />
     <Compile Include="src\File\Temp.php" />
     <Compile Include="src\Model\ChildArray.php" />
     <Compile Include="src\Model\ChildModel.php" />

@@ -277,7 +277,7 @@ class Url {
      * supplied to this method and replaced in the output.  This allows a single URL object to be used multiple times
      * and it's parameters changed
      *
-     * h2. Example:
+     * ## Example:
      *
      * <code>
      * $url = new \Hazaar\Application\Url('controller', 'action', array('id' => '$id'));

@@ -89,7 +89,7 @@ class Dir {
 
         $last = $this->path;
 
-        while(! ($exists = $this->backend->exists($last))) {
+        while(!$this->backend->exists($last)) {
 
             $parents[] = $last;
 

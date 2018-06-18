@@ -1179,6 +1179,23 @@ pre { margin: 30px; }
 
 }
 
+/**
+ * Perform a regular expression match on a string using multiple possible regular expressions.
+ *
+ * This is the same as calling preg_match() except that $patterns is an array of regular expressions.
+ * Execution returns on the first match.
+ *
+ * @param array   $patterns   An array of patterns to search for, as a string.
+ * @param string  $subject    The input string.
+ * @param array   $matches    If matches is provided, then it is filled with the results of search. $matches[0] will contain the text that     *                          matched the full pattern, $matches[1] will have the text that matched the first captured parenthesized
+ *                            subpattern, and so on.
+ * @param integer $flags      For details on available flags, see the "preg_match()":http://php.net/manual/en/function.preg-match.php
+ *                            documentation.
+ * @param integer $offset     Normally, the search starts from the beginning of the subject string. The optional parameter offset can
+ *                            be used to specify the alternate place from which to start the search (in bytes).
+ *
+ * @return boolean|integer
+ */
 function preg_match_array($patterns, $subject, &$matches = NULL, $flags = 0, $offset = 0) {
 
     if (!is_array($patterns))
@@ -1188,6 +1205,7 @@ function preg_match_array($patterns, $subject, &$matches = NULL, $flags = 0, $of
 
         if (preg_match($pattern, $subject, $matches, $flags, $offset))
             return 1;
+
     }
 
     return 0;
@@ -1330,8 +1348,11 @@ if (!function_exists('str_putcsv')) {
      * Convert an array into a CSV line.
      *
      * @param array $input
+     *
      * @param string $delimiter Defaults to comma (,)
+     *
      * @param string $enclosure Defaults to double quote (")
+     *
      * @return string
      */
     function str_putcsv($input, $delimiter = ',', $enclosure = '"') {
@@ -1413,5 +1434,33 @@ function replace_recursive(){
     }
 
     return $target;
+
+}
+
+/**
+ * Recrusively convert a traversable object into a normal array
+ *
+ * This is the same as the built-in PHP iterator_to_array() function except it will recurse into any \Traversable objects it contains.
+ *
+ * @param Traversable $it The object to convert to an array.
+ *
+ * @return array
+ *
+ * @since 2.3.60
+ */
+function recursive_iterator_to_array(\Traversable $it) {
+
+    $result = array();
+
+    foreach($it as $key => $value) {
+
+        if($value instanceof \Traversable)
+            $result[$key] = recursive_iterator_to_array($value);
+        else
+            $result[$key] = $value;
+
+    }
+
+    return $result;
 
 }
