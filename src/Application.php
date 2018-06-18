@@ -65,7 +65,7 @@ chdir(APPLICATION_PATH);
  * * Hazaar\Application\Request\Cli - This is a special request type to allow Hazaar applications to
  * be executed from the command line. This is currently used by the config tool
  *
- * h3. Example usage:
+ * ### Example usage:
  *
  * <code>
  * define('APPLICATION_ENV', 'development');
@@ -890,6 +890,11 @@ class Application {
 
     }
 
+    /**
+     * Return the current Hazaar MVC framework version.
+     * 
+     * @return string
+     */
     public function version() {
 
         return HAZAAR_VERSION;

@@ -312,7 +312,7 @@ class Config extends \Hazaar\Map {
      * @detail      This method is useful for logging, debugging or for using in application administration interfaces
      *              to check the current running configuration.
      *
-     *              h3. Example Output
+     *              ### Example Output
      *
      *              <pre>
      *              app.name = Example Application

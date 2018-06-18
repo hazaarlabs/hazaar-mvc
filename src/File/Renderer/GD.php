@@ -1,9 +1,10 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: jamie
- * Date: 2/02/16
- * Time: 4:15 PM
+ * @file        Hazaar/File/Renderer/GD.php
+ *
+ * @author      Jamie Carl <jamie@hazaarlabs.com>
+ *
+ * @copyright   Copyright (c) 2018 Jamie Carl (http://www.hazaarlabs.com)
  */
 
 namespace Hazaar\File\Renderer;

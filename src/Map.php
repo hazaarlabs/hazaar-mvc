@@ -16,7 +16,7 @@ namespace Hazaar;
  *              able to reset a Map to default values, easily extend using another Map or Array, have more simplified
  *              access to array key functions, as well as output to various formats such as Array or JSON.
  *
- *              h3. Example
+ *              ### Example
  *
  *              <code class="php">
  *              $map = new Hazaar\Map();
@@ -30,7 +30,7 @@ namespace Hazaar;
  *              { "depth0" : { "depth1" : { "depth2" : [ "foo", "bar" ] } } }
  *              </code>
  *
- *              h2. Filters
+ *              ## Filters
  *
  *              Filters are callback functions or class methods that are executed upon a get/set call.  There are two
  *              methods
@@ -42,7 +42,7 @@ namespace Hazaar;
  *              The method executed is passed two arguments, the value and the key, in that order.  The method must
  *              return the value that it wants to be used or stored.
  *
- *              h3. Using Filters
+ *              ### Using Filters
  *
  *              Here is an example of using an input filter to convert a Date object into an array of MongoDate and a
  *              timezone field.
@@ -125,7 +125,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      * default
      *              set of values that may or may not exist in the extended array.
      *
-     *              h3. Example
+     *              ### Example
      *
      *              <code class="php">
      *                $config = array('enabled' => true);

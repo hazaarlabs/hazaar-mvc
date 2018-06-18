@@ -91,7 +91,7 @@ define('SUPPORT_PATH', realpath(LIBRARY_PATH . DIRECTORY_SEPARATOR . '..' . DIRE
  * This class is not meant to be instantiated directly and instances should be retrieved using the
  * Loader::getInstance()method.
  *
- * h3. Example
+ * ### Example
  *
  * <code class="php">
  * $loader = Hazaar\Loader::getInstance();

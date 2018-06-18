@@ -9,7 +9,7 @@ namespace Hazaar\File;
  * works with the PHP $_FILES global that contains information about any uploaded files.  This class then provides a few
  * simple methods to make saving all files, or a single file, much simpler.
  *
- * h3. Examples
+ * ### Examples
  *
  * Save all uploaded files to a directory:
  *

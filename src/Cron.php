@@ -1,9 +1,10 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: jamie
- * Date: 15/10/14
- * Time: 11:16 AM
+ * @file        Hazaar/Cron.php
+ *
+ * @author      Jamie Carl <jamie@hazaarlabs.com>
+ *
+ * @copyright   Copyright (c) 2018 Jamie Carl (http://www.hazaarlabs.com)
  */
 
 namespace Hazaar;
@@ -21,10 +22,10 @@ define('IDX_YEAR', 5);
  * It can parse a given string with a schedule specification in cron format.  The class can compute the last and the
  * next schedule times relative to a given time.
  *
- * h3. Example
+ * ### Example
  *
  * <code>
- * $cron = new \Hazaar\Cron('0,30 9-17 * * 1-5');
+ * $cron = new \Hazaar\Cron('0,30 9-17 \* \* 1-5');
  * $next = $cron->getNextOccurrence();
  * </code>
  *
