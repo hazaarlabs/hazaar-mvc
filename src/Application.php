@@ -688,20 +688,15 @@ class Application {
 
                     if(class_exists($serviceClass)) {
 
-                        if($config = ake($payload, 'config')){
-
+                        if($config = ake($payload, 'config'))
                             $this->config->extend($config);
-
-                            $this->config->app['test'] = '1234';
-
-                        }
 
                         $service = new $serviceClass($this, $protocol);
 
                         if($service->connect($payload->application_name, '127.0.0.1',
                             $payload->server_port, $payload->job_id, $payload->access_key)){
 
-                            $code = call_user_func(array($service, 'main'), ake($payload, 'params'));
+                            $code = call_user_func(array($service, 'main'), ake($payload, 'params'), ake($payload, 'dynamic', false));
 
                         }else{
 
@@ -892,7 +887,7 @@ class Application {
 
     /**
      * Return the current Hazaar MVC framework version.
-     * 
+     *
      * @return string
      */
     public function version() {
