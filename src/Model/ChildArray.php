@@ -273,9 +273,26 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
+    public function has($key){
+
+        return array_key_exists($key, $this->values);
+
+    }
+
+    public function get($offset){
+
+        return $this->values[$offset];
+
+    }
+
     public function toArray(){
 
-        return $this->values;
+        $values = $this->values;
+
+        foreach($values as &$value)
+            if($value instanceof Strict) $value = $value->toArray();
+
+        return $values;
 
     }
 
