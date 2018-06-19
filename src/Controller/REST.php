@@ -155,7 +155,7 @@ abstract class REST extends \Hazaar\Controller {
 
                                 list($key, $value) = explode('=', $part, 2);
 
-                                if($value = json_decode($value, true))
+                                if($value = json_decode(str_replace("'", '"', $value), true))
                                     $args[$key] = $value;
 
                             }else{
