@@ -23,7 +23,7 @@ namespace Hazaar\Controller;
  *              class ApiController extends \Hazaar\Controller\REST {
  *
  *                  /**
- *                   * @route('/dothething/<int:thingstodo>', method=['GET'])
+ *                   * @route('/dothething/<int:thingstodo>', methods=['GET'])
  *                   **\/
  *                  protected function do_the_thing($thingstodo){
  *
@@ -48,7 +48,7 @@ namespace Hazaar\Controller;
  *              class ApiController extends \Hazaar\Controller\REST {
  *
  *                  /**
- *                   * @route('/v1/dothething/<int:thingstodo>', method=['GET'])
+ *                   * @route('/v1/dothething/<int:thingstodo>', methods=['GET'])
  *                   **\/
  *                  protected function do_the_thing($thingstodo){
  *
@@ -57,7 +57,7 @@ namespace Hazaar\Controller;
  *                  }
  *
  *                  /**
- *                   * @route('/v2/dothething/<date:when>/<int:thingstodo>', method=['GET'])
+ *                   * @route('/v2/dothething/<date:when>/<int:thingstodo>', methods=['GET'])
  *                   **\/
  *                  protected function do_the_thing_v2($thingstodo, $when){
  *
@@ -80,13 +80,13 @@ namespace Hazaar\Controller;
  *
  *              <code>
  *              /**
- *                * @route('/v1/dothething/<date:when>/<int:thingstodo>', method=['GET'])
- *                * @route('/v2/dothething/<date:when>/<int:thingstodo>', method=['GET'])
+ *                * @route('/v1/dothething/<date:when>/<int:thingstodo>', methodsGET'])
+ *                * @route('/v2/dothething/<date:when>/<int:thingstodo>', methods=['GET'])
  *               **\/
  *
  *              ## Endpoint Directories
  *              Endpoint directories are simply a list of the available endpoints with some basic information
- *              about how they operate such as the HTTP method, parameter description and a brief description.
+ *              about how they operate such as the HTTP methods allowed, parameter description and a brief description.
  */
 abstract class REST extends \Hazaar\Controller {
 
@@ -99,6 +99,8 @@ abstract class REST extends \Hazaar\Controller {
     private $__rest_cache;
 
     private $__rest_cache_enable_global = false;
+
+    static private $valid_types = array('boolean', 'bool', 'integer', 'int', 'double', 'float', 'string', 'array', 'null', 'date');
 
     protected function enableEndpointCaching($boolean){
 
@@ -142,7 +144,7 @@ abstract class REST extends \Hazaar\Controller {
 
                     $route = '/' . ltrim($matches[1], '/');
 
-                    $args = array('method' => array('GET'));
+                    $args = array('methods' => array('GET'));
 
                     if(array_key_exists(2, $matches)){
 
@@ -224,7 +226,7 @@ abstract class REST extends \Hazaar\Controller {
 
                             $response = new \Hazaar\Controller\Response\Json();
 
-                            $response->setHeader('allow', $endpoint['args']['method']);
+                            $response->setHeader('allow', $endpoint['args']['methods']);
 
                             if($this->allow_directory)
                                 $response->populate($this->__describe_endpoint($route, $endpoint, $this->describe_full));
@@ -270,11 +272,11 @@ abstract class REST extends \Hazaar\Controller {
 
         if(!$api) $api = array();
 
-        foreach($endpoint['args']['method'] as $method){
+        foreach($endpoint['args']['methods'] as $methods){
 
             $info = array(
                 'url' => $this->url() . $route,
-                'httpMethod' => $method
+                'httpMethods' => $methods
             );
 
             if($describe_full && ($doc = ake($endpoint, 'doc'))){
@@ -311,8 +313,6 @@ abstract class REST extends \Hazaar\Controller {
 
         $args = array();
 
-        $valid_types = array('boolean', 'bool', 'integer', 'int', 'double', 'float', 'string', 'array', 'null', 'date');
-
         $path = explode('/', ltrim($path, '/'));
 
         $route = explode('/', ltrim($route, '/'));
@@ -336,11 +336,13 @@ abstract class REST extends \Hazaar\Controller {
 
                 $key = $matches[3];
 
-                if(!in_array($matches[1], $valid_types))
+                if(!in_array($matches[1], REST::$valid_types))
                     return false;
 
                 if($matches[1] == 'date')
                     $value = new \Hazaar\Date($value);
+                elseif($matches[1] == 'bool' || $matches[1] == 'boolean')
+                    $value = boolify($value);
                 else
                     settype($value, $matches[1]);
 
@@ -355,7 +357,7 @@ abstract class REST extends \Hazaar\Controller {
 
         }
 
-        $http_methods = ake(ake($endpoint, 'args'), 'method', array('GET'));
+        $http_methods = ake(ake($endpoint, 'args'), 'methods', array('GET'));
 
         if(!in_array($this->request->method(), $http_methods))
             return false;
