@@ -320,7 +320,12 @@ class Dir {
 
     }
 
-    public function get($child) {
+    public function get($child, $force_dir = false) {
+
+        $path = $this->path($child);
+
+        if($force_dir === true || (file_exists($path) && is_dir($path)))
+            return new \Hazaar\File\Dir($path, $this->backend, $this->manager);
 
         return new \Hazaar\File($this->path($child), $this->backend, $this->manager);
 
