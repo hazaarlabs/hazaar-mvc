@@ -10,15 +10,15 @@ namespace Hazaar;
  *
  * Data is obtained via the publicly available GeoLite2 databases provided by MaxMind.
  *
- * See the "MaxMind GeoLite2 Pages":https://dev.maxmind.com/geoip/geoip2/geolite2/ for more information.
+ * See the [MaxMind GeoLite2 Pages](https://dev.maxmind.com/geoip/geoip2/geolite2/) for more information.
  *
- * p(notice). Currently, IP information is not stored and only country/state/city level data is
- * searchable.
+ * <p class="notice">Currently, IP information is not stored and only country/state/city level data is
+ * searchable.</p>
  *
- * p(notice warning). The first time the \Hazaar\GeoData class is used it needs to download some files
+ * <p class="notice warning">The first time the \Hazaar\GeoData class is used it needs to download some files
  * and construct an internal B-Tree database.  This requires HTTP access to the internet and depending
  * on the speed of the connection can take some time (usually around 10-15 seconds).  Once the B-Tree
- * database is constructed then data access speeds are extremely fast.
+ * database is constructed then data access speeds are extremely fast.</p>
  *
  * @since 2.3.44
  *
