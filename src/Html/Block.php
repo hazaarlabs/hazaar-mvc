@@ -152,8 +152,20 @@ class Block extends Element implements \ArrayAccess, \Iterator {
      */
     public function add() {
 
-        foreach(func_get_args() as $arg)
+        foreach(func_get_args() as $arg){
+
+            if(is_array($arg)){
+
+                foreach($arg as $a)
+                    $this->add($a);
+
+                continue;
+
+            }
+
             $this->content[] = $arg;
+
+        }
 
         return $this;
 
@@ -168,7 +180,16 @@ class Block extends Element implements \ArrayAccess, \Iterator {
      */
     public function prepend($element) {
 
-        array_unshift($this->content, $element);
+        if(is_array($element)){
+
+            foreach(array_reverse($element) as $e)
+                array_unshift($this->content, $e);
+
+        }else{
+
+            array_unshift($this->content, $element);
+
+        }
 
         return $this;
 
