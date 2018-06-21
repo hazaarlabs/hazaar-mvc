@@ -195,6 +195,61 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     }
 
+    public function before($selector, $content){
+
+        return $this->spliceElement($selector, $content, 0);
+
+    }
+
+    public function after($selector, $content){
+
+        return $this->spliceElement($selector, $content, 1);
+
+    }
+
+    public function replace($selector, $content){
+
+        return $this->spliceElement($selector, $content, 0, 1);
+
+    }
+
+    private function spliceElement($selector, $content, $offset, $length = 0){
+
+        if(is_array($this->content)){
+
+            $count = count($this->content);
+
+            //Split on a comma and any amount of adjacent white space
+            $parts = preg_split('/\s*,\s*/', $selector);
+
+            $ruleset = array();
+
+            //Compile all the selector rules.
+            foreach($parts as $part)
+                $ruleset[] = ElementCollection::compileRules($part, 1);
+
+            foreach($this->content as $index => $element){
+
+                foreach($ruleset as $rules){
+
+                    if(ElementCollection::matchElement($element, $rules, $index, $count)){
+
+                        array_splice($this->content, $index + $offset, $length, array($content));
+
+                        return $this;
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        return $this;
+
+    }
+
     public function children($selector = null) {
 
         return new ElementCollection($this->content, $selector);
