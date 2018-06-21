@@ -40,7 +40,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
     }
 
-    static private function compileRules($selector, $count){
+    static public function compileRules($selector, $count){
 
         $rules = array(
                 'type' => null,
@@ -196,7 +196,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
     }
 
-    static private function matchElement($element, $rules, $index, $count){
+    static public function matchElement($element, $rules, $index, $count){
 
         if($rules['type'] && $rules['type'] != $element->getTypeName())
             return false;
