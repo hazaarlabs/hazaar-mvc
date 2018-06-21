@@ -20,19 +20,14 @@ abstract class Element implements _Interface {
     protected $style = array();
 
     /**
-     * @detail      The HTML element constructor takes two arguments.  The type of the element which is defined by the
-     * available
-     *              types in the HTML standards.  eg: A, DIV, SPAN, etc.  The second argument is an array of parameters
-     * to
-     *              apply to the element such as width, height, style, etc.  The parameters are also defined by the
-     * current HTML
-     *              standards.
+     * @detail      The HTML element constructor takes two arguments.  The type of the element which is defined by
+     *              the available types in the HTML standards.  eg: A, DIV, SPAN, etc.  The second argument is an
+     *              array of parameters to apply to the element such as width, height, style, etc.  The parameters
+     *              are also defined by the current HTML standards.
      *
-     *              The available types and parameters are not restricted by this class and so ANY type, valid or not,
-     * can be
-     *              specified.  It is up to the developer to ensure that the HTML element types they use adhere to the
-     * standards
-     *              for which they are trying to comply.
+     *              The available types and parameters are not restricted by this class and so ANY type, valid or
+     *              not, can be specified.  It is up to the developer to ensure that the HTML element types they
+     *              use adhere to the standards for which they are trying to comply.
      *
      * @since       1.0.0
      *
@@ -40,7 +35,7 @@ abstract class Element implements _Interface {
      *
      * @param       array $parameters An array of HTML parameters to apply to the element.
      */
-    function __construct($type, $parameters = array()) {
+    function __construct($type = null, $parameters = array()) {
 
         $this->type = $type;
 
@@ -328,5 +323,21 @@ abstract class Element implements _Interface {
 
     }
 
-}
+    /**
+     * Append the element to another.
+     *
+     * This is the same as calling add() on the other element but is more convenient in some cases.
+     *
+     * @param mixed $element The element to append to.
+     *
+     * @return Element This element
+     */
+    public function appendTo(Element $element){
 
+        $element->add($this);
+
+        return $this;
+
+    }
+
+}

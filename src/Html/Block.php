@@ -12,33 +12,31 @@ namespace Hazaar\Html;
  */
 class Block extends Element implements \ArrayAccess, \Iterator {
 
-    protected $type;
-
     private   $close;
 
     private   $content = array();
 
     /**
-     * @detail      The HTML block element constructor.  This allows a block element of any type to be constructed.
+     * @detail  The HTML block element constructor.  This allows a block element of any type to be constructed.
      *
-     * @since       1.0.0
+     * @since   1.0.0
      *
-     * @param       string $type The type of the element.
+     * @param   string $type        The type of the element.  If this is NULL then the block will not generate any
+     *                              HTML tags.  This is useful if you need a logical container for other elements.
      *
-     * @param       mixed $content Any content to add to the element.  Content can be a string, an integer, another
-     *                                 HTML element, or an array of any depth containing a mix of strings and HTML
-     *                                 elements.
+     * @param   mixed $content      Any content to add to the element.  Content can be a string, an integer, another
+     *                              HTML element, or an array of any depth containing a mix of strings and HTML
+     *                              elements.
      *
-     * @param       array $parameters An array of parameters to apply to the block element.
+     * @param   array $parameters   An array of parameters to apply to the block element.
      *
-     * @param       bool $close Sets whether to close the block.  Sometimes some fancy things need to happen
-     *                                 inside a block so we can request that the block no be closed.  This is usually
-     *                                 used inside a view to allow a block to be displayed in code, then using '?>'
-     *
-     * escape sequence to drop the PHP interpreter back into HTML output mode
-     *              to render more content that will appear inside the block.
+     * @param   bool $close         Sets whether to close the block.  Sometimes some fancy things need to happen
+     *                              inside a block so we can request that the block no be closed.  This is usually
+     *                              used inside a view to allow a block to be displayed in code, then using '?>' escape
+     *                              sequence to drop the PHP interpreter back into HTML output mode to render more
+     *                              content that will appear inside the block.
      */
-    function __construct($type, $content = NULL, $parameters = array(), $close = TRUE) {
+    function __construct($type = null, $content = NULL, $parameters = array(), $close = TRUE) {
 
         parent::__construct($type, $parameters);
 
@@ -96,19 +94,19 @@ class Block extends Element implements \ArrayAccess, \Iterator {
      */
     public function renderObject() {
 
-        $out = '<' . $this->type . (($this->parameters->count() > 0) ? ' ' . $this->parameters : '');
+        $out = '';
+
+        if($this->type)
+            $out .= '<' . $this->type . (($this->parameters->count() > 0) ? ' ' . $this->parameters : '') . '>';
 
         $content = array();
 
-        foreach($this->content as $child) {
-
+        foreach($this->content as $child)
             $content[] = $this->renderElement($child);
 
-        }
+        $out .= implode($content);
 
-        $out .= '>' . implode($content);
-
-        if($this->close)
+        if($this->type && $this->close)
             $out .= "</$this->type>";
 
         return $out;
