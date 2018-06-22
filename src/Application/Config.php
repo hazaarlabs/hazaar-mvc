@@ -38,14 +38,14 @@ class Config extends \Hazaar\Map {
      *
      * @since       1.0.0
      *
-     * @param       string $source_file The absolute path to the config file
+     * @param       string  $source_file    The absolute path to the config file
      *
-     * @param       string $env         The application environment to read settings for.  Usually 'development' or
-     *                                  'production'.
+     * @param       string  $env            The application environment to read settings for.  Usually `development`
+     *                                      or `production`.
      *
-     * @param       mixed   $defaults   Initial defaut values.
+     * @param       mixed   $defaults       Initial defaut values.
      *
-     * @param       mixed   $path_type  The search path type to look for configuration files.
+     * @param       mixed   $path_type      The search path type to look for configuration files.
      *
      * @param       mixed   $override_paths An array of subdirectory names to look for overrides.
      */
