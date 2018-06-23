@@ -30,14 +30,49 @@ class GD extends BaseRenderer {
 
         ob_start();
 
-        switch($this->type){
-            case 'png':
+        switch($this->type) {
+            case 'gif' :
+
+                imagegif($this->img);
+
                 break;
 
-            case 'jpeg':
-            default:
-                imagejpeg($this->img);
+            case 'png' :
+
+                imagesavealpha($this->img, TRUE);
+
+                if($this->quality) {
+
+                    imagepng($this->img, NULL, ($this->quality / 10) - 1);
+
+                    $this->quality = NULL;
+
+                } else {
+
+                    imagepng($this->img);
+
+                }
+
                 break;
+
+
+            case 'jpeg':
+            default :
+
+                if(is_numeric($this->quality)) {
+
+                    imagejpeg($this->img, NULL, intval($this->quality));
+
+                    $this->quality = NULL;
+
+                } else {
+
+                    imagejpeg($this->img);
+
+                }
+
+                break;
+
         }
 
         return ob_get_clean();
@@ -64,22 +99,7 @@ class GD extends BaseRenderer {
 
     public function compress($quality) {
 
-        ob_start();
-
-        switch($this->type) {
-            case 'jpeg' :
-
-                imagejpeg($this->img, NULL, $quality);
-
-            case 'png' :
-
-                imagesavealpha($this->img, TRUE);
-
-                imagepng($this->img, NULL, ($quality / 10) - 1);
-
-        }
-
-        return ob_end_clean();
+        return $this->quality($quality);
 
     }
 
@@ -192,59 +212,12 @@ class GD extends BaseRenderer {
         /*
          * Do the actual resize
          */
-        imagecopyresampled($dst, $this->img, 0, 0, $src_x, $src_y, $width, $height, $src_w, $src_h);
+        if(!imagecopyresampled($dst, $this->img, 0, 0, $src_x, $src_y, $width, $height, $src_w, $src_h))
+            return false;
 
-        /*
-         * Update the content with the resized image data
-         */
-        ob_start();
+        $this->img = $dst;
 
-        switch($this->type) {
-            case 'gif' :
-
-                imagegif($dst);
-
-                break;
-
-            case 'png' :
-
-                imagesavealpha($dst, TRUE);
-
-                if($this->quality) {
-
-                    imagepng($dst, NULL, ($this->quality / 10) - 1);
-
-                    $this->quality = NULL;
-
-                } else {
-
-                    imagepng($dst);
-
-                }
-
-                break;
-
-
-            case 'jpeg':
-            default :
-
-                if(is_numeric($this->quality)) {
-
-                    imagejpeg($dst, NULL, intval($this->quality));
-
-                    $this->quality = NULL;
-
-                } else {
-
-                    imagejpeg($dst);
-
-                }
-
-                break;
-
-        }
-
-        return ob_get_clean();
+        return true;
 
     }
 

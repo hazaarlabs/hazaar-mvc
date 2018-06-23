@@ -4,9 +4,17 @@ namespace Hazaar\Controller\Response;
 
 class Image extends File {
 
+    private $cache_enabled = false;
+
     private $quality = 100;
 
-    function __construct($filename = NULL, $quality = NULL, $backend = NULL) {
+    private $cache_dir = RUNTIME_PATH . DIRECTORY_SEPARATOR . 'response_image_cache';
+
+    private $cache_file = null;
+
+    private $cache = false;
+
+    function __construct($filename = NULL, $quality = NULL, $backend = NULL, $enable_image_cache = false) {
 
         parent::__construct($filename, $backend);
 
@@ -14,6 +22,21 @@ class Image extends File {
 
         if($this->file)
             $this->file->quality($this->quality);
+
+        $this->cache_enabled = $enable_image_cache;
+
+    }
+
+    function __destruct(){
+
+        if($this->cache === true && $this->cache_file !== null && $this->file){
+
+            if(!file_exists($this->cache_dir))
+                mkdir($this->cache_dir);
+
+            file_put_contents($this->cache_file, $this->getContent());
+
+        }
 
     }
 
@@ -79,11 +102,17 @@ class Image extends File {
 
     public function resize($width = NULL, $height = NULL, $crop = FALSE, $align = NULL, $keep_aspect = TRUE, $reduce_only = TRUE, $ratio = NULL, $offsetTop = 0, $offsetLeft = 0) {
 
+        if($this->checkCacheFile('resize', func_get_args()))
+            return true;
+
         return $this->file->resize($width, $height, $crop, $align, $keep_aspect, $reduce_only, $ratio, $offsetTop, $offsetLeft);
 
     }
 
     public function expand($width = NULL, $height = NULL, $align = 'topleft', $offsettop = 0, $offsetleft = 0) {
+
+        if($this->checkCacheFile('expand', func_get_args()))
+            return true;
 
         return $this->file->expand($width, $height, $align, $offsettop, $offsetleft);
 
@@ -91,7 +120,31 @@ class Image extends File {
 
     public function filter($filters) {
 
+        if($this->checkCacheFile('filter', func_get_args()))
+            return true;
+
         return $this->file->filter($filters);
+
+    }
+
+    private function checkCacheFile($method, $args = array()){
+
+        if($this->cache_enabled === false)
+            return false;
+
+        $this->cache_file = $this->cache_dir . DIRECTORY_SEPARATOR . md5($this->file->name() . serialize(func_get_args()));
+
+        if(!file_exists($this->cache_file)){
+
+            $this->cache = true;
+
+            return false;
+
+        }
+
+        $this->file->set_contents(file_get_contents($this->cache_file));
+
+        return true;
 
     }
 
