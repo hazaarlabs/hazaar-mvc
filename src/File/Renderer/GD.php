@@ -144,7 +144,7 @@ class GD extends BaseRenderer {
 
         }
 
-        $dst = imagecreate($width, $height);
+        $dst = imagecreatetruecolor($width, $height);
 
         /*
          * Initialize default values for stretching
@@ -204,24 +204,6 @@ class GD extends BaseRenderer {
 
             case 'png' :
 
-                if($this->quality) {
-
-                    imagejpeg($dst, NULL, $this->quality);
-
-                    $this->quality = NULL;
-
-                } else {
-
-                    imagejpeg($dst);
-
-                }
-
-                break;
-
-
-            case 'jpeg':
-            default :
-
                 imagesavealpha($dst, TRUE);
 
                 if($this->quality) {
@@ -236,8 +218,26 @@ class GD extends BaseRenderer {
 
                 }
 
+                break;
+
+
+            case 'jpeg':
+            default :
+
+                if(is_numeric($this->quality)) {
+
+                    imagejpeg($dst, NULL, intval($this->quality));
+
+                    $this->quality = NULL;
+
+                } else {
+
+                    imagejpeg($dst);
+
+                }
 
                 break;
+
         }
 
         return ob_get_clean();
