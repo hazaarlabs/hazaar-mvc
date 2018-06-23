@@ -89,6 +89,10 @@ class GD extends BaseRenderer {
          * Initialize the source dimenstions
          */
 
+        $src_x = 0;
+
+        $src_y = 0;
+
         $src_w = imagesx($this->img);
 
         $src_h = imagesy($this->img);
@@ -103,7 +107,7 @@ class GD extends BaseRenderer {
             $height = min($src_h, intval($height));
 
             if($src_w <= $width && $src_h <= $height)
-                return;
+                return null;
 
         }
 
@@ -147,39 +151,39 @@ class GD extends BaseRenderer {
         $dst = imagecreatetruecolor($width, $height);
 
         /*
-         * Initialize default values for stretching
-         */
-
-        $dst_x = 0;
-
-        $dst_y = 0;
-
-        $src_x = 0;
-
-        $src_y = 0;
-
-        $dst_w = $width;
-
-        $dst_h = $height;
-
-        /*
-         * Otherwise, check if we are cropping and figure out what area we want
+         * Check if we are cropping and figure out what area we want
          */
         if($crop == TRUE) {
 
-            $ratio2 = $dst_h / $dst_w;
+            //The target height scaled to the original image
+            $scale_height = ($src_w / $width) * $height;
 
-            if($ratio2 < $ratio) {
+            //The target height scaled to the original image
+            $scale_width = ($src_h / $height) * $width;
 
-                $dst_y = ceil(($dst_h - ($dst_w * $ratio)) / 2);
+            if($scale_height < $src_h){
 
-                $dst_h -= ($dst_y * 2);
+                if($align == 'top')
+                    $src_y = 0;
+                elseif($align == 'bottom')
+                    $src_y = ceil($src_h - $scale_height);
+                else
+                    $src_y = ceil(($src_h / 2) - ($scale_height / 2));
 
-            } else {
+                $src_h = ceil($scale_height);
 
-                $dst_x = ceil(($dst_w - ($dst_h / $ratio)) / 2);
+            }
 
-                $dst_w -= ($dst_x * 2);
+            if($scale_width < $src_w){
+
+                if($align == 'left')
+                    $src_x = 0;
+                elseif($align == 'right')
+                    $src_x = ceil($src_w - $scale_width);
+                else
+                    $src_x = ceil(($src_w / 2) - ($scale_width / 2));
+
+                $src_w = ceil($scale_width);
 
             }
 
@@ -188,7 +192,7 @@ class GD extends BaseRenderer {
         /*
          * Do the actual resize
          */
-        imagecopyresampled($dst, $this->img, $dst_x, $dst_y, $src_x, $src_y, $dst_w, $dst_h, $src_w, $src_h);
+        imagecopyresampled($dst, $this->img, 0, 0, $src_x, $src_y, $width, $height, $src_w, $src_h);
 
         /*
          * Update the content with the resized image data

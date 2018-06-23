@@ -109,7 +109,7 @@ class Imagick extends BaseRenderer {
 
         }
 
-        if($crop) {
+        if($crop === true) {
 
             $o_ratio = $geo['height'] / $geo['width'];
 
@@ -119,7 +119,6 @@ class Imagick extends BaseRenderer {
 
             if($width > ($height / $o_ratio))
                 $scale_height = $width * $o_ratio;
-
             else
                 $scale_width = $height / $o_ratio;
 
