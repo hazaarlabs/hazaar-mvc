@@ -91,7 +91,8 @@ class Image extends \Hazaar\File {
 
             $this->checkLoaded();
 
-            $this->set_contents(call_user_func_array(array($this->renderer, $func), $params));
+            if($new_contents = call_user_func_array(array($this->renderer, $func), $params))
+                $this->set_contents($new_contents);
 
             return TRUE;
 
