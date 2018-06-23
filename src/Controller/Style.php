@@ -42,12 +42,32 @@ class Style extends \Hazaar\Controller {
 
             if($response->setUnmodified($this->request->getHeader('If-Modified-Since')) === false){
 
-                $w = $this->request->get('w');
+                $params = $this->request->getParams();
 
-                $h = $this->request->get('h');
+                if($quality = ake($params, 'quality'))
+                    $response->quality(intval($quality));
 
-                if($w || $h)
-                    $response->resize($w, $h, boolify($this->request->get('crop', false)));
+                $xwidth = intval(ake($params, 'xwidth'));
+
+                $xheight = intval(ake($params, 'xheight'));
+
+                if($xwidth > 0 || $xheight > 0)
+                    $response->expand($xwidth, $xheight, ake($params, 'align'), ake($params, 'xoffsettop'), ake($params, 'xoffsetleft'));
+
+                $width = intval(ake($params, 'width'));
+
+                $height = intval(ake($params, 'height'));
+
+                if($width > 0 || $height > 0) {
+
+                    $align = $this->request->get('align', (boolify(ake($params, 'center', 'false')) ? 'center' : NULL));
+
+                    $response->resize($width, $height, boolify(ake($params, 'crop', FALSE)), $align, boolify(ake($params, 'aspect', TRUE)), ! boolify(ake($params, 'enlarge')), ake($params, 'ratio'), intval(ake($params, 'offsettop')), intval(ake($params, 'offsetleft')));
+
+                }
+
+                if($filter = ake($params, 'filter'))
+                    $response->filter($filter);
 
             }
 
