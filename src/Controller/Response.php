@@ -198,7 +198,7 @@ abstract class Response implements Response\_Interface {
         if($this->content_type)
             header('Content-Type: ' . $this->getContentType());
 
-        if(! $content_length)
+        if($content_length === null)
             $content_length = $this->getContentLength();
 
         header('Content-Length: ' . $content_length);

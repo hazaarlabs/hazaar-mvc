@@ -57,6 +57,9 @@ class Image extends \Hazaar\File {
 
     public function quality($quality = NULL) {
 
+        if($quality === null)
+            return false;
+
         $this->checkLoaded();
 
         return $this->renderer->quality($quality);
@@ -88,9 +91,7 @@ class Image extends \Hazaar\File {
 
             $this->checkLoaded();
 
-            $this->set_contents(call_user_func_array(array($this->renderer, $func), $params));
-
-            return TRUE;
+            return call_user_func_array(array($this->renderer, $func), $params);
 
         }
 
