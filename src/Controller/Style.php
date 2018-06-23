@@ -38,7 +38,7 @@ class Style extends \Hazaar\Controller {
 
         if(substr($mime_type, 0, strpos($mime_type, '/')) === 'image'){
 
-            $response = new Response\Image($this->source);
+            $response = new Response\Image($this->source, null, null, $this->application->config->app->get('responseImageCache'));
 
             if($response->setUnmodified($this->request->getHeader('If-Modified-Since')) === false){
 

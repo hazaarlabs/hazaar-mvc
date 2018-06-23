@@ -160,7 +160,8 @@ class Application {
                     'shutdown' => 'shutdown.php',
                     'route' => 'route.php',
                     'media' => 'media.php'
-                )
+                ),
+                'responseImageCache' => false
             ),
             'paths' => array(
                 'model' => 'models',
