@@ -15,7 +15,7 @@ class GD extends BaseRenderer {
 
     private $type;
 
-    private $quality = 100;
+    private $quality = null;
 
     public function load($bytes, $type = 'jpeg'){
 
@@ -222,6 +222,125 @@ class GD extends BaseRenderer {
     }
 
     public function expand($xwidth = NULL, $xheight = NULL, $align = 'topleft', $offsetTop = 0, $offsetLeft = 0){
+
+    }
+
+    public function filter($filter_def) {
+
+        $filters = array();
+
+        if(is_array($filter_def)) {
+
+            $filters = $filter_def;
+
+        } else {
+
+            $parts = explode(';', $filter_def);
+
+            foreach($parts as $part) {
+
+                $values = explode(':', $part);
+
+                $key = array_shift($values);
+
+                $filters[$key] = $values;
+
+            }
+
+        }
+
+        foreach($filters as $filter => $values) {
+
+            $ret = false;
+
+            switch($filter) {
+
+                case 'blur':  //Blur
+
+                    $value = intval(ake($values, 0, 1));
+
+                    for($i=0;$i<$value;$i++){
+
+                        if(!($ret = imagefilter($this->img, IMG_FILTER_GAUSSIAN_BLUR)))
+                            break;
+
+                    }
+
+                    break;
+
+                case 'sharpen': //Sharpen
+
+                    $value = intval(ake($values, 0, 1));
+
+                    for($i=0;$i<$value;$i++){
+
+                        if(!($ret = imagefilter($this->img, IMG_FILTER_SMOOTH, -10)))
+                            break;
+
+                    }
+
+                    break;
+
+                case 'c': //Contrast
+
+                    $ret = imagefilter($this->img, IMG_FILTER_CONTRAST, intval(ake($values, 0, 1)));
+
+                    break;
+
+                case 'b': //Brightness
+
+                    $ret = imagefilter($this->img, IMG_FILTER_BRIGHTNESS, intval(ake($values, 0, 1)));
+
+                    break;
+
+                case 's': //Saturation
+
+                    $value = intval(ake($values, 0, 1));
+
+                    $ret = imagefilter($this->img, IMG_FILTER_COLORIZE, -$value, -$value, -$value);
+
+                    break;
+
+                case 'h': //Hue
+
+                    list($red, $green, $blue) = $values;
+
+                    $ret = imagefilter($this->img, IMG_FILTER_COLORIZE, $red, $green, $blue);
+
+                    break;
+
+                case 'edge': //Edge enhancement
+
+                    $ret = imagefilter($this->img, IMG_FILTER_EDGEDETECT);
+
+                    break;
+
+                case 'emboss': //Emboss
+
+                    $ret = imagefilter($this->img, IMG_FILTER_EMBOSS);
+
+                    break;
+
+                case 'flip':  //Vertially flip the image
+
+                    $ret = imageflip($this->img, IMG_FLIP_VERTICAL);
+
+                    break;
+
+                case 'flop':  //Horizontally flip the image
+
+                    $ret = imageflip($this->img, IMG_FLIP_HORIZONTAL);
+
+                    break;
+
+            }
+
+            if($ret == false)
+                throw new \Exception('There was an error applying filter: ' . $filter);
+
+        }
+
+        return true;
 
     }
 
