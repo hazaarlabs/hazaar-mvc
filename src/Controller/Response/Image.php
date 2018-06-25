@@ -14,6 +14,8 @@ class Image extends File {
 
     private $cache = false;
 
+    private $cache_key = array();
+
     function __construct($filename = NULL, $quality = NULL, $backend = NULL, $enable_image_cache = false) {
 
         parent::__construct($filename, $backend);
@@ -64,6 +66,24 @@ class Image extends File {
 
     }
 
+    private function addToCacheKey($key){
+
+        if(is_array($key))
+            $this->cache_key += $key;
+        else
+            $this->cache_key[] = $key;
+
+
+        return $this->cache_key;
+
+    }
+
+    private function getCacheKey(){
+
+        return md5(serialize($this->cache_key));
+
+    }
+
     public function width() {
 
         if(!$this->file)
@@ -102,17 +122,11 @@ class Image extends File {
 
     public function resize($width = NULL, $height = NULL, $crop = FALSE, $align = NULL, $keep_aspect = TRUE, $reduce_only = TRUE, $ratio = NULL, $offsetTop = 0, $offsetLeft = 0) {
 
-        if($this->checkCacheFile('resize', func_get_args()))
-            return true;
-
         return $this->file->resize($width, $height, $crop, $align, $keep_aspect, $reduce_only, $ratio, $offsetTop, $offsetLeft);
 
     }
 
     public function expand($width = NULL, $height = NULL, $align = 'topleft', $offsettop = 0, $offsetleft = 0) {
-
-        if($this->checkCacheFile('expand', func_get_args()))
-            return true;
 
         return $this->file->expand($width, $height, $align, $offsettop, $offsetleft);
 
@@ -120,19 +134,16 @@ class Image extends File {
 
     public function filter($filters) {
 
-        if($this->checkCacheFile('filter', func_get_args()))
-            return true;
-
         return $this->file->filter($filters);
 
     }
 
-    private function checkCacheFile($method, $args = array()){
+    public function checkCacheFile($args){
 
-        if($this->cache_enabled === false)
+        if($this->cache_enabled === false || !$this->file)
             return false;
 
-        $this->cache_file = $this->cache_dir . DIRECTORY_SEPARATOR . md5($this->file->name() . serialize(func_get_args()));
+        $this->cache_file = $this->cache_dir . DIRECTORY_SEPARATOR . md5($this->file->name() . serialize($args));
 
         if(!file_exists($this->cache_file)){
 
