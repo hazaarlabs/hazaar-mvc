@@ -143,7 +143,7 @@ class Image extends File {
         if($this->cache_enabled === false || !$this->file)
             return false;
 
-        $this->cache_file = $this->cache_dir . DIRECTORY_SEPARATOR . md5($this->file->name() . serialize($args));
+        $this->cache_file = $this->cache_dir . DIRECTORY_SEPARATOR . md5($this->file->md5() . serialize($args));
 
         if(!file_exists($this->cache_file)){
 
