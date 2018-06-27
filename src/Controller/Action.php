@@ -96,7 +96,7 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
     public function __run() {
 
-        $response = parent::__runAction($this->action);
+        $response = parent::__runAction();
 
         if($this->stream)
             return new Response\Stream($response);
@@ -123,7 +123,7 @@ abstract class Action extends \Hazaar\Controller\Basic {
         }
 
         if($this->cache_key !== null)
-            $this->cache->set($this->cache_key, $response, $this->cachedActions[$this->action]['timeout']);
+            Basic::$cache->set($this->cache_key, $response, $this->cachedActions[$this->name . '::' . $this->action]['timeout']);
 
         $response->setController($this);
 

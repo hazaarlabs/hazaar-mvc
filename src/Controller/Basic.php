@@ -31,9 +31,16 @@ abstract class Basic extends \Hazaar\Controller {
 
     protected $cachedActions = array();
 
-    protected $cache         = null;
+    protected static $cache  = null;
 
-    protected $cache_key     = null;
+    public function setRequest($request) {
+
+        parent::setRequest($request);
+
+        if($path = $this->request->getPath())
+            $this->actionArgs = explode('/', $path);
+
+    }
 
     public function cacheAction($action, $timeout = 60, $public = false) {
 
@@ -43,9 +50,10 @@ abstract class Basic extends \Hazaar\Controller {
         if(!class_exists('Hazaar\Cache'))
             throw new \Exception('The Hazaar\Cache class is not available.  Please make sure the hazaar-cache library is correctly installed', 401);
 
-        $this->cache = new \Hazaar\Cache();
+        if(!Basic::$cache instanceof \Hazaar\Cache)
+            Basic::$cache = new \Hazaar\Cache();
 
-        $this->cachedActions[$action] = array('timeout' => $timeout, 'public' => $public);
+        $this->cachedActions[$this->name . '::' . $action] = array('timeout' => $timeout, 'public' => $public);
 
         return true;
 
@@ -86,24 +94,22 @@ abstract class Basic extends \Hazaar\Controller {
      *
      * @return mixed
      */
-    protected function __runAction($action_name) {
+    protected function __runAction() {
 
-        $args = array();
-
-        if($path = $this->application->request->getPath())
-            $args = explode('/', $path);
-
-        $action = $action_name;
-
-        if(! method_exists($this, $action)) {
+        /*
+         * Check that the requested controller is this one.  If not then we probably got re-routed to the
+         * default controller so check for the __default() method. Then check if the action method exists
+         * and if not check for the __default() method.
+         */
+        if(ucfirst($this->name) . 'Controller' !== get_class($this) || !method_exists($this, $this->action)) {
 
             if(method_exists($this, '__default')) {
 
-                array_unshift($args, $action);
+                array_unshift($this->actionArgs, $this->action);
 
-                array_unshift($args, $this->application->getRequestedController());
+                array_unshift($this->actionArgs, $this->application->getRequestedController());
 
-                $action = '__default';
+                $this->action = '__default';
 
             } else {
 
@@ -113,27 +119,29 @@ abstract class Basic extends \Hazaar\Controller {
 
         }
 
+        $cache_name = $this->name . '::' . $this->action;
+
         /**
          * Check the cached actions to see if this requested should use a cached version
          */
-        if($this->cache && array_key_exists($action_name, $this->cachedActions)) {
+        if(Basic::$cache && array_key_exists($cache_name, $this->cachedActions)) {
 
-            $this->cache_key = $this->name . '::' . $action_name . '(' . serialize($this->actionArgs) . ')';
+            $this->cache_key = $cache_name . '(' . serialize($this->actionArgs) . ')';
 
-            if($this->cachedActions[$action_name]['public'] !== true && $sid = session_id())
+            if($this->cachedActions[$cache_name]['public'] !== true && $sid = session_id())
                 $this->cache_key .= '::' . $sid;
 
-            if($response = $this->cache->get($this->cache_key, $args))
+            if($response = Basic::$cache->get($this->cache_key))
                 return $response;
 
         }
 
-        $method = new \ReflectionMethod($this, $action);
+        $method = new \ReflectionMethod($this, $this->action);
 
         if(! $method->isPublic())
             throw new Exception\ActionNotPublic(get_class($this), $this->action);
 
-        $response = $method->invokeArgs($this, $args);
+        $response = $method->invokeArgs($this, $this->actionArgs);
 
         return $response;
 
@@ -148,7 +156,7 @@ abstract class Basic extends \Hazaar\Controller {
             $response = (is_array($response) || is_object($response)) ? new Response\Json($response) : new Response\Text($response);
 
             if($this->cache_key !== null)
-                $this->cache->set($this->cache_key, $response, $this->cachedActions[$this->action]['timeout']);
+                Basic::$cache->set($this->cache_key, $response, $this->cachedActions[$this->name . '::' . $this->action]['timeout']);
 
         }
 
