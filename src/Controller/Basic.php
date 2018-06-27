@@ -33,6 +33,8 @@ abstract class Basic extends \Hazaar\Controller {
 
     protected static $cache  = null;
 
+    protected $cache_key     = null;
+
     public function setRequest($request) {
 
         parent::setRequest($request);
@@ -155,14 +157,31 @@ abstract class Basic extends \Hazaar\Controller {
 
             $response = (is_array($response) || is_object($response)) ? new Response\Json($response) : new Response\Text($response);
 
-            if($this->cache_key !== null)
-                Basic::$cache->set($this->cache_key, $response, $this->cachedActions[$this->name . '::' . $this->action]['timeout']);
+            $this->cacheResponse($response);
 
         }
 
         $response->setController($this);
 
         return $response;
+
+    }
+
+    /**
+     * Cache a response to the current action invocation
+     *
+     * @param Response $response The response to cache
+     *
+     * @return boolean True or false from the cache backend indicating if the cache store was successful or not.
+     */
+    protected function cacheResponse(Response $response){
+
+        $cache_name = $this->name . '::' . $this->action;
+
+        if(!($this->cache_key !== null && array_key_exists($cache_name, $this->cachedActions)))
+            return false;
+
+        return Basic::$cache->set($this->cache_key, $response, $this->cachedActions[$cache_name]['timeout']);
 
     }
 

@@ -122,8 +122,7 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
         }
 
-        if($this->cache_key !== null)
-            Basic::$cache->set($this->cache_key, $response, $this->cachedActions[$this->name . '::' . $this->action]['timeout']);
+        $this->cacheResponse($response);
 
         $response->setController($this);
 
