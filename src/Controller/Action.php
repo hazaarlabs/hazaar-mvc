@@ -96,87 +96,36 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
     public function __run() {
 
-        $action = $this->action;
+        $response = parent::__runAction($this->action);
 
-        $args = $this->actionArgs;
+        if($this->stream)
+            return new Response\Stream($response);
 
-        if(! method_exists($this, $action)) {
+        if(!$response instanceof Response) {
 
-            if(method_exists($this, '__default')) {
+            if($response === NULL) {
 
-                array_unshift($args, $action);
+                $response = new Response\Html();
 
-                array_unshift($args, $this->application->getRequestedController());
+                /*
+                 * Execute the action helpers.  These are responsible for actually rendering any views.
+                 */
+                $this->_helper->execAllHelpers($this, $response);
 
-                $action = '__default';
+                $response->enableTidy($this->application->config->app->get('tidy', false));
 
-            } else {
+            }else{
 
-                throw new Exception\ActionNotFound(get_class($this), $action);
-
-            }
-
-        }
-
-        $method = new \ReflectionMethod($this, $action);
-
-        if(! $method->isPublic())
-            throw new Exception\ActionNotPublic(get_class($this), $action);
-
-        $response = null;
-
-        /**
-         * Check the cached actions to see if this requested should use a cached version
-         */
-        if(array_key_exists($action, $this->cachedActions)) {
-
-            $cache = new \Hazaar\Cache();
-
-            $key = $this->name . '::' . $action;
-
-            $response = $cache->get($key, $args);
-
-        }
-
-        if(! $response instanceof Response) {
-
-            /*
-             * Execute the requested action
-             */
-            $response = call_user_func_array(array($this, $action), $args);
-
-            if($this->stream)
-                return new Response\Stream($response);
-
-            if(! ($response instanceof Response)) {
-
-                if($response === NULL) {
-
-                    $response = new Response\Html();
-
-                    /*
-                     * Execute the action helpers.  These are responsible for actually rendering any views.
-                     */
-                    $this->_helper->execAllHelpers($this, $response);
-
-                    if($this->application->config->app->has('tidy'))
-                        $response->enableTidy($this->application->config->app->get('tidy', false));
-
-                }else{
-
-                    $response = new Response\Json($response);
-
-                }
+                $response = new Response\Json($response);
 
             }
 
-            if(isset($cache) && isset($key))
-                $cache->set($key, $response, $this->cachedActions[$action]);
-
         }
 
-        if($response instanceof Response)
-            $response->setController($this);
+        if($this->cache_key !== null)
+            $this->cache->set($this->cache_key, $response, $this->cachedActions[$this->action]['timeout']);
+
+        $response->setController($this);
 
         return $response;
 
