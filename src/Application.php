@@ -230,6 +230,11 @@ class Application {
 
         }
 
+        /*
+         * Use the config to add search paths to the loader
+         */
+        $this->loader->addSearchPaths($this->config->get('paths'));
+
         if(!defined('RUNTIME_PATH')){
 
             define('RUNTIME_PATH', $this->runtimePath(null, true));
@@ -239,11 +244,6 @@ class Application {
         }
 
         $this->request = Application\Request\Loader::load($this->config);
-
-        /*
-         * Use the config to add search paths to the loader
-         */
-        $this->loader->addSearchPaths($this->config->get('paths'));
 
     }
 
