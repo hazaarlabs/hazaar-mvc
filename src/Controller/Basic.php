@@ -31,20 +31,21 @@ abstract class Basic extends \Hazaar\Controller {
 
     protected $cachedActions = array();
 
-    public function cacheAction($action, $timeout = 60) {
+    protected $cache         = null;
+
+    protected $cache_key     = null;
+
+    public function cacheAction($action, $timeout = 60, $public = false) {
 
         /*
-         * To cache an action:
-         * * Caching library has to be installed
-         * * The method being cached must exist on the controller
-         * * The method must not already be set to cache
+         * To cache an action the caching library has to be installed
          */
-        if(!class_exists('Hazaar\Cache')
-            || !method_exists($this, $action)
-            || array_key_exists($action, $this->cachedActions))
-            return false;
+        if(!class_exists('Hazaar\Cache'))
+            throw new \Exception('The Hazaar\Cache class is not available.  Please make sure the hazaar-cache library is correctly installed', 401);
 
-        $this->cachedActions[$action] = $timeout;
+        $this->cache = new \Hazaar\Cache();
+
+        $this->cachedActions[$action] = array('timeout' => $timeout, 'public' => $public);
 
         return true;
 
@@ -72,22 +73,37 @@ abstract class Basic extends \Hazaar\Controller {
 
     }
 
-    public function __run() {
+    /**
+     * Run an action method on a controller
+     *
+     * This is the main controller action decision code and is where the controller will decide what to
+     * actually execute and whether to cache the response on not.
+     *
+     * @param mixed $action The name of the action to run
+     *
+     * @throws Exception\ActionNotFound
+     * @throws Exception\ActionNotPublic
+     *
+     * @return mixed
+     */
+    protected function __runAction($action_name) {
 
         $args = array();
 
         if($path = $this->application->request->getPath())
             $args = explode('/', $path);
 
-        if(! method_exists($this, $this->action)) {
+        $action = $action_name;
+
+        if(! method_exists($this, $action)) {
 
             if(method_exists($this, '__default')) {
 
-                array_unshift($args, $this->action);
+                array_unshift($args, $action);
 
                 array_unshift($args, $this->application->getRequestedController());
 
-                $this->action = '__default';
+                $action = '__default';
 
             } else {
 
@@ -97,47 +113,46 @@ abstract class Basic extends \Hazaar\Controller {
 
         }
 
-        $method = new \ReflectionMethod($this, $this->action);
+        /**
+         * Check the cached actions to see if this requested should use a cached version
+         */
+        if($this->cache && array_key_exists($action_name, $this->cachedActions)) {
+
+            $this->cache_key = $this->name . '::' . $action_name . '(' . serialize($this->actionArgs) . ')';
+
+            if($this->cachedActions[$action_name]['public'] !== true && $sid = session_id())
+                $this->cache_key .= '::' . $sid;
+
+            if($response = $this->cache->get($this->cache_key, $args))
+                return $response;
+
+        }
+
+        $method = new \ReflectionMethod($this, $action);
 
         if(! $method->isPublic())
             throw new Exception\ActionNotPublic(get_class($this), $this->action);
 
-        $response = null;
+        $response = $method->invokeArgs($this, $args);
 
-        /**
-         * Check the cached actions to see if this requested should use a cached version
-         */
-        if(array_key_exists($this->action, $this->cachedActions)) {
+        return $response;
 
-            $cache = new \Hazaar\Cache();
+    }
 
-            $key = $this->name . '::' . $this->action;
+    public function __run(){
 
-            $response = $cache->get($key, $args);
-
-        }
+        $response = $this->__runAction($this->action);
 
         if(!$response instanceof Response){
 
-            $response = call_user_func_array(array($this, $this->action), $args);
+            $response = (is_array($response) || is_object($response)) ? new Response\Json($response) : new Response\Text($response);
 
-            if(is_array($response)) {
-
-                $response = new Response\Json($response);
-
-            } elseif(! is_object($response)) {
-
-                $response = new Response\Text($response);
-
-            }
-
-            if(isset($cache) && isset($key))
-                $cache->set($key, $response, $this->cachedActions[$this->action]);
+            if($this->cache_key !== null)
+                $this->cache->set($this->cache_key, $response, $this->cachedActions[$this->action]['timeout']);
 
         }
 
-        if($response instanceof Response)
-            $response->setController($this);
+        $response->setController($this);
 
         return $response;
 
