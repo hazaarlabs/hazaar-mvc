@@ -127,7 +127,7 @@ abstract class REST extends \Hazaar\Controller {
 
             foreach($class->getMethods() as $method){
 
-                if($method->isPrivate())
+                if(substr($method->getName(), 0, 2) === '__' || $method->isPrivate())
                     continue;
 
                 $method->setAccessible(true);
@@ -176,12 +176,33 @@ abstract class REST extends \Hazaar\Controller {
                     if(!array_key_exists($route, $this->__rest_endpoints))
                         $this->__rest_endpoints[$route] = array();
 
-                    $this->__rest_endpoints[$route][] = array(
+                    $endpoint = array(
                         'func' => $method,
                         'doc' => $doc,
                         'args' => $args,
-                        'cache' => $doc->hasTag('cache') ? boolify($doc->tag('cache')[0]) : false
+                        'cache' => false,
+                        'cache_timeout' => null
                     );
+
+                    if($doc->hasTag('cache')){
+
+                        $cache = $doc->tag('cache')[0];
+
+                        if(is_numeric($cache)){
+
+                            $endpoint['cache'] = true;
+
+                            $endpoint['cache_timeout'] = intval($cache);
+
+                        }else{
+
+                            $endpoint['cache'] = boolify($cache);
+
+                        }
+
+                    }
+
+                    $this->__rest_endpoints[$route][] = $endpoint;
 
                 }
 
@@ -420,7 +441,7 @@ abstract class REST extends \Hazaar\Controller {
 
                 //Save the result if caching is enabled.
                 if($cache_key !== null)
-                    $this->__rest_cache->set($cache_key, $result);
+                    $this->__rest_cache->set($cache_key, $result, $endpoint['cache_timeout']);
 
             }
 
