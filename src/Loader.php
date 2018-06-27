@@ -526,7 +526,7 @@ class Loader {
 						/*
                          * Use the default controller if no controller has been found.
                          */
-						if(boolify($this->application->config->app->useDefault)){
+						if(boolify($this->application->config->app->useDefaultController)){
 
 							$controllerClass = ucfirst($this->application->config->app->defaultController) . 'Controller';
 
@@ -555,6 +555,7 @@ class Loader {
 		}
 
 		return $newController;
+
 	}
 
 	/**

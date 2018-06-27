@@ -152,6 +152,7 @@ class Application {
             'app' => array(
                 'root' => dirname($_SERVER['SCRIPT_NAME']),
                 'defaultController' => 'Index',
+                'useDefaultController' => false,
                 'favicon' => 'favicon.png',
                 'timezone' => 'UTC',
                 'rewrite' => (php_sapi_name() !== 'cli-server'),
