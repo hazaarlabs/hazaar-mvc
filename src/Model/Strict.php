@@ -416,8 +416,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
          *
          * If a value is static then updates to it are not allowed and are silently ignored
          */
-        if ((array_key_exists('static', $def) && $def['static'] === true)
-            || (array_key_exists('readonly', $def) && $def['readonly'] && $this->loaded))
+        if (array_key_exists('value', $def) || (array_key_exists('readonly', $def) && $def['readonly'] && $this->loaded))
             return false;
 
         /*
@@ -428,9 +427,6 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             && is_array($def['update'])
             && array_key_exists('pre', $def['update']))
             $value = $this->execCallback($def['update']['pre'], $value, $key);
-
-        if(array_key_exists('value', $def))
-            $value = $def['value'];
 
         /*
          * Type check
@@ -814,7 +810,10 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
              * If the definition for this field has the 'hide' attribute, we check if the value matches and if so we skip
              * this value.
              */
-            if ($show_hidden === false && array_key_exists($key, $this->fields) && is_array($this->fields[$key]) && array_key_exists('hide', $this->fields[$key])) {
+            if ($show_hidden === false 
+                && array_key_exists($key, $this->fields)
+                && is_array($this->fields[$key]) 
+                && array_key_exists('hide', $this->fields[$key])) {
 
                 $hide = $this->fields[$key]['hide'];
 
