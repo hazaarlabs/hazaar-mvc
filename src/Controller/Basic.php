@@ -25,22 +25,22 @@ namespace Hazaar\Controller;
  */
 abstract class Basic extends \Hazaar\Controller {
 
-    protected $action        = 'index';
+    protected $__action        = 'index';
 
-    protected $actionArgs    = array();
+    protected $__actionArgs    = array();
 
-    protected $cachedActions = array();
+    protected $__cachedActions = array();
 
-    protected static $cache  = null;
+    protected static $__cache  = null;
 
-    protected $cache_key     = null;
+    protected $__cache_key     = null;
 
     public function setRequest($request) {
 
         parent::setRequest($request);
 
         if($path = $this->request->getPath())
-            $this->actionArgs = explode('/', $path);
+            $this->__actionArgs = explode('/', $path);
 
     }
 
@@ -52,10 +52,10 @@ abstract class Basic extends \Hazaar\Controller {
         if(!class_exists('Hazaar\Cache'))
             throw new \Exception('The Hazaar\Cache class is not available.  Please make sure the hazaar-cache library is correctly installed', 401);
 
-        if(!Basic::$cache instanceof \Hazaar\Cache)
-            Basic::$cache = new \Hazaar\Cache();
+        if(!Basic::$__cache instanceof \Hazaar\Cache)
+            Basic::$__cache = new \Hazaar\Cache();
 
-        $this->cachedActions[$this->name . '::' . $action] = array('timeout' => $timeout, 'public' => $public);
+        $this->__cachedActions[$this->name . '::' . $action] = array('timeout' => $timeout, 'public' => $public);
 
         return true;
 
@@ -63,20 +63,20 @@ abstract class Basic extends \Hazaar\Controller {
 
     public function getAction() {
 
-        return $this->action;
+        return $this->__action;
 
     }
 
     public function getActionArgs() {
 
-        return $this->actionArgs;
+        return $this->__actionArgs;
 
     }
 
     public function __initialize(\Hazaar\Application\Request $request) {
 
-        if(! ($this->action = $request->getActionName()))
-            $this->action = 'index';
+        if(! ($this->__action = $request->getActionName()))
+            $this->__action = 'index';
 
         if(method_exists($this, 'init'))
             $this->init($request);
@@ -98,7 +98,7 @@ abstract class Basic extends \Hazaar\Controller {
      */
     protected function __runAction(&$action = null) {
 
-        $action = $this->action;
+        $action = $this->__action;
 
         /*
          * Check that the requested controller is this one.  If not then we probably got re-routed to the
@@ -109,9 +109,9 @@ abstract class Basic extends \Hazaar\Controller {
 
             if(method_exists($this, '__default')) {
 
-                array_unshift($this->actionArgs, $action);
+                array_unshift($this->__actionArgs, $action);
 
-                array_unshift($this->actionArgs, $this->application->getRequestedController());
+                array_unshift($this->__actionArgs, $this->application->getRequestedController());
 
                 $action = '__default';
 
@@ -128,14 +128,14 @@ abstract class Basic extends \Hazaar\Controller {
         /**
          * Check the cached actions to see if this requested should use a cached version
          */
-        if(Basic::$cache && array_key_exists($cache_name, $this->cachedActions)) {
+        if(Basic::$__cache && array_key_exists($cache_name, $this->__cachedActions)) {
 
-            $this->cache_key = $cache_name . '(' . serialize($this->actionArgs) . ')';
+            $this->__cache_key = $cache_name . '(' . serialize($this->__actionArgs) . ')';
 
-            if($this->cachedActions[$cache_name]['public'] !== true && $sid = session_id())
-                $this->cache_key .= '::' . $sid;
+            if($this->__cachedActions[$cache_name]['public'] !== true && $sid = session_id())
+                $this->__cache_key .= '::' . $sid;
 
-            if($response = Basic::$cache->get($this->cache_key))
+            if($response = Basic::$__cache->get($this->__cache_key))
                 return $response;
 
         }
@@ -145,7 +145,7 @@ abstract class Basic extends \Hazaar\Controller {
         if(! $method->isPublic())
             throw new Exception\ActionNotPublic(get_class($this), $action);
 
-        $response = $method->invokeArgs($this, $this->actionArgs);
+        $response = $method->invokeArgs($this, $this->__actionArgs);
 
         return $response;
 
@@ -178,12 +178,12 @@ abstract class Basic extends \Hazaar\Controller {
      */
     protected function cacheResponse(Response $response){
 
-        $cache_name = $this->name . '::' . $this->action;
+        $cache_name = $this->name . '::' . $this->__action;
 
-        if(!($this->cache_key !== null && array_key_exists($cache_name, $this->cachedActions)))
+        if(!($this->__cache_key !== null && array_key_exists($cache_name, $this->__cachedActions)))
             return false;
 
-        return Basic::$cache->set($this->cache_key, $response, $this->cachedActions[$cache_name]['timeout']);
+        return Basic::$__cache->set($this->__cache_key, $response, $this->__cachedActions[$cache_name]['timeout']);
 
     }
 
@@ -232,7 +232,7 @@ abstract class Basic extends \Hazaar\Controller {
 
             $action = array_shift($args);
 
-            $params_match = (count(array_intersect_assoc($args, $this->actionArgs)) > 0);
+            $params_match = (count(array_intersect_assoc($args, $this->__actionArgs)) > 0);
 
         }
 
