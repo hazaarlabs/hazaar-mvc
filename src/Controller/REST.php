@@ -132,14 +132,27 @@ abstract class REST extends \Hazaar\Controller {
 
                 $method->setAccessible(true);
 
-                $doc = new \Hazaar\Parser\DocBlock($method->getDocComment());
-
-                if(!$doc->hasTag('route'))
+                if(!($comment = $method->getDocComment()))
                     continue;
 
-                foreach($doc->tag('route') as $tag){
+                if(!(preg_match_all('/\*\s*@((\w+).*)/', $comment, $matches)))
+                    continue;
 
-                    if(!preg_match('/\([\'\"]([\w\<\>\:\/]+)[\'\"]\s*,?\s*(.+)*\)/', $tag, $matches))
+                $cache = false;
+
+                if(($pos = array_search('cache', $matches[2])) !== false){
+
+                    if(preg_match('/cache\s+(.*)/', $matches[1][$pos], $cache_matches))
+                        $cache = trim($cache_matches[1]);
+
+                }
+
+                foreach($matches[2] as $index => $tag){
+
+                    if($tag !== 'route')
+                        continue;
+
+                    if(!preg_match('/\([\'\"]([\w\<\>\:\/]+)[\'\"]\s*,?\s*(.+)*\)/', $matches[1][$index], $matches))
                         continue;
 
                     $route = '/' . ltrim($matches[1], '/');
@@ -178,15 +191,12 @@ abstract class REST extends \Hazaar\Controller {
 
                     $endpoint = array(
                         'func' => $method,
-                        'doc' => $doc,
                         'args' => $args,
                         'cache' => false,
                         'cache_timeout' => null
                     );
 
-                    if($doc->hasTag('cache')){
-
-                        $cache = $doc->tag('cache')[0];
+                    if($cache !== false){
 
                         if(is_numeric($cache)){
 
