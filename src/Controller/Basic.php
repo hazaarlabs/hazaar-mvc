@@ -96,32 +96,34 @@ abstract class Basic extends \Hazaar\Controller {
      *
      * @return mixed
      */
-    protected function __runAction() {
+    protected function __runAction(&$action = null) {
+
+        $action = $this->action;
 
         /*
          * Check that the requested controller is this one.  If not then we probably got re-routed to the
          * default controller so check for the __default() method. Then check if the action method exists
          * and if not check for the __default() method.
          */
-        if(ucfirst($this->name) . 'Controller' !== get_class($this) || !method_exists($this, $this->action)) {
+        if(ucfirst($this->name) . 'Controller' !== get_class($this) || !method_exists($this, $action)) {
 
             if(method_exists($this, '__default')) {
 
-                array_unshift($this->actionArgs, $this->action);
+                array_unshift($this->actionArgs, $action);
 
                 array_unshift($this->actionArgs, $this->application->getRequestedController());
 
-                $this->action = '__default';
+                $action = '__default';
 
             } else {
 
-                throw new Exception\ActionNotFound(get_class($this), $this->action);
+                throw new Exception\ActionNotFound(get_class($this), $action);
 
             }
 
         }
 
-        $cache_name = $this->name . '::' . $this->action;
+        $cache_name = $this->name . '::' . $action;
 
         /**
          * Check the cached actions to see if this requested should use a cached version
@@ -138,10 +140,10 @@ abstract class Basic extends \Hazaar\Controller {
 
         }
 
-        $method = new \ReflectionMethod($this, $this->action);
+        $method = new \ReflectionMethod($this, $action);
 
         if(! $method->isPublic())
-            throw new Exception\ActionNotPublic(get_class($this), $this->action);
+            throw new Exception\ActionNotPublic(get_class($this), $action);
 
         $response = $method->invokeArgs($this, $this->actionArgs);
 
@@ -151,7 +153,7 @@ abstract class Basic extends \Hazaar\Controller {
 
     public function __run(){
 
-        $response = $this->__runAction($this->action);
+        $response = $this->__runAction();
 
         if(!$response instanceof Response){
 
@@ -217,8 +219,10 @@ abstract class Basic extends \Hazaar\Controller {
         if(! $controller)
             $controller = $this->getName();
 
+        $is_controller = strcasecmp($this->getName(), $controller) == 0;
+
         if(! $action)
-            $action = 'index';
+            return $is_controller;
 
         $params_match = true;
 
@@ -232,7 +236,9 @@ abstract class Basic extends \Hazaar\Controller {
 
         }
 
-        return (strcasecmp($this->getName(), $controller) == 0 && strcasecmp($this->getAction(), $action) == 0 && $params_match);
+        $is_action = (strcasecmp($this->getAction(), $action) == 0);
+
+        return ($is_controller && $is_action && $params_match);
 
     }
 
