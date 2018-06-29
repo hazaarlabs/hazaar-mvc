@@ -657,6 +657,10 @@ class Application {
             if(!$payload instanceof \stdClass)
                 throw new \Exception('Got Hazaar protocol packet without payload!');
 
+            //Synchronise the timezone with the server
+            if($tz = ake($payload, 'timezone'))
+                date_default_timezone_set($tz);
+
             switch ($type) {
 
                 case 'EXEC' :
