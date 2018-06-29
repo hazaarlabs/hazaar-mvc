@@ -335,7 +335,8 @@ class RRD {
         if(file_exists($this->rrdfile))
             unlink($this->rrdfile);
 
-        $h = fopen($this->rrdfile, 'w');
+        if(!($h = fopen($this->rrdfile, 'w')))
+            return false;
 
         $header = pack('vvl', 0x81, $this->version, $this->tickSec);
 
@@ -521,7 +522,8 @@ class RRD {
 
         if(count($updates) > 0) {
 
-            $h = fopen($this->rrdfile, 'c');
+            if(!($h = fopen($this->rrdfile, 'c')))
+                return false;
 
             foreach($updates as $archiveID => $rows) {
 
