@@ -75,25 +75,6 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
     }
 
-    public function __initialize(\Hazaar\Application\Request $request) {
-
-        if(! ($this->action = $request->getActionName()))
-            $this->action = 'index';
-
-        if(method_exists($this, 'init')) {
-
-            $ret = $this->init($request);
-
-            if($ret === FALSE)
-                throw new \Exception('Failed to initialize action controller! ' . get_class($this) . '::init() returned false!');
-
-        }
-
-        if($path = $request->getPath())
-            $this->actionArgs = explode('/', $path);
-
-    }
-
     public function __run() {
 
         $response = parent::__runAction();
