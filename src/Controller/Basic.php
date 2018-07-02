@@ -105,7 +105,7 @@ abstract class Basic extends \Hazaar\Controller {
          * default controller so check for the __default() method. Then check if the action method exists
          * and if not check for the __default() method.
          */
-        if(ucfirst($this->name) . 'Controller' !== get_class($this) || !method_exists($this, $action)) {
+        if($this->request->getControllerName() !== $this->name || !method_exists($this, $action)) {
 
             if(method_exists($this, '__default')) {
 
