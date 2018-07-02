@@ -461,10 +461,7 @@ class Application {
         if(setlocale(LC_ALL, $locale) === FALSE)
             throw new \Exception("Unable to set locale to $locale.  Make sure the $locale locale is enabled on your system.");
 
-        if($this->config->app->has('timezone'))
-            $tz = $this->config->app->timezone;
-        else
-            $tz = 'UTC';
+        $tz = $this->config->app->has('timezone') ? $this->config->app->timezone : 'UTC';
 
         if(!date_default_timezone_set($tz))
             throw new Application\Exception\BadTimezone($tz);
