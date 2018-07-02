@@ -135,33 +135,33 @@ abstract class REST extends \Hazaar\Controller {
                 if(!($comment = $method->getDocComment()))
                     continue;
 
-                if(!(preg_match_all('/\*\s*@((\w+).*)/', $comment, $matches)))
+                if(!(preg_match_all('/\*\s*@((\w+).*)/', $comment, $method_matches)))
                     continue;
 
                 $cache = false;
 
-                if(($pos = array_search('cache', $matches[2])) !== false){
+                if(($pos = array_search('cache', $method_matches[2])) !== false){
 
-                    if(preg_match('/cache\s+(.*)/', $matches[1][$pos], $cache_matches))
+                    if(preg_match('/cache\s+(.*)/', $method_matches[1][$pos], $cache_matches))
                         $cache = trim($cache_matches[1]);
 
                 }
 
-                foreach($matches[2] as $index => $tag){
+                foreach($method_matches[2] as $index => $tag){
 
                     if($tag !== 'route')
                         continue;
 
-                    if(!preg_match('/\([\'\"]([\w\<\>\:\/]+)[\'\"]\s*,?\s*(.+)*\)/', $matches[1][$index], $matches))
+                    if(!preg_match('/\([\'\"]([\w\<\>\:\/]+)[\'\"]\s*,?\s*(.+)*\)/', $method_matches[1][$index], $route_matches))
                         continue;
 
-                    $route = '/' . ltrim($matches[1], '/');
+                    $route = '/' . ltrim($route_matches[1], '/');
 
                     $args = array('methods' => array('GET'));
 
-                    if(array_key_exists(2, $matches)){
+                    if(array_key_exists(2, $route_matches)){
 
-                        $parts = preg_split('/\s*(,(?![^(\[]*[\)\]]))\s*/', $matches[2]);
+                        $parts = preg_split('/\s*(,(?![^(\[]*[\)\]]))\s*/', $route_matches[2]);
 
                         foreach($parts as $part){
 
