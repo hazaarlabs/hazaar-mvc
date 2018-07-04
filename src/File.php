@@ -25,6 +25,8 @@ class File {
 
     protected $handle;
 
+    protected $relative_path;
+
     /*
      * Encryption bits
      */
@@ -34,7 +36,7 @@ class File {
 
     private $encrypted = false;
 
-    function __construct($file = null, File\Backend\_Interface $backend = NULL, File\Manager $manager = null) {
+    function __construct($file = null, File\Backend\_Interface $backend = NULL, File\Manager $manager = null, $relative_path = null) {
 
         if($file instanceof \Hazaar\File) {
 
@@ -76,6 +78,8 @@ class File {
             $this->manager = $manager;
 
         }
+
+        $this->relative_path = rtrim(str_replace('\\', '/', $relative_path), '/') . '/';
 
     }
 
@@ -144,7 +148,18 @@ class File {
 
         $dir = $this->dirname();
 
-        return $dir . ((substr($dir, -1, 1) != '/') ? '/' : NULL) . $this->basename();
+        return trim($dir, '/') . '/' . $this->basename();
+
+    }
+
+    public function relativepath(){
+
+        if(!$this->relative_path)
+            return $this->fullpath();
+
+        $dir = $this->dirname();
+
+        return preg_replace('|^' . preg_quote($this->relative_path) . '|', '', rtrim($dir, '/')) . '/' . $this->basename();
 
     }
 
