@@ -79,7 +79,7 @@ class File {
 
         }
 
-        $this->relative_path = rtrim(str_replace('\\', '/', $relative_path), '/') . '/';
+        $this->relative_path = rtrim(str_replace('\\', '/', $relative_path), '/');
 
     }
 
@@ -157,9 +157,29 @@ class File {
         if(!$this->relative_path)
             return $this->fullpath();
 
-        $dir = $this->dirname();
+        $dir_parts = explode('/', $this->dirname());
 
-        return preg_replace('|^' . preg_quote($this->relative_path) . '|', '', rtrim($dir, '/')) . '/' . $this->basename();
+        $rel_parts = explode('/', $this->relative_path);
+
+        $path = null;
+
+        foreach($dir_parts as $index => $part){
+
+            if(array_key_exists($index, $rel_parts) && $rel_parts[$index] === $part)
+                continue;
+
+            $dir_parts =  array_slice($dir_parts, $index);
+
+            if(($count = count($rel_parts) - $index) > 0)
+                $dir_parts = array_merge(array_fill(0, $count, '..'), $dir_parts);
+
+            $path = implode('/', $dir_parts);
+
+            break;
+
+        }
+
+        return $path . '/' . $this->basename();
 
     }
 
