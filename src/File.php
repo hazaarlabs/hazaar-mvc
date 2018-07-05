@@ -179,7 +179,7 @@ class File {
 
         }
 
-        return $path . '/' . $this->basename();
+        return ($path ? $path . '/' : '') . $this->basename();
 
     }
 
