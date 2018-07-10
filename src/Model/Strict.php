@@ -123,7 +123,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      */
     public function populate($data, $exec_filters = false) {
 
-        if (!\Hazaar\Map::is_array($data))
+        if (!(\Hazaar\Map::is_array($data) || $data instanceof \stdClass))
             return false;
 
         foreach($data as $key => $value)
