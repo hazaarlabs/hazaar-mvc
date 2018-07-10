@@ -44,7 +44,8 @@ abstract class DataTypeConverter  {
 
         if (in_array($type, DataTypeConverter::$known_types)) {
 
-            if(is_array($value) && array_key_exists('__hz_value', $value)){
+            if((is_array($value) && array_key_exists('__hz_value', $value))
+            || ($value instanceof \stdClass && property_exists($value, '__hz_value'))){
 
                 if($type !== 'array'){
 
