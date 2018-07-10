@@ -56,6 +56,17 @@ class DataBinderValue implements \JsonSerializable {
             if(array_key_exists('__hz_label', $value))
                 $value = $value['__hz_value'];
 
+        }elseif($value instanceof \stdClass){
+
+            if(property_exists($value, '__hz_other'))
+                $other = $value->__hz_other;
+
+            if(property_exists($value, '__hz_value'))
+                $label = $value->__hz_label;
+
+            if(property_exists($value, '__hz_label'))
+                $value = $value->__hz_value;
+
         }
 
         return new DataBinderValue($value, $label, $other);

@@ -194,7 +194,7 @@ class Dir {
 
         }
 
-        return new \Hazaar\File($this->fixPath($this->path, $file), $this->backend, $this->manager);
+        return new \Hazaar\File($this->fixPath($this->path, $file), $this->backend, $this->manager, $this->path);
 
     }
 
@@ -251,7 +251,7 @@ class Dir {
             } elseif(! fnmatch($pattern, $file))
                 continue;
 
-            $list[] = new \Hazaar\File($start . $file, $this->backend, $this->manager);
+            $list[] = new \Hazaar\File($start . $file, $this->backend, $this->manager, $this->path);
 
         }
 
@@ -327,7 +327,7 @@ class Dir {
         if($force_dir === true || (file_exists($path) && is_dir($path)))
             return new \Hazaar\File\Dir($path, $this->backend, $this->manager);
 
-        return new \Hazaar\File($this->path($child), $this->backend, $this->manager);
+        return new \Hazaar\File($this->path($child), $this->backend, $this->manager, $this->path);
 
     }
 

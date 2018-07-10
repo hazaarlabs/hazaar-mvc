@@ -528,7 +528,9 @@ class Loader {
                          */
 						if(boolify($this->application->config->app->useDefaultController)){
 
-							$controllerClass = ucfirst($this->application->config->app->defaultController) . 'Controller';
+                            $controller = $this->application->config->app->defaultController;
+
+                            $controllerClass = ucfirst($this->application->config->app->defaultController) . 'Controller';
 
 							if(! class_exists($controllerClass))
 								return FALSE;

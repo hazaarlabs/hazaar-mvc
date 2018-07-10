@@ -1464,3 +1464,62 @@ function recursive_iterator_to_array(\Traversable $it) {
     return $result;
 
 }
+
+/**
+ * Recursivly computes the difference of arrays with additional index check
+ *
+ * Compares `array1` against `array2` and returns the difference. Unlike array_diff() the array keys are also used
+ * in the comparison.  Also, unlike the PHP array_diff_assoc() function, this function recurse into child arrays.
+ *
+ * @param array array1 The array to compare from.
+ * 
+ * @param array array2 The array to compare against.
+ * 
+ * @param array ... More arrays to compare against.
+ * 
+ * @return array
+ * 
+ * @author Diego Dias <diego.dias@apir.com.au>
+ *
+ * @since 2.4.1
+ */
+function array_diff_assoc_recursive() {
+
+    $arrays = func_get_args();
+
+    $array1 = array_shift($arrays);
+
+    $difference = array();
+
+    foreach($arrays as $array_compare){
+
+        foreach($array1 as $key => $value) {
+
+            if(is_array($value)) {
+
+                if(!isset($array_compare[$key]) || !is_array($array_compare[$key])){
+
+                    $difference[$key] = $value;
+
+                }else{
+
+                    $new_diff = array_diff_assoc_recursive($value, $array_compare[$key]);
+
+                    if(!empty($new_diff))
+                        $difference[$key] = $new_diff;
+
+                }
+
+            }elseif(!array_key_exists($key, $array_compare) || $array_compare[$key] !== $value){
+
+                $difference[$key] = $value;
+
+            }
+
+        }
+
+    }
+
+    return $difference;
+
+}
