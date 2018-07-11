@@ -398,7 +398,7 @@ dataBinderArray.prototype._attr_name = function (attr_name) {
 dataBinderArray.prototype.pop = function () {
     var index = this._elements.length - 1;
     var element = this._elements[index];
-    this.remove(index);
+    this.unset(index);
     return element;
 };
 
@@ -458,10 +458,22 @@ dataBinderArray.prototype.indexOf = function (searchString) {
     return -1;
 };
 
-dataBinderArray.prototype.remove = function (index) {
-    if (index instanceof dataBinderValue) index = index.value;
-    if (typeof index === 'string') index = this.indexOf(index);
-    if (index < 0 || typeof index === 'undefined') return;
+/**
+ * Remove an item value from the array
+ * 
+ * @param {any} value The value to remove.
+ */
+dataBinderArray.prototype.remove = function (value) {
+    return this.unset(this.indexOf(((value instanceof dataBinderValue) ? value.value : value)));
+};
+
+/**
+ * Remove an item from the array using it's index in the array
+ * 
+ * @param {any} index The index of the item to remove.
+ */
+dataBinderArray.prototype.unset = function (index) {
+    if (index < 0 || typeof index !== 'integer') return;
     var element = this._elements[index];
     if (element instanceof dataBinder) jQuery('[data-bind="' + this._attr_name() + '"]').children().eq(index).remove();
     this._cleanupItem(index);
