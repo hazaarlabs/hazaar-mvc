@@ -473,8 +473,9 @@ dataBinderArray.prototype.remove = function (value) {
  * @param {any} index The index of the item to remove.
  */
 dataBinderArray.prototype.unset = function (index) {
-    if (index < 0 || typeof index !== 'integer') return;
+    if (index < 0 || typeof index !== 'number') return;
     var element = this._elements[index];
+    if (typeof element === 'undefined') return;
     if (element instanceof dataBinder) jQuery('[data-bind="' + this._attr_name() + '"]').children().eq(index).remove();
     this._cleanupItem(index);
     this._update(this._attr_name(), element);
