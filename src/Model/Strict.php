@@ -128,10 +128,13 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * The destructor calls the shutdown method to allow the extending class to do any cleanup functions.
      */
-    function __destruct() {
+    final function __destruct() {
 
         if (method_exists($this, 'shutdown'))
             $this->shutdown();
+
+        if (method_exists($this, 'destruct'))
+            $this->destruct();
 
     }
 
