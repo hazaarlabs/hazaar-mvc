@@ -71,10 +71,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         $data = array_shift($args);
 
-        if (!method_exists($this, 'init'))
-            throw new Exception\InitMissing(get_class($this));
-
-        $field_definition = $this->init();
+        $field_definition = $this->__init();
 
         if (!is_array($field_definition))
             throw new Exception\BadFieldDefinition();
@@ -93,6 +90,36 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         if (method_exists($this, 'construct'))
             call_user_func_array(array($this, 'construct'), $args);
+
+    }
+
+    private function __init(){
+
+        if (!method_exists($this, 'init'))
+            throw new Exception\InitMissing(get_class($this));
+
+        $params = array();
+
+        $parent = new \ReflectionClass($this);
+
+        while($parent && $parent->name !== 'Hazaar\Model\Strict'){
+
+            if($parent->hasMethod('init')){
+
+                $init = $parent->getMethod('init');
+
+                $init_params = $init->invoke($this);
+
+                if(is_array($init_params))
+                    $params = array_merge($init_params, $params);
+
+            }
+
+            $parent = $parent->getParentClass();
+
+        }
+
+        return $params;
 
     }
 
@@ -810,9 +837,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
              * If the definition for this field has the 'hide' attribute, we check if the value matches and if so we skip
              * this value.
              */
-            if ($show_hidden === false 
+            if ($show_hidden === false
                 && array_key_exists($key, $this->fields)
-                && is_array($this->fields[$key]) 
+                && is_array($this->fields[$key])
                 && array_key_exists('hide', $this->fields[$key])) {
 
                 $hide = $this->fields[$key]['hide'];
