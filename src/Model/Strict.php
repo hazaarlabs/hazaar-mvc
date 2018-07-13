@@ -416,14 +416,13 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         }
 
         /*
-         * Keep the field definition handy
+         * Check if the field is defined and decide if we should allow access to it
          *
-         * If it is an array, it is a complex type
-         * If it is a string, it is a simple type, so convert to an array automatically with just a type def
+         * By default, fields have to be defined to work.  However it is possible to
+         * allow undefined fields to be automatically defined when they get set for
+         * the first time.
          */
-        $def = ake($this->fields, $key, ake($this->fields, '*'));
-
-        if (!$def) {
+        if (!array_key_exists($key, $this->fields)) {
 
             if ($this->ignore_undefined === true)
                 return null;
@@ -431,9 +430,17 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             elseif ($this->allow_undefined === false)
                 throw new Exception\FieldUndefined($key);
 
-            $this->fields[$key] = gettype($value);
+            $this->fields[$key] = array('type' => gettype($value));
 
         }
+
+        /*
+         * Keep the field definition handy
+         *
+         * If it is an array, it is a complex type
+         * If it is a string, it is a simple type, so convert to an array automatically with just a type def
+         */
+        $def = ake($this->fields, $key, ake($this->fields, '*'));
 
         if (!is_array($def))
             $def = array('type' => $def);
