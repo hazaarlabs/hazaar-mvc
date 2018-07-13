@@ -643,6 +643,31 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     }
 
+    public function delete($key){
+
+        if(!array_key_exists($key, $this->values))
+            return false;
+
+        if(!array_key_exists($key, $this->fields)){
+
+            unset($this->values[$key]);
+
+            return true;
+
+        }
+
+        if(array_key_exists('value', $this->fields[$key]))
+            return false;
+
+        if(array_key_exists('default', $this->fields[$key]))
+            $this->values[$key] = $this->fields[$key]['default'];
+        else
+            unset($this->values[$key]);
+
+        return true;
+
+    }
+
     /**
      * Append an element to an array item
      *
