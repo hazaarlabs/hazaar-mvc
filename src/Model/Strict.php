@@ -643,7 +643,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     }
 
-    public function delete($key){
+    public function remove($key){
 
         if(!array_key_exists($key, $this->values))
             return false;
