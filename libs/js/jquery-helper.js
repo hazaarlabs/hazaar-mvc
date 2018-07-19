@@ -148,9 +148,12 @@ dataBinderValue.prototype.toString = function () {
 };
 
 dataBinderValue.prototype.set = function (value, label, other) {
-    if (value !== null && typeof value === 'object') return;
+    value = this._parent.__nullify(value);
+    if ((value !== null && typeof value === 'object')
+        || (value === this._value && label === this._label
+            && (typeof other === 'undefined' || other === this._other))) return;
     var attr_name = this._parent._attr_name(this._name);
-    this._value = this._parent.__nullify(value);
+    this._value = value;
     this._label = label;
     if (typeof other !== 'undefined') this._other = other;
     this._parent._update(attr_name, true);
