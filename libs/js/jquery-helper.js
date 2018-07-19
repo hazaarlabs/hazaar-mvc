@@ -109,7 +109,7 @@ var dataBinderValue = function (name, value, label, parent) {
     Object.defineProperties(this, {
         "value": {
             set: function (value) {
-                if (value !== null && typeof value === 'object') return;
+                if ((value !== null && typeof value === 'object') || value === this._value) return;
                 var attr_name = this._parent._attr_name(this._name);
                 this._value = this._parent.__nullify(value);
                 this._other = null;
@@ -122,7 +122,7 @@ var dataBinderValue = function (name, value, label, parent) {
         },
         "label": {
             set: function (value) {
-                if (typeof value !== 'string') return;
+                if (typeof value !== 'string' || value === this._label) return;
                 this._label = value;
                 this._parent._update(this._parent._attr_name(this._name), false);
             },
@@ -132,7 +132,7 @@ var dataBinderValue = function (name, value, label, parent) {
         },
         "other": {
             set: function (value) {
-                if (value !== null && typeof value === 'object') return;
+                if ((value !== null && typeof value === 'object') || value === this._other) return;
                 this._other = value;
                 this._parent._update(this._parent._attr_name(this._name), false);
             },
