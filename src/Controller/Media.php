@@ -33,17 +33,16 @@ class Media extends \Hazaar\Controller\Action {
 
         $this->connector->setProgressCallback(array($this, 'progress'));
 
-        if($this->config = $this->loadConfig()) {
+        if(($this->config = $this->loadConfig()) === false)
+            throw new \Exception('Media controller has not been configured!');
 
-            if($this->config->disabled === true)
-                return;
+        if($this->config->disabled === true)
+            return;
 
-            if($this->config->global->has('cache'))
-                $this->global_cache = boolify($this->config->global['cache']);
+        if($this->config->global->has('cache'))
+            $this->global_cache = boolify($this->config->global['cache']);
 
-            $this->loadSources($this->config, $this->connector);
-
-        }
+        $this->loadSources($this->config, $this->connector);
 
     }
 
@@ -130,6 +129,8 @@ class Media extends \Hazaar\Controller\Action {
 
         if($this->request->has('cmd'))
             return $this->command($this->request->get('cmd'), $this->connector);
+
+        dump($this->application->config);
 
         //Check for global authentication
         if($this->config->global->has('auth')
