@@ -36,6 +36,8 @@ class File {
 
     private $encrypted = false;
 
+    private $__media_uri;
+
     function __construct($file = null, File\Backend\_Interface $backend = NULL, File\Manager $manager = null, $relative_path = null) {
 
         if($file instanceof \Hazaar\File) {
@@ -133,7 +135,10 @@ class File {
 
     public function dirname() {
 
-        //Hack: The str_replace() call makes all directory separaters consistent as /.  The use of DIRECTORY_SEPARATOR should only be used in the local backend.
+        /*
+         * Hack: The str_replace() call makes all directory separaters consistent as /.
+         * The use of DIRECTORY_SEPARATOR should only be used in the local backend.
+         */
         return str_replace('\\', '/', dirname($this->source_file));
 
     }
@@ -579,7 +584,19 @@ class File {
 
     }
 
-    public function media_uri(){
+    public function media_uri($set_path = null){
+
+        if($set_path !== null){
+
+            if(!$set_path instanceof \Hazaar\Http\Uri)
+                $set_path = new \Hazaar\Http\Uri($set_path);
+
+            $this->__media_uri = $set_path;
+
+        }
+
+        if($this->__media_uri)
+            return $this->__media_uri;
 
         if(!$this->manager)
             return null;
