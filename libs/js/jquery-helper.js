@@ -345,13 +345,10 @@ dataBinder.prototype.keys = function () {
 };
 
 dataBinder.prototype.populate = function (items) {
-    for (let x in this._attributes) {
-        if (!(x in items))
-            this.remove(x);
-    }
+    this._attributes = {};
     for (let x in items) {
-        if (items[x] instanceof dataBinder || items[x] instanceof dataBinderArray || !(x in this._attributes))
-            this.add(items[x]);
+        if (key in this._attributes) continue;
+        this.add(items[x]);
     }
 };
 
@@ -537,14 +534,10 @@ dataBinderArray.prototype._cleanupItem = function (index) {
 };
 
 dataBinderArray.prototype.populate = function (elements) {
+    this._elements = [];
     if (!Array.isArray(elements))
         elements = Object.values(elements);
     for (let x in elements) {
-        var removed_items = this._elements.filter(function (e) {
-            return this.indexOf(e) < 0;
-        }, elements);
-        for (let x in removed_items)
-            this.remove(removed_items[x]);
         if (elements[x] instanceof dataBinder || elements[x] instanceof dataBinderArray || this._elements.indexOf(elements[x]) < 0)
             this.push(elements[x]);
     }
