@@ -130,8 +130,6 @@ class Media extends \Hazaar\Controller\Action {
         if($this->request->has('cmd'))
             return $this->command($this->request->get('cmd'), $this->connector);
 
-        dump($this->application->config);
-
         //Check for global authentication
         if($this->config->global->has('auth')
             && $this->config->global->auth === true
