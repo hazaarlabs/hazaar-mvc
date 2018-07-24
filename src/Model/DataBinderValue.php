@@ -78,6 +78,9 @@ class DataBinderValue implements \JsonSerializable {
         if($this->name)
             return (string)new \Hazaar\Html\Span(coalesce($this->label, $this->value), array('data-bind' => $this->name));
 
+        if(!$this->value && $this->other)
+            return $this->other;
+
         return coalesce($this->label, $this->value);
 
     }

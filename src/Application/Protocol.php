@@ -53,6 +53,7 @@ class Protocol {
         0x32 => 'SERVICE',      //Service status
         0x33 => 'SPAWN',        //Spawn a dynamic service
         0x34 => 'KILL',         //Kill a dynamic service instance
+        0x35 => 'SIGNAL',       //Signal between a dyanmic service and it's client
 
         //LOGGING/OUTPUT MESSAGES
         0x90 => 'LOG',          //Generic log message

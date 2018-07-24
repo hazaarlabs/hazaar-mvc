@@ -64,7 +64,7 @@ class Template {
             'smarty' => array('sections' => array(), 'foreach' => array())
         );
 
-        $params = array_merge($default_params, $params);
+        $params = array_merge($default_params, (array)$params);
 
         $id = '_template_' . md5(uniqid());
 

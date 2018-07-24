@@ -189,17 +189,29 @@ abstract class Request implements Request\_Interface {
     }
 
     /**
-     * @detail      Return the request path suffix.  This is the path that comes after the controller and action
-     *              path elements.  Take the path /myapp/public/index/test/foo/bar for example.  In this case this
-     *              method would return '/foo/bar'.
+     * Return the request path suffix.
+     *
+     * This is the path that comes after the controller and action path elements.  Take the
+     * path /myapp/public/index/test/foo/bar for example.  In this case this method would return '/foo/bar'.
+     *
+     * @param mixed $strip_filename If true, this will cause the function to return anything before the last '/'
+     *                              (including the '/') which is the fulle directory path name. (Similar to dirname()).
      *
      * @since       1.0.0
      *
-     * @return      string The path suffix of the request URI
+     * @return \null|string The path suffix of the request URI
      */
-    public function getPath() {
+    public function getPath($strip_filename = false) {
 
-        return $this->path;
+        if($strip_filename !== true)
+            return $this->path;
+
+        $path = ltrim($this->path, '/');
+
+        if(($pos = strrpos($path, '/')) === false)
+            return null;
+
+        return substr($path, 0, $pos) . '/';
 
     }
 
