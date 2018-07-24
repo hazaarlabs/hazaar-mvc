@@ -71,10 +71,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         $data = array_shift($args);
 
-        if (!method_exists($this, 'init'))
-            throw new Exception\InitMissing(get_class($this));
-
-        $field_definition = $this->init();
+        $field_definition = $this->__init();
 
         if (!is_array($field_definition))
             throw new Exception\BadFieldDefinition();
@@ -96,15 +93,48 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     }
 
+    private function __init(){
+
+        if (!method_exists($this, 'init'))
+            throw new Exception\InitMissing(get_class($this));
+
+        $params = array();
+
+        $parent = new \ReflectionClass($this);
+
+        while($parent && $parent->name !== 'Hazaar\Model\Strict'){
+
+            if($parent->hasMethod('init')){
+
+                $init = $parent->getMethod('init');
+
+                $init_params = $init->invoke($this);
+
+                if(is_array($init_params))
+                    $params = array_merge($init_params, $params);
+
+            }
+
+            $parent = $parent->getParentClass();
+
+        }
+
+        return $params;
+
+    }
+
     /**
      * Strict model destructor
      *
      * The destructor calls the shutdown method to allow the extending class to do any cleanup functions.
      */
-    function __destruct() {
+    final function __destruct() {
 
         if (method_exists($this, 'shutdown'))
             $this->shutdown();
+
+        if (method_exists($this, 'destruct'))
+            $this->destruct();
 
     }
 
@@ -389,14 +419,13 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         }
 
         /*
-         * Keep the field definition handy
+         * Check if the field is defined and decide if we should allow access to it
          *
-         * If it is an array, it is a complex type
-         * If it is a string, it is a simple type, so convert to an array automatically with just a type def
+         * By default, fields have to be defined to work.  However it is possible to
+         * allow undefined fields to be automatically defined when they get set for
+         * the first time.
          */
-        $def = ake($this->fields, $key, ake($this->fields, '*'));
-
-        if (!$def) {
+        if (!array_key_exists($key, $this->fields)) {
 
             if ($this->ignore_undefined === true)
                 return null;
@@ -404,9 +433,17 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             elseif ($this->allow_undefined === false)
                 throw new Exception\FieldUndefined($key);
 
-            $this->fields[$key] = gettype($value);
+            $this->fields[$key] = array('type' => gettype($value));
 
         }
+
+        /*
+         * Keep the field definition handy
+         *
+         * If it is an array, it is a complex type
+         * If it is a string, it is a simple type, so convert to an array automatically with just a type def
+         */
+        $def = ake($this->fields, $key, ake($this->fields, '*'));
 
         if (!is_array($def))
             $def = array('type' => $def);
@@ -603,6 +640,31 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             $this->execCallback($def['update']['post'], $old_value, $key);
 
         return $value;
+
+    }
+
+    public function remove($key){
+
+        if(!array_key_exists($key, $this->values))
+            return false;
+
+        if(!array_key_exists($key, $this->fields)){
+
+            unset($this->values[$key]);
+
+            return true;
+
+        }
+
+        if(array_key_exists('value', $this->fields[$key]))
+            return false;
+
+        if(array_key_exists('default', $this->fields[$key]))
+            $this->values[$key] = $this->fields[$key]['default'];
+        else
+            unset($this->values[$key]);
+
+        return true;
 
     }
 
@@ -810,9 +872,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
              * If the definition for this field has the 'hide' attribute, we check if the value matches and if so we skip
              * this value.
              */
-            if ($show_hidden === false 
+            if ($show_hidden === false
                 && array_key_exists($key, $this->fields)
-                && is_array($this->fields[$key]) 
+                && is_array($this->fields[$key])
                 && array_key_exists('hide', $this->fields[$key])) {
 
                 $hide = $this->fields[$key]['hide'];

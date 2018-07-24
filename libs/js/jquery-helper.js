@@ -109,7 +109,7 @@ var dataBinderValue = function (name, value, label, parent) {
     Object.defineProperties(this, {
         "value": {
             set: function (value) {
-                if (value !== null && typeof value === 'object') return;
+                if ((value !== null && typeof value === 'object') || value === this._value) return;
                 var attr_name = this._parent._attr_name(this._name);
                 this._value = this._parent.__nullify(value);
                 this._other = null;
@@ -122,7 +122,7 @@ var dataBinderValue = function (name, value, label, parent) {
         },
         "label": {
             set: function (value) {
-                if (typeof value !== 'string') return;
+                if (typeof value !== 'string' || value === this._label) return;
                 this._label = value;
                 this._parent._update(this._parent._attr_name(this._name), false);
             },
@@ -132,7 +132,7 @@ var dataBinderValue = function (name, value, label, parent) {
         },
         "other": {
             set: function (value) {
-                if (value !== null && typeof value === 'object') return;
+                if ((value !== null && typeof value === 'object') || value === this._other) return;
                 this._other = value;
                 this._parent._update(this._parent._attr_name(this._name), false);
             },
@@ -147,10 +147,17 @@ dataBinderValue.prototype.toString = function () {
     return this.label || this.value || this.other;
 };
 
+dataBinderValue.prototype.valueOf = function () {
+    return this.value;
+};
+
 dataBinderValue.prototype.set = function (value, label, other) {
-    if (value !== null && typeof value === 'object') return;
+    value = this._parent.__nullify(value);
+    if ((value !== null && typeof value === 'object')
+        || (value === this._value && label === this._label
+            && (typeof other === 'undefined' || other === this._other))) return;
     var attr_name = this._parent._attr_name(this._name);
-    this._value = this._parent.__nullify(value);
+    this._value = value;
     this._label = label;
     if (typeof other !== 'undefined') this._other = other;
     this._parent._update(attr_name, true);
@@ -342,13 +349,10 @@ dataBinder.prototype.keys = function () {
 };
 
 dataBinder.prototype.populate = function (items) {
-    for (let x in this._attributes) {
-        if (!(x in items))
-            this.remove(x);
-    }
+    this._attributes = {};
     for (let x in items) {
-        if (items[x] instanceof dataBinder || items[x] instanceof dataBinderArray || !(x in this._attributes))
-            this.add(items[x]);
+        if (key in this._attributes) continue;
+        this.add(items[x]);
     }
 };
 
@@ -398,7 +402,7 @@ dataBinderArray.prototype._attr_name = function (attr_name) {
 dataBinderArray.prototype.pop = function () {
     var index = this._elements.length - 1;
     var element = this._elements[index];
-    this.remove(index);
+    this.unset(index);
     return element;
 };
 
@@ -458,11 +462,24 @@ dataBinderArray.prototype.indexOf = function (searchString) {
     return -1;
 };
 
-dataBinderArray.prototype.remove = function (index) {
-    if (index instanceof dataBinderValue) index = index.value;
-    if (typeof index === 'string') index = this.indexOf(index);
-    if (index < 0 || typeof index === 'undefined') return;
+/**
+ * Remove an item value from the array
+ * 
+ * @param {any} value The value to remove.
+ */
+dataBinderArray.prototype.remove = function (value) {
+    return this.unset(this.indexOf(((value instanceof dataBinderValue) ? value.value : value)));
+};
+
+/**
+ * Remove an item from the array using it's index in the array
+ * 
+ * @param {any} index The index of the item to remove.
+ */
+dataBinderArray.prototype.unset = function (index) {
+    if (index < 0 || typeof index !== 'number') return;
     var element = this._elements[index];
+    if (typeof element === 'undefined') return;
     if (element instanceof dataBinder) jQuery('[data-bind="' + this._attr_name() + '"]').children().eq(index).remove();
     this._cleanupItem(index);
     this._update(this._attr_name(), element);
@@ -521,14 +538,10 @@ dataBinderArray.prototype._cleanupItem = function (index) {
 };
 
 dataBinderArray.prototype.populate = function (elements) {
+    this._elements = [];
     if (!Array.isArray(elements))
         elements = Object.values(elements);
     for (let x in elements) {
-        var removed_items = this._elements.filter(function (e) {
-            return this.indexOf(e) < 0;
-        }, elements);
-        for (let x in removed_items)
-            this.remove(removed_items[x]);
         if (elements[x] instanceof dataBinder || elements[x] instanceof dataBinderArray || this._elements.indexOf(elements[x]) < 0)
             this.push(elements[x]);
     }
