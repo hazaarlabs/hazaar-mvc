@@ -93,7 +93,8 @@ class Dir {
 
             $parents[] = $last;
 
-            $last = dirname($last);
+            //Gets dirname an ensures separator is a forward slash (/).
+            $last = str_replace(DIRECTORY_SEPARATOR, $this->backend->separator, dirname($last));
 
             if($last == $this->backend->separator)
                 break;

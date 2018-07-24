@@ -153,7 +153,7 @@ class File {
 
         $dir = $this->dirname();
 
-        return trim($dir, '/') . '/' . $this->basename();
+        return rtrim($dir, '/') . '/' . $this->basename();
 
     }
 
