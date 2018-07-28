@@ -245,6 +245,23 @@ class Http extends \Hazaar\Application\Request {
     }
 
     /**
+     * Return the current request content type.
+     * 
+     * This is a helpful method for doing a few things in one go as it will only return a content type
+     * if the request is a POST method.  Otherwise it will safely return a FALSE value.
+     * 
+     * @return mixed The content type of the POST request.  False if the request is not a POST request.
+     */
+    public function getContentType(){
+
+        if($this->isPost())
+            return $this->getHeader('Content-Type');
+
+        return false;
+
+    }
+
+    /**
      * @detail      Test if the request originated from an XMLHttpRequest object.  This object is used when sending an
      *              AJAX request from withing a JavaScript function.  All of the major JavaScript libraries (jQuery,
      *              extJS, etc) will set the X-Requested-With header to indicate that the request is an AJAX request.
