@@ -93,6 +93,8 @@ class DataBinderValue implements \JsonSerializable {
 
     public function toArray(){
 
+        if(!($this->label || $this->other)) return $this->value;
+
         $array = array('__hz_value' => $this->value, '__hz_label' => $this->label);
 
         if($this->other) $array['__hz_other'] = $this->other;
@@ -123,6 +125,12 @@ class DataBinderValue implements \JsonSerializable {
         }
 
         return $array;
+
+    }
+
+    public function export(){
+
+        return coalesce($this->value, $this->other, $this->label);
 
     }
 
