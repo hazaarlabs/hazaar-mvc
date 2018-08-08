@@ -307,15 +307,21 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             foreach($parts as $key => $part){
 
-                if(!$value instanceof Strict){
+                if($value instanceof Strict){
+
+                    $value = $value->get($part, (($lastKey === $key) ? $exec_filters : false));
+
+                }elseif(is_array($value)){
+
+                    $value = ake($value, $part);
+
+                }else{
 
                     $null = null;
 
                     return $null;
 
                 }
-
-                $value = $value->get($part, (($lastKey === $key) ? $exec_filters : false));
 
             }
 
@@ -770,7 +776,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                 if(is_array($ignore_keys) && in_array($key, $ignore_keys))
                     continue;
 
-                if (!array_key_exists($key, $this->values))
+                if ($this->ignore_undefined && !array_key_exists($key, $this->values))
                     continue;
 
                 if ($this->values[$key] instanceof Strict) {
@@ -1266,6 +1272,14 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             $this->extend($values);
 
         return $result;
+
+    }
+
+    public function allowUndefined($toggle = true){
+
+        $this->allow_undefined = $toggle;
+
+        $this->ignore_undefined = !$toggle;
 
     }
 
