@@ -326,7 +326,6 @@
     <Compile Include="src\View\Helper\JQuery.php" />
     <Compile Include="src\View\Helper\PDF.php" />
     <Compile Include="src\View\Helper\Gui.php" />
-    <Compile Include="src\View\Helper\Textile.php" />
     <Compile Include="src\View\Helper\_Interface.php" />
     <Compile Include="src\View\Layout.php" />
     <Compile Include="src\Text\Template.php" />
