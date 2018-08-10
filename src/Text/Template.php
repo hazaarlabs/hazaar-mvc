@@ -21,7 +21,7 @@ namespace Hazaar\Text;
  */
 class Template {
 
-    static private $tags = array('if', 'elseif', 'else', 'section', 'sectionelse', 'url', 'foreach', 'foreachelse');
+    static private $tags = array('if', 'elseif', 'else', 'section', 'sectionelse', 'url', 'foreach', 'foreachelse', 'ldelim', 'rdelim');
 
     static private $modifiers = array('date_format', 'capitalize');
 
@@ -33,9 +33,15 @@ class Template {
 
     private $__foreach_stack = array();
 
+    public $ldelim = '{';
+
+    public $rdelim = '}';
+
+    public $allow_globals = true;
+
     function __construct($content){
 
-        $this->__content = (string)$content;
+        $this->loadFromString($content);
 
     }
 
@@ -52,17 +58,36 @@ class Template {
         $app = \Hazaar\Application::getInstance();
 
         $default_params = array(
-            '_COOKIE' => $_COOKIE,
-            '_ENV' => $_ENV,
-            '_GET' => $_GET,
-            '_POST' => $_POST,
-            '_REQUEST' => $_REQUEST,
-            '_SERVER' => $_SERVER,
-            'config' => $app->config->toArray(),
             'hazaar' => array('version' => HAZAAR_VERSION),
-            'now' => new \Hazaar\Date(),
-            'smarty' => array('sections' => array(), 'foreach' => array())
+            'smarty' => array(
+                'now' => new \Hazaar\Date(),
+                'const' => get_defined_constants(),
+                'capture' => null,
+                'config' => $app->config->toArray(),
+                'section' => array(),
+                'foreach' => array(),
+                'template' => null,
+                'version' => 2,
+                'ldelim' => $this->ldelim,
+                'rdelim' => $this->rdelim
+            )
         );
+
+        if($this->allow_globals){
+
+            $default_params['_COOKIE'] = $_COOKIE;
+
+            $default_params['_ENV'] = $_ENV;
+
+            $default_params['_GET'] = $_GET;
+
+            $default_params['_POST'] = $_POST;
+
+            $default_params['_REQUEST'] = $_REQUEST;
+
+            $default_params['_SERVER'] = $_SERVER;
+
+        }
 
         $params = array_merge($default_params, (array)$params);
 
@@ -259,7 +284,9 @@ class Template {
 
     private function replaceVAR($name){
 
-        return '<?php echo @' . $this->compileVAR($name) . ';?>';
+        $var = $this->compileVAR($name);
+
+        return '<?php echo @(is_array(' . $var . ') ? print_r(' . $var . ', true) : ' . $var . ');?>';
 
     }
 
@@ -433,6 +460,18 @@ class Template {
             return '<?php endif; ?>';
 
         return '<?php endforeach; endif; ?>';
+
+    }
+
+    public function compileLDELIM($tag){
+
+        return $this->ldelim;
+
+    }
+
+    public function compileRDELIM($tag){
+
+        return $this->rdelim;
 
     }
 
