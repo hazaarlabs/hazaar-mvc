@@ -1,27 +1,37 @@
 <?php
 
-namespace Hazaar\Text;
+namespace Hazaar\Template;
 
 /**
- * The Text\Template class
+ * Smarty 2.0 Templates
  *
- * Templates are used to separate view content from application logic.  These templates use a simple
- * tag substitution technique to apply data to templates to generate content.  Data can be applied
- * to templates multiple times (in a loop for example) to generate multiple output content containing
- * different values.  This is useful for tasks such as mail-merges/mass mailouts using a pre-defined
- * email template.
+ * This class implements the entire Smarty 2.0 template specification.  For documentation on the
+ * Smarty 2.0 template format see the Smarty 2.0 online documentation: https://www.smarty.net/docsv2/en/
  *
- * Tags are in the format of ${tagname}.  This tag would reference a parameter passed to the parser
+ * Tags are in the format of {$tagname}.  This tag would reference a parameter passed to the parser
  * with the array key value of 'tagname'.  Such as:
  *
- * <code>
- * $tpl->parse(array('tagname' => 'Hello, World!'));
- * </code>
+ * ```
+ * $tpl = new \Hazaar\Template\Smarty($template_content);
+ * $tpl->render(array('tagname' => 'Hello, World!'));
+ * ```
  *
  */
-class Template {
+class Smarty {
 
-    static private $tags = array('if', 'elseif', 'else', 'section', 'sectionelse', 'url', 'foreach', 'foreachelse');
+    static protected $tags = array(
+        'if',
+        'elseif',
+        'else',
+        'section',
+        'sectionelse',
+        'url',
+        'foreach',
+        'foreachelse',
+        'ldelim',
+        'rdelim',
+        'capture'
+    );
 
     static private $modifiers = array('date_format', 'capitalize');
 
@@ -33,9 +43,17 @@ class Template {
 
     private $__foreach_stack = array();
 
+    private $__capture_stack = array();
+
+    public $ldelim = '{';
+
+    public $rdelim = '}';
+
+    public $allow_globals = true;
+
     function __construct($content){
 
-        $this->__content = (string)$content;
+        $this->loadFromString($content);
 
     }
 
@@ -52,30 +70,51 @@ class Template {
         $app = \Hazaar\Application::getInstance();
 
         $default_params = array(
-            '_COOKIE' => $_COOKIE,
-            '_ENV' => $_ENV,
-            '_GET' => $_GET,
-            '_POST' => $_POST,
-            '_REQUEST' => $_REQUEST,
-            '_SERVER' => $_SERVER,
-            'config' => $app->config->toArray(),
             'hazaar' => array('version' => HAZAAR_VERSION),
-            'now' => new \Hazaar\Date(),
-            'smarty' => array('sections' => array(), 'foreach' => array())
+            'smarty' => array(
+                'now' => new \Hazaar\Date(),
+                'const' => get_defined_constants(),
+                'capture' => array(),
+                'config' => $app->config->toArray(),
+                'section' => array(),
+                'foreach' => array(),
+                'template' => null,
+                'version' => 2,
+                'ldelim' => $this->ldelim,
+                'rdelim' => $this->rdelim
+            )
         );
+
+        if($this->allow_globals){
+
+            $default_params['_COOKIE'] = $_COOKIE;
+
+            $default_params['_ENV'] = $_ENV;
+
+            $default_params['_GET'] = $_GET;
+
+            $default_params['_POST'] = $_POST;
+
+            $default_params['_REQUEST'] = $_REQUEST;
+
+            $default_params['_SERVER'] = $_SERVER;
+
+        }
 
         $params = array_merge($default_params, (array)$params);
 
         $id = '_template_' . md5(uniqid());
 
         if(!$this->__compiled_content)
-            $this->compile();
+            $this->__compiled_content = $this->compile();
 
         $code = "class $id {
 
             private \$modify;
 
-            function __construct(){ \$this->modify = new \Hazaar\Text\Template\Modifier; }
+            private \$variables = array();
+
+            function __construct(){ \$this->modify = new \Hazaar\Template\Smarty\Modifier; }
 
             public function render(\$params){
 
@@ -101,7 +140,7 @@ class Template {
 
     }
 
-    private function setType($value, $type = 'string', $args = null){
+    protected function setType($value, $type = 'string', $args = null){
 
         switch($type){
 
@@ -125,45 +164,72 @@ class Template {
 
     }
 
-    protected function compile(){
+    protected function parsePARAMS($params){
 
-        $this->__compiled_content = preg_replace(array('/\<\?/', '/\?\>/'), array('&lt;?','?&gt;'), $this->__content);
+        $parts = preg_split('/\s+/', $params);
 
-        while(preg_match_all('/\{(\$[^\}]+|(\/?\w+)\s*([^\}]*))\}(\r?\n)?/', $this->__compiled_content, $matches, PREG_PATTERN_ORDER)){
+        $params = array();
 
-            foreach($matches[0] as $idx => $match){
+        foreach($parts as $part)
+            $params = array_merge($params, array_unflatten($part));
 
-                $replacement = '';
-
-                //It matched a variable
-                if(substr($matches[1][$idx], 0, 1) === '$'){
-
-                    $replacement = $this->replaceVAR($matches[1][$idx]);
-
-                    //Must be a function so we exec the internal function handler
-                }elseif((substr($matches[2][$idx], 0, 1) == '/' && in_array(substr($matches[2][$idx], 1), Template::$tags))
-                    || in_array($matches[2][$idx], Template::$tags)){
-
-                    $func = 'compile' . str_replace('/', 'END', strtoupper($matches[2][$idx]));
-
-                    $replacement = $this->$func($matches[3][$idx]);
-
-                }
-
-                if($matches[4][$idx])
-                    $replacement .= " \r\n";
-
-                $this->__compiled_content = preg_replace('/' . preg_quote($match, '/') . '/', $replacement, $this->__compiled_content, 1);
-
-            }
-
-        }
-
-        return true;
+        return $params;
 
     }
 
-    private function compileVAR($name){
+    public function compile(){
+
+        $compiled_content = preg_replace(array('/\<\?/', '/\?\>/'), array('&lt;?','?&gt;'), $this->__content);
+
+        $regex = '/\{([#\$][^\}]+|(\/?\w+)\s*([^\}]*))\}(\r?\n)?/';
+
+        $literal = false;
+
+        $compiled_content = preg_replace_callback($regex, function($matches) use(&$literal){
+
+            $replacement = '';
+
+            if(preg_match('/(\/?)literal/', $matches[1], $literals)){
+
+                $literal = ($literals[1] !== '/');
+
+            }elseif($literal){
+
+                return $matches[0];
+
+                //It matched a variable
+            }elseif(substr($matches[1], 0, 1) === '$'){
+
+                $replacement = $this->replaceVAR($matches[1]);
+
+                //Matched a config variable
+            }elseif(substr($matches[1], 0, 1) === '#' && substr($matches[1], -1) === '#'){
+
+                $replacement = $this->replaceCONFIG_VAR(substr($matches[1], 1, -1));
+
+                //Must be a function so we exec the internal function handler
+            }elseif((substr($matches[2], 0, 1) == '/'
+                && in_array(substr($matches[2], 1), Smarty::$tags))
+                || in_array($matches[2], Smarty::$tags)){
+
+                $func = 'compile' . str_replace('/', 'END', strtoupper($matches[2]));
+
+                $replacement = $this->$func($matches[3]);
+
+            }
+
+            if(isset($matches[4]))
+                $replacement .= " \r\n";
+
+            return $replacement;
+
+        }, $compiled_content);
+
+        return $compiled_content;
+
+    }
+
+    protected function compileVAR($name){
 
         $modifiers = array();
 
@@ -233,7 +299,7 @@ class Template {
 
                 $func = array_shift($params);
 
-                if(Template\Modifier::has_function($func))
+                if(Smarty\Modifier::has_function($func))
                     $name = '$this->modify->' . $func . '(' . $name . ((count($params) > 0) ? ', ' . implode(', ', $params) : '') . ')';
 
             }
@@ -244,7 +310,7 @@ class Template {
 
     }
 
-    private function compileVARS($string){
+    protected function compileVARS($string){
 
         if(preg_match_all('/\$[\w\.\[\]]+/', $string, $matches)){
 
@@ -257,13 +323,21 @@ class Template {
 
     }
 
-    private function replaceVAR($name){
+    protected function replaceVAR($name){
 
-        return '<?php echo @' . $this->compileVAR($name) . ';?>';
+        $var = $this->compileVAR($name);
+
+        return '<?php echo @(is_array(' . $var . ') ? print_r(' . $var . ', true) : ' . $var . ');?>';
 
     }
 
-    private function compilePARAMS($params){
+    protected function replaceCONFIG_VAR($name){
+
+        return $this->replaceVAR("\$this->variables['$name']");
+
+    }
+
+    protected function compilePARAMS($params){
 
         if(preg_match_all('/\$\w[\w\.\$]+/', $params, $matches)){
 
@@ -276,31 +350,31 @@ class Template {
 
     }
 
-    private function compileIF($params){
+    protected function compileIF($params){
 
         return '<?php if(@' . $this->compilePARAMS($params) . '): ?>';
 
     }
 
-    private function compileELSEIF($params){
+    protected function compileELSEIF($params){
 
         return '<?php elseif(@' . $this->compilePARAMS($params) . '): ?>';
 
     }
 
-    private function compileELSE($params){
+    protected function compileELSE($params){
 
         return '<?php else: ?>';
 
     }
 
-    private function compileENDIF($tag){
+    protected function compileENDIF($tag){
 
         return '<?php endif; ?>';
 
     }
 
-    private function compileSECTION($params){
+    protected function compileSECTION($params){
 
         $parts = preg_split('/\s+/', $params);
 
@@ -338,7 +412,7 @@ class Template {
 
     }
 
-    private function compileSECTIONELSE($tag){
+    protected function compileSECTIONELSE($tag){
 
         end($this->__section_stack);
 
@@ -348,7 +422,7 @@ class Template {
 
     }
 
-    private function compileENDSECTION($tag){
+    protected function compileENDSECTION($tag){
 
         $section = array_pop($this->__section_stack);
 
@@ -359,20 +433,15 @@ class Template {
 
     }
 
-    private function compileURL($tag){
+    protected function compileURL($tag){
 
         return '<?php echo @$this->url(\'' .$this->compileVARS(trim($tag, "'")) . '\');?>';
 
     }
 
-    public function compileFOREACH($params){
+    protected function compileFOREACH($params){
 
-        $parts = preg_split('/\s+/', $params);
-
-        $params = array();
-
-        foreach($parts as $part)
-            $params = array_merge($params, array_unflatten($part));
+        $params = $this->parsePARAMS($params);
 
         $code = '';
 
@@ -415,7 +484,7 @@ class Template {
 
     }
 
-    public function compileFOREACHELSE($tag){
+    protected function compileFOREACHELSE($tag){
 
         end($this->__foreach_stack);
 
@@ -425,7 +494,7 @@ class Template {
 
     }
 
-    public function compileENDFOREACH($tag){
+    protected function compileENDFOREACH($tag){
 
         $loop = array_pop($this->__foreach_stack);
 
@@ -433,6 +502,44 @@ class Template {
             return '<?php endif; ?>';
 
         return '<?php endforeach; endif; ?>';
+
+    }
+
+    protected function compileLDELIM($tag){
+
+        return $this->ldelim;
+
+    }
+
+    protected function compileRDELIM($tag){
+
+        return $this->rdelim;
+
+    }
+
+    protected function compileCAPTURE($params){
+
+        $params = $this->parsePARAMS($params);
+
+        if(!array_key_exists('name', $params))
+            return '';
+
+        $this->__capture_stack[] = $params;
+
+        return '<?php ob_start(); ?>';
+
+    }
+
+    protected function compileENDCAPTURE(){
+
+        $params = array_pop($this->__capture_stack);
+
+        $code = '<?php $' . $this->compileVAR('smarty.capture.' . $params['name']);
+
+        if(array_key_exists('assign', $params))
+            $code .= ' = $' . $this->compileVAR($params['assign']);
+
+        return $code . ' = ob_get_clean(); ?>';
 
     }
 
