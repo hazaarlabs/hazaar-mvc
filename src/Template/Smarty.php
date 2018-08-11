@@ -19,7 +19,18 @@ namespace Hazaar\Template;
  */
 class Smarty {
 
-    static private $tags = array('if', 'elseif', 'else', 'section', 'sectionelse', 'url', 'foreach', 'foreachelse', 'ldelim', 'rdelim');
+    static protected $tags = array(
+        'if',
+        'elseif',
+        'else',
+        'section',
+        'sectionelse',
+        'url',
+        'foreach',
+        'foreachelse',
+        'ldelim',
+        'rdelim'
+    );
 
     static private $modifiers = array('date_format', 'capitalize');
 
@@ -92,11 +103,13 @@ class Smarty {
         $id = '_template_' . md5(uniqid());
 
         if(!$this->__compiled_content)
-            $this->compile();
+            $this->__compiled_content = $this->compile();
 
         $code = "class $id {
 
             private \$modify;
+
+            private \$variables = array();
 
             function __construct(){ \$this->modify = new \Hazaar\Template\Smarty\Modifier; }
 
@@ -148,11 +161,24 @@ class Smarty {
 
     }
 
-    protected function compile(){
+    protected function parsePARAMS($params){
 
-        $this->__compiled_content = preg_replace(array('/\<\?/', '/\?\>/'), array('&lt;?','?&gt;'), $this->__content);
+        $parts = preg_split('/\s+/', $params);
 
-        while(preg_match_all('/\{(\$[^\}]+|(\/?\w+)\s*([^\}]*))\}(\r?\n)?/', $this->__compiled_content, $matches, PREG_PATTERN_ORDER)){
+        $params = array();
+
+        foreach($parts as $part)
+            $params = array_merge($params, array_unflatten($part));
+
+        return $params;
+
+    }
+
+    public function compile(){
+
+        $compiled_content = preg_replace(array('/\<\?/', '/\?\>/'), array('&lt;?','?&gt;'), $this->__content);
+
+        while(preg_match_all('/\{([#\$][^\}]+|(\/?\w+)\s*([^\}]*))\}(\r?\n)?/', $compiled_content, $matches, PREG_PATTERN_ORDER)){
 
             foreach($matches[0] as $idx => $match){
 
@@ -163,8 +189,14 @@ class Smarty {
 
                     $replacement = $this->replaceVAR($matches[1][$idx]);
 
+                    //Matched a config variable
+                }elseif(substr($matches[1][$idx], 0, 1) === '#' && substr($matches[1][$idx], -1) === '#'){
+
+                    $replacement = $this->replaceCONFIG_VAR(substr($matches[1][$idx], 1, -1));
+
                     //Must be a function so we exec the internal function handler
-                }elseif((substr($matches[2][$idx], 0, 1) == '/' && in_array(substr($matches[2][$idx], 1), Smarty::$tags))
+                }elseif((substr($matches[2][$idx], 0, 1) == '/'
+                    && in_array(substr($matches[2][$idx], 1), Smarty::$tags))
                     || in_array($matches[2][$idx], Smarty::$tags)){
 
                     $func = 'compile' . str_replace('/', 'END', strtoupper($matches[2][$idx]));
@@ -176,17 +208,17 @@ class Smarty {
                 if($matches[4][$idx])
                     $replacement .= " \r\n";
 
-                $this->__compiled_content = preg_replace('/' . preg_quote($match, '/') . '/', $replacement, $this->__compiled_content, 1);
+                $compiled_content = preg_replace('/' . preg_quote($match, '/') . '/', $replacement, $compiled_content, 1);
 
             }
 
         }
 
-        return true;
+        return $compiled_content;
 
     }
 
-    private function compileVAR($name){
+    protected function compileVAR($name){
 
         $modifiers = array();
 
@@ -267,7 +299,7 @@ class Smarty {
 
     }
 
-    private function compileVARS($string){
+    protected function compileVARS($string){
 
         if(preg_match_all('/\$[\w\.\[\]]+/', $string, $matches)){
 
@@ -280,7 +312,7 @@ class Smarty {
 
     }
 
-    private function replaceVAR($name){
+    protected function replaceVAR($name){
 
         $var = $this->compileVAR($name);
 
@@ -288,7 +320,13 @@ class Smarty {
 
     }
 
-    private function compilePARAMS($params){
+    protected function replaceCONFIG_VAR($name){
+
+        return $this->replaceVAR("\$this->variables['$name']");
+
+    }
+
+    protected function compilePARAMS($params){
 
         if(preg_match_all('/\$\w[\w\.\$]+/', $params, $matches)){
 
@@ -392,12 +430,7 @@ class Smarty {
 
     public function compileFOREACH($params){
 
-        $parts = preg_split('/\s+/', $params);
-
-        $params = array();
-
-        foreach($parts as $part)
-            $params = array_merge($params, array_unflatten($part));
+        $params = $this->parsePARAMS($params);
 
         $code = '';
 
