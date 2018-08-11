@@ -285,12 +285,18 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function toArray(){
+    public function toArray($export_data_binder = false, $disable_callbacks = false, $depth = null, $show_hidden = true){
 
         $values = $this->values;
 
-        foreach($values as &$value)
-            if($value instanceof Strict) $value = $value->toArray();
+        foreach($values as &$value){
+
+            if($value instanceof Strict)
+                $value = $value->toArray($disable_callbacks, $depth, $show_hidden, $export_data_binder);
+            elseif($value instanceof DataBinderValue)
+                $value = ($export_data_binder ? $value->toArray() : $value->value);
+
+        }
 
         return $values;
 

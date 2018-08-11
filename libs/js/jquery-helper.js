@@ -171,6 +171,10 @@ dataBinderValue.prototype.save = function (no_label) {
     return this.value;
 };
 
+dataBinderValue.prototype.empty = function () {
+    return this.set(null, null, null);
+};
+
 dataBinder.prototype._init = function (data, name, parent) {
     this._jquery = jQuery({});
     this._name = name;

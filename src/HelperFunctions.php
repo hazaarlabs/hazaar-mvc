@@ -1475,9 +1475,9 @@ function recursive_iterator_to_array(\Traversable $it) {
  * Compares `array1` against `array2` and returns the difference. Unlike array_diff() the array keys are also used
  * in the comparison.  Also, unlike the PHP array_diff_assoc() function, this function recurse into child arrays.
  *
- * @param array array1 The array to compare from.
+ * @param array $array1 The array to compare from.
  * 
- * @param array array2 The array to compare against.
+ * @param array $array2 The array to compare against.
  * 
  * @param array ... More arrays to compare against.
  * 
