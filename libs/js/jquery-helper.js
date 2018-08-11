@@ -161,7 +161,7 @@ dataBinderValue.prototype.set = function (value, label, other) {
     this._label = label;
     if (typeof other !== 'undefined') this._other = other;
     this._parent._update(attr_name, true);
-    this._parent._trigger(attr_name, this._value);
+    this._parent._trigger(this._name, this._value);
     return this;
 };
 
@@ -169,6 +169,10 @@ dataBinderValue.prototype.save = function (no_label) {
     if (((this.value !== null && this.label !== null) || (this.value === null && this.other !== null)) && no_label !== true)
         return { "__hz_value": this.value, "__hz_label": this.label, "__hz_other": this.other };
     return this.value;
+};
+
+dataBinderValue.prototype.empty = function () {
+    return this.set(null, null, null);
 };
 
 dataBinder.prototype._init = function (data, name, parent) {
@@ -239,7 +243,7 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
                 return; //If the value or label has not changed, then bugger off.
             this._attributes[key] = value;
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
-            this._trigger(attr_name, value);
+            this._trigger(key, value);
         },
         get: function () {
             if (!this._attributes[key])
@@ -289,7 +293,7 @@ dataBinder.prototype._update = function (attr_name, do_update) {
 dataBinder.prototype._trigger = function (key, value) {
     if (key in this._watchers) {
         for (let x in this._watchers[key])
-            this._watchers[key][x][0](key, value, this._watchers[key][x][1]);
+            this._watchers[key][x][0].call(this, key, value, this._watchers[key][x][1]);
     }
 };
 

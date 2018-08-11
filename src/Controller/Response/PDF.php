@@ -378,7 +378,7 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
             $tmp_path = \Hazaar\Application::getInstance()->runtimePath('tmp', true);
 
             if($winos = (substr(PHP_OS, 0, 3) == 'WIN'))
-                $asset_suffix = '_mingw-w64-cross-win' . ((php_uname('m') == 'i586') ? '64' : '32') . '.exe';
+                $asset_suffix = '-win' . ((php_uname('m') == 'i586') ? '64' : '32') . '.exe';
             else
                 $asset_suffix = '_linux-generic-' . ((php_uname('m') == 'x86_64') ? 'amd64' : 'i386') . '.tar.xz';
 
@@ -392,7 +392,9 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
             if($response->status != 200)
                 throw new \Exception('Got ' . $response->status . ' from Github API call!');
 
-            if(!is_array($info = $response->body()))
+            $info = $response->body();
+
+            if(!$info instanceof \stdClass)
                 throw new \Exception('Unable to parse Github API response body!');
 
             if(!($assets = ake($info, 'assets')))
@@ -402,7 +404,7 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
 
             foreach($assets as $asset){
 
-                if(substr($asset['name'], -strlen($asset_suffix), strlen($asset_suffix)) != $asset_suffix)
+                if(substr($asset->name, -strlen($asset_suffix), strlen($asset_suffix)) != $asset_suffix)
                     continue;
 
                 $source_url = ake($asset, 'browser_download_url');

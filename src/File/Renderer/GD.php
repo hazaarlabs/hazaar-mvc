@@ -17,7 +17,14 @@ class GD extends BaseRenderer {
 
     private $quality = null;
 
-    public function load($bytes, $type = 'jpeg'){
+    public function load($bytes, $type = null){
+
+        if($type === null){
+
+            if($info = getimagesizefromstring($bytes))
+                $type = substr($info['mime'], 6);
+
+        }
 
         if($this->img = imagecreatefromstring($bytes))
             $this->loaded = true;
