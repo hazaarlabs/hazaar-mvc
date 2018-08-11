@@ -152,7 +152,7 @@
     <Compile Include="src\File\Renderer\GD.php" />
     <Compile Include="src\File\Renderer\Imagick.php" />
     <Compile Include="src\File\RRD.php" />
-    <Compile Include="src\File\Template.php" />
+    <Compile Include="src\File\Template\Smarty.php" />
     <Compile Include="src\File\Upload.php" />
     <Compile Include="src\HelperFunctions.php" />
     <Compile Include="src\Html\A.php" />
@@ -392,6 +392,7 @@
     <Folder Include="src\File\Backend\" />
     <Folder Include="src\File\Backend\Exception\" />
     <Folder Include="src\File\Exception\" />
+    <Folder Include="src\File\Template\" />
     <Folder Include="src\File\Renderer\" />
     <Folder Include="src\Html\" />
     <Folder Include="src\Http\" />
