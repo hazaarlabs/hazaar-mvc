@@ -6,7 +6,7 @@ namespace Hazaar\File;
  * The View\Template class
  *
  */
-class Template extends \Hazaar\Text\Template {
+class Template extends \Hazaar\Template\Smarty {
 
     static public $cache_enabled = true;
 
