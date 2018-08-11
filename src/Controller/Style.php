@@ -44,7 +44,7 @@ class Style extends \Hazaar\Controller {
 
                 $params = $this->request->getParams();
 
-                if($response->checkCacheFile($params))
+                if(!(is_array($params) && count($params) > 0) || $response->checkCacheFile($params))
                     return $response;
 
                 if($quality = ake($params, 'quality'))
