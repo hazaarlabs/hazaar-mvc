@@ -63,7 +63,8 @@
     <Compile Include="src\Model\ChildArray.php" />
     <Compile Include="src\Model\ChildModel.php" />
     <Compile Include="src\Model\DataTypeConverter.php" />
-    <Compile Include="src\Text\Template\Modifier.php" />
+    <Compile Include="src\Template\Smarty\Modifier.php" />
+    <Compile Include="src\Template\Smarty.php" />
     <Compile Include="src\View\Controller.php" />
     <Compile Include="src\GeoData.php" />
     <Compile Include="src\Extender.php" />
@@ -328,7 +329,6 @@
     <Compile Include="src\View\Helper\Gui.php" />
     <Compile Include="src\View\Helper\_Interface.php" />
     <Compile Include="src\View\Layout.php" />
-    <Compile Include="src\Text\Template.php" />
     <Compile Include="src\View\Viewable.php" />
     <Compile Include="src\View\ViewableObject.php" />
     <Compile Include="src\View\Widgets\FileBrowser.php" />
@@ -408,8 +408,8 @@
     <Folder Include="src\Model\Exception\" />
     <Folder Include="src\Console\" />
     <Folder Include="src\Net\" />
-    <Folder Include="src\Text\" />
-    <Folder Include="src\Text\Template\" />
+    <Folder Include="src\Template\" />
+    <Folder Include="src\Template\Smarty\" />
     <Folder Include="src\View\" />
     <Folder Include="src\View\Helper\" />
     <Folder Include="src\View\Widgets\" />

@@ -1,6 +1,6 @@
 <?php
 
-namespace Hazaar\Text\Template;
+namespace Hazaar\Template\Smarty;
 
 class Modifier {
 

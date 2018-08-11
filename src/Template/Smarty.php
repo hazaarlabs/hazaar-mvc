@@ -1,25 +1,23 @@
 <?php
 
-namespace Hazaar\Text;
+namespace Hazaar\Template;
 
 /**
- * The Text\Template class
+ * Smarty 2.0 Templates
  *
- * Templates are used to separate view content from application logic.  These templates use a simple
- * tag substitution technique to apply data to templates to generate content.  Data can be applied
- * to templates multiple times (in a loop for example) to generate multiple output content containing
- * different values.  This is useful for tasks such as mail-merges/mass mailouts using a pre-defined
- * email template.
+ * This class implements the entire Smarty 2.0 template specification.  For documentation on the
+ * Smarty 2.0 template format see the Smarty 2.0 online documentation: https://www.smarty.net/docsv2/en/
  *
- * Tags are in the format of ${tagname}.  This tag would reference a parameter passed to the parser
+ * Tags are in the format of {$tagname}.  This tag would reference a parameter passed to the parser
  * with the array key value of 'tagname'.  Such as:
  *
- * <code>
- * $tpl->parse(array('tagname' => 'Hello, World!'));
- * </code>
+ * ```
+ * $tpl = new \Hazaar\Template\Smarty($template_content);
+ * $tpl->render(array('tagname' => 'Hello, World!'));
+ * ```
  *
  */
-class Template {
+class Smarty {
 
     static private $tags = array('if', 'elseif', 'else', 'section', 'sectionelse', 'url', 'foreach', 'foreachelse', 'ldelim', 'rdelim');
 
@@ -100,7 +98,7 @@ class Template {
 
             private \$modify;
 
-            function __construct(){ \$this->modify = new \Hazaar\Text\Template\Modifier; }
+            function __construct(){ \$this->modify = new \Hazaar\Template\Smarty\Modifier; }
 
             public function render(\$params){
 
@@ -166,8 +164,8 @@ class Template {
                     $replacement = $this->replaceVAR($matches[1][$idx]);
 
                     //Must be a function so we exec the internal function handler
-                }elseif((substr($matches[2][$idx], 0, 1) == '/' && in_array(substr($matches[2][$idx], 1), Template::$tags))
-                    || in_array($matches[2][$idx], Template::$tags)){
+                }elseif((substr($matches[2][$idx], 0, 1) == '/' && in_array(substr($matches[2][$idx], 1), Smarty::$tags))
+                    || in_array($matches[2][$idx], Smarty::$tags)){
 
                     $func = 'compile' . str_replace('/', 'END', strtoupper($matches[2][$idx]));
 
@@ -258,7 +256,7 @@ class Template {
 
                 $func = array_shift($params);
 
-                if(Template\Modifier::has_function($func))
+                if(Smarty\Modifier::has_function($func))
                     $name = '$this->modify->' . $func . '(' . $name . ((count($params) > 0) ? ', ' . implode(', ', $params) : '') . ')';
 
             }
