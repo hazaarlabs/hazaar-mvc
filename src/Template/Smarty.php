@@ -181,41 +181,49 @@ class Smarty {
 
         $compiled_content = preg_replace(array('/\<\?/', '/\?\>/'), array('&lt;?','?&gt;'), $this->__content);
 
-        while(preg_match_all('/\{([#\$][^\}]+|(\/?\w+)\s*([^\}]*))\}(\r?\n)?/', $compiled_content, $matches, PREG_PATTERN_ORDER)){
+        $regex = '/\{([#\$][^\}]+|(\/?\w+)\s*([^\}]*))\}(\r?\n)?/';
 
-            foreach($matches[0] as $idx => $match){
+        $literal = false;
 
-                $replacement = '';
+        $compiled_content = preg_replace_callback($regex, function($matches) use(&$literal){
+
+            $replacement = '';
+
+            if(preg_match('/(\/?)literal/', $matches[1], $literals)){
+
+                $literal = ($literals[1] !== '/');
+
+            }elseif($literal){
+
+                return $matches[0];
 
                 //It matched a variable
-                if(substr($matches[1][$idx], 0, 1) === '$'){
+            }elseif(substr($matches[1], 0, 1) === '$'){
 
-                    $replacement = $this->replaceVAR($matches[1][$idx]);
+                $replacement = $this->replaceVAR($matches[1]);
 
-                    //Matched a config variable
-                }elseif(substr($matches[1][$idx], 0, 1) === '#' && substr($matches[1][$idx], -1) === '#'){
+                //Matched a config variable
+            }elseif(substr($matches[1], 0, 1) === '#' && substr($matches[1], -1) === '#'){
 
-                    $replacement = $this->replaceCONFIG_VAR(substr($matches[1][$idx], 1, -1));
+                $replacement = $this->replaceCONFIG_VAR(substr($matches[1], 1, -1));
 
-                    //Must be a function so we exec the internal function handler
-                }elseif((substr($matches[2][$idx], 0, 1) == '/'
-                    && in_array(substr($matches[2][$idx], 1), Smarty::$tags))
-                    || in_array($matches[2][$idx], Smarty::$tags)){
+                //Must be a function so we exec the internal function handler
+            }elseif((substr($matches[2], 0, 1) == '/'
+                && in_array(substr($matches[2], 1), Smarty::$tags))
+                || in_array($matches[2], Smarty::$tags)){
 
-                    $func = 'compile' . str_replace('/', 'END', strtoupper($matches[2][$idx]));
+                $func = 'compile' . str_replace('/', 'END', strtoupper($matches[2]));
 
-                    $replacement = $this->$func($matches[3][$idx]);
-
-                }
-
-                if($matches[4][$idx])
-                    $replacement .= " \r\n";
-
-                $compiled_content = preg_replace('/' . preg_quote($match, '/') . '/', $replacement, $compiled_content, 1);
+                $replacement = $this->$func($matches[3]);
 
             }
 
-        }
+            if(isset($matches[4]))
+                $replacement .= " \r\n";
+
+            return $replacement;
+
+        }, $compiled_content);
 
         return $compiled_content;
 
