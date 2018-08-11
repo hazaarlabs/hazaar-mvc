@@ -29,7 +29,8 @@ class Smarty {
         'foreach',
         'foreachelse',
         'ldelim',
-        'rdelim'
+        'rdelim',
+        'capture'
     );
 
     static private $modifiers = array('date_format', 'capitalize');
@@ -41,6 +42,8 @@ class Smarty {
     private $__section_stack = array();
 
     private $__foreach_stack = array();
+
+    private $__capture_stack = array();
 
     public $ldelim = '{';
 
@@ -71,7 +74,7 @@ class Smarty {
             'smarty' => array(
                 'now' => new \Hazaar\Date(),
                 'const' => get_defined_constants(),
-                'capture' => null,
+                'capture' => array(),
                 'config' => $app->config->toArray(),
                 'section' => array(),
                 'foreach' => array(),
@@ -137,7 +140,7 @@ class Smarty {
 
     }
 
-    private function setType($value, $type = 'string', $args = null){
+    protected function setType($value, $type = 'string', $args = null){
 
         switch($type){
 
@@ -339,31 +342,31 @@ class Smarty {
 
     }
 
-    private function compileIF($params){
+    protected function compileIF($params){
 
         return '<?php if(@' . $this->compilePARAMS($params) . '): ?>';
 
     }
 
-    private function compileELSEIF($params){
+    protected function compileELSEIF($params){
 
         return '<?php elseif(@' . $this->compilePARAMS($params) . '): ?>';
 
     }
 
-    private function compileELSE($params){
+    protected function compileELSE($params){
 
         return '<?php else: ?>';
 
     }
 
-    private function compileENDIF($tag){
+    protected function compileENDIF($tag){
 
         return '<?php endif; ?>';
 
     }
 
-    private function compileSECTION($params){
+    protected function compileSECTION($params){
 
         $parts = preg_split('/\s+/', $params);
 
@@ -401,7 +404,7 @@ class Smarty {
 
     }
 
-    private function compileSECTIONELSE($tag){
+    protected function compileSECTIONELSE($tag){
 
         end($this->__section_stack);
 
@@ -411,7 +414,7 @@ class Smarty {
 
     }
 
-    private function compileENDSECTION($tag){
+    protected function compileENDSECTION($tag){
 
         $section = array_pop($this->__section_stack);
 
@@ -422,13 +425,13 @@ class Smarty {
 
     }
 
-    private function compileURL($tag){
+    protected function compileURL($tag){
 
         return '<?php echo @$this->url(\'' .$this->compileVARS(trim($tag, "'")) . '\');?>';
 
     }
 
-    public function compileFOREACH($params){
+    protected function compileFOREACH($params){
 
         $params = $this->parsePARAMS($params);
 
@@ -473,7 +476,7 @@ class Smarty {
 
     }
 
-    public function compileFOREACHELSE($tag){
+    protected function compileFOREACHELSE($tag){
 
         end($this->__foreach_stack);
 
@@ -483,7 +486,7 @@ class Smarty {
 
     }
 
-    public function compileENDFOREACH($tag){
+    protected function compileENDFOREACH($tag){
 
         $loop = array_pop($this->__foreach_stack);
 
@@ -494,15 +497,41 @@ class Smarty {
 
     }
 
-    public function compileLDELIM($tag){
+    protected function compileLDELIM($tag){
 
         return $this->ldelim;
 
     }
 
-    public function compileRDELIM($tag){
+    protected function compileRDELIM($tag){
 
         return $this->rdelim;
+
+    }
+
+    protected function compileCAPTURE($params){
+
+        $params = $this->parsePARAMS($params);
+
+        if(!array_key_exists('name', $params))
+            return '';
+
+        $this->__capture_stack[] = $params;
+
+        return '<?php ob_start(); ?>';
+
+    }
+
+    protected function compileENDCAPTURE(){
+
+        $params = array_pop($this->__capture_stack);
+
+        $code = '<?php $' . $this->compileVAR('smarty.capture.' . $params['name']);
+
+        if(array_key_exists('assign', $params))
+            $code .= ' = $' . $this->compileVAR($params['assign']);
+
+        return $code . ' = ob_get_clean(); ?>';
 
     }
 
