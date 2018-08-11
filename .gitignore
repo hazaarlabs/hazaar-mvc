@@ -12,3 +12,5 @@ nbproject
 tmp/
 vendor/
 composer.lock
+
+*.user
