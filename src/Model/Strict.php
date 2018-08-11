@@ -848,13 +848,13 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @since 1.0.0
      */
-    public function toArray($disable_callbacks = false, $depth = null, $show_hidden = true) {
+    public function toArray($disable_callbacks = false, $depth = null, $show_hidden = true, $export_data_binder = false) {
 
-        return $this->resolveArray($this, $disable_callbacks, $depth, $show_hidden);
+        return $this->resolveArray($this, $disable_callbacks, $depth, $show_hidden, $export_data_binder);
 
     }
 
-    private function resolveArray($array, $disable_callbacks = false, $depth = null, $show_hidden = false) {
+    private function resolveArray($array, $disable_callbacks = false, $depth = null, $show_hidden = false, $export_data_binder = true) {
 
         $result = array();
 
@@ -904,15 +904,15 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                 if ($value instanceof Strict) {
 
-                    $value = $value->toArray($disable_callbacks, $next, $show_hidden);
+                    $value = $value->toArray($disable_callbacks, $next, $show_hidden, $export_data_binder);
 
                 } elseif ($value instanceof DataBinderValue) {
 
-                    $value = $value->toArray();
+                    $value = ($export_data_binder ? $value->toArray() : $value->value);
 
                 } elseif (is_array($value) || $value instanceof ChildArray) {
 
-                    $value = $this->resolveArray($value, $disable_callbacks, $next, $show_hidden);
+                    $value = $this->resolveArray($value, $disable_callbacks, $next, $show_hidden, $export_data_binder);
 
                 }
 
@@ -922,6 +922,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                 $value = '';
 
             $result[$key] = $value;
+
         }
 
         $this->disable_callbacks = $callback_state;
