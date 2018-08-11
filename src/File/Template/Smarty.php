@@ -56,13 +56,8 @@ class Smarty extends \Hazaar\Template\Smarty {
 
             $cache_file = $cache_dir->get($cache_id . '.tpl');
 
-            if($cache_file->exists() && $cache_file->mtime() > $this->__source_file->mtime()){
-
-                $this->__compiled_content = $cache_file->get_contents();
-
-                return true;
-
-            }
+            if($cache_file->exists() && $cache_file->mtime() > $this->__source_file->mtime())
+                return $cache_file->get_contents();
 
         }
 
