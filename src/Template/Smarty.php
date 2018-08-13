@@ -30,7 +30,10 @@ class Smarty {
         'foreachelse',
         'ldelim',
         'rdelim',
-        'capture'
+        'capture',
+
+        //Hybrid Smarty 3.0 Bits
+        'function'
     );
 
     static private $modifiers = array('date_format', 'capitalize');
@@ -38,6 +41,8 @@ class Smarty {
     protected $__content = null;
 
     protected $__compiled_content = null;
+
+    protected $__custom_functions = array();
 
     private $__section_stack = array();
 
@@ -215,6 +220,10 @@ class Smarty {
                 $func = 'compile' . str_replace('/', 'END', strtoupper($matches[2]));
 
                 $replacement = $this->$func($matches[3]);
+
+            }elseif(array_key_exists($matches[2], $this->__custom_functions)){
+
+                $replacement = $this->compileCUSTOMFUNC($matches[2], $matches[3]);
 
             }
 
@@ -540,6 +549,55 @@ class Smarty {
             $code .= ' = $' . $this->compileVAR($params['assign']);
 
         return $code . ' = ob_get_clean(); ?>';
+
+    }
+
+    protected function compileFUNCTION($params){
+
+        $params = $this->parsePARAMS($params);
+
+        if(!($name = ake($params, 'name')) || array_key_exists($name, $this->__custom_functions))
+            return null;
+
+        unset($params['name']);
+
+        $this->__custom_functions[$name] = $params;
+
+        $code = "<?php function __func_{$name}(\$params){ global \$smarty; extract(\$params); ?>";
+
+        return $code;
+
+    }
+
+    protected function compileENDFUNCTION(){
+
+        return '<?php } ?>';
+
+    }
+
+    protected function compileCUSTOMFUNC($name, $params){
+
+        if(!array_key_exists($name, $this->__custom_functions))
+            return null;
+
+        $code = "<?php __func_{$name}(";
+
+        $params = array_merge($this->__custom_functions[$name], $this->parsePARAMS($params));
+
+        if(count($params) > 0){
+
+            $parts = array();
+
+            foreach($params as $key => $value)
+                $parts[] = "'$key' => " . $this->compileVAR($value);
+
+            $code .= '[' . implode(', ', $parts) . ']';
+
+        }
+
+        $code .= "); ?>";
+
+        return $code;
 
     }
 
