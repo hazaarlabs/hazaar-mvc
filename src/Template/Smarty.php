@@ -31,6 +31,7 @@ class Smarty {
         'ldelim',
         'rdelim',
         'capture',
+        'assign',
 
         //Hybrid Smarty 3.0 Bits
         'function'
@@ -549,6 +550,17 @@ class Smarty {
             $code .= ' = $' . $this->compileVAR($params['assign']);
 
         return $code . ' = ob_get_clean(); ?>';
+
+    }
+
+    protected function compileASSIGN($params){
+
+        $params = $this->parsePARAMS($params);
+
+        if(!(array_key_exists('var', $params) && array_key_exists('value', $params)))
+            return null;
+
+        return "<?php $" . trim($params['var'], "'") . "={$params['value']};?>";
 
     }
 
