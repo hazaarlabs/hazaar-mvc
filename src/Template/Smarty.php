@@ -181,7 +181,7 @@ class Smarty {
 
         $compiled_content = preg_replace(array('/\<\?/', '/\?\>/'), array('&lt;?','?&gt;'), $this->__content);
 
-        $regex = '/\{([#\$][^\}]+|(\/?\w+)\s*([^\}]*))\}(\r?\n)?/';
+        $regex = '/\{([#\$\*][^\}]+|(\/?\w+)\s*([^\}]*))\}(\r?\n)?/';
 
         $literal = false;
 
