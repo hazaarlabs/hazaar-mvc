@@ -25,7 +25,10 @@ class Modifier {
         'strip_tags',
         'truncate',
         'upper',
-        'wordwrap'
+        'wordwrap',
+
+        //Custom Hazaar MVC Modifiers
+        'implode'
     );
 
     static public function has_function($func){
@@ -198,6 +201,15 @@ class Modifier {
     public function wordwrap($string, $width = 80, $break = "\n", $cut = true){
 
         return wordwrap($string, $width, $break, $cut);
+
+    }
+
+    public function implode($array, $glue = ''){
+
+        if(is_array($array))
+            return implode($glue, $array);
+
+        return $array;
 
     }
 
