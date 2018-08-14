@@ -680,7 +680,7 @@ class Smarty {
 
             if(array_key_exists($name, $params)){
 
-                $value = $params[$name];
+                $value = $this->compilePARAMS($params[$name]);
 
             }elseif($p->isDefaultValueAvailable()){
 
