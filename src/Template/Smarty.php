@@ -32,6 +32,7 @@ class Smarty {
         'rdelim',
         'capture',
         'assign',
+        'include',
 
         //Hybrid Smarty 3.0 Bits
         'function',
@@ -130,6 +131,8 @@ class Smarty {
 
             private \$variables = array();
 
+            private \$params = array();
+
             private \$functions = array();
 
             function __construct(){ \$this->modify = new \Hazaar\Template\Smarty\Modifier; }
@@ -138,13 +141,23 @@ class Smarty {
 
             public function render(\$params){
 
-                extract(\$params);
+                extract(\$this->params = \$params);
 
                 ?>{$this->__compiled_content}<?php
 
             }
 
             private function url(\$path = null){ return new \Hazaar\Application\Url(urldecode(\$path)); }
+
+            private function include(\$file, \$params = array()){
+
+                \$template = new \\Hazaar\\File\\Template\\Smarty(getcwd() . DIRECTORY_SEPARATOR . \$file);
+
+                \$params = (is_array(\$params) ? array_merge(\$this->params, \$params) : \$this->params);
+
+                echo \$template->render(\$params);
+
+            }
 
         }";
 
@@ -714,6 +727,25 @@ class Smarty {
             return null;
 
         return $this->compileCUSTOMFUNC($call_params['name'], $params);
+
+    }
+
+    protected function compileINCLUDE($params){
+
+        $params = $this->parsePARAMS($params);
+
+        $file = $params['file'];
+
+        unset($params['file']);
+
+        $include_params = array();
+
+        foreach($params as $key => $value)
+            $include_params[] = $this->compilePARAMS($key) . ' => ' . $this->compileVAR($value);
+
+        $include_params = '[' . implode(', ', $include_params) . ']';
+
+        return "<?php \$this->include($file, $include_params); ?>";
 
     }
 
