@@ -34,7 +34,8 @@ class Smarty {
         'assign',
 
         //Hybrid Smarty 3.0 Bits
-        'function'
+        'function',
+        'call'
     );
 
     static private $modifiers = array('date_format', 'capitalize');
@@ -697,6 +698,22 @@ class Smarty {
         $params = implode(', ', $func_params);
 
         return "<?php echo call_user_func_array(array(\$this->custom_handler, '$method'), array($params)); ?>";
+
+    }
+
+    protected function compileCALL($params){
+
+        $call_params = $this->parsePARAMS($params);
+
+        if(isset($call_params[0]))
+            $call_params['name'] = $call_params[0];
+
+        $params = substr($params, strpos($params, ' ') + 1);
+
+        if(!isset($call_params['name']))
+            return null;
+
+        return $this->compileCUSTOMFUNC($call_params['name'], $params);
 
     }
 
