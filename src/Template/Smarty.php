@@ -135,6 +135,8 @@ class Smarty {
 
             private \$functions = array();
 
+            private \$custom_handler;
+
             function __construct(){ \$this->modify = new \Hazaar\Template\Smarty\Modifier; }
 
             public function setCustomHandler(\$object){ \$this->custom_handler = \$object; }
@@ -151,7 +153,20 @@ class Smarty {
 
             private function include(\$file, \$params = array()){
 
-                \$template = new \\Hazaar\\File\\Template\\Smarty(getcwd() . DIRECTORY_SEPARATOR . \$file);
+                if(is_object(\$this->custom_handler) && method_exists(\$this->custom_handler, 'smarty_include')){
+
+                    \$content = \$this->custom_handler->smarty_include(\$file);
+
+                }else{
+
+                    if(\$file[0] !== '/' && !preg_match('/^\w+\\:\\/\\//', \$file))
+                        \$file = getcwd() . DIRECTORY_SEPARATOR . \$file;
+
+                    \$content = file_get_contents(\$file);
+
+                }
+
+                \$template = new \\Hazaar\\Template\\Smarty(\$content);
 
                 \$params = (is_array(\$params) ? array_merge(\$this->params, \$params) : \$this->params);
 
