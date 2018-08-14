@@ -45,6 +45,8 @@ class Smarty {
 
     protected $__custom_functions = array();
 
+    private   $__custom_function_handler;
+
     private $__section_stack = array();
 
     private $__foreach_stack = array();
@@ -68,6 +70,13 @@ class Smarty {
         $this->__content = (string)$content;
 
         $this->__compiled_content = null;
+
+    }
+
+    public function registerFunctionHandler($object){
+
+        if(is_object($object))
+            $this->__custom_function_handler = $object;
 
     }
 
@@ -120,7 +129,11 @@ class Smarty {
 
             private \$variables = array();
 
+            private \$functions = array();
+
             function __construct(){ \$this->modify = new \Hazaar\Template\Smarty\Modifier; }
+
+            public function setCustomHandler(\$object){ \$this->custom_handler = \$object; }
 
             public function render(\$params){
 
@@ -139,6 +152,9 @@ class Smarty {
         $obj = new $id;
 
         ob_start();
+
+        if($this->__custom_function_handler)
+            $obj->setCustomHandler($this->__custom_function_handler);
 
         $obj->render($params);
 
@@ -191,7 +207,9 @@ class Smarty {
 
         $literal = false;
 
-        $compiled_content = preg_replace_callback($regex, function($matches) use(&$literal){
+        $strip = false;
+
+        $compiled_content = preg_replace_callback($regex, function($matches) use(&$literal, &$strip){
 
             $replacement = '';
 
@@ -226,9 +244,19 @@ class Smarty {
 
                 $replacement = $this->compileCUSTOMFUNC($matches[2], $matches[3]);
 
+            }elseif(is_object($this->__custom_function_handler) && method_exists($this->__custom_function_handler, $matches[2])){
+
+                $replacement = $this->compileCUSTOMHANDLERFUNC($matches[2], $matches[3]);
+
+            }elseif(preg_match('/(\/?)strip/', $matches[1], $flags)){
+
+                $strip = ($flags[1] !== '/');
+
             }
 
-            if(isset($matches[4]))
+            if($strip === true)
+                $replacement = trim($replacement);
+            elseif(isset($matches[4]))
                 $replacement .= " \r\n";
 
             return $replacement;
@@ -349,10 +377,33 @@ class Smarty {
 
     protected function compilePARAMS($params){
 
-        if(preg_match_all('/\$\w[\w\.\$]+/', $params, $matches)){
+        if(is_array($params)){
 
-            foreach($matches[0] as $match)
-                $params = str_replace($match, $this->compileVAR($match), $params);
+            $out = array();
+
+            foreach($params as $p)
+                $out[] = $this->compilePARAMS($p);
+
+            return implode(', ', $out);
+
+        }
+
+        if(is_string($params)){
+
+            if(preg_match_all('/\$\w[\w\.\$]+/', $params, $matches)){
+
+                foreach($matches[0] as $match)
+                    $params = str_replace($match, $this->compileVAR($match), $params);
+
+            }else $params = "'$params'";
+
+        }elseif(is_int($params) || is_float($params)){
+
+            $params = (string)$params;
+
+        }elseif(is_bool($params)){
+
+            $params = $params ? 'true' : 'false';
 
         }
 
@@ -575,7 +626,7 @@ class Smarty {
 
         $this->__custom_functions[$name] = $params;
 
-        $code = "<?php function __func_{$name}(\$params){ global \$smarty; extract(\$params); ?>";
+        $code = "<?php (\$this->functions['{$name}'] = function(\$params){ global \$smarty; extract(\$params); ?>";
 
         return $code;
 
@@ -583,7 +634,7 @@ class Smarty {
 
     protected function compileENDFUNCTION(){
 
-        return '<?php } ?>';
+        return '<?php })->bindTo($this); ?>';
 
     }
 
@@ -592,7 +643,7 @@ class Smarty {
         if(!array_key_exists($name, $this->__custom_functions))
             return null;
 
-        $code = "<?php __func_{$name}(";
+        $code = "<?php \$this->functions['{$name}'](";
 
         $params = array_merge($this->__custom_functions[$name], $this->parsePARAMS($params));
 
@@ -610,6 +661,42 @@ class Smarty {
         $code .= "); ?>";
 
         return $code;
+
+    }
+
+    protected function compileCUSTOMHANDLERFUNC($method, $params){
+
+        $params = $this->parsePARAMS($params);
+
+        $reflect = new \ReflectionMethod($this->__custom_function_handler, $method);
+
+        $func_params = array();
+
+        foreach($reflect->getParameters() as $p){
+
+            $name = $p->getName();
+
+            $value = 'null';
+
+            if(array_key_exists($name, $params)){
+
+                $value = $params[$name];
+
+            }elseif($p->isDefaultValueAvailable()){
+
+                $value = ake($params, $p->getName(), ($p->isDefaultValueAvailable() ? $p->getDefaultValue() : null));
+
+                $value = $this->compilePARAMS($value);
+
+            }
+
+            $func_params[$p->getPosition()] = $value;
+
+        }
+
+        $params = implode(', ', $func_params);
+
+        return "<?php echo call_user_func_array(array(\$this->custom_handler, '$method'), array($params)); ?>";
 
     }
 
