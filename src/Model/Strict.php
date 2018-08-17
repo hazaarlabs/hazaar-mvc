@@ -779,7 +779,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                 if ($this->ignore_undefined && !array_key_exists($key, $this->values))
                     continue;
 
-                if ($this->values[$key] instanceof Strict) {
+                if (array_key_exists($key, $this->values) && $this->values[$key] instanceof Strict) {
 
                     $this->values[$key]->extend($value, $exec_filters, $ignore_keys);
 
