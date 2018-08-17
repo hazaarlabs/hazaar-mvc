@@ -1108,6 +1108,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             }
 
+            if(array_key_exists('export', $key_def) && is_callable($key_def['export']))
+                $value = $key_def['export']($value, $key);
+
             $values[$key] = $key_def;
 
             if($value instanceof Strict){
