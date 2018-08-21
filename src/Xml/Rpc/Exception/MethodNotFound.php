@@ -2,7 +2,7 @@
 
 namespace Hazaar\Xml\Rpc\Exception;
 
-class InvalidRequest extends \Hazaar\Exception {
+class MethodNotFound extends \Hazaar\Exception {
 
     function __construct($method) {
 
