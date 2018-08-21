@@ -26,20 +26,24 @@
  */
 function ake($array, $key, $default = NULL, $non_empty = FALSE) {
 
-    if ((is_array($array) || $array instanceof \ArrayAccess)
-        && isset($array[$key])
-        && $array[$key] !== NULL
-        && (!$non_empty || ($non_empty && (is_string($array[$key]) ? trim($array[$key]) : $array[$key]))))
-        return $array[$key];
-
-    if ($array instanceof \Hazaar\Model\Strict)
-        return $array->ake($key, $default, $non_empty);
-
-    if(is_object($array)
-        && property_exists($array, $key)
-        && (!$non_empty || ($non_empty && trim($array->$key) !== NULL)))
-        return $array->$key;
-
+    if(is_string($key) || is_int($key)){
+        
+        if ((is_array($array) || $array instanceof \ArrayAccess)
+            && isset($array[$key])
+            && $array[$key] !== NULL
+            && (!$non_empty || ($non_empty && (is_string($array[$key]) ? trim($array[$key]) : $array[$key]))))
+            return $array[$key];
+    
+        if ($array instanceof \Hazaar\Model\Strict)
+            return $array->ake($key, $default, $non_empty);
+    
+        if(is_object($array)
+            && property_exists($array, $key)
+            && (!$non_empty || ($non_empty && trim($array->$key) !== NULL)))
+            return $array->$key;
+    
+    }
+    
     return $default;
 
 }
@@ -1471,9 +1475,9 @@ function recursive_iterator_to_array(\Traversable $it) {
  * Compares `array1` against `array2` and returns the difference. Unlike array_diff() the array keys are also used
  * in the comparison.  Also, unlike the PHP array_diff_assoc() function, this function recurse into child arrays.
  *
- * @param array array1 The array to compare from.
+ * @param array $array1 The array to compare from.
  * 
- * @param array array2 The array to compare against.
+ * @param array $array2 The array to compare against.
  * 
  * @param array ... More arrays to compare against.
  * 

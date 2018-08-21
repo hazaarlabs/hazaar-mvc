@@ -307,15 +307,21 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             foreach($parts as $key => $part){
 
-                if(!$value instanceof Strict){
+                if($value instanceof Strict){
+
+                    $value = $value->get($part, (($lastKey === $key) ? $exec_filters : false));
+
+                }elseif(is_array($value)){
+
+                    $value = ake($value, $part);
+
+                }else{
 
                     $null = null;
 
                     return $null;
 
                 }
-
-                $value = $value->get($part, (($lastKey === $key) ? $exec_filters : false));
 
             }
 
@@ -770,10 +776,10 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                 if(is_array($ignore_keys) && in_array($key, $ignore_keys))
                     continue;
 
-                if (!array_key_exists($key, $this->values))
+                if ($this->ignore_undefined && !array_key_exists($key, $this->values))
                     continue;
 
-                if ($this->values[$key] instanceof Strict) {
+                if (array_key_exists($key, $this->values) && $this->values[$key] instanceof Strict) {
 
                     $this->values[$key]->extend($value, $exec_filters, $ignore_keys);
 
@@ -842,13 +848,13 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @since 1.0.0
      */
-    public function toArray($disable_callbacks = false, $depth = null, $show_hidden = true) {
+    public function toArray($disable_callbacks = false, $depth = null, $show_hidden = true, $export_data_binder = false) {
 
-        return $this->resolveArray($this, $disable_callbacks, $depth, $show_hidden);
+        return $this->resolveArray($this, $disable_callbacks, $depth, $show_hidden, $export_data_binder);
 
     }
 
-    private function resolveArray($array, $disable_callbacks = false, $depth = null, $show_hidden = false) {
+    private function resolveArray($array, $disable_callbacks = false, $depth = null, $show_hidden = false, $export_data_binder = true) {
 
         $result = array();
 
@@ -898,15 +904,15 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                 if ($value instanceof Strict) {
 
-                    $value = $value->toArray($disable_callbacks, $next, $show_hidden);
+                    $value = $value->toArray($disable_callbacks, $next, $show_hidden, $export_data_binder);
 
                 } elseif ($value instanceof DataBinderValue) {
 
-                    $value = $value->toArray();
+                    $value = ($export_data_binder ? $value->toArray() : $value->value);
 
                 } elseif (is_array($value) || $value instanceof ChildArray) {
 
-                    $value = $this->resolveArray($value, $disable_callbacks, $next, $show_hidden);
+                    $value = $this->resolveArray($value, $disable_callbacks, $next, $show_hidden, $export_data_binder);
 
                 }
 
@@ -916,6 +922,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                 $value = '';
 
             $result[$key] = $value;
+
         }
 
         $this->disable_callbacks = $callback_state;
@@ -1101,6 +1108,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             }
 
+            if(array_key_exists('export', $key_def) && is_callable($key_def['export']))
+                $value = $key_def['export']($value, $key);
+
             $values[$key] = $key_def;
 
             if($value instanceof Strict){
@@ -1266,6 +1276,14 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             $this->extend($values);
 
         return $result;
+
+    }
+
+    public function allowUndefined($toggle = true){
+
+        $this->allow_undefined = $toggle;
+
+        $this->ignore_undefined = !$toggle;
 
     }
 
