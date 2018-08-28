@@ -55,6 +55,21 @@ class Protocol {
         0x34 => 'KILL',         //Kill a dynamic service instance
         0x35 => 'SIGNAL',       //Signal between a dyanmic service and it's client
 
+        //KV STORAGE MESSAGES
+        0x40 => 'KVGET',          //Get a value by key
+        0x41 => 'KVSET',          //Set a value by key
+        0x42 => 'KVHAS',          //Test if a key has a value
+        0x43 => 'KVDEL',          //Delete a value
+        0x44 => 'KVLIST',         //List all keys/values in the selected namespace
+        0x45 => 'KVCLEAR',        //Clear all values in the selected namespace
+        0x46 => 'KVPULL',         //Return and remove a key value
+        0x47 => 'KVPUSH',         //Append one or more elements on to the end of a list
+        0x48 => 'KVPOP',          //Remove and return the last element in a list
+        0x49 => 'KVSHIFT',        //Remove and return the first element in a list
+        0x50 => 'KVUNSHIFT',      //Prepend one or more elements to the beginning of a list
+        0x51 => 'KVINCR',         //Increment an integer value
+        0x52 => 'KVDECR',         //Decrement an integer value
+
         //LOGGING/OUTPUT MESSAGES
         0x90 => 'LOG',          //Generic log message
         0x91 => 'DEBUG'
@@ -126,7 +141,7 @@ class Protocol {
 
     }
 
-    public function encode($type, $payload = array()) {
+    public function encode($type, $payload = null) {
 
         if(($type = $this->check($type)) === false)
             return false;
@@ -137,7 +152,7 @@ class Protocol {
             'TME' => time()
         );
 
-        if($payload)
+        if($payload !== null)
             $packet->PLD = $payload;
 
         $packet = json_encode($packet);
