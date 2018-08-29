@@ -69,6 +69,8 @@ class Protocol {
         0x50 => 'KVUNSHIFT',      //Prepend one or more elements to the beginning of a list
         0x51 => 'KVINCR',         //Increment an integer value
         0x52 => 'KVDECR',         //Decrement an integer value
+        0x53 => 'KVKEYS',         //Return all keys in the selected namespace
+        0x54 => 'KVVALS',         //Return all values in the selected namespace
 
         //LOGGING/OUTPUT MESSAGES
         0x90 => 'LOG',          //Generic log message
@@ -132,10 +134,10 @@ class Protocol {
     public function getTypeName($type) {
 
         if(!is_int($type))
-            return $this->error('Bad packet type!');
+            return $this->error('Bad packet type');
 
         if(! array_key_exists($type, $this->typeCodes))
-            return $this->error('Unknown packet type!');
+            return $this->error('Unknown packet type');
 
         return $this->typeCodes[$type];
 
@@ -176,7 +178,7 @@ class Protocol {
 
         //This is a security thing to ensure that the client is connecting to the correct instance of Warlock
         if(! property_exists($packet, 'SID') || $packet->SID != $this->id)
-            return $this->error('Packet decode rejected due to bad SID.');
+            return $this->error('Packet decode rejected due to bad SID');
 
         if(property_exists($packet, 'PLD'))
             $payload = $packet->PLD;
