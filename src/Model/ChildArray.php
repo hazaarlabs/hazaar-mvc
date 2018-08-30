@@ -285,6 +285,17 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
+    public function append($value){
+
+        if(is_array($this->type))
+            $value = new ChildModel($this->type, $value);
+        else
+            DataTypeConverter::convertType($value, $this->type);
+
+        return $this->values[] = $value;
+
+    }
+
     public function toArray($export_data_binder = false, $disable_callbacks = false, $depth = null, $show_hidden = true){
 
         $values = $this->values;
