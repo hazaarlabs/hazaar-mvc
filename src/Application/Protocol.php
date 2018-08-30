@@ -22,9 +22,7 @@ namespace Hazaar\Application;
  */
 class Protocol {
 
-    private $encoded   = true;
-
-    private $typeCodes = array(
+    static public $typeCodes = array(
         //SYSTEM MESSAGES
         0x00 => 'NOOP',         //Null Opperation
         0x01 => 'SYNC',         //Sync client
@@ -81,6 +79,8 @@ class Protocol {
 
     private $last_error;
 
+    private $encoded   = true;
+
     function __construct($id, $encoded = true) {
 
         $this->id = $id;
@@ -106,14 +106,14 @@ class Protocol {
 
         if(is_int($type)){
 
-            if(array_key_exists($type, $this->typeCodes))
+            if(array_key_exists($type, Protocol::$typeCodes))
                 return $type;
 
             return false;
 
         }
 
-        return array_search(strtoupper($type), $this->typeCodes, true);
+        return array_search(strtoupper($type), Protocol::$typeCodes, true);
 
     }
 
@@ -127,7 +127,7 @@ class Protocol {
 
     public function getType($name) {
 
-        return array_search(strtoupper($name), $this->typeCodes);
+        return array_search(strtoupper($name), Protocol::$typeCodes);
 
     }
 
@@ -136,10 +136,10 @@ class Protocol {
         if(!is_int($type))
             return $this->error('Bad packet type');
 
-        if(! array_key_exists($type, $this->typeCodes))
+        if(! array_key_exists($type, Protocol::$typeCodes))
             return $this->error('Unknown packet type');
 
-        return $this->typeCodes[$type];
+        return Protocol::$typeCodes[$type];
 
     }
 
