@@ -95,6 +95,12 @@ class Protocol {
 
     }
 
+    public function encoded(){
+
+        return $this->encoded;
+
+    }
+
     /**
      * Checks that a protocol message type is valid and returns it's numeric value
      *
