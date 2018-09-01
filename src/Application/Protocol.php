@@ -65,10 +65,11 @@ class Protocol {
         0x48 => 'KVPOP',          //Remove and return the last element in a list
         0x49 => 'KVSHIFT',        //Remove and return the first element in a list
         0x50 => 'KVUNSHIFT',      //Prepend one or more elements to the beginning of a list
-        0x51 => 'KVINCR',         //Increment an integer value
-        0x52 => 'KVDECR',         //Decrement an integer value
-        0x53 => 'KVKEYS',         //Return all keys in the selected namespace
-        0x54 => 'KVVALS',         //Return all values in the selected namespace
+        0x51 => 'KVCOUNT',        //Count number of elements in a list
+        0x52 => 'KVINCR',         //Increment an integer value
+        0x53 => 'KVDECR',         //Decrement an integer value
+        0x54 => 'KVKEYS',         //Return all keys in the selected namespace
+        0x55 => 'KVVALS',         //Return all values in the selected namespace
 
         //LOGGING/OUTPUT MESSAGES
         0x90 => 'LOG',          //Generic log message
