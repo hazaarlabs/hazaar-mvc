@@ -553,9 +553,9 @@ dataBinderArray.prototype.populate = function (elements) {
 
 dataBinderArray.prototype.filter = function (cb, saved) {
     var list = [];
-    for (let x in this.elements) {
-        var value = this.elements[x] instanceof dataBinderValue ? this.elements[x].value : this.elements[x];
-        if (cb(value)) list.push(this.elements[x]);
+    for (let x in this._elements) {
+        var value = this._elements[x] instanceof dataBinderValue ? this._elements[x].value : this._elements[x];
+        if (cb(value)) list.push(this_.elements[x]);
     }
     return list;
 };
