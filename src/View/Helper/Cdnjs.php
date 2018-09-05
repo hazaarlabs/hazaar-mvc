@@ -24,6 +24,8 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     static private $cache;
 
+    static private $mutex;
+
     public function import() {
 
         if(!self::$cache instanceof \Hazaar\Btree)
@@ -50,6 +52,35 @@ class Cdnjs extends \Hazaar\View\Helper {
             }
 
         }
+
+    }
+
+    private function lock(){
+
+        if(Cdnjs::$mutex)
+            return false;
+
+        $lock_file = \Hazaar\Application::getInstance()->runtimePath('cdnjs.lck');
+
+        //hack to get this instance to block until other instances have finished using a MUTEX file.
+        Cdnjs::$mutex = fopen($lock_file, 'w');
+
+        flock(Cdnjs::$mutex, LOCK_EX);
+
+        return true;
+
+    }
+
+    public function __destruct(){
+
+        if(!Cdnjs::$mutex)
+            return;
+
+        flock(Cdnjs::$mutex, LOCK_UN);
+
+        fclose(Cdnjs::$mutex);
+
+        Cdnjs::$mutex = null;
 
     }
 
@@ -171,6 +202,14 @@ class Cdnjs extends \Hazaar\View\Helper {
 
         if($force_reload === false && ($info = self::$cache->get($name)) !== null)
             return $info;
+
+        if($this->lock() === true){
+
+            //Check again if we blocked getting the lock as someone else may have written the info
+            if(($info = self::$cache->get($name)) !== null)
+                return $info;
+
+        }
 
         if(!($info = json_decode(file_get_contents('https://api.cdnjs.com/libraries/' . $name), true)))
             throw new \Exception('CDNJS: Error parsing package info!');

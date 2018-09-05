@@ -666,8 +666,12 @@ class Application {
 
                     $container = new \Hazaar\Warlock\Container($this, $protocol);
 
-                    if($container->connect($payload->application_name, '127.0.0.1',
-                        $payload->server_port, $payload->job_id, $payload->access_key)){
+                    $headers = array(
+                        'X-WARLOCK-JOB-ID' => $payload->job_id,
+                        'X-WARLOCK-ACCESS-KEY' => base64_encode($payload->access_key)
+                    );
+
+                    if($container->connect($payload->application_name, '127.0.0.1', $payload->server_port, $headers)){
 
                         $code = $container->exec($payload->function, ake($payload, 'params'));
 
@@ -698,8 +702,12 @@ class Application {
 
                         $service = new $serviceClass($this, $protocol);
 
-                        if($service->connect($payload->application_name, '127.0.0.1',
-                            $payload->server_port, $payload->job_id, $payload->access_key)){
+                        $headers = array(
+                            'X-WARLOCK-JOB-ID' => $payload->job_id,
+                            'X-WARLOCK-ACCESS-KEY' => base64_encode($payload->access_key)
+                        );
+
+                        if($service->connect($payload->application_name, '127.0.0.1', $payload->server_port, $headers)){
 
                             $code = call_user_func(array($service, 'main'), ake($payload, 'params'), ake($payload, 'dynamic', false));
 
