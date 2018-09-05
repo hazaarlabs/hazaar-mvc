@@ -379,6 +379,11 @@ dataBinder.prototype.get = function (key) {
         return this._attributes[key];
 };
 
+dataBinder.prototype.empty = function () {
+    for (x in this._elements)
+        this._elements[x].empty();
+};
+
 dataBinderArray.prototype._init = function (data, name, parent) {
     if (!parent) throw "dataBinderArray requires a parent!";
     this._name = name;
@@ -566,4 +571,9 @@ dataBinderArray.prototype.__nullify = function (value) {
 
 dataBinderArray.prototype.watch = function (cb) {
     if (typeof cb === 'function') this._watchers.push(cb);
+};
+
+dataBinderArray.prototype.empty = function () {
+    for (x in this._elements)
+        this._elements[x].empty();
 };
