@@ -175,6 +175,12 @@ dataBinderValue.prototype.empty = function () {
     return this.set(null, null, null);
 };
 
+dataBinderValue.prototype.update = function () {
+    var attr_name = this._parent._attr_name(this._name);
+    this._parent._update(attr_name, true);
+    this._parent._trigger(this._name, this._value);
+};
+
 dataBinder.prototype._init = function (data, name, parent) {
     this._jquery = jQuery({});
     this._name = name;
