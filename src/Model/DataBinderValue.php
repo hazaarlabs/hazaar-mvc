@@ -50,10 +50,10 @@ class DataBinderValue implements \JsonSerializable {
             if(array_key_exists('__hz_other', $value))
                 $other = $value['__hz_other'];
 
-            if(array_key_exists('__hz_value', $value))
+            if(array_key_exists('__hz_label', $value))
                 $label = $value['__hz_label'];
 
-            if(array_key_exists('__hz_label', $value))
+            if(array_key_exists('__hz_value', $value))
                 $value = $value['__hz_value'];
 
         }elseif($value instanceof \stdClass){
@@ -61,10 +61,10 @@ class DataBinderValue implements \JsonSerializable {
             if(property_exists($value, '__hz_other'))
                 $other = $value->__hz_other;
 
-            if(property_exists($value, '__hz_value'))
+            if(property_exists($value, '__hz_label'))
                 $label = $value->__hz_label;
 
-            if(property_exists($value, '__hz_label'))
+            if(property_exists($value, '__hz_value'))
                 $value = $value->__hz_value;
 
         }

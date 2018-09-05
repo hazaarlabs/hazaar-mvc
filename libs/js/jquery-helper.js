@@ -166,13 +166,19 @@ dataBinderValue.prototype.set = function (value, label, other) {
 };
 
 dataBinderValue.prototype.save = function (no_label) {
-    if (((this.value !== null && this.label !== null) || (this.value === null && this.other !== null)) && no_label !== true)
+    if (((this.value !== null && this.label !== null && this.label !== '') || (this.value === null && this.other !== null)) && no_label !== true)
         return { "__hz_value": this.value, "__hz_label": this.label, "__hz_other": this.other };
     return this.value;
 };
 
 dataBinderValue.prototype.empty = function () {
     return this.set(null, null, null);
+};
+
+dataBinderValue.prototype.update = function () {
+    var attr_name = this._parent._attr_name(this._name);
+    this._parent._update(attr_name, true);
+    this._parent._trigger(this._name, this._value);
 };
 
 dataBinder.prototype._init = function (data, name, parent) {
@@ -379,6 +385,11 @@ dataBinder.prototype.get = function (key) {
         return this._attributes[key];
 };
 
+dataBinder.prototype.empty = function () {
+    for (x in this._elements)
+        this._elements[x].empty();
+};
+
 dataBinderArray.prototype._init = function (data, name, parent) {
     if (!parent) throw "dataBinderArray requires a parent!";
     this._name = name;
@@ -553,9 +564,9 @@ dataBinderArray.prototype.populate = function (elements) {
 
 dataBinderArray.prototype.filter = function (cb, saved) {
     var list = [];
-    for (let x in this.elements) {
-        var value = this.elements[x] instanceof dataBinderValue ? this.elements[x].value : this.elements[x];
-        if (cb(value)) list.push(this.elements[x]);
+    for (let x in this._elements) {
+        var value = this._elements[x] instanceof dataBinderValue ? this._elements[x].value : this._elements[x];
+        if (cb(value)) list.push(this_.elements[x]);
     }
     return list;
 };
@@ -566,4 +577,9 @@ dataBinderArray.prototype.__nullify = function (value) {
 
 dataBinderArray.prototype.watch = function (cb) {
     if (typeof cb === 'function') this._watchers.push(cb);
+};
+
+dataBinderArray.prototype.empty = function () {
+    for (x in this._elements)
+        this._elements[x].empty();
 };

@@ -22,9 +22,7 @@ namespace Hazaar\Application;
  */
 class Protocol {
 
-    private $encoded   = true;
-
-    private $typeCodes = array(
+    static public $typeCodes = array(
         //SYSTEM MESSAGES
         0x00 => 'NOOP',         //Null Opperation
         0x01 => 'SYNC',         //Sync client
@@ -55,6 +53,24 @@ class Protocol {
         0x34 => 'KILL',         //Kill a dynamic service instance
         0x35 => 'SIGNAL',       //Signal between a dyanmic service and it's client
 
+        //KV STORAGE MESSAGES
+        0x40 => 'KVGET',          //Get a value by key
+        0x41 => 'KVSET',          //Set a value by key
+        0x42 => 'KVHAS',          //Test if a key has a value
+        0x43 => 'KVDEL',          //Delete a value
+        0x44 => 'KVLIST',         //List all keys/values in the selected namespace
+        0x45 => 'KVCLEAR',        //Clear all values in the selected namespace
+        0x46 => 'KVPULL',         //Return and remove a key value
+        0x47 => 'KVPUSH',         //Append one or more elements on to the end of a list
+        0x48 => 'KVPOP',          //Remove and return the last element in a list
+        0x49 => 'KVSHIFT',        //Remove and return the first element in a list
+        0x50 => 'KVUNSHIFT',      //Prepend one or more elements to the beginning of a list
+        0x51 => 'KVCOUNT',        //Count number of elements in a list
+        0x52 => 'KVINCR',         //Increment an integer value
+        0x53 => 'KVDECR',         //Decrement an integer value
+        0x54 => 'KVKEYS',         //Return all keys in the selected namespace
+        0x55 => 'KVVALS',         //Return all values in the selected namespace
+
         //LOGGING/OUTPUT MESSAGES
         0x90 => 'LOG',          //Generic log message
         0x91 => 'DEBUG'
@@ -63,6 +79,8 @@ class Protocol {
     private $id;
 
     private $last_error;
+
+    private $encoded   = true;
 
     function __construct($id, $encoded = true) {
 
@@ -78,6 +96,12 @@ class Protocol {
 
     }
 
+    public function encoded(){
+
+        return $this->encoded;
+
+    }
+
     /**
      * Checks that a protocol message type is valid and returns it's numeric value
      *
@@ -89,14 +113,14 @@ class Protocol {
 
         if(is_int($type)){
 
-            if(array_key_exists($type, $this->typeCodes))
+            if(array_key_exists($type, Protocol::$typeCodes))
                 return $type;
 
             return false;
 
         }
 
-        return array_search(strtoupper($type), $this->typeCodes, true);
+        return array_search(strtoupper($type), Protocol::$typeCodes, true);
 
     }
 
@@ -110,23 +134,23 @@ class Protocol {
 
     public function getType($name) {
 
-        return array_search(strtoupper($name), $this->typeCodes);
+        return array_search(strtoupper($name), Protocol::$typeCodes);
 
     }
 
     public function getTypeName($type) {
 
         if(!is_int($type))
-            return $this->error('Bad packet type!');
+            return $this->error('Bad packet type');
 
-        if(! array_key_exists($type, $this->typeCodes))
-            return $this->error('Unknown packet type!');
+        if(! array_key_exists($type, Protocol::$typeCodes))
+            return $this->error('Unknown packet type');
 
-        return $this->typeCodes[$type];
+        return Protocol::$typeCodes[$type];
 
     }
 
-    public function encode($type, $payload = array()) {
+    public function encode($type, $payload = null) {
 
         if(($type = $this->check($type)) === false)
             return false;
@@ -137,7 +161,7 @@ class Protocol {
             'TME' => time()
         );
 
-        if($payload)
+        if($payload !== null)
             $packet->PLD = $payload;
 
         $packet = json_encode($packet);
@@ -161,7 +185,7 @@ class Protocol {
 
         //This is a security thing to ensure that the client is connecting to the correct instance of Warlock
         if(! property_exists($packet, 'SID') || $packet->SID != $this->id)
-            return $this->error('Packet decode rejected due to bad SID.');
+            return $this->error('Packet decode rejected due to bad SID');
 
         if(property_exists($packet, 'PLD'))
             $payload = $packet->PLD;
