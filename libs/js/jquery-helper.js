@@ -334,6 +334,9 @@ dataBinder.prototype.save = function (no_label) {
 };
 
 dataBinder.prototype.watch = function (key, callback, args) {
+    if (match = key.match(/(\w+)\.([\w\.]*)/))
+        return match[1] in this._attributes && this._attributes[match[1]] instanceof dataBinder
+            ? this._attributes[match[1]].watch(match[2], callback, args) : null;
     if (!(key in this._watchers))
         this._watchers[key] = {};
     var id = "" + this._watchID++;
