@@ -1146,7 +1146,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
 
     public function each(){
 
-        if(!($key = key($this->elements)))
+        if(($key = key($this->elements)) === null)
             return false;
 
         $item = array('key' => $key, 'value' => current($this->elements));
