@@ -241,6 +241,7 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
         configurable: true,
         set: function (value) {
             var attr = this._attributes[key];
+            if (value instanceof dataBinder) value = value.save(); //Export so that we trigger an import to reset the value names
             value = this.__convert_type(key, value);
             if (value === null && attr && attr.other) attr.other = null;
             else if ((value === null && attr instanceof dataBinder)
@@ -334,7 +335,7 @@ dataBinder.prototype.save = function (no_label) {
 };
 
 dataBinder.prototype.watch = function (key, callback, args) {
-    if (match = key.match(/(\w+)\.([\w\.]*)/))
+    if ((match = key.match(/(\w+)\.([\w\.]*)/)) !== false)
         return match[1] in this._attributes && this._attributes[match[1]] instanceof dataBinder
             ? this._attributes[match[1]].watch(match[2], callback, args) : null;
     if (!(key in this._watchers))
