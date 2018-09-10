@@ -390,8 +390,12 @@ dataBinder.prototype.get = function (key) {
 };
 
 dataBinder.prototype.empty = function () {
-    for (x in this._elements)
-        this._elements[x].empty();
+    for (x in this._attributes)
+        if (this._attributes[x] instanceof dataBinder
+            || this._attributes[x] instanceof dataBinderArray
+            || this._attributes[x] instanceof dataBinderValue)
+            this._attributes[x].empty();
+        else this._attributes[x] = null;
 };
 
 dataBinderArray.prototype._init = function (data, name, parent) {
