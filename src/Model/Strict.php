@@ -960,7 +960,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     public function each(){
 
-        if(!($key = key($this->values)))
+        if(($key = key($this->values)) === null)
             return false;
 
         $item = array('key' => $key, 'value' => current($this->values));
