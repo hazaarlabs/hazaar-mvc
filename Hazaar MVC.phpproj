@@ -358,6 +358,17 @@
     <Compile Include="README.md" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="docs\" />
+    <Folder Include="docs\advanced\databases\" />
+    <Folder Include="docs\advanced\view-helpers\" />
+    <Folder Include="docs\images\" />
+    <Folder Include="docs\intro\" />
+    <Folder Include="docs\advanced\caching\" />
+    <Folder Include="docs\basics\" />
+    <Folder Include="docs\advanced\" />
+    <Folder Include="docs\tutorial\" />
+    <Folder Include="docs\reference\" />
+    <Folder Include="docs\advanced\warlock\" />
     <Folder Include="libs\" />
     <Folder Include="libs\console\" />
     <Folder Include="libs\console\cache\" />
@@ -425,6 +436,52 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="composer.json" />
+    <Content Include="docs\advanced\ajax-streaming.md" />
+    <Content Include="docs\advanced\dav.md" />
+    <Content Include="docs\advanced\logger.md" />
+    <Content Include="docs\advanced\routing-aliases.md" />
+    <Content Include="docs\advanced\google.md" />
+    <Content Include="docs\advanced\caching\backends.md" />
+    <Content Include="docs\advanced\caching\frontends.md" />
+    <Content Include="docs\advanced\caching\overview.md" />
+    <Content Include="docs\advanced\databases\mongodb.md" />
+    <Content Include="docs\advanced\databases\relational.md" />
+    <Content Include="docs\advanced\filesystem_browser.md" />
+    <Content Include="docs\advanced\helper-functions.md" />
+    <Content Include="docs\advanced\view-helpers\textile.md" />
+    <Content Include="docs\basics\views.md" />
+    <Content Include="docs\basics\models.md" />
+    <Content Include="docs\basics\bootstrap.md" />
+    <Content Include="docs\basics\urls.md" />
+    <Content Include="docs\basics\controllers.md" />
+    <Content Include="docs\basics\routing.md" />
+    <Content Include="docs\basics\layout.md" />
+    <Content Include="docs\images\mvc-overview.gif" />
+    <Content Include="docs\images\mvc_diagram.png" />
+    <Content Include="docs\advanced\authentication.md" />
+    <Content Include="docs\index.md" />
+    <Content Include="docs\intro\licence.md" />
+    <Content Include="docs\intro\overview.md" />
+    <Content Include="docs\advanced\lesscss.md" />
+    <Content Include="docs\advanced\model.md" />
+    <Content Include="docs\advanced\money.md" />
+    <Content Include="docs\advanced\multiple-class-inheritance.md" />
+    <Content Include="docs\overview.md" />
+    <Content Include="docs\advanced\pdf.md" />
+    <Content Include="docs\tutorial\your-first-app.md" />
+    <Content Include="docs\tutorial\something-useful.md" />
+    <Content Include="docs\tutorial\responses.md" />
+    <Content Include="docs\tutorial\next.md" />
+    <Content Include="docs\tutorial\what-do-you-need.md" />
+    <Content Include="docs\reference\http-status-codes.md" />
+    <Content Include="docs\reference\errorcodes.md" />
+    <Content Include="docs\reference\configs.md" />
+    <Content Include="docs\advanced\warlock\delayed-exec.md" />
+    <Content Include="docs\advanced\warlock\realtime-signalling.md" />
+    <Content Include="docs\advanced\warlock\kvstore.md" />
+    <Content Include="docs\advanced\warlock\services.md" />
+    <Content Include="docs\advanced\xmlrpc.md" />
+    <Content Include="docs\test-page.md" />
     <Content Include="libs\console\css\layout.css" />
     <Content Include="libs\console\css\login.css" />
     <Content Include="libs\console\css\phpinfo.css" />
@@ -486,6 +543,7 @@
     <Content Include="libs\media\dir.phtml" />
     <Content Include="libs\mime.types" />
     <Content Include="LICENCE.md" />
+    <Content Include="mkdocs.yml" />
     <Content Include="phpunit.xml" />
     <Content Include="tests\application\configs\application.json" />
   </ItemGroup>
