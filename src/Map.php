@@ -95,7 +95,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
     protected $elements = array();
 
     /**
-     * The current value for array access returned by each()
+     * The current value for array access returned by Map::each()
      */
     protected $current;
 
@@ -1144,6 +1144,19 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
 
     }
 
+    public function each(){
+
+        if(($key = key($this->elements)) === null)
+            return false;
+
+        $item = array('key' => $key, 'value' => current($this->elements));
+
+        next($this->elements);
+
+        return $item;
+
+    }
+
     /**
      * @detail      Return the current element in the Map
      *
@@ -1179,11 +1192,8 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      */
     public function next() {
 
-        if($this->current = each($this->elements)) {
-
+        if($this->current = $this->each())
             return TRUE;
-
-        }
 
         return FALSE;
 
@@ -1198,7 +1208,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
 
         reset($this->elements);
 
-        $this->current = each($this->elements);
+        $this->current = $this->each();
 
     }
 

@@ -47,7 +47,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
     private $loaded = false;
 
     /**
-     * The current value for array access returned by each().
+     * The current value for array access returned by Strict::each().
      * @var mixed
      */
     protected $current;
@@ -958,6 +958,19 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     }
 
+    public function each(){
+
+        if(($key = key($this->values)) === null)
+            return false;
+
+        $item = array('key' => $key, 'value' => current($this->values));
+
+        next($this->values);
+
+        return $item;
+
+    }
+
     /**
      * @detail Return the current element in the model
      *
@@ -999,7 +1012,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      */
     public function next() {
 
-        if ($this->current = each($this->values))
+        if ($this->current = $this->each())
             return true;
 
         return false;
@@ -1015,7 +1028,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         reset($this->values);
 
-        $this->current = each($this->values);
+        $this->current = $this->each();
 
     }
 

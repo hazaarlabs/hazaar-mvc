@@ -120,6 +120,11 @@ abstract class DataTypeConverter  {
 
         } elseif (class_exists($type)) {
 
+            if(is_array($value) && array_key_exists('__hz_value', $value))
+                $value = $value['__hz_value'];
+            elseif($value instanceof \stdClass && property_exists($value, '__hz_value'))
+                $value = $value->__hz_value;
+
             if (!is_a($value, $type)) {
 
                 try {
