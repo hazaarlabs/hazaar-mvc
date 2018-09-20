@@ -57,13 +57,13 @@ class GeoData {
      */
     private $db;
 
-    function __construct(){
+    function __construct($re_intialise = false){
 
         $file = new \Hazaar\File(\Hazaar\Application::getInstance()->runtimePath('geodata.db'));
 
         $this->db = new \Hazaar\Btree($file);
 
-        if($this->db->get('__version__') !== GeoData::$version)
+        if($re_intialise === true || $this->db->get('__version__') !== GeoData::$version)
             $this->__initialise();
 
         return true;
