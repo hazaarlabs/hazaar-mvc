@@ -114,7 +114,7 @@ var dataBinderValue = function (name, value, label, parent) {
                 this._value = this._parent.__nullify(value);
                 this._other = null;
                 this._parent._update(attr_name, true);
-                this._parent._trigger(attr_name, this._value);
+                this._parent._trigger(attr_name, this);
             },
             get: function () {
                 return this._value;
@@ -132,7 +132,7 @@ var dataBinderValue = function (name, value, label, parent) {
         },
         "other": {
             set: function (value) {
-                if ((value !== null && typeof value === 'object') || value === this._other) return;
+                if (value === this._other) return;
                 this._other = value;
                 this._parent._update(this._parent._attr_name(this._name), false);
             },
@@ -166,7 +166,7 @@ dataBinderValue.prototype.set = function (value, label, other) {
     this._label = label;
     if (typeof other !== 'undefined') this._other = other;
     this._parent._update(attr_name, true);
-    this._parent._trigger(this._name, this._value);
+    this._parent._trigger(this._name, this);
     return this;
 };
 
@@ -183,7 +183,7 @@ dataBinderValue.prototype.empty = function () {
 dataBinderValue.prototype.update = function () {
     var attr_name = this._parent._attr_name(this._name);
     this._parent._update(attr_name, true);
-    this._parent._trigger(this._name, this._value);
+    this._parent._trigger(this._name, this);
 };
 
 dataBinder.prototype._init = function (data, name, parent) {
@@ -255,7 +255,7 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
                 return; //If the value or label has not changed, then bugger off.
             this._attributes[key] = value;
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
-            this._trigger(key, value);
+            this._trigger(key, this);
         },
         get: function () {
             if (!this._attributes[key])
