@@ -139,6 +139,11 @@ var dataBinderValue = function (name, value, label, parent) {
             get: function () {
                 return this._other;
             }
+        },
+        "parent": {
+            get: function () {
+                return this._parent;
+            }
         }
     });
 };
@@ -256,6 +261,11 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
             if (!this._attributes[key])
                 this._attributes[key] = new dataBinderValue(key, null, null, this);
             return this._attributes[key];
+        },
+        parent: {
+            get: function () {
+                return this._parent;
+            }
         }
     });
 };
@@ -408,9 +418,16 @@ dataBinderArray.prototype._init = function (data, name, parent) {
     this.resync();
     if (Array.isArray(data) && data.length > 0)
         for (let x in data) this.push(data[x]);
-    Object.defineProperty(this, 'length', {
-        get: function () {
-            return this._elements.length;
+    Object.defineProperties(this, {
+        "length": {
+            get: function () {
+                return this._elements.length;
+            }
+        },
+        "parent": {
+            get: function () {
+                return this._parent;
+            }
         }
     });
 };
