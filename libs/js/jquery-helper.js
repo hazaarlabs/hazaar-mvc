@@ -105,6 +105,7 @@ var dataBinderValue = function (name, value, label, parent) {
     this._value = parent.__nullify(value);
     this._label = label;
     this._other = null;
+    this._enabled = true;
     this._parent = parent;
     Object.defineProperties(this, {
         "value": {
@@ -186,6 +187,11 @@ dataBinderValue.prototype.update = function () {
     this._parent._trigger(this._name, this);
 };
 
+dataBinderValue.prototype.enabled = function (value) {
+    if (typeof value !== 'boolean') return this._enabled;
+    return this._enabled = value;
+};
+
 dataBinder.prototype._init = function (data, name, parent) {
     this._jquery = jQuery({});
     this._name = name;
@@ -193,6 +199,7 @@ dataBinder.prototype._init = function (data, name, parent) {
     this._attributes = {};
     this._watchers = {};
     this._watchID = 0;
+    this._enabled = true;
     if (Object.keys(data).length > 0)
         for (var key in data) this.add(key, data[key]);
     Object.defineProperty(this, 'length', {
@@ -408,6 +415,11 @@ dataBinder.prototype.empty = function () {
         else this._attributes[x] = null;
 };
 
+dataBinder.prototype.enabled = function (value) {
+    if (typeof value !== 'boolean') return this._enabled;
+    return this._enabled = value;
+};
+
 dataBinderArray.prototype._init = function (data, name, parent) {
     if (!parent) throw "dataBinderArray requires a parent!";
     this._name = name;
@@ -415,6 +427,7 @@ dataBinderArray.prototype._init = function (data, name, parent) {
     this._elements = [];
     this._template = null;
     this._watchers = [];
+    this._enabled = true;
     this.resync();
     if (Array.isArray(data) && data.length > 0)
         for (let x in data) this.push(data[x]);
@@ -502,20 +515,10 @@ dataBinderArray.prototype.indexOf = function (searchString) {
     return -1;
 };
 
-/**
- * Remove an item value from the array
- * 
- * @param {any} value The value to remove.
- */
 dataBinderArray.prototype.remove = function (value) {
     return this.unset(this.indexOf(((value instanceof dataBinderValue) ? value.value : value)));
 };
 
-/**
- * Remove an item from the array using it's index in the array
- * 
- * @param {any} index The index of the item to remove.
- */
 dataBinderArray.prototype.unset = function (index) {
     if (index < 0 || typeof index !== 'number') return;
     var element = this._elements[index];
@@ -607,4 +610,9 @@ dataBinderArray.prototype.watch = function (cb) {
 dataBinderArray.prototype.empty = function () {
     for (x in this._elements)
         this._elements[x].empty();
+};
+
+dataBinderArray.prototype.enabled = function (value) {
+    if (typeof value !== 'boolean') return this._enabled;
+    return this._enabled = value;
 };
