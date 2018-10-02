@@ -262,7 +262,7 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
                 return; //If the value or label has not changed, then bugger off.
             this._attributes[key] = value;
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
-            this._trigger(key, this);
+            this._trigger(key, value);
         },
         get: function () {
             if (!this._attributes[key])
