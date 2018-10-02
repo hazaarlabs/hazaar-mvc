@@ -115,7 +115,7 @@ var dataBinderValue = function (name, value, label, parent) {
                 this._value = this._parent.__nullify(value);
                 this._other = null;
                 this._parent._update(attr_name, true);
-                this._parent._trigger(attr_name, this);
+                this._parent._trigger(this._name, this);
             },
             get: function () {
                 return this._value;
