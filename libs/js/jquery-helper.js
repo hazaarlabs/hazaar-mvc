@@ -263,6 +263,11 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
             this._attributes[key] = value;
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
             this._trigger(key, value);
+            if (attr instanceof dataBinder && value instanceof dataBinder) {
+                value._parent = this;
+                value._watchers = attr._watchers;
+                value._trigger_diff(attr);
+            }
         },
         get: function () {
             if (!this._attributes[key])
@@ -318,6 +323,17 @@ dataBinder.prototype._trigger = function (key, value) {
     if (key in this._watchers) {
         for (let x in this._watchers[key])
             this._watchers[key][x][0].call(this, key, value, this._watchers[key][x][1]);
+    }
+};
+
+dataBinder.prototype._trigger_diff = function (source) {
+    if (!source instanceof dataBinder) return;
+    for (let x in this._attributes) {
+        if ((this._attributes[x] instanceof dataBinderValue ? this._attributes[x].value : this._attributes[x])
+            !== (source[x] instanceof dataBinderValue ? source[x].value : source[x])) {
+            this._update(this._attr_name(x));
+            this._trigger(x, this._attributes[x]);
+        } else if (this._attributes[x] instanceof dataBinder) this._attributes[x]._trigger_diff(source[x]);
     }
 };
 
