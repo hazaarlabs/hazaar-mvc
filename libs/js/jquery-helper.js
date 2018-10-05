@@ -52,7 +52,7 @@ jQuery.stream = function (url, options) {
             };
             worker.xhr.onprogress = function (event) {
                 var response;
-                while ((response = worker.read())) {
+                while ((response = worker.read()) !== null) {
                     if (typeof callbacks.progress === 'function')
                         callbacks.progress(response, event.statusText, ajax);
                 }
@@ -110,7 +110,7 @@ var dataBinderValue = function (name, value, label, parent) {
     Object.defineProperties(this, {
         "value": {
             set: function (value) {
-                if ((value !== null && typeof value === 'object') || value === this._value) return;
+                if (value !== null && typeof value === 'object' || value === this._value) return;
                 var attr_name = this._parent._attr_name(this._name);
                 this._value = this._parent.__nullify(value);
                 this._other = null;
@@ -159,9 +159,9 @@ dataBinderValue.prototype.valueOf = function () {
 
 dataBinderValue.prototype.set = function (value, label, other) {
     value = this._parent.__nullify(value);
-    if ((value !== null && typeof value === 'object')
-        || (value === this._value && label === this._label
-            && (typeof other === 'undefined' || other === this._other))) return;
+    if (value !== null && typeof value === 'object'
+        || value === this._value && label === this._label
+        && (typeof other === 'undefined' || other === this._other)) return;
     var attr_name = this._parent._attr_name(this._name);
     this._value = value;
     this._label = label;
@@ -172,7 +172,7 @@ dataBinderValue.prototype.set = function (value, label, other) {
 };
 
 dataBinderValue.prototype.save = function (no_label) {
-    if (((this.value !== null && this.label !== null && this.label !== '') || (this.value === null && this.other !== null)) && no_label !== true)
+    if ((this.value !== null && this.label !== null && this.label !== '' || this.value === null && this.other !== null) && no_label !== true)
         return { "__hz_value": this.value, "__hz_label": this.label, "__hz_other": this.other };
     return this.value;
 };
@@ -256,9 +256,9 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
             if (value instanceof dataBinder) value = value.save(); //Export so that we trigger an import to reset the value names
             value = this.__convert_type(key, value);
             if (value === null && attr && attr.other) attr.other = null;
-            else if ((value === null && attr instanceof dataBinder)
-                || ((attr instanceof dataBinderValue ? attr.value : attr) === (value instanceof dataBinderValue ? value.value : value)
-                    && (attr && (!(attr instanceof dataBinderValue) || !(value instanceof dataBinderValue) || (attr.label === value.label && attr.other === value.other)))))
+            else if (value === null && attr instanceof dataBinder
+                || (attr instanceof dataBinderValue ? attr.value : attr) === (value instanceof dataBinderValue ? value.value : value)
+                && (attr && (!(attr instanceof dataBinderValue) || !(value instanceof dataBinderValue) || attr.label === value.label && attr.other === value.other)))
                 return; //If the value or label has not changed, then bugger off.
             this._attributes[key] = value;
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
@@ -481,7 +481,7 @@ dataBinderArray.prototype.pop = function () {
 
 dataBinderArray.prototype._newitem = function (index, element) {
     var attr_name = this._attr_name(index), a = this;
-    var newitem = (this._template.prop('tagName') === 'TEMPLATE')
+    var newitem = this._template.prop('tagName') === 'TEMPLATE'
         ? jQuery(this._template.html()).attr('data-bind', attr_name)
         : this._template.clone(true).attr('data-bind', attr_name);
     newitem.find('[data-bind]').each(function (idx, item) {
@@ -489,6 +489,7 @@ dataBinderArray.prototype._newitem = function (index, element) {
         item.attributes['data-bind'].value = attr_name + '.' + key;
     });
     if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x](newitem);
+    console.log(attr_name);
     return newitem;
 };
 
@@ -536,7 +537,7 @@ dataBinderArray.prototype.indexOf = function (searchString) {
 };
 
 dataBinderArray.prototype.remove = function (value) {
-    return this.unset(this.indexOf(((value instanceof dataBinderValue) ? value.value : value)));
+    return this.unset(this.indexOf(value instanceof dataBinderValue ? value.value : value));
 };
 
 dataBinderArray.prototype.unset = function (index) {
