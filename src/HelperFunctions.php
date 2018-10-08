@@ -59,11 +59,17 @@ function ake($array, $key, $default = NULL, $non_empty = FALSE) {
  */
 function akr(&$array, $key_from, $key_to){
 
-    if(array_key_exists($key_from, $array)){
+    if(is_array($array) && array_key_exists($key_from, $array)){
 
         $array[$key_to] = $array[$key_from];
 
         unset($array[$key_from]);
+
+    }elseif(is_object($array) && property_exists($array, $key_from)){
+
+        $array->$key_to = $array->$key_from;
+
+        unset($array->$key_from);
 
     }
 

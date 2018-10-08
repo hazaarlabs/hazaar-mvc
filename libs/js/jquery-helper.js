@@ -52,7 +52,7 @@ jQuery.stream = function (url, options) {
             };
             worker.xhr.onprogress = function (event) {
                 var response;
-                while ((response = worker.read())) {
+                while ((response = worker.read()) !== null) {
                     if (typeof callbacks.progress === 'function')
                         callbacks.progress(response, event.statusText, ajax);
                 }
@@ -105,16 +105,17 @@ var dataBinderValue = function (name, value, label, parent) {
     this._value = parent.__nullify(value);
     this._label = label;
     this._other = null;
+    this._enabled = true;
     this._parent = parent;
     Object.defineProperties(this, {
         "value": {
             set: function (value) {
-                if ((value !== null && typeof value === 'object') || value === this._value) return;
+                if (value !== null && typeof value === 'object' || value === this._value) return;
                 var attr_name = this._parent._attr_name(this._name);
                 this._value = this._parent.__nullify(value);
                 this._other = null;
                 this._parent._update(attr_name, true);
-                this._parent._trigger(attr_name, this._value);
+                this._parent._trigger(this._name, this);
             },
             get: function () {
                 return this._value;
@@ -132,12 +133,17 @@ var dataBinderValue = function (name, value, label, parent) {
         },
         "other": {
             set: function (value) {
-                if ((value !== null && typeof value === 'object') || value === this._other) return;
+                if (value === this._other) return;
                 this._other = value;
                 this._parent._update(this._parent._attr_name(this._name), false);
             },
             get: function () {
                 return this._other;
+            }
+        },
+        "parent": {
+            get: function () {
+                return this._parent;
             }
         }
     });
@@ -153,20 +159,20 @@ dataBinderValue.prototype.valueOf = function () {
 
 dataBinderValue.prototype.set = function (value, label, other) {
     value = this._parent.__nullify(value);
-    if ((value !== null && typeof value === 'object')
-        || (value === this._value && label === this._label
-            && (typeof other === 'undefined' || other === this._other))) return;
+    if (value !== null && typeof value === 'object'
+        || value === this._value && label === this._label
+        && (typeof other === 'undefined' || other === this._other)) return;
     var attr_name = this._parent._attr_name(this._name);
     this._value = value;
     this._label = label;
     if (typeof other !== 'undefined') this._other = other;
     this._parent._update(attr_name, true);
-    this._parent._trigger(this._name, this._value);
+    this._parent._trigger(this._name, this);
     return this;
 };
 
 dataBinderValue.prototype.save = function (no_label) {
-    if (((this.value !== null && this.label !== null && this.label !== '') || (this.value === null && this.other !== null)) && no_label !== true)
+    if ((this.value !== null && this.label !== null && this.label !== '' || this.value === null && this.other !== null) && no_label !== true)
         return { "__hz_value": this.value, "__hz_label": this.label, "__hz_other": this.other };
     return this.value;
 };
@@ -178,7 +184,12 @@ dataBinderValue.prototype.empty = function () {
 dataBinderValue.prototype.update = function () {
     var attr_name = this._parent._attr_name(this._name);
     this._parent._update(attr_name, true);
-    this._parent._trigger(this._name, this._value);
+    this._parent._trigger(this._name, this);
+};
+
+dataBinderValue.prototype.enabled = function (value) {
+    if (typeof value !== 'boolean') return this._enabled;
+    return this._enabled = value;
 };
 
 dataBinder.prototype._init = function (data, name, parent) {
@@ -188,6 +199,7 @@ dataBinder.prototype._init = function (data, name, parent) {
     this._attributes = {};
     this._watchers = {};
     this._watchID = 0;
+    this._enabled = true;
     if (Object.keys(data).length > 0)
         for (var key in data) this.add(key, data[key]);
     Object.defineProperty(this, 'length', {
@@ -244,18 +256,28 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
             if (value instanceof dataBinder) value = value.save(); //Export so that we trigger an import to reset the value names
             value = this.__convert_type(key, value);
             if (value === null && attr && attr.other) attr.other = null;
-            else if ((value === null && attr instanceof dataBinder)
-                || ((attr instanceof dataBinderValue ? attr.value : attr) === (value instanceof dataBinderValue ? value.value : value)
-                    && (attr && (!(attr instanceof dataBinderValue) || !(value instanceof dataBinderValue) || (attr.label === value.label && attr.other === value.other)))))
+            else if (value === null && attr instanceof dataBinder
+                || (attr instanceof dataBinderValue ? attr.value : attr) === (value instanceof dataBinderValue ? value.value : value)
+                && (attr && (!(attr instanceof dataBinderValue) || !(value instanceof dataBinderValue) || attr.label === value.label && attr.other === value.other)))
                 return; //If the value or label has not changed, then bugger off.
             this._attributes[key] = value;
             this._jquery.trigger(trigger_name, [this, attr_name, value]);
             this._trigger(key, value);
+            if (attr instanceof dataBinder && value instanceof dataBinder) {
+                value._parent = this;
+                value._watchers = attr._watchers;
+                value._trigger_diff(attr);
+            }
         },
         get: function () {
             if (!this._attributes[key])
                 this._attributes[key] = new dataBinderValue(key, null, null, this);
             return this._attributes[key];
+        },
+        parent: {
+            get: function () {
+                return this._parent;
+            }
         }
     });
 };
@@ -289,11 +311,15 @@ dataBinder.prototype._update = function (attr_name, do_update) {
                 o.val(attr_item ? attr_item.other : null);
             else if (o.is("select")) {
                 if (o.find('option[value="' + (attr_value === null ? '' : attr_value) + '"]').length > 0) o.val(attr_value);
-            } else
-                o.val(attr_value);
+            } else o.val(attr_value);
             if (do_update === true) o.trigger('update', [attr_name, attr_value]);
-        } else
-            o.html(attr_item ? attr_item.toString() : '');
+        } else {
+            if (o.attr('data-bind-label') === 'false')
+                o.html(attr_item ? attr_item.value : null);
+            else if (o.attr('data-bind-other') === 'true')
+                o.html(attr_item ? attr_item.other : null);
+            else o.html(attr_item ? attr_item.toString() : '');
+        }
     });
 };
 
@@ -301,6 +327,17 @@ dataBinder.prototype._trigger = function (key, value) {
     if (key in this._watchers) {
         for (let x in this._watchers[key])
             this._watchers[key][x][0].call(this, key, value, this._watchers[key][x][1]);
+    }
+};
+
+dataBinder.prototype._trigger_diff = function (source) {
+    if (!source instanceof dataBinder) return;
+    for (let x in this._attributes) {
+        if ((this._attributes[x] instanceof dataBinderValue ? this._attributes[x].value : this._attributes[x])
+            !== (source[x] instanceof dataBinderValue ? source[x].value : source[x])) {
+            this._update(this._attr_name(x), true);
+            this._trigger(x, this._attributes[x]);
+        } else if (this._attributes[x] instanceof dataBinder) this._attributes[x]._trigger_diff(source[x]);
     }
 };
 
@@ -398,6 +435,11 @@ dataBinder.prototype.empty = function () {
         else this._attributes[x] = null;
 };
 
+dataBinder.prototype.enabled = function (value) {
+    if (typeof value !== 'boolean') return this._enabled;
+    return this._enabled = value;
+};
+
 dataBinderArray.prototype._init = function (data, name, parent) {
     if (!parent) throw "dataBinderArray requires a parent!";
     this._name = name;
@@ -405,12 +447,20 @@ dataBinderArray.prototype._init = function (data, name, parent) {
     this._elements = [];
     this._template = null;
     this._watchers = [];
+    this._enabled = true;
     this.resync();
     if (Array.isArray(data) && data.length > 0)
         for (let x in data) this.push(data[x]);
-    Object.defineProperty(this, 'length', {
-        get: function () {
-            return this._elements.length;
+    Object.defineProperties(this, {
+        "length": {
+            get: function () {
+                return this._elements.length;
+            }
+        },
+        "parent": {
+            get: function () {
+                return this._parent;
+            }
         }
     });
 };
@@ -431,7 +481,7 @@ dataBinderArray.prototype.pop = function () {
 
 dataBinderArray.prototype._newitem = function (index, element) {
     var attr_name = this._attr_name(index), a = this;
-    var newitem = (this._template.prop('tagName') === 'TEMPLATE')
+    var newitem = this._template.prop('tagName') === 'TEMPLATE'
         ? jQuery(this._template.html()).attr('data-bind', attr_name)
         : this._template.clone(true).attr('data-bind', attr_name);
     newitem.find('[data-bind]').each(function (idx, item) {
@@ -439,6 +489,7 @@ dataBinderArray.prototype._newitem = function (index, element) {
         item.attributes['data-bind'].value = attr_name + '.' + key;
     });
     if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x](newitem);
+    console.log(attr_name);
     return newitem;
 };
 
@@ -485,20 +536,10 @@ dataBinderArray.prototype.indexOf = function (searchString) {
     return -1;
 };
 
-/**
- * Remove an item value from the array
- * 
- * @param {any} value The value to remove.
- */
 dataBinderArray.prototype.remove = function (value) {
-    return this.unset(this.indexOf(((value instanceof dataBinderValue) ? value.value : value)));
+    return this.unset(this.indexOf(value instanceof dataBinderValue ? value.value : value));
 };
 
-/**
- * Remove an item from the array using it's index in the array
- * 
- * @param {any} index The index of the item to remove.
- */
 dataBinderArray.prototype.unset = function (index) {
     if (index < 0 || typeof index !== 'number') return;
     var element = this._elements[index];
@@ -590,4 +631,9 @@ dataBinderArray.prototype.watch = function (cb) {
 dataBinderArray.prototype.empty = function () {
     for (x in this._elements)
         this._elements[x].empty();
+};
+
+dataBinderArray.prototype.enabled = function (value) {
+    if (typeof value !== 'boolean') return this._enabled;
+    return this._enabled = value;
 };
