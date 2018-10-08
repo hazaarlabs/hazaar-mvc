@@ -361,10 +361,10 @@ class Application {
     static public function filePath($path = NULL, $file = NULL, $force_realpath = TRUE) {
 
         if(strlen($path) > 0)
-            $path = '/' . trim($path, '/');
+            $path = DIRECTORY_SEPARATOR . trim($path, DIRECTORY_SEPARATOR);
 
         if($file)
-            $path .= '/' . $file;
+            $path .= DIRECTORY_SEPARATOR . $file;
 
         $path = APPLICATION_PATH . ($path ? $path : NULL);
 
