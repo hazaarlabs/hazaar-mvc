@@ -31,6 +31,16 @@ class Client {
 
     private $auth;
 
+    private $encryption_enabled = false;
+
+    private $encryption_key     = null;
+
+    private $encryption_cipher  = null;
+
+    static public $encryption_default_cipher = 'AES-256-CBC';
+
+    static public $encryption_header = 'X-HAZAAR-COMKEY';
+
     function __construct($local_cert = NULL, $passphrase = NULL, $debug = FALSE) {
 
         $this->context = stream_context_create();
@@ -179,6 +189,9 @@ class Client {
             $request->authorise($this->username, $this->password);
 
         $this->applyCookies($request);
+
+        if($this->encryption_enabled === true)
+            $request->encrypt($this->encryption_key, $this->encryption_cipher);
 
         $sck_fd = @stream_socket_client($request->getHost(), $errno, $errstr, $this->connection_timeout, STREAM_CLIENT_CONNECT, $this->context);
 
@@ -474,6 +487,16 @@ class Client {
     public function disableRedirect() {
 
         $this->auto_redirect = FALSE;
+
+    }
+
+    public function enableEncryption($key, $cipher = Client::$encryption_default_cipher){
+
+        $this->encryption_enabled = true;
+
+        $this->encryption_key = $key;
+
+        $this->encryption_cipher = $cipher;
 
     }
 

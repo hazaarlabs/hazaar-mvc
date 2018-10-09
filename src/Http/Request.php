@@ -408,4 +408,16 @@ class Request extends \Hazaar\Map {
 
     }
 
+    public function encrypt($key, $cipher = Client::$encryption_default_cipher){
+
+        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($cipher));
+
+        $this->body = base64_encode(openssl_encrypt($this->body, $cipher, $key, OPENSSL_RAW_DATA, $iv));
+
+        $this->setHeader(Client::$encryption_header, base64_encode($iv));
+
+        return true;
+
+    }
+
 }
