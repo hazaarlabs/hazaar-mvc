@@ -96,6 +96,8 @@ abstract class REST extends \Hazaar\Controller {
 
     private $__rest_endpoints = array();
 
+    private $__endpoint;
+
     private $__rest_cache;
 
     private $__rest_cache_enable_global = false;
@@ -119,13 +121,13 @@ abstract class REST extends \Hazaar\Controller {
 
     public function __initialize(\Hazaar\Application\Request $request) {
 
-        $request->setResponseType('json');
+        //$request->setResponseType('json');
 
         try{
 
             $class = new \ReflectionClass($this);
 
-            foreach($class->getMethods() as $method){
+            foreach($class->getMethods(\ReflectionMethod::IS_PUBLIC) as $method){
 
                 if(substr($method->getName(), 0, 2) === '__' || $method->isPrivate())
                     continue;
@@ -138,12 +140,32 @@ abstract class REST extends \Hazaar\Controller {
                 if(!(preg_match_all('/\*\s*@((\w+).*)/', $comment, $method_matches)))
                     continue;
 
-                $cache = false;
+                $endpoint = array(
+                    'cache' => false,
+                    'cache_timeout' => null,
+                    'comment' => $comment,
+                    'routes' => array()
+                );
 
                 if(($pos = array_search('cache', $method_matches[2])) !== false){
 
-                    if(preg_match('/cache\s+(.*)/', $method_matches[1][$pos], $cache_matches))
+                    if(preg_match('/cache\s+(.*)/', $method_matches[1][$pos], $cache_matches)){
+
                         $cache = trim($cache_matches[1]);
+
+                        if(is_numeric($cache)){
+
+                            $endpoint['cache'] = true;
+
+                            $endpoint['cache_timeout'] = intval($cache);
+
+                        }else{
+
+                            $endpoint['cache'] = boolify($cache);
+
+                        }
+
+                    }
 
                 }
 
@@ -155,7 +177,7 @@ abstract class REST extends \Hazaar\Controller {
                     if(!preg_match('/\([\'\"]([\w\<\>\:\/]+)[\'\"]\s*,?\s*(.+)*\)/', $method_matches[1][$index], $route_matches))
                         continue;
 
-                    $route = '/' . ltrim($route_matches[1], '/');
+                    $target = '/' . ltrim($route_matches[1], '/');
 
                     $args = array('methods' => array('GET'));
 
@@ -186,37 +208,62 @@ abstract class REST extends \Hazaar\Controller {
 
                     }
 
-                    if(!array_key_exists($route, $this->__rest_endpoints))
-                        $this->__rest_endpoints[$route] = array();
-
-                    $endpoint = array(
+                    $endpoint['routes'][$target] = array(
                         'func' => $method,
-                        'args' => $args,
-                        'cache' => false,
-                        'cache_timeout' => null
+                        'args' => $args
                     );
 
-                    if($cache !== false){
+                }
 
-                        if(is_numeric($cache)){
+                if(count($endpoint['routes']) > 0)
+                    $this->__rest_endpoints[$method->name] = $endpoint;
 
-                            $endpoint['cache'] = true;
+            }
 
-                            $endpoint['cache_timeout'] = intval($cache);
+            $full_path = '/' . $this->request->getRawPath();
+
+            if($full_path == '/'){
+
+                if(!$this->allow_directory)
+                    throw new \Exception('Directory listing is not allowed', 403);
+
+                return new \Hazaar\Controller\Response\Json($this->__describe_api());
+
+            }
+
+            foreach($this->__rest_endpoints as $endpoint){
+
+                foreach($endpoint['routes'] as $target => $route){
+
+                    if($this->__match_route($full_path, $target, $route, $args)){
+
+                        if($this->request->method() == 'OPTIONS'){
+
+                            $response = new \Hazaar\Controller\Response\Json();
+
+                            $response->setHeader('allow', $route['args']['methods']);
+
+                            if($this->allow_directory)
+                                $response->populate($this->__describe_endpoint($target, $route, $this->describe_full));
+
+                            return $response;
 
                         }else{
 
-                            $endpoint['cache'] = boolify($cache);
+                            $this->__endpoint = array($route, $args);
+
+                            break;
 
                         }
 
                     }
 
-                    $this->__rest_endpoints[$route][] = $endpoint;
-
                 }
 
             }
+
+            if(!$this->__endpoint)
+                throw new \Exception('REST API Endpoint not found: ' . $full_path, 404);
 
             if(method_exists($this, 'init'))
                 $this->init($request);
@@ -236,44 +283,7 @@ abstract class REST extends \Hazaar\Controller {
 
         try{
 
-            $full_path = '/' . $this->request->getRawPath();
-
-            if($full_path == '/'){
-
-                if(!$this->allow_directory)
-                    throw new \Exception('Directory listing is not allowed', 403);
-
-                return new \Hazaar\Controller\Response\Json($this->__describe_api());
-
-            }
-
-            foreach($this->__rest_endpoints as $route => $routes){
-
-                foreach($routes as $endpoint){
-
-                    if($this->__match_route($full_path, $route, $endpoint, $args)){
-
-                        if($this->request->method() == 'OPTIONS'){
-
-                            $response = new \Hazaar\Controller\Response\Json();
-
-                            $response->setHeader('allow', $endpoint['args']['methods']);
-
-                            if($this->allow_directory)
-                                $response->populate($this->__describe_endpoint($route, $endpoint, $this->describe_full));
-
-                            return $response;
-
-                        }else
-                            return $this->__exec_endpoint($endpoint, $args);
-
-                    }
-
-                }
-
-            }
-
-            throw new \Exception('REST API Endpoint not found: ' . $full_path, 404);
+            return $this->__exec_endpoint($this->endpoint[0], $this->endpoint[1]);
 
         }
         catch(\Exception $e){
@@ -485,6 +495,49 @@ abstract class REST extends \Hazaar\Controller {
         $out = new \Hazaar\Controller\Response\Json($error, $code);
 
         return $out;
+
+    }
+
+    protected function getRequestedEndpoint(){
+
+        return $this->__endpoint[0]['func']->name;
+
+    }
+
+    protected function getEndpointTags($name){
+
+        foreach($this->__rest_endpoints as $endpoint){
+
+            foreach($endpoint['routes'] as $route){
+
+                if($route['func']->name === $name){
+
+                    if(!array_key_exists('tags', $route)){
+
+                        $route['tags'] = array();
+
+                        preg_match_all('/\*\s*@((\w+).*)/', $endpoint['comment'], $matches);
+
+                        foreach($matches[1] as $annotation){
+
+                            if(!preg_match('/^(\w+)(\W.*)$/', $annotation, $parts))
+                                continue;
+
+                            $route['tags'][$parts[1]] = trim($parts[2]);
+
+                        }
+
+                    }
+
+                    return $route['tags'];
+
+                }
+
+            }
+
+        }
+
+        return false;
 
     }
 
