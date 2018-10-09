@@ -321,5 +321,18 @@ class Response {
 
     }
 
+    public function decrypt($key, $cipher = Client::$encryption_default_cipher){
+
+        if(!($iv = $this->getHeader(Client::$encryption_header)))
+            return false;
+
+        $iv = base64_decode($iv);
+
+        $this->body = openssl_decrypt(base64_decode($this->body), $cipher, $key, OPENSSL_RAW_DATA, $iv);
+
+        return true;
+
+    }
+
 }
 
