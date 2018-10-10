@@ -283,7 +283,7 @@ abstract class REST extends \Hazaar\Controller {
 
         try{
 
-            return $this->__exec_endpoint($this->endpoint[0], $this->endpoint[1]);
+            return $this->__exec_endpoint($this->__endpoint[0], $this->__endpoint[1]);
 
         }
         catch(\Exception $e){
