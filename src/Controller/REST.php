@@ -250,7 +250,7 @@ abstract class REST extends \Hazaar\Controller {
 
                         }else{
 
-                            $this->__endpoint = array($route, $args);
+                            $this->__endpoint = array($endpoint, $route, $args);
 
                             break;
 
@@ -283,7 +283,7 @@ abstract class REST extends \Hazaar\Controller {
 
         try{
 
-            return $this->__exec_endpoint($this->__endpoint[0], $this->__endpoint[1]);
+            return $this->__exec_endpoint($this->__endpoint);
 
         }
         catch(\Exception $e){
@@ -407,11 +407,13 @@ abstract class REST extends \Hazaar\Controller {
 
     }
 
-    private function __exec_endpoint($endpoint, $args){
+    private function __exec_endpoint($endpoint){
 
         try{
 
-            if(!($method = $endpoint['func']) instanceof \ReflectionMethod)
+            list($endpoint, $route, $args) = $endpoint;
+
+            if(!($method = $route['func']) instanceof \ReflectionMethod)
                 throw new \Exception('Method is no longer a method!?', 500);
 
             $params = array();
@@ -424,8 +426,8 @@ abstract class REST extends \Hazaar\Controller {
 
                 if(array_key_exists($key, $args))
                     $value = $args[$key];
-                elseif(array_key_exists('defaults', $endpoint['args']) && array_key_exists($key, $endpoint['args']['defaults']))
-                    $value = $endpoint['args']['defaults'][$key];
+                elseif(array_key_exists('defaults', $route['args']) && array_key_exists($key, $route['args']['defaults']))
+                    $value = $route['args']['defaults'][$key];
                 elseif($p->isDefaultValueAvailable())
                     $value = $p->getDefaultValue();
                 else
@@ -500,7 +502,7 @@ abstract class REST extends \Hazaar\Controller {
 
     protected function getRequestedEndpoint(){
 
-        return $this->__endpoint[0]['func']->name;
+        return $this->__endpoint[1]['func']->name;
 
     }
 
