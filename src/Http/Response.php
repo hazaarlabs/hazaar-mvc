@@ -251,7 +251,15 @@ class Response {
 
     }
 
+    public function hasHeader($key){
+
+        return array_key_exists(strtolower($key), $this->headers);
+
+    }
+
     public function getHeader($header) {
+
+        $header = strtolower($header);
 
         if(array_key_exists($header, $this->headers))
             return $this->headers[$header];
@@ -297,7 +305,8 @@ class Response {
 
         $header = str_replace('; ', ';', $this->getHeader('content-type'));
 
-        $start = strpos($header, ';');
+        if(($start = strpos($header, ';')) === false)
+            return $header;
 
         $content_type = substr($header, 0, $start);
 
@@ -318,6 +327,22 @@ class Response {
             return json_decode($this->body);
 
         return $this->body;
+
+    }
+
+    public function decrypt($key, $cipher = null){
+
+        if(!($iv = $this->getHeader(Client::$encryption_header)))
+            return false;
+
+        if($cipher === null)
+            $cipher = Client::$encryption_default_cipher;
+
+        $iv = base64_decode($iv);
+
+        $this->body = openssl_decrypt(base64_decode($this->body), $cipher, $key, OPENSSL_RAW_DATA, $iv);
+
+        return true;
 
     }
 
