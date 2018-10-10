@@ -113,7 +113,7 @@ class Http extends \Hazaar\Application\Request {
                     case 'application/javascript':
                     case 'application/x-javascript':
 
-                        $request = array_merge($request, $this->json_decode($this->body, true));
+                        $request = array_merge($request, json_decode($this->body, true));
 
                         break;
 
