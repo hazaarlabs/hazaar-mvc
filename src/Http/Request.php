@@ -139,6 +139,12 @@ class Request extends \Hazaar\Map {
 
     }
 
+    public function getHeaders() {
+
+        return $this->headers;
+
+
+    }
     public function getHeader($key) {
 
         return ake($this->headers, $key);
@@ -162,7 +168,7 @@ class Request extends \Hazaar\Map {
 
     }
 
-    public function toString() {
+    public function toString($encryption_key = null, $encryption_cipher = null) {
 
         $uri = clone $this->uri;
 
@@ -172,140 +178,21 @@ class Request extends \Hazaar\Map {
          * Convert any parameters into a HTTP POST query
          */
 
-        if($this->method == 'GET' && $this->count() > 0) {
+        if($this->method == 'GET' && $this->count() > 0 && $encryption_key === null) {
 
             $uri->setParams($this->toArray());
 
-        } else {
+        } elseif($this->body !== null) {
 
-            if($this->body !== null) {
+            if(count($this->elements) > 0) {
 
-                if(count($this->elements) > 0) {
+                if(!is_array($this->body)) {
 
-                    if(!is_array($this->body)) {
+                    $saved_body = $this->body;
 
-                        $saved_body = $this->body;
-
-                        $this->body = array();
-
-                    }
-
-                    $content_type = $this->getHeader('Content-Type');
-
-                    if(($pos = strpos($content_type, ';')) > 0)
-                        $content_type = substr($content_type, 0, $pos);
-
-                    switch($content_type) {
-
-                        case 'text/json' :
-                        case 'application/json' :
-                        case 'application/javascript' :
-                        case 'application/x-javascript' :
-
-                            $this->body[] = array($content_type, $this->toJSON());
-
-                            break;
-
-                        case 'text/html' :
-                        case 'application/x-www-form-urlencoded':
-                        default:
-
-                            $elements = array();
-
-                            foreach(array_build_html($this->toArray()) as $key => $value) {
-
-                                $elements[] = array(
-                                    array('Content-Disposition' => 'form-data; name="' . $key . '"'),
-                                    $value
-                                );
-
-                            }
-
-                            $this->body = array_merge($elements, $this->body);
-
-                            break;
-
-                    }
-
-                    if(isset($saved_body))
-                        $this->body[] = array($content_type, $saved_body);
+                    $this->body = array();
 
                 }
-
-                if(is_array($this->body)) {
-
-                    if(count($this->body[0]) == 2) {
-
-                        $boundary = 'HazaarMVCMultipartBoundary' . uniqid();
-
-                        $this->setHeader('Content-Type', 'multipart/form-data; boundary="' . $boundary . '"');
-
-                        foreach($this->body as $part) {
-
-                            $body .= "--$boundary\r\n";
-
-                            if(! is_array($part[0]))
-                                $part[0] = array('Content-Type' => $part[0]);
-
-                            if($content_type = ake($part[0], 'Content-Type')) {
-
-                                if(($pos = strpos($content_type, ';')) > 0)
-                                    $content_type = substr($content_type, 0, $pos);
-
-                                switch($content_type) {
-
-                                    case 'text/json' :
-                                    case 'application/json' :
-
-                                        $data = json_encode($part[1]);
-
-                                        break;
-
-                                    case 'text/html' :
-                                    case 'application/x-www-form-urlencoded':
-
-                                        $data = is_array($part[1]) ? http_build_query($part[1]) : $part[1];
-
-                                        break;
-
-                                    default:
-
-                                        $data =& $part[1];
-
-                                        break;
-
-                                }
-
-                            } else {
-
-                                $data = $part[1];
-
-                            }
-
-                            foreach($part[0] as $key => $value)
-                                $body .= $key . ': ' . $value . "\r\n";
-
-                            $body .= "\r\n$data\r\n";
-
-                        }
-
-                        $body .= "--$boundary--\r\n";
-
-                    } else {
-
-                        $this->setHeader('Content-Type', 'application/json');
-
-                        $body = json_encode($this->body);
-
-                    }
-
-                } else { //Otherwise use the raw content body
-
-                    $body = $this->body;
-
-                }
-
-            } elseif($this->count() > 0) {
 
                 $content_type = $this->getHeader('Content-Type');
 
@@ -319,7 +206,7 @@ class Request extends \Hazaar\Map {
                     case 'application/javascript' :
                     case 'application/x-javascript' :
 
-                        $body = $this->toJSON();
+                        $this->body[] = array($content_type, $this->toJSON());
 
                         break;
 
@@ -327,13 +214,141 @@ class Request extends \Hazaar\Map {
                     case 'application/x-www-form-urlencoded':
                     default:
 
-                        $body = http_build_query($this->toArray());
+                        $elements = array();
+
+                        foreach(array_build_html($this->toArray()) as $key => $value) {
+
+                            $elements[] = array(
+                                array('Content-Disposition' => 'form-data; name="' . $key . '"'),
+                                $value
+                            );
+
+                        }
+
+                        $this->body = array_merge($elements, $this->body);
 
                         break;
 
                 }
 
+                if(isset($saved_body))
+                    $this->body[] = array($content_type, $saved_body);
+
             }
+
+            if(is_array($this->body)) {
+
+                if(count($this->body[0]) == 2) {
+
+                    $boundary = 'HazaarMVCMultipartBoundary' . uniqid();
+
+                    $this->setHeader('Content-Type', 'multipart/form-data; boundary="' . $boundary . '"');
+
+                    foreach($this->body as $part) {
+
+                        $body .= "--$boundary\r\n";
+
+                        if(! is_array($part[0]))
+                            $part[0] = array('Content-Type' => $part[0]);
+
+                        if($content_type = ake($part[0], 'Content-Type')) {
+
+                            if(($pos = strpos($content_type, ';')) > 0)
+                                $content_type = substr($content_type, 0, $pos);
+
+                            switch($content_type) {
+
+                                case 'text/json' :
+                                case 'application/json' :
+
+                                    $data = json_encode($part[1]);
+
+                                    break;
+
+                                case 'text/html' :
+                                case 'application/x-www-form-urlencoded':
+
+                                    $data = is_array($part[1]) ? http_build_query($part[1]) : $part[1];
+
+                                    break;
+
+                                default:
+
+                                    $data =& $part[1];
+
+                                    break;
+
+                            }
+
+                        } else {
+
+                            $data = $part[1];
+
+                        }
+
+                        foreach($part[0] as $key => $value)
+                            $body .= $key . ': ' . $value . "\r\n";
+
+                        $body .= "\r\n$data\r\n";
+
+                    }
+
+                    $body .= "--$boundary--\r\n";
+
+                } else {
+
+                    $this->setHeader('Content-Type', 'application/json');
+
+                    $body = json_encode($this->body);
+
+                }
+
+            } else { //Otherwise use the raw content body
+
+                $body = $this->body;
+
+            }
+
+        } elseif($this->count() > 0) {
+
+            $content_type = $this->getHeader('Content-Type');
+
+            if(($pos = strpos($content_type, ';')) > 0)
+                $content_type = substr($content_type, 0, $pos);
+
+            switch($content_type) {
+
+                case 'text/json' :
+                case 'application/json' :
+                case 'application/javascript' :
+                case 'application/x-javascript' :
+
+                    $body = $this->toJSON();
+
+                    break;
+
+                case 'text/html' :
+                case 'application/x-www-form-urlencoded':
+                default:
+
+                    $body = http_build_query($this->toArray());
+
+                    break;
+
+            }
+
+        }
+
+        if($encryption_key !== null){
+
+            if($encryption_cipher === null)
+                $encryption_cipher = Client::$encryption_default_cipher;
+
+            $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($encryption_cipher));
+
+            $body = base64_encode(openssl_encrypt($body, $encryption_cipher, $encryption_key, OPENSSL_RAW_DATA, $iv));
+
+            $this->setHeader(Client::$encryption_header, base64_encode($iv));
 
         }
 
@@ -405,18 +420,6 @@ class Request extends \Hazaar\Map {
         }
 
         return false;
-
-    }
-
-    public function encrypt($key, $cipher = Client::$encryption_default_cipher){
-
-        $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($cipher));
-
-        $this->body = base64_encode(openssl_encrypt($this->body, $cipher, $key, OPENSSL_RAW_DATA, $iv));
-
-        $this->setHeader(Client::$encryption_header, base64_encode($iv));
-
-        return true;
 
     }
 

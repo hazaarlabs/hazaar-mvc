@@ -95,6 +95,18 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
                 $response->enableTidy($this->application->config->app->get('tidy', false));
 
+            }elseif(is_string($response)){
+
+                $response = new Response\Text($response);
+
+            }elseif($response instanceof \Hazaar\Html\Element){
+
+                $html = new Response\Html();
+
+                $html->setContent($response);
+
+                $response = $html;
+
             }else{
 
                 $response = new Response\Json($response);
