@@ -84,12 +84,49 @@ class Http extends \Hazaar\Application\Request {
 
             $this->body = @file_get_contents('php://input');
 
-            if($content_type = explode(';', $this->getHeader('Content-Type'))){
+            $encryption_header = ucwords(strtolower(\Hazaar\Http\Client::$encryption_header), '-');
 
-                $this->bodyJSON = json_decode($this->body, true);
+            if(array_key_exists($encryption_header, $this->headers)){
 
-                if($content_type[0] == 'application/json' && $this->body && $this->bodyJSON)
-                    $request = array_merge($request, $this->bodyJSON);
+                $iv = base64_decode($this->headers[$encryption_header]);
+
+                if(!($keyfile = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, '.key')))
+                    throw new \Exception('Unable to encrypt.  No key provided and no default keyfile!');
+
+                \Hazaar\Controller\Response::$encryption_key = trim(file_get_contents($keyfile));
+
+                $this->body = openssl_decrypt(base64_decode($this->body),
+                    \Hazaar\Http\Client::$encryption_default_cipher,
+                    \Hazaar\Controller\Response::$encryption_key, OPENSSL_RAW_DATA, $iv);
+
+                if($this->body === false)
+                    throw new \Exception('Received an encrypted request but was unable to decrypt the body!', 500);
+
+            }
+
+            if($this->body && ($content_type = explode(';', $this->getHeader('Content-Type')))){
+
+                switch($content_type[0]){
+
+                    case 'text/json':
+                    case 'application/json':
+                    case 'application/javascript':
+                    case 'application/x-javascript':
+
+                        $request = array_merge($request, $this->json_decode($this->body, true));
+
+                        break;
+
+                    case 'text/html':
+                    case 'application/x-www-form-urlencoded':
+
+                        parse_str($this->body, $params);
+
+                        $request = array_merge($request, $params);
+
+                        break;
+
+                }
 
             }
 
@@ -246,10 +283,10 @@ class Http extends \Hazaar\Application\Request {
 
     /**
      * Return the current request content type.
-     * 
+     *
      * This is a helpful method for doing a few things in one go as it will only return a content type
      * if the request is a POST method.  Otherwise it will safely return a FALSE value.
-     * 
+     *
      * @return mixed The content type of the POST request.  False if the request is not a POST request.
      */
     public function getContentType(){
