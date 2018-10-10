@@ -121,7 +121,7 @@ abstract class REST extends \Hazaar\Controller {
 
     public function __initialize(\Hazaar\Application\Request $request) {
 
-        //$request->setResponseType('json');
+        $request->setResponseType('json');
 
         try{
 
