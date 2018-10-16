@@ -23,6 +23,8 @@ abstract class Response implements Response\_Interface {
 
     protected $tidy         = FALSE;
 
+    public static $encryption_key;
+
     function __construct($type = "text/html", $status = 501) {
 
         $this->content_type = $type;
@@ -263,6 +265,18 @@ abstract class Response implements Response\_Interface {
 
             if(! $content)
                 $content = '';
+
+        }
+
+        if(Response::$encryption_key !== null){
+
+            $encryption_cipher = \Hazaar\Http\Client::$encryption_default_cipher;
+
+            $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($encryption_cipher));
+
+            $content = base64_encode(openssl_encrypt($content, $encryption_cipher, Response::$encryption_key, OPENSSL_RAW_DATA, $iv));
+
+            $this->setHeader(\Hazaar\Http\Client::$encryption_header, base64_encode($iv));
 
         }
 

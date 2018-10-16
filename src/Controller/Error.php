@@ -390,7 +390,7 @@ class Error extends \Hazaar\Controller\Action {
 
         $out .= "\n";
 
-        return new Response\Text($out);
+        return new Response\Text($out, $this->code);
 
     }
 
