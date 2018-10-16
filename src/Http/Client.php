@@ -31,6 +31,16 @@ class Client {
 
     private $auth;
 
+    private $encryption_key     = null;
+
+    private $encryption_cipher  = null;
+
+    static public $encryption_default_key;
+
+    static public $encryption_default_cipher = 'AES-256-CBC';
+
+    static public $encryption_header = 'X-HAZAAR-COMKEY';
+
     function __construct($local_cert = NULL, $passphrase = NULL, $debug = FALSE) {
 
         $this->context = stream_context_create();
@@ -184,7 +194,7 @@ class Client {
 
         if($sck_fd) {
 
-            $http_request = $request->toString();
+            $http_request = $request->toString($this->encryption_key, $this->encryption_cipher);
 
             fputs($sck_fd, $http_request, strlen($http_request));
 
@@ -267,6 +277,9 @@ class Client {
 
         if($cookie = $response->getHeader('set-cookie'))
             $this->setCookie($cookie);
+
+        if($response->hasHeader(strtolower(\Hazaar\Http\Client::$encryption_header)))
+            $response->decrypt($this->encryption_key, $this->encryption_cipher);
 
         return $response;
 
@@ -359,7 +372,7 @@ class Client {
                 if($arg_k === 'expires')
                     $arg_v = new \Hazaar\Date($arg_v);
                 elseif($arg_k === 'max-age')
-                    $arg_v = (new \Hazaar\Date())->add('P' . $arg_v . 'S');
+                    $arg_v = (new \Hazaar\Date())->add('PT' . $arg_v . 'S');
 
                 $data[$arg_k] = $arg_v;
 
@@ -474,6 +487,32 @@ class Client {
     public function disableRedirect() {
 
         $this->auto_redirect = FALSE;
+
+    }
+
+    public function enableEncryption($key = null, $cipher = null){
+
+        if($key === null){
+
+            if(\Hazaar\Http\Client::$encryption_default_key === null){
+
+                if(!($keyfile = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, '.key')))
+                    throw new \Exception('Unable to encrypt.  No key provided and no default keyfile!');
+
+                \Hazaar\Http\Client::$encryption_default_key = trim(file_get_contents($keyfile));
+
+            }
+
+            $key = \Hazaar\Http\Client::$encryption_default_key;
+
+        }
+
+        $this->encryption_key = $key;
+
+        if($cipher === null)
+            $cipher = Client::$encryption_default_cipher;
+
+        $this->encryption_cipher = $cipher;
 
     }
 

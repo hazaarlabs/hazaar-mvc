@@ -2,11 +2,11 @@
 
 namespace Hazaar\Controller\Response;
 
-class Text extends \Hazaar\Controller\Response\HTTP\OK {
+class Text extends \Hazaar\Controller\Response {
 
-    function __construct($content = null) {
+    function __construct($content = null, $status = 200) {
 
-        parent::__construct("text/plain");
+        parent::__construct("text/plain", $status);
 
         $this->setContent($content);
 
