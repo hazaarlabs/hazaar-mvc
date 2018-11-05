@@ -197,7 +197,11 @@ var fbConnector = function (url, filter, with_meta) {
         return this._send(packet);
     };
     this._target = function (source, path) {
-        if (!(source && path)) return null;
+        if (!source) return null;
+        else if (typeof source === 'object') {
+            path = Array.isArray(source) ? source[1] : source.path;
+            source = Array.isArray(source) ? source[0] : source.source;
+        }
         return btoa(source + ':' + path).replace(/\+/g, '-').replace(/\//g, '_').replace(/\=+$/, '');
     };
     this._source = function (target) {
@@ -1250,7 +1254,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             allowmultiple: true,
             autoexpand: false,
             startDirectory: null,
-            rootDirectory: null,
+            root: null,
             select: null,
             cookiePath: null,
             showinfo: false,
@@ -1325,7 +1329,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 }
             });
         host._render(host.settings.mode);
-        host.conn.tree(host.conn._target(host.settings.rootSource, host.settings.rootDirectory), 0).done(function () {
+        host.conn.tree(host.conn._target(host.settings.root), 0).done(function () {
             var startDir;
             if (host.settings.startDirectory) {
                 let matches = host.settings.startDirectory.match(/^\/(\w+)(\/?.*)/);
