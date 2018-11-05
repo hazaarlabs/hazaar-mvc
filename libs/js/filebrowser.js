@@ -905,7 +905,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 host._item(item);
             });
             $(host).trigger('chdir', [cwd]);
-            document.cookie = 'filebrowser.' + host.id + '.cwd=' + cwd.id;
+            if (host.settings.saveCWD === true) document.cookie = 'filebrowser.' + host.id + '.cwd=' + cwd.id;
         };
         host._date = function (date) {
             var d = new Date(date * 1000);
@@ -1257,6 +1257,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             startDirectory: null,
             root: null,
             select: null,
+            saveCWD: true,
             showinfo: false,
             userpanel: null,
             defaulttools: true,
@@ -1334,7 +1335,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             if (host.settings.startDirectory) {
                 let matches = host.settings.startDirectory.match(/^\/(\w+)(\/?.*)/);
                 if (matches) startDir = host.conn._target(matches[1], matches[2] || '/');
-            } else {
+            } else if (host.settings.saveCWD === true) {
                 let matches = document.cookie.match(new RegExp("filebrowser\." + host.id + "\.cwd=([^;\s$]+)"));
                 if (matches) startDir = matches[1];
             }
