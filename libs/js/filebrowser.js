@@ -1330,7 +1330,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             });
         host._render(host.settings.mode);
         host.conn.tree(host.conn._target(host.settings.root), 0).done(function () {
-            var startDir;
+            var startDir = host.treeDIV.children().first().attr('data-id');
             if (host.settings.startDirectory) {
                 let matches = host.settings.startDirectory.match(/^\/(\w+)(\/?.*)/);
                 if (matches) startDir = host.conn._target(matches[1], matches[2] || '/');
@@ -1338,12 +1338,10 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 let matches = document.cookie.match(new RegExp("filebrowser\." + host.id + "\.cwd=([^;\s$]+)"));
                 if (matches) startDir = matches[1];
             }
-            if (startDir) {
-                host.conn.open(startDir, true).done(function (data) {
-                    if (host.settings.select)
-                        $('#' + host.conn._target(host.conn._source(startDir), host.conn._path(startDir) + '/' + host.settings.select)).addClass('selected');
-                });
-            }
+            host.conn.open(startDir, true).done(function (data) {
+                if (host.settings.select)
+                    $('#' + host.conn._target(host.conn._source(startDir), host.conn._path(startDir) + '/' + host.settings.select)).addClass('selected');
+            });
         });
         $(host).click(function (event) {
             if (!event.isTrigger && host.menuDIV.is(':visible')) {
