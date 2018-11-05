@@ -27,8 +27,8 @@ $.fn.browserDialog = function (params) {
     }
     this.after(host.winDIV);
     host.winDIV.append(host.titleDIV, host.contentDIV.append(this, host.buttonsDIV)).css({
-        top: (window.innerHeight / 2) - (host.winDIV.height() / 2),
-        left: (window.innerWidth / 2) - (host.winDIV.width() / 2)
+        top: window.innerHeight / 2 - host.winDIV.height() / 2,
+        left: window.innerWidth / 2 - host.winDIV.width() / 2
     }).fadeIn();
     for (i in params.buttons) {
         var meta = params.buttons[i];
@@ -58,8 +58,7 @@ $.fn.browserDialog = function (params) {
     return host.winDIV;
 };
 
-var fbConnector = function (browser, url, filter, with_meta) {
-    this.browser = browser;
+var fbConnector = function (url, filter, with_meta) {
     this.url = url;
     this.filter = filter;
     this.cwd = null;
@@ -198,15 +197,16 @@ var fbConnector = function (browser, url, filter, with_meta) {
         return this._send(packet);
     };
     this._target = function (source, path) {
+        if (!(source && path)) return null;
         return btoa(source + ':' + path).replace(/\+/g, '-').replace(/\//g, '_').replace(/\=+$/, '');
     };
     this._source = function (target) {
-        target = (target + '==').slice(0, target.length + ((4 - (target.length % 4)) % 4));
+        target = (target + '==').slice(0, target.length + (4 - target.length % 4) % 4);
         var raw = atob(target.replace(/-/g, '+').replace(/_/g, '/'));
         return raw.substr(0, raw.indexOf(':'));
     };
     this._path = function (target) {
-        target = (target + '==').slice(0, target.length + ((4 - (target.length % 4)) % 4));
+        target = (target + '==').slice(0, target.length + (4 - target.length % 4) % 4);
         var raw = atob(target.replace(/-/g, '+').replace(/_/g, '/'));
         return raw.substr(raw.indexOf(':') + 1);
     };
@@ -238,7 +238,7 @@ var fbConnector = function (browser, url, filter, with_meta) {
         var packet = { 'cmd': 'tree' };
         if (target)
             packet.target = target;
-        if (typeof depth != 'undefined')
+        if (typeof depth !== 'undefined')
             packet.depth = depth;
         return this._send(packet).done(function (items) {
             $.each(items, function (index, item) {
@@ -249,7 +249,7 @@ var fbConnector = function (browser, url, filter, with_meta) {
     this.open = function (target, tree, depth) {
         var packet = {
             'cmd': 'open',
-            'tree': (typeof tree === 'undefined' ? false : tree)
+            'tree': typeof tree === 'undefined' ? false : tree
         };
         if (this.filter)
             packet.filter = this.filter;
@@ -357,16 +357,12 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
         switch (arg1) {
             case 'selected':
                 return host.selected();
-                break;
             case 'get':
                 return host;
-                break;
             case 'selectNextItem':
                 return host.selectItem(host.selected(true).next().attr('id'));
-                break;
             case 'selectPrevItem':
                 return host.selectItem(host.selected(true).prev().attr('id'));
-                break;
             case 'delete':
                 host.conn.unlink([arg2]);
                 break;
@@ -494,9 +490,9 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 }
                 host.menuDIV.append(itemDIV);
             });
-            if ((posX + host.menuDIV.width()) > window.innerWidth)
+            if (posX + host.menuDIV.width() > window.innerWidth)
                 posX = window.innerWidth - host.menuDIV.width();
-            if ((posY + host.menuDIV.height()) > window.innerHeight)
+            if (posY + host.menuDIV.height() > window.innerHeight)
                 posY = window.innerHeight - host.menuDIV.height();
             host.menuDIV.css({ left: posX, top: posY });
             if (!host.menuDIV.is(':visible'))
@@ -570,92 +566,96 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             host.titleDIV = $('<div class="fb-topbar-title">').html(host.settings.title);
             host.searchINPUT = $('<input type="text" placeholder="Search...">');
             host.searchBUTTON = $('<button>').html('Search');
-            host.topbarDIV = $('<div class="fb-topbar">')
-                .append(host.titleDIV, $('<div class="fb-search">').append(host.searchINPUT, host.searchBUTTON));
-            if (typeof host.settings.tools === 'object') {
-                host.topbarToolsDIV = $('<div class="fb-topbar-tools">');
-                for (x in host.settings.tools) {
-                    var toolDIV = $('<div class="fb-topbar-tool">');
-                    toolDIV.append($('<i class="fa">').addClass('fa-' + host.settings.tools[x].icon));
-                    toolDIV.click(host.settings.tools[x].click);
-                    host.topbarToolsDIV.append(toolDIV);
+            if (host.settings.topbar) {
+                host.topbarDIV = $('<div class="fb-topbar">')
+                    .append(host.titleDIV, $('<div class="fb-search">').append(host.searchINPUT, host.searchBUTTON));
+                if (typeof host.settings.tools === 'object') {
+                    host.topbarToolsDIV = $('<div class="fb-topbar-tools">');
+                    for (x in host.settings.tools) {
+                        var toolDIV = $('<div class="fb-topbar-tool">');
+                        toolDIV.append($('<i class="fa">').addClass('fa-' + host.settings.tools[x].icon));
+                        toolDIV.click(host.settings.tools[x].click);
+                        host.topbarToolsDIV.append(toolDIV);
+                    }
+                    host.topbarDIV.append(host.topbarToolsDIV);
                 }
-                host.topbarDIV.append(host.topbarToolsDIV);
             }
-            host.newBUTTON = $('<button class="fb-btn-new">').html('New');
-            host.uploadDIV = $('<div class="fb-upload">');
-            host.uploadDoneSPAN = $('<span>').html(0);
-            host.uploadTotalSPAN = $('<span>').html(0);
-            host.uploadProgressDIV = $('<div class="pct">').css('width', '0%');
-            host.uploadDIV.append([
-                $('<div class="fb-upload-left">').append(host.uploadDoneSPAN, ' of ', host.uploadTotalSPAN),
-                $('<div class="fb-upload-right">').append($('<div class="fb-upload-progress">').append(host.uploadProgressDIV))
-            ]);
-            host.treeDIV = $('<div class="fb-tree">')
-                .append($('<div class="fb-tree-control">').html(host.newBUTTON), $('<div class="fb-tree-content">'), host.uploadDIV);
+            host.treeDIV = $('<div class="fb-tree">');
+            if (host.settings.upload) {
+                host.newBUTTON = $('<button class="fb-btn-new">').html('New');
+                host.uploadDIV = $('<div class="fb-upload">');
+                host.uploadDoneSPAN = $('<span>').html(0);
+                host.uploadTotalSPAN = $('<span>').html(0);
+                host.uploadProgressDIV = $('<div class="pct">').css('width', '0%');
+                host.uploadDIV.append([
+                    $('<div class="fb-upload-left">').append(host.uploadDoneSPAN, ' of ', host.uploadTotalSPAN),
+                    $('<div class="fb-upload-right">').append($('<div class="fb-upload-progress">').append(host.uploadProgressDIV))
+                ]);
+                host.newBUTTON.click(function (event) {
+                    var options = [
+                        {
+                            icon: 'folder',
+                            label: 'Folder',
+                            action: function (event) {
+                                host._mkdir(host.conn.cwd.id);
+                            }
+                        },
+                        'spacer',
+                        {
+                            icon: 'upload',
+                            label: 'File Upload',
+                            action: host._upload
+                        },
+                        {
+                            icon: 'upload',
+                            label: 'Folder Upload',
+                            action: function () {
+                                host._upload(true);
+                            }
+                        },
+                        {
+                            icon: 'cloud-download',
+                            label: 'Snatch File',
+                            action: function () {
+                                var urlINPUT = $('<input type="text" placeholder="source URL...">').css('width', '400px');
+                                $('<div>').append(urlINPUT).browserDialog({
+                                    title: 'Snatch file from URL',
+                                    buttons: [
+                                        {
+                                            label: 'Snatch',
+                                            action: function () {
+                                                host._snatch(urlINPUT.val());
+                                            },
+                                            default: true
+                                        },
+                                        {
+                                            label: 'Cancel'
+                                        }
+                                    ]
+                                });
+                                urlINPUT.focus();
+                            }
+                        },
+                        'spacer',
+                        {
+                            icon: 'image',
+                            label: 'Image'
+                        },
+                        {
+                            icon: 'file-text',
+                            label: 'Document'
+                        }
+                    ];
+                    var testInput = $('<input type="file" directory mozdirectory webkitdirectory>');
+                    if (!(testInput.get(0).webkitdirectory || testInput.get(0).mozdirectory || testInput.get(0).directory))
+                        options.splice(3, 1);
+                    return host._contextMenu(event, options);
+                });
+                host.treeDIV.append($('<div class="fb-tree-control">').html(host.newBUTTON), host.uploadDIV);
+            }
             $(host).addClass('fb-container')
                 .append(host.menuDIV, host.topbarDIV, host.treeDIV, host.mainDIV)
-                .css({ width: host.settings.width, height: host.settings.height });
-            host.newBUTTON.click(function (event) {
-                var options = [
-                    {
-                        icon: 'folder',
-                        label: 'Folder',
-                        action: function (event) {
-                            host._mkdir(host.conn.cwd.id);
-                        }
-                    },
-                    'spacer',
-                    {
-                        icon: 'upload',
-                        label: 'File Upload',
-                        action: host._upload
-                    },
-                    {
-                        icon: 'upload',
-                        label: 'Folder Upload',
-                        action: function () {
-                            host._upload(true);
-                        }
-                    },
-                    {
-                        icon: 'cloud-download',
-                        label: 'Snatch File',
-                        action: function () {
-                            var urlINPUT = $('<input type="text" placeholder="source URL...">').css('width', '400px');
-                            $('<div>').append(urlINPUT).browserDialog({
-                                title: 'Snatch file from URL',
-                                buttons: [
-                                    {
-                                        label: 'Snatch',
-                                        action: function () {
-                                            host._snatch(urlINPUT.val());
-                                        },
-                                        default: true
-                                    },
-                                    {
-                                        label: 'Cancel'
-                                    }
-                                ]
-                            });
-                            urlINPUT.focus();
-                        }
-                    },
-                    'spacer',
-                    {
-                        icon: 'image',
-                        label: 'Image'
-                    },
-                    {
-                        icon: 'file-text',
-                        label: 'Document'
-                    }
-                ];
-                var testInput = $('<input type="file" directory mozdirectory webkitdirectory>');
-                if (!(testInput.get(0).webkitdirectory || testInput.get(0).mozdirectory || testInput.get(0).directory))
-                    options.splice(3, 1);
-                return host._contextMenu(event, options);
-            });
+                .css({ position: "relative", width: host.settings.width, height: host.settings.height });
             host.mainDIV.click(function (event) {
                 if (event.target === this && !event.ctrlKey)
                     host.itemsDIV.find('.selected').removeClass('selected');
@@ -703,7 +703,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 if (host.settings.userpanel) {
                     var userDIV = $('<div class="fb-user">').append(host.settings.userpanel);
                     host.rightDIV.append(userDIV);
-                    host.infoDIV.css('bottom', userDIV.height())
+                    host.infoDIV.css('bottom', userDIV.height());
                 }
             }
             host.searchBUTTON.click(function () {
@@ -819,7 +819,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                                 action: function () {
                                     host.paste(itemDIV);
                                 }
-                            })
+                            });
                         }
                         options.push('spacer');
                         options.push({
@@ -907,6 +907,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             return d.toUTCString();
         };
         host._size = function (bytes, type, precision, exclude_suffix) {
+            var value = bytes, suffix = 'bytes', prec = 0;
             if (typeof type === 'undefined') {
                 if (bytes < Math.pow(2, 10))
                     type = 'B';
@@ -917,11 +918,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 else
                     type = 'G';
             }
-            var value = bytes;
-            var type = type.toUpperCase();
-            var suffix = 'bytes';
-            var prec = 0;
-            switch (type) {
+            switch (type.toUpperCase()) {
                 case 'K':
                     value = bytes / Math.pow(2, 10);
                     suffix = 'KB';
@@ -942,12 +939,12 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                     prec = 2;
                     break;
             }
-            if (typeof precision != 'undefined')
+            if (typeof precision !== 'undefined')
                 prec = precision;
             return value.toLocaleString('en', { maximumFractionDigits: prec }) + (exclude_suffix === true ? '' : ' ' + suffix);
         };
         host._item = function (item) {
-            if (item.kind != 'file') {
+            if (item.kind !== 'file') {
                 console.log('Skipping non-file: ' + item.name);
                 return;
             }
@@ -985,7 +982,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 } else if (event.shiftKey && host.focus && host.settings.allowmultiple) {
                     var start = host.itemsDIV.children('.fb-item').index(host.focus);
                     var end = host.itemsDIV.children('.fb-item').index(this);
-                    host.itemsDIV.children('.fb-item').slice((end > start ? start + 1 : end), (start > end ? start : end + 1)).addClass('selected');
+                    host.itemsDIV.children('.fb-item').slice(end > start ? start + 1 : end, start > end ? start : end + 1).addClass('selected');
                 } else {
                     host.itemsDIV.find('.selected').removeClass('selected');
                     host.focus = $(this).addClass('selected');
@@ -1203,12 +1200,12 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
         };
         host.paste = function (target) {
             if (host.clipboard.length > 0) {
-                var target = $(target).attr('data-id');
-                while (item = host.clipboard.pop()) {
+                var o = $(target).attr('data-id');
+                while ((item = host.clipboard.pop()) !== null) {
                     if (item[0] === 'cut') {
-                        host.conn.move(item[1], target);
+                        host.conn.move(item[1], o);
                     } else {
-                        host.conn.copy(item[1], target);
+                        host.conn.copy(item[1], o);
                     }
                 }
             }
@@ -1226,7 +1223,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             var total = parseInt(host.uploadTotalSPAN.html());
             if (typeof done === 'undefined')
                 done = parseInt(host.uploadDoneSPAN.html()) + 1;
-            var pct = (done / total) * 100;
+            var pct = done / total * 100;
             host.uploadDoneSPAN.html(done);
             host.uploadProgressDIV.css('width', pct + '%');
             if (done >= parseInt(host.uploadTotalSPAN.html())) {
@@ -1240,7 +1237,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             var ca = document.cookie.split(';');
             for (x in ca) {
                 var item = ca[x].trim().split('=');
-                if (item[0] === 'filebrowser.mode')
+                if (item[0] === 'filebrowser.' + host.id + '.mode')
                     return item[1];
             }
             return defmode;
@@ -1253,6 +1250,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             allowmultiple: true,
             autoexpand: false,
             startDirectory: null,
+            rootDirectory: null,
             select: null,
             cookiePath: null,
             showinfo: false,
@@ -1262,12 +1260,14 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             previewsize: { w: 100, h: 100 },
             useMeta: false,
             tools: [],
-            monthNames: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+            monthNames: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+            upload: true,
+            topbar: true
         }, arg1);
         host.settings.mode = host._mode(host.settings.mode);
         if (host.settings.defaulttools) {
             host.settings.tools.unshift({
-                icon: (host.settings.mode === 'grid') ? 'th-large' : 'th-list',
+                icon: host.settings.mode === 'grid' ? 'th-large' : 'th-list',
                 click: function () {
                     if (host.settings.mode === 'list') {
                         host.settings.mode = 'grid';
@@ -1281,8 +1281,8 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                     document.cookie = 'filebrowser.mode=' + host.settings.mode;
                 }
             });
-        };
-        host.conn = new fbConnector(this, host.settings.connect, host.settings.mimeFilter, host.settings.useMeta);
+        }
+        host.conn = new fbConnector(host.settings.connect, host.settings.mimeFilter, host.settings.useMeta);
         host.conn.on('mkdir', host._dir)
             .on('rmdir', host._rmdir)
             .on('file', host._item)
@@ -1294,7 +1294,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 host.itemsDIV.children('#' + file.id).children('.fb-item-thumb').append($('<div class="fb-item-upload-pct">'));
             }).on('uploadProgress', function (file, pct) {
                 var progressDIV = host.itemsDIV.children('#' + file.id).find('.fb-item-upload-pct');
-                progressDIV.css('height', ((1 - pct) * 100) + '%');
+                progressDIV.css('height', (1 - pct) * 100 + '%');
             }).on('uploadDone', function (file, data) {
                 var itemDIV = host.itemsDIV.children('#' + file.id);
                 if (data.previewLink) {
@@ -1319,22 +1319,20 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 if (packet.data.init) {
                     host.initProgress(packet.data.init);
                 } else {
-                    if (packet.data.kind != 'dir') {
+                    if (packet.data.kind === 'dir') {
                         host.progress();
                     }
                 }
             });
         host._render(host.settings.mode);
-        host.conn.tree(null, 0).done(function () {
+        host.conn.tree(host.conn._target(host.settings.rootSource, host.settings.rootDirectory), 0).done(function () {
             var startDir;
             if (host.settings.startDirectory) {
-                var matches = host.settings.startDirectory.match(/^\/(\w+)(\/?.*)/);
-                if (matches)
-                    startDir = host.conn._target(matches[1], (matches[2] || '/'));
+                let matches = host.settings.startDirectory.match(/^\/(\w+)(\/?.*)/);
+                if (matches) startDir = host.conn._target(matches[1], matches[2] || '/');
             } else {
-                var matches = document.cookie.match(/hzBrowserCWD=([^;\s$]+)/);
-                if (matches)
-                    startDir = matches[1];
+                let matches = document.cookie.match(/hzBrowserCWD=([^;\s$]+)/);
+                if (matches) startDir = matches[1];
             }
             if (startDir) {
                 host.conn.open(startDir, true).done(function (data) {
@@ -1349,9 +1347,9 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             }
         });
         $(window).on('keydown', function (event) {
-            if (event.target != window.document.body)
+            if (event.target !== window.document.body)
                 return;
-            if (event.keyCode === 114 || (event.ctrlKey && event.keyCode === 70)) {
+            if (event.keyCode === 114 || event.ctrlKey && event.keyCode === 70) {
                 host.searchINPUT.focus();
                 event.preventDefault();
             } else if (event.keyCode === 113) {

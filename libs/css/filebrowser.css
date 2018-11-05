@@ -121,9 +121,18 @@
                     background-color: #ddd;
                 }
 
+    .fb-container .fb-tree,
+    .fb-container .fb-main {
+        top: 0px;
+    }
+
+    .fb-container .fb-topbar ~ .fb-tree,
+    .fb-container .fb-topbar ~ .fb-main {
+        top: 60px;
+    }
+
     .fb-container .fb-main {
         position: absolute;
-        top: 60px;
         left: 250px;
         right: 300px;
         bottom: 0;
@@ -136,7 +145,6 @@
 
     .fb-container .fb-tree {
         position: absolute;
-        top: 60px;
         left: 0;
         width: 250px;
         bottom: 0;
@@ -144,10 +152,12 @@
         color: #444;
         overflow-y: auto;
         overflow-x: hidden;
+        padding-top: 25px;
     }
 
         .fb-container .fb-tree .fb-tree-control {
-            padding: 25px 0 25px 35px;
+            margin-bottom: 25px;
+            text-align: center;
         }
 
         .fb-container .fb-tree button.fb-btn-new {
