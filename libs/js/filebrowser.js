@@ -905,6 +905,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 host._item(item);
             });
             $(host).trigger('chdir', [cwd]);
+            document.cookie = 'filebrowser.' + host.id + '.cwd=' + cwd.id;
         };
         host._date = function (date) {
             var d = new Date(date * 1000);
@@ -1256,7 +1257,6 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             startDirectory: null,
             root: null,
             select: null,
-            cookiePath: null,
             showinfo: false,
             userpanel: null,
             defaulttools: true,
@@ -1282,7 +1282,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                         host.mainDIV.removeClass('grid').addClass('list');
                         $(this).children().removeClass('fa-th-large').addClass('fa-th-list');
                     }
-                    document.cookie = 'filebrowser.mode=' + host.settings.mode;
+                    document.cookie = 'filebrowser.' + host.id + '.mode=' + host.settings.mode;
                 }
             });
         }
@@ -1335,7 +1335,7 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                 let matches = host.settings.startDirectory.match(/^\/(\w+)(\/?.*)/);
                 if (matches) startDir = host.conn._target(matches[1], matches[2] || '/');
             } else {
-                let matches = document.cookie.match(/hzBrowserCWD=([^;\s$]+)/);
+                let matches = document.cookie.match(new RegExp("filebrowser\." + host.id + "\.cwd=([^;\s$]+)"));
                 if (matches) startDir = matches[1];
             }
             if (startDir) {
@@ -1382,13 +1382,6 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
             } else if (event.keyCode === 46) {
                 host.delete();
             }
-        });
-        $(host).on('remove', function () {
-            var cookie = 'hzBrowserCWD=' + host.cwd.id;
-            if (host.settings.cookiePath)
-                cookie += ';Path=' + host.settings.cookiePath;
-            document.cookie = cookie;
-            $(window).off('keydown');
         });
     }
     return this;
