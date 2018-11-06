@@ -50,9 +50,45 @@ class Dir {
 
     }
 
+    public function fullpath($suffix = null){
+
+        return $this->path($suffix);
+
+    }
+
     public function realpath($suffix = NULL) {
 
         return $this->backend->realpath($this->fixPath($this->path, $suffix));
+
+    }
+
+    public function dirname(){
+
+        return  str_replace('\\', '/', dirname($this->fixPath($this->path)));
+
+    }
+
+    public function basename(){
+
+        return basename($this->fixPath($this->path));
+
+    }
+
+    public function mtime(){
+
+        return $this->backend->filemtime($this->fixPath($this->path));
+
+    }
+
+    public function size(){
+
+        return $this->backend->filesize($this->fixPath($this->path));
+
+    }
+
+    public function type(){
+
+        return $this->backend->filetype($this->fixPath($this->path));
 
     }
 

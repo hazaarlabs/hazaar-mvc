@@ -110,7 +110,10 @@ class BrowserConnector {
 
     }
 
-    public function info(\Hazaar\File\Manager $source, \Hazaar\File $file) {
+    public function info(\Hazaar\File\Manager $source, $file) {
+
+        if(!($file instanceof \Hazaar\File || $file instanceof \Hazaar\File\Dir))
+            throw new \Exception('$file must be either Hazaar\File or Hazaar\File\Dir when calling info()');
 
         if($file->fullpath() == '/')
             $parent = $this->target($source);
@@ -139,7 +142,7 @@ class BrowserConnector {
             'write'        => $file->is_writable()
         );
 
-        if($file->is_dir()) {
+        if($file instanceof \Hazaar\File\Dir || $file->is_dir()) {
 
             $info['dirs'] = 0;
 
@@ -174,20 +177,30 @@ class BrowserConnector {
             if(! $source = $this->source($target))
                 return FALSE;
 
-            $dir = $source->dir($this->path($target));
+            $path = trim($this->path($target));
 
-            while(($file = $dir->read()) !== FALSE) {
+            $dir = $source->dir($path);
 
-                if(! $file->is_dir())
-                    continue;
+            if(substr($path, -1) !== '/'){
 
-                $tree[] = $this->info($source, $file);
+                $tree = array($this->info($source, $dir));
 
-                if($depth > 0 || $depth === NULL) {
+            }else{
 
-                    $sub = $this->tree($this->target($source, $file->fullpath()), (($depth !== NULL) ? $depth - 1 : NULL));
+                while(($file = $dir->read()) !== FALSE) {
 
-                    $tree = array_merge($tree, $sub);
+                    if(! $file->is_dir())
+                        continue;
+
+                    $tree[] = $this->info($source, $file);
+
+                    if($depth > 0 || $depth === NULL) {
+
+                        $sub = $this->tree($this->target($source, $file->fullpath()), (($depth !== NULL) ? $depth - 1 : NULL));
+
+                        $tree = array_merge($tree, $sub);
+
+                    }
 
                 }
 
