@@ -584,10 +584,12 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                     host.topbarDIV.append(host.topbarToolsDIV);
                 }
             }
-            host.treeDIV = $('<div class="fb-tree">');
+            host.leftDIV = $('<div class="fb-left">');
+            host.controlDIV = $('<div class="fb-tree-control">').appendTo(host.leftDIV);
+            host.treeDIV = $('<div class="fb-tree">').appendTo(host.leftDIV);
             if (host.settings.upload) {
-                host.newBUTTON = $('<button class="fb-btn-new">').html('New');
-                host.uploadDIV = $('<div class="fb-upload">');
+                host.newBUTTON = $('<button class="fb-btn-new">').html('New').appendTo(host.controlDIV);
+                host.uploadDIV = $('<div class="fb-upload">').appendTo(host.leftDIV);
                 host.uploadDoneSPAN = $('<span>').html(0);
                 host.uploadTotalSPAN = $('<span>').html(0);
                 host.uploadProgressDIV = $('<div class="pct">').css('width', '0%');
@@ -655,10 +657,9 @@ $.fn.fileBrowser = function (arg1, arg2, arg3) {
                         options.splice(3, 1);
                     return host._contextMenu(event, options);
                 });
-                host.treeDIV.append($('<div class="fb-tree-control">').html(host.newBUTTON), host.uploadDIV);
             }
             $(host).addClass('fb-container')
-                .append(host.menuDIV, host.topbarDIV, host.treeDIV, host.mainDIV)
+                .append(host.menuDIV, host.topbarDIV, host.leftDIV, host.mainDIV)
                 .css({ position: "relative", width: host.settings.width, height: host.settings.height });
             host.mainDIV.click(function (event) {
                 if (event.target === this && !event.ctrlKey)
