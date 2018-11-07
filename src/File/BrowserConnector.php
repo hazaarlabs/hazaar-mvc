@@ -115,13 +115,11 @@ class BrowserConnector {
         if(!($file instanceof \Hazaar\File || $file instanceof \Hazaar\File\Dir))
             throw new \Exception('$file must be either Hazaar\File or Hazaar\File\Dir when calling info()');
 
-        if($file->fullpath() == '/')
-            $parent = $this->target($source);
+        $is_dir = $file instanceof \Hazaar\File\Dir || $file->is_dir();
 
-        else
-            $parent = $this->target($source, $file->dirname());
+        $parent = ($file->fullpath() == '/') ? $this->target($source) : $this->target($source, $file->dirname() . '/');
 
-        $fileId = $this->target($source, $source->fixPath($file->dirname(), $file->basename()));
+        $fileId = $this->target($source, $source->fixPath($file->dirname(), $file->basename()) . ($is_dir ? '/' : ''));
 
         $linkURL = rtrim($this->url, '/') . '/' . $source->name . rtrim($file->dirname(), '/') . '/' . $file->basename();
 
@@ -142,7 +140,7 @@ class BrowserConnector {
             'write'        => $file->is_writable()
         );
 
-        if($file instanceof \Hazaar\File\Dir || $file->is_dir()) {
+        if($is_dir) {
 
             $info['dirs'] = 0;
 
@@ -181,11 +179,7 @@ class BrowserConnector {
 
             $dir = $source->dir($path);
 
-            if(substr($path, -1) !== '/'){
-
-                $tree = array($this->info($source, $dir));
-
-            }else{
+            if(substr($path, -1) === '/'){
 
                 while(($file = $dir->read()) !== FALSE) {
 
@@ -203,6 +197,10 @@ class BrowserConnector {
                     }
 
                 }
+
+            }else{
+
+                $tree = array($this->info($source, $dir));
 
             }
 
@@ -255,7 +253,7 @@ class BrowserConnector {
 
         $files = array();
 
-        $path = $source->fixPath($this->path($target));
+        $path = $source->fixPath($this->path($target)) . '/';
 
         $dir = $source->dir($path);
 
