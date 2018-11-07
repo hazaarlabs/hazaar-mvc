@@ -263,11 +263,11 @@ class Error extends \Hazaar\Controller\Action {
 
             if(is_array($response)) {
 
-                $response = new Response\Json($response);
+                $response = new Response\Json($response, $this->code);
 
             } else {
 
-                $response = new Response\Html();
+                $response = new Response\Html($this->code);
 
                 /*
                  * Execute the action helpers.  These are responsible for actually rendering any views.
