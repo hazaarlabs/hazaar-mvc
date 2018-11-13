@@ -112,15 +112,16 @@ class DataBinderValue implements \JsonSerializable {
      */
     static function resolve($array, $recursive = true){
 
-        foreach($array as &$value){
+        if(is_array($array) || $array instanceof \stdClass){
 
-            if(!is_array($value))
-                continue;
+            foreach($array as &$value){
 
-            if(array_key_exists('__hz_value', $value))
-                $value = (DataBinderValue::create($value))->value;
-            elseif($recursive === true)
-                $value = DataBinderValue::resolve($value);
+                if((is_array($value) && array_key_exists('__hz_value', $value)) || ($value instanceof \stdClass && property_exists($value, '__hz_value')))
+                    $value = (DataBinderValue::create($value))->value;
+                elseif($recursive === true)
+                    $value = DataBinderValue::resolve($value);
+
+            }
 
         }
 
