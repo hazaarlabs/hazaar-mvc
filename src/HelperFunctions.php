@@ -1533,3 +1533,29 @@ function array_diff_assoc_recursive() {
     return $difference;
 
 }
+
+/**
+ * Recursively convert an object into an array.
+ * 
+ * This is basically a recursive version of PHP's get_object_vars().
+ * 
+ * @param object $object The object to convert.
+ * @return array|boolean Returns the converted object as an array or false on failure.
+ */
+function object_to_array($object){
+
+    if(!is_object($object))
+        return false;
+
+    $array = get_object_vars($object);
+
+    foreach($array as &$value) {
+
+        if(is_object($value))
+            $value = object_to_array($value);
+
+    }
+
+    return $array;
+
+}
