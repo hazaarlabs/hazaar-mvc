@@ -230,10 +230,10 @@ class Manager {
 
     }
 
-    public function find($search = NULL, $path = '/') {
+    public function find($search = NULL, $path = '/', $case_insensitive = false) {
 
         if(method_exists($this->backend, 'find'))
-            return $this->backend->find($search, $path);
+            return $this->backend->find($search, $path, $case_insensitive);
 
         $dir = $this->dir($path);
 
@@ -256,10 +256,10 @@ class Manager {
                     if((ctype_alnum($first) || $first == '\\') == false
                         && $first == substr($search, -1, 1)) {
 
-                        if(! preg_match($search, $file->basename()))
+                        if(! preg_match($search . ($case_insensitive ? 'i' : ''), $file->basename()))
                             continue;
 
-                    } elseif(! fnmatch($search, $file->basename())) {
+                    } elseif(! fnmatch($search, $file->basename(), ($case_insensitive ? FNM_CASEFOLD : 0))) {
 
                         continue;
 

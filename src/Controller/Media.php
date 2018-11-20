@@ -442,7 +442,7 @@ class Media extends \Hazaar\Controller\Action {
 
         ksort($args);
 
-        $response = call_user_func_array(array($connector, $cmd), $args);
+        $response = $method->invokeArgs($connector, $args);
 
         if(strtolower($this->request->getHeader('X-Request-Type')) == 'stream')
             return $this->stream($response);

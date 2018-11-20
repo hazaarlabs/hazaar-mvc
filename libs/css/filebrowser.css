@@ -121,9 +121,18 @@
                     background-color: #ddd;
                 }
 
+    .fb-container .fb-left,
+    .fb-container .fb-main {
+        top: 0px;
+    }
+
+    .fb-container .fb-topbar ~ .fb-left,
+    .fb-container .fb-topbar ~ .fb-main {
+        top: 60px;
+    }
+
     .fb-container .fb-main {
         position: absolute;
-        top: 60px;
         left: 250px;
         right: 300px;
         bottom: 0;
@@ -134,9 +143,8 @@
             right: 0;
         }
 
-    .fb-container .fb-tree {
+    .fb-container .fb-left {
         position: absolute;
-        top: 60px;
         left: 0;
         width: 250px;
         bottom: 0;
@@ -144,24 +152,26 @@
         color: #444;
         overflow-y: auto;
         overflow-x: hidden;
+        padding-top: 25px;
     }
 
-        .fb-container .fb-tree .fb-tree-control {
-            padding: 25px 0 25px 35px;
+        .fb-container .fb-left .fb-tree-control {
+            text-align: center;
         }
 
-        .fb-container .fb-tree button.fb-btn-new {
+        .fb-container .fb-left button.fb-btn-new {
             width: 60%;
             background: #554d7c;
             color: #fff;
+            margin-bottom: 25px;
         }
 
-        .fb-container .fb-tree .fb-tree-control button.fb-btn-new:hover {
+        .fb-container .fb-left .fb-tree-control button.fb-btn-new:hover {
             box-shadow: inset -4px -4px 8px rgba(0, 0, 0, 0.2);
             border-color: rgba(0, 0, 0, 0.2);
         }
 
-        .fb-container .fb-tree .fb-tree-control button.fb-btn-new:active {
+        .fb-container .fb-left .fb-tree-control button.fb-btn-new:active {
             box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
         }
 
