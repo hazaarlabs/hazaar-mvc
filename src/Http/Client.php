@@ -16,7 +16,9 @@ class Client {
 
     private $cookies            = array();
 
-    private $context            = NULL;
+    private $local_cert         = NULL;
+
+    private $cert_passphrase    = NULL;
 
     private $auto_redirect      = TRUE;
 
@@ -43,25 +45,9 @@ class Client {
 
     function __construct($local_cert = NULL, $passphrase = NULL, $debug = FALSE) {
 
-        $this->context = stream_context_create();
+        $this->local_cert = $local_cert;
 
-        if($local_cert) {
-
-            if(! file_exists($local_cert)) {
-
-                throw new Exception\CertificateNotFound();
-
-            }
-
-            stream_context_set_option($this->context, 'ssl', 'local_cert', $local_cert);
-
-            if($passphrase) {
-
-                stream_context_set_option($this->context, 'ssl', 'passphrase', $passphrase);
-
-            }
-
-        }
+        $this->cert_passphrase = $passphrase;
 
         $this->debug = $debug;
 
@@ -182,6 +168,9 @@ class Client {
 
         }
 
+        if($this->local_cert)
+            $request->setLocalCertificate($this->local_cert, $this->cert_passphrase);
+
         if($this->auth)
             $request->authorisation($this->auth);
 
@@ -190,7 +179,7 @@ class Client {
 
         $this->applyCookies($request);
 
-        $sck_fd = @stream_socket_client($request->getHost(), $errno, $errstr, $this->connection_timeout, STREAM_CLIENT_CONNECT, $this->context);
+        $sck_fd = @stream_socket_client($request->getHost(), $errno, $errstr, $this->connection_timeout, STREAM_CLIENT_CONNECT, $request->context);
 
         if($sck_fd) {
 
