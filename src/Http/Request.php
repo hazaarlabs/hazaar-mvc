@@ -12,15 +12,17 @@ class Request extends \Hazaar\Map {
         'Connection'   => 'close'
     );
 
-    private  $raw_uri;
+    private $raw_uri;
 
-    private  $uri;
+    private $uri;
 
-    private  $fsock_host;
+    private $fsock_host;
 
-    private  $body    = NULL;
+    private $body    = null;
 
-    function __construct($uri = NULL, $method = 'GET', $content_type = NULL) {
+    public  $context = null;
+
+    function __construct($uri = null, $method = 'GET', $content_type = null, $custom_context = null) {
 
         if($method)
             $this->method = $method;
@@ -43,6 +45,8 @@ class Request extends \Hazaar\Map {
 
         $this->uri($uri);
 
+        $this->context = is_resource($custom_context) ? $custom_context : stream_context_create();
+
     }
 
     /**
@@ -53,7 +57,7 @@ class Request extends \Hazaar\Map {
      */
     public function uri($uri = null){
 
-        if($uri === NULL)
+        if($uri === null)
             return $this->uri;
 
         $this->raw_uri = $uri;
@@ -93,7 +97,7 @@ class Request extends \Hazaar\Map {
 
     }
 
-    public function addMultipart($data, $content_type = NULL) {
+    public function addMultipart($data, $content_type = null) {
 
         if(! $content_type) {
 
@@ -420,6 +424,91 @@ class Request extends \Hazaar\Map {
         }
 
         return false;
+
+    }
+
+    /**
+     * Set a local PEM encoded certificate to use for SSL communication
+     *
+     * @param mixed $local_cert
+     * @param mixed $passphrase
+     * @throws Exception\CertificateNotFound
+     * @return boolean
+     */
+    public function setLocalCertificate($local_cert, $passphrase = null, $local_pk = null){
+
+        if(!file_exists((string)$local_cert))
+            throw new Exception\CertificateNotFound();
+
+        $result = stream_context_set_option($this->context, 'ssl', 'local_cert', $local_cert);
+
+        if($local_pk){
+
+            if(!file_exists((string)$local_pk))
+                throw new \Exception('Local private key specified but the file does not exist!');
+
+            stream_context_set_option($this->context, 'ssl', 'local_pk', $local_pk);
+
+        }
+
+        if($passphrase)
+            stream_context_set_option($this->context, 'ssl', 'passphrase', $passphrase);
+
+        return $result;
+
+    }
+
+    /**
+     * Wrapper function to the internal PHP function stream_context_set_option() function.
+     *
+     * See http://php.net/manual/en/context.ssl.php documentation for all the available wrappers and options.
+     *
+     * @param mixed $options Must be an associative array in the format $arr['wrapper']['option'] = $value;
+     *
+     * @return boolean Returns TRUE on success or FALSE on failure.
+     */
+    public function setContextOption($options){
+
+        return stream_context_set_option($this->context, $options);
+
+    }
+
+    /**
+     * When using SSL communications, this allows the use of self-signed certificates.
+     *
+     * @param boolean $value
+     *
+     * @return boolean
+     */
+    public function allowSelfSigned($value = true){
+
+        return stream_context_set_option($this->context, 'ssl', 'allow_self_signed', $value);
+
+    }
+
+    /**
+     * When using SSL communications, this sets whether peer certificate verification is used.
+     *
+     * @param boolean $value
+     *
+     * @return boolean
+     */
+    public function verifyPeer($value = true){
+
+        return stream_context_set_option($this->context, 'ssl', 'verify_peer', $value);
+
+    }
+
+    /**
+     * When using SSL communications, this sets whether peer name verification is used.
+     *
+     * @param boolean $value
+     *
+     * @return boolean
+     */
+    public function verifyPeerName($value = true){
+
+        return stream_context_set_option($this->context, 'ssl', 'verify_peer_name', $value);
 
     }
 

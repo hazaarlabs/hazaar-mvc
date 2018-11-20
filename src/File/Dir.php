@@ -50,9 +50,45 @@ class Dir {
 
     }
 
+    public function fullpath($suffix = null){
+
+        return $this->path($suffix);
+
+    }
+
     public function realpath($suffix = NULL) {
 
         return $this->backend->realpath($this->fixPath($this->path, $suffix));
+
+    }
+
+    public function dirname(){
+
+        return  str_replace('\\', '/', dirname($this->fixPath($this->path)));
+
+    }
+
+    public function basename(){
+
+        return basename($this->fixPath($this->path));
+
+    }
+
+    public function mtime(){
+
+        return $this->backend->filemtime($this->fixPath($this->path));
+
+    }
+
+    public function size(){
+
+        return $this->backend->filesize($this->fixPath($this->path));
+
+    }
+
+    public function type(){
+
+        return $this->backend->filetype($this->fixPath($this->path));
 
     }
 
@@ -222,10 +258,7 @@ class Dir {
      */
     public function find($pattern, $show_hidden = FALSE, $case_sensitive = TRUE, $start = NULL) {
 
-        if(! $start)
-            $start = $this->path;
-
-        $start = rtrim($start, $this->backend->separator) . $this->backend->separator;
+        $start = rtrim($this->path . ($start ? '/' . ltrim($start, DIRECTORY_SEPARATOR . '/.') : '' ), $this->backend->separator) . $this->backend->separator;
 
         $list = array();
 
@@ -237,7 +270,7 @@ class Dir {
             if(($show_hidden === FALSE && substr($file, 0, 1) == '.') || $file == '.' || $file == '..')
                 continue;
 
-            if(is_dir($start . $file)) {
+            if($this->backend->is_dir($start . $file)) {
 
                 if($subdir = $this->find($pattern, $show_hidden, $case_sensitive, $start . $file))
                     $list = array_merge($list, $subdir);
@@ -249,7 +282,7 @@ class Dir {
                 if(preg_match($pattern . ($case_sensitive ? NULL : 'i'), $file) == 0)
                     continue;
 
-            } elseif(! fnmatch($pattern, $file))
+            } elseif(! fnmatch($pattern, $file, $case_sensitive ? 0 : FNM_CASEFOLD))
                 continue;
 
             $list[] = new \Hazaar\File($start . $file, $this->backend, $this->manager, $this->path);

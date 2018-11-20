@@ -110,15 +110,16 @@ class BrowserConnector {
 
     }
 
-    public function info(\Hazaar\File\Manager $source, \Hazaar\File $file) {
+    public function info(\Hazaar\File\Manager $source, $file) {
 
-        if($file->fullpath() == '/')
-            $parent = $this->target($source);
+        if(!($file instanceof \Hazaar\File || $file instanceof \Hazaar\File\Dir))
+            throw new \Exception('$file must be either Hazaar\File or Hazaar\File\Dir when calling info()');
 
-        else
-            $parent = $this->target($source, $file->dirname());
+        $is_dir = $file instanceof \Hazaar\File\Dir || $file->is_dir();
 
-        $fileId = $this->target($source, $source->fixPath($file->dirname(), $file->basename()));
+        $parent = ($file->fullpath() == '/') ? $this->target($source) : $this->target($source, $file->dirname() . '/');
+
+        $fileId = $this->target($source, $source->fixPath($file->dirname(), $file->basename()) . ($is_dir ? '/' : ''));
 
         $linkURL = rtrim($this->url, '/') . '/' . $source->name . rtrim($file->dirname(), '/') . '/' . $file->basename();
 
@@ -139,7 +140,7 @@ class BrowserConnector {
             'write'        => $file->is_writable()
         );
 
-        if($file->is_dir()) {
+        if($is_dir) {
 
             $info['dirs'] = 0;
 
@@ -174,22 +175,32 @@ class BrowserConnector {
             if(! $source = $this->source($target))
                 return FALSE;
 
-            $dir = $source->dir($this->path($target));
+            $path = trim($this->path($target));
 
-            while(($file = $dir->read()) !== FALSE) {
+            $dir = $source->dir($path);
 
-                if(! $file->is_dir())
-                    continue;
+            if(substr($path, -1) === '/'){
 
-                $tree[] = $this->info($source, $file);
+                while(($file = $dir->read()) !== FALSE) {
 
-                if($depth > 0 || $depth === NULL) {
+                    if(! $file->is_dir())
+                        continue;
 
-                    $sub = $this->tree($this->target($source, $file->fullpath()), (($depth !== NULL) ? $depth - 1 : NULL));
+                    $tree[] = $this->info($source, $file);
 
-                    $tree = array_merge($tree, $sub);
+                    if($depth > 0 || $depth === NULL) {
+
+                        $sub = $this->tree($this->target($source, $file->fullpath()), (($depth !== NULL) ? $depth - 1 : NULL));
+
+                        $tree = array_merge($tree, $sub);
+
+                    }
 
                 }
+
+            }else{
+
+                $tree = array($this->info($source, $dir));
 
             }
 
@@ -242,7 +253,7 @@ class BrowserConnector {
 
         $files = array();
 
-        $path = $source->fixPath($this->path($target));
+        $path = $source->fixPath($this->path($target)) . '/';
 
         $dir = $source->dir($path);
 
@@ -611,7 +622,7 @@ class BrowserConnector {
 
         $path = $this->path($target);
 
-        $list = $source->find('*' . $query . '*', $path);
+        $list = $source->find('*' . $query . '*', $path, true);
 
         if(!is_array($list))
             throw new \Exception('Search failed!');
