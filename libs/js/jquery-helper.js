@@ -395,6 +395,14 @@ dataBinder.prototype.unwatch = function (key, id) {
     } else delete this._watchers[key];
 };
 
+dataBinder.prototype.unwatchAll = function () {
+    this._watchers = {};
+    for (let x in this._attributes) {
+        if (this._attributes[x] instanceof dataBinder)
+            this._attributes[x].unwatchAll();
+    }
+};
+
 dataBinder.prototype.keys = function () {
     return Object.keys(this._attributes);
 };
