@@ -35,6 +35,18 @@ abstract class DataTypeConverter  {
         'text' => 'string'
     );
 
+    /**
+     * Convert a variable to the request type.
+     *
+     * This also allows us to convert complex types, such as arrays, into objects.
+     *
+     * @param mixed $value The value to convert.
+     * @param mixed $type  The type to convert it to.
+     *
+     * @throws Exception\InvalidDataType
+     * @throws \Exception
+     * @return mixed
+     */
     protected static function convertType(&$value, $type) {
 
         if($value === null || $type === null) return $value;
@@ -139,6 +151,10 @@ abstract class DataTypeConverter  {
                 }
 
             }
+
+        }else{
+
+            throw new \Exception("Unable to convert value to unknown type or class '$type'.");
 
         }
 
