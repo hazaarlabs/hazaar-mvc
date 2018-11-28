@@ -32,7 +32,8 @@ abstract class DataTypeConverter  {
     protected static $type_aliases = array(
         'bool' => 'boolean',
         'number' => 'float',
-        'text' => 'string'
+        'text' => 'string',
+        'date' => 'Hazaar\Date'
     );
 
     /**
