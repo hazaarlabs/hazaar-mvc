@@ -157,7 +157,7 @@ dataBinderValue.prototype.valueOf = function () {
     return this.value;
 };
 
-dataBinderValue.prototype.set = function (value, label, other) {
+dataBinderValue.prototype.set = function (value, label, other, update) {
     value = this._parent.__nullify(value);
     if (value !== null && typeof value === 'object'
         || value === this._value && label === this._label
@@ -166,8 +166,10 @@ dataBinderValue.prototype.set = function (value, label, other) {
     this._value = value;
     this._label = label;
     if (typeof other !== 'undefined') this._other = other;
-    this._parent._update(attr_name, true);
-    this._parent._trigger(this._name, this);
+    if (update !== false) {
+        this._parent._update(attr_name, true);
+        this._parent._trigger(this._name, this);
+    }
     return this;
 };
 
@@ -177,8 +179,8 @@ dataBinderValue.prototype.save = function (no_label) {
     return this.value;
 };
 
-dataBinderValue.prototype.empty = function () {
-    return this.set(null, null, null);
+dataBinderValue.prototype.empty = function (update) {
+    return this.set(null, null, null, update);
 };
 
 dataBinderValue.prototype.update = function () {
