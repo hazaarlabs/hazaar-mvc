@@ -71,7 +71,7 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     }
 
-    public function __destruct(){
+    private function unlock(){
 
         if(!Cdnjs::$mutex)
             return;
@@ -81,6 +81,12 @@ class Cdnjs extends \Hazaar\View\Helper {
         fclose(Cdnjs::$mutex);
 
         Cdnjs::$mutex = null;
+
+    }
+
+    public function __destruct(){
+
+        $this->unlock();
 
     }
 
@@ -215,6 +221,8 @@ class Cdnjs extends \Hazaar\View\Helper {
             throw new \Exception('CDNJS: Error parsing package info!');
 
         self::$cache->set($name, $info);
+
+        $this->unlock();
 
         return $info;
 
