@@ -17,7 +17,7 @@ class Dir {
     function __construct($path, Backend\_Interface $backend = NULL, Manager $manager = null) {
 
         if(! $backend)
-            $backend = new Backend\Local(array('root' => '/'));
+            $backend = new Backend\Local(array('root' => ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : '/')));
 
         $this->backend = $backend;
 
