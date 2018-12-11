@@ -320,7 +320,7 @@ class Application {
             // Try and create the directory automatically
             try {
 
-                mkdir($path, 0775);
+                @mkdir($path, 0775);
 
             }
             catch(\Exception $e) {
