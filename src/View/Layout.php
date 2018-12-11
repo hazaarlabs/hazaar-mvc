@@ -467,7 +467,10 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
             if(count($params) > 0)
                 $url .= '?' . http_build_query($params);
 
-            $file->set_contents(file_get_contents($url));
+            if(!($content = @file_get_contents($url)))
+                throw new \Exception('Unable to cache from source ' . $url, 502);
+
+            $file->set_contents($content);
 
             $file->save();
 
