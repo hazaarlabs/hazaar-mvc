@@ -449,7 +449,9 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
 
         $path = $request->getRawPath();
 
-        $file = $this->cacheDir->get($path);
+        $params = $request->getParams();
+
+        $file = $this->cacheDir->get($path . ((count($params) > 0) ? '_' . md5(array_flatten($params)) : null));
 
         if(!$file->exists()){
 
@@ -461,6 +463,9 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
             $pos = strpos($path, '/');
 
             $url = substr($path, 0, $pos) . '://' . substr($path, $pos + 1);
+
+            if(count($params) > 0)
+                $url .= '?' . http_build_query($params);
 
             $file->set_contents(file_get_contents($url));
 
