@@ -8,37 +8,49 @@ class Local implements _Interface {
 
     private $options;
 
-    static  $mime_types = NULL;
+    static  $mime_types = null;
 
-    private $meta       = array();
+    private $meta = array();
 
     public function __construct($options = array()) {
 
         $root = ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : DIRECTORY_SEPARATOR);
 
-        $this->options = new \Hazaar\Map(array('display_hidden' => FALSE, 'root' => $root), $options);
-
-        $metafile = $this->options->root . DIRECTORY_SEPARATOR . '.metadata';
-
-        if(file_exists($metafile) && $meta = json_decode(file_get_contents($metafile), TRUE))
-            $this->meta = $meta;
+        $this->options = new \Hazaar\Map(array('display_hidden' => false, 'root' => $root), $options);
 
     }
 
-    public function __destruct() {
+    public function __destruct(){
 
-        if(is_array($this->meta) && count($this->meta) > 0 && $this->options->root != DIRECTORY_SEPARATOR)
-            file_put_contents($this->options->root . DIRECTORY_SEPARATOR . '.metadata', json_encode($this->meta));
+        if(count($this->meta) > 0){
+
+            foreach($this->meta as $fullpath => $meta){
+
+                if($meta[1] !== true)
+                    continue;
+
+                $metadir = dirname($fullpath) . DIRECTORY_SEPARATOR . '.metadata';
+
+                if(!file_exists($metadir))
+                    mkdir($metadir, 0644, true);
+
+                $metafile = $metadir . DIRECTORY_SEPARATOR . basename($fullpath);
+
+                file_put_contents($metafile, json_encode($meta[0]));
+
+            }
+
+        }
 
     }
 
-    public function refresh($reset = FALSE) {
+    public function refresh($reset = false) {
 
-        return TRUE;
+        return true;
 
     }
 
-    public function resolvePath($path, $file = NULL) {
+    public function resolvePath($path, $file = null) {
 
         $path = \Hazaar\Loader::fixDirectorySeparator($path);
 
@@ -47,32 +59,32 @@ class Local implements _Interface {
         if($path == DIRECTORY_SEPARATOR)
             $path = $base;
         elseif(substr($path, 1, 1) !== ':') //Not an absolute Windows path
-            $path = $base . ((substr($base, -1, 1) != DIRECTORY_SEPARATOR) ? DIRECTORY_SEPARATOR : NULL) . trim($path, DIRECTORY_SEPARATOR);
+            $path = $base . ((substr($base, -1, 1) != DIRECTORY_SEPARATOR) ? DIRECTORY_SEPARATOR : null) . trim($path, DIRECTORY_SEPARATOR);
 
         if($file)
-            $path .= ((strlen($path) > 1) ? DIRECTORY_SEPARATOR : NULL) . trim($file, DIRECTORY_SEPARATOR);
+            $path .= ((strlen($path) > 1) ? DIRECTORY_SEPARATOR : null) . trim($file, DIRECTORY_SEPARATOR);
 
         return $path;
 
     }
 
-    public function scandir($path, $regex_filter = NULL, $show_hidden = FALSE) {
+    public function scandir($path, $regex_filter = null, $show_hidden = false) {
 
         $list = array();
 
         $path = $this->resolvePath($path);
 
         if(! is_dir($path))
-            return FALSE;
+            return false;
 
         $dir = dir($path);
 
-        while(($file = $dir->read()) != FALSE) {
+        while(($file = $dir->read()) != false) {
 
             if($file == '.metadata')
                 continue;
 
-            if(($show_hidden == FALSE && substr($file, 0, 1) == '.') || $file == '.' || $file == '..')
+            if(($show_hidden == false && substr($file, 0, 1) == '.') || $file == '.' || $file == '..')
                 continue;
 
             if($regex_filter && ! preg_match($regex_filter, $file))
@@ -86,11 +98,11 @@ class Local implements _Interface {
 
     }
 
-    public function read($file, $offset = -1, $maxlen = NULL) {
+    public function read($file, $offset = -1, $maxlen = null) {
 
         $file = $this->resolvePath($file);
 
-        $ret = FALSE;
+        $ret = false;
 
         if(file_exists($file)) {
 
@@ -98,11 +110,11 @@ class Local implements _Interface {
 
                 if($maxlen) {
 
-                    $ret = file_get_contents($file, FALSE, NULL, $offset, $maxlen);
+                    $ret = file_get_contents($file, false, null, $offset, $maxlen);
 
                 } else {
 
-                    $ret = file_get_contents($file, FALSE, NULL, $offset);
+                    $ret = file_get_contents($file, false, null, $offset);
 
                 }
 
@@ -118,34 +130,34 @@ class Local implements _Interface {
 
     }
 
-    public function write($file, $data, $content_type, $overwrite = TRUE) {
+    public function write($file, $data, $content_type, $overwrite = true) {
 
         $file = $this->resolvePath($file);
 
-        if(file_exists($file) && $overwrite == FALSE)
-            return FALSE;
+        if(file_exists($file) && $overwrite == false)
+            return false;
 
-        if(($ret = file_put_contents($file, $data)) !== FALSE)
-            return TRUE;
+        if(($ret = file_put_contents($file, $data)) !== false)
+            return true;
 
-        return FALSE;
+        return false;
 
     }
 
-    public function upload($path, $file, $overwrite = TRUE) {
+    public function upload($path, $file, $overwrite = true) {
 
         $path = \Hazaar\Loader::fixDirectorySeparator($path);
 
         $fullPath = $this->resolvePath(rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $file['name']);
 
-        if(file_exists($fullPath) && $overwrite == FALSE)
-            return FALSE;
+        if(file_exists($fullPath) && $overwrite == false)
+            return false;
 
         return move_uploaded_file($file['tmp_name'], $fullPath);
 
     }
 
-    public function copy($src, $dst, $recursive = FALSE) {
+    public function copy($src, $dst, $recursive = false) {
 
         $src = rtrim(\Hazaar\Loader::fixDirectorySeparator($src), DIRECTORY_SEPARATOR);
 
@@ -164,10 +176,10 @@ class Local implements _Interface {
 
             if($ret) {
 
-                if($srcMeta = ake($this->meta, $rSrc))
-                    $this->meta[$rDst] = $srcMeta;
+                if($srcMeta = $this->meta($rSrc))
+                    $this->meta[$rDst] = array($srcMeta, true);
 
-                return TRUE;
+                return true;
 
             }
 
@@ -185,18 +197,18 @@ class Local implements _Interface {
                 $fullpath = $src . DIRECTORY_SEPARATOR . $file;
 
                 if($this->is_dir($fullpath))
-                    $this->copy($fullpath, $dst, TRUE);
+                    $this->copy($fullpath, $dst, true);
 
                 else
                     $this->copy($fullpath, $dst);
 
             }
 
-            return TRUE;
+            return true;
 
         }
 
-        return FALSE;
+        return false;
 
     }
 
@@ -207,7 +219,7 @@ class Local implements _Interface {
         $rDst = $this->resolvePath($dst);
 
         if(file_exists($rDst))
-            return FALSE;
+            return false;
 
         return link($rSrc, $rDst);
 
@@ -223,25 +235,25 @@ class Local implements _Interface {
             $rDst = $this->resolvePath($dst, basename($src));
 
         if(substr($dst, 0, strlen($src)) == $src)
-            return FALSE;
+            return false;
 
         $ret = rename($rSrc, $rDst);
 
         if($ret) {
 
-            if($srcMeta = ake($this->meta, $rSrc)) {
+            if($srcMeta = $this->meta($rSrc)) {
 
-                $this->meta[$rDst] = $srcMeta;
+                $this->meta[$rDst] = array($srcMeta, true);
 
                 unset($this->meta[$rSrc]);
 
             }
 
-            return TRUE;
+            return true;
 
         }
 
-        return FALSE;
+        return false;
 
     }
 
@@ -255,16 +267,18 @@ class Local implements _Interface {
 
             if($ret) {
 
-                if(is_array($this->meta) && array_key_exists($realPath, $this->meta))
-                    unset($this->meta[$realPath]);
+                $metafile = dirname($realPath) . DIRECTORY_SEPARATOR . '.metadata' . DIRECTORY_SEPARATOR . basename($realPath);
 
-                return TRUE;
+                if(file_exists($metafile))
+                    unlink($metafile);
+
+                return true;
 
             }
 
         }
 
-        return FALSE;
+        return false;
 
     }
 
@@ -273,7 +287,7 @@ class Local implements _Interface {
         $path = $this->resolvePath($path);
 
         if(! file_exists($path))
-            return NULL;
+            return null;
 
         $info = pathinfo($path);
 
@@ -340,13 +354,13 @@ class Local implements _Interface {
         if($path = $this->resolvePath($path))
             return md5_file($path);
 
-        return NULL;
+        return null;
 
     }
 
     public function thumbnail($path, $params = array()) {
 
-        return FALSE;
+        return false;
 
     }
 
@@ -355,22 +369,22 @@ class Local implements _Interface {
         $path = $this->resolvePath($path);
 
         if(file_exists($path))
-            return FALSE;
+            return false;
 
         return mkdir($path);
 
     }
 
-    public function rmdir($path, $recurse = FALSE) {
+    public function rmdir($path, $recurse = false) {
 
         $realPath = $this->resolvePath($path);
 
         if(! is_dir($realPath))
-            return FALSE;
+            return false;
 
         if($recurse) {
 
-            $dir = $this->scandir($path, NULL, TRUE);
+            $dir = $this->scandir($path, null, true);
 
             foreach($dir as $file) {
 
@@ -381,7 +395,7 @@ class Local implements _Interface {
 
                 if($this->is_dir($fullpath)) {
 
-                    $this->rmdir($fullpath, TRUE);
+                    $this->rmdir($fullpath, true);
 
                 } else {
 
@@ -394,7 +408,7 @@ class Local implements _Interface {
         }
 
         if($path == DIRECTORY_SEPARATOR)
-            return TRUE;
+            return true;
 
         //Hack to get PHP on windows to let go of the now empty directory so that we can remove it
         $handle = opendir($realPath);
@@ -430,21 +444,21 @@ class Local implements _Interface {
 
     }
 
-    //TRUE if path is a directory
+    //true if path is a directory
     public function is_dir($path) {
 
         return is_dir($this->resolvePath($path));
 
     }
 
-    //TRUE if path is a symlink
+    //true if path is a symlink
     public function is_link($path) {
 
         return is_link($this->resolvePath($path));
 
     }
 
-    //TRUE if path is a normal file
+    //true if path is a normal file
     public function is_file($path) {
 
         return is_file($this->resolvePath($path));
@@ -509,19 +523,27 @@ class Local implements _Interface {
 
     }
 
-    private function meta($path) {
+    private function meta($fullpath) {
 
-        $fullpath = $this->resolvePath($path);
+        if(array_key_exists($fullpath, $this->meta))
+            return $this->meta[$fullpath][0];
 
-        if($meta = ake($this->meta, $fullpath))
-            return $meta;
+        $metafile =  dirname($fullpath) . DIRECTORY_SEPARATOR . '.metadata' . DIRECTORY_SEPARATOR . basename($fullpath);
+
+        if(file_exists($metafile)){
+
+            $this->meta[$fullpath] = array(json_decode(file_get_contents($metafile), true), false);
+
+            return $this->meta[$fullpath][0];
+
+        }
 
         $meta = array();
 
         /**
          * Generate Image Meta
          */
-        if(substr($this->mime_content_type($path), 0, 5) == 'image') {
+        if(substr($this->mime_content_type($fullpath), 0, 5) == 'image') {
 
             $size = getimagesize($fullpath);
 
@@ -535,29 +557,27 @@ class Local implements _Interface {
 
         }
 
-        $this->meta[$fullpath] = $meta;
+        $this->meta[$fullpath] = array($meta, true);
 
         return $meta;
 
     }
 
-    public function set_meta($path, $values) {
+    public function set_meta($path, $values, $merge = true) {
 
         $fullpath = $this->resolvePath($path);
 
-        if(! ($meta = ake($this->meta, $fullpath)))
-            return NULL;
+        $meta = $this->meta($fullpath);
 
-        $this->meta[$fullpath] = array_merge($this->meta[$fullpath], $values);
+        $this->meta[$fullpath] = array(array_merge($meta, $values), true);
 
-        return TRUE;
+        return true;
 
     }
 
-    public function get_meta($path, $key = NULL) {
+    public function get_meta($path, $key = null) {
 
-        if(! ($meta = $this->meta($path)))
-            return NULL;
+        $meta = $this->meta($this->resolvePath($path));
 
         if($key)
             return ake($meta, $key);
@@ -568,13 +588,13 @@ class Local implements _Interface {
 
     public function preview_uri($path) {
 
-        return FALSE;
+        return false;
 
     }
 
     public function direct_uri($path) {
 
-        return FALSE;
+        return false;
 
     }
 
