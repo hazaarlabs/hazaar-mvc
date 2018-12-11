@@ -289,9 +289,7 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
             if($cache_local === true || ($cache_local === null && $this->application->config->view->cache === true))
                 $href = $this->application->url('hazaar', 'view/css/' . $matches[1] . '/' . $matches[2])->encode();
 
-            $link->href($href);
-
-        }else{
+        }elseif(!$href instanceof \Hazaar\Application\Url){
 
             switch ($rel) {
                 case 'stylesheet':
@@ -304,19 +302,23 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
                     else
                         $href = 'style/' . $href;
 
-                    $link->href($this->application->url($href));
+                    $href = $this->application->url($href);
 
                     break;
 
                 case 'shortcut icon':
 
-                    $link->href($this->application->url($href))
-                        ->id('favicon');
+                    $link->id('favicon');
+
+                    $href = $this->application->url($href);
 
                     break;
+
             }
 
         }
+
+        $link->href($href);
 
         $this->_links[$this->_priority][] = $link;
 
