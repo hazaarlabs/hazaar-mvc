@@ -19,7 +19,9 @@ class Controller extends \Hazaar\Controller {
 
         $action = $request->getActionName();
 
-        switch($request->getControllerName()){
+        $controller = $request->getControllerName();
+
+        switch($controller){
             case 'helper':
 
                 $request->evaluate($request->getRawPath());
@@ -33,7 +35,18 @@ class Controller extends \Hazaar\Controller {
 
                 $this->method = $request->getActionName();
 
-                $this->params = $request->getParams();
+                $this->params = array($request);
+
+                break;
+
+            case 'js':
+            case 'css':
+
+                $this->helper = new \Hazaar\View\Layout();
+
+                $this->method = 'lib';
+
+                $this->params = array($controller, $request);
 
                 break;
 
@@ -49,7 +62,7 @@ class Controller extends \Hazaar\Controller {
         if(!method_exists($this->helper, $this->method))
             throw new \Exception('Method not found!', 404);
 
-        $response = call_user_func(array($this->helper, $this->method), $this->request);
+        $response = call_user_func_array(array($this->helper, $this->method), $this->params);
 
         return $response;
 

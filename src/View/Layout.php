@@ -27,7 +27,9 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
 
     protected $_postItems = array();
 
-    public function __construct($view = NULL) {
+    private $cacheDir;
+
+    public function __construct($view = null) {
 
         if(! $view)
             $view = 'application';
@@ -220,19 +222,24 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
 
     }
 
-    public function requires($script, $charset = NULL) {
+    public function requires($script, $charset = null, $cache_local = null) {
 
         if (is_array($script)) {
 
-            foreach ($script as $s)
-                $this->requires($s, $charset);
+            foreach ($script as $s) $this->requires($s, $charset, $cache_local);
 
             return;
+
         }
 
-        if (! $script instanceof \Hazaar\Html\Script) {
+        if (!$script instanceof \Hazaar\Html\Script) {
 
-            if (! preg_match('/^http[s]?:\/\//', $script)){
+            if(is_string($script) && preg_match('/^(\w+):\/\/(.+)$/', $script, $matches)){
+
+                if($cache_local === true || ($cache_local === null && $this->application->config->view->cache === true))
+                    $script = $this->application->url('hazaar', 'view/js/' . $matches[1] . '/' . $matches[2])->encode();
+
+            }elseif(!$script instanceof \Hazaar\Application\Url){
 
                 if($this->_methodHandler instanceof \Hazaar\Controller
                     && $this->_methodHandler->base_path)
@@ -250,13 +257,14 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
 
             if ($charset)
                 $script->charset($charset);
+
         }
 
         $this->_requires[$this->_priority][] = $script;
 
     }
 
-    public function link($href, $rel = NULL) {
+    public function link($href, $rel = null, $cache_local = null) {
 
         if (! $rel) {
 
@@ -276,7 +284,14 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
 
         $link = (new \Hazaar\Html\Inline('link'))->rel($rel);
 
-        if (! preg_match('/^http[s]?:\/\//', $href)) {
+        if(is_string($href) && preg_match('/^(\w+):\/\/(.+)$/', $href, $matches)){
+
+            if($cache_local === true || ($cache_local === null && $this->application->config->view->cache === true))
+                $href = $this->application->url('hazaar', 'view/css/' . $matches[1] . '/' . $matches[2])->encode();
+
+            $link->href($href);
+
+        }else{
 
             switch ($rel) {
                 case 'stylesheet':
@@ -300,10 +315,6 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
 
                     break;
             }
-
-        }else{
-
-            $link->href($href);
 
         }
 
@@ -344,7 +355,7 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
      *
      * @return \Hazaar\View
      */
-    public function add($view, $key = NULL) {
+    public function add($view, $key = null) {
 
         if(! $view instanceof \Hazaar\View)
             $view = new \Hazaar\View($view, FALSE);
@@ -424,6 +435,44 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
     public function valid() {
 
         return current($this->_views);
+
+    }
+
+    public function lib($type, $request){
+
+        $app_url = (string)\Hazaar\Application::getInstance()->url();
+
+        if(!substr($request->referer(), 0, strlen($app_url)) == $app_url)
+            throw new \Exception('You are not allowed to access this resource!', 403);
+
+        $this->cacheDir = new \Hazaar\File\Dir($this->application->runtimePath('viewcache/' . $type, true));
+
+        $path = $request->getRawPath();
+
+        $file = $this->cacheDir->get($path);
+
+        if(!$file->exists()){
+
+            $parent = $file->parent();
+
+            if(!$parent->exists())
+                $parent->create(true);
+
+            $pos = strpos($path, '/');
+
+            $url = substr($path, 0, $pos) . '://' . substr($path, $pos + 1);
+
+            $file->set_contents(file_get_contents($url));
+
+            $file->save();
+
+        }
+
+        $response = new \Hazaar\Controller\Response\Javascript($file);
+
+        $response->setUnmodified($request->getHeader('If-Modified-Since'));
+
+        return $response;
 
     }
 

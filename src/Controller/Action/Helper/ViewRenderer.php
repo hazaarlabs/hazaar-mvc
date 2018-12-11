@@ -209,14 +209,14 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
             $view->setRequiresParam($this->_requires_param);
 
             foreach($this->_requires as $req)
-                $view->requires($req);
+                $view->requires($req[0], $req[1], $req[2]);
 
         }
 
         if(is_array($this->_links)){
 
             foreach($this->_links as $link)
-                $view->link($link[0], $link[1]);
+                $view->link($link[0], $link[1], $link[2]);
 
         }
 
@@ -237,21 +237,21 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
     }
 
-    public function requires($script) {
+    public function requires($script, $charset = NULL, $cache_local = null) {
 
         if(! method_exists($this->view, 'requires'))
             throw new \Exception('The current view does not support script imports');
 
-        $this->_requires[] = $script;
+        $this->_requires[] = array($script, $charset, $cache_local);
 
     }
 
-    public function link($href, $rel = NULL) {
+    public function link($href, $rel = NULL, $cache_local = null) {
 
         if(! method_exists($this->view, 'link'))
             throw new \Exception('The current view does not support HTML links');
 
-        $this->_links[] = array($href, $rel);
+        $this->_links[] = array($href, $rel, $cache_local);
 
     }
 
