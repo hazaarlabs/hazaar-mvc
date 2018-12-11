@@ -106,17 +106,8 @@ class Url {
 
             }
 
-            if($m_params) {
-
-                foreach(explode('&', $m_params) as $param) {
-
-                    list($key, $value) = explode('=', $param);
-
-                    $this->params[$key] = $value;
-
-                }
-
-            }
+            if($m_params)
+                parse_str($m_params, $this->params);
 
             /*
              * Sanitize the controller/method
