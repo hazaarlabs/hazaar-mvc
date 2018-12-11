@@ -470,6 +470,22 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
             if(!($content = @file_get_contents($url)))
                 throw new \Exception('Unable to cache from source ' . $url, 502);
 
+            $headers = array();
+
+            foreach($http_response_header as $idx => $hdr){
+
+                if($idx === 0)
+                    continue;
+
+                $pos = strpos($hdr, ':');
+
+                $headers[strtolower(substr($hdr, 0, $pos))] = trim(substr($hdr, $pos + 2));
+
+
+            }
+
+            $file->set_meta($headers);
+
             $file->set_contents($content);
 
             $file->save();
@@ -479,6 +495,9 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
         $response = new \Hazaar\Controller\Response\Javascript($file);
 
         $response->setUnmodified($request->getHeader('If-Modified-Since'));
+
+        if($meta = $file->get_meta())
+            $response->setContentType(ake($meta, 'content-type'));
 
         return $response;
 
