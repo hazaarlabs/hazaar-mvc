@@ -35,7 +35,7 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     public function init(\Hazaar\View\Layout $view, $args = array()) {
 
-        $this->cache_local = ake($args, 'cache_local', false);
+        $this->cache_local = ake($args, 'cache_local');
 
         if($libs = ake($args, 'libs')){
 
@@ -71,7 +71,7 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     }
 
-    public function __destruct(){
+    private function unlock(){
 
         if(!Cdnjs::$mutex)
             return;
@@ -81,6 +81,12 @@ class Cdnjs extends \Hazaar\View\Helper {
         fclose(Cdnjs::$mutex);
 
         Cdnjs::$mutex = null;
+
+    }
+
+    public function __destruct(){
+
+        $this->unlock();
 
     }
 
@@ -101,23 +107,12 @@ class Cdnjs extends \Hazaar\View\Helper {
 
             foreach($info['load'] as &$file){
 
-                if($this->cache_local){
-
-                    //Create the directory here so that we know later that it is OK to load this library
-                    \Hazaar\Application::getInstance()->runtimePath('cdnjs' . DIRECTORY_SEPARATOR . $name . DIRECTORY_SEPARATOR . $info['version'], true);
-
-                    $url = $this->application->url('hazaar', 'view/helper/cdnjs/lib/' . $name . '/' . $info['version'] . '/' . $file)->encode();
-
-                }else{
-
-                    $url =  $this->url($name, $info['version'], $file);
-
-                }
+                $url = 'https://cdnjs.cloudflare.com/ajax/libs/' . $name . '/' . $info['version'] . '/' . ltrim($file, '/');
 
                 if(strtolower(substr($file, -3)) == '.js')
-                    $view->requires($url);
+                    $view->requires($url, null, $this->cache_local);
                 else
-                    $view->link($url);
+                    $view->link($url, null, $this->cache_local);
 
             }
 
@@ -216,54 +211,9 @@ class Cdnjs extends \Hazaar\View\Helper {
 
         self::$cache->set($name, $info);
 
+        $this->unlock();
+
         return $info;
-
-    }
-
-    private function url($name, $version, $path){
-
-        return 'https://cdnjs.cloudflare.com/ajax/libs/' . $name . '/' . $version . '/' . ltrim($path, '/');
-
-    }
-
-    public function lib($request){
-
-        $app = \Hazaar\Application::getInstance();
-
-        $app_url = (string)$app->url();
-
-        if(!substr($request->referer(), 0, strlen($app_url)) == $app_url)
-            throw new \Exception('You are not allowed to access this resource!', 403);
-
-        list($name, $version, $file) = explode('/', $request->getPath(), 3);
-
-        $path = $app->runtimePath('cdnjs' . DIRECTORY_SEPARATOR . $name . DIRECTORY_SEPARATOR . $version);
-
-        if(!file_exists($path))
-            throw new \Exception('This library is not currently accessible!', 404);
-
-        $cacheFile = new \Hazaar\File($path . DIRECTORY_SEPARATOR . $file);
-
-        if(!$cacheFile->exists()){
-
-            $filePath = $cacheFile->dirname();
-
-            if(!file_exists($filePath))
-                mkdir($filePath, 0775, TRUE);
-
-            $url = $this->url($name, $version, $file);
-
-            $cacheFile->set_contents(file_get_contents($url));
-
-            $cacheFile->save();
-
-        }
-
-        $response = new \Hazaar\Controller\Response\File($cacheFile);
-
-        $response->setUnmodified($request->getHeader('If-Modified-Since'));
-
-        return $response;
 
     }
 

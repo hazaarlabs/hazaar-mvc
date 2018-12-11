@@ -199,6 +199,9 @@ class File {
         if($this->contents)
             return strlen($this->contents);
 
+        if(!$this->exists())
+            return false;
+
         return $this->backend->filesize($this->source_file);
 
     }
@@ -220,11 +223,17 @@ class File {
 
     public function is_readable() {
 
+        if(!$this->exists())
+            return false;
+
         return $this->backend->is_readable($this->source_file);
 
     }
 
     public function is_writable() {
+
+        if(!$this->exists())
+            return false;
 
         return $this->backend->is_writable($this->source_file);
 
@@ -247,11 +256,17 @@ class File {
 
     public function is_link() {
 
+        if(!$this->exists())
+            return false;
+
         return $this->backend->is_link($this->source_file);
 
     }
 
     public function is_file() {
+
+        if(!$this->exists())
+            return false;
 
         return $this->backend->is_file($this->source_file);
 
@@ -265,11 +280,17 @@ class File {
 
     public function type() {
 
+        if(!$this->exists())
+            return false;
+
         return $this->backend->filetype($this->source_file);
 
     }
 
     public function ctime() {
+
+        if(!$this->exists())
+            return false;
 
         return $this->backend->filectime($this->source_file);
 
@@ -277,17 +298,29 @@ class File {
 
     public function mtime() {
 
+        if(!$this->exists())
+            return false;
+
         return $this->backend->filemtime($this->source_file);
 
     }
 
     public function atime() {
 
+        if(!$this->exists())
+            return false;
+
         return $this->backend->fileatime($this->source_file);
 
     }
 
     public function has_contents() {
+
+        if($this->contents)
+            return true;
+
+        if(!$this->exists())
+            return false;
 
         return ($this->backend->filesize($this->source_file) > 0);
 
