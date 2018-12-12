@@ -1499,38 +1499,48 @@ function array_diff_assoc_recursive() {
 
     $array1 = array_shift($arrays);
 
-    $difference = array();
+    $diff = array();
 
-    foreach($arrays as $array_compare){
+    foreach($array1 as $key => $value) {
 
-        foreach($array1 as $key => $value) {
+        foreach($arrays as $array_compare){
 
-            if(is_array($value)) {
+            //Check if the value exists in the compare array and if not, check the next array
+            if((is_array($array_compare) && !array_key_exists($key, $array_compare))
+                || ($array_compare instanceof \stdClass && !property_exists($array_compare, $key)))
+                continue;
 
-                if(!isset($array_compare[$key]) || !is_array($array_compare[$key])){
+            if(!(is_array($value) || $value instanceof \stdClass) && $value !== ake($array_compare, $key))
+                continue;
 
-                    $difference[$key] = $value;
+            if(is_array($value) || $value instanceof \stdClass){
 
-                }else{
+                $compare_value = ake($array_compare, $key);
 
-                    $new_diff = array_diff_assoc_recursive($value, $array_compare[$key]);
+                if(!(is_array($compare_value) || $compare_value instanceof \stdClass))
+                    break;
 
-                    if(!empty($new_diff))
-                        $difference[$key] = $new_diff;
+                $child_diff = array_diff_assoc_recursive($value, $compare_value);
+
+                if(!empty($child_diff)){
+
+                    $value = $child_diff;
+
+                    break;
 
                 }
 
-            }elseif(!array_key_exists($key, $array_compare) || $array_compare[$key] !== $value){
-
-                $difference[$key] = $value;
-
             }
+
+            continue 2;
 
         }
 
+        $diff[$key] = $value;
+
     }
 
-    return $difference;
+    return $diff;
 
 }
 
