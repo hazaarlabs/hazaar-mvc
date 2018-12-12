@@ -27,23 +27,23 @@
 function ake($array, $key, $default = NULL, $non_empty = FALSE) {
 
     if(is_string($key) || is_int($key)){
-        
+
         if ((is_array($array) || $array instanceof \ArrayAccess)
             && isset($array[$key])
             && $array[$key] !== NULL
             && (!$non_empty || ($non_empty && (is_string($array[$key]) ? trim($array[$key]) : $array[$key]))))
             return $array[$key];
-    
+
         if ($array instanceof \Hazaar\Model\Strict)
             return $array->ake($key, $default, $non_empty);
-    
+
         if(is_object($array)
             && property_exists($array, $key)
             && (!$non_empty || ($non_empty && trim($array->$key) !== NULL)))
             return $array->$key;
-    
+
     }
-    
+
     return $default;
 
 }
@@ -1482,13 +1482,13 @@ function recursive_iterator_to_array(\Traversable $it) {
  * in the comparison.  Also, unlike the PHP array_diff_assoc() function, this function recurse into child arrays.
  *
  * @param array $array1 The array to compare from.
- * 
+ *
  * @param array $array2 The array to compare against.
- * 
+ *
  * @param array ... More arrays to compare against.
- * 
+ *
  * @return array
- * 
+ *
  * @author Diego Dias <diego.dias@apir.com.au>
  *
  * @since 2.4.1
@@ -1536,9 +1536,9 @@ function array_diff_assoc_recursive() {
 
 /**
  * Recursively convert an object into an array.
- * 
+ *
  * This is basically a recursive version of PHP's get_object_vars().
- * 
+ *
  * @param object $object The object to convert.
  * @return array|boolean Returns the converted object as an array or false on failure.
  */
@@ -1557,5 +1557,37 @@ function object_to_array($object){
     }
 
     return $array;
+
+}
+
+/**
+ * Searches the array using a callback function and returns the first corresponding key if successful.
+ *
+ * @param mixed $haystack The array.
+ * @param callable $callback The callback function to use.  This function should return true if the value matches.
+ * @return mixed
+ */
+function array_usearch($haystack, callable $callback){
+
+    foreach($haystack as $key => $value){
+
+        if($callback($value, $key) === true)
+            return $key;
+
+    }
+
+    return false;
+}
+
+/**
+ * Checks if a value exists in an array using a callback function.
+ *
+ * @param mixed $haystack The array.
+ * @param callable $callback The callback function to use.  This function should return true if the value matches.
+ * @return boolean True if the value is found in the array, false otherwise.
+ */
+function in_uarray($haystack, callable $callback){
+
+    return array_usearch($haystack, $callback) !== false;
 
 }
