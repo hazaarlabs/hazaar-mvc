@@ -29,7 +29,7 @@ class Timer {
      *
      * This sets the precision of the output.  By default it is 2 which means output is 1/10th of a millisecond.
      */
-    private $precision = 2;
+    private $precision;
 
     /**
      * Timer class constructor
@@ -37,7 +37,7 @@ class Timer {
      * The timer class has an implicit timer that is always active called the 'global' timer.  This is simply
      * used to record how long the timer class itself has been active.
      *
-     * @param mixed $precision The precision to use when returning timer values.
+     * @param mixed $precision The precision to use when returning timer values. Defaults to 2.
      */
     function __construct($precision = 2) {
 
@@ -106,6 +106,16 @@ class Timer {
 
     /**
      * Get the current state of a timer.
+     * 
+     * If a timer is currently running, then it's value will be the difference between when it started
+     * and 'now'.  If a timer has stopped, it's value will be the difference between when it was started and when
+     * it stopped.
+     *
+     * @param mixed $name The name of the timer to stop.  If the timer does not exist an exception is thrown.
+     *
+     * @param mixed $precision The precision of the returned value.  If not specified the precision used in the constructor is used.
+     *
+     * @throws Exception
      *
      * @return float
      */
@@ -114,36 +124,29 @@ class Timer {
         if(!array_key_exists($name, $this->timers))
             throw new Exception("Unable to return current value of non-existent timer '$name'.");
 
-        if(!$precision)
-            $precision = $this->precision;
-
         $timer = $this->timers[$name];
 
         $start = $timer['start'];
 
         $stop = (array_key_exists('stop', $timer) ? $timer['stop'] : microtime(true));
 
-        return round(($stop - $start) * 1000, $precision);
+        return round(($stop - $start) * 1000, ($precision !== null) ? $precision : $this->precision);
 
     }
 
     /**
      * Get an array of all timers and their current state
      *
-     * If a timer is currently running, then it's value will be the difference between when it started
-     * and 'now'.
+     * @param mixed $precision The precision of the returned values.  If not specified the precision used in the constructor is used.
      *
-     * If a timer has stopped, it's value will be the difference between when it was started and when
-     * it stopped.
-     *
-     * @return string[]
+     * @return float[]
      */
-    public function all() {
+    public function all($precision = null) {
 
         $results = array();
 
         foreach(array_keys($this->timers) as $name)
-            $results[$name] = $this->get($name);
+            $results[$name] = $this->get($name, $precision);
 
         return $results;
 
