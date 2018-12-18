@@ -1,5 +1,15 @@
 # Configuration
 
+## Includes
+
+You can include another configuration if needed.
+
+```
+include = production
+```
+
+This is useful for if you have a development server or other stripped down server. You can set all your options up in the [production] configuration, include that config, and then only add the settings that you want to override. For example, you may have debugging off by default, so you could include the production config and then just set debug = true.
+
 ## Application Directives
 
 These directives are used throughout the application and affect it's functionality only.
@@ -49,16 +59,34 @@ app.errorController = "Error"
 If this is true, the application will compress any output that it produces. This includes stylesheets and javascript files.
 
 ```
-pp.compress = false
+app.compress = false
 ```
 
 ### app.timer
 
-Enables the built-in application execution timer which is available from inside a controller at
+Enables the built-in application execution timer which is available from inside a controller at 
 
 ```
 $this->application->timer
 ```
+
+This timer is used by the application to track performace during various stages of execution.  Below is a list of available timers automatically
+created by the application during execution.  Any timers that are prefixed with an underscore (_) are pre-stage timers, meaning they hold the execution
+time between the global start time and the start of the timer stage.
+
+* **global** - The global timer is available in all Hazaar\Timer objects and is the time between when the Hazaar MVC application.php file is loaded (known as
+the global start time) and now.
+* **init** - The time taken to initialise the Hazaar\Application object.  This includes everything that occurs in the Hazaar\Application constructor, such as
+initialising the class loader, loading the configuration and setting up the application environment.
+* **_bootstrap** - The time taken to get to the bootstrap stage from global start.
+* **bootstrap** - The time taken to bootstrap the application.  Bootstrapping the application involves all the steps required to prepare the target controller
+for execution.  This includes setting up the operating locale, determining the requested controller using the request path and any routing
+aliases/scripts, as well as initialising the target controller so it is ready for execution.
+* **_exec** - The time taken to get to the exec stage from global start.
+* **exec** - The time taken to actually execute the application.  At this point the target controller will be loaded and prepared so this is just the stage 
+where the controller performs it's tasks.  This can include load/rendering/outputting views, generating and outputting JSON data, etc.
+* **shutdown** - This timer is open ended and is started at the end of the exec stage.  Theoretically the Hazaar\Application::shutdown() method should be
+almost the last thing to execute so using the timer at that point can give an indication of any shutdown issues.
 
 ```
 app.timer = true
@@ -66,7 +94,7 @@ app.timer = true
 
 ### app.maxload
 
-If this directive exists it will activate load average protection. When the application executes it will check the 1 minute load average and if it is greater than this number Hazaar will return a 503 Too Busy HTTP response.
+If this directive exists it will activate load average protection. When the application executes it will check the 1 minute load average and if it is greater than this number the application will return a 503 Too Busy HTTP response.
 
 ```
 app.maxload = 3.00
@@ -114,7 +142,9 @@ The path, relative to the root/application path where models are kept. Usually '
 paths.controller = "controllers"
 ```
 
-## PHP Settings Directivesh3. php.*
+## PHP Settings Directives
+
+### php.*
 
 These config options can be used to configure INI settings in PHP itself.
 
@@ -153,16 +183,6 @@ Specifies the number of seconds of idle time that should pass before a session w
 session.timeout = 180
 ```
 
-## Includes
-
-You can include another configuration if needed.
-
-```
-include = production
-```
-
-This is useful for if you have a development server or other stripped down server. You can set all your options up in the [production] configuration, include that config, and then only add the settings that you want to override. For example, you may have debugging off by default, so you could include the production config and then just set debug = true.
-
 ## View Directives
 
 ```
@@ -174,4 +194,16 @@ This directive can be used to load one or more view helpers automatically, meani
 ```
 view.helper.load[] = Bootstrap
 view.helper.load[] = Google
+```
+
+```
+view.cache
+```
+
+Enables internal caching of external view includes.  This means that if an external JavaScript or CSS file is included using the 
+Hazaar\Controller::requires() or Hazaar\Controller::link() methods, then the file will be cached in the application runtime directory.  This can be
+used during development to reduce requests to external servers and allows for working "offline".
+
+```
+view.cache = true
 ```
