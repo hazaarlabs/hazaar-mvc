@@ -361,6 +361,8 @@
     <Folder Include="docs\" />
     <Folder Include="docs\advanced\databases\" />
     <Folder Include="docs\advanced\view-helpers\" />
+    <Folder Include="docs\getting_started\" />
+    <Folder Include="docs\getting_started\web\" />
     <Folder Include="docs\images\" />
     <Folder Include="docs\intro\" />
     <Folder Include="docs\advanced\caching\" />
@@ -456,6 +458,12 @@
     <Content Include="docs\basics\controllers.md" />
     <Content Include="docs\basics\routing.md" />
     <Content Include="docs\basics\layout.md" />
+    <Content Include="docs\getting_started\create_application.md" />
+    <Content Include="docs\getting_started\install.md" />
+    <Content Include="docs\getting_started\requirements.md" />
+    <Content Include="docs\getting_started\set_locale.md" />
+    <Content Include="docs\getting_started\web\apache.md" />
+    <Content Include="docs\getting_started\web\nginx.md" />
     <Content Include="docs\images\mvc-overview.gif" />
     <Content Include="docs\images\mvc_diagram.png" />
     <Content Include="docs\advanced\authentication.md" />
