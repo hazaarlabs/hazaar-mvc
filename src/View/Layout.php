@@ -447,6 +447,8 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
         if(!substr($request->referer(), 0, strlen($app_url)) == $app_url)
             throw new \Exception('You are not allowed to access this resource!', 403);
 
+        $this->application->config->app['compress'] = false;
+
         $this->cacheDir = new \Hazaar\File\Dir($this->application->runtimePath('viewcache/' . $type, true));
 
         $path = $request->getRawPath();
