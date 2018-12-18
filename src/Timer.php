@@ -15,9 +15,10 @@ namespace Hazaar;
  *
  * The timer class can be used to time one or more events and returns how long it took in milliseconds.
  *
- * !!! NOTE
- *      The \Hazaar\Application class has a built-in timer for measuring the performance of your application automatically.  By default
- *      this timer is disabled.  See the ```app.timer``` setting in [Config Directives](http://scroly.io/hazaarmvc/latest/reference/configs.md).
+ * ## Application Timer
+ * 
+ * The Hazaar\Application class has a built-in timer for measuring the performance of your application automatically.  By default
+ * this timer is disabled.  See the `app.timer` setting in [Config Directives](http://scroly.io/hazaarmvc/latest/reference/configs.md).
  *
  * @since       1.0.0
  */
