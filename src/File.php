@@ -232,14 +232,14 @@ class File {
 
     public function is_writable() {
 
-        if(!$this->exists())
-            return false;
-
         return $this->backend->is_writable($this->source_file);
 
     }
 
     public function is_dir() {
+
+        if(!$this->exists())
+            return false;
 
         return $this->backend->is_dir($this->source_file);
 
