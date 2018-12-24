@@ -29,14 +29,14 @@ class Layout extends \Hazaar\View implements \ArrayAccess, \Iterator {
 
     private $cacheDir;
 
-    public function __construct($view = null, $use_app_config = true) {
+    public function __construct($view = null) {
 
         if(! $view)
             $view = 'application';
 
-        parent::__construct($view, array('html', 'hazaar'), $use_app_config);
+        parent::__construct($view, array('html', 'hazaar'));
 
-        if ($use_app_config && $this->application->config->has('view')) {
+        if ($this->application->config->has('view')) {
 
             if ($this->application->config->view->has('link')) {
 

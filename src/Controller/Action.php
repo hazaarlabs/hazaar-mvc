@@ -24,16 +24,16 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
     private   $stream        = FALSE;
 
-    public function __construct($name, $application, $use_app_config = true) {
+    public function __construct($name, $application) {
 
-        parent::__construct($name, $application, $use_app_config);
+        parent::__construct($name, $application);
 
         $this->_helper = new Action\HelperBroker($this);
 
         if(! $this->view = $this->_helper->addHelper('ViewRenderer'))
             throw new Exception\NoDefaultRenderer();
 
-        if($use_app_config && $this->application->config->app->has('layout')) {
+        if($this->application->config->app->has('layout')) {
 
             $this->_helper->ViewRenderer->layout($this->application->config->app['layout']);
 

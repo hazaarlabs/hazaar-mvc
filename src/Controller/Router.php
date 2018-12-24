@@ -41,6 +41,9 @@ class Router extends \Hazaar\Controller {
 
         }else{
 
+            //Reset the application configuration to defaults so that we don't use any loaded options
+            $this->application->config->reset(true);
+
             $this->module = new $this->className($this->moduleName, $this->application, false);
 
             if($path)

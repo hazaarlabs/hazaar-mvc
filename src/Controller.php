@@ -24,7 +24,7 @@ abstract class Controller implements Controller\_Interface {
 
     public    $base_path;    //Optional base_path for controller relative url() calls.
 
-    public function __construct($name, $application, $use_app_config = true) {
+    public function __construct($name, $application) {
 
         $this->name = $name;
 

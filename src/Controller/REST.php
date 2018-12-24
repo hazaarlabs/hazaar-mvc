@@ -110,9 +110,9 @@ abstract class REST extends \Hazaar\Controller {
 
     }
 
-    public function __construct($name, $application, $use_app_config = true) {
+    public function __construct($name, $application) {
 
-        parent::__construct($name, $application, $use_app_config);
+        parent::__construct($name, $application);
 
         if(class_exists('Hazaar\Cache'))
             $this->__rest_cache = new \Hazaar\Cache();
