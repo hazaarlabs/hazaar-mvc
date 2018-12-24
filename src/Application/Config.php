@@ -125,13 +125,12 @@ class Config extends \Hazaar\Map {
 
         }
 
-        if(!count($options) > 0) return false;
-
         $config = new \Hazaar\Map($defaults);
 
+        if(!$config->count() > 0) return false;
+
         //Load the main configuration file
-        if(!$this->loadConfigOptions(array_shift($options), $config))
-            return false;
+        $this->loadConfigOptions(array_shift($options), $config);
 
         //Load any override files we have found
         if(count($options) > 0){
