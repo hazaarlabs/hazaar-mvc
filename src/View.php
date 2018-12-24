@@ -33,7 +33,7 @@ class View {
 
     protected $_methodHandler;
 
-    public function __construct($view, $init_helpers = array()) {
+    public function __construct($view, $init_helpers = array(), $use_app_config = true) {
 
         $this->load($view);
 
@@ -46,7 +46,7 @@ class View {
 
         }
 
-        if ($this->application->config->has('view')) {
+        if ($use_app_config && $this->application->config->has('view')) {
 
             if ($this->application->config->view->has('helper')) {
 
