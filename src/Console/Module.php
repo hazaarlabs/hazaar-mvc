@@ -18,7 +18,7 @@ abstract class Module extends \Hazaar\Controller\Action {
 
         parent::__construct($name, $application, false);
 
-        $this->view->layout('@console/layout');
+        $this->view->layout('@console/layout', false);
 
         $this->view->notices = array();
 

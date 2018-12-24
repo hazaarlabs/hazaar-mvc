@@ -115,7 +115,7 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
      * Use a layout view
      */
 
-    public function layout($view, $use_app_config = false) {
+    public function layout($view, $use_app_config = true) {
 
         if($this->view instanceof \Hazaar\View\Layout) {
 
@@ -124,7 +124,7 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
         } else {
 
             if(! $view instanceof \Hazaar\View\Layout)
-                $view = new \Hazaar\View\Layout($view, true, $use_app_config);
+                $view = new \Hazaar\View\Layout($view, $use_app_config);
 
             $this->view = $view;
 
