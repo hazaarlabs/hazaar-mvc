@@ -164,7 +164,7 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
 
     public function getContentType() {
 
-        return $this->file->mime_content_type();
+        return $this->content_type ? $this->content_type : $this->file->mime_content_type();
 
     }
 

@@ -157,7 +157,7 @@ dataBinderValue.prototype.valueOf = function () {
     return this.value;
 };
 
-dataBinderValue.prototype.set = function (value, label, other) {
+dataBinderValue.prototype.set = function (value, label, other, update) {
     value = this._parent.__nullify(value);
     if (value !== null && typeof value === 'object'
         || value === this._value && label === this._label
@@ -166,8 +166,10 @@ dataBinderValue.prototype.set = function (value, label, other) {
     this._value = value;
     this._label = label;
     if (typeof other !== 'undefined') this._other = other;
-    this._parent._update(attr_name, true);
-    this._parent._trigger(this._name, this);
+    if (update !== false) {
+        this._parent._update(attr_name, true);
+        this._parent._trigger(this._name, this);
+    }
     return this;
 };
 
@@ -177,8 +179,8 @@ dataBinderValue.prototype.save = function (no_label) {
     return this.value;
 };
 
-dataBinderValue.prototype.empty = function () {
-    return this.set(null, null, null);
+dataBinderValue.prototype.empty = function (update) {
+    return this.set(null, null, null, update);
 };
 
 dataBinderValue.prototype.update = function () {
@@ -265,7 +267,7 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
             this._trigger(key, value);
             if (attr instanceof dataBinder && value instanceof dataBinder) {
                 value._parent = this;
-                value._watchers = attr._watchers;
+                value._copy_watchers(attr);
                 value._trigger_diff(attr);
             }
         },
@@ -280,6 +282,14 @@ dataBinder.prototype._defineProperty = function (trigger_name, key) {
             }
         }
     });
+};
+
+dataBinder.prototype._copy_watchers = function (source) {
+    this._watchers = source._watchers;
+    for (x in source._attributes) {
+        if (source._attributes[x] instanceof dataBinder && x in this._attributes && this._attributes[x] instanceof dataBinder)
+            this._attributes[x]._copy_watchers(source._attributes[x]);
+    }
 };
 
 dataBinder.prototype.remove = function (key) {
@@ -333,11 +343,12 @@ dataBinder.prototype._trigger = function (key, value) {
 dataBinder.prototype._trigger_diff = function (source) {
     if (!source instanceof dataBinder) return;
     for (let x in this._attributes) {
-        if ((this._attributes[x] instanceof dataBinderValue ? this._attributes[x].value : this._attributes[x])
+        if (this._attributes[x] instanceof dataBinder) this._attributes[x]._trigger_diff(source[x])
+        else if ((this._attributes[x] instanceof dataBinderValue ? this._attributes[x].value : this._attributes[x])
             !== (source[x] instanceof dataBinderValue ? source[x].value : source[x])) {
             this._update(this._attr_name(x), true);
             this._trigger(x, this._attributes[x]);
-        } else if (this._attributes[x] instanceof dataBinder) this._attributes[x]._trigger_diff(source[x]);
+        }
     }
 };
 
@@ -393,6 +404,14 @@ dataBinder.prototype.unwatch = function (key, id) {
         if (id in this._watchers[key])
             delete this._watchers[key][id];
     } else delete this._watchers[key];
+};
+
+dataBinder.prototype.unwatchAll = function () {
+    this._watchers = {};
+    for (let x in this._attributes) {
+        if (this._attributes[x] instanceof dataBinder)
+            this._attributes[x].unwatchAll();
+    }
 };
 
 dataBinder.prototype.keys = function () {

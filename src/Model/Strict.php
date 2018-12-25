@@ -311,6 +311,10 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                     $value = $value->get($part, (($lastKey === $key) ? $exec_filters : false));
 
+                }elseif($value instanceof DataBinderValue){
+
+                    $value = ake($value, $part);
+
                 }elseif(is_array($value)){
 
                     $value = ake($value, $part);
