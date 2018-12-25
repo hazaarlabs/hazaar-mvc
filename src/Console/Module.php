@@ -18,13 +18,11 @@ abstract class Module extends \Hazaar\Controller\Action {
 
         parent::__construct($name, $application, false);
 
-        $this->view->layout('@console/layout', false);
-
-        $this->view->notices = array();
-
     }
 
     public function __initialize(\Hazaar\Application\Request $request){
+
+        $this->view->layout('@console/layout');
 
         $this->view->link($this->application->url('hazaar/file/console/css/popup.css'));
 
@@ -34,7 +32,7 @@ abstract class Module extends \Hazaar\Controller\Action {
 
         $this->view->addHelper('jQuery');
 
-        $this->view->addHelper('fontawesome', array('version' => '4.7.0'));
+        $this->view->addHelper('fontawesome');
 
         $this->view->requires($this->application->url('hazaar/file/console/js/popup.js'));
 
@@ -42,17 +40,19 @@ abstract class Module extends \Hazaar\Controller\Action {
 
         $this->view->navitems = $this->handler->getNavItems();
 
-        $this->prepare();
+        $this->view->notices = array();
+
+        $this->init();
 
     }
 
-    public function init(){
+    public function load(){
 
         return true;
 
     }
 
-    public function prepare(){
+    public function init(){
 
         return true;
 
