@@ -204,7 +204,7 @@ class Handler {
         }
 
         foreach($this->modules as $module)
-            $module->init();
+            $module->load();
 
         $this->application = $application;
 

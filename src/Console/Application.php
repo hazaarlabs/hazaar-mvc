@@ -4,7 +4,7 @@ namespace Hazaar\Console;
 
 class Application extends Module {
 
-    public function init(){
+    public function load(){
 
         $this->addMenuGroup('Application', 'bars');
 
