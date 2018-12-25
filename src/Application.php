@@ -220,19 +220,6 @@ class Application {
         }
 
         /*
-         * Create a timer for performance measuring
-         */
-        if($this->config->app->has('timer') && $this->config->app['timer'] == TRUE) {
-
-            $this->timer = new Timer();
-
-            $this->timer->start('init', HAZAAR_INIT_START);
-
-            $this->timer->stop('init');
-
-        }
-
-        /*
          * Use the config to add search paths to the loader
          */
         $this->loader->addSearchPaths($this->config->get('paths'));
@@ -246,6 +233,19 @@ class Application {
         }
 
         $this->request = Application\Request\Loader::load($this->config);
+
+        /*
+         * Create a timer for performance measuring
+         */
+        if($this->config->app->has('timer') && $this->config->app['timer'] == TRUE) {
+
+            $this->timer = new Timer();
+
+            $this->timer->start('init', HAZAAR_INIT_START);
+
+            $this->timer->stop('init');
+
+        }
 
     }
 
@@ -320,7 +320,7 @@ class Application {
             // Try and create the directory automatically
             try {
 
-                mkdir($path, 0775);
+                @mkdir($path, 0775);
 
             }
             catch(\Exception $e) {
@@ -435,11 +435,11 @@ class Application {
 
         if($this->timer) {
 
-            $this->timer->start('pre_boot', HAZAAR_EXEC_START);
+            $this->timer->start('_bootstrap', HAZAAR_EXEC_START);
 
-            $this->timer->stop('pre_boot');
+            $this->timer->stop('_bootstrap');
 
-            $this->timer->start('boot');
+            $this->timer->start('bootstrap');
 
         }
 
@@ -531,7 +531,7 @@ class Application {
         }
 
         if($this->timer)
-            $this->timer->stop('boot');
+            $this->timer->stop('bootstrap');
 
         return $this;
 
@@ -558,8 +558,15 @@ class Application {
      */
     public function run(Controller $controller = NULL) {
 
-        if($this->timer)
+        if($this->timer){
+
+            $this->timer->start('_exec', HAZAAR_EXEC_START);
+
+            $this->timer->stop('_exec');
+
             $this->timer->start('exec');
+
+        }
 
         if(!$controller)
             $controller = $this->controller;
@@ -620,7 +627,7 @@ class Application {
 
         if($this->timer) {
 
-            $this->timer->start('post_exec');
+            $this->timer->start('shutdown');
 
             $this->timer->stop('exec');
 
