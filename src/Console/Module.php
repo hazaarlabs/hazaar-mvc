@@ -10,9 +10,7 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     public $notices = array();
 
-    final function __construct($name, $path, $application, Handler $handler){
-
-        $this->handler = $handler;
+    final function __construct($name, $path, $application){
 
         $this->view_path = $path;
 
@@ -20,7 +18,16 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     }
 
+    final public function __configure(Handler $handler){
+
+        $this->handler = $handler;
+
+    }
+
     public function __initialize(\Hazaar\Application\Request $request){
+
+        if(!$this->handler instanceof Handler)
+            throw new \Exception('Module requires a console handler before being initialised!');
 
         $this->view->layout('@console/layout');
 
