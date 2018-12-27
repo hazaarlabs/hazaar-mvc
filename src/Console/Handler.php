@@ -14,7 +14,9 @@ class Handler {
 
     private $application;
 
-    public function __construct(){
+    public function __construct(\Hazaar\Application $application){
+
+        $this->application = $application;
 
         $this->passwd = CONFIG_PATH . DIRECTORY_SEPARATOR . '.passwd';
 
@@ -161,13 +163,22 @@ class Handler {
 
     }
 
-    public function loadModules($application){
+    public function load(Module $module){
 
-        $path = LIBRARY_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs' . DIRECTORY_SEPARATOR . 'console';
+        $name = $module->getName();
 
-        $this->modules['app'] = new Application('app', $path, $application, $this);
+        if(array_key_exists($name, $this->modules))
+            throw new \Exception('Module ' . $name . ' already loaded!');
 
-        $this->modules['sys'] = new System('sys', $path, $application, $this);
+        $module->__configure($this);
+
+        $this->modules[$name] = $module;
+
+        $module->load();
+
+    }
+
+    public function loadComposerModules(){
 
         $installed = ROOT_PATH
             . DIRECTORY_SEPARATOR . 'vendor'
@@ -197,16 +208,11 @@ class Handler {
                 if(!($path = $this->getSupportPath($consoleClass)))
                     continue;
 
-                $this->modules[$name] = new $consoleClass($name, $path . DIRECTORY_SEPARATOR . 'console', $application, $this);
+                $this->load(new $consoleClass($name, $path . DIRECTORY_SEPARATOR . 'console', $this->application));
 
             }
 
         }
-
-        foreach($this->modules as $module)
-            $module->load();
-
-        $this->application = $application;
 
         return;
 

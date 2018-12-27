@@ -8,11 +8,11 @@ class Application extends Module {
 
         $this->addMenuGroup('Application', 'bars');
 
-        $this->addMenuItem('Models', 'models', 'sitemap', 3);
+        $this->addMenuItem('Models', 'models', 'sitemap');
 
-        $this->addMenuItem('Views', 'views', 'binoculars', 12);
+        $this->addMenuItem('Views', 'views', 'binoculars');
 
-        $this->addMenuItem('Controllers', 'controllers', 'code-fork', 5);
+        $this->addMenuItem('Controllers', 'controllers', 'code-fork');
 
         $this->addMenuItem('Configuration', 'configs', 'cogs');
 

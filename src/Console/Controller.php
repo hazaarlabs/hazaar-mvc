@@ -12,13 +12,19 @@ class Controller extends \Hazaar\Controller\Action {
 
     public function init(){
 
-        $this->handler = new Handler();
+        $this->handler = new Handler($this->application);
 
         if($this->request->getActionName() === 'login')
             return;
 
         if(!$this->handler->authenticated())
             return $this->redirect($this->url('login'));
+
+        $path = LIBRARY_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs' . DIRECTORY_SEPARATOR . 'console';
+
+        $this->handler->load(new Application('app', $path, $this->application));
+
+        $this->handler->load(new System('sys', $path, $this->application));
 
     }
 
@@ -57,7 +63,7 @@ class Controller extends \Hazaar\Controller\Action {
      */
     public function __default($controller, $action){
 
-        $this->handler->loadModules($this->application);
+        $this->handler->loadComposerModules($this->application);
 
         return $this->handler->exec($this, $this->request);
 
