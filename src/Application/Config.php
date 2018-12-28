@@ -78,11 +78,11 @@ class Config extends \Hazaar\Map {
 
     }
 
-    public function load($source, $defaults = array(), $path_type = FILE_PATH_CONFIG, $override_paths = null) {
+    public function load(&$source, $defaults = array(), $path_type = FILE_PATH_CONFIG, $override_paths = null) {
 
         $options = array();
 
-        $sources = array($source);
+        $search_sources = array($source);
 
         if($override_paths){
 
@@ -90,19 +90,19 @@ class Config extends \Hazaar\Map {
                 $override_paths = array($override_paths);
 
             foreach($override_paths as $override)
-                $sources[] = $override . DIRECTORY_SEPARATOR . $source;
+                $search_sources[] = $override . DIRECTORY_SEPARATOR . $source;
 
 
         }
 
-        foreach($sources as &$source){
+        foreach($search_sources as &$search_source){
 
             $source_file = null;
 
             //If we have an extension, just use that file.
-            if(strrpos($source, '.') !== false){
+            if(strrpos($search_source, '.') !== false){
 
-                $source_file = \Hazaar\Loader::getFilePath($path_type, $source);
+                $source_file = \Hazaar\Loader::getFilePath($path_type, $search_source);
 
             }else{ //Otherwise, search for files with supported extensions
 
@@ -110,7 +110,7 @@ class Config extends \Hazaar\Map {
 
                 foreach($extensions as $ext){
 
-                    $filename = $source . '.' . $ext;
+                    $filename = $search_source . '.' . $ext;
 
                     if($source_file = \Hazaar\Loader::getFilePath($path_type, $filename))
                         break;
@@ -139,7 +139,7 @@ class Config extends \Hazaar\Map {
 
                 if(!$o) continue;
 
-                $this->loadConfigOptions(array($this->env => $o), $config);
+                $this->loadConfigOptions(array($this->env => $o), $config, $this->env);
 
             }
 
@@ -370,6 +370,10 @@ class Config extends \Hazaar\Map {
 
         $options = new \Hazaar\Map();
 
+        //The file is a named config file ie: not an absolute file name
+        if(ake($info, 'dirname') === '.' && !array_key_exists('extension', $info))
+            $this->source = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $target . '.' . $type);
+
         //Grab the original file so we can merge into it
         if($this->source && file_exists($this->source)){
 
@@ -393,18 +397,17 @@ class Config extends \Hazaar\Map {
 
                 $output .= "[$env]" . LINE_BREAK;
 
-                $output .= $option->todotnotation()
-                                  ->flatten(' = ', LINE_BREAK) . LINE_BREAK;
+                $output .= $option->todotnotation()->flatten(' = ', LINE_BREAK) . LINE_BREAK;
 
             }
 
         }else{
 
-            $output = json_encode($this->toArray());
+            $output = $options->toJSON(false, JSON_PRETTY_PRINT);
 
         }
 
-        $result = file_put_contents($target, $output);
+        $result = file_put_contents($this->source, $output);
 
         if($result === FALSE)
             return FALSE;
