@@ -8,13 +8,15 @@ class Application extends Module {
 
         $this->addMenuGroup('Application', 'bars');
 
-        $this->addMenuItem('Models', 'models', 'sitemap');
+        //$this->addMenuItem('Models', 'models', 'sitemap');
 
-        $this->addMenuItem('Views', 'views', 'binoculars');
+        //$this->addMenuItem('Views', 'views', 'binoculars');
 
-        $this->addMenuItem('Controllers', 'controllers', 'code-fork');
+        //$this->addMenuItem('Controllers', 'controllers', 'code-fork');
 
-        $this->addMenuItem('Configuration', 'configs', 'cogs');
+        $this->addMenuItem('Configuration', 'config', 'cogs');
+
+        $this->addMenuItem('Encryption', 'encrypt', 'key');
 
     }
 
@@ -34,17 +36,40 @@ class Application extends Module {
 
     public function views($request){
 
-        $this->view('views');
+        $this->view('application/views');
 
     }
 
     public function controllers($request){
 
-        $this->view('controllers');
+        $this->view('application/controllers');
 
     }
 
-    public function configs($request){
+    public function config($request){
+
+        $config = new \Hazaar\Application\Config('application', APPLICATION_ENV);
+
+        if($request->isPost()){
+
+            $config->fromJSON($request->config);
+
+            if(!$config->write())
+                throw new \Exception('shit happened');
+
+            $this->redirect($this->url('app/config'));
+
+        }
+
+        $this->notice('This section is under active development and is subject to regular change.', 'exclamation-triangle', 'warning');
+
+        $this->view('application/config');
+
+        $this->view->config = $config->toJSON(false, JSON_PRETTY_PRINT);
+
+    }
+
+    public function encrypt($request){
 
         if($request->isXMLHttpRequest()){
 
@@ -94,9 +119,9 @@ class Application extends Module {
 
         }
 
-        $this->view('configs');
+        $this->view('application/encrypt');
 
-        $this->view->requires('js/configs.js');
+        $this->view->requires('js/encrypt.js');
 
         if(!(\Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, '.key')))
             $this->notice('There is no application .key file.  Encrypting files will use the defaut key which is definitely NOT RECOMMENDED!', 'key', 'danger');

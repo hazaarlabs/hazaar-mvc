@@ -1,7 +1,7 @@
 ﻿$(document).ready(function () {
-    $.get(hazaar.url('app', 'configs')).done(function (data) {
+    $.get(hazaar.url('app', 'encrypt')).done(function (data) {
         var binder = new dataBinder({ files: data });
-        var tbody = $('#configFiles').children('tbody');
+        var tbody = $('#encryptFiles').children('tbody');
         for (x in binder.files.save()) {
             var file = binder.files[x];
             var action = $('<button>').data('i', x);
@@ -16,10 +16,10 @@
                 $('<td>').html(action)
             ]).data('file', file));
         }
-        $('#configFiles').find('button').click(function (event) {
+        $('#encryptFiles').find('button').click(function (event) {
             var i = $(this).data('i');
             var btn = $(this);
-            $.post(hazaar.url('app', 'configs'), { encrypt: binder.files[i].name.value }).done(function (data) {
+            $.post(hazaar.url('app', 'encrypt'), { encrypt: binder.files[i].name.value }).done(function (data) {
                 btn.toggleClass('danger', data.encrypt)
                     .toggleClass('success', !data.encrypt)
                     .html((data.encrypt ? 'Decrypt' : 'Encrypt'));

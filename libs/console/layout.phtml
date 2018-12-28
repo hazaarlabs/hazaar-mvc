@@ -17,6 +17,7 @@
 
     <div class="hazaar-layout">
         <div class="sidebar">
+
             <div class="sidebar-header">
                 <div class="sidebar-logo"></div>
                 <a class="sidebar-brand" href="<?=$this->url();?>">
@@ -26,11 +27,13 @@
                     <?=APPLICATION_ENV;?>
                 </div>
             </div>
+
             <div class="sidebar-user-info">
-                <?=$this->gravatar('jamie@hazaarlabs.com')->class('sidebar-user-img');?>
-                <div class="sidebar-user-name">Jamie Carl</div>
-                <div class="sidebar-user-role">Administrator</div>
+                <?=$this->html->i()->class('fa fa-user-circle fa-4x sidebar-user-img');?>
+                <div class="sidebar-user-name"><?=$this->user['fullname'];?></div>
+                <div class="sidebar-user-role"><?=$this->user['group'];?></div>
             </div>
+
             <div class="sidebar-nav">
                 <?php
                 $nav = $this->html->ul()->class('sidebar-nav-module');
@@ -96,12 +99,6 @@
                         <a href="<?=$this->application->url();?>" target="_blank">
                             <i class="fa fa-undo"></i>
                             Back to App
-                        </a>
-                    </li>
-                    <li>
-                        <a href="<?=$this->url('settings');?>">
-                            <i class="fa fa-cogs"></i>
-                            Settings
                         </a>
                     </li>
                     <li>

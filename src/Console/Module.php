@@ -49,6 +49,11 @@ abstract class Module extends \Hazaar\Controller\Action {
 
         $this->view->notices = array();
 
+        $this->view->user = array(
+            'fullname' => $this->handler->getUser(),
+            'group' => 'Administrator'
+        );
+
         $this->init();
 
     }

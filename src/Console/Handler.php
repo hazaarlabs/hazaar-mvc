@@ -44,6 +44,8 @@ class Handler {
 
         list($identity, $credential) = explode(':', base64_decode($code));
 
+        $this->user = $identity;
+
         return $this->authenticate($identity, $credential);
 
     }
@@ -160,6 +162,12 @@ class Handler {
     public function deauth(){
 
         session_unset();
+
+    }
+
+    public function getUser(){
+
+        return $_SESSION[$this->session_key];
 
     }
 

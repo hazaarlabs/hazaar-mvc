@@ -2,6 +2,10 @@
  * Base structure
  */
 
+* {
+    box-sizing: border-box;
+}
+
 /* Move down content because we have a fixed navbar that is 50px tall */
 body {
     background: #444;
@@ -18,7 +22,9 @@ body {
     right: 0;
     bottom: 0;
     left: 0;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
 }
 
     .main-panel .main .notice {
@@ -26,67 +32,72 @@ body {
     }
 
     .main-panel .main .main-content {
-        padding: 15px;
+        overflow-y: auto;
+        flex: 1;
     }
 
 .row {
-    float: left;
-    width: 100%;
-    box-sizing: border-box;
+    display: flex;
+    flex-direction: row;
 }
 
+    .row.row-full {
+        height: 100%;
+    }
+
     .row .col {
-        float: left;
+        display: flex;
+        flex-direction: column;
         padding: 15px;
         box-sizing: border-box;
     }
 
     .row .col-1 {
-        width: 8.3333333%;
+        flex: 1;
     }
 
     .row .col-2 {
-        width: 16.666667%;
+        flex: 2;
     }
 
     .row .col-3 {
-        width: 25%;
+        flex: 3;
     }
 
     .row .col-4 {
-        width: 33.3333333%;
+        flex: 4;
     }
 
     .row .col-5 {
-        width: 41.6666667%;
+        flex: 5;
     }
 
     .row .col-6 {
-        width: 50%;
+        flex: 6;
     }
 
     .row .col-7 {
-        width: 58.3333333%;
+        flex: 7;
     }
 
     .row .col-8 {
-        width: 66.6666667%;
+        flex: 8;
     }
 
     .row .col-9 {
-        width: 75%;
+        flex: 9;
     }
 
     .row .col-10 {
-        width: 83.3333333%;
+        flex: 10;
     }
 
     .row .col-11 {
-        width: 91.6666667%;
+        flex: 11;
     }
 
     .row .col-12 {
-        width: 100%;
+        flex: 12;
     }
 
 
@@ -350,12 +361,12 @@ body {
     Panels
 */
 .panel {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
     background-color: #fff;
     color: #333;
     box-shadow: 1px 1px 16px rgba(0,0,0,0.3);
-    float: left;
-    width: 100%;
-    margin-bottom: 25px;
 }
 
     .panel .panel-header {
@@ -364,12 +375,8 @@ body {
         font-weight: bold;
     }
 
-    .panel .panel-header,
-    .panel .panel-content,
-    .panel .panel-footer {
-        float: left;
-        width: 100%;
-        box-sizing: border-box;
+    .panel .panel-content {
+        flex: 1;
     }
 
     .panel > h1, .panel > h2, .panel > h3, .panel > h4 {
@@ -404,6 +411,17 @@ body {
     .panel.default, .panel.primary, .panel.info, .panel.warning, .panel.danger {
         color: #fff;
     }
+
+    .panel.panel-full {
+        height: 100%;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+        .panel.panel-full .panel-content {
+            flex: 1;
+        }
 
 table.table {
     width: 100%;
