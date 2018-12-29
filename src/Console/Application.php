@@ -16,7 +16,9 @@ class Application extends Module {
 
         $this->addMenuItem('Configuration', 'config', 'cogs');
 
-        $this->addMenuItem('Encryption', 'encrypt', 'key');
+        $this->addMenuItem('File Encryption', 'encrypt', 'key');
+
+        $this->addMenuItem('Cache Settings', 'cache', 'facebook');
 
     }
 
@@ -130,17 +132,8 @@ class Application extends Module {
 
     }
 
-    public function system($request){
-
-        $this->view('system');
-
-
-    }
-
-    public function phpinfo($request){
-
-        $this->view('phpinfo');
-
+    public function cache($request){
+        
     }
 
 }
