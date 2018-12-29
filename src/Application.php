@@ -854,13 +854,15 @@ class Application {
 
             if($save_url) {
 
-                $sess['REDIRECT'] = array(
+                $data = array(
                     'URI' => $_SERVER['REQUEST_URI'],
                     'METHOD' => $_SERVER['REQUEST_METHOD']
                 );
 
                 if($_SERVER['REQUEST_METHOD'] == 'POST')
-                    $sess['REDIRECT']['POST'] = $_POST;
+                    $data['POST'] = $_POST;
+
+                $sess['REDIRECT'] = $data;
 
             }
 
