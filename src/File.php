@@ -1024,6 +1024,9 @@ class File {
      */
     public function isEncrypted(){
 
+        if(!$this->exists())
+            return false;
+
         $r = $this->open();
 
         $bom = pack('H*','BADA55');  //Haha, Bad Ass!

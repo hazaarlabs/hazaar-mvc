@@ -20,7 +20,7 @@ namespace Hazaar\Cache\Backend;
  *
  * * lifetime - The lifetime to use for cached data. Default: 3600.
  * * session - Any settings to set on the session instance.
- * 
+ *
  * @since 1.0.0
  */
 class Session extends \Hazaar\Cache\Backend {
@@ -72,7 +72,10 @@ class Session extends \Hazaar\Cache\Backend {
              * it now for this application. Otherwise just use the default name
              * specified in the PHP configuration. ie: PHPSESSID
              */
-            if ($app->config->has('session') && is_array($app->config->session) && array_key_exists('name', $app->config->session) && $name = $app->config->session['name'])
+            if ($app->config->has('session')
+                && is_array($app->config->session)
+                && array_key_exists('name', $app->config->session)
+                && $name = $app->config->session['name'])
                 session_name($name);
 
             /*
@@ -86,21 +89,21 @@ class Session extends \Hazaar\Cache\Backend {
         }
 
         /*
-         * This is a hack to make sure the session doesn't get cleaned up
-         * while we are still using it
-         */
-
-        ini_set('session.gc_maxlifetime', $this->timeout * 2);
-
-        ini_set('session.cookie_maxlifetime', $this->timeout * 2);
-
-        /*
          * Start the session if we don't already have one
          */
         if (!session_id()) {
 
             if(Session::$started == true)
                 throw new \Exception('Session already started!');
+
+            /*
+             * This is a hack to make sure the session doesn't get cleaned up
+             * while we are still using it
+             */
+
+            ini_set('session.gc_maxlifetime', $this->timeout * 2);
+
+            ini_set('session.cookie_maxlifetime', $this->timeout * 2);
 
             session_start();
 

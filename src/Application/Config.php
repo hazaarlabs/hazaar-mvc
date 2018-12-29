@@ -302,7 +302,7 @@ class Config extends \Hazaar\Map {
     }
 
     public function getEnvironments(){
-        
+
         return array_keys($this->global);
 
     }
@@ -396,16 +396,18 @@ class Config extends \Hazaar\Map {
         if(ake($info, 'dirname') === '.' && !array_key_exists('extension', $info))
             $this->source = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $target . '.' . $type);
 
+        $source = new \Hazaar\File($this->source);
+
         //Grab the original file so we can merge into it
-        if($this->source && file_exists($this->source)){
+        if($source->exists()){
 
-            $info = pathinfo($this->source);
+            $source_type = $source->extension();
 
-            if($info['extension'] == 'json')
-                $options->fromJSON(file_get_contents($this->source));
+            if($source_type == 'json')
+                $options->fromJSON($source->get_contents());
 
-            elseif($info['extension'] == 'ini')
-                $options->fromDotNotation(parse_ini_file($this->source, TRUE, INI_SCANNER_RAW));
+            elseif($source_type == 'ini')
+                $options->fromDotNotation(parse_ini_string($source->get_contents(), TRUE, INI_SCANNER_RAW));
 
         }
 
@@ -429,7 +431,9 @@ class Config extends \Hazaar\Map {
 
         }
 
-        $result = file_put_contents($this->source, $output);
+        $source->set_contents($output);
+
+        $result = $source->save();
 
         if($result === FALSE)
             return FALSE;
