@@ -3,9 +3,17 @@
     <div class="row row-full">
         <div class="col col-12">
             <div class="panel panel-full">
-                <div class="panel-header">Application Configuration</div>
+                <div class="panel-header">
+                    Application Configuration
+                    <?php
+                    $envs = $this->config->getEnvironments();
+
+                    echo $this->html->select('env', array_combine($envs, $envs), $this->config->getEnv())
+                        ->id('selectEnv');
+                    ?>
+                </div>
                 <div class="panel-content">
-                    <textarea name="config" style="width: 100%; height: 100%;"><?=$this->config;?></textarea>
+                    <textarea name="config" style="width: 100%; height: 100%;"><?=json_encode($this->config->getEnvConfig(), JSON_PRETTY_PRINT);?></textarea>
                 </div>
                 <div class="panel-footer">
                     <button class="primary">Save</button>

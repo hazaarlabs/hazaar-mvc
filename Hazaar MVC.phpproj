@@ -499,6 +499,7 @@
     <Content Include="libs\console\application\config.phtml" />
     <Content Include="libs\console\images\hazaar-bg.jpg" />
     <Content Include="libs\console\images\hazaar-icon-lg.png" />
+    <Content Include="libs\console\js\config.js" />
     <Content Include="libs\console\js\encrypt.js" />
     <Content Include="libs\console\js\application.js" />
     <Content Include="libs\console\js\console.js" />

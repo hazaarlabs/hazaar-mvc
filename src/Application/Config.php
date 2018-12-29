@@ -29,6 +29,8 @@ class Config extends \Hazaar\Map {
 
     private $source;
 
+    private $global;
+
     private $loaded = false;
 
     /**
@@ -227,6 +229,11 @@ class Config extends \Hazaar\Map {
         if(!(\Hazaar\Map::is_array($options) && array_key_exists($env, $options)))
             return false;
 
+        if(!is_array($this->global))
+            $this->global = array();
+
+        $this->global = array_merge($this->global, $options);
+
         foreach($options[$env] as $key => $values) {
 
             if($key === 'include') {
@@ -282,6 +289,21 @@ class Config extends \Hazaar\Map {
     public function getEnv() {
 
         return $this->env;
+
+    }
+
+    public function getEnvConfig($env = null){
+
+        if($env === null)
+            $env = $this->env;
+
+        return ake($this->global, $env);
+
+    }
+
+    public function getEnvironments(){
+        
+        return array_keys($this->global);
 
     }
 

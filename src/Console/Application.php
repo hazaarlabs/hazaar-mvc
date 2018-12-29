@@ -48,7 +48,7 @@ class Application extends Module {
 
     public function config($request){
 
-        $config = new \Hazaar\Application\Config('application', APPLICATION_ENV);
+        $config = new \Hazaar\Application\Config('application', $request->get('env', APPLICATION_ENV));
 
         if($request->isPost()){
 
@@ -57,7 +57,7 @@ class Application extends Module {
             if(!$config->write())
                 throw new \Exception('shit happened');
 
-            $this->redirect($this->url('app/config'));
+            $this->redirect($this->url('app/config', array('env' => $config->getEnv())));
 
         }
 
@@ -65,7 +65,9 @@ class Application extends Module {
 
         $this->view('application/config');
 
-        $this->view->config = $config->toJSON(false, JSON_PRETTY_PRINT);
+        $this->view->requires('js/config.js');
+
+        $this->view->config = $config;
 
     }
 
