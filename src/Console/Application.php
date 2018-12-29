@@ -54,22 +54,30 @@ class Application extends Module {
 
         if($request->isPost()){
 
-            $config->fromJSON($request->config);
+            if($config->fromJSON($request->config)){
 
-            if(!$config->write())
-                throw new \Exception('shit happened');
+                if($config->write())
+                    $this->redirect($this->url('app/config', array('env' => $config->getEnv())));
 
-            $this->redirect($this->url('app/config', array('env' => $config->getEnv())));
+                $this->notice('An error ocurred writing the config file.', 'exclamation-triangle', 'danger');
 
-        }
+            }else
+                $this->notice('Invalid JSON.  Please fix and try again!', 'exclamation-triangle', 'warning');
 
-        $this->notice('This section is under active development and is subject to regular change.', 'exclamation-triangle', 'warning');
+            $data = $request->config;
+
+        } else
+            $data = json_encode($config->getEnvConfig(), JSON_PRETTY_PRINT);
 
         $this->view('application/config');
 
         $this->view->requires('js/config.js');
 
-        $this->view->config = $config;
+        $this->view->extend(array(
+            'config' => $data,
+            'env' => $config->getEnv(),
+            'envs' => $config->getEnvironments()
+        ));
 
     }
 
@@ -133,7 +141,7 @@ class Application extends Module {
     }
 
     public function cache($request){
-        
+
     }
 
 }
