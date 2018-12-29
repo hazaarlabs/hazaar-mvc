@@ -20,12 +20,6 @@ class Controller extends \Hazaar\Controller\Action {
         if(!$this->handler->authenticated())
             return $this->redirect($this->url('login'));
 
-        $path = LIBRARY_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs' . DIRECTORY_SEPARATOR . 'console';
-
-        $this->handler->load(new Application('app', $path, $this->application));
-
-        $this->handler->load(new System('sys', $path, $this->application));
-
     }
 
     public function login(){
@@ -40,8 +34,6 @@ class Controller extends \Hazaar\Controller\Action {
         }
 
         $this->layout('@console/login');
-
-        $this->view->link('console/css/layout.css');
 
         $this->view->link('console/css/login.css');
 
@@ -62,6 +54,12 @@ class Controller extends \Hazaar\Controller\Action {
      * Launch the Hazaar MVC Management Console
      */
     public function __default($controller, $action){
+
+        $path = LIBRARY_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs' . DIRECTORY_SEPARATOR . 'console';
+
+        $this->handler->load(new Application('app', $path, $this->application));
+
+        $this->handler->load(new System('sys', $path, $this->application));
 
         $this->handler->loadComposerModules($this->application);
 

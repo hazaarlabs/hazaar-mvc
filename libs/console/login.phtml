@@ -17,7 +17,9 @@
 
 <body>
 
-    <div class="overlay"></div>
+    <div class="login-bg">
+        <div class="overlay"></div>
+    </div>
 
     <div class="container">
 
@@ -28,7 +30,7 @@
                 <h4>Application Console</h4>
             </div>
 
-            <?php if($this->msg) echo $this->html->div($this->msg)->class('alert alert-danger');?>
+            <?php if($this->msg) echo $this->html->div($this->msg)->class('alert');?>
 
             <div class="login-icon"></div>
 
