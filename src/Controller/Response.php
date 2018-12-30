@@ -291,6 +291,8 @@ abstract class Response implements Response\_Interface {
 
         echo $content;
 
+        flush();
+
     }
 
     public function __sleep(){
