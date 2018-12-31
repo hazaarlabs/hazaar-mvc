@@ -73,7 +73,7 @@ class Metric {
 
     public function __destruct(){
 
-        //$this->update();
+        $this->update();
 
         fclose($this->h);
 
@@ -552,6 +552,8 @@ class Metric {
 
             fwrite($this->h, pack('l', $ds['last']));
 
+            $this->lastTick['data'][$dsname] = $tick;
+
         }
 
         switch($this->data_sources[$dsname]['type']) {
@@ -632,14 +634,29 @@ class Metric {
 
                     $start = $this->getDataSourceOffset($dsname) + METRIC_DSDEF_LEN + strlen($ds['name'] . $ds['desc']);
 
-                    for($tick = $last_tick + 1; $tick < $current_tick; $tick++){
+                    for($tick = $current_tick - 1; $tick > $last_tick; $tick--){
 
-                        //TODO: Somewhere here we need to load the values from the actual PDPs.
-                        //$row = $ds['last'];
-                        //fseek($this->h, $start + ($row * METRIC_PDP_ROW_LEN));
-                        //$pdp = unpack('vtype/Vtick/fvalue', fread($this->h, METRIC_PDP_ROW_LEN));
+                        //If the PDP for this tick has not been written
+                        if($this->lastTick['data'][$dsname] < $tick){
 
-                        $data[$tick] = 0;
+                            $data[$tick] = 0;
+
+                        }else{
+
+                            $diff = ($tick - $this->lastTick['data'][$dsname]);
+
+                            $row = $ds['last'] + $diff;
+
+                            if($row < 0)
+                                $row = $ds['ticks'] + $row;
+
+                            fseek($this->h, $start + ($row * METRIC_PDP_ROW_LEN));
+
+                            $pdp = unpack('vtype/Vtick/fvalue', fread($this->h, METRIC_PDP_ROW_LEN));
+
+                            $data[$tick] = ($pdp['tick'] === $tick) ? $pdp['value'] : 0;
+
+                        }
 
                     }
 
@@ -701,6 +718,8 @@ class Metric {
 
                     $archive['last'] = $row;
 
+                    $this->lastTick['archive'][$archive_id] = $tick;
+
                 }
 
                 $pos = $offset_start + METRIC_ARCHIVE_HDR_LEN + strlen($archive['id'] . $archive['desc']) - 4;
@@ -719,7 +738,7 @@ class Metric {
 
     }
 
-    private function consolidate($cf, $dp) {
+    private function consolidate($cf, $data_points) {
 
         $value = NULL;
 
@@ -729,34 +748,34 @@ class Metric {
 
                 $value = 0;
 
-                foreach($dp as $dp)
+                foreach($data_points as $dp)
                     $value += $dp;
 
-                $value = $value / count($dp);
+                $value = $value / count($data_points);
 
                 break;
 
             case 0x02: //MIN
 
-                $value = array_shift($dp);
+                $value = array_shift($data_points);
 
-                foreach($dp as $dp)
+                foreach($data_points as $dp)
                     if($dp < $value) $value = $dp;
 
                 break;
 
             case 0x03: //MAX
 
-                $value = array_shift($dp);
+                $value = array_shift($data_points);
 
-                foreach($dp as $dp)
+                foreach($data_points as $dp)
                     if($dp > $value) $value = $dp;
 
                 break;
 
             case 0x04: //LAST
 
-                $value = array_pop($dp);
+                $value = array_pop($data_points);
 
                 break;
 
