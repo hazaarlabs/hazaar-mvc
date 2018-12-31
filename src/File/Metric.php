@@ -4,9 +4,9 @@ namespace Hazaar\File;
 
 define('METRIC_FLOAT_LEN', strlen(pack('f', 0)));
 
-define('METRIC_HDR_LEN', 4);
+define('METRIC_HDR_LEN', 8);
 
-define('METRIC_DSDEF_LEN', 16 + (2 * METRIC_FLOAT_LEN));
+define('METRIC_DSDEF_LEN', 12 + (2 * METRIC_FLOAT_LEN));
 
 define('METRIC_ARCHIVE_HDR_LEN', 18);  //plus the value of ID length
 
@@ -34,11 +34,13 @@ class Metric {
 
     private $version = 1;
 
+    private $tick_sec = 0;
+
     private $data_sources = array();
 
     private $archives = array();
 
-    private $info = array('data' => array(), 'archive' => array());
+    private $lastTick = array('data' => array(), 'archive' => array());
 
     private $dataSourceTypes = array(
         'GAUGE'    => 0x01,
@@ -63,7 +65,7 @@ class Metric {
 
             $this->restoreOptions();
 
-            //$this->update();
+            $this->update();
 
         }
 
@@ -88,14 +90,13 @@ class Metric {
      *
      * @param mixed $dsname         //The name of the data source
      * @param mixed $type           //Data source types are: GAUGE, COUNTER, ABSOLUTE
-     * @param mixed $heartbeat      //Seconds per tick
      * @param mixed $min            //Minimum allowed value
      * @param mixed $max            //Maximum allowed value
      * @param mixed $description    //String describing the data source
      *
      * @return boolean
      */
-    public function addDataSource($dsname, $type, $heartbeat = NULL, $min = NULL, $max = NULL, $description = NULL) {
+    public function addDataSource($dsname, $type, $min = NULL, $max = NULL, $description = NULL) {
 
         $type = strtoupper($type);
 
@@ -106,7 +107,6 @@ class Metric {
             'name'      => $dsname,
             'desc'      => $description,
             'type'      => $this->dataSourceTypes[$type],
-            'heartbeat' => ($heartbeat == NULL ? 0 : $heartbeat),
             'ticks'     => 0,
             'min'       => $min,
             'max'       => $max,
@@ -222,10 +222,7 @@ class Metric {
      *
      * @return integer|boolean
      */
-    public function getTick($dsname, $time = NULL) {
-
-        if(!array_key_exists($dsname, $this->data_sources))
-            return false;
+    public function getTick($time = NULL) {
 
         if($time === NULL)
             $time = time();
@@ -233,7 +230,7 @@ class Metric {
         elseif(! is_numeric($time))
             $time = strtotime($time);
 
-        return intval(floor($time / $this->data_sources[$dsname]['heartbeat']));
+        return intval(floor($time / $this->tick_sec));
 
     }
 
@@ -254,12 +251,14 @@ class Metric {
             switch(ord($type)) {
                 case METRIC_TYPE_HDR: //Header
 
-                    $bytes = fread($this->h, 2);
+                    $bytes = fread($this->h, METRIC_HDR_LEN - 2);
 
-                    $header = unpack('vversion', $bytes);
+                    $header = unpack('vversion/Vticksec', $bytes);
 
                     if(intval($header['version']) != $this->version)
                         throw new \Exception('RRD file version error.  File is version ' . $header['version'] . ' but RRD is version ' . $this->version);
+
+                    $this->tick_sec = $header['ticksec'];
 
                     break;
 
@@ -273,13 +272,12 @@ class Metric {
 
                     $desc = (($body['len'] > 0) ? fread($this->h, $body['len']) : NULL);
 
-                    $foot = unpack('Vhb/vticks/fmin/fmax/llast', fread($this->h, 10 + (2 * METRIC_FLOAT_LEN)));
+                    $foot = unpack('vticks/fmin/fmax/llast', fread($this->h, 6 + (2 * METRIC_FLOAT_LEN)));
 
                     $ds = array(
                         'name'      => $name,
                         'desc'      => $desc,
                         'type'      => $header['type'],
-                        'heartbeat' => $foot['hb'],
                         'ticks'     => $foot['ticks'],
                         'min'       => ($foot['min'] == -1) ? NULL : $foot['min'],
                         'max'       => ($foot['max'] == -1) ? NULL : $foot['max'],
@@ -292,38 +290,18 @@ class Metric {
 
                     if($ds['last'] < 0){
 
-                        $this->info['data'][$ds['name']] = array(
-                            'first' => -1,
-                            'last' => -1
-                        );
+                        $this->lastTick['data'][$ds['name']] = $this->getTick() - 1;
 
                     }else{
 
-                        $row = $ds['last'];
-
                         //Skip to the current PDP row
-                        $offset = $start + $row * METRIC_PDP_ROW_LEN;
+                        $offset = $start + $ds['last'] * METRIC_PDP_ROW_LEN;
 
                         fseek($this->h, $offset);
 
                         $pdp = unpack('vtype/Vtick/fvalue', fread($this->h, METRIC_PDP_ROW_LEN));
 
-                        $this->info['data'][$ds['name']]['last'] = $pdp['tick'];
-
-                        if($ds['ticks'] > 1){
-
-                            $row = (($row > 0) ? $row : $ds['ticks']) - 1;
-
-                            //Skip to the first PDP row
-                            $offset = $start + $row * METRIC_PDP_ROW_LEN;
-
-                            fseek($this->h, $offset);
-
-                            $pdp = unpack('vtype/Vtick/fvalue', fread($this->h, METRIC_PDP_ROW_LEN));
-
-                        }
-
-                        $this->info['data'][$ds['name']]['first'] = $pdp['tick'];
+                        $this->lastTick['data'][$ds['name']] = $pdp['tick'];
 
                     }
 
@@ -354,12 +332,9 @@ class Metric {
 
                     if($archive['last'] < 0) {
 
-                        foreach($this->data_sources as $ds)
-                            $this->info['archive'][$archive['id']][$ds['name']] = $this->getTick($ds['name']) - 1;
+                        $this->lastTick['archive'][$archive['id']] = $this->getTick() - $archive['ticks'] - 1;
 
                     } else {
-
-                        die('not implemented');
 
                         //Skip to the current archive row
                         $offset = $len * $archive['last'];
@@ -368,7 +343,7 @@ class Metric {
 
                         $row = unpack('vtype/Vtick', fread($this->h, $len));
 
-                        $this->info['archive'][$archive['id']] = $row['tick'];
+                        $this->lastTick['archive'][$archive['id']] = $row['tick'];
 
                     }
 
@@ -412,7 +387,7 @@ class Metric {
 
         $max = ($ds['max'] === NULL) ? -1 : $ds['max'];
 
-        $line .= pack('Vvffl', $ds['heartbeat'], $ds['ticks'], $min, $max, $ds['last']);
+        $line .= pack('vffl', $ds['ticks'], $min, $max, $ds['last']);
 
         $len = strlen($line) - strlen($ds['name']) - strlen($ds['desc']);
 
@@ -465,7 +440,7 @@ class Metric {
 
     }
 
-    public function create() {
+    public function create($tick_sec = 1) {
 
         if(is_resource($this->h)){
 
@@ -478,7 +453,9 @@ class Metric {
         if(!($this->h = fopen($this->file, 'c+')))
             return false;
 
-        $header = pack('vv', METRIC_TYPE_HDR, $this->version);
+        $this->tick_sec = $tick_sec;
+
+        $header = pack('vvV', METRIC_TYPE_HDR, $this->version, $this->tick_sec);
 
         fwrite($this->h, $header);
 
@@ -504,7 +481,7 @@ class Metric {
         if(! is_numeric($value))
             return FALSE;
 
-        $tick = $this->getTick($dsname);
+        $tick = $this->getTick();
 
         $ds =& $this->data_sources[$dsname];
 
@@ -634,48 +611,111 @@ class Metric {
         if(!is_resource($this->h))
             return false;
 
+        $current_tick = $this->getTick();
+
+        $updates = array();
+
         foreach($this->archives as $archive_id => $archive){
 
             $data = array();
 
-            $offset = $this->getArchiveOffset($archive_id);
-            
-            foreach($this->data_sources as $dsname => $ds){
+            $last_tick = $this->lastTick['archive'][$archive_id];
 
-                $current_tick = $this->getTick($dsname);
+            $update_tick = $last_tick + $archive['ticks'];
 
-                $first_tick = $this->info['data'][$dsname]['first'];
+            if($current_tick > $update_tick){
 
-                $last_tick = $this->info['data'][$dsname]['last'];
+                foreach($this->data_sources as $dsname => $ds){
 
-                $update_tick = $last_tick + 1;
+                    if($ds['ticks'] < $archive['ticks'])
+                        throw new \Exception("There are not enough primary data points({$ds['ticks']}) to satify this archive({$archive['ticks']})");
 
-                dump($update_tick);
+                    $start = $this->getDataSourceOffset($dsname) + METRIC_DSDEF_LEN + strlen($ds['name'] . $ds['desc']);
 
-                if(!($current_tick > $update_tick))
-                    continue;
+                    for($tick = $last_tick + 1; $tick < $current_tick; $tick++){
 
-                for($tick = $update_tick; $tick < $current_tick; $tick++)
-                    $values[$tick] = 0;
+                        //TODO: Somewhere here we need to load the values from the actual PDPs.
+                        //$row = $ds['last'];
+                        //fseek($this->h, $start + ($row * METRIC_PDP_ROW_LEN));
+                        //$pdp = unpack('vtype/Vtick/fvalue', fread($this->h, METRIC_PDP_ROW_LEN));
 
-                //STEP 2 - Make sure ticks are up to date
-                for($tick = $updateTick; $tick < $currentTick; $tick++) {
+                        $data[$tick] = 0;
 
-                    //If there are no data points yet, or the datapoint for $tick does not exist
-                    if(! array_key_exists($tick, $dataPoints))
-                        $dataPoints[$tick] = 0;
+                    }
 
+                    ksort($data);
+
+                    $current_data = array();
+
+                    foreach($data as $tick => $value) {
+
+                        if($tick >= $current_tick)         //Not ready to process this data point yet
+                            break;
+
+                        $current_data[$tick] = $value;
+
+                        if(count($current_data) == $archive['ticks']) {
+
+                            $cvalue = $this->consolidate($archive['cf'], $current_data);
+
+                            $updates[$archive_id][$tick][$dsname] = $cvalue;
+
+                            $current_data = array();
+
+                        }
+
+                    }
                 }
-
-                //STEP 3 - Check if there are enough dataPoints for this archive
-                //We do this by looking at the datapoints and pulling out those that are after the last update
-                ksort($dataPoints);
 
             }
 
-            dump($data);
+        }
+
+        if(count($updates) > 0) {
+
+            foreach($updates as $archive_id => $rows) {
+
+                $archive =& $this->archives[$archive_id];
+
+                //Get the start of the archive
+                $offset_start = $this->getArchiveOffset($archive_id);
+
+                foreach($rows as $tick => $values) {
+
+                    if(count($values) != count($this->data_sources))
+                        throw new \Exception('All dataSources must be written in an update!');
+
+                    //Get the current row we are working on
+                    $row = $archive['last'] + 1;
+
+                    if($row >= $archive['rows'])
+                        $row = 0;
+
+                    $offset = METRIC_ARCHIVE_HDR_LEN + strlen($archive['id'] . $archive['desc']) + ($row * $this->getCDPLength());
+
+                    $pos = $offset_start + $offset;
+
+                    fseek($this->h, $pos); //Seek to the correct archive position
+
+                    $this->writeCDP($tick, $values);
+
+                    $archive['last'] = $row;
+
+                }
+
+                $pos = $offset_start + METRIC_ARCHIVE_HDR_LEN + strlen($archive['id'] . $archive['desc']) - 4;
+
+                fseek($this->h, $pos);
+
+                fwrite($this->h, pack('l', $archive['last']));
+
+            }
+
+            return true;
 
         }
+
+        return false;
 
     }
 
@@ -768,11 +808,6 @@ class Metric {
 
         fseek($this->h, $offset);
 
-        $type = fread($this->h, 2);
-
-        if(ord($type) != METRIC_TYPE_CDP)
-            throw new \Exception('Metric data file corrupted while accessing CDP header of archive: ' . $archive_id);
-
         $row_length = $this->getCDPLength();
 
         while($type = fread($this->h, 2)) {
@@ -782,7 +817,7 @@ class Metric {
 
             $parts = unpack('Vtick', fread($this->h, 4));
 
-            $tick = $parts['tick'] * $this->tickSec;
+            $tick = $parts['tick'] * $this->tick_sec;
 
             if(!($tick > 0))
                 break;
@@ -793,23 +828,23 @@ class Metric {
 
         }
 
-        /*
-        $stepSec = $archive['ticks'] * $this->tickSec;
+
+        $step_sec = $archive['ticks'] * $this->tick_sec;
 
         if(($diff = ($archive['rows'] - count($data))) > 0) {
 
-        if(count($data) > 0)
-        $min = min(array_keys($data));
+            if(count($data) > 0)
+                $min = min(array_keys($data));
 
-        else
-        $min = $this->getTick($dsname) * $this->tickSec;
+            else
+                $min = $this->getTick($dsname) * $this->tick_sec;
 
-        $startTick = $min - ($diff * $stepSec);
+            $start_tick = $min - ($diff * $step_sec);
 
-        for($tick = $startTick; $tick < $min; $tick += $stepSec)
-        $data[$tick] = 0;
+            for($tick = $start_tick; $tick < $min; $tick += $step_sec)
+                $data[$tick] = floatval(0);
 
-        }*/
+        }
 
         ksort($data);
 
@@ -849,13 +884,12 @@ class Metric {
 
         $desc = (($body['len'] > 0) ? fread($this->h, $body['len']) : NULL);
 
-        $foot = unpack('Vhb/vticks/fmin/fmax/llast', fread($this->h, 10 + (2 * METRIC_FLOAT_LEN)));
+        $foot = unpack('vticks/fmin/fmax/llast', fread($this->h, 6 + (2 * METRIC_FLOAT_LEN)));
 
         $ds = array(
             'name'      => $name,
             'desc'      => $desc,
             'type'      => $header['type'],
-            'heartbeat' => $foot['hb'],
             'ticks'     => $foot['ticks'],
             'min'       => ($foot['min'] == -1) ? NULL : $foot['min'],
             'max'       => ($foot['max'] == -1) ? NULL : $foot['max'],
