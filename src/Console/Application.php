@@ -30,6 +30,28 @@ class Application extends Module {
 
     }
 
+    public function stats($request){
+
+        if(!$request->isPost())
+            throw new \Exception('Method not allowed!', 405);
+
+        if(!$request->has('name'))
+            throw new \Exception('No datasource name', 400);
+
+        if(!$request->has('archive'))
+            throw new \Exception('No archive name', 400);
+
+        $rrd_file = $this->application->runtimePath('profile.rrd');
+
+        $rrd = new \Hazaar\File\RRD($rrd_file);
+
+        if(($result = $rrd->graph($request->name, $request->archive)) === false)
+            throw new \Exception('No data!', 204);
+
+        return $result;
+
+    }
+
     public function models($request){
 
         $this->view('models');
