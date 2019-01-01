@@ -269,7 +269,7 @@ class Application {
 
             if($this->config->app['metrics'] === true){
 
-                $metric_file = $this->runtimePath('profile.dat');
+                $metric_file = $this->runtimePath('metrics.dat');
 
                 $metric = new \Hazaar\File\Metric($metric_file);
 
@@ -281,13 +281,13 @@ class Application {
 
                     $metric->addArchive('max_1hour', 'MAX', 1, 60, 'Max per minute for last hour');
 
-                    $metric->addArchive('max_1day', 'MAX', 60, 24, 'Max per minute for last day');
+                    $metric->addArchive('max_1day', 'MAX', 60, 24, 'Max per hour for last day');
 
-                    $metric->addArchive('avg_1day', 'AVERAGE', 60, 24, 'Average per minute for last day');
+                    $metric->addArchive('avg_1day', 'AVERAGE', 60, 24, 'Average per hour for last day');
 
-                    $metric->addArchive('max_1year', 'MAX', 3660, 365, 'Max per minute for last year');
+                    $metric->addArchive('max_1year', 'MAX', 3660, 365, 'Max per day for last year');
 
-                    $metric->addArchive('avg_1year', 'AVERAGE', 3660, 365, 'Average per minute for last year');
+                    $metric->addArchive('avg_1year', 'AVERAGE', 3660, 365, 'Average per day for last year');
 
                     $metric->create(60);
 
