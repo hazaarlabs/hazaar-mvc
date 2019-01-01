@@ -4,15 +4,16 @@ namespace Hazaar\Console;
 
 class Application extends Module {
 
+    private $config;
+
     public function load(){
+
+        $this->config = new \Hazaar\Application\Config('application');
 
         $this->addMenuGroup('Application', 'bars');
 
-        //$this->addMenuItem('Models', 'models', 'sitemap');
-
-        //$this->addMenuItem('Views', 'views', 'binoculars');
-
-        //$this->addMenuItem('Controllers', 'controllers', 'code-fork');
+        if($this->config->app['metrics'] === true)
+            $this->addMenuItem('Metrics', 'metrics', 'line-chart');
 
         $this->addMenuItem('Configuration', 'config', 'cogs');
 
@@ -27,6 +28,48 @@ class Application extends Module {
         $this->view('index');
 
         $this->view->requires('js/application.js');
+
+    }
+
+    public function metrics($request){
+
+        $this->view('application/metrics');
+
+        $this->view->requires('https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js');
+
+        $this->view->requires('js/metrics.js');
+
+    }
+
+    public function stats($request){
+
+        if(!$request->isPost())
+            throw new \Exception('Method not allowed!', 405);
+
+        if(!$request->has('name'))
+            throw new \Exception('No datasource name', 400);
+
+        if(!$request->has('archive'))
+            throw new \Exception('No archive name', 400);
+
+        $metric_file = $this->application->runtimePath('profile.dat');
+
+        $rrd = new \Hazaar\File\Metric($metric_file);
+
+        if(($result = $rrd->graph($request->name, $request->archive)) === false)
+            throw new \Exception('No data!', 204);
+
+        if($request->has('args'))
+            $result['args'] = $request->args;
+
+        $ticks = array();
+
+        foreach($result['ticks'] as $tick => $value)
+            $ticks[date('H:i', $tick)] = $value;
+
+        $result['ticks'] = $ticks;
+
+        return $result;
 
     }
 
