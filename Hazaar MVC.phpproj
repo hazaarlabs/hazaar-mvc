@@ -431,7 +431,6 @@
     <Folder Include="libs\console\cache\" />
     <Folder Include="libs\console\css\" />
     <Folder Include="libs\console\images\" />
-    <Folder Include="libs\console\login\" />
     <Folder Include="libs\console\js\" />
     <Folder Include="libs\console\application\" />
     <Folder Include="libs\console\system\" />
@@ -562,7 +561,6 @@
     <Content Include="libs\console\css\layout.css" />
     <Content Include="libs\console\css\login.css" />
     <Content Include="libs\console\css\phpinfo.css" />
-    <Content Include="libs\console\css\popup.css" />
     <Content Include="libs\console\application\config.phtml" />
     <Content Include="libs\console\images\hazaar-bg.jpg" />
     <Content Include="libs\console\images\hazaar-icon-lg.png" />
@@ -572,7 +570,6 @@
     <Content Include="libs\console\js\console.js" />
     <Content Include="libs\console\application\controllers.phtml" />
     <Content Include="libs\console\application\encrypt.phtml" />
-    <Content Include="libs\console\js\popup.js" />
     <Content Include="libs\console\login.phtml" />
     <Content Include="libs\console\application\models.phtml" />
     <Content Include="libs\console\system\phpinfo.phtml" />
@@ -582,10 +579,6 @@
     <Content Include="libs\console\images\hazaar-logo.png" />
     <Content Include="libs\console\index.phtml" />
     <Content Include="libs\console\layout.phtml" />
-    <Content Include="libs\console\login\hazaar-bg.jpg" />
-    <Content Include="libs\console\login\hazaar-icon-lg.png" />
-    <Content Include="libs\console\login\layout.phtml" />
-    <Content Include="libs\console\login\main.css" />
     <Content Include="libs\css\fileicons.css" />
     <Content Include="libs\css\filebrowser.css" />
     <Content Include="libs\css\images\fileicon\archive.png" />
