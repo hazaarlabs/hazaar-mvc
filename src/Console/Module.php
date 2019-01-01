@@ -31,7 +31,7 @@ abstract class Module extends \Hazaar\Controller\Action {
 
         $this->view->layout('@console/layout');
 
-        $this->view->link($this->application->url('hazaar/file/console/css/popup.css'));
+        $this->view->link($this->application->url('hazaar/file/css/popup.css'));
 
         $this->view->link($this->application->url('hazaar/file/console/css/layout.css'));
 
@@ -41,7 +41,7 @@ abstract class Module extends \Hazaar\Controller\Action {
 
         $this->view->addHelper('fontawesome');
 
-        $this->view->requires($this->application->url('hazaar/file/console/js/popup.js'));
+        $this->view->requires($this->application->url('hazaar/file/js/popup.js'));
 
         $this->view->requires($this->application->url('hazaar/file/console/js/console.js'));
 
