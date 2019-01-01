@@ -437,7 +437,7 @@ table.table {
 /*
 Buttons
 */
-button {
+.btn {
     border: none;
     padding: 10px 15px;
     color: #333;
@@ -446,17 +446,39 @@ button {
     opacity: 0.8;
 }
 
-    button:hover {
+    .btn:hover {
         opacity: 1;
     }
 
-    button.btn-hazaar {
-        width: 100%;
+    .btn.btn-default {
+        background-color: #777;
     }
 
-    button.primary {
+    .btn.btn-success {
+        background-color: #48e478;
+    }
+
+    .btn.btn-primary {
+        background-color: #2ECBFF;
+    }
+
+    .btn.btn-info {
+        background-color: #02877a;
+    }
+
+    .btn.btn-warning {
+        background-color: #ea6710;
+    }
+
+    .btn.btn-danger {
+        background-color: #be3030;
+    }
+
+    .btn.btn-hazaar {
+        background-color: #554d7c;
         color: #fff;
     }
+
 /*
 Fancy Stat Class
 */
@@ -514,11 +536,6 @@ Fancy Stat Class
 
 .danger {
     background-color: #be3030;
-}
-
-.hazaar {
-    background-color: #554d7c;
-    color: #fff;
 }
 
 .hz-error {
