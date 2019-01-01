@@ -52,7 +52,7 @@ class Application extends Module {
         if(!$request->has('archive'))
             throw new \Exception('No archive name', 400);
 
-        $metric_file = $this->application->runtimePath('profile.dat');
+        $metric_file = $this->application->runtimePath('metrics.dat');
 
         $rrd = new \Hazaar\File\Metric($metric_file);
 
