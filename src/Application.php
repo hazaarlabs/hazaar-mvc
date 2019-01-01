@@ -267,6 +267,38 @@ class Application {
             if(file_exists($shutdown))
                 include ($shutdown);
 
+            if($this->config->app['metrics'] === true){
+
+                $metric_file = $this->runtimePath('profile.dat');
+
+                $metric = new \Hazaar\File\Metric($metric_file);
+
+                if(!$metric->exists()){
+
+                    $metric->addDataSource('hits', 'COUNTER', null, null, 'Hit counter');
+
+                    $metric->addDataSource('exec', 'GAUGE', null, null, 'Execution timer');
+
+                    $metric->addArchive('max_1hour', 'MAX', 1, 60, 'Max per minute for last hour');
+
+                    $metric->addArchive('max_1day', 'MAX', 60, 24, 'Max per minute for last day');
+
+                    $metric->addArchive('avg_1day', 'AVERAGE', 60, 24, 'Average per minute for last day');
+
+                    $metric->addArchive('max_1year', 'MAX', 3660, 365, 'Max per minute for last year');
+
+                    $metric->addArchive('avg_1year', 'AVERAGE', 3660, 365, 'Average per minute for last year');
+
+                    $metric->create(60);
+
+                }
+
+                $metric->setValue('hits', 1);
+
+                $metric->setValue('exec', (microtime(true) - HAZAAR_EXEC_START) * 1000);
+
+            }
+
         }
 
     }
