@@ -41,8 +41,14 @@ class Router extends \Hazaar\Controller {
 
         }else{
 
+            $locale = $this->application->config['app']['locale'];
+
+            $timezone = $this->application->config['app']['timezone'];
+
             //Reset the application configuration to defaults so that we don't use any loaded options
             $this->application->config->reset(true);
+
+            $this->application->config['app']->extend(array('locale' => $locale, 'timezone' => $timezone));
 
             $this->module = new $this->className($this->moduleName, $this->application, false);
 
