@@ -375,6 +375,11 @@ body {
         font-weight: bold;
     }
 
+    .panel .panel-subheader {
+        padding: 0 25px;
+        font-size: .9em;
+    }
+
     .panel .panel-content {
         flex: 1;
     }
@@ -551,3 +556,7 @@ Fancy Stat Class
         font-weight: bold;
         margin-right: 15px;
     }
+
+canvas.metrics {
+    width: 100%;
+}
