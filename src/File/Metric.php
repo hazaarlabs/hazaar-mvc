@@ -758,10 +758,14 @@ class Metric {
 
                 $value = 0;
 
-                foreach($data_points as $dp)
-                    $value += $dp;
+                if(is_array($data_points) && count($data_points) > 0){
 
-                $value = $value / count($data_points);
+                    foreach($data_points as $dp)
+                        $value += $dp;
+
+                    $value = $value / count($data_points);
+
+                }
 
                 break;
 
