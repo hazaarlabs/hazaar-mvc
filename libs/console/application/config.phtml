@@ -11,10 +11,12 @@
                     ?>
                 </div>
                 <div class="panel-content">
-                    <textarea name="config" style="width: 100%; height: 100%;"><?=$this->config;?></textarea>
+                    <?=$this->html->textarea('config', $this->config)
+                    ->style(array('width' => '100%', 'height' => '100%'))
+                    ->prop('disabled', !$this->writable);?>
                 </div>
                 <div class="panel-footer">
-                    <button class="btn btn-primary">Save</button>
+                    <?=$this->html->button('Save', 'submit')->class('btn btn-primary')->prop('disabled', !$this->writable);?>
                 </div>
             </div>
         </div>

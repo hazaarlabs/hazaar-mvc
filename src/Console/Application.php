@@ -197,6 +197,8 @@ class Application extends Module {
 
     public function config($request){
 
+        \Hazaar\Application\Config::$override_paths = null;
+
         $config = new \Hazaar\Application\Config('application', $request->get('env', APPLICATION_ENV));
 
         if($request->isPost()){
@@ -223,7 +225,8 @@ class Application extends Module {
         $this->view->extend(array(
             'config' => $data,
             'env' => $config->getEnv(),
-            'envs' => $config->getEnvironments()
+            'envs' => $config->getEnvironments(),
+            'writable' => $config->isWritable()
         ));
 
     }

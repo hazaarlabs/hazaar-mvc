@@ -328,6 +328,17 @@ class Config extends \Hazaar\Map {
     }
 
     /**
+     * Test if the current loaded source file is writable on the filesystem
+     * 
+     * @return boolean
+     */
+    public function isWritable(){
+
+        return is_writable($this->source);
+
+    }
+
+    /**
      * @brief       Output the configuration in a human readable format.
      *
      * @detail      This method is useful for logging, debugging or for using in application administration interfaces
