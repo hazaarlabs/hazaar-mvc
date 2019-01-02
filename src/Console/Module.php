@@ -4,7 +4,7 @@ namespace Hazaar\Console;
 
 abstract class Module extends \Hazaar\Controller\Action {
 
-    private $handler;
+    protected $handler;
 
     public $view_path;
 
