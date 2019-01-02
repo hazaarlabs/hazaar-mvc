@@ -41,6 +41,80 @@ class Application extends Module {
 
     }
 
+    public function graphs($request) {
+
+        $graphs = array();
+
+        $metric_file = $this->application->runtimePath('metrics.dat');
+
+        $metrics = new \Hazaar\File\Metric($metric_file);
+
+        if($metrics->hasDataSource('hits')){
+
+            $graphs[] = array(
+                array(
+                    'ds'=> 'hits',
+                    'archive'=> 'max_1hour',
+                    'scale'=> 'Count',
+                    'bgcolor'=> 'rgba(132, 99, 255, 0.2)',
+                    'color'=> 'rgba(132,99,255,1)'
+                ),
+                array(
+                    'ds'=> 'hits',
+                    'archive'=> 'avg_1day',
+                    'scale'=> 'Count',
+                    'bgcolor'=> 'rgba(132, 99, 255, 0.2)',
+                    'color'=> 'rgba(132,99,255,1)'
+                )
+            );
+
+        }
+
+        if($metrics->hasDataSource('exec')){
+
+            $graphs[] =  array(
+                array(
+                    'ds'=> 'exec',
+                    'archive'=> 'max_1hour',
+                    'scale'=> 'ms',
+                    'bgcolor'=> 'rgba(255, 99, 132, 0.2)',
+                    'color'=> 'rgba(255,99,132,1)' ),
+                array(
+                    'ds'=> 'exec',
+                    'archive'=> 'avg_1day',
+                    'scale'=> 'ms',
+                    'bgcolor'=> 'rgba(255, 99, 132, 0.2)',
+                    'color'=> 'rgba(255,99,132,1)'
+                )
+            );
+
+        }
+
+        if($metrics->hasDataSource('mem')){
+
+            $graphs[] = array(
+                array(
+                    'ds'=> 'mem',
+                    'archive'=> 'max_1hour',
+                    'scale'=> 'Count',
+                    'bgcolor'=> 'rgba(132, 99, 255, 0.2)',
+                    'color'=> 'rgba(132,99,255,1)'
+                ),
+                array(
+                    'ds'=> 'mem',
+                    'archive'=> 'avg_1day',
+                    'scale'=> 'ms',
+                    'bgcolor'=> 'rgba(255, 99, 132, 0.2)',
+                    'color'=> 'rgba(255,99,132,1)'
+                )
+            );
+
+        }
+
+        return $graphs;
+
+    }
+
     public function stats($request){
 
         if(!$request->isPost())
@@ -54,9 +128,9 @@ class Application extends Module {
 
         $metric_file = $this->application->runtimePath('metrics.dat');
 
-        $rrd = new \Hazaar\File\Metric($metric_file);
+        $metrics = new \Hazaar\File\Metric($metric_file);
 
-        if(($result = $rrd->graph($request->name, $request->archive)) === false)
+        if(($result = $metrics->graph($request->name, $request->archive)) === false)
             throw new \Exception('No data!', 204);
 
         if($request->has('args'))
@@ -109,7 +183,7 @@ class Application extends Module {
 
             $data = $request->config;
 
-        } else
+        }else
             $data = json_encode($config->getEnvConfig(), JSON_PRETTY_PRINT);
 
         $this->view('application/config');
