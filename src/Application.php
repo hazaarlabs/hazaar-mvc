@@ -145,44 +145,12 @@ class Application {
         //Store the search paths in the GLOBALS container so they can be used in config includes.
         $this->GLOBALS['paths'] = $this->loader->getSearchPaths();
 
-        $is_cli = (substr(php_sapi_name(), 0, 3) === 'cli');
-
-        /**
-         * Set up some default config properties.
-         */
-        $defaults = array(
-            'app' => array(
-                'root' => ($is_cli ? '/' : dirname($_SERVER['SCRIPT_NAME'])),
-                'defaultController' => 'Index',
-                'useDefaultController' => false,
-                'favicon' => 'favicon.png',
-                'timezone' => 'UTC',
-                'rewrite' => (!$is_cli),
-                'files' => array(
-                    'bootstrap' => 'bootstrap.php',
-                    'shutdown' => 'shutdown.php',
-                    'route' => 'route.php',
-                    'media' => 'media.php'
-                ),
-                'responseImageCache' => false
-            ),
-            'paths' => array(
-                'model' => 'models',
-                'view' => 'views',
-                'controller' => 'controllers',
-                'service' => 'services'
-            ),
-            'view' => array(
-                'prepare' => false
-            )
-        );
-
         /*
          * Load it with a config object. if the file doesn't exist
          * it will just be an empty object that will handle calls to
          * it silently.
          */
-        $this->config = new Application\Config('application', $env, $defaults, FILE_PATH_CONFIG);
+        $this->config = new Application\Config('application', $env, $this->getDefaultConfig(), FILE_PATH_CONFIG);
 
         Application\Url::$base = $this->config->app->get('base');
 
@@ -306,6 +274,41 @@ class Application {
             }
 
         }
+
+    }
+
+    public function getDefaultConfig(){
+
+        $is_cli = (substr(php_sapi_name(), 0, 3) === 'cli');
+
+        return array(
+            'app' => array(
+                'root' => ($is_cli ? '/' : dirname($_SERVER['SCRIPT_NAME'])),
+                'defaultController' => 'Index',
+                'errorController' => 'Error',
+                'useDefaultController' => false,
+                'favicon' => 'favicon.png',
+                'timezone' => 'UTC',
+                'rewrite' => (!$is_cli),
+                'files' => array(
+                    'bootstrap' => 'bootstrap.php',
+                    'shutdown' => 'shutdown.php',
+                    'route' => 'route.php',
+                    'media' => 'media.php'
+                ),
+                'responseImageCache' => false
+            ),
+            'paths' => array(
+                'model' => 'models',
+                'view' => 'views',
+                'controller' => 'controllers',
+                'service' => 'services'
+            ),
+            'view' => array(
+                'prepare' => false
+            )
+
+        );
 
     }
 
