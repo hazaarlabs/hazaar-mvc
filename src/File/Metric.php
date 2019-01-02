@@ -45,14 +45,16 @@ class Metric {
     private $dataSourceTypes = array(
         'GAUGE'    => 0x01,
         'COUNTER'  => 0x02,
-        'ABSOLUTE' => 0x03
+        'ABSOLUTE' => 0x03,
+        'GAUGEZ'   => 0x04
     );
 
     private $archiveCFs      = array(
         'AVERAGE' => 0x01,
         'MIN'     => 0x02,
         'MAX'     => 0x03,
-        'LAST'    => 0x04
+        'LAST'    => 0x04,
+        'COUNT'   => 0x05
     );
 
     public function __construct($file) {
@@ -72,8 +74,6 @@ class Metric {
     }
 
     public function __destruct(){
-
-        $this->update();
 
         fclose($this->h);
 
@@ -405,28 +405,25 @@ class Metric {
 
     private function writeArchive(&$archive) {
 
-        $header = pack('vC', METRIC_TYPE_AD, strlen($archive['id'])) . $archive['id'];
+        $data = pack('vC', METRIC_TYPE_AD, strlen($archive['id'])) . $archive['id'];
 
-        $header .= pack('C', strlen($archive['desc'])) . $archive['desc'];
+        $data .= pack('C', strlen($archive['desc'])) . $archive['desc'];
 
-        $header .= pack('vVVl', $archive['cf'], $archive['ticks'], $archive['rows'], $archive['last']);
+        $data .= pack('vVVl', $archive['cf'], $archive['ticks'], $archive['rows'], $archive['last']);
 
-        $len = strlen($header) - strlen($archive['id']) - strlen($archive['desc']);
+        $len = strlen($data) - strlen($archive['id']) - strlen($archive['desc']);
 
         if($len != METRIC_ARCHIVE_HDR_LEN)
             die('archive header length is not METRIC_ARCHIVE_HDR_LEN(' . METRIC_ARCHIVE_HDR_LEN . ") LENGTH=$len\n");
 
-        if(fwrite($this->h, $header) !== strlen($header))
-            return false;
-
         for($i = 0; $i < $archive['rows']; $i++)
-            $this->writeCDP(0, array_fill(0, count($this->data_sources), 0));
+            $data .= $this->writeCDP(0, array_fill(0, count($this->data_sources), 0), false);
 
-        return true;
+        return fwrite($this->h, $data) === strlen($data);
 
     }
 
-    private function writeCDP($tick, $values) {
+    private function writeCDP($tick, $values, $do_write = true) {
 
         $row = pack('vV', METRIC_TYPE_CDP, $tick);
 
@@ -436,7 +433,10 @@ class Metric {
         foreach($values as $value)
             $row .= pack('f', $value);
 
-        return fwrite($this->h, $row) === strlen($row);
+        if($do_write === true)
+            return fwrite($this->h, $row) === strlen($row);
+
+        return $row;
 
     }
 
@@ -559,6 +559,7 @@ class Metric {
         switch($this->data_sources[$dsname]['type']) {
 
             case 0x01:  //GAUGE
+            case 0x04:  //GAUGEZ
 
                 if($value > $current['value'])
                     $current['value'] = $value;
@@ -673,7 +674,7 @@ class Metric {
 
                         if(count($current_data) == $archive['ticks']) {
 
-                            $cvalue = $this->consolidate($archive['cf'], $current_data);
+                            $cvalue = $this->consolidate($archive['cf'], $current_data, $ds['type']);
 
                             $updates[$archive_id][$tick][$dsname] = $cvalue;
 
@@ -738,9 +739,18 @@ class Metric {
 
     }
 
-    private function consolidate($cf, $data_points) {
+    private function consolidate($cf, $data_points, $ds_type = null) {
 
         $value = NULL;
+
+        //GAUGEZ means we want to ignore zero values in our consolidation
+        if($ds_type === 0x04){
+
+            $data_points = array_filter($data_points, function($value){
+                return ($value <> 0);
+            });
+
+        }
 
         switch($cf) {
 
@@ -776,6 +786,12 @@ class Metric {
             case 0x04: //LAST
 
                 $value = array_pop($data_points);
+
+                break;
+
+            case 0x05:
+
+                $value = array_sum($data_points);
 
                 break;
 
