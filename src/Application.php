@@ -249,15 +249,19 @@ class Application {
 
                     $metric->addDataSource('mem', 'GAUGE', null, null, 'Memory Usage');
 
-                    $metric->addArchive('max_1hour', 'COUNT', 6, 60, 'Count per minute for last hour');
+                    $metric->addArchive('count_1hour', 'COUNT', 6, 60, 'Count per minute for last hour');
 
                     $metric->addArchive('avg_1hour', 'AVERAGE', 6, 60, 'Average per minute for last hour');
 
-                    $metric->addArchive('max_1day', 'COUNT', 360, 24, 'Count per hour for last day');
+                    $metric->addArchive('count_1day', 'COUNT', 360, 24, 'Count per hour for last day');
 
                     $metric->addArchive('avg_1day', 'AVERAGE', 360, 24, 'Average per hour for last day');
 
-                    $metric->addArchive('max_1year', 'COUNT', 8640, 365, 'Count per day for last year');
+                    $metric->addArchive('count_1week', 'COUNT', 360, 168, 'Count per hour for last week');
+
+                    $metric->addArchive('avg_1week', 'AVERAGE', 360, 168, 'Average per hour for last week');
+
+                    $metric->addArchive('count_1year', 'COUNT', 8640, 365, 'Count per day for last year');
 
                     $metric->addArchive('avg_1year', 'AVERAGE', 8640, 365, 'Average per day for last year');
 
