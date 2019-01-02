@@ -6,14 +6,21 @@ class Application extends Module {
 
     private $config;
 
+    private $metrics;
+
     public function load(){
 
-        $this->config = new \Hazaar\Application\Config('application');
+        $this->config = new \Hazaar\Application\Config('application', null, $this->application->getDefaultConfig());
 
         $this->addMenuGroup('Application', 'bars');
 
-        if($this->config->app['metrics'] === true)
+        if($this->config->app['metrics'] === true){
+
+            $this->metrics = new \Hazaar\File\Metric($this->application->runtimePath('metrics.dat'));
+
             $this->addMenuItem('Metrics', 'metrics', 'line-chart');
+
+        }
 
         $this->addMenuItem('Configuration', 'config', 'cogs');
 
@@ -29,9 +36,34 @@ class Application extends Module {
 
         $this->view->requires('js/application.js');
 
+        $this->view->config = $this->config;
+
+        $this->view->libraries = $this->handler->getLibraries();
+
+        $date_start = strtotime('now - 1 month');
+
+        if($this->metrics instanceof \Hazaar\File\Metric){
+
+            $count_month = array_filter(ake($this->metrics->graph('hits', 'count_1year'), 'ticks'),
+                function($value, $key) use($date_start){
+                    return $key > $date_start;
+                }, ARRAY_FILTER_USE_BOTH);
+
+            $this->view->stats = array(
+                'hour' => array_sum(ake($this->metrics->graph('hits', 'count_1hour'), 'ticks')),
+                'day' => array_sum(ake($this->metrics->graph('hits', 'count_1day'), 'ticks')),
+                'week' => array_sum(ake($this->metrics->graph('hits', 'count_1week'), 'ticks')),
+                'month' => array_sum($count_month)
+            );
+
+        }
+
     }
 
     public function metrics($request){
+
+        if(!$this->metrics instanceof \Hazaar\File\Metric)
+            throw new \Exception('Metrics are not enabled!', 501);
 
         $this->view('application/metrics');
 
@@ -43,18 +75,17 @@ class Application extends Module {
 
     public function graphs($request) {
 
+        if(!$this->metrics instanceof \Hazaar\File\Metric)
+            throw new \Exception('Metrics are not enabled!', 501);
+
         $graphs = array();
 
-        $metric_file = $this->application->runtimePath('metrics.dat');
-
-        $metrics = new \Hazaar\File\Metric($metric_file);
-
-        if($metrics->hasDataSource('hits')){
+        if($this->metrics->hasDataSource('hits')){
 
             $graphs[] = array(
                 array(
                     'ds'=> 'hits',
-                    'archive'=> 'max_1hour',
+                    'archive'=> 'count_1hour',
                     'scale'=> 'Count',
                     'bgcolor'=> 'rgba(132, 99, 255, 0.2)',
                     'color'=> 'rgba(132,99,255,1)'
@@ -70,12 +101,12 @@ class Application extends Module {
 
         }
 
-        if($metrics->hasDataSource('exec')){
+        if($this->metrics->hasDataSource('exec')){
 
             $graphs[] =  array(
                 array(
                     'ds'=> 'exec',
-                    'archive'=> 'max_1hour',
+                    'archive'=> 'count_1hour',
                     'scale'=> 'ms',
                     'bgcolor'=> 'rgba(255, 99, 132, 0.2)',
                     'color'=> 'rgba(255,99,132,1)' ),
@@ -90,20 +121,20 @@ class Application extends Module {
 
         }
 
-        if($metrics->hasDataSource('mem')){
+        if($this->metrics->hasDataSource('mem')){
 
             $graphs[] = array(
                 array(
                     'ds'=> 'mem',
-                    'archive'=> 'max_1hour',
-                    'scale'=> 'Count',
+                    'archive'=> 'count_1hour',
+                    'scale'=> 'bytes',
                     'bgcolor'=> 'rgba(132, 99, 255, 0.2)',
                     'color'=> 'rgba(132,99,255,1)'
                 ),
                 array(
                     'ds'=> 'mem',
                     'archive'=> 'avg_1day',
-                    'scale'=> 'ms',
+                    'scale'=> 'bytes',
                     'bgcolor'=> 'rgba(255, 99, 132, 0.2)',
                     'color'=> 'rgba(255,99,132,1)'
                 )
@@ -117,6 +148,9 @@ class Application extends Module {
 
     public function stats($request){
 
+        if(!$this->metrics instanceof \Hazaar\File\Metric)
+            throw new \Exception('Metrics are not enabled!', 501);
+
         if(!$request->isPost())
             throw new \Exception('Method not allowed!', 405);
 
@@ -126,11 +160,7 @@ class Application extends Module {
         if(!$request->has('archive'))
             throw new \Exception('No archive name', 400);
 
-        $metric_file = $this->application->runtimePath('metrics.dat');
-
-        $metrics = new \Hazaar\File\Metric($metric_file);
-
-        if(($result = $metrics->graph($request->name, $request->archive)) === false)
+        if(($result = $this->metrics->graph($request->name, $request->archive)) === false)
             throw new \Exception('No data!', 204);
 
         if($request->has('args'))

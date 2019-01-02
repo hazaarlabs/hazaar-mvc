@@ -13,7 +13,48 @@ body {
     font-family: 'Quicksand', 'Arial Narrow', Arial, sans-serif;
 }
 
-.hazaar-layout {
+a, a:visited {
+    color: #554d7c;
+}
+
+    a:hover, a:active, .primary a:hover {
+        color: #ea6710;
+    }
+
+.primary a {
+    color: #bbb;
+}
+
+.text-mono {
+    font-family: monospace;
+}
+
+.text-serif {
+    font-family: serif;
+}
+
+.text-sans {
+    font-family: sans-serif;
+}
+
+.text-small {
+    font-size: .8rem;
+}
+
+.text-xsmall {
+    font-size: .7rem;
+}
+
+.text-xxsmall {
+    font-size: .6rem;
+}
+
+.text-large {
+    font-size: 1.2rem;
+}
+
+.pull-right {
+    text-align: right;
 }
 
 .main-panel .main {
@@ -413,7 +454,7 @@ body {
             padding-right: 50px;
         }
 
-    .panel.default, .panel.primary, .panel.info, .panel.warning, .panel.danger {
+    .panel.default, .panel.primary, .panel.seconday, .panel.success, .panel.info, .panel.warning, .panel.danger {
         color: #fff;
     }
 
@@ -428,7 +469,8 @@ body {
             flex: 1;
         }
 
-table.table {
+table.table,
+table.table-vert {
     width: 100%;
 }
 
@@ -439,17 +481,35 @@ table.table {
         padding: 5px 10px;
     }
 
+    table.table-vert th {
+        text-align: right;
+        padding-right: 5px;
+    }
+
 /*
 Buttons
 */
-.btn {
+.btn,
+.btn:visited {
     border: none;
     padding: 10px 15px;
-    color: #333;
+    color: #fff;
+    border: 1px solid transparent;
     border-radius: 3px;
     cursor: pointer;
     opacity: 0.8;
+    background-color: #999;
+    text-decoration: none;
+    font-family: Arial;
+    font-size: 0.9rem;
+    font-weight: normal;
 }
+
+    .btn:active {
+        color: #ea6710;
+        outline: none;
+        border: 1px solid #ea6710;
+    }
 
     .btn:hover {
         opacity: 1;
@@ -459,29 +519,39 @@ Buttons
         background-color: #777;
     }
 
-    .btn.btn-success {
-        background-color: #48e478;
+    .btn.btn-primary {
+        background-color: #375a7f;
+        border-color: #375a7f;
     }
 
-    .btn.btn-primary {
-        background-color: #2ECBFF;
+    .btn.btn-secondary {
+        background-color: #444;
+        border-color: #444;
+    }
+
+    .btn.btn-success {
+        background-color: #00bc8c;
+        border-color: #00bc8c;
     }
 
     .btn.btn-info {
-        background-color: #02877a;
+        background-color: #3498DB;
+        border-color: #3498DB;
     }
 
     .btn.btn-warning {
-        background-color: #ea6710;
+        background-color: #F39C12;
+        border-color: #F39C12;
     }
 
     .btn.btn-danger {
-        background-color: #be3030;
+        background-color: #E74C3C;
+        border-color: #E74C3C;
     }
 
     .btn.btn-hazaar {
         background-color: #554d7c;
-        color: #fff;
+        border-color: #6a6291;
     }
 
 /*
@@ -489,15 +559,17 @@ Fancy Stat Class
 */
 .stat {
     text-align: center;
+    display: block;
 }
 
-    .stat .number {
+    .stat .stat-number {
         font-size: 2em;
     }
 
-    .stat .label {
+    .stat .stat-label {
         font-weight: lighter;
         font-size: .8em;
+        margin: auto;
     }
 
 /*
@@ -523,24 +595,28 @@ Fancy Stat Class
     background-color: #777;
 }
 
-.success {
-    background-color: #48e478;
+.primary {
+    background-color: #375a7f;
 }
 
-.primary {
-    background-color: #2ECBFF;
+.secondary {
+    background-color: #444;
+}
+
+.success {
+    background-color: #00bc8c;
 }
 
 .info {
-    background-color: #02877a;
+    background-color: #3498DB;
 }
 
 .warning {
-    background-color: #ea6710;
+    background-color: #F39C12;
 }
 
 .danger {
-    background-color: #be3030;
+    background-color: #E74C3C;
 }
 
 .hz-error {
@@ -560,3 +636,30 @@ Fancy Stat Class
 canvas.metrics {
     width: 100%;
 }
+
+.pct {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+    .pct .pct-content,
+    .pct .pct-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+    }
+
+    .pct .pct-content {
+        text-align: center;
+        color: #000;
+        right: 0;
+        vertical-align: middle;
+    }
+
+    .pct .pct-bar {
+        background: #fff;
+        max-width: 100%;
+        mix-blend-mode: difference;
+    }

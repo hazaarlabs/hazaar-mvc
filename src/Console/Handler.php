@@ -10,6 +10,8 @@ class Handler {
 
     private $modules = array();
 
+    private $libraries = array();
+
     private $menus = array();
 
     private $application;
@@ -195,15 +197,15 @@ class Handler {
 
         if(file_exists($installed)){
 
-            $libraries = json_decode(file_get_contents($installed), true);
+            $this->libraries = json_decode(file_get_contents($installed), true);
 
-            usort($libraries, function($a, $b){
+            usort($this->libraries, function($a, $b){
                 if ($a['name'] == $b['name'])
                     return 0;
                 return ($a['name'] < $b['name']) ? -1 : 1;
             });
 
-            foreach($libraries as $library){
+            foreach($this->libraries as $library){
 
                 if(!(($name = substr(ake($library, 'name'), 18))
                     && ake($library, 'type') == 'library'
@@ -247,9 +249,21 @@ class Handler {
 
     }
 
+    public function getModules(){
+
+        return $this->modules;
+
+    }
+
     public function moduleExists($name){
 
         return array_key_exists($name, $this->modules);
+
+    }
+
+    public function getLibraries(){
+
+        return $this->libraries;
 
     }
 
