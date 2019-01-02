@@ -275,27 +275,33 @@ class Application {
 
                 if(!$metric->exists()){
 
-                    $metric->addDataSource('hits', 'COUNTER', null, null, 'Hit counter');
+                    $metric->addDataSource('hits', 'COUNTER', null, null, 'Hit Counter');
 
-                    $metric->addDataSource('exec', 'GAUGE', null, null, 'Execution timer');
+                    $metric->addDataSource('exec', 'GAUGEZ', null, null, 'Execution Timer');
 
-                    $metric->addArchive('max_1hour', 'MAX', 1, 60, 'Max per minute for last hour');
+                    $metric->addDataSource('mem', 'GAUGE', null, null, 'Memory Usage');
 
-                    $metric->addArchive('max_1day', 'MAX', 60, 24, 'Max per hour for last day');
+                    $metric->addArchive('max_1hour', 'COUNT', 6, 60, 'Count per minute for last hour');
 
-                    $metric->addArchive('avg_1day', 'AVERAGE', 60, 24, 'Average per hour for last day');
+                    $metric->addArchive('avg_1hour', 'AVERAGE', 6, 60, 'Average per minute for last hour');
 
-                    $metric->addArchive('max_1year', 'MAX', 3660, 365, 'Max per day for last year');
+                    $metric->addArchive('max_1day', 'COUNT', 360, 24, 'Count per hour for last day');
 
-                    $metric->addArchive('avg_1year', 'AVERAGE', 3660, 365, 'Average per day for last year');
+                    $metric->addArchive('avg_1day', 'AVERAGE', 360, 24, 'Average per hour for last day');
 
-                    $metric->create(60);
+                    $metric->addArchive('max_1year', 'COUNT', 8640, 365, 'Count per day for last year');
+
+                    $metric->addArchive('avg_1year', 'AVERAGE', 8640, 365, 'Average per day for last year');
+
+                    $metric->create(10);
 
                 }
 
                 $metric->setValue('hits', 1);
 
                 $metric->setValue('exec', (microtime(true) - HAZAAR_EXEC_START) * 1000);
+
+                $metric->setValue('mem', memory_get_peak_usage());
 
             }
 
