@@ -1,5 +1,5 @@
 
-<ul class="sidebar-nav-module">
+<ul class="nav-menu">
     <?php
     foreach($this->items as $item){
 
@@ -9,14 +9,14 @@
         $a = $this->html->a($this->url($item->target), array(
             $item->icon ? $this->fontawesome->icon($item->icon) : null,
             $item->label
-        ));
+        ))->class('nav-link');
 
         if($item->suffix)
             $a->add($this->html->span(ake($item->suffix, 0))->class('suffix ' . ake($item->suffix, 1, 'default')));
 
-        $li = $this->html->li($a)->class('sidebar-nav-item')->toggleClass('selected', $active);
+        $li = $this->html->li($a)->class('nav-item')->toggleClass('selected', $active);
 
-        if($active && $item->items)
+        if($item->items)
             $li->add($this->partial('menu', array('items' => $item->items)));
 
         echo $li;

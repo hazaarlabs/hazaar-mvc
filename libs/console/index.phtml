@@ -3,11 +3,11 @@ $memory_limit = bytes_str(ini_get('memory_limit'));
 $memory_peak = bytes_str(memory_get_peak_usage());
 ?>
 <div class="row">
-    <div class="col col-1">
+    <div class="col col-6">
         <div class="panel">
             <div class="panel-header">Application Information</div>
             <div class="panel-content">
-                <table class="table-vert text-mono">
+                <table class="table-vert">
                     <tr>
                         <th style="width: 150px;">Name:</th>
                         <td>
@@ -76,11 +76,11 @@ $memory_peak = bytes_str(memory_get_peak_usage());
             </div>
         </div>
     </div>
-    <div class="col col-1">
+    <div class="col col-6">
         <div class="panel">
             <div class="panel-header">System Information</div>
             <div class="panel-content">
-                <table class="table-vert text-mono">
+                <table class="table-vert">
                     <tr>
                         <th style="width: 150px;">PHP Version:</th>
                         <td>
@@ -152,7 +152,7 @@ $memory_peak = bytes_str(memory_get_peak_usage());
 </div>
 
 <div class="row">
-    <div class="col col-1">
+    <div class="col col-<?=($this->stats) ? '6' : '12';?>">
         <div class="panel primary">
             <div class="panel-header">Composer Libraries</div>
             <div class="panel-content">
@@ -184,11 +184,11 @@ $memory_peak = bytes_str(memory_get_peak_usage());
             </div>
         </div>
     </div><?php if($this->stats):?>
-    <div class="col col-1">
+    <div class="col col-6">
         <div class="panel success">
             <div class="panel-header">Statistics</div>
             <div class="panel-content row">
-                <div class="col col-1">
+                <div class="col col-3">
                     <div class="stat">
                         <div class="stat-number">
                             <?=$this->stats['hour'];?>
@@ -196,7 +196,7 @@ $memory_peak = bytes_str(memory_get_peak_usage());
                         <div class="stat-label">Hour</div>
                     </div>
                 </div>
-                <div class="col col-1">
+                <div class="col col-3">
                     <div class="stat">
                         <div class="stat-number">
                             <?=$this->stats['day'];?>
@@ -204,7 +204,7 @@ $memory_peak = bytes_str(memory_get_peak_usage());
                         <div class="stat-label">Day</div>
                     </div>
                 </div>
-                <div class="col col-1">
+                <div class="col col-3">
                     <div class="stat">
                         <div class="stat-number">
                             <?=$this->stats['week'];?>
@@ -212,7 +212,7 @@ $memory_peak = bytes_str(memory_get_peak_usage());
                         <div class="stat-label">Week</div>
                     </div>
                 </div>
-                <div class="col col-1">
+                <div class="col col-3">
                     <div class="stat">
                         <div class="stat-number">
                             <?=$this->stats['month'];?>
