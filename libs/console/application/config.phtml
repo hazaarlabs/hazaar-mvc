@@ -1,7 +1,7 @@
 
-<form class="row row-full" method="post">
+<form class="row fullscreen" method="post">
     <div class="col col-12">
-        <div class="panel panel-full">
+        <div class="panel flex-grow-1">
             <div class="panel-header">
                 Application Configuration
                 <?php
@@ -9,9 +9,9 @@
                     ->id('selectEnv');
                 ?>
             </div>
-            <div class="panel-content flex flex-column">
+            <div class="panel-content flex flex-col flex-grow-1">
                 <?=$this->html->textarea('config', $this->config)
-                ->class('flex-grow')
+                ->class('flex-grow-1')
                 ->prop('disabled', !$this->writable);?>
             </div>
             <div class="panel-footer">
