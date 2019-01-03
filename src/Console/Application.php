@@ -22,7 +22,7 @@ class Application extends Module {
 
         }
 
-        $config = $group->addMenuItem('Configuration', 'config', 'cogs');
+        $group->addMenuItem('Configuration', 'config', 'cogs');
 
         $group->addMenuItem('File Encryption', 'encrypt', 'key');
 

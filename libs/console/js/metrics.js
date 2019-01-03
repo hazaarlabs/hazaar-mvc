@@ -4,7 +4,7 @@
             var row = $('<div class="row">').appendTo($('#metrics'));
             for (i in graphs[x]) {
                 let graph = graphs[x][i];
-                let id = x + i, canvas = $('<canvas class="metrics">'), col = $('<div class="col col-1">').appendTo(row);
+                let id = x + i, canvas = $('<canvas class="metrics">'), col = $('<div class="col col-' + (12 / graphs[i].length) + '">').appendTo(row);
                 $('<div class="panel">').html([
                     $('<div class="panel-header">'),
                     $('<div class="panel-subheader">'),

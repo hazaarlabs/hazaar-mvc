@@ -1,23 +1,21 @@
 
-<form style="height: 100%;" method="post">
-    <div class="row row-full">
-        <div class="col col-12">
-            <div class="panel panel-full">
-                <div class="panel-header">
-                    Application Configuration
-                    <?php
-                    echo $this->html->select('env', array_combine($this->envs, $this->envs), $this->env)
-                        ->id('selectEnv');
-                    ?>
-                </div>
-                <div class="panel-content">
-                    <?=$this->html->textarea('config', $this->config)
-                    ->style(array('width' => '100%', 'height' => '100%'))
-                    ->prop('disabled', !$this->writable);?>
-                </div>
-                <div class="panel-footer">
-                    <?=$this->html->button('Save', 'submit')->class('btn btn-primary')->prop('disabled', !$this->writable);?>
-                </div>
+<form class="row row-full" method="post">
+    <div class="col col-12">
+        <div class="panel panel-full">
+            <div class="panel-header">
+                Application Configuration
+                <?php
+                echo $this->html->select('env', array_combine($this->envs, $this->envs), $this->env)
+                    ->id('selectEnv');
+                ?>
+            </div>
+            <div class="panel-content flex flex-column">
+                <?=$this->html->textarea('config', $this->config)
+                ->class('flex-grow')
+                ->prop('disabled', !$this->writable);?>
+            </div>
+            <div class="panel-footer">
+                <?=$this->html->button('Save', 'submit')->class('btn btn-primary')->prop('disabled', !$this->writable);?>
             </div>
         </div>
     </div>
