@@ -971,7 +971,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      *
      * @return      mixed Value at key $key
      */
-    public function & get($key, $create = false) {
+    public function & get($key, $default = null, $create = false) {
 
         if($key === NULL && ! $this->locked) {
 
@@ -981,14 +981,22 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
 
         } elseif(! array_key_exists($key, $this->elements) && ! $this->locked) {
 
-            if($create === false){
+            if($default !== null){
+
+                $elem = $default;
+
+            }elseif($create === true){
+
+                $elem = new Map(NULL, NULL, $this->filter);
+
+            }else{
 
                 $null = null;
 
                 return $null;
             }
 
-            $this->elements[$key] = $elem = new Map(NULL, NULL, $this->filter);
+            $this->elements[$key] = $elem;
 
         } else {
 
@@ -1011,7 +1019,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      */
     public function & __get($key) {
 
-        return $this->get($key, true);
+        return $this->get($key, null, true);
 
     }
 
