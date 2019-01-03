@@ -1,21 +1,11 @@
 
-<h1>Views</h1>
-
-<?php
-if(is_array($this->views)){
-
-    $table = $this->html->table()->class('table');
-
-    foreach($this->views as $view){
-
-        $row = $this->html->row(array(
-            $view['name'],
-            $view['file']
-        ));
-
-    }
-
-    echo $table;
-
-}
-?>
+<div class="row">
+    <div class="col">
+        <div class="panel">
+            <div class="panel-header">Views</div>
+            <div class="panel-content">
+                <?=$this->partial('mvc_items', array('items' => $this->views));?>
+            </div>
+        </div>
+    </div>
+</div>
