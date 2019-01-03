@@ -18,12 +18,12 @@ class Handler {
 
     public function __construct(\Hazaar\Application $application){
 
-        $this->application = $application;
-
         $this->passwd = CONFIG_PATH . DIRECTORY_SEPARATOR . '.passwd';
 
         if(!file_exists($this->passwd))
             die('Hazaar admin console is currently disabled!');
+
+        $this->application = $application;
 
         session_start();
 
@@ -291,7 +291,8 @@ class Handler {
 
         $module->base_path = 'hazaar/console';
 
-        $module->__initialize($request);
+        if($action !== 'file')
+            $module->__initialize($request);
 
         $module->setRequest($request);
 
@@ -323,41 +324,10 @@ class Handler {
 
     }
 
-    public function addMenuGroup($module, $label, $icon = null, $url = null){
-
-        $name = $module->getName();
-
-        if(array_key_exists($name, $this->menus))
-            return false;
-
-        $this->menus[$name] = array(
-            'label' => $label,
-            'icon' => $icon,
-            'target' => $module->getName() . ($url? '/' . $url:null),
-            'items' => array()
-        );
-
-        return true;
-
-    }
-
     public function addMenuItem($module, $label, $url = null, $icon = null, $suffix = null){
 
-        $group = $module->getName();
-
-        if(!array_key_exists($group, $this->menus))
-            return false;
-
-        $this->menus[$group]['items'][] = array(
-            'label' => $label,
-            'target' => $module->getName() . ($url? '/' . $url:null),
-            'icon' => $icon,
-            'suffix' => (is_array($suffix)?$suffix:array($suffix))
-        );
-
-        return true;
+        return $this->menus[] = new MenuItem($module, $label, $url, $icon, $suffix);
 
     }
-
 
 }
