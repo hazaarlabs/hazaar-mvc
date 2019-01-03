@@ -279,9 +279,14 @@ a, a:visited {
         border-left-color: #554d7c;
     }
 
-    .sidebar-nav-module a i.fa,
-    .sidebar-nav-item .sidebar-nav-items li a i.fa {
-        width: 16px;
+    .sidebar-nav-module a > i.fa,
+    .sidebar-nav-item .sidebar-nav-items li a > i.fa {
+        width: 2em;
+        text-align: center;
+    }
+
+    .sidebar-nav-module a > i.fa,
+    .sidebar-nav-module a > span.fa-stack {
         margin-right: 10px;
     }
 
@@ -308,7 +313,7 @@ a, a:visited {
     box-sizing: border-box;
 }
 
-    .sidebar-nav-item .sidebar-nav-items li a .suffix {
+    .sidebar-nav-item li a .suffix {
         float: right;
         padding: 0 8px;
         border-radius: 3px;

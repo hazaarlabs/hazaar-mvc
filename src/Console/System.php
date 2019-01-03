@@ -6,7 +6,7 @@ class System extends Module {
 
     public function load(){
 
-        $this->addMenuGroup('System', 'wrench');
+        $this->addMenuItem('System', 'wrench');
 
     }
 

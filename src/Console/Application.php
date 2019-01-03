@@ -12,21 +12,21 @@ class Application extends Module {
 
         $this->config = new \Hazaar\Application\Config('application', null, $this->application->getDefaultConfig());
 
-        $this->addMenuGroup('Application', 'bars');
+        $group = $this->addMenuItem('Application', 'bars');
 
         if($this->config->app['metrics'] === true){
 
             $this->metrics = new \Hazaar\File\Metric($this->application->runtimePath('metrics.dat'));
 
-            $this->addMenuItem('Metrics', 'metrics', 'line-chart');
+            $group->addMenuItem('Metrics', 'metrics', 'line-chart');
 
         }
 
-        $this->addMenuItem('Configuration', 'config', 'cogs');
+        $config = $group->addMenuItem('Configuration', 'config', 'cogs');
 
-        $this->addMenuItem('File Encryption', 'encrypt', 'key');
+        $group->addMenuItem('File Encryption', 'encrypt', 'key');
 
-        $this->addMenuItem('Cache Settings', 'cache', 'facebook');
+        $group->addMenuItem('Cache Settings', 'cache', 'bolt');
 
     }
 

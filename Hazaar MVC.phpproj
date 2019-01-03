@@ -71,6 +71,7 @@
     <Compile Include="src\Cache\Func.php" />
     <Compile Include="src\Cache\Output.php" />
     <Compile Include="src\Closure.php" />
+    <Compile Include="src\Console\MenuItem.php" />
     <Compile Include="src\Console\System.php" />
     <Compile Include="src\Console\Application.php" />
     <Compile Include="src\Console\Handler.php" />
@@ -565,6 +566,7 @@
     <Content Include="libs\console\application\config.phtml" />
     <Content Include="libs\console\images\hazaar-bg.jpg" />
     <Content Include="libs\console\images\hazaar-icon-lg.png" />
+    <Content Include="libs\console\menu.phtml" />
     <Content Include="libs\console\js\metrics.js" />
     <Content Include="libs\console\js\config.js" />
     <Content Include="libs\console\js\encrypt.js" />

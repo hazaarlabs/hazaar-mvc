@@ -10,6 +10,8 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     public $notices = array();
 
+    private $module_info = array('label' => 'Module', 'icon' => 'bars');
+
     final function __construct($name, $path, $application){
 
         $this->view_path = $path;
@@ -70,15 +72,9 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     }
 
-    public function addMenuGroup($label, $icon = null, $method = null){
+    protected function addMenuItem($label, $icon = null, $suffix = null){
 
-        $this->handler->addMenuGroup($this, $label, $icon, $method);
-
-    }
-
-    protected function addMenuItem($label, $method = null, $icon = null, $suffix = null){
-
-        $this->handler->addMenuItem($this, $label, $method, $icon, $suffix);
+        return $this->handler->addMenuItem($this, $label, null, $icon, $suffix);
 
     }
 
@@ -103,6 +99,22 @@ abstract class Module extends \Hazaar\Controller\Action {
             'class' => $class,
             'icon' => $icon
         );
+
+    }
+
+    public function setActiveMenu(MenuItem $item){
+
+        $this->module_info = array('label' => $item->label, 'icon' => $item->icon);
+
+    }
+
+    public function  getActiveMenu(){
+
+        return $this->view->html->div(array(
+            $this->view->html->i()->class('fa fa-' . $this->module_info['icon']),
+            ' ',
+            $this->module_info['label']
+        ));
 
     }
 
