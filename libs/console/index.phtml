@@ -2,7 +2,7 @@
 $memory_limit = bytes_str(ini_get('memory_limit'));
 $memory_peak = bytes_str(memory_get_peak_usage());
 ?>
-<div class="row">
+<div class="row flex-grow-1">
     <div class="col col-6">
         <div class="panel">
             <div class="panel-header">Application Information</div>
@@ -75,9 +75,7 @@ $memory_peak = bytes_str(memory_get_peak_usage());
                 </table>
             </div>
         </div>
-    </div>
-    <div class="col col-6">
-        <div class="panel">
+        <div class="panel flex-grow-1">
             <div class="panel-header">System Information</div>
             <div class="panel-content">
                 <table class="table-vert">
@@ -149,42 +147,8 @@ $memory_peak = bytes_str(memory_get_peak_usage());
             </div>
         </div>
     </div>
-</div>
-
-<div class="row">
-    <div class="col col-<?=($this->stats) ? '6' : '12';?>">
-        <div class="panel primary">
-            <div class="panel-header">Composer Libraries</div>
-            <div class="panel-content">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Version</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach($this->libraries as $lib): ?>
-                        <tr>
-                            <td>
-                                <div class="text-small">
-                                    <?=$this->html->a($lib['homepage'], $lib['name'])->target('_blank');?>
-                                </div>
-                                <div class="text-xsmall">
-                                    <?=$lib['description'];?>
-                                </div>
-                            </td>
-                            <td>
-                                <?=$lib['version'];?>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div><?php if($this->stats):?>
     <div class="col col-6">
+        <?php if($this->stats):?>
         <div class="panel success">
             <div class="panel-header">Statistics</div>
             <div class="panel-content row">
@@ -225,6 +189,36 @@ $memory_peak = bytes_str(memory_get_peak_usage());
                 <a href="<?=$this->url('app/metrics');?>" class="btn btn-default">View Metrics</a>
             </div>
         </div>
+        <?php endif; ?>
+        <div class="panel primary flex-grow-1">
+            <div class="panel-header">Composer Libraries</div>
+            <div class="panel-content">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Version</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($this->libraries as $lib): ?>
+                        <tr>
+                            <td>
+                                <div class="text-small">
+                                    <?=$this->html->a($lib['homepage'], $lib['name'])->target('_blank');?>
+                                </div>
+                                <div class="text-xsmall">
+                                    <?=$lib['description'];?>
+                                </div>
+                            </td>
+                            <td>
+                                <?=$lib['version'];?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-    <?php endif; ?>
 </div>
