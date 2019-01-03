@@ -14,6 +14,12 @@ class Application extends Module {
 
         $group = $this->addMenuItem('Application', 'bars');
 
+        $group->addMenuItem('Models', 'models', 'cubes');
+
+        $group->addMenuItem('Views', 'views', 'eye');
+
+        $group->addMenuItem('Controllers', 'controllers', 'gamepad');
+
         if($this->config->app['metrics'] === true){
 
             $this->metrics = new \Hazaar\File\Metric($this->application->runtimePath('metrics.dat'));
@@ -179,7 +185,20 @@ class Application extends Module {
 
     public function models($request){
 
-        $this->view('models');
+        $this->view('application/models');
+
+        $models = array();
+
+        foreach($this->application->loader->getSearchPaths(FILE_PATH_MODEL) as $path){
+
+            $dir = new \Hazaar\File\Dir($path);
+
+            while($file = $dir->read())
+                $models[] = $file;
+
+        }
+
+        $this->view->models = $models;
 
     }
 
@@ -187,11 +206,36 @@ class Application extends Module {
 
         $this->view('application/views');
 
+        $views = array();
+
+        foreach($this->application->loader->getSearchPaths(FILE_PATH_VIEW) as $path){
+
+            $dir = new \Hazaar\File\Dir($path);
+
+            $views = array_merge($views, $dir->find('/.*\.phtml/', false, false));
+
+        }
+
+        $this->view->views = $views;
+
     }
 
     public function controllers($request){
 
         $this->view('application/controllers');
+
+        $controllers = array();
+
+        foreach($this->application->loader->getSearchPaths(FILE_PATH_CONTROLLER) as $path){
+
+            $dir = new \Hazaar\File\Dir($path);
+
+            while($file = $dir->read())
+                $controllers[] = $file;
+
+        }
+
+        $this->view->controllers = $controllers;
 
     }
 

@@ -560,6 +560,7 @@
     <Content Include="docs\advanced\xmlrpc.md" />
     <Content Include="docs\test-page.md" />
     <Content Include="libs\console\application\metrics.phtml" />
+    <Content Include="libs\console\application\mvc_items.phtml" />
     <Content Include="libs\console\css\layout.css" />
     <Content Include="libs\console\css\login.css" />
     <Content Include="libs\console\css\phpinfo.css" />

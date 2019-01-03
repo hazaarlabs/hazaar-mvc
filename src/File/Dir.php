@@ -16,6 +16,9 @@ class Dir {
 
     function __construct($path, Backend\_Interface $backend = NULL, Manager $manager = null) {
 
+        if(!is_string($path))
+            throw new \Exception('Invalid path specification');
+
         if(! $backend)
             $backend = new Backend\Local(array('root' => ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : '/')));
 
@@ -272,7 +275,7 @@ class Dir {
 
             if($this->backend->is_dir($start . $file)) {
 
-                if($subdir = $this->find($pattern, $show_hidden, $case_sensitive, $start . $file))
+                if($subdir = $this->find($pattern, $show_hidden, $case_sensitive, $file))
                     $list = array_merge($list, $subdir);
 
             }
