@@ -25,7 +25,10 @@ class Handler {
 
         $this->application = $application;
 
-        session_start();
+        session_start(array(
+            'name' => 'HAZAAR_CONSOLE',
+            'cookie_path' => \Hazaar\Application::path('hazaar')
+        ));
 
     }
 
