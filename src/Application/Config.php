@@ -99,12 +99,12 @@ class Config extends \Hazaar\Map {
 
         foreach($search_sources as &$search_source){
 
-            $source_file = null;
+            $source = null;
 
             //If we have an extension, just use that file.
             if(strrpos($search_source, '.') !== false){
 
-                $source_file = \Hazaar\Loader::getFilePath($path_type, $search_source);
+                $source = \Hazaar\Loader::getFilePath($path_type, $search_source);
 
             }else{ //Otherwise, search for files with supported extensions
 
@@ -114,7 +114,7 @@ class Config extends \Hazaar\Map {
 
                     $filename = $search_source . '.' . $ext;
 
-                    if($source_file = \Hazaar\Loader::getFilePath($path_type, $filename))
+                    if($source = \Hazaar\Loader::getFilePath($path_type, $filename))
                         break;
 
                 }
@@ -122,8 +122,8 @@ class Config extends \Hazaar\Map {
             }
 
             //If the file doesn't exist, then skip it.
-            if($source_file)
-                $options[] = $this->loadSourceFile($source_file);
+            if($source)
+                $options[] = $this->loadSourceFile($source);
 
         }
 
@@ -329,7 +329,7 @@ class Config extends \Hazaar\Map {
 
     /**
      * Test if the current loaded source file is writable on the filesystem
-     * 
+     *
      * @return boolean
      */
     public function isWritable(){
