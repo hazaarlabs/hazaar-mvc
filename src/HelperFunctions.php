@@ -85,8 +85,7 @@ function akr(&$array, $key_from, $key_to){
  *
  * @since 1.0.0
  *
- * @param string $value
- *            The string representation of the boolean
+ * @param string $value The string representation of the boolean
  *
  * @return boolean
  */
@@ -108,8 +107,7 @@ function boolify($value) {
  *
  * @since 1.0.0
  *
- * @param string $value
- *            The string representation of the boolean
+ * @param string $value The string representation of the boolean
  *
  * @return string
  */
@@ -140,8 +138,7 @@ function strbool($value) {
  *
  * @since 2.0.0
  *
- * @param string $value
- *            The string representation of the boolean
+ * @param string $value The string representation of the boolean
  *
  * @return boolean
  */
@@ -174,7 +171,7 @@ function is_boolean($value) {
  *
  * @param boolean A boolean type value.  Can be an actual boolean or 1/0 yes/no on/off, etc.
  *
- * @returns string
+ * @return string
  */
 function yn($value){
 
@@ -188,6 +185,7 @@ function yn($value){
  * @detail Takes a variable list of arguments and returns the first non-null value.
  *
  * @since 1.0.0
+ * 
  * @return mixed The first non-NULL argument value, or NULL if all values are NULL.
  */
 function coalesce() {
@@ -209,8 +207,7 @@ function coalesce() {
  *
  * @since 1.0.0
  *
- * @param array $array
- *            The array to test
+ * @param array $array The array to test
  *
  * @return boolean
  */
@@ -232,8 +229,7 @@ function is_multi_array(array $array) {
  *
  * @since 1.0.0
  *
- * @param array $array
- *            The array to test
+ * @param array $array The array to test
  *
  * @return boolean
  */
@@ -497,11 +493,9 @@ function base64url_decode($data) {
 /**
  * Seek the array cursor forward $count number of elements
  *
- * @param $array The
- *            array to seek
+ * @param $array array The array to seek
  *
- * @param $count The
- *            number of elements to seek forward
+ * @param $count integer The number of elements to seek forward
  */
 function array_seek(&$array, $count) {
 
@@ -517,31 +511,19 @@ function array_seek(&$array, $count) {
  * @brief Build a correctly formatted URL from argument list
  *
  * @detail This function will build a correctly formatted HTTP compliant URL using a list of parameters. If any
- * of
- * the parameters
- * are null then they will be omitted from the formatted output, including any extra values.
+ * of the parameters are null then they will be omitted from the formatted output, including any extra values.
  *
- * For example, you can specify a username and a password which will be formatted as username:password\@.
- * However if you omit
- * the password you will simply get username\@.
+ * For example, you can specify a username and a password which will be formatted as username:password\@.  However
+ * if you omit the password you will simply get username\@.
  *
- * @param string $scheme
- *            The protocol to use. Usually http or https.
- * @param string $host
- *            Hostname
- * @param integer $port
- *            (optional) Port
- * @param string $user
- *            (optional) Username
- * @param string $pass
- *            (optional) User password. If set, a username is required.
- * @param string $path
- *            (optional) Path suffix
- * @param array $query
- *            (optional) Array of parameters to send. ie: the stuff after the '?'. Uses
- *            http_build_query to generate string.
- * @param string $fragment
- *            (optional) Anything to go after the '#'.
+ * @param string  $scheme    The protocol to use. Usually http or https.
+ * @param string  $host      Hostname
+ * @param integer $port      (optional) Port
+ * @param string  $user      (optional) Username
+ * @param string  $pass      (optional) User password. If set, a username is required.
+ * @param string  $path      (optional) Path suffix
+ * @param array   $query     (optional) Array of parameters to send. ie: the stuff after the '?'. Uses http_build_query to generate string.
+ * @param string  $fragment  (optional) Anything to go after the '#'.
  */
 function build_url($scheme = 'http', $host = 'localhost', $port = NULL, $user = NULL, $pass = NULL, $path = NULL, $query = array(), $fragment = NULL) {
 
@@ -577,17 +559,14 @@ function build_url($scheme = 'http', $host = 'localhost', $port = NULL, $user = 
  *
  * @since 1.0.0
  *
- * @param int $bytes
- *            The byte value to convert to a string.
- * @param string $type
- *            The type to convert to. Type can be:
+ * @param int $bytes The byte value to convert to a string.
+ * @param string $type The type to convert to. Type can be:
  *            * B (bytes)
  *            * K (kilobytes)
  *            * M (megabytes)
  *            * G (giabytes)
  *            * T (terrabytes)
- * @param int $precision
- *            The number of decimal places to show.
+ * @param int $precision The number of decimal places to show.
  *
  * @return string The human readable byte string. eg: '100 MB'.
  */
@@ -669,10 +648,9 @@ function str_bytes($bytes, $type = NULL, $precision = NULL, $exclude_suffix = FA
  *
  * @since 1.0.0
  *
- * @param int $string
- *            The byte string value to convert to an integer. eg: '100MB'
+ * @param int $string The byte string value to convert to an integer. eg: '100MB'
  *
- * @return int The number of bytes
+ * @return int|boolean The number of bytes or false on failure
  */
 function bytes_str($string) {
 
@@ -703,7 +681,7 @@ function bytes_str($string) {
         return $size;
     }
 
-    return FALSE;
+    return false;
 
 }
 
@@ -727,8 +705,7 @@ function bytes_str($string) {
  *
  * @since 1.0.0
  *
- * @param string $interval
- *            The string interval to convert to seconds
+ * @param string $interval The string interval to convert to seconds
  *
  * @return int Number of seconds in the interval
  */
@@ -744,7 +721,7 @@ function seconds($interval) {
     foreach($intervals as $interval) {
 
         if (!preg_match('/(\d+)\s+(\w+)/', $interval, $matches))
-            return NULL;
+            return 0;
 
         $val = $matches[1];
 
@@ -873,7 +850,7 @@ function years($interval) {
  *
  * @since 1.0.0
  *
- *        $retval int Number of years from the specified date to now.
+ * @return int Number of years from the specified date to now.
  */
 function age($date) {
 
@@ -889,7 +866,7 @@ function age($date) {
  *
  * @since 1.0.0
  *
- * @return int Minutes in interval
+ * @return string Minutes in interval
  */
 function uptime($seconds) {
 
@@ -962,8 +939,7 @@ function interval($seconds){
  *
  * @since 1.0.0
  *
- * @param mixed $value
- *            The variable to type check and possibly fix.
+ * @param mixed $value The variable to type check and possibly fix.
  *
  * @return mixed The fixed variable.
  */
@@ -987,8 +963,7 @@ function str_fixtype(&$value) {
 /**
  * Helper function to get the status text for an HTTP response code
  *
- * @param integer $code
- *            The response code.
+ * @param integer $code The response code.
  *
  * @return mixed A string containing the response text if the code is valid. False otherwise.
  */
@@ -1001,7 +976,9 @@ function http_response_text($code) {
         if (preg_match('/^' . $code . '\s(.*)$/m', file_get_contents($file), $matches)) {
 
             $text = $matches[1];
+
         }
+
     }
 
     return $text;
@@ -1061,21 +1038,25 @@ if(!function_exists('http_response_code')){
 
             if ($text = http_response_text($code)) {
 
-                header($_SERVER['SERVER_PROTOCOL'] . ' ' . $code . ' ' . $matches[1]);
+                header($_SERVER['SERVER_PROTOCOL'] . ' ' . $code . ' ' . $text);
 
                 $_SERVER['HTTP_RESPONSE_CODE'] = $code;
 
-                return TRUE;
+                return true;
+
             } else {
 
                 die('Missing Http_Status.dat file!');
+
             }
+
         } else {
 
             return (array_key_exists('HTTP_RESPONSE_CODE', $_SERVER) ? $_SERVER['HTTP_RESPONSE_CODE'] : 200);
+
         }
 
-        return FALSE;
+        return false;
 
     }
 }
@@ -1197,7 +1178,8 @@ pre { margin: 30px; }
  *
  * @param array   $patterns   An array of patterns to search for, as a string.
  * @param string  $subject    The input string.
- * @param array   $matches    If matches is provided, then it is filled with the results of search. $matches[0] will contain the text that     *                          matched the full pattern, $matches[1] will have the text that matched the first captured parenthesized
+ * @param array   $matches    If matches is provided, then it is filled with the results of search. $matches[0] will contain the text that
+ *                            matched the full pattern, $matches[1] will have the text that matched the first captured parenthesized
  *                            subpattern, and so on.
  * @param integer $flags      For details on available flags, see the "preg_match()":http://php.net/manual/en/function.preg-match.php
  *                            documentation.
