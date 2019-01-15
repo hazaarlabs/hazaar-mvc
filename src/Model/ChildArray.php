@@ -298,7 +298,7 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function toArray($export_data_binder = false, $disable_callbacks = false, $depth = null, $show_hidden = true){
+    public function toArray($disable_callbacks = false, $depth = null, $show_hidden = true, $export_data_binder = false){
 
         $values = $this->values;
 
