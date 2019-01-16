@@ -200,6 +200,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
     static public function is_array($array) {
 
         return (is_array($array)
+            || $array instanceof \stdClass
             || $array instanceof \ArrayAccess
             || $array instanceof \ArrayIterator
             || $array instanceof \Iterator);
