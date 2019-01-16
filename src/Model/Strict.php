@@ -84,7 +84,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         $this->prepare($data);
 
         if (is_array($data) && count($data) > 0)
-            $this->populate($data);
+            $this->populate($data, false);
 
         $this->loaded = true;
 
@@ -147,11 +147,11 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @param mixed $data The array of data.
      *
-     * @param mixed $exec_filters Execute any callback filters.  For populate this is disabled by default.
+     * @param mixed $exec_filters Execute any callback filters.
      *
      * @return boolean
      */
-    public function populate($data, $exec_filters = false) {
+    public function populate($data, $exec_filters = true) {
 
         if (!(\Hazaar\Map::is_array($data) || $data instanceof \stdClass))
             return false;
@@ -624,7 +624,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         if (ake($def, 'type') == 'model') {
 
             if ($this->values[$key] instanceof ChildModel)
-                $this->values[$key]->populate($value);
+                $this->values[$key]->populate($value, $exec_filters);
 
         } else {
 
