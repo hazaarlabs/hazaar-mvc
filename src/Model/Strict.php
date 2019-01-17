@@ -795,10 +795,11 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                         if($type = ake($def, 'arrayOf')){
 
-                            if($extend = ake($def, 'extend')){
+                            if($exec_filters && ($extend = ake($def, 'extend'))){
 
                                 if(is_callable($extend))
-                                    $this->set($key, $extend($value, $this->values[$key]));
+                                    $this->set($key, $extend($value, $this->values[$key]), false);
+                                //Do not execute callbacks because we are executing 'extend' instead.
 
                             }else{
 
