@@ -5,6 +5,13 @@ namespace Hazaar\Model;
 abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable {
 
     /**
+     * Stored arguments provided to the constructor
+     *
+     * @var array
+     */
+    protected $args;
+
+    /**
      * Undefined values will be ignored. This is checked first.
      * @var bool
      */
@@ -67,9 +74,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      */
     function __construct() {
 
-        $args = func_get_args();
+        $this->args = func_get_args();
 
-        $data = array_shift($args);
+        $data = array_shift($this->args);
 
         $field_definition = $this->__init();
 
@@ -89,7 +96,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         $this->loaded = true;
 
         if (method_exists($this, 'construct'))
-            call_user_func_array(array($this, 'construct'), $args);
+            call_user_func_array(array($this, 'construct'), $this->args);
 
     }
 
@@ -153,7 +160,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      */
     public function populate($data, $exec_filters = true) {
 
-        if (!(\Hazaar\Map::is_array($data) || $data instanceof \stdClass))
+        if (!\Hazaar\Map::is_array($data))
             return false;
 
         foreach($data as $key => $value)
