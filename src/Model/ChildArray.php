@@ -16,6 +16,8 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     private $type;
 
+    private $allow_undefined = false;
+
     private $values = array();
 
     /**
@@ -31,10 +33,13 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
      */
     function __construct($type, $values = array()){
 
-        if(!(is_array($type) || in_array($type, DataTypeConverter::$known_types) || class_exists($type)))
+        if(!(is_array($type) || in_array($type, DataTypeConverter::$known_types) || $type === 'any' || class_exists($type)))
             throw new \Exception('Unknown/Unsupported data type: ' . $type);
 
         $this->type = $type;
+
+        if($this->type === 'any')
+            $this->allow_undefined = true;
 
         if(!is_array($values))
             $values = ($values === null) ? array() : array($values);
@@ -223,6 +228,8 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
         if(is_array($this->type))
             $value = new ChildModel($this->type, $value);
+        elseif($this->allow_undefined === true && $this->type === 'any')
+            $value = is_array($value) ? new ChildArray('any', $value) : new ChildModel('any', $value);
         else
             DataTypeConverter::convertType($value, $this->type);
 
