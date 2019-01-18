@@ -384,7 +384,10 @@ class Hmv extends \Hazaar\View\Helper {
                     case 'checkbox':
                     case 'text':
                     default:
-                        $input = $this->html->input($type, $name, $item)->class($this->input_class)->id($name);
+                        if(ake($def, 'multiline') === true)
+                            $input = $this->html->textarea($name, $item)->class($this->input_class)->id($name);
+                        else
+                            $input = $this->html->input($type, $name, $item)->class($this->input_class)->id($name);
                         break;
 
                 }
