@@ -197,9 +197,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                             $value = new ChildArray($def['arrayOf'], $value);
 
                         //If the type is a model then we use the ChildModel class
-                    }elseif($type == 'model' && array_key_exists('items', $def)) {
+                    }elseif($type == 'model') {
 
-                        $value = new ChildModel($def['items'], $value);
+                        $value = new ChildModel(ake($def, 'items', 'any'), $value);
 
                         //Otherwise, just convert the type
                     } elseif($value !== null) {
@@ -621,10 +621,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         $old_value = null;
 
-        if (ake($def, 'type') == 'model') {
+        if (array_key_exists($key, $this->values) && $this->values[$key] instanceof ChildModel){
 
-            if ($this->values[$key] instanceof ChildModel)
-                $this->values[$key]->populate($value, $exec_filters);
+            $this->values[$key]->populate($value, $exec_filters);
 
         } else {
 
