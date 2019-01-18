@@ -466,6 +466,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         if (array_key_exists('value', $def) || (array_key_exists('readonly', $def) && $def['readonly'] && $this->loaded))
             return false;
 
+        if(array_key_exists('prepare', $def))
+            $value = $this->execCallback($def['prepare'], $value, $key);
+
         /*
          * Run any pre-update callbacks
          */
