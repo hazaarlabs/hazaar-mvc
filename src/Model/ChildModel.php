@@ -44,8 +44,14 @@ class ChildModel extends Strict {
 
     public function set($key, $value, $exec_filters = true){
 
-        if($this->allow_undefined === true && (is_array($value) || $value instanceof \stdClass))
-            $value = new ChildArray('any', $value);
+        if($this->allow_undefined === true && (is_array($value) || $value instanceof \stdClass)){
+
+            if(is_array($value) && !is_assoc($value))
+                $value = new ChildArray('any', $value);
+            else
+                $value = new ChildModel('any', $value);
+
+        }
 
         return parent::set($key, $value, $exec_filters);
 
