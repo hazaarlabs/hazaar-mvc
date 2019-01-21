@@ -95,9 +95,12 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $labelTD = $this->html->td($this->html->label($label));
 
+                if(array_key_exists('render', $item) && is_callable($item['render']))
+                    $item['value'] = call_user_func($item['render'], $key, $item, $this->view);
+
                 $value = ake($item, 'value', $empty_val, true);
 
-                if(ake($item, 'empty', true) === false && $value == $empty_val)
+                if(ake($item, 'empty', true) === false && $value === $empty_val)
                     continue;
 
                 if(is_bool($value))
@@ -158,9 +161,12 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $label = $this->html->label(ake($item, 'label'));
 
+                if(array_key_exists('render', $item) && is_callable($item['render']))
+                    $item['value'] = call_user_func($item['render'], $key, $item, $this->view);
+
                 $value = ake($item, 'value', $empty_val, true);
 
-                if(ake($item, 'empty', true) === false && $value == $empty_val)
+                if(ake($item, 'empty', true) === false && $value === $empty_val)
                     continue;
 
                 if(is_bool($value))
