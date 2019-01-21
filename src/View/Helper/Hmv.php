@@ -263,11 +263,11 @@ class Hmv extends \Hazaar\View\Helper {
 
                 }
 
-            }elseif($render = ake($def, 'render')){
+            }elseif(array_key_exists('input', $def) && $def['input'] instanceof \Closure){
 
                 $labelTD = $this->html->td($this->html->label($label));
 
-                $input = call_user_func($render, $name, $item, $this->view);
+                $input = call_user_func($def['input'], $name, $item, $this->view);
 
             }elseif($item instanceof \Hazaar\Model\Strict){
 
