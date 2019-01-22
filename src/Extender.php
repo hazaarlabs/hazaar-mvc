@@ -55,8 +55,15 @@ abstract class Extender {
         if($r->isFinal())
             throw new Exception\ExtenderMayNotInherit('final', get_class($this), $class);
 
-        if($r->isAbstract())
-            throw new Exception\ExtenderMayNotInherit('abstract', get_class($this), $class);
+        if($r->isAbstract()){
+
+            $wrapper_class = 'wrapper_' . str_replace('\\', '_', $class);
+
+            eval("class $wrapper_class extends $class {}");
+
+            $r = new \ReflectionClass($wrapper_class);
+
+        }
 
         $obj = $r->newInstanceArgs($args);
 
