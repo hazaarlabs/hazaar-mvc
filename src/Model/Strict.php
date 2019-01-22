@@ -78,6 +78,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         $data = array_shift($this->args);
 
+        if($data instanceof ChildModel)
+            $data = $data->values;
+
         $field_definition = $this->__init();
 
         if (!is_array($field_definition))
