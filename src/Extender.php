@@ -42,6 +42,14 @@ abstract class Extender {
 
         $class = array_shift($args);
 
+        if($class[0] !== '\\'){
+
+            $t = new \ReflectionClass($this);
+
+            $class = $t->getNamespaceName() . '\\' . $class;
+
+        }
+
         $r = new \ReflectionClass($class);
 
         if($r->isFinal())
