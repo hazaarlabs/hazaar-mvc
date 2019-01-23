@@ -78,7 +78,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         $data = array_shift($this->args);
 
-        if($data instanceof ChildModel)
+        if($data instanceof Strict)
             $data = $data->values;
 
         $field_definition = $this->__init();
@@ -795,7 +795,18 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                 if ($this->ignore_undefined && !array_key_exists($key, $this->values))
                     continue;
 
-                if (array_key_exists($key, $this->values) && $this->values[$key] instanceof Strict) {
+                $def = ake($this->fields, $key);
+
+                if($exec_filters && ($extend = ake($def, 'extend'))){
+
+                    if(is_callable($extend)){
+
+                        //Do not execute callbacks because we are executing 'extend' instead.
+                        $this->set($key, $extend($value, $this->values[$key]), false);
+
+                    }
+
+                }elseif (array_key_exists($key, $this->values) && $this->values[$key] instanceof Strict) {
 
                     $this->values[$key]->extend($value, $exec_filters, $ignore_keys);
 
@@ -803,27 +814,15 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                     if(is_array($value)){
 
-                        $def = ake($this->fields, $key);
-
                         if($type = ake($def, 'arrayOf')){
 
-                            if($exec_filters && ($extend = ake($def, 'extend'))){
+                            foreach($value as $subKey => $subValue){
 
-                                if(is_callable($extend))
-                                    $this->set($key, $extend($value, $this->values[$key]), false);
-                                //Do not execute callbacks because we are executing 'extend' instead.
+                                if(ake($this->values[$key], $subKey) instanceof Strict)
+                                    $this->values[$key][$subKey]->extend($subValue, $exec_filters, $ignore_keys);
 
-                            }else{
-
-                                foreach($value as $subKey => $subValue){
-
-                                    if(ake($this->values[$key], $subKey) instanceof Strict)
-                                        $this->values[$key][$subKey]->extend($subValue, $exec_filters, $ignore_keys);
-
-                                    else
-                                        $this->values[$key][$subKey] = $this->convertType($subValue, $type);
-
-                                }
+                                else
+                                    $this->values[$key][$subKey] = $this->convertType($subValue, $type);
 
                             }
 
