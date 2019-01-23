@@ -5,6 +5,13 @@ namespace Hazaar\Model;
 abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable {
 
     /**
+     * Stored arguments provided to the constructor
+     *
+     * @var array
+     */
+    protected $args;
+
+    /**
      * Undefined values will be ignored. This is checked first.
      * @var bool
      */
@@ -67,9 +74,12 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      */
     function __construct() {
 
-        $args = func_get_args();
+        $this->args = func_get_args();
 
-        $data = array_shift($args);
+        $data = array_shift($this->args);
+
+        if($data instanceof ChildModel)
+            $data = $data->values;
 
         $field_definition = $this->__init();
 
@@ -84,12 +94,12 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         $this->prepare($data);
 
         if (is_array($data) && count($data) > 0)
-            $this->populate($data);
+            $this->populate($data, false);
 
         $this->loaded = true;
 
         if (method_exists($this, 'construct'))
-            call_user_func_array(array($this, 'construct'), $args);
+            call_user_func_array(array($this, 'construct'), $this->args);
 
     }
 
@@ -147,13 +157,13 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @param mixed $data The array of data.
      *
-     * @param mixed $exec_filters Execute any callback filters.  For populate this is disabled by default.
+     * @param mixed $exec_filters Execute any callback filters.
      *
      * @return boolean
      */
-    public function populate($data, $exec_filters = false) {
+    public function populate($data, $exec_filters = true) {
 
-        if (!(\Hazaar\Map::is_array($data) || $data instanceof \stdClass))
+        if (!\Hazaar\Map::is_array($data))
             return false;
 
         foreach($data as $key => $value)
@@ -197,9 +207,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                             $value = new ChildArray($def['arrayOf'], $value);
 
                         //If the type is a model then we use the ChildModel class
-                    }elseif($type == 'model' && array_key_exists('items', $def)) {
+                    }elseif($type == 'model') {
 
-                        $value = new ChildModel($def['items'], $value);
+                        $value = new ChildModel(ake($def, 'items', 'any'), $value);
 
                         //Otherwise, just convert the type
                     } elseif($value !== null) {
@@ -466,6 +476,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         if (array_key_exists('value', $def) || (array_key_exists('readonly', $def) && $def['readonly'] && $this->loaded))
             return false;
 
+        if(array_key_exists('prepare', $def))
+            $value = $this->execCallback($def['prepare'], $value, $key);
+
         /*
          * Run any pre-update callbacks
          */
@@ -621,10 +634,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         $old_value = null;
 
-        if (ake($def, 'type') == 'model') {
+        if (array_key_exists($key, $this->values) && $this->values[$key] instanceof ChildModel){
 
-            if ($this->values[$key] instanceof ChildModel)
-                $this->values[$key]->populate($value);
+            $this->values[$key]->populate($value, $exec_filters);
 
         } else {
 
@@ -795,10 +807,11 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                         if($type = ake($def, 'arrayOf')){
 
-                            if($extend = ake($def, 'extend')){
+                            if($exec_filters && ($extend = ake($def, 'extend'))){
 
                                 if(is_callable($extend))
-                                    $this->set($key, $extend($value, $this->values[$key]));
+                                    $this->set($key, $extend($value, $this->values[$key]), false);
+                                //Do not execute callbacks because we are executing 'extend' instead.
 
                             }else{
 

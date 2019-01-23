@@ -1089,7 +1089,7 @@ function dump($data = NULL) {
 
         $app = Hazaar\Application::getInstance();
 
-        if($app && $app->request && !($response = $app->request->getResponseType())){
+        if($app && $app->request && !($response = $app->getResponseType())){
 
             if (function_exists('apache_request_headers')) {
 

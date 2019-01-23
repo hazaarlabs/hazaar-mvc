@@ -101,10 +101,14 @@ abstract class DataTypeConverter  {
 
                 }elseif($type == 'list'){
 
-                    if(!is_array($value))
-                        @settype($value, 'array');
-                    else
-                        $value = array_values($value);
+                    if(!$value instanceof ChildArray){
+
+                        if(!is_array($value))
+                            @settype($value, 'array');
+                        else
+                            $value = array_values($value);
+
+                    }
 
                 } elseif ($type == 'string' && is_object($value) && method_exists($value, '__tostring')) {
 
