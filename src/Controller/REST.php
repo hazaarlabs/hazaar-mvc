@@ -298,51 +298,51 @@ abstract class REST extends \Hazaar\Controller {
 
         $api = array();
 
-        foreach($this->__rest_endpoints as $route => $routes){
-
-            foreach($routes as $endpoint)
-                $this->__describe_endpoint($route, $endpoint, $this->describe_full, $api);
-
-        }
+        foreach($this->__rest_endpoints as $endpoint)
+            $this->__describe_endpoint($endpoint, $this->describe_full, $api);
 
         return $api;
 
     }
 
-    private function __describe_endpoint($route, $endpoint, $describe_full = false, &$api = null){
+    private function __describe_endpoint($endpoint, $describe_full = false, &$api = null){
 
         if(!$api) $api = array();
 
-        foreach($endpoint['args']['methods'] as $methods){
+        foreach($endpoint['routes'] as $route => $route_data){
 
-            $info = array(
-                'url' => $this->url() . $route,
-                'httpMethods' => $methods
-            );
+            foreach($route_data['args']['methods'] as $methods){
 
-            if($describe_full && ($doc = ake($endpoint, 'doc'))){
+                $info = array(
+                    'url' => (string)$this->url($route),
+                    'httpMethods' => $methods
+                );
 
-                if($doc->hasTag('param')){
+                if($describe_full && ($doc = ake($endpoint, 'doc'))){
 
-                    $info['parameters'] = array();
+                    if($doc->hasTag('param')){
 
-                    foreach($doc->tag('param') as $name => $param){
+                        $info['parameters'] = array();
 
-                        if(!preg_match('/<(\w+:)*' . substr($name, 1) . '>/', $route))
-                            continue;
+                        foreach($doc->tag('param') as $name => $param){
 
-                        $info['parameters'][$name] = $param['desc'];
+                            if(!preg_match('/<(\w+:)*' . substr($name, 1) . '>/', $route))
+                                continue;
+
+                            $info['parameters'][$name] = $param['desc'];
+
+                        }
 
                     }
 
+                    if($brief = $doc->brief())
+                        $info['description'] = $brief;
+
                 }
 
-                if($brief = $doc->brief())
-                    $info['description'] = $brief;
+                $api[] = $info;
 
             }
-
-            $api[] = $info;
 
         }
 
