@@ -148,7 +148,7 @@ function strbool($value) {
 function is_boolean($value) {
 
     if (!is_string($value))
-        return FALSE;
+        return is_bool($value);
 
     $accepted = array(
         't',
