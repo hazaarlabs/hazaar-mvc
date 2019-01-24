@@ -56,8 +56,7 @@ class Hmv extends \Hazaar\View\Helper {
 
         foreach($items as $key => $item){
 
-            if(!($label = ake($item, 'label')))
-                $label = $key;
+            $label = ake($item, 'label', $key);
 
             if($children = ake($item, 'list')){
 
@@ -83,7 +82,7 @@ class Hmv extends \Hazaar\View\Helper {
 
             }elseif($children = ake($item, 'items')){
 
-                $section = $this->html->td($this->html->block($this->section_tag, ake($item, 'label')));
+                $section = $this->html->td($this->html->block($this->section_tag, $label));
 
                 $childTable = $this->html->table()->class($this->container_class);
 
