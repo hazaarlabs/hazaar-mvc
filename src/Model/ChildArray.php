@@ -72,6 +72,28 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
+    public function remove($criteria = array(), $multiple = false){
+
+        foreach($this->values as $index => $value){
+
+            if(!\Hazaar\Map::is_array($value))
+                continue;
+
+            if($this->matchItem($value, $criteria)){
+
+                unset($this->values[$index]);
+
+                if($multiple !== true)
+                    return;
+
+            }
+
+        }
+
+        return;
+
+    }
+
     public function matchItem($item, $criteria){
 
         foreach($criteria as $key => $criteriaValue){
