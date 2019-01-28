@@ -464,15 +464,18 @@ class Cron {
         // Next basic check... do we have 5 segments?
         $cron = explode(' ', $expression);
 
-        if(count($cron) <> 5) {
-
+        if(count($cron) !== 5)
             return FALSE;
 
-        } else {
+        $dummy = array();
 
-            // Yup, 5 segments... lets see if we can work with them
-            foreach($cron as $idx => $segment)
-                $dummy[$idx] = $this->expandSegment($idx, $segment);
+        // Yup, 5 segments... lets see if we can work with them
+        foreach($cron as $idx => $segment){
+
+            if(($value = $this->expandSegment($idx, $segment)) === false)
+                throw new \Exception('Invalid CRON time expression');
+
+            $dummy[$idx] = $value;
 
         }
 
