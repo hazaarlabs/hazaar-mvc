@@ -41,15 +41,20 @@ class Cron {
      */
     private $ranges = array(
         IDX_MINUTE  => array('min' => 0,
-                             'max' => 59),    // Minutes
+                             'max' => 59,
+                             'name' => 'i'),    // Minutes
         IDX_HOUR    => array('min' => 0,
-                             'max' => 23),    // Hours
+                             'max' => 23,
+                             'name' => 'G'),    // Hours
         IDX_DAY     => array('min' => 1,
-                             'max' => 31),    // Days
+                             'max' => 31,
+                             'name' => 'd'),    // Days
         IDX_MONTH   => array('min' => 1,
-                             'max' => 12),    // Months
+                             'max' => 12,
+                             'name' => 'm'),    // Months
         IDX_WEEKDAY => array('min' => 0,
-                             'max' => 7)    // Weekdays
+                             'max' => 7,
+                             'name' => 'w')    // Weekdays
     );
 
     /**
@@ -107,6 +112,9 @@ class Cron {
 
         $this->pcron = $this->parse($expression);
 
+        if($this->pcron === false)
+            throw new \Exception('Invalid CRON time expression');
+
     }
 
     /**
@@ -116,9 +124,12 @@ class Cron {
      *
      * @param    int $timestamp optional reference-time
      *
-     * @return    int
+     * @return    int|boolean
      */
     public function getNextOccurrence($timestamp = NULL) {
+
+        if(!$this->pcron)
+            return false;
 
         $next = $this->getTimestamp($timestamp);
 
@@ -135,9 +146,12 @@ class Cron {
      *
      * @param    int $timestamp optional reference-time
      *
-     * @return    int
+     * @return    int|boolean
      */
     public function getLastOccurrence($timestamp = NULL) {
+
+        if(!$this->pcron)
+            return false;
 
         // Convert timestamp to array
         $last = $this->getTimestamp($timestamp);
@@ -446,7 +460,7 @@ class Cron {
      *
      * @return       mixed
      */
-    public function parse($expression) {
+    private function parse($expression) {
 
         // First of all we cleanup the expression and remove all duplicate tabs/spaces/etc.
         $expression = preg_replace('/(\s+)/', ' ', strtolower(trim($expression)));
@@ -473,7 +487,7 @@ class Cron {
         foreach($cron as $idx => $segment){
 
             if(($value = $this->expandSegment($idx, $segment)) === false)
-                throw new \Exception('Invalid CRON time expression');
+                return false;
 
             $dummy[$idx] = $value;
 
@@ -505,13 +519,12 @@ class Cron {
         }
 
         // Replace wildcards
-        if(substr($segment, 0, 1) == '*') {
+        $token = substr($segment, 0, 1);
 
-            $segment = preg_replace('/^\*(\/\d+)?$/i',
-                $this->ranges[$idx]['min'] . '-' . $this->ranges[$idx]['max'] . '$1',
-                $segment);
-
-        }
+        if($token === '*')
+            $segment = preg_replace('/^\*(\/\d+)?$/i', $this->ranges[$idx]['min'] . '-' . $this->ranges[$idx]['max'] . '$1', $segment);
+        elseif($token === '?')
+            $segment = preg_replace('/^\?(\/\d+)?$/i', date($this->ranges[$idx]['name']) . '$1', $segment);
 
         // Make sure that nothing unparsed is left :)
         $dummy = preg_replace('/[0-9\-\/\,]/', '', $segment);
