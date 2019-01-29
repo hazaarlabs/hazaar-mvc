@@ -41,15 +41,20 @@ class Cron {
      */
     private $ranges = array(
         IDX_MINUTE  => array('min' => 0,
-                             'max' => 59),    // Minutes
+                             'max' => 59,
+                             'name' => 'i'),    // Minutes
         IDX_HOUR    => array('min' => 0,
-                             'max' => 23),    // Hours
+                             'max' => 23,
+                             'name' => 'H'),    // Hours
         IDX_DAY     => array('min' => 1,
-                             'max' => 31),    // Days
+                             'max' => 31,
+                             'name' => 'd'),    // Days
         IDX_MONTH   => array('min' => 1,
-                             'max' => 12),    // Months
+                             'max' => 12,
+                             'name' => 'm'),    // Months
         IDX_WEEKDAY => array('min' => 0,
-                             'max' => 7)    // Weekdays
+                             'max' => 7,
+                             'name' => 'w')    // Weekdays
     );
 
     /**
@@ -514,13 +519,12 @@ class Cron {
         }
 
         // Replace wildcards
-        if(substr($segment, 0, 1) == '*') {
+        $token = substr($segment, 0, 1);
 
-            $segment = preg_replace('/^\*(\/\d+)?$/i',
-                $this->ranges[$idx]['min'] . '-' . $this->ranges[$idx]['max'] . '$1',
-                $segment);
-
-        }
+        if($token === '*')
+            $segment = preg_replace('/^\*(\/\d+)?$/i', $this->ranges[$idx]['min'] . '-' . $this->ranges[$idx]['max'] . '$1', $segment);
+        elseif($token === '?')
+            $segment = preg_replace('/^\?(\/\d+)?$/i', date($this->ranges[$idx]['name']) . '$1', $segment);
 
         // Make sure that nothing unparsed is left :)
         $dummy = preg_replace('/[0-9\-\/\,]/', '', $segment);
