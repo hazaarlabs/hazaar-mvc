@@ -80,17 +80,19 @@ class Money {
      * @param       string $currency The name of the currency or country of origin.  Ie: 'USD' and 'US' will both resolve
      *              to US dollars.
      */
-    function __construct($value, $currency = NULL) {
+    function __construct($value, $currency = NULL, $disable_cache = false) {
 
         $this->value = $value;
 
         if(! Money::$currency_info){
 
-            if(class_exists('Hazaar\Cache')){
+            if($disable_cache === true){
 
-                $backend = (in_array('apuc', get_loaded_extensions()) ? 'apcu' : 'file');
+                Money::$currency_info = $this->loadCurrencyInfo();
 
-                Money::$cache = new \Hazaar\Cache($backend);
+            }else{
+
+                Money::$cache = new \Hazaar\Cache();
 
                 if(Money::$cache->has('currency_info')){
 
@@ -103,10 +105,6 @@ class Money {
                     Money::$cache->set('currency_info', Money::$currency_info);
 
                 }
-
-            }else{
-
-                Money::$currency_info = $this->loadCurrencyInfo();
 
             }
 
