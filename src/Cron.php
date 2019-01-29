@@ -69,7 +69,8 @@ class Cron {
         '@weekly'   => '0 0 * * 0',
         '@midnight' => '0 0 * * *',
         '@daily'    => '0 0 * * *',
-        '@hourly'   => '0 * * * *'
+        '@hourly'   => '0 * * * *',
+        '@reboot'   => 'now'
     );
 
     /**
@@ -110,7 +111,7 @@ class Cron {
 
     function __construct($expression) {
 
-        $this->pcron = $this->parse($expression);
+        $this->pcron = is_int($expression) ? $expression : $this->parse($expression);
 
         if($this->pcron === false)
             throw new \Exception('Invalid CRON time expression');
@@ -135,7 +136,7 @@ class Cron {
 
         $next_time = $this->calculateDateTime($next);
 
-        return $next_time;
+        return ($next_time > time()) ? $next_time : false;
 
     }
 
@@ -160,7 +161,7 @@ class Cron {
         $last_time = $this->calculateDateTime($last, FALSE);
 
         // return calculated time
-        return $last_time;
+        return ($last_time <= time()) ? $last_time : false;
 
     }
 
@@ -174,6 +175,9 @@ class Cron {
      * @return   int
      */
     private function calculateDateTime($rtime, $next = TRUE) {
+
+        if(is_int($this->pcron))
+            return $this->pcron;
 
         // Initialize vars
         $calc_date = TRUE;
@@ -367,22 +371,14 @@ class Cron {
      */
     private function getTimestamp($timestamp = NULL) {
 
-        if(is_null($timestamp)) {
-
+        if(is_null($timestamp))
             $arr = explode(',', strftime('%M,%H,%d,%m,%w,%Y', time()));
 
-        } else {
-
+        else
             $arr = explode(',', strftime('%M,%H,%d,%m,%w,%Y', $timestamp));
 
-        }
-
         // Remove leading zeros (or we'll get in trouble ;-)
-        foreach($arr as $key => $value) {
-
-            $arr[$key] = (int)ltrim($value, '0');
-
-        }
+        array_walk($arr, function(&$value){ $value = intval($value); });
 
         return $arr;
 
@@ -474,6 +470,9 @@ class Cron {
                 return FALSE;
 
         }
+
+        if($expression === 'now')
+            return time();
 
         // Next basic check... do we have 5 segments?
         $cron = explode(' ', $expression);
