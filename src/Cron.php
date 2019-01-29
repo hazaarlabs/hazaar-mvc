@@ -45,7 +45,7 @@ class Cron {
                              'name' => 'i'),    // Minutes
         IDX_HOUR    => array('min' => 0,
                              'max' => 23,
-                             'name' => 'H'),    // Hours
+                             'name' => 'G'),    // Hours
         IDX_DAY     => array('min' => 1,
                              'max' => 31,
                              'name' => 'd'),    // Days
