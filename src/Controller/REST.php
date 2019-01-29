@@ -116,8 +116,7 @@ abstract class REST extends \Hazaar\Controller {
 
         parent::__construct($name, $application);
 
-        if(class_exists('Hazaar\Cache'))
-            $this->__rest_cache = new \Hazaar\Cache();
+        $this->__rest_cache = new \Hazaar\Cache();
 
     }
 
