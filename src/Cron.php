@@ -107,6 +107,9 @@ class Cron {
 
         $this->pcron = $this->parse($expression);
 
+        if($this->pcron === false)
+            throw new \Exception('Invalid CRON time expression');
+
     }
 
     /**
@@ -116,9 +119,12 @@ class Cron {
      *
      * @param    int $timestamp optional reference-time
      *
-     * @return    int
+     * @return    int|boolean
      */
     public function getNextOccurrence($timestamp = NULL) {
+
+        if(!$this->pcron)
+            return false;
 
         $next = $this->getTimestamp($timestamp);
 
@@ -135,9 +141,12 @@ class Cron {
      *
      * @param    int $timestamp optional reference-time
      *
-     * @return    int
+     * @return    int|boolean
      */
     public function getLastOccurrence($timestamp = NULL) {
+
+        if(!$this->pcron)
+            return false;
 
         // Convert timestamp to array
         $last = $this->getTimestamp($timestamp);
@@ -446,7 +455,7 @@ class Cron {
      *
      * @return       mixed
      */
-    public function parse($expression) {
+    private function parse($expression) {
 
         // First of all we cleanup the expression and remove all duplicate tabs/spaces/etc.
         $expression = preg_replace('/(\s+)/', ' ', strtolower(trim($expression)));
@@ -473,7 +482,7 @@ class Cron {
         foreach($cron as $idx => $segment){
 
             if(($value = $this->expandSegment($idx, $segment)) === false)
-                throw new \Exception('Invalid CRON time expression');
+                return false;
 
             $dummy[$idx] = $value;
 
