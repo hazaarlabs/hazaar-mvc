@@ -39,7 +39,7 @@ class Error extends \Hazaar\Controller\Action {
 
         if ($request instanceof \Hazaar\Application\Request\Http && function_exists('apache_request_headers')) {
 
-            if(!($this->response = $request->getResponseType())){
+            if(!($this->response = $this->application->getResponseType())){
 
                 $h = apache_request_headers();
 

@@ -56,8 +56,7 @@ class Hmv extends \Hazaar\View\Helper {
 
         foreach($items as $key => $item){
 
-            if(!($label = ake($item, 'label')))
-                $label = $key;
+            $label = ake($item, 'label', $key);
 
             if($children = ake($item, 'list')){
 
@@ -83,7 +82,7 @@ class Hmv extends \Hazaar\View\Helper {
 
             }elseif($children = ake($item, 'items')){
 
-                $section = $this->html->td($this->html->block($this->section_tag, ake($item, 'label')));
+                $section = $this->html->td($this->html->block($this->section_tag, $label));
 
                 $childTable = $this->html->table()->class($this->container_class);
 
@@ -95,9 +94,12 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $labelTD = $this->html->td($this->html->label($label));
 
+                if(array_key_exists('render', $item) && is_callable($item['render']))
+                    $item['value'] = call_user_func($item['render'], $key, $item, $this->view);
+
                 $value = ake($item, 'value', $empty_val, true);
 
-                if(ake($item, 'empty', true) === false && $value == $empty_val)
+                if(ake($item, 'empty', true) === false && $value === $empty_val)
                     continue;
 
                 if(is_bool($value))
@@ -158,9 +160,12 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $label = $this->html->label(ake($item, 'label'));
 
+                if(array_key_exists('render', $item) && is_callable($item['render']))
+                    $item['value'] = call_user_func($item['render'], $key, $item, $this->view);
+
                 $value = ake($item, 'value', $empty_val, true);
 
-                if(ake($item, 'empty', true) === false && $value == $empty_val)
+                if(ake($item, 'empty', true) === false && $value === $empty_val)
                     continue;
 
                 if(is_bool($value))
@@ -263,11 +268,11 @@ class Hmv extends \Hazaar\View\Helper {
 
                 }
 
-            }elseif($render = ake($def, 'render')){
+            }elseif(array_key_exists('input', $def) && $def['input'] instanceof \Closure){
 
                 $labelTD = $this->html->td($this->html->label($label));
 
-                $input = call_user_func($render, $name, $item, $this->view);
+                $input = call_user_func($def['input'], $name, $item, $this->view);
 
             }elseif($item instanceof \Hazaar\Model\Strict){
 
@@ -384,7 +389,10 @@ class Hmv extends \Hazaar\View\Helper {
                     case 'checkbox':
                     case 'text':
                     default:
-                        $input = $this->html->input($type, $name, $item)->class($this->input_class)->id($name);
+                        if(ake($def, 'multiline') === true)
+                            $input = $this->html->textarea($name, $item)->class($this->input_class)->id($name);
+                        else
+                            $input = $this->html->input($type, $name, $item)->class($this->input_class)->id($name);
                         break;
 
                 }
