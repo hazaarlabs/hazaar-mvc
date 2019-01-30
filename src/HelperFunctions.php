@@ -1601,3 +1601,31 @@ function in_uarray($haystack, callable $callback){
     return array_usearch($haystack, $callback) !== false;
 
 }
+
+/**
+ * Recursively remove all empty values from an array
+ *
+ * Removes all values from an array that are considered empty.  This includes null values, empty strings and empty arrays.
+ * 
+ * Unlike PHP's `empty()` function, this DOES NOT include 0, 0.0, "0" or false.
+ *
+ * @param mixed $array
+ * @return mixed
+ */
+function array_remove_empty(&$array){
+
+    foreach ($array as $key => &$value) {
+
+        if (is_array($value))
+            array_remove_empty($value);
+
+        if ($value === null
+            || (is_string($value) && trim($value) === '')
+            || (is_array($value) && count($value) === 0))
+            unset($array[$key]);
+
+    }
+
+    return $array;
+
+}
