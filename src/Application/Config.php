@@ -49,7 +49,7 @@ class Config extends \Hazaar\Map {
      *
      * @param       mixed   $override_paths An array of subdirectory names to look for overrides.
      */
-    function __construct($source_file = null, $env = NULL, $defaults = array(), $path_type = FILE_PATH_CONFIG) {
+    function __construct($source_file = null, $env = NULL, $defaults = array(), $path_type = FILE_PATH_CONFIG, $override_namespaces = false) {
 
         $config = null;
 
@@ -60,7 +60,7 @@ class Config extends \Hazaar\Map {
 
         if($this->source = trim($source_file)){
 
-            if($config = $this->load($this->source, $defaults, $path_type, Config::$override_paths))
+            if($config = $this->load($this->source, $defaults, $path_type, Config::$override_paths, $override_namespaces))
                 $this->loaded = ($config->count() > 0);
 
         }
@@ -78,7 +78,7 @@ class Config extends \Hazaar\Map {
 
     }
 
-    public function load($source, $defaults = array(), $path_type = FILE_PATH_CONFIG, $override_paths = null) {
+    public function load($source, $defaults = array(), $path_type = FILE_PATH_CONFIG, $override_paths = null, $override_namespaces = false) {
 
         $options = array();
 
@@ -127,24 +127,29 @@ class Config extends \Hazaar\Map {
 
         if(!count($options) > 0) return false;
 
-        $config = new \Hazaar\Map($defaults);
+        $combined = array();
 
-        //Load the main configuration file
-        if(!$this->loadConfigOptions(array_shift($options), $config))
-            return false;
+        if($override_namespaces === true){
 
-        //Load any override files we have found
-        if(count($options) > 0){
+            foreach($options as $o)
+                $combined = array_replace_recursive($combined, $o);
 
-            foreach($options as $o){
+        }else{
 
-                if(!$o) continue;
+            $combined = array_shift($options);
 
-                $this->loadConfigOptions(array($this->env => $o), $config);
+            if(!array_key_exists($this->env, $combined))
+                $combined[$this->env] = array();
 
-            }
+            foreach($options as $o)
+                $combined[$this->env] = array_replace_recursive($combined[$this->env], $o);
 
         }
+
+        $config = new \Hazaar\Map($defaults);
+
+        if(!$this->loadConfigOptions($combined, $config))
+            return false;
 
         return $config;
 
