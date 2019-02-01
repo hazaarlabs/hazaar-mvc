@@ -303,7 +303,7 @@ function array_collate($array, $key_item, $value_item, $group_item = null){
 
     foreach($array as $item){
 
-        if(!array_key_exists($key_item, $item))
+        if(!isset($item[$key_item]))
             continue;
 
         if($group_item !== null)
@@ -460,7 +460,7 @@ function array_from_dot_notation($array) {
 
             foreach($parts as $part) {
 
-                if(! array_key_exists($part, $cur))
+                if(!isset($cur[$part]))
                     $cur[$part] = array();
 
                 if(is_array($cur))
