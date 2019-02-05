@@ -130,7 +130,7 @@ class Money {
         }
 
         if(strlen($currency) !== 3)
-            $currency = $this->getCode($currency);
+            $currency = $this->getCurrencyCode($currency);
 
         return Money::$db->get($currency);
 
@@ -162,7 +162,8 @@ class Money {
          */
         if(! $code) {
 
-            if(preg_match('/^\w\w_(\w\w)/', setlocale(LC_MONETARY, '0'), $matches)) {
+            //Get the current locale country code and use that to look up the currency code
+            if(preg_match('/^\w\w[_-](\w\w)/', setlocale(LC_MONETARY, '0'), $matches)) {
 
                 $code = $matches[1];
 
@@ -175,12 +176,13 @@ class Money {
 
             }
 
-            Money::$default_currency = $code;
-
         }
 
-        if(strlen($code) == 2)
+        if(strlen($code) === 2)
             $code = $this->getCode($code);
+
+        if(!Money::$default_currency)
+            Money::$default_currency = $code;
 
         return strtoupper($code);
 
