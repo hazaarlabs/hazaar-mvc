@@ -136,7 +136,7 @@ class Cron {
 
         $next_time = $this->calculateDateTime($next);
 
-        return ($next_time > time()) ? $next_time : false;
+        return $next_time;
 
     }
 
