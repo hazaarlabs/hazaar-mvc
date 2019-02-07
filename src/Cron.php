@@ -125,7 +125,7 @@ class Cron {
      *
      * @param    int $timestamp optional reference-time
      *
-     * @return    int|boolean
+     * @return    int|null
      */
     public function getNextOccurrence($timestamp = NULL) {
 
@@ -136,7 +136,7 @@ class Cron {
 
         $next_time = $this->calculateDateTime($next);
 
-        return $next_time;
+        return $timestamp < $next_time ? $next_time : null;
 
     }
 
@@ -147,7 +147,7 @@ class Cron {
      *
      * @param    int $timestamp optional reference-time
      *
-     * @return    int|boolean
+     * @return    int|null
      */
     public function getLastOccurrence($timestamp = NULL) {
 
@@ -161,7 +161,7 @@ class Cron {
         $last_time = $this->calculateDateTime($last, FALSE);
 
         // return calculated time
-        return ($last_time <= time()) ? $last_time : false;
+        return $timestamp > $last_time ? $last_time : null;
 
     }
 
