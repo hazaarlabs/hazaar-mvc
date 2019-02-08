@@ -740,6 +740,12 @@ class File {
 
     }
 
+    public function get_resource(){
+
+        return $this->handle;
+
+    }
+
     /**
      * Close the file handle if it is currently open
      *
