@@ -834,12 +834,16 @@ class File {
         if($this->handle)
             return fgetcsv($this->handle, $length, $delimiter, $enclosure, $escape);
 
-        if(is_array($this->contents))
-            next($this->contents);
-        else
+        if(!is_array($this->contents)){
+
             $this->contents = explode("\n", $this->contents);
 
-        return str_getcsv(current($this->contents), $delimiter, $enclosure, $escape);
+            $line = reset($this->contents);
+
+        }elseif(!($line = next($this->contents)))
+            return false;
+
+        return str_getcsv($line, $delimiter, $enclosure, $escape);
 
     }
 
