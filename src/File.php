@@ -681,6 +681,8 @@ class File {
 
                 $file = new \Hazaar\File(basename($name));
 
+                $file->set_contents(zip_entry_read($zip_entry, zip_entry_filesize($zip_entry)));
+
             }else{
 
                 $file = $target->get($name);
@@ -690,12 +692,9 @@ class File {
                 if(!$dir->exists())
                     $dir->create();
 
-            }
-
-            if($target)
                 $file->put_contents(zip_entry_read($zip_entry, zip_entry_filesize($zip_entry)));
-            else
-                $file->set_contents(zip_entry_read($zip_entry, zip_entry_filesize($zip_entry)));
+
+            }
 
             $files[] = $file;
 
