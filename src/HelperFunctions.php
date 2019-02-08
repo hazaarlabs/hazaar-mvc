@@ -1365,11 +1365,11 @@ if (!function_exists('str_putcsv')) {
      *
      * @return string
      */
-    function str_putcsv($input, $delimiter = ',', $enclosure = '"') {
+    function str_putcsv($input, $delimiter = ',', $enclosure = '"', $escape_char = "\\") {
 
         $fp = fopen('php://temp', 'r+b');
 
-        fputcsv($fp, $input, $delimiter, $enclosure);
+        fputcsv($fp, $input, $delimiter, $enclosure, $escape_char);
 
         rewind($fp);
 
@@ -1606,7 +1606,7 @@ function in_uarray($haystack, callable $callback){
  * Recursively remove all empty values from an array
  *
  * Removes all values from an array that are considered empty.  This includes null values, empty strings and empty arrays.
- * 
+ *
  * Unlike PHP's `empty()` function, this DOES NOT include 0, 0.0, "0" or false.
  *
  * @param mixed $array
