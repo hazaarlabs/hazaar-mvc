@@ -831,10 +831,15 @@ class File {
      */
     public function getcsv($length = 0, $delimiter = ',', $enclosure = '"', $escape = '\\'){
 
-        if(!$this->handle)
-            return null;
+        if($this->handle)
+            return fgetcsv($this->handle, $length, $delimiter, $enclosure, $escape);
 
-        return fgetcsv($this->handle, $length, $delimiter, $enclosure, $escape);
+        if(is_array($this->contents))
+            next($this->contents);
+        else
+            $this->contents = explode("\n", $this->contents);
+
+        return str_getcsv(current($this->contents), $delimiter, $enclosure, $escape);
 
     }
 
@@ -851,14 +856,19 @@ class File {
      * @param mixed $enclosure  The optional enclosure parameter sets the field enclosure character (one character only).
      * @param mixed $escape     The optional escape parameter sets the escape character (one character only).
      *
-     * @return \integer|null
+     * @return integer|null
      */
     public function putcsv($fields, $delimiter = ',', $enclosure = '"', $escape = '\\'){
 
-        if(!($this->handle && is_array($fields)))
-            return null;
+        if($this->handle && is_array($fields))
+            return fputcsv($this->handle, $fields, $delimiter, $enclosure, $escape);
 
-        return fputcsv($this->handle, $fields, $delimiter, $enclosure, $escape);
+        if(!is_array($this->contents))
+            $this->contents = array();
+
+        $this->contents[] = $line = str_putcsv($fields, $delimiter, $enclosure, $escape);
+
+        return strlen($line);
 
     }
 
@@ -1056,6 +1066,9 @@ class File {
      * @return mixed
      */
     private function filter($content){
+
+        if(is_array($content))
+            $content = implode("\n", $content);
 
         $bom = substr($content, 0, 3);
 
