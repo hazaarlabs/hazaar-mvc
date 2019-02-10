@@ -669,8 +669,7 @@ function str_bytes($bytes, $type = NULL, $precision = NULL, $exclude_suffix = FA
  *
  * @since 1.0.0
  *
- * @param int $string
- *            The byte string value to convert to an integer. eg: '100MB'
+ * @param string $string The byte string value to convert to an integer. eg: '100MB'
  *
  * @return int The number of bytes
  */
