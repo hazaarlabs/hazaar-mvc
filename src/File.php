@@ -660,7 +660,9 @@ class File {
         if(!is_array($filenames))
             $filenames = array($filenames);
 
-        if($target !== null && !$target instanceof \Hazaar\File\Dir)
+        if($target === null)
+            $target = new File\TempDir();
+        elseif(!$target instanceof \Hazaar\File\Dir)
             $target = new \Hazaar\File\Dir($target, $this->backend, $this->manager);
 
         $files = array();
@@ -677,24 +679,23 @@ class File {
             if(!in_array(basename($name), $filenames))
                 continue;
 
-            if($target === null){
+            $file = $target->get($name);
 
-                $file = new \Hazaar\File(basename($name));
+            $dir = new \Hazaar\File\Dir($file->dirname());
 
-                $file->set_contents(zip_entry_read($zip_entry, zip_entry_filesize($zip_entry)));
+            if(!$dir->exists())
+                $dir->create(true);
 
-            }else{
+            $block_size = max(bytes_str(ini_get('memory_limit')) / 2, 1024000);
 
-                $file = $target->get($name);
+            $zip_entry_size = zip_entry_filesize($zip_entry);
 
-                $dir = new \Hazaar\File\Dir($file->dirname());
+            $file->open('w');
 
-                if(!$dir->exists())
-                    $dir->create();
+            for($i = 1; $i <= (ceil($zip_entry_size / $block_size)); $i++)
+                $file->write(zip_entry_read($zip_entry, $block_size));
 
-                $file->put_contents(zip_entry_read($zip_entry, zip_entry_filesize($zip_entry)));
-
-            }
+            $file->close();
 
             $files[] = $file;
 
