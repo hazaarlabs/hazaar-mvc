@@ -541,6 +541,21 @@ class File {
 
     }
 
+    /**
+     * Copy the file to another folder
+     *
+     * @param mixed $destination The destination folder to copy the file into
+     * @param mixed $create_dest Flag that indicates if the destination folder should be created.  If the
+     *                              destination does not exist an error will be thrown.
+     * @param mixed $dstBackend The destination backend.  Defaults to the same backend as the source.
+     *
+     * @throws \Exception
+     *
+     * @throws File\Exception\SourceNotFound
+     * @throws File\Exception\TargetNotFound
+     *
+     * @return mixed
+     */
     public function copyTo($destination, $create_dest = FALSE, $dstBackend = NULL) {
 
         if(! $dstBackend)
