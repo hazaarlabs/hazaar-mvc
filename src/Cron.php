@@ -130,13 +130,13 @@ class Cron {
     public function getNextOccurrence($timestamp = NULL) {
 
         if(!$this->pcron)
-            return false;
+            return null;
 
         $next = $this->getTimestamp($timestamp);
 
         $next_time = $this->calculateDateTime($next);
 
-        return $timestamp < $next_time ? $next_time : null;
+        return $next_time;
 
     }
 
@@ -152,7 +152,7 @@ class Cron {
     public function getLastOccurrence($timestamp = NULL) {
 
         if(!$this->pcron)
-            return false;
+            return null;
 
         // Convert timestamp to array
         $last = $this->getTimestamp($timestamp);
@@ -161,7 +161,7 @@ class Cron {
         $last_time = $this->calculateDateTime($last, FALSE);
 
         // return calculated time
-        return $timestamp > $last_time ? $last_time : null;
+        return $last_time;
 
     }
 
@@ -172,12 +172,17 @@ class Cron {
      *
      * @param    bool  $next  true = nextOccurence, false = lastOccurence
      *
-     * @return   int
+     * @return   int|null
      */
     private function calculateDateTime($rtime, $next = TRUE) {
 
-        if(is_int($this->pcron))
-            return $this->pcron;
+        if(is_int($this->pcron)){
+
+            $timestamp = mktime($rtime[1], $rtime[0], 0, $rtime[3], $rtime[2], $rtime[5]);
+
+            return ($next === true) ? (($this->pcron >= $timestamp) ? $this->pcron : null) : (($this->pcron < $timestamp) ? $this->pcron : null);
+
+        }
 
         // Initialize vars
         $calc_date = TRUE;
@@ -185,7 +190,7 @@ class Cron {
         $cron = ($next ? $this->pcron : $this->arrayReverse($this->pcron));
 
         if(! $cron)
-            return FALSE;
+            return null;
 
         // OK, lets see if the day/month/weekday of the reference-date exist in our
         // $cron-array.
@@ -343,7 +348,7 @@ class Cron {
 
             }
 
-            return FALSE;
+            return null;
 
         }
 
@@ -372,10 +377,9 @@ class Cron {
     private function getTimestamp($timestamp = NULL) {
 
         if(is_null($timestamp))
-            $arr = explode(',', strftime('%M,%H,%d,%m,%w,%Y', time()));
+            $timestamp = time();
 
-        else
-            $arr = explode(',', strftime('%M,%H,%d,%m,%w,%Y', $timestamp));
+        $arr = explode(',', strftime('%M,%H,%d,%m,%w,%Y', $timestamp));
 
         // Remove leading zeros (or we'll get in trouble ;-)
         array_walk($arr, function(&$value){ $value = intval($value); });
@@ -472,7 +476,7 @@ class Cron {
         }
 
         if($expression === 'now')
-            return time();
+            return intval(floor(time() / 60) * 60);
 
         // Next basic check... do we have 5 segments?
         $cron = explode(' ', $expression);
