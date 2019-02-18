@@ -54,15 +54,26 @@ class Money {
     /**
      * @private
      */
-    static private  $currency_info  = array();
-
     private         $value;
 
     private         $local_currency = NULL;
 
-    static private  $cache;
+    static private  $db;
+
+    static private  $geo;
 
     static private  $exchange_rates = array();
+
+    static private  $cache;
+
+    /**
+     * The current Money database format version.
+     *
+     * Changing this triggers a re-initialisation of the internal database.
+     *
+     * @var int
+     */
+    static private $version = 1;
 
     /**
      * @detail      The money class constructors takes two parameters.  The value of the currency and the type of
@@ -82,9 +93,9 @@ class Money {
      */
     function __construct($value, $currency = NULL, $disable_cache = false) {
 
-        $this->value = $value;
+        $this->set($value, $currency);
 
-        if(! Money::$currency_info){
+        $this->local_currency = $this->getCurrencyInfo($currency);
 
             if($disable_cache === true){
 
@@ -114,49 +125,40 @@ class Money {
 
     }
 
-    private function loadCurrencyInfo(){
+    public function getCurrencyInfo($currency){
 
-        if($info = Loader::getFilePath(FILE_PATH_SUPPORT, 'currencyInfo.csv')) {
+        if(!Money::$db instanceof Btree){
 
-            $h = fopen($info, 'r');
+            $file = new \Hazaar\File(\Hazaar\Application::getInstance()->runtimePath('currency.db'));
 
-            if($h) {
+            Money::$db = new Btree($file);
 
-                $lines = array();
+            if(Money::$db->get('__version__') !== Money::$version){
 
-                $headers = FALSE;
+                Money::$db->reset_btree_file();
 
-                while($line = fgetcsv($h, 0, ',')) {
+                if(!Money::$geo instanceof GeoData)
+                    Money::$geo = new GeoData();
 
-                    if($headers == FALSE) {
+                $countries = Money::$geo->country_info_all();
 
-                        $headers = $line;
+                foreach($countries as $country){
 
-                        continue;
-
-                    }
-
-                    if(substr($line[0], 0, 1) == '#')
-                        continue;
-
-                    $infoline = array();
-
-                    foreach($headers as $index => $key)
-                        $infoline[$key] = $line[$index];
-
-                    $lines[$line[3]] = $infoline;
+                    if($code = ake($country['currency'], 'code'))
+                        Money::$db->set($code, $country['currency']);
 
                 }
 
-                fclose($h);
-
-                return $lines;
+                Money::$db->set('__version__', Money::$version);
 
             }
 
         }
 
-        return false;
+        if(strlen($currency) !== 3)
+            $currency = $this->getCurrencyCode($currency);
+
+        return Money::$db->get($currency);
 
     }
 
@@ -186,7 +188,8 @@ class Money {
          */
         if(! $code) {
 
-            if(preg_match('/^\w\w_(\w\w)/', setlocale(LC_MONETARY, '0'), $matches)) {
+            //Get the current locale country code and use that to look up the currency code
+            if(preg_match('/^\w\w[_-](\w\w)/', setlocale(LC_MONETARY, '0'), $matches)) {
 
                 $code = $matches[1];
 
@@ -199,12 +202,13 @@ class Money {
 
             }
 
-            Money::$default_currency = $code;
-
         }
 
-        if(strlen($code) == 2)
+        if(strlen($code) === 2)
             $code = $this->getCode($code);
+
+        if(!Money::$default_currency)
+            Money::$default_currency = $code;
 
         return strtoupper($code);
 
@@ -232,16 +236,19 @@ class Money {
 
         if($country) {
 
-            foreach(Money::$currency_info as $info) {
+            if(!Money::$geo instanceof GeoData)
+                Money::$geo = new GeoData();
 
-                if($info['iso'] == $country)
-                    return $info['currencycode'];
+            if(strlen($country) > 3)
+                $country = Money::$geo->country_code($country);
 
-            }
+            $info = Money::$geo->country_currency_info($country);
+
+            return ake($info, 'code');
 
         }
 
-        return $this->local_currency;
+        return ake($this->local_currency, 'code');
 
     }
 
@@ -254,15 +261,7 @@ class Money {
      */
     public function getCurrencySymbol() {
 
-        $local = $this->getCode();
-
-        if(! ($info = Money::$currency_info[$local])) {
-
-            return '$';
-
-        }
-
-        return $info['symbol'];
+        return ake($this->local_currency, 'symbol', '$');
 
     }
 
@@ -283,14 +282,17 @@ class Money {
         if(strlen($foreign_currency) == 2)
             $foreign_currency = $this->getCode($foreign_currency);
 
-        if(strcasecmp($this->local_currency, $foreign_currency) == 0)
+        if(strcasecmp($this->local_currency['code'], $foreign_currency) == 0)
             return 1;
 
-        $base = strtoupper(trim($this->local_currency));
+        $base = strtoupper(trim($this->local_currency['code']));
 
         $foreign_currency = strtoupper(trim($foreign_currency));
 
         if(!ake(Money::$exchange_rates, $base)){
+
+            if(!Money::$cache && class_exists('Hazaar\Cache'))
+                Money::$cache = new \Hazaar\Cache();
 
             $key = 'exchange_rate_' . $base;
 
@@ -421,13 +423,13 @@ class Money {
 
             } elseif($arg instanceof Money) {
 
-                $total += $arg->convertTo($this->local_currency)->toFloat();
+                $total += $arg->convertTo($this->local_currency['code'])->toFloat();
 
             }
 
         }
 
-        return new Money($total, $this->local_currency);
+        return new Money($total, $this->local_currency['code']);
 
     }
 
@@ -450,13 +452,41 @@ class Money {
 
             } elseif($arg instanceof Money) {
 
-                $total -= $arg->convertTo($this->local_currency)->toFloat();
+                $total -= $arg->convertTo($this->local_currency['code'])->toFloat();
 
             }
 
         }
 
-        return new Money($total, $this->local_currency);
+        return new Money($total, $this->local_currency['code']);
+
+    }
+
+    public function set($value, &$currency = null){
+
+        if(is_string($value)){
+
+            $value = trim($value);
+
+            if(preg_match('/^(\D*)([\d\.,]+)(\D*)/', $value, $matches)){
+
+                $this->value = floatval(str_replace(',', '', $matches[2]));
+
+                $currency = ake($matches, 3, null, true);
+
+            }else
+                $this->value = floatval(substr($value, 1));
+
+        }else
+            $this->value = floatval($value);
+
+        return $this->value;
+
+    }
+
+    public function getCurrencyName(){
+
+        return ake($this->local_currency, 'name');
 
     }
 

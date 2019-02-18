@@ -84,11 +84,13 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
                 unset($this->values[$index]);
 
                 if($multiple !== true)
-                    return;
+                    break;
 
             }
 
         }
+
+        $this->values = array_values($this->values);
 
         return;
 
@@ -265,6 +267,8 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
     public function offsetUnset($offset){
 
         unset($this->values[$offset]);
+
+        $this->values = array_values($this->values);
 
     }
 

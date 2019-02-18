@@ -299,7 +299,7 @@ function array_collate($array, $key_item, $value_item, $group_item = null){
 
     foreach($array as $item){
 
-        if(!array_key_exists($key_item, $item))
+        if(!isset($item[$key_item]))
             continue;
 
         if($group_item !== null)
@@ -456,7 +456,7 @@ function array_from_dot_notation($array) {
 
             foreach($parts as $part) {
 
-                if(! array_key_exists($part, $cur))
+                if(!isset($cur[$part]))
                     $cur[$part] = array();
 
                 if(is_array($cur))
@@ -648,7 +648,7 @@ function str_bytes($bytes, $type = NULL, $precision = NULL, $exclude_suffix = FA
  *
  * @since 1.0.0
  *
- * @param int $string The byte string value to convert to an integer. eg: '100MB'
+ * @param string $string The byte string value to convert to an integer. eg: '100MB'
  *
  * @return int|boolean The number of bytes or false on failure
  */
@@ -1347,11 +1347,11 @@ if (!function_exists('str_putcsv')) {
      *
      * @return string
      */
-    function str_putcsv($input, $delimiter = ',', $enclosure = '"') {
+    function str_putcsv($input, $delimiter = ',', $enclosure = '"', $escape_char = "\\") {
 
         $fp = fopen('php://temp', 'r+b');
 
-        fputcsv($fp, $input, $delimiter, $enclosure);
+        fputcsv($fp, $input, $delimiter, $enclosure, $escape_char);
 
         rewind($fp);
 
@@ -1581,5 +1581,33 @@ function array_usearch($haystack, callable $callback){
 function in_uarray($haystack, callable $callback){
 
     return array_usearch($haystack, $callback) !== false;
+
+}
+
+/**
+ * Recursively remove all empty values from an array
+ *
+ * Removes all values from an array that are considered empty.  This includes null values, empty strings and empty arrays.
+ *
+ * Unlike PHP's `empty()` function, this DOES NOT include 0, 0.0, "0" or false.
+ *
+ * @param mixed $array
+ * @return mixed
+ */
+function array_remove_empty(&$array){
+
+    foreach ($array as $key => &$value) {
+
+        if (is_array($value))
+            array_remove_empty($value);
+
+        if ($value === null
+            || (is_string($value) && trim($value) === '')
+            || (is_array($value) && count($value) === 0))
+            unset($array[$key]);
+
+    }
+
+    return $array;
 
 }

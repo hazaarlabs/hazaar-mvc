@@ -429,8 +429,6 @@ abstract class REST extends \Hazaar\Controller {
             || ($this->__rest_cache_enable_global === true && $endpoint['cache'] !== false))
             ? 'rest_endpoint_' . md5(serialize(array($method, $params, $this->request->getParams()))) : null);
 
-        $response = new \Hazaar\Controller\Response\Json();
-
         //Try extracting from cache first if caching is enabled
         if($cache_key !== null)
             $result = $this->__rest_cache->get($cache_key);
@@ -440,11 +438,16 @@ abstract class REST extends \Hazaar\Controller {
 
             $result = $method->invokeArgs($this, $params);
 
+            if($result instanceof \Hazaar\Controller\Response)
+                return $result;
+
             //Save the result if caching is enabled.
             if($cache_key !== null)
                 $this->__rest_cache->set($cache_key, $result, $endpoint['cache_timeout']);
 
         }
+
+        $response = new \Hazaar\Controller\Response\Json();
 
         $response->populate($result);
 
