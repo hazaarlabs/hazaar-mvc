@@ -35,6 +35,12 @@ class Error extends \Hazaar\Controller\Action {
 
     private $status_codes = array();
 
+    function __construct($name, $application){
+
+        parent::__construct($name, $application, false);
+
+    }
+
     function __initialize(\Hazaar\Application\Request $request = NULL) {
 
         if ($request instanceof \Hazaar\Application\Request\Http && function_exists('apache_request_headers')) {

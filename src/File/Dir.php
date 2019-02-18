@@ -393,4 +393,44 @@ class Dir {
 
     }
 
+    /**
+     * Download a file from a URL directly to the directory and return a new File object
+     *
+     * This is useful for download large files as this method will write the file directly to storage.  Currently,
+     * only local storage is supported as this uses OS file access.
+     *
+     * @param mixed $source_url The source URL of the file to download
+     * @param mixed $timeout The download timeout after which an exception will be thrown
+     * @throws \Exception
+     * @return \Hazaar\File A file object for accessing the newly created file
+     */
+    public function download($source_url, $timeout = 60){
+
+        $file = $this->get(basename($source_url));
+
+        $file->open('w+');
+
+        $ch = curl_init(str_replace(" ","%20", $source_url));
+
+        curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+
+        curl_setopt($ch, CURLOPT_FILE, $file->get_resource());
+
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+
+        if(!curl_exec($ch))
+            throw new \Exception(curl_error($ch));
+
+        curl_close($ch);
+
+        $file->close();
+
+        return $file;
+
+    }
+
 }
