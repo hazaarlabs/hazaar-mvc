@@ -433,5 +433,60 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
+    /**
+     * Report the error to the Hazaar error tracker API.
+     *
+     * This looks for the most unobtrusive way to report the error.  Using either CURL or file_get_contents
+     * if one of them is available.  If not, then we don't bother doing this at all.
+     * @param mixed $error
+     */
+    private function report_error($error){
+
+        $url = 'http://localhost:42279/public/api/report';
+
+        $data = json_encode(array('error' => $error));
+
+        dump($data);
+
+        if(function_exists('curl_version')){
+
+            /**
+             * POST error data to the Hazaar error tracker
+             */
+            $ch = curl_init($url);
+
+            curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST");
+
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+                'Content-Type: application/json',
+                'Content-Length: ' . strlen($data))
+            );
+
+            return curl_exec($ch);
+
+        }elseif(ini_get('allow_url_fopen') ) {
+
+            $options = array(
+                    'http' => array(
+                    'header'  => "Content-type: application/json\r\n",
+                    'method'  => 'POST',
+                    'content' => $data,
+                )
+            );
+
+            $result = file_get_contents($url, false, stream_context_create($options));
+
+            return ($result);
+
+        }
+
+        return false;
+
+    }
+
 }
 

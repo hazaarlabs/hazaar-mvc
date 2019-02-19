@@ -16,6 +16,8 @@
     <IncludeDebugInformation>false</IncludeDebugInformation>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="libs\error\fatal.php" />
+    <Compile Include="libs\error\trace.php" />
     <Compile Include="src\Application.php" />
     <Compile Include="src\Application\Config.php" />
     <Compile Include="src\Application\Exception\BadTimezone.php" />
