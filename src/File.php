@@ -662,11 +662,32 @@ class File {
     /**
      * Return the CSV content as a parsed array
      *
+     * @param mixed $use_header_row Indicates if a header row should be parsed and used to build an associative array.  In this case the
+     *                              keys in the returned array will be the values from the first row, which is normally a header row.
+     *
      * @return array
      */
-    public function readCSV(){
+    public function readCSV($use_header_row = false){
 
-        return array_map('str_getcsv', $this->toArray("\n"));
+        $data = array_map('str_getcsv', $this->toArray("\n"));
+
+        if($use_header_row === true){
+
+            $headers = array_shift($data);
+
+            foreach($data as &$row){
+
+                if(count($headers) !== count($row))
+                    continue;
+
+                $row = array_combine($headers, $row);
+
+            }
+
+        }
+
+        return $data;
+
 
     }
 
