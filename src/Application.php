@@ -892,7 +892,7 @@ class Application {
 
             echo "<script>document.location = '$url';</script>";
 
-        } elseif(class_exists('Hazaar\Session')) {
+        } else {
 
             $sess = new \Hazaar\Session();
 
