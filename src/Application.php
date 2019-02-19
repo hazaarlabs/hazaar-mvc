@@ -291,7 +291,7 @@ class Application {
             'app' => array(
                 'root' => ($is_cli ? '/' : dirname($_SERVER['SCRIPT_NAME'])),
                 'defaultController' => 'Index',
-                'errorController' => 'Error',
+                'errorController' => null,
                 'useDefaultController' => false,
                 'favicon' => 'favicon.png',
                 'timezone' => 'UTC',
