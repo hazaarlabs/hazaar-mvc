@@ -247,31 +247,7 @@ class Error extends \Hazaar\Controller\Action {
 
     public function __shutdown(){
 
-        $type = 'error';
-
-        switch($this->type){
-            case ERR_TYPE_EXCEPTION:
-
-                $type = 'exception';
-
-                break;
-
-            case ERR_TYPE_SHUTDOWN:
-
-                $type = 'shutdown';
-
-                break;
-
-            case ERR_TYPE_ERROR:
-            default:
-
-                $type = 'error';
-
-                break;
-
-        }
-
-        $this->report($type);
+        $this->report();
 
     }
 
@@ -434,7 +410,38 @@ class Error extends \Hazaar\Controller\Action {
      * This looks for the most unobtrusive way to report the error.  Using either CURL or file_get_contents
      * if one of them is available.  If not, then we don't bother doing this at all.
      */
-    private function report($type = 'error'){
+    private function report(){
+
+        $check_path = ROOT_PATH
+            . DIRECTORY_SEPARATOR . 'vendor'
+            . DIRECTORY_SEPARATOR . 'hazaarlabs';
+
+        if(substr($this->errfile, 0, strlen($check_path)) !== $check_path)
+            return false;
+
+        $type = 'error';
+
+        switch($this->type){
+            case ERR_TYPE_EXCEPTION:
+
+                $type = 'exception';
+
+                break;
+
+            case ERR_TYPE_SHUTDOWN:
+
+                $type = 'shutdown';
+
+                break;
+
+            case ERR_TYPE_ERROR:
+            default:
+
+                $type = 'error';
+
+                break;
+
+        }
 
         $url = 'http://api.hazaarmvc.com/api/report/' . $type;
 
@@ -452,7 +459,21 @@ class Error extends \Hazaar\Controller\Action {
             'config' => $this->application->config->toArray()
         ));
 
-        if(function_exists('curl_version')){
+        if(ini_get('allow_url_fopen') ) {
+
+            $options = array(
+                    'http' => array(
+                    'header'  => "Content-type: application/json\r\n",
+                    'method'  => 'POST',
+                    'content' => $data,
+                )
+            );
+
+            $result = file_get_contents($url, false, stream_context_create($options));
+
+            return ($result);
+
+        }elseif(function_exists('curl_version')){
 
             /**
              * POST error data to the Hazaar error tracker
@@ -471,20 +492,6 @@ class Error extends \Hazaar\Controller\Action {
             );
 
             return curl_exec($ch);
-
-        }elseif(ini_get('allow_url_fopen') ) {
-
-            $options = array(
-                    'http' => array(
-                    'header'  => "Content-type: application/json\r\n",
-                    'method'  => 'POST',
-                    'content' => $data,
-                )
-            );
-
-            $result = file_get_contents($url, false, stream_context_create($options));
-
-            return ($result);
 
         }
 
