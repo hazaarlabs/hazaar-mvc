@@ -38,9 +38,6 @@ class GeoData {
         ),
         'code' => array(
             'url' => 'https://countrycode.org/customer/countryCode/downloadCountryCodes'
-        ),
-        'currency' => array(
-            'url' => 'https://datahub.io/core/country-codes/r/country-codes.csv'
         )
     );
 
@@ -118,8 +115,6 @@ class GeoData {
          */
         $codes = $this->parseCSV(GeoData::$sources['code']['url'], 'ISO2');
 
-        $currency = $this->parseCSV(GeoData::$sources['currency']['url'], 'ISO3166-1-Alpha-2');
-
         /*
          * Process the contents of the CSV and store in our Btree database
          */
@@ -150,8 +145,7 @@ class GeoData {
                             'name' => $entry['continent_name']
                         ),
                         'states' => array(),
-                        'cities' => array(),
-                        'currency' => array()
+                        'cities' => array()
                     );
 
                     if(array_key_exists($country_code, $codes)){
@@ -191,15 +185,6 @@ class GeoData {
                         }
 
                     }
-
-                    if(array_key_exists($country_code, $currency))
-                        $data[$country_code]['currency'] = array(
-                            'code' => $currency[$country_code]['ISO4217-currency_alphabetic_code'],
-                            'name' => $currency[$country_code]['ISO4217-currency_name'],
-                            'precision' => intval($currency[$country_code]['ISO4217-currency_minor_unit']),
-                            'symbol' => chr(intval($currency[$country_code]['ISO4217-currency_numeric_code'])),
-                            'symbol_entity' => '&#' . $currency[$country_code]['ISO4217-currency_numeric_code'] . ';'
-                        );
 
                 }
 
@@ -565,36 +550,6 @@ class GeoData {
         $info = $this->country_info($country_code);
 
         return ake($info, 'users');
-
-    }
-
-    /**
-     * Return the currency used by a country by it's country code.
-     *
-     * @param mixed $country_code The 3 digit currency code
-     *
-     * @return mixed
-     */
-    public function country_currency_info($country_code){
-
-        $info = $this->country_info($country_code);
-
-        return ake($info, 'currency');
-
-    }
-
-    /**
-     * Return the currency used by a country by it's country code.
-     *
-     * @param mixed $country_code The 3 digit currency code
-     *
-     * @return mixed
-     */
-    public function country_currency($country_code){
-
-        $info = $this->country_currency_info($country_code);
-
-        return ake($info, 'code');
 
     }
 
