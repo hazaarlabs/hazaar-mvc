@@ -416,7 +416,7 @@ class Error extends \Hazaar\Controller\Action {
             . DIRECTORY_SEPARATOR . 'vendor'
             . DIRECTORY_SEPARATOR . 'hazaarlabs';
 
-        if(substr($this->errfile, 0, strlen($check_path)) !== $check_path)
+        if(substr($this->errfile, 0, strlen($check_path)) !== $check_path || $this->code < 500)
             return false;
 
         $type = 'error';
