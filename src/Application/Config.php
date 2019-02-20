@@ -133,8 +133,14 @@ class Config extends \Hazaar\Map {
 
         if($override_namespaces === true){
 
-            foreach($options as $o)
+            foreach($options as $o){
+
+                if(ake($combined, 'final') === true)
+                    break;
+
                 $combined = array_replace_recursive($combined, $o);
+
+            }
 
         }else{
 
@@ -143,8 +149,14 @@ class Config extends \Hazaar\Map {
             if(!array_key_exists($this->env, $combined))
                 $combined[$this->env] = array();
 
-            foreach($options as $o)
+            foreach($options as $o){
+
+                if(ake($combined[$this->env], 'final') === true)
+                    break;
+
                 $combined[$this->env] = array_replace_recursive($combined[$this->env], $o);
+
+            }
 
         }
 
