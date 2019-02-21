@@ -231,6 +231,9 @@ class Dir {
 
         }
 
+        if($this->backend->is_dir($this->fixPath($this->path, $file)))
+            return new \Hazaar\File\Dir($this->fixPath($this->path, $file), $this->backend, $this->manager);
+
         return new \Hazaar\File($this->fixPath($this->path, $file), $this->backend, $this->manager, $this->path);
 
     }
