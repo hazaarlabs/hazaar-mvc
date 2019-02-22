@@ -622,7 +622,7 @@ class BrowserConnector {
 
         $path = $this->path($target);
 
-        $list = $source->find('*' . $query . '*', $path, true);
+        $list = $source->find($query, $path, true);
 
         if(!is_array($list))
             throw new \Exception('Search failed!');
