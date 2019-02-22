@@ -267,12 +267,14 @@ class Dir {
 
         foreach($dir as $file) {
 
-            if(($show_hidden === FALSE && substr($file, 0, 1) == '.') || $file == '.' || $file == '..')
+            if(($show_hidden === FALSE && substr($file, 0, 1) == '.'))
                 continue;
 
-            if($this->backend->is_dir($start . $file)) {
+            $item = $start . $file;
 
-                if($subdir = $this->find($pattern, $show_hidden, $case_sensitive, $start . $file))
+            if($this->backend->is_dir($item)) {
+
+                if($subdir = $this->find($pattern, $show_hidden, $case_sensitive, $item))
                     $list = array_merge($list, $subdir);
 
             }
@@ -285,7 +287,7 @@ class Dir {
             } elseif(! fnmatch($pattern, $file, $case_sensitive ? 0 : FNM_CASEFOLD))
                 continue;
 
-            $list[] = new \Hazaar\File($start . $file, $this->backend, $this->manager, $this->path);
+            $list[] = new \Hazaar\File($item, $this->backend, $this->manager, $this->path);
 
         }
 
