@@ -1628,3 +1628,21 @@ function array_remove_empty(&$array){
     return $array;
 
 }
+
+function str_random($length, $include_special = false){
+
+    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    if($include_special === true)
+        $characters .= ' ~!@#$%^&*()-_=+[{]}\|;:\'",<.>/?';
+
+    $count = strlen($characters);
+
+    $randomString = '';
+
+    for ($i = 0; $i < $length; $i++)
+        $randomString .= $characters[rand(0, $count - 1)];
+
+    return $randomString;
+
+}
