@@ -303,7 +303,7 @@ function array_collate($array, $key_item, $value_item, $group_item = null){
 
     foreach($array as $item){
 
-        if(!array_key_exists($key_item, $item))
+        if(!isset($item[$key_item]))
             continue;
 
         if($group_item !== null)
@@ -460,7 +460,7 @@ function array_from_dot_notation($array) {
 
             foreach($parts as $part) {
 
-                if(! array_key_exists($part, $cur))
+                if(!isset($cur[$part]))
                     $cur[$part] = array();
 
                 if(is_array($cur))
@@ -669,8 +669,7 @@ function str_bytes($bytes, $type = NULL, $precision = NULL, $exclude_suffix = FA
  *
  * @since 1.0.0
  *
- * @param int $string
- *            The byte string value to convert to an integer. eg: '100MB'
+ * @param string $string The byte string value to convert to an integer. eg: '100MB'
  *
  * @return int The number of bytes
  */
@@ -1365,11 +1364,11 @@ if (!function_exists('str_putcsv')) {
      *
      * @return string
      */
-    function str_putcsv($input, $delimiter = ',', $enclosure = '"') {
+    function str_putcsv($input, $delimiter = ',', $enclosure = '"', $escape_char = "\\") {
 
         $fp = fopen('php://temp', 'r+b');
 
-        fputcsv($fp, $input, $delimiter, $enclosure);
+        fputcsv($fp, $input, $delimiter, $enclosure, $escape_char);
 
         rewind($fp);
 
@@ -1606,7 +1605,7 @@ function in_uarray($haystack, callable $callback){
  * Recursively remove all empty values from an array
  *
  * Removes all values from an array that are considered empty.  This includes null values, empty strings and empty arrays.
- * 
+ *
  * Unlike PHP's `empty()` function, this DOES NOT include 0, 0.0, "0" or false.
  *
  * @param mixed $array
@@ -1627,5 +1626,23 @@ function array_remove_empty(&$array){
     }
 
     return $array;
+
+}
+
+function str_random($length, $include_special = false){
+
+    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+    if($include_special === true)
+        $characters .= ' ~!@#$%^&*()-_=+[{]}\|;:\'",<.>/?';
+
+    $count = strlen($characters);
+
+    $randomString = '';
+
+    for ($i = 0; $i < $length; $i++)
+        $randomString .= $characters[rand(0, $count - 1)];
+
+    return $randomString;
 
 }
