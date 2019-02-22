@@ -14,6 +14,8 @@ class Dir {
 
     private $allow_hidden = FALSE;
 
+    private $__media_uri;
+
     function __construct($path, Backend\_Interface $backend = NULL, Manager $manager = null) {
 
         if(! $backend)
@@ -231,6 +233,9 @@ class Dir {
 
         }
 
+        if($this->backend->is_dir($this->fixPath($this->path, $file)))
+            return new \Hazaar\File\Dir($this->fixPath($this->path, $file), $this->backend, $this->manager);
+
         return new \Hazaar\File($this->fixPath($this->path, $file), $this->backend, $this->manager, $this->path);
 
     }
@@ -432,6 +437,27 @@ class Dir {
         $file->close();
 
         return $file;
+
+    }
+
+    public function media_uri($set_path = null){
+
+        if($set_path !== null){
+
+            if(!$set_path instanceof \Hazaar\Http\Uri)
+                $set_path = new \Hazaar\Http\Uri($set_path);
+
+            $this->__media_uri = $set_path;
+
+        }
+
+        if($this->__media_uri)
+            return $this->__media_uri;
+
+        if(!$this->manager)
+            return null;
+
+        return $this->manager->uri($this->fullpath());
 
     }
 
