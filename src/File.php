@@ -541,6 +541,21 @@ class File {
 
     }
 
+    /**
+     * Copy the file to another folder
+     *
+     * @param mixed $destination The destination folder to copy the file into
+     * @param mixed $create_dest Flag that indicates if the destination folder should be created.  If the
+     *                              destination does not exist an error will be thrown.
+     * @param mixed $dstBackend The destination backend.  Defaults to the same backend as the source.
+     *
+     * @throws \Exception
+     *
+     * @throws File\Exception\SourceNotFound
+     * @throws File\Exception\TargetNotFound
+     *
+     * @return mixed
+     */
     public function copyTo($destination, $create_dest = FALSE, $dstBackend = NULL) {
 
         if(! $dstBackend)
@@ -660,7 +675,9 @@ class File {
         if(!is_array($filenames))
             $filenames = array($filenames);
 
-        if($target !== null && !$target instanceof \Hazaar\File\Dir)
+        if($target === null)
+            $target = new File\TempDir();
+        elseif(!$target instanceof \Hazaar\File\Dir)
             $target = new \Hazaar\File\Dir($target, $this->backend, $this->manager);
 
         $files = array();
@@ -677,25 +694,23 @@ class File {
             if(!in_array(basename($name), $filenames))
                 continue;
 
-            if($target === null){
+            $file = $target->get($name);
 
-                $file = new \Hazaar\File(basename($name));
+            $dir = new \Hazaar\File\Dir($file->dirname());
 
-            }else{
+            if(!$dir->exists())
+                $dir->create(true);
 
-                $file = $target->get($name);
+            $block_size = max(bytes_str(ini_get('memory_limit')) / 2, 1024000);
 
-                $dir = new \Hazaar\File\Dir($file->dirname());
+            $zip_entry_size = zip_entry_filesize($zip_entry);
 
-                if(!$dir->exists())
-                    $dir->create();
+            $file->open('w');
 
-            }
+            for($i = 1; $i <= (ceil($zip_entry_size / $block_size)); $i++)
+                $file->write(zip_entry_read($zip_entry, $block_size));
 
-            if($target)
-                $file->put_contents(zip_entry_read($zip_entry, zip_entry_filesize($zip_entry)));
-            else
-                $file->set_contents(zip_entry_read($zip_entry, zip_entry_filesize($zip_entry)));
+            $file->close();
 
             $files[] = $file;
 
@@ -738,6 +753,12 @@ class File {
             return $this->handle;
 
         return $this->handle = fopen($this->backend->resolvePath($this->source_file), $mode);
+
+    }
+
+    public function get_resource(){
+
+        return $this->handle;
 
     }
 
@@ -832,10 +853,19 @@ class File {
      */
     public function getcsv($length = 0, $delimiter = ',', $enclosure = '"', $escape = '\\'){
 
-        if(!$this->handle)
-            return null;
+        if($this->handle)
+            return fgetcsv($this->handle, $length, $delimiter, $enclosure, $escape);
 
-        return fgetcsv($this->handle, $length, $delimiter, $enclosure, $escape);
+        if(!is_array($this->contents)){
+
+            $this->contents = explode("\n", $this->contents);
+
+            $line = reset($this->contents);
+
+        }elseif(!($line = next($this->contents)))
+            return false;
+
+        return str_getcsv($line, $delimiter, $enclosure, $escape);
 
     }
 
@@ -852,14 +882,19 @@ class File {
      * @param mixed $enclosure  The optional enclosure parameter sets the field enclosure character (one character only).
      * @param mixed $escape     The optional escape parameter sets the escape character (one character only).
      *
-     * @return \integer|null
+     * @return integer|null
      */
     public function putcsv($fields, $delimiter = ',', $enclosure = '"', $escape = '\\'){
 
-        if(!($this->handle && is_array($fields)))
-            return null;
+        if($this->handle && is_array($fields))
+            return fputcsv($this->handle, $fields, $delimiter, $enclosure, $escape);
 
-        return fputcsv($this->handle, $fields, $delimiter, $enclosure, $escape);
+        if(!is_array($this->contents))
+            $this->contents = array();
+
+        $this->contents[] = $line = str_putcsv($fields, $delimiter, $enclosure, $escape);
+
+        return strlen($line);
 
     }
 
@@ -1057,6 +1092,9 @@ class File {
      * @return mixed
      */
     private function filter($content){
+
+        if(is_array($content))
+            $content = implode("\n", $content);
 
         $bom = substr($content, 0, 3);
 

@@ -66,20 +66,24 @@ abstract class Basic extends \Hazaar\Controller {
 
     public function __initialize(\Hazaar\Application\Request $request) {
 
+        $response = null;
+
         if(!($this->__action = $request->getActionName()))
             $this->__action = 'index';
 
         if(method_exists($this, 'init')) {
 
-            $ret = $this->init($request);
+            $response = $this->init($request);
 
-            if($ret === FALSE)
+            if($response === FALSE)
                 throw new \Exception('Failed to initialize action controller! ' . get_class($this) . '::init() returned false!');
 
         }
 
         if($path = $request->getPath())
             $this->__actionArgs = explode('/', $path);
+
+        return $response;
 
     }
 

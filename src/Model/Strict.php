@@ -769,13 +769,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             $value = call_user_func_array($callback, $params);
 
-        } elseif ($cb_def instanceof \Closure) {
+        } elseif (is_callable($cb_def)) {
 
-            $value = $cb_def($value, $key);
-
-        } elseif (is_string($cb_def)) {
-
-            $value = $cb_def($value, $key);
+            $value = call_user_func($cb_def, $value, $key);
 
         }
 
