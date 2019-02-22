@@ -256,9 +256,9 @@ class Dir {
      * @param bool $relative Return a path relative to the search path, default is to return absolute paths.
      * @return array    Returns an array of matches files.
      */
-    public function find($pattern, $show_hidden = FALSE, $case_sensitive = TRUE, $start = NULL) {
+    public function find($pattern, $show_hidden = FALSE, $case_sensitive = TRUE) {
 
-        $start = rtrim($this->path . ($start ? '/' . ltrim($start, DIRECTORY_SEPARATOR . '/.') : '' ), $this->backend->separator) . $this->backend->separator;
+        $start = rtrim($this->path, $this->backend->separator) . $this->backend->separator;
 
         $list = array();
 
@@ -267,15 +267,10 @@ class Dir {
 
         foreach($dir as $file) {
 
-            if(($show_hidden === FALSE && substr($file, 0, 1) == '.') || $file == '.' || $file == '..')
+            if(($show_hidden === FALSE && substr($file, 0, 1) == '.'))
                 continue;
 
-            if($this->backend->is_dir($start . $file)) {
-
-                if($subdir = $this->find($pattern, $show_hidden, $case_sensitive, $start . $file))
-                    $list = array_merge($list, $subdir);
-
-            }
+            $item = $start . $file;
 
             if(strlen($pattern) > 1 && substr($pattern, 0, 1) == substr($pattern, -1, 1)) {
 
@@ -285,7 +280,17 @@ class Dir {
             } elseif(! fnmatch($pattern, $file, $case_sensitive ? 0 : FNM_CASEFOLD))
                 continue;
 
-            $list[] = new \Hazaar\File($start . $file, $this->backend, $this->manager, $this->path);
+            if($this->backend->is_dir($item)) {
+
+                $dir = new \Hazaar\File\Dir($item, $this->backend, $this->manager);
+
+                if($subdir = $dir->find($pattern, $show_hidden, $case_sensitive))
+                    $list = array_merge($list, $subdir);
+
+                $list[] = $dir;
+
+            }else
+                $list[] = new \Hazaar\File($item, $this->backend, $this->manager, $this->path);
 
         }
 
