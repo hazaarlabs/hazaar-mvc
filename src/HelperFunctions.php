@@ -454,11 +454,35 @@ function array_from_dot_notation($array) {
 
         $parts = explode('.', $idx);
 
-        if(count($parts) > 1) {
+        $cur =& $new;
 
-            $cur =& $new;
+        foreach($parts as $part) {
 
-            foreach($parts as $part) {
+            if(substr($part, -1) === ']' && ($pos = strpos($part, '[')) > 0){
+
+                if(!preg_match_all('/\[([\w\d]+)\]/', substr($part, $pos), $matches))
+                    continue;
+
+                $key = substr($part, 0, $pos);
+
+                if(!isset($cur[$key]))
+                    $cur[$key] = array();
+
+                $cur =& $cur[$key];
+
+                foreach($matches[1] as $match){
+
+                    if(is_numeric($match)) settype($match, 'int');
+
+                    if(!isset($cur[$match]))
+                        $cur[$match] = array();
+
+                    if(is_array($cur))
+                        $cur =& $cur[$match];
+
+                }
+
+            }else{
 
                 if(!isset($cur[$part]))
                     $cur[$part] = array();
@@ -468,13 +492,9 @@ function array_from_dot_notation($array) {
 
             }
 
-            $cur = $value;
-
-        } else {
-
-            $new[$idx] = $value;
-
         }
+
+        $cur = $value;
 
     }
 
