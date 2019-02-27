@@ -545,7 +545,9 @@ dataBinderArray.prototype.push = function (element) {
             }
         });
     }
-    this._elements[key] = this.__convert_type(key, element);
+    element = this.__convert_type(key, element);
+    this._elements[key] = element;
+    jQuery('[data-bind="' + this._attr_name() + '"]').trigger('push', [this._attr_name(), element, key]);
     if (this._elements[key] instanceof dataBinder) {
         jQuery('[data-bind="' + this._attr_name() + '"]').append(this._newitem(key, this._elements[key]));
         this.resync();
@@ -569,6 +571,7 @@ dataBinderArray.prototype.unset = function (index) {
     if (typeof element === 'undefined') return;
     if (element instanceof dataBinder) jQuery('[data-bind="' + this._attr_name() + '"]').children().eq(index).remove();
     this._cleanupItem(index);
+    jQuery('[data-bind="' + this._attr_name() + '"]').trigger('pop', [this._attr_name(), element, index]);
     this._update(this._attr_name(), element, true);
     return element;
 };
