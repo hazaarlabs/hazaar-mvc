@@ -508,7 +508,6 @@ dataBinderArray.prototype._newitem = function (index, element) {
         item.attributes['data-bind'].value = attr_name + '.' + key;
     });
     if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x](newitem);
-    console.log(attr_name);
     return newitem;
 };
 
@@ -516,8 +515,8 @@ dataBinderArray.prototype.__convert_type = function (key, value) {
     return this._parent.__convert_type(key, value, this);
 };
 
-dataBinderArray.prototype._update = function (attr_name, attr_element) {
-    var remove = this.indexOf(attr_element) < 0;
+dataBinderArray.prototype._update = function (attr_name, attr_element, do_update) {
+    var remove = this.indexOf(attr_element) < 0, attr_value = this;
     jQuery('[data-bind="' + attr_name + '"]').each(function (index, item) {
         var o = $(item);
         if (o.is('[data-toggle]')) {
@@ -525,7 +524,12 @@ dataBinderArray.prototype._update = function (attr_name, attr_element) {
                 .toggleClass('active', !remove)
                 .children('input[type=checkbox]').prop('checked', !remove);
         }
+        if (do_update === true) o.trigger('update', [attr_name, attr_value]);
     });
+};
+
+dataBinderArray.prototype._trigger = function (name, obj) {
+    this._parent._trigger(this._attr_name(name), obj);
 };
 
 dataBinderArray.prototype.push = function (element) {
@@ -545,7 +549,7 @@ dataBinderArray.prototype.push = function (element) {
     if (this._elements[key] instanceof dataBinder) {
         jQuery('[data-bind="' + this._attr_name() + '"]').append(this._newitem(key, this._elements[key]));
         this.resync();
-    } else this._update(this._attr_name(), this._elements[key]);
+    } else this._update(this._attr_name(), this._elements[key], true);
     return key;
 };
 
@@ -565,7 +569,7 @@ dataBinderArray.prototype.unset = function (index) {
     if (typeof element === 'undefined') return;
     if (element instanceof dataBinder) jQuery('[data-bind="' + this._attr_name() + '"]').children().eq(index).remove();
     this._cleanupItem(index);
-    this._update(this._attr_name(), element);
+    this._update(this._attr_name(), element, true);
     return element;
 };
 
@@ -650,9 +654,14 @@ dataBinderArray.prototype.watch = function (cb) {
 dataBinderArray.prototype.empty = function () {
     for (x in this._elements)
         this._elements[x].empty();
+    this._elements = [];
 };
 
 dataBinderArray.prototype.enabled = function (value) {
     if (typeof value !== 'boolean') return this._enabled;
     return this._enabled = value;
+};
+
+dataBinderArray.prototype.find = function (callback) {
+    for (x in this._elements) callback(this._elements[x]);
 };
