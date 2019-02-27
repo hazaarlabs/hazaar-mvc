@@ -662,6 +662,13 @@ dataBinderArray.prototype.enabled = function (value) {
     return this._enabled = value;
 };
 
-dataBinderArray.prototype.find = function (callback) {
+dataBinderArray.prototype.each = function (callback) {
     for (x in this._elements) callback(this._elements[x]);
+};
+
+dataBinderArray.prototype.find = function (callback) {
+    var elements = [];
+    for (x in this._elements)
+        if (callback(this._elements[x]) === true) elements.push(this._elements[x]);
+    return elements;
 };
