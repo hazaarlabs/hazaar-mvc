@@ -22,6 +22,8 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
 
     private $title      = 'PDF Document';
 
+    private $margins    = null;
+
     /**
      * PDF generated as landscape (vertical).
      */
@@ -271,6 +273,8 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
         // title
         $cmd .= (($this->title != '') ? ' --title "' . $this->title . '"' : '');
 
+        if(is_array($this->margins)) foreach($this->margins as $arg => $value) $cmd .= ' -' . $arg . ' ' . (is_int($value) ? $value . 'mm' : $value);
+
         // URL and optional to write to STDOUT (with quiet)
         $cmd .= ' -q -l "' . $web . '" -';
 
@@ -468,6 +472,18 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
         }
 
         return false;
+
+    }
+
+    public function setMargin($top, $right = null, $bottom = null, $left = null){
+
+        if($right === null) $right = $top;
+
+        if($bottom === null) $bottom = $top;
+
+        if($left === null) $left = $right;
+
+        $this->margins = array('T' => $top, 'R' => $right, 'B' => $bottom, 'L' => $left);
 
     }
 
