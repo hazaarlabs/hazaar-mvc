@@ -459,6 +459,14 @@ dataBinder.prototype.enabled = function (value) {
     return this._enabled = value;
 };
 
+dataBinder.prototype.compare = function (value) {
+    if (typeof value !== 'object' || !value instanceof dataBinder || value.constructor.name !== 'Object') return false;
+    for (x in value) if (!(x in this._attributes)
+        || (this._attributes[x] instanceof dataBinderValue ? this._attributes[x].value : this._attributes[x]) !== value[x]) return false;
+    for (x in this._attributes) if (!(x in value)) return false;
+    return true;
+};
+
 dataBinderArray.prototype._init = function (data, name, parent) {
     if (!parent) throw "dataBinderArray requires a parent!";
     this._name = name;
@@ -557,7 +565,11 @@ dataBinderArray.prototype.push = function (element) {
 
 dataBinderArray.prototype.indexOf = function (searchString) {
     if (searchString instanceof dataBinderValue) searchString = searchString.value;
-    for (let i in this._elements) if (this._elements[i].value === searchString) return parseInt(i);
+    for (let i in this._elements) {
+        if (this._elements[i] instanceof dataBinder && this._elements[i].compare(searchString) === true
+            || (this._elements[i] instanceof dataBinderValue ? this._elements[i].value : this._elements[i] === searchString))
+            return parseInt(i);
+    }
     return -1;
 };
 
