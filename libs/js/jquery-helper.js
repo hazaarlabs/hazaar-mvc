@@ -231,8 +231,8 @@ dataBinder.prototype.__convert_type = function (key, value, parent) {
     } else if (value !== null && !(value instanceof dataBinder
         || value instanceof dataBinderArray
         || value instanceof dataBinderValue)) {
-        if (value !== null && typeof value === 'object') value = new dataBinder(value, key, parent);
-        else value = new dataBinderValue(key, value, null, parent);
+        if (value !== null && typeof value === 'object' && value.constructor.name === 'Object') value = new dataBinder(value, key, parent);
+        else if (typeof value !== 'object') value = new dataBinderValue(key, value, null, parent);
     }
     return value;
 };
