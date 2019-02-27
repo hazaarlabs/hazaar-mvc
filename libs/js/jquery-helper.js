@@ -540,7 +540,7 @@ dataBinderArray.prototype._trigger = function (name, obj) {
     this._parent._trigger(this._attr_name(name), obj);
 };
 
-dataBinderArray.prototype.push = function (element) {
+dataBinderArray.prototype.push = function (element, no_update) {
     var key = this._elements.length;
     if (!Object.getOwnPropertyDescriptor(this, key)) {
         var trigger_name = this._trigger_name(this._attr_name(key));
@@ -556,7 +556,7 @@ dataBinderArray.prototype.push = function (element) {
     element = this.__convert_type(key, element);
     this._elements[key] = element;
     jQuery('[data-bind="' + this._attr_name() + '"]').trigger('push', [this._attr_name(), element, key]);
-    if (this._elements[key] instanceof dataBinder) {
+    if (no_update !== true && this._elements[key] instanceof dataBinder) {
         jQuery('[data-bind="' + this._attr_name() + '"]').append(this._newitem(key, this._elements[key]));
         this.resync();
     } else this._update(this._attr_name(), this._elements[key], true);
@@ -573,15 +573,15 @@ dataBinderArray.prototype.indexOf = function (searchString) {
     return -1;
 };
 
-dataBinderArray.prototype.remove = function (value) {
-    return this.unset(this.indexOf(value instanceof dataBinderValue ? value.value : value));
+dataBinderArray.prototype.remove = function (value, no_update) {
+    return this.unset(this.indexOf(value instanceof dataBinderValue ? value.value : value), no_update);
 };
 
-dataBinderArray.prototype.unset = function (index) {
+dataBinderArray.prototype.unset = function (index, no_update) {
     if (index < 0 || typeof index !== 'number') return;
     var element = this._elements[index];
     if (typeof element === 'undefined') return;
-    if (element instanceof dataBinder) jQuery('[data-bind="' + this._attr_name() + '"]').children().eq(index).remove();
+    if (no_update !== true && element instanceof dataBinder) jQuery('[data-bind="' + this._attr_name() + '"]').children().eq(index).remove();
     this._cleanupItem(index);
     jQuery('[data-bind="' + this._attr_name() + '"]').trigger('pop', [this._attr_name(), element, index]);
     this._update(this._attr_name(), element, true);
