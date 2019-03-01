@@ -108,6 +108,18 @@ class File {
 
     }
 
+    public function getBackend(){
+
+        return $this->backend;
+
+    }
+
+    public function getManager(){
+
+        return $this->manager;
+
+    }
+
     /**
      * Content filters
      */
