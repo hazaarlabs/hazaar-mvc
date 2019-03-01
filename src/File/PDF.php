@@ -2,6 +2,17 @@
 
 namespace Hazaar\File;
 
+/**
+ * PDF File class for generating PDFs from HTML
+ *
+ * This class can be used to generate PDFs from HTML sources.  It extends the Hazaar\File class so all of it's methods
+ * are available.  The difference here is that when calling Hazaar\File\PDF::set_content(), the content is filtered
+ * throught the PDF generator.  So you can set the content as HTML and the actual stored content will be in PDF format.
+ *
+ * If the content being set is already in PDF format, there is protection coded in that does not attempt to re-render
+ * the content.
+ *
+ */
 class PDF extends \Hazaar\File {
 
     private $source_url = NULL;
@@ -41,7 +52,19 @@ class PDF extends \Hazaar\File {
     private $last_error = NULL;
 
     /**
-     * Constructor: initialize command line and reserve temporary file.
+     * Constructor: Initialize command line and reserve temporary file.
+     */
+    /**
+     * Hazaar\File\PDF constructor
+     *
+     * @param mixed $file Filename to use if the file will be written to disk.  If null, the file can exist only in memory.
+     * @param mixed $backend The file backend to use for reading/writing the file.
+     * @param mixed $manager An optional file manager for accessing public file data
+     * @param mixed $relative_path Internal relative path when accessing the file through a Hazaar\File\Dir object.
+     *
+     * @throws Exception\WKPDFInstallFailed The automated installation of WKPDFtoHTML failed.
+     *
+     * @throws Exception\WKPDFNotExecutable The WKPDFtoHTML executable exists but failed to execute.
      */
     function __construct($file = null, $backend = NULL, $manager = null, $relative_path = null){
 
@@ -88,6 +111,7 @@ class PDF extends \Hazaar\File {
 
     /**
      * Advanced execution routine.
+     * 
      * @param string $cmd The command to execute.
      * @param string $input Any input not in arguments.
      * @return array An array of execution data; stdout, stderr and return "error" code.
@@ -133,7 +157,9 @@ class PDF extends \Hazaar\File {
 
     /**
      * Set orientation, use constants from this class.
+     * 
      * By default orientation is portrait.
+     * 
      * @param string $mode Use constants from this class.
      */
     public function setOrientation($mode) {
@@ -144,7 +170,9 @@ class PDF extends \Hazaar\File {
 
     /**
      * Set page/paper size.
+     * 
      * By default page size is A4.
+     * 
      * @param string $size Formal paper size (eg; A4, letter...)
      */
     public function setPageSize($size) {
@@ -155,7 +183,9 @@ class PDF extends \Hazaar\File {
 
     /**
      * Whether to automatically generate a TOC (table of contents) or not.
+     * 
      * By default TOC is disabled.
+     * 
      * @param boolean $enabled True use TOC, false disable TOC.
      */
     public function setTOC($enabled) {
@@ -166,7 +196,9 @@ class PDF extends \Hazaar\File {
 
     /**
      * Set the number of copies to be printed.
+     * 
      * By default it is one.
+     * 
      * @param integer $count Number of page copies.
      */
     public function setCopies($count) {
@@ -177,7 +209,9 @@ class PDF extends \Hazaar\File {
 
     /**
      * Whether to print in grayscale or not.
+     * 
      * By default it is OFF.
+     * 
      * @param boolean True to print in grayscale, false in full color.
      */
     public function setGrayscale($mode) {
@@ -188,7 +222,9 @@ class PDF extends \Hazaar\File {
 
     /**
      * Set PDF title. If empty, HTML <title> of first document is used.
+     * 
      * By default it is empty.
+     * 
      * @param string Title text.
      */
     public function setTitle($text) {
@@ -197,6 +233,14 @@ class PDF extends \Hazaar\File {
 
     }
 
+    /**
+     * Set the HTML content of the new PDF file.
+     * 
+     * This content should be HTML format and will be converted into a PDF immediately and stored in memory.  set_content()
+     * will not directly write the file to storage.  If you want to do that, use put_content() instead.
+     * 
+     * @param mixed $content The HTML content to convert into a PDF
+     */
     public function set_contents($content){
 
         $this->source_url = NULL;
@@ -207,6 +251,7 @@ class PDF extends \Hazaar\File {
 
     /**
      * Set source URL of content.
+     * 
      * @param string $url A url accessible from the host that will be rendered to a PDF
      */
     public function setSource($url) {
@@ -228,7 +273,9 @@ class PDF extends \Hazaar\File {
     }
 
     /**
-     * Convert HTML to PDF.
+     * FILE_FILTER_SET Content filter to convert HTML to PDF.
+     *
+     * This is the guts of it really.  This is the method that converts the HTML content being set into a PDF.
      */
     protected function render(&$bytes) {
 
@@ -237,6 +284,9 @@ class PDF extends \Hazaar\File {
             $web = $this->source_url;
 
         } else {
+
+            if(substr($bytes, 0, 5) === '%PDF-')
+                return false;
 
             file_put_contents($this->tmp, $bytes);
 
@@ -287,6 +337,8 @@ class PDF extends \Hazaar\File {
 
         if(file_exists($this->tmp))
             unlink($this->tmp);
+
+        return true ;
 
     }
 
