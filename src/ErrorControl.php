@@ -283,10 +283,19 @@ function shutdown_handler() {
     if(headers_sent())
         return;
 
-    $error = error_get_last();
+    if($error = error_get_last()){
 
-    if(is_array($error))
-        errorAndDie($error, debug_backtrace());
+        $ignored_errors = array(
+            E_CORE_WARNING,
+            E_COMPILE_WARNING,
+            E_USER_WARNING,
+            E_RECOVERABLE_ERROR
+        );
+
+        if(is_array($error) && !in_array($error['type'], $ignored_errors))
+            errorAndDie($error, debug_backtrace());
+
+    }
 
 }
 
