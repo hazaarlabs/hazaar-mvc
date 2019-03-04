@@ -15,6 +15,12 @@
  * Otherwise null is returned.
  *
  * This helps prevent array key not found errors in the PHP interpreter.
+ * 
+ * Keys may also be specified using dot-notation.  This allows ake to called only once instead of for each
+ * element in a reference chain.  For example, you can call `ake($myarray, 'object.child.other');` and each
+ * reference will be recursed into if it exists.  If at any step the child does not exist (or is empty if 
+ * `$non_empty === TRUE`) then execution will stop and return the default value.  This will also handle things
+ * if the child is not an array or object.
  *
  * @since 1.0.0
  *
@@ -41,6 +47,16 @@ function ake($array, $key, $default = NULL, $non_empty = FALSE) {
             && property_exists($array, $key)
             && (!$non_empty || ($non_empty && trim($array->$key) !== NULL)))
             return $array->$key;
+
+        if(strpos($key, '.') !== false){
+
+            $parts = explode('.', $key);
+
+            foreach($parts as $part) if(($array = ake($array, $part, null, $non_empty)) === null) break;
+
+            if(!is_null($array)) return $array;
+
+        }
 
     }
 
