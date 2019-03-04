@@ -372,14 +372,8 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         /*
          * Run any pre-read callbacks
          */
-        if ($exec_filters && is_array($def) && array_key_exists('read', $def)){
-
+        if ($exec_filters && is_array($def) && array_key_exists('read', $def))
             $value = $this->execCallback($def['read'], $value, $key);
-
-            if($type = ake($def, 'type'))
-                $this->convertType($value, $type);
-
-        }
 
         return $value;
 
