@@ -567,7 +567,7 @@ dataBinderArray.prototype.indexOf = function (searchString) {
     if (searchString instanceof dataBinderValue) searchString = searchString.value;
     for (let i in this._elements) {
         if (this._elements[i] instanceof dataBinder && this._elements[i].compare(searchString) === true
-            || (this._elements[i] instanceof dataBinderValue ? this._elements[i].value : this._elements[i] === searchString))
+            || (this._elements[i] instanceof dataBinderValue ? this._elements[i].value : this._elements[i]) === searchString)
             return parseInt(i);
     }
     return -1;
