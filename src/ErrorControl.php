@@ -280,21 +280,13 @@ function exception_handler($e) {
 
 function shutdown_handler() {
 
-    $error_notices = array(
-        1,
-        4,
-        16,
-        64,
-        256
-    );
+    if(headers_sent())
+        return;
 
     $error = error_get_last();
 
-    if(in_array($error['type'], $error_notices)) {
-
+    if(is_array($error))
         errorAndDie($error, debug_backtrace());
-
-    }
 
 }
 
