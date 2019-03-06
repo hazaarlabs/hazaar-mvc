@@ -563,12 +563,16 @@ dataBinderArray.prototype.push = function (element, no_update) {
     return key;
 };
 
-dataBinderArray.prototype.indexOf = function (searchString) {
-    if (searchString instanceof dataBinderValue) searchString = searchString.value;
-    for (let i in this._elements) {
-        if (this._elements[i] instanceof dataBinder && this._elements[i].compare(searchString) === true
-            || (this._elements[i] instanceof dataBinderValue ? this._elements[i].value : this._elements[i]) === searchString)
-            return parseInt(i);
+dataBinderArray.prototype.indexOf = function (search) {
+    if (typeof search === 'function') {
+        for (x in this._elements) if (search(this._elements[x], x) === true) return parseInt(x);
+    } else {
+        if (search instanceof dataBinderValue) search = search.value;
+        for (let i in this._elements) {
+            if (this._elements[i] instanceof dataBinder && this._elements[i].compare(search) === true
+                || (this._elements[i] instanceof dataBinderValue ? this._elements[i].value : this._elements[i]) === search)
+                return parseInt(i);
+        }
     }
     return -1;
 };
