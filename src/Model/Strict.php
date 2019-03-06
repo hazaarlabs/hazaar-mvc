@@ -214,7 +214,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                         //Otherwise, just convert the type
                     } elseif($value !== null) {
 
-                        $value = DataTypeConverter::convertType($value, $type);
+                        DataTypeConverter::convertType($value, $type);
 
                     }
 
@@ -810,8 +810,13 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                                 if(ake($this->values[$key], $subKey) instanceof Strict)
                                     $this->values[$key][$subKey]->extend($subValue, $exec_filters, $ignore_keys);
 
-                                else
-                                    $this->values[$key][$subKey] = $this->convertType($subValue, $type);
+                                else{
+
+                                    $this->convertType($subValue, $type);
+
+                                    $this->values[$key][$subKey] = $subValue;
+
+                                }
 
                             }
 
