@@ -119,7 +119,7 @@ abstract class DataTypeConverter  {
 
                     $value = null;
 
-                } elseif (!@settype($value, $type)) {
+                } elseif (!$value instanceof \stdClass && !@settype($value, $type)) {
 
                     throw new Exception\InvalidDataType($type, get_class($value));
 
