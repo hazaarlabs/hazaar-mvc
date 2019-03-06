@@ -270,15 +270,14 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         foreach($this->fields as $key => $def){
 
-            $type = ake($def, 'type');
+            if(($value = ake($this->values, $key)) === null)
+                continue;
 
-            if($type == 'array'){
+            if(($value instanceof Strict && $value->hasValues() === false)
+                || ($value instanceof ChildArray && $value->count() === 0))
+                continue;
 
-                if(count(ake($this->values, $key, array())) > 0)
-                    return true;
-
-            }elseif(ake($this->values, $key) !== null)
-                return true;
+            return true;
 
         }
 
