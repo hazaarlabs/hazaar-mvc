@@ -440,7 +440,16 @@ class Dir {
 
         }elseif(ini_get('allow_url_fopen') ) {
 
-            $result = file_get_contents($url);//, false, stream_context_create($options));
+            $options = array(
+                'http' => array(
+                    'method'  => 'GET',
+                    'timeout' => $timeout,
+                    'follow_location' => 1
+                )
+            );
+
+            if(!($result = file_get_contents($url, false, stream_context_create($options))))
+                throw new \Exception('Download failed.  Zero bytes received.');
 
             $file->write($result);
 
