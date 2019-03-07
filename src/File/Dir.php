@@ -403,8 +403,8 @@ class Dir {
     /**
      * Download a file from a URL directly to the directory and return a new File object
      *
-     * This is useful for download large files as this method will write the file directly to storage.  Currently,
-     * only local storage is supported as this uses OS file access.
+     * This is useful for download large files as this method will write the file directly
+     * to storage.  Currently, only local storage is supported as this uses OS file access.
      *
      * @param mixed $source_url The source URL of the file to download
      * @param mixed $timeout The download timeout after which an exception will be thrown
@@ -417,22 +417,43 @@ class Dir {
 
         $file->open('w+');
 
-        $ch = curl_init(str_replace(" ","%20", $source_url));
+        $url = str_replace(" ","%20", $source_url);
 
-        curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+        if(function_exists('curl_version')){
 
-        curl_setopt($ch, CURLOPT_FILE, $file->get_resource());
+            $ch = curl_init($url);
 
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
 
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+            curl_setopt($ch, CURLOPT_FILE, $file->get_resource());
 
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 
-        if(!curl_exec($ch))
-            throw new \Exception(curl_error($ch));
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 
-        curl_close($ch);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+
+            if(!curl_exec($ch))
+                throw new \Exception(curl_error($ch));
+
+            curl_close($ch);
+
+        }elseif(ini_get('allow_url_fopen') ) {
+
+            $options = array(
+                'http' => array(
+                    'method'  => 'GET',
+                    'timeout' => $timeout,
+                    'follow_location' => 1
+                )
+            );
+
+            if(!($result = file_get_contents($url, false, stream_context_create($options))))
+                throw new \Exception('Download failed.  Zero bytes received.');
+
+            $file->write($result);
+
+        }
 
         $file->close();
 
