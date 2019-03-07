@@ -154,7 +154,7 @@ abstract class DataTypeConverter  {
 
                         $reflector = new \ReflectionClass($type);
 
-                        if($reflector->isSubclassOf('Hazaar\Model\Strict'))
+                        if(!is_array($value) || $reflector->isSubclassOf('Hazaar\Model\Strict'))
                             $value = array($value);
 
                         $value = $reflector->newInstanceArgs($value);
