@@ -295,6 +295,12 @@ class Application {
 
     }
 
+    static public function getRoot(){
+
+        return Application::$root;
+
+    }
+
     /**
      * @brief Returns the application runtime directory
      *
