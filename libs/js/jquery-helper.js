@@ -653,13 +653,18 @@ dataBinderArray.prototype.populate = function (elements) {
     }
 };
 
-dataBinderArray.prototype.filter = function (cb, saved) {
+dataBinderArray.prototype.filter = function (cb) {
     var list = [];
     for (let x in this._elements) {
         var value = this._elements[x] instanceof dataBinderValue ? this._elements[x].value : this._elements[x];
-        if (cb(value)) list.push(this_.elements[x]);
+        if (cb(value)) list.push(this._elements[x]);
     }
     return list;
+};
+
+dataBinderArray.prototype.reduce = function (cb) {
+    for (let x in this._elements) if (cb(this._elements[x]) === false) this._elements.splice(x, 1);
+    return this;
 };
 
 dataBinderArray.prototype.__nullify = function (value) {
