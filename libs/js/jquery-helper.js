@@ -149,6 +149,10 @@ var dataBinderValue = function (name, value, label, parent) {
     });
 };
 
+dataBinderValue.prototype.__name = function () {
+    return this._parent._attr_name(this._name);
+};
+
 dataBinderValue.prototype.toString = function () {
     return this.label || this.value || this.other;
 };
@@ -209,6 +213,10 @@ dataBinder.prototype._init = function (data, name, parent) {
             return Object.keys(this._attributes).length;
         }
     });
+};
+
+dataBinder.prototype.__name = function () {
+    return this._attr_name();
 };
 
 dataBinder.prototype.__nullify = function (value) {
@@ -490,6 +498,10 @@ dataBinderArray.prototype._init = function (data, name, parent) {
             }
         }
     });
+};
+
+dataBinderArray.prototype.__name = function () {
+    return this._attr_name();
 };
 
 dataBinderArray.prototype._trigger_name = dataBinder.prototype._trigger_name;
