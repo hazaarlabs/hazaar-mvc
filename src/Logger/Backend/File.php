@@ -16,6 +16,8 @@ class File extends \Hazaar\Logger\Backend {
 
         $this->setDefaultOption('write_timestamp', TRUE);
 
+        $this->setDefaultOption('write_pid', TRUE);
+
         $this->setDefaultOption('write_uri', TRUE);
 
         $this->setDefaultOption('logfile', \Hazaar\Application::getInstance()->runtimePath('hazaar.log'));
@@ -65,6 +67,9 @@ class File extends \Hazaar\Logger\Backend {
 
         $line[] = str_pad(strtoupper($this->getLogLevelId($level)), 6, ' ', STR_PAD_RIGHT);
 
+        if($this->getOption('write_pid'))
+            $line[] = getmypid();
+            
         if($this->getOption('write_uri'))
             $line[] = ake($_SERVER, 'REQUEST_URI');
 
