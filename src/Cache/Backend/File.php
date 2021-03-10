@@ -106,13 +106,8 @@ class File extends \Hazaar\Cache\Backend {
                 $timeout = 0;
 
             //If the namespace has expired, drop it
-            if(time() >= $timeout){
-
-                $this->clear(true);
-
-                $this->timeout = time() + $this->options->lifetime;
-
-            }
+            if(time() >= $timeout)
+                $this->clear();
 
         }
 
@@ -127,6 +122,8 @@ class File extends \Hazaar\Cache\Backend {
 
         if($this->timeout > 0)
             $this->store->set('__namespace_timeout', $this->timeout);
+
+        unset($this->store);
 
     }
 
