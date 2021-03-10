@@ -65,7 +65,8 @@ class File extends \Hazaar\Cache\Backend {
             'cache_dir'   => $cache_dir,
             'file_prefix' => NULL,
             'use_zlib'    => false,
-            'encode_fs'   => false
+            'encode_fs'   => false,
+            'keepalive'   => false
         ));
 
         $cache_dir = $this->options->cache_dir
@@ -97,7 +98,7 @@ class File extends \Hazaar\Cache\Backend {
             $this->addCapabilities('array');
 
         //If the lifetime value is greater than 0 then we support namespace timeouts.
-        if($this->options->lifetime > 0){
+        if($this->options->keepalive === true && $this->options->lifetime > 0){
 
             $this->addCapabilities('expire_ns', 'keepalive');
 
