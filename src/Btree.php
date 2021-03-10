@@ -60,6 +60,8 @@ class Btree {
      */
     private $nodecache = array();
 
+    public $LOCK_EX = LOCK_EX;
+
     /**
      * Use static method open() to get instance
      */
@@ -121,7 +123,7 @@ class Btree {
 
         if ($this->file->tell() === 0) {
 
-            if (!$this->file->lock(LOCK_EX)) {
+            if (!$this->file->lock($this->LOCK_EX)) {
 
                 $this->file->close();
 
@@ -263,7 +265,7 @@ class Btree {
     public function set($key, $value) {
 
         // Obtain an exclusive file lock
-        if (!$this->file->lock(LOCK_EX))
+        if (!$this->file->lock($this->LOCK_EX))
             return false;
 
         if ($this->file->seek(0, SEEK_END) === -1) {
