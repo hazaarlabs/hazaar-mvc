@@ -149,6 +149,17 @@ class Btree {
 
     }
 
+    public function close(){
+
+        if(!$this->file)
+            return false;
+
+        $this->file->close();
+
+        unset($this->file);
+        
+    }
+
     /**
      * The the B-Tree source file.
      *
