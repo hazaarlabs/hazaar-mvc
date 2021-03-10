@@ -84,6 +84,8 @@ class File extends \Hazaar\Cache\Backend {
 
         $this->store = File::$__open_store[$cache_file];
 
+        $this->store->LOCK_EX = LOCK_EX | LOCK_NB;
+
         $this->addCapabilities('store_objects', 'expire_val', 'array');
 
         if(in_array('zlib', get_loaded_extensions())){
