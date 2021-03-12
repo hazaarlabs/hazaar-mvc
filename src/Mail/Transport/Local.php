@@ -4,11 +4,16 @@ namespace Hazaar\Mail\Transport;
 
 class Local extends \Hazaar\Mail\Transport {
 
-    public function send($to, $subject = NULL, $message = NULL, $extra_headers = array()) {
+    public function send($to, $subject = NULL, $message = NULL, $headers = array(), $dsn_types = array()) {
 
         $sendmail_from = '';
 
-        foreach($extra_headers as $key => $value) {
+        $mail_headers = array();
+
+        foreach($headers as $key => $value) {
+
+            if(!$value)
+                continue;
 
             if(strtolower($key) == 'from') {
 
@@ -16,24 +21,30 @@ class Local extends \Hazaar\Mail\Transport {
                  * If this is the from header, try and extract the email address to use in sendmail -f.
                  * Sometimes emails will not send correctly if this fails
                  */
-                if(preg_match('/[\w\s]*\<(.*)\>/', $value, $matches)) {
-
+                if(preg_match('/[\w\s]*\<(.*)\>/', $value, $matches))
                     $sendmail_from = $matches[1];
-
-                } else {
-
+                else
                     $sendmail_from = $value;
-
-                }
 
             }
 
-            $headers[] = $key . ': ' . trim($value);
+            $mail_headers[] = $key . ':   ' . trim($value);
 
         }
 
-        //The @ sign causes errors not to be thrown and allows things to continue.  the mail() comment will just return false when not successful.
-        $ret = @mail($this->formatTo($to), $subject, $message, implode("\n", $headers), ($sendmail_from ? '-f ' . $sendmail_from : NULL));
+        $mail_headers = implode("\n", $mail_headers);
+
+        $params = [];
+
+        if($sendmail_from)
+            $params['-f'] = $sendmail_from;
+
+        if(is_array($dsn_types) && count($dsn_types) > 0)
+            $params['-N'] = '"' . implode(',', array_map('strtolower', $dsn_types)) . '"';
+
+        //The @ sign causes errors not to be thrown and allows things to continue.  the mail() command
+        //will just return false when not successful.
+        $ret = @mail($this->formatTo($to), $subject, $message, $mail_headers, (count($params) > 0 ? array_flatten($params, ' ', ' ') : NULL));
 
         if(!$ret){
 
