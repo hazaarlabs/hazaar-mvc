@@ -609,7 +609,7 @@ class Application {
             if($this->timer)
                 $this->timer->stop('bootstrap');
 
-        }catch(\Exception $e){
+        }catch(\Throwable $e){
 
             dieDieDie($e);
 
