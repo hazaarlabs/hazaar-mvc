@@ -1107,7 +1107,7 @@ if(!function_exists('http_response_code')){
 
             } else {
 
-                die('Missing Http_Status.dat file!');
+                dieDieDie('Missing Http_Status.dat file!');
 
             }
 

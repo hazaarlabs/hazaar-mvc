@@ -166,7 +166,7 @@ class Application {
             $this->config = new Application\Config('application', $env, $this->getDefaultConfig(), FILE_PATH_CONFIG);
 
             if(!$this->config->loaded())
-                die('Application is not configured!');
+                dieDieDie('Application is not configured!');
 
             Application\Url::$base = $this->config->app->get('base');
 
