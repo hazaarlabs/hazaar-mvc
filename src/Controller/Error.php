@@ -94,10 +94,9 @@ class Error extends \Hazaar\Controller\Action {
 
             while($line = fgets($h)) {
 
-                if (preg_match('/^(\d*)\s(.*)$/', $line, $matches)) {
-
+                if (preg_match('/^(\d*)\s(.*)$/', $line, $matches))
                     $status_codes[$matches[1]] = $matches[2];
-                }
+                    
             }
         }
 
@@ -203,6 +202,12 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
+    public function getMessage(){
+
+        return $this->errstr;
+
+    }
+
     public function getErrorMessage() {
 
         return $this->errstr . ' on line ' . $this->errline . ' in file ' . $this->errfile;
@@ -223,7 +228,6 @@ class Error extends \Hazaar\Controller\Action {
             $response = $this->run();
         else
             $response = $this->html();
-
         if(!$response instanceof \Hazaar\Controller\Response){
 
             if(is_array($response)) {
@@ -257,11 +261,9 @@ class Error extends \Hazaar\Controller\Action {
 
     public function clean_output_buffer() {
 
-        while(count(ob_get_status()) > 0) {
-
+        while(count(ob_get_status()) > 0)
             ob_end_clean();
-        }
-
+            
     }
 
     private function runner(){
