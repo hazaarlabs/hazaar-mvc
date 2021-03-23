@@ -148,9 +148,9 @@ class Smarty extends \Hazaar\Template\Smarty {
 
             $this->__cache_file = null;
 
-            $line = ($e->getLine() - 21);
+            $line = ($e->getLine() - 22);
 
-            $output = "An error occurred parsing the Smarty template: ";
+            $output = "An error occurred parsing the Smarty template: " . $e->getMessage();
 
             $e = new \Hazaar\Exception($output, 500);
 
