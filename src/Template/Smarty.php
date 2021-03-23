@@ -709,7 +709,7 @@ class Smarty {
 
         $value = preg_match('/(.+)/', $params['value'], $matches) ? $matches[1] : 'null';
 
-        return "<?php @$" . trim($params['var'], '"') . "=$value;?>";
+        return "<?php @$" . trim($params['var'], '\'"') . "=$value;?>";
 
     }
 
