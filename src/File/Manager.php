@@ -378,6 +378,12 @@ class Manager implements Backend\_Interface {
 
     }
 
+    public function toArray($path, $sort = SCANDIR_SORT_ASCENDING, $allow_hidden = false){
+
+        return $this->backend->scandir($this->fixPath($path), $sort, $allow_hidden);
+
+    }
+
     public function find($search = NULL, $path = '/', $case_insensitive = false) {
 
         if(method_exists($this->backend, 'find'))
@@ -625,6 +631,14 @@ class Manager implements Backend\_Interface {
 
     }
 
+    public function isEmpty($path){
+
+        $files = $this->backend->scandir($this->fixPath($path));
+
+        return (count($files) === 0);
+
+    }
+
     public function filesize($path) {
 
         return $this->backend->filesize($this->fixPath($path));
@@ -695,15 +709,19 @@ class Manager implements Backend\_Interface {
     }
 
     //Get a directory listing
-    public function scandir($path, $regex_filter = NULL, $show_hidden = FALSE){
+    public function scandir($path, $regex_filter = NULL, $show_hidden = FALSE, $relative_path = null){
 
-        $items = $this->backend->scandir($this->fixPath($path));
+        if(($items = $this->backend->scandir($this->fixPath($path))) === false)
+            return false;
+
+        if(!$relative_path) 
+            $relative_path = rtrim($path, '/') . '/';
 
         foreach($items as &$item){
 
             $fullpath = $this->fixPath($path, $item);
 
-            $item = ($this->is_dir($fullpath) ? new \Hazaar\File\Dir($fullpath, $this) : new \Hazaar\File($fullpath, $this));
+            $item = ($this->is_dir($fullpath) ? new \Hazaar\File\Dir($fullpath, $this, $relative_path) : new \Hazaar\File($fullpath, $this, $relative_path));
 
         }
 
