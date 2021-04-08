@@ -16,19 +16,19 @@ define('HZ_SYNC_ERROR', 6);
 
 class Dir implements _Interface {
 
-    private $path;
+    protected $path;
 
-    private $backend;
+    protected $backend;
 
-    private $manager;
+    protected $manager;
 
-    private $files;
+    protected $files;
 
-    private $allow_hidden = FALSE;
+    protected $allow_hidden = FALSE;
 
-    private $__media_uri;
+    protected $__media_uri;
 
-    private $relative_path;
+    protected $relative_path;
 
     function __construct($path, Manager $manager = null, $relative_path = null) {
 
@@ -98,6 +98,82 @@ class Dir implements _Interface {
     public function fullpath($suffix = null){
 
         return $this->path($suffix);
+
+    }
+
+    /**
+     * Get the relative path of the directory.
+     *
+     * If the file was returned from a [[Hazaar\File\Dir]] object, then it will have a stored
+     * relative path.  Otherwise any file/path can be provided in the form of another [[Hazaar\File\\
+     * object, [[Hazaar\File\Dir]] object, or string path, and the relative path to the file will
+     * be returned.
+     *
+     * @param mixed $path Optional path to use as the relative path.
+     *
+     * @return boolean|string The relative path.  False when $path is not valid
+     */
+    public function relativepath($path = null){
+
+        if($path !== null){
+
+            if($path instanceof File)
+                $path = $path->dirname();
+            if($path instanceof File\Dir)
+                $path = $path->fullpath();
+            elseif(!is_string($path))
+                return false;
+
+            $source_path = explode('/', trim(str_replace('\\', '/', dirname($this->path)), '/'));
+
+            $path = explode('/', trim(str_replace('\\', '/', $path), '/'));
+
+            $index = 0;
+
+            while (isset($source_path[$index])
+                && isset($path[$index])
+                && $source_path[$index] === $path[$index])
+                $index++;
+
+            $diff = count($source_path) - $index;
+
+            return implode('/', array_merge(array_fill(0, $diff, '..'), array_slice($path, $index)));
+
+        }
+
+
+        if(!$this->relative_path)
+            return $this->fullpath();
+
+        $dir_parts = explode('/', $this->dirname());
+
+        $rel_parts = explode('/', $this->relative_path);
+
+        $path = null;
+
+        foreach($dir_parts as $index => $part){
+
+            if(array_key_exists($index, $rel_parts) && $rel_parts[$index] === $part)
+                continue;
+
+            $dir_parts =  array_slice($dir_parts, $index);
+
+            if(($count = count($rel_parts) - $index) > 0)
+                $dir_parts = array_merge(array_fill(0, $count, '..'), $dir_parts);
+
+            $path = implode('/', $dir_parts);
+
+            break;
+
+        }
+
+        return ($path ? $path . '/' : '') . $this->basename();
+
+    }
+
+    public function setRelativePath($path){
+
+        $this->relative_path = $path;
 
     }
 
@@ -303,9 +379,7 @@ class Dir implements _Interface {
 
     public function isEmpty(){
 
-        $files = $this->manager->scandir($this->path);
-
-        return (count($files) === 0);
+        return $this->manager->isEmpty($this->path);
 
     }
 
@@ -353,9 +427,12 @@ class Dir implements _Interface {
 
     public function read($regex_filter = NULL) {
 
-        if(! is_array($this->files)) {
+        if(!is_array($this->files)) {
 
-            $this->files = $this->manager->scandir($this->path, $regex_filter, $this->allow_hidden);
+            if(!($files = $this->manager->scandir($this->path, $regex_filter, $this->allow_hidden)))
+                return false;
+
+            $this->files = $files;
 
             if(($file = $this->rewind()) == FALSE)
                 return FALSE;
@@ -393,40 +470,32 @@ class Dir implements _Interface {
      */
     public function find($pattern, $show_hidden = FALSE, $case_sensitive = TRUE, $depth = null) {
 
-        $start = $this->path . '/';
-
         $list = array();
 
-        if(!($dir = $this->manager->scandir($start, NULL, TRUE)))
+        if(!($dir = $this->manager->scandir($this->path, NULL, TRUE, $this->relative_path)))
             return null;
 
-        $relative_path = $this->relative_path ? $this->relative_path : $this->path;
+        foreach($dir as $item) {
 
-        foreach($dir as $file) {
-
-            if(($show_hidden === FALSE && substr($file, 0, 1) == '.'))
+            if(($show_hidden === FALSE && substr($item->name(), 0, 1) == '.'))
                 continue;
 
-            $item = $start . $file;
+            if($item->is_dir() && ($depth === null || $depth > 0)) {
 
-            if($this->manager->is_dir($item) && ($depth === null || $depth > 0)) {
-
-                $subdir = new \Hazaar\File\Dir($item, $this->manager, $relative_path);
-
-                if($subdiritems = $subdir->find($pattern, $show_hidden, $case_sensitive, (($depth === null) ? $depth : $depth - 1)))
+                if($subdiritems = $item->find($pattern, $show_hidden, $case_sensitive, (($depth === null) ? $depth : $depth - 1)))
                     $list = array_merge($list, $subdiritems);
 
             }else{
 
                 if(strlen($pattern) > 1 && substr($pattern, 0, 1) == substr($pattern, -1, 1)) {
 
-                    if(preg_match($pattern . ($case_sensitive ? NULL : 'i'), $file) == 0)
+                    if(preg_match($pattern . ($case_sensitive ? NULL : 'i'), $item) == 0)
                         continue;
 
-                } elseif(! fnmatch($pattern, $file, $case_sensitive ? 0 : FNM_CASEFOLD))
+                } elseif(! fnmatch($pattern, $item->basename(), $case_sensitive ? 0 : FNM_CASEFOLD))
                     continue;
 
-                $list[] = new \Hazaar\File($item, $this->manager, $relative_path);
+                $list[] = $item;
 
             }
 
@@ -443,49 +512,45 @@ class Dir implements _Interface {
             if(! $this->manager->is_dir($target))
                 return FALSE;
 
-        } else if(! $this->manager->mkdir($target))
+        } else if(!$this->manager->mkdir($target))
             return FALSE;
 
-        $dir = $this->manager->scandir($this->path, NULL, TRUE);
+        $dir = $this->manager->scandir($this->path, null, true);
 
         foreach($dir as $cur) {
 
-            if($cur == '.' || $cur == '..')
+            if($cur->name() === '.' || $cur->name() === '..')
                 continue;
 
-            $sourcePath = $this->path . '/' . $cur;
-
-            $targetPath = $target . '/' . $cur;
-
-            if(is_array($transport_callback) && count($transport_callback) == 2) {
+            if(is_array($transport_callback) && count($transport_callback) === 2) {
 
                 /*
                  * Call the transport callback.  If it returns true, do the copy.  False means do not copy this file.
                  * This gives the callback a chance to perform the copy itself in a special way, or ignore a
                  * file/directory
                  */
-                if(! call_user_func_array($transport_callback, array($sourcePath, $targetPath)))
+                if(!call_user_func_array($transport_callback, array($cur->fullpath(), $target . '/' . $cur->basename())))
                     continue;
 
             }
 
-            if($this->manager->is_dir($sourcePath)) {
+            if($cur->is_dir()) {
 
                 if($recursive) {
 
-                    $dir = new Dir($sourcePath, $this->manager);
+                    $dir = new Dir($cur, $this->manager);
 
-                    $dir->copyTo($targetPath, $recursive, $transport_callback);
+                    $dir->copyTo($target, $recursive, $transport_callback);
 
                 }
 
             } else {
 
-                $perms = $this->manager->fileperms($sourcePath);
+                $perms = $cur->perms();
 
-                $this->manager->copy($sourcePath, $targetPath);
+                $new = $cur->copyTo($target);
 
-                $this->manager->chmod($targetPath, $perms);
+                $new->chmod($perms);
 
             }
 
@@ -506,7 +571,7 @@ class Dir implements _Interface {
 
     }
 
-    public function getDir($child){
+    public function getDir($path){
 
         return new \Hazaar\File\Dir($this->path($path), $this->manager);
 
@@ -528,7 +593,7 @@ class Dir implements _Interface {
 
     public function toArray(){
 
-        return $this->manager->scandir($this->path, null, $this->allow_hidden);
+        return $this->manager->toArray($this->path, null, $this->allow_hidden);
 
     }
 
