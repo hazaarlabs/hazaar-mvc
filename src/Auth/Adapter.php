@@ -101,6 +101,8 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
     // Extra data fields to store from the user record
     protected $extra = array();
 
+    private $no_credential_hashing = false;
+
     function __construct($cache_config = array(), $cache_backend = null) {
 
         $this->options = new \Hazaar\Map(array(
@@ -200,7 +202,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
         if($credential === null)
             $credential = $this->credential;
 
-        if(!$credential)
+        if(!$credential || $this->no_credential_hashing === true)
             return $credential;
 
         $hash = false;
@@ -558,6 +560,21 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
      * be overridden.
      */
     protected function authenticationSuccess($identity, $data){
+
+    }
+
+    /**
+     * Toggles on/off the internal credential hashing algorithm.
+     * 
+     * This is useful is you want to authenticate with an already hashed credential.
+     * 
+     * WARNING:  This should NOT normally be used.  And if it IS used, it should only be used to authenticate credentials
+     * supplied internally by the application itself, and not provided by a user/client/etc.  Disabling password hash
+     * essentially turns this all into clear text credentials.
+     */
+    public function disableCredentialHashing($value = true){
+
+        $this->no_credential_hashing = boolify($value);
 
     }
 
