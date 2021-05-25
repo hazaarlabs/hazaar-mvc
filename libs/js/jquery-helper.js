@@ -373,7 +373,7 @@ dataBinder.prototype._trigger = function (key, value) {
 };
 
 dataBinder.prototype._trigger_diff = function (source) {
-    if (!source instanceof dataBinder) return;
+    if (!(source instanceof dataBinder)) return;
     for (let x in this._attributes) {
         if (this._attributes[x] instanceof dataBinder
             || this._attributes[x] instanceof dataBinderArray
@@ -753,7 +753,7 @@ dataBinderArray.prototype.watch = function (cb, args) {
 
 dataBinderArray.prototype.empty = function (no_update) {
     if (this._elements.length === 0) return false;
-    while (this.unset(0, no_update) !== false);
+    while (this.unset(0, no_update) !== false) { }
     this._elements = [];
     if (no_update !== true) jQuery(this._node_name()).trigger('empty', [this._attr_name()]);
 };
