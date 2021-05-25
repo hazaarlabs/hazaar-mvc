@@ -684,7 +684,7 @@ dataBinderArray.prototype.resync = function () {
             if (item.length === 0) {
                 let newitem = this._newitem(x, this._elements[x]);
                 parent.append(newitem);
-                if (this._watchers.length > 0) for (let watcher of this._watchers) watcher[0](this._elements[x], newitem, watcher[1]);
+                if (this._watchers.length > 0) for (let id in this._watchers) this._watchers[id][0](this._elements[x], newitem, this._watchers[id][1]);
             }
             if (this._elements[x] instanceof dataBinder || this._elements[x] instanceof dataBinderArray)
                 this._elements[x].resync();
