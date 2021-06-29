@@ -218,7 +218,6 @@ dataBinder.prototype._init = function (data, name, parent, namespace) {
     this._parent = parent;
     this._attributes = {};
     this._watchers = {};
-    dataBinder._watchID = 0;
     this._enabled = true;
     this._data = {};
     if (Object.keys(data).length > 0)
@@ -366,7 +365,7 @@ dataBinder.prototype._update = function (key, do_update) {
 };
 
 dataBinder.prototype._trigger = function (key, value) {
-    if (key in this._watchers) for (let x in this._watchers[key]) this._watchers[key][x][0].call(this, key, value, this._watchers[key][x][1]);
+    if (key in this._watchers) for (let watcher of this._watchers[key]) watcher[0].call(this, key, value, watcher[1]);
 };
 
 dataBinder.prototype._trigger_diff = function (source) {
@@ -414,23 +413,17 @@ dataBinder.prototype.watch = function (key, cb, args) {
     if ((match = key.match(/(\w+)\.([\w\.]*)/)) !== null)
         return match[1] in this._attributes && this._attributes[match[1]] instanceof dataBinder
             ? this._attributes[match[1]].watch(match[2], cb, args) : null;
-    if (!(key in this._watchers)) this._watchers[key] = {};
-    let id = "" + dataBinder._watchID++;
-    this._watchers[key][id] = [cb, args];
-    return id;
+    if (!(key in this._watchers)) this._watchers[key] = [];
+    return this._watchers[key].push([cb, args]);
 };
 
-dataBinder.prototype.unwatch = function (key, id) {
+dataBinder.prototype.unwatch = function (key) {
     if (typeof key === 'undefined') {
         this._watchers = {};
         return;
     }
-    if (!(key in this._watchers))
-        return;
-    if (typeof id !== 'undefined') {
-        if (id in this._watchers[key])
-            delete this._watchers[key][id];
-    } else delete this._watchers[key];
+    if (!(key in this._watchers)) return;
+    delete this._watchers[key];
 };
 
 dataBinder.prototype.unwatchAll = function () {
@@ -517,7 +510,7 @@ dataBinderArray.prototype._init = function (data, name, parent, namespace) {
     this._parent = parent;
     this._elements = [];
     this._template = null;
-    this._watchers = {};
+    this._watchers = [];
     this._enabled = true;
     this._data = {};
     this.resync();
@@ -614,7 +607,7 @@ dataBinderArray.prototype.push = function (element, no_update) {
             newitem = this._newitem(key, element);
             jQuery(sel).append(newitem);
         }
-        if (this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](element, newitem, this._watchers[x][1]);
+        if (this._watchers.length > 0) for (let watcher of this._watchers) watcher[0](element, newitem, watcher[1]);
         this.resync();
         this._trigger(key, element);
     } else this._update(this._attr_name(), element, true);
@@ -647,7 +640,7 @@ dataBinderArray.prototype.unset = function (index, no_update) {
     if (no_update !== true && element instanceof dataBinder) jQuery(sel).children().eq(index).remove();
     this._cleanupItem(index);
     jQuery(sel).trigger('pop', [this._attr_name(), element, index]);
-    if (no_update !== true && this._watchers.length > 0) for (let x in this._watchers) this._watchers[x][0](null, null, this._watchers[x][1]);
+    if (no_update !== true && this._watchers.length > 0) for (let watcher of this._watchers) watcher[0](null, null, watcher[1]);
     this._update(this._attr_name(), element, true);
     this._trigger(key, element);
     return element;
@@ -684,7 +677,7 @@ dataBinderArray.prototype.resync = function () {
             if (item.length === 0) {
                 let newitem = this._newitem(x, this._elements[x]);
                 parent.append(newitem);
-                if (this._watchers.length > 0) for (let id in this._watchers) this._watchers[id][0](this._elements[x], newitem, this._watchers[id][1]);
+                if (this._watchers.length > 0) for (let watcher of this._watchers) watcher[0](this._elements[x], newitem, watcher[1]);
             }
             if (this._elements[x] instanceof dataBinder || this._elements[x] instanceof dataBinderArray)
                 this._elements[x].resync();
@@ -740,9 +733,7 @@ dataBinderArray.prototype.__nullify = function (value) {
 
 dataBinderArray.prototype.watch = function (cb, args) {
     if (typeof cb !== 'function') return null;
-    let id = "" + dataBinder._watchID++;
-    this._watchers[id] = [cb, args];
-    return id;
+    return this._watchers.push([cb, args]);
 };
 
 dataBinderArray.prototype.empty = function (no_update) {
