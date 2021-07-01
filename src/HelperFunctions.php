@@ -1506,7 +1506,8 @@ function replace_recursive(){
 
     $items = func_get_args();
 
-    $target = array_shift($items);
+    if(!($target = array_shift($items)))
+        $target = new \stdClass;
 
     foreach($items as $item){
 
