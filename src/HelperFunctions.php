@@ -1837,3 +1837,42 @@ function array_pull(&$array, $key){
     return $item;
 
 }
+
+/**
+ * Performs a deep clone on an object or array
+ * 
+ * The standard PHP clone function will only perform a shallow copy of the object.  PHP has implemented the __clone() magic
+ * method to allow objects to recursively clone properties.  However, this does not help when you are cloning a \stdClass
+ * object.  This function allows you to perform a deep clone of any object, including \stdClass and also clone all it's 
+ * properties recursively.
+ * 
+ * @param mixed $object The object to clone.  If the parameter is an array then it will be recursed.  If it is anything it simply returned as is.
+ * 
+ * @return object|array The cloned object or array of objects.
+ */
+function deep_clone($object){
+    
+    if(!(is_object($object) || is_array($object)))
+        return $object;
+
+    $nObject = is_array($object) ? [] : clone $object;
+
+    foreach($object as $key => &$property){
+
+        $nProperty = deep_clone($property);
+
+        if(is_array($nObject)){
+
+            $nObject[$key] = $nProperty;
+
+        }elseif(is_object($nObject)){
+
+            $nObject->$key = $nProperty;
+            
+        }
+        
+    }
+
+    return $nObject;
+
+}
