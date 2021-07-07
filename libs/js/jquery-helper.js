@@ -632,6 +632,11 @@ dataBinderArray.prototype.indexOf = function (search) {
     return -1;
 };
 
+dataBinderArray.prototype.findIndex = function (search) {
+    for (x in this._elements) if (search(this._elements[x], x) === true) return parseInt(x);
+    return -1;
+};
+
 dataBinderArray.prototype.remove = function (value, no_update) {
     return this.unset(this.indexOf(value instanceof dataBinderValue ? value.value : value), no_update);
 };
