@@ -106,6 +106,7 @@ class Date extends \DateTime implements \JsonSerializable {
                     $timezone = $datetime['timezone'];
 
                 $datetime = '@' . strtotime($datetime['date']) . '.' . $datetime['usec'];
+
             }else{
 
                 $datetime = null;
@@ -221,15 +222,19 @@ class Date extends \DateTime implements \JsonSerializable {
             if (is_numeric($timezone)) {
 
                 $timezone = timezone_name_from_abbr('', $timezone, FALSE);
+
             } elseif (preg_match('/([+-])?(\d+):(\d+)/', $timezone, $matches)) {
 
                 if (!$matches[1])
                     $matches[1] = '+';
 
-                $timezone = timezone_name_from_abbr('', ((int) ($matches[1] . (($matches[2] * 3600) + $matches[3]))), FALSE);
+                if($timezone_name = timezone_name_from_abbr('', ((int) ($matches[1] . (($matches[2] * 3600) + $matches[3]))), FALSE))
+                    $timezone = $timezone_name;
+
             }
 
             $timezone = new \Datetimezone($timezone);
+            
         }
 
         return parent::setTimezone($timezone);
