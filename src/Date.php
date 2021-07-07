@@ -165,7 +165,9 @@ class Date extends \DateTime implements \JsonSerializable {
 
         } else {
 
-            if (!$timezone)
+            if(preg_match('/[\+\-][\d\:]+$/', $datetime, $matches))
+                $timezone = $matches[0];
+            elseif (!$timezone)
                 $timezone = date_default_timezone_get();
             elseif (is_numeric($timezone))
                 $timezone = timezone_identifiers_list()[(int) $timezone];
