@@ -340,9 +340,8 @@ dataBinder.prototype._update = function (key, do_update) {
     if (attr_item instanceof dataBinder || attr_item instanceof dataBinderArray) return;
     let sel = this._node_name(key);
     jQuery(sel).each(function (index, item) {
-        let o = jQuery(item);
+        let o = jQuery(item), attr_value = attr_item ? attr_item.value : null;
         if (o.is("input, textarea, select")) {
-            let attr_value = attr_item ? attr_item.value : null;
             if (o.attr('type') === 'checkbox')
                 o.prop('checked', attr_value);
             else if (o.attr('type') === 'radio') {
@@ -354,16 +353,16 @@ dataBinder.prototype._update = function (key, do_update) {
             else if (o.is("select")) {
                 if (attr_item && !attr_item.other && o.find('option[value="' + (attr_value === null ? '' : attr_value) + '"]').length > 0) o.val(attr_value !== null ? attr_value.toString() : null);
             } else o.val(attr_value);
-            if (do_update === true) o.trigger('update', [attr_name, attr_value]);
         } else if (o.is("img")) {
-            o.attr('src', attr_item ? attr_item.value : null);
+            o.attr('src',attr_value);
         } else {
             if (o.attr('data-bind-label') === 'false')
-                o.html(attr_item ? attr_item.value : null);
+                o.html(attr_value);
             else if (o.attr('data-bind-other') === 'true')
-                o.html(attr_item ? attr_item.other : null);
+                o.html(attr_value);
             else o.html(attr_item ? attr_item.toString() : '');
         }
+        if (do_update === true) o.trigger('update', [attr_name, attr_value]);
     });
 };
 
