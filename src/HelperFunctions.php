@@ -1159,7 +1159,7 @@ if(!function_exists('http_response_code')){
 
             if ($text = http_response_text($code)) {
 
-                header($_SERVER['SERVER_PROTOCOL'] . ' ' . $code . ' ' . $matches[1]);
+                header($_SERVER['SERVER_PROTOCOL'] . ' ' . $code . ' ' . $text);
 
                 $_SERVER['HTTP_RESPONSE_CODE'] = $code;
 
