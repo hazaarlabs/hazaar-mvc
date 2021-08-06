@@ -17,11 +17,16 @@ class Smtp extends \Hazaar\Mail\Transport {
         if(!$config->has('server'))
             throw new \Exception('Cannot send mail.  No SMTP mail server is configured!');
 
+        $config->populate([
+            'port' => 25,
+            'timeout' => 5
+        ], false);
+
         $this->server = $config->server;
 
-        $this->port = $config->get('port', 25);
+        $this->port = $config->get('port');
 
-        $this->read_timeout = $config->get('timeout', 5);
+        $this->read_timeout = $config->get('timeout');
 
     }
 
