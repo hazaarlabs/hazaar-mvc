@@ -22,10 +22,16 @@ class Version {
      */
     public function __construct($version) {
 
+        $this->set($version);
+
+    }
+
+    public function set($version) {
+
         if($version === NULL)
             throw new \Hazaar\Exception('Version can not be null');
 
-        if(! preg_match('/[0-9]+(\\.[0-9]+)*/', $version))
+        if(!preg_match('/[0-9]+(\\.[0-9]+)*/', $version))
             throw new \Hazaar\Exception('Invalid version format');
 
         $this->version = $version;
@@ -117,6 +123,21 @@ class Version {
             return FALSE;
 
         return ($this->compareTo($that) == 0);
+
+    }
+
+    public function setIfHigher($version) {
+
+        if ($this->compareTo($version) === -1)
+            $this->set($version);
+
+    }
+
+    public function setIfLower($version) {
+
+        if ($this->compareTo($version) === 1)
+            $this->set($version);
+
     }
 
 }
