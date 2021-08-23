@@ -22,7 +22,7 @@ class Version {
      */
     public function __construct($version) {
 
-        if($version == NULL)
+        if($version === NULL)
             throw new \Hazaar\Exception('Version can not be null');
 
         if(! preg_match('/[0-9]+(\\.[0-9]+)*/', $version))
