@@ -11,7 +11,32 @@ namespace Hazaar;
  */
 class Version {
 
-    private $version;
+    static public $default_delimiter = '.';
+
+    private $__precision = null;
+
+    private $__version_delimiter;
+
+    private $__version;
+
+    /**
+     * Format a version number using the specified precision
+     * 
+     * @param $version mixed The version number to format.  Can be a string or a number.
+     * 
+     * @param $precision integer The precision of the version.  Normally 2 or 3, where 3 is Major/Minor/Revision.
+     * 
+     * @param $delimiter string Optionally override the version delimiter.  Normall a single character, ie: a full stop (.).  
+     *          This will be the global default of '.' if not specified.
+     */
+    static public function format($version, $precision, $delimiter = null) {
+
+        if(!$delimiter)
+            $delimiter = self::$default_delimiter;
+
+        return implode($delimiter, array_pad(explode($delimiter, $version), $precision, '0'));
+
+    }
 
     /**
      * Version constructor.
@@ -20,21 +45,29 @@ class Version {
      *
      * @throws \Exception
      */
-    public function __construct($version) {
+    public function __construct($version, $precision = null, $delimiter = null) {
 
-        $this->set($version);
+        if(is_int($precision))
+            $this->__precision = $precision;
 
+        $this->__version_delimiter = ($delimiter !== null) ? $delimiter : self::$default_delimiter;
+
+        $this->set($version, $this->__precision);
+        
     }
 
-    public function set($version) {
+    public function set($version, &$precision = null) {
 
         if($version === NULL)
             throw new \Hazaar\Exception('Version can not be null');
 
-        if(!preg_match('/[0-9]+(\\.[0-9]+)*/', $version))
+        if(!preg_match('/[0-9]+(\\' . $this->__version_delimiter . '[0-9]+)*/', $version))
             throw new \Hazaar\Exception('Invalid version format');
 
-        $this->version = $version;
+        if(!is_int($precision))
+            $precision = substr_count($version, $this->__version_delimiter) + 1;
+        
+        $this->__version = $this->format($version, $precision, $this->__version_delimiter);
 
     }
 
@@ -45,7 +78,7 @@ class Version {
      */
     public final function get() {
 
-        return $this->version;
+        return $this->__version;
 
     }
 
