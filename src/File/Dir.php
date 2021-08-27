@@ -433,16 +433,15 @@ class Dir implements _Interface {
 
             $this->files = $files;
 
-            if(($file = $this->rewind()) == FALSE)
-                return FALSE;
+            reset($this->files);
 
-        } else {
+        } 
 
-            if(($file = next($this->files)) === FALSE)
-                return FALSE;
+        if(($file = current($this->files)) === FALSE)
+            return FALSE;
 
-        }
-
+        next($this->files);
+            
         return $file;
 
     }
