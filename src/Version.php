@@ -15,9 +15,9 @@ class Version {
 
     private $__precision = null;
 
-    private $__version_delimiter;
-
     private $__version;
+
+    private $__version_parts;
 
     /**
      * Format a version number using the specified precision
@@ -34,7 +34,9 @@ class Version {
         if(!$delimiter)
             $delimiter = self::$default_delimiter;
 
-        return implode($delimiter, array_pad(explode($delimiter, $version), $precision, '0'));
+        $version = is_array($version) ? $version : explode($delimiter, $version);
+
+        return implode('.', array_pad($version, $precision, '0'));
 
     }
 
@@ -50,24 +52,27 @@ class Version {
         if(is_int($precision))
             $this->__precision = $precision;
 
-        $this->__version_delimiter = ($delimiter !== null) ? $delimiter : self::$default_delimiter;
+        if(!$delimiter)
+            $delimiter = self::$default_delimiter;
 
-        $this->set($version, $this->__precision);
+        $this->set($version, $this->__precision, $delimiter);
         
     }
 
-    public function set($version, &$precision = null) {
+    public function set($version, &$precision = null, $delimiter = null) {
 
         if($version === NULL)
             throw new \Hazaar\Exception('Version can not be null');
 
-        if(!preg_match('/[0-9]+(\\' . $this->__version_delimiter . '[0-9]+)*/', $version))
+        if(!preg_match('/[0-9]+(\\' . $delimiter . '[0-9]+)*/', $version))
             throw new \Hazaar\Exception('Invalid version format');
 
         if(!is_int($precision))
-            $precision = substr_count($version, $this->__version_delimiter) + 1;
+            $precision = substr_count($version, $delimiter) + 1;
         
-        $this->__version = $this->format($version, $precision, $this->__version_delimiter);
+        $this->__version_parts = preg_split('/\\' . $delimiter . '/', $version);
+
+        $this->__version = self::format($this->__version_parts, $precision);
 
     }
 
@@ -93,6 +98,11 @@ class Version {
 
     }
 
+    public function getParts(){
+
+        return $this->__version_parts;
+
+    }
     /**
      * Compare the version to another version.
      *
@@ -113,15 +123,13 @@ class Version {
         if(! $that instanceof Version)
             $that = new Version($that);
 
-        $thisParts = preg_split('/\\./', $this->get());
+        $thatParts = $that->getParts();
 
-        $thatParts = preg_split('/\\./', $that->get());
-
-        $length = max(count($thisParts), count($thatParts));
+        $length = max(count($this->__version_parts), count($thatParts));
 
         for($i = 0; $i < $length; $i++) {
 
-            $thisPart = $i < count($thisParts) ? intval($thisParts[$i]) : 0;
+            $thisPart = $i < count($this->__version_parts) ? intval($this->__version_parts[$i]) : 0;
 
             $thatPart = $i < count($thatParts) ? intval($thatParts[$i]) : 0;
 
