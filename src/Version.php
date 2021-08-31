@@ -55,11 +55,11 @@ class Version {
         if(!$delimiter)
             $delimiter = self::$default_delimiter;
 
-        $this->set($version, $this->__precision, $delimiter);
+        $this->set($version, $delimiter);
         
     }
 
-    public function set($version, &$precision = null, $delimiter = null) {
+    public function set($version, $delimiter = null) {
 
         if($version === NULL)
             throw new \Hazaar\Exception('Version can not be null');
@@ -67,12 +67,12 @@ class Version {
         if(!preg_match('/[0-9]+(\\' . $delimiter . '[0-9]+)*/', $version))
             throw new \Hazaar\Exception('Invalid version format');
 
-        if(!is_int($precision))
-            $precision = substr_count($version, $delimiter) + 1;
+        if(!is_int($this->__precision))
+            $this->__precision = substr_count($version, $delimiter) + 1;
         
         $this->__version_parts = preg_split('/\\' . $delimiter . '/', $version);
 
-        $this->__version = self::format($this->__version_parts, $precision);
+        $this->__version = self::format($this->__version_parts, $this->__precision);
 
     }
 
@@ -115,13 +115,13 @@ class Version {
      *
      * @return int Either -1, 0 or 1 to indicate if the version is less than, equal to or greater than $that.
      */
-    public function compareTo($that) {
+    public function compareTo($that, $delimiter = null) {
 
         if($that == NULL)
             return 1;
 
         if(! $that instanceof Version)
-            $that = new Version($that);
+            $that = new Version($that, $delimiter);
 
         $thatParts = $that->getParts();
 
@@ -167,17 +167,17 @@ class Version {
 
     }
 
-    public function setIfHigher($version) {
+    public function setIfHigher($version, $delimiter = null) {
 
-        if ($this->compareTo($version) === -1)
-            $this->set($version);
+        if ($this->compareTo($version, $delimiter) === -1)
+            $this->set($version, $delimiter);
 
     }
 
-    public function setIfLower($version) {
+    public function setIfLower($version, $delimiter = null) {
 
-        if ($this->compareTo($version) === 1)
-            $this->set($version);
+        if ($this->compareTo($version, $delimiter) === 1)
+            $this->set($version, $delimiter);
 
     }
 
