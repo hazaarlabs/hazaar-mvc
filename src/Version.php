@@ -121,7 +121,7 @@ class Version {
             return 1;
 
         if(! $that instanceof Version)
-            $that = new Version($that, $delimiter);
+            $that = new Version($that, $this->__precision, $delimiter);
 
         $thatParts = $that->getParts();
 
