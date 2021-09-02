@@ -39,6 +39,12 @@ abstract class DataTypeConverter  {
     );
 
     /**
+     * Remove any null values from array fields.  Disabled by default for backwards compatibility.
+     * @var bool
+     */
+    public static $filter_nulls_from_arrays = false;
+
+    /**
      * Convert a variable to the request type.
      *
      * This also allows us to convert complex types, such as arrays, into objects.
@@ -135,6 +141,10 @@ abstract class DataTypeConverter  {
 
                     $value = $o;
 
+                }elseif(is_array($value) && DataTypeConverter::$filter_nulls_from_arrays === true){
+
+                    $value = array_filter($value, function($item){ return !empty($item); });
+                        
                 }
 
             }
