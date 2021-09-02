@@ -49,7 +49,7 @@ class File implements File\_Interface, \JsonSerializable {
 
     function __construct($file = null, File\Manager $manager = null, $relative_path = null) {
 
-        if($file instanceof \Hazaar\File) {
+        if ($file instanceof \Hazaar\File) {
 
             $manager = $file->manager;
 
@@ -59,7 +59,7 @@ class File implements File\_Interface, \JsonSerializable {
 
             $file = $file->source_file;
 
-        }elseif(is_resource($file)){
+        } elseif (is_resource($file)) {
 
             $meta = stream_get_meta_data($file);
 
@@ -69,12 +69,11 @@ class File implements File\_Interface, \JsonSerializable {
 
         } else {
 
-            if(empty($file))
+            if (empty($file))
                 $file = Application::getInstance()->runtimePath('tmp', true) . DIRECTORY_SEPARATOR . uniqid();
-
         }
 
-        if(!$manager instanceof File\Manager)
+        if (!$manager instanceof File\Manager)
             $manager = new File\Manager();
 
         $this->manager = $manager;
@@ -82,30 +81,68 @@ class File implements File\_Interface, \JsonSerializable {
         $this->source_file = $this->manager->fixPath($file);
 
         $this->relative_path = rtrim($this->manager->fixPath($relative_path), '/');
-
     }
 
-    public function __destruct(){
+    public function __destruct() {
 
         $this->close();
-
     }
 
-    public function backend(){
+    public function backend() {
 
         return $this->manager->getBackendName();
-
     }
 
-    public function getBackend(){
+    public function getBackend() {
 
         return $this->manager;
-
     }
 
-    public function getManager(){
+    public function getManager() {
 
         return $this->manager;
+    }
+
+    static public function get($url, \Hazaar\Http\Client $client = null) {
+
+        if (!preg_match('/^\w+\:\/\//', $url))
+            return false;
+
+        $filename = basename($url);
+
+        if(($pos = strpos($filename, '?')) !== false)
+            $filename = substr($filename, 0, $pos);
+
+        if (!$client)
+            $client = new \Hazaar\Http\Client();
+
+        $request = new \Hazaar\Http\Request($url, 'GET');
+
+        $response = $client->send($request);
+
+        if ($response->status !== 200)
+            return false;
+
+        if ($disposition = $response->getHeader('content-disposition')) {
+
+            list($type, $raw_params) = explode(';', $disposition);
+
+            $params = array_map(function ($value) {
+                return trim($value, '"');
+            }, array_unflatten(trim($raw_params)));
+
+            if(isset($params['filename']))
+                $filename = $params['filename'];
+
+        }
+
+        $file = new \Hazaar\File($filename);
+
+        $file->set_mime_content_type($response->getContentType());
+
+        $file->set_contents($response->body);
+
+        return $file;
 
     }
 
@@ -113,33 +150,30 @@ class File implements File\_Interface, \JsonSerializable {
      * Content filters
      */
 
-    public function registerFilter($type, $callable){
+    public function registerFilter($type, $callable) {
 
-        if(!array_key_exists($type, $this->filters))
+        if (!array_key_exists($type, $this->filters))
             $this->filters[$type] = array();
 
-        if(is_string($callable))
+        if (is_string($callable))
             $callable = array($this, $callable);
 
-        if(!is_callable($callable))
+        if (!is_callable($callable))
             return false;
 
         $this->filters[$type][] = $callable;
 
         return true;
-
     }
 
     public function set_meta($values) {
 
         return $this->manager->set_meta($this->source_file, $values);
-
     }
 
     public function get_meta($key = NULL) {
 
         return $this->manager->get_meta($this->source_file, $key);
-
     }
 
     /*
@@ -148,13 +182,11 @@ class File implements File\_Interface, \JsonSerializable {
     public function toString() {
 
         return $this->fullpath();
-
     }
 
     public function __tostring() {
 
         return $this->toString();
-
     }
 
     /*
@@ -163,7 +195,6 @@ class File implements File\_Interface, \JsonSerializable {
     public function basename() {
 
         return basename($this->source_file);
-
     }
 
     public function dirname() {
@@ -173,13 +204,11 @@ class File implements File\_Interface, \JsonSerializable {
          * The use of DIRECTORY_SEPARATOR should only be used in the local backend.
          */
         return str_replace('\\', '/', dirname($this->source_file));
-
     }
 
     public function name() {
 
         return pathinfo($this->source_file, PATHINFO_FILENAME);
-
     }
 
     public function fullpath() {
@@ -187,7 +216,6 @@ class File implements File\_Interface, \JsonSerializable {
         $dir = $this->dirname();
 
         return rtrim($dir, '/') . '/' . $this->basename();
-
     }
 
     /**
@@ -202,15 +230,15 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return boolean|string The relative path.  False when $path is not valid
      */
-    public function relativepath($path = null){
+    public function relativepath($path = null) {
 
-        if($path !== null){
+        if ($path !== null) {
 
-            if($path instanceof File)
+            if ($path instanceof File)
                 $path = $path->dirname();
-            if($path instanceof File\Dir)
+            if ($path instanceof File\Dir)
                 $path = $path->fullpath();
-            elseif(!is_string($path))
+            elseif (!is_string($path))
                 return false;
 
             $source_path = explode('/', trim(str_replace('\\', '/', dirname($this->source_file)), '/'));
@@ -219,19 +247,20 @@ class File implements File\_Interface, \JsonSerializable {
 
             $index = 0;
 
-            while (isset($source_path[$index])
+            while (
+                isset($source_path[$index])
                 && isset($path[$index])
-                && $source_path[$index] === $path[$index])
+                && $source_path[$index] === $path[$index]
+            )
                 $index++;
 
             $diff = count($source_path) - $index;
 
             return implode('/', array_merge(array_fill(0, $diff, '..'), array_slice($path, $index)));
-
         }
 
 
-        if(!$this->relative_path)
+        if (!$this->relative_path)
             return $this->fullpath();
 
         $dir_parts = explode('/', $this->dirname());
@@ -240,48 +269,43 @@ class File implements File\_Interface, \JsonSerializable {
 
         $path = null;
 
-        foreach($dir_parts as $index => $part){
+        foreach ($dir_parts as $index => $part) {
 
-            if(array_key_exists($index, $rel_parts) && $rel_parts[$index] === $part)
+            if (array_key_exists($index, $rel_parts) && $rel_parts[$index] === $part)
                 continue;
 
             $dir_parts =  array_slice($dir_parts, $index);
 
-            if(($count = count($rel_parts) - $index) > 0)
+            if (($count = count($rel_parts) - $index) > 0)
                 $dir_parts = array_merge(array_fill(0, $count, '..'), $dir_parts);
 
             $path = implode('/', $dir_parts);
 
             break;
-
         }
 
         return ($path ? $path . '/' : '') . $this->basename();
-
     }
-    
-    public function setRelativePath($path){
+
+    public function setRelativePath($path) {
 
         $this->relative_path = $path;
-        
     }
 
     public function extension() {
 
         return pathinfo($this->source_file, PATHINFO_EXTENSION);
-
     }
 
     public function size() {
 
-        if($this->contents)
+        if ($this->contents)
             return (is_array($this->contents)) ? array_sum(array_map('strlen', $this->contents)) : strlen($this->contents);
 
-        if(!$this->exists())
+        if (!$this->exists())
             return false;
 
         return $this->manager->filesize($this->source_file);
-
     }
 
     /*
@@ -290,127 +314,112 @@ class File implements File\_Interface, \JsonSerializable {
     public function exists() {
 
         return $this->manager->exists($this->source_file);
-
     }
 
     public function realpath() {
 
         return $this->manager->realpath($this->source_file);
-
     }
 
     public function is_readable() {
 
-        if(!$this->exists())
+        if (!$this->exists())
             return false;
 
         return $this->manager->is_readable($this->source_file);
-
     }
 
     public function is_writable() {
 
         return $this->manager->is_writable($this->source_file);
-
     }
 
     public function is_file() {
 
-        if(!$this->exists())
+        if (!$this->exists())
             return false;
 
         return $this->manager->is_file($this->source_file);
-
     }
 
     public function is_dir() {
 
-        if(!$this->exists())
+        if (!$this->exists())
             return false;
 
         return $this->manager->is_dir($this->source_file);
-
     }
 
     public function is_link() {
 
-        if(!$this->exists())
+        if (!$this->exists())
             return false;
 
         return $this->manager->is_link($this->source_file);
-
     }
 
     public function dir($child = null) {
 
-        if($this->is_dir())
+        if ($this->is_dir())
             return new File\Dir($this->source_file, $this->manager, $this->relative_path);
 
         return FALSE;
-
     }
 
     public function parent() {
 
         return new File\Dir($this->dirname(), $this->manager, $this->relative_path);
-
     }
 
     public function type() {
 
-        if(!$this->exists())
+        if (!$this->exists())
             return false;
 
         return $this->manager->filetype($this->source_file);
-
     }
 
     public function ctime() {
 
-        if(!$this->exists())
+        if (!$this->exists())
             return false;
 
         return $this->manager->filectime($this->source_file);
-
     }
 
     public function mtime() {
 
-        if(!$this->exists())
+        if (!$this->exists())
             return false;
 
         return $this->manager->filemtime($this->source_file);
-
     }
 
-    public function touch(){
+    public function touch() {
 
-        if(!$this->exists())
+        if (!$this->exists())
             return false;
 
         return $this->manager->touch($this->source_file);
-
     }
 
     public function atime() {
 
-        if(!$this->exists())
+        if (!$this->exists())
             return false;
 
         return $this->manager->fileatime($this->source_file);
-
     }
 
     public function has_contents() {
 
-        if($this->contents)
+        if ($this->contents)
             return true;
 
-        if(!$this->exists())
+        if (!$this->exists())
             return false;
 
         return ($this->manager->filesize($this->source_file) > 0);
-
     }
 
     /**
@@ -424,7 +433,7 @@ class File implements File\_Interface, \JsonSerializable {
      */
     public function get_contents($offset = null, $maxlen = NULL) {
 
-        if($this->contents)
+        if ($this->contents)
             return is_array($this->contents) ? implode("\n", $this->contents) : $this->contents;
 
         $this->contents = $this->manager->read($this->source_file, $offset, $maxlen);
@@ -432,7 +441,6 @@ class File implements File\_Interface, \JsonSerializable {
         $this->filter_in($this->contents);
 
         return $this->contents;
-
     }
 
     /**
@@ -446,21 +454,20 @@ class File implements File\_Interface, \JsonSerializable {
      */
     public function put_contents($data, $overwrite = true) {
 
-        if($data instanceof File)
+        if ($data instanceof File)
             $data = $data->get_contents();
-            
+
         $content_type = null;
 
-        if(!is_resource($this->handle))
+        if (!is_resource($this->handle))
             $content_type = $this->mime_content_type();
 
-        if(!$content_type)
+        if (!$content_type)
             $content_type = 'text/text';
 
         $this->filter_out($data);
 
         return $this->manager->write($this->source_file, $data, $content_type, $overwrite);
-
     }
 
     /**
@@ -473,18 +480,16 @@ class File implements File\_Interface, \JsonSerializable {
      */
     public function set_contents($bytes) {
 
-        if($bytes instanceof File)
+        if ($bytes instanceof File)
             $bytes = $bytes->get_contents();
 
-        if(array_key_exists(FILE_FILTER_SET, $this->filters)){
+        if (array_key_exists(FILE_FILTER_SET, $this->filters)) {
 
-            foreach($this->filters[FILE_FILTER_SET] as $filter)
+            foreach ($this->filters[FILE_FILTER_SET] as $filter)
                 call_user_func_array($filter, array(&$bytes));
-
         }
 
         $this->contents = $bytes;
-
     }
 
     /**
@@ -495,54 +500,50 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @param mixed $bytes The encoded data
      */
-    public function set_decoded_contents($bytes){
+    public function set_decoded_contents($bytes) {
 
-        if(substr($bytes, 0, 5) == 'data:'){
+        if (substr($bytes, 0, 5) == 'data:') {
 
             //Check we have a correctly encoded data URI
-            if(($pos = strpos($bytes, ',', 5)) === false)
+            if (($pos = strpos($bytes, ',', 5)) === false)
                 return false;
 
             $info = explode(';', $bytes);
 
-            if(!count($info) >= 2)
+            if (!count($info) >= 2)
                 return false;
 
             list($header, $content_type) = explode(':', array_shift($info));
 
-            if(!($header === 'data' && $content_type))
+            if (!($header === 'data' && $content_type))
                 return false;
 
             $content = array_pop($info);
 
-            if(($pos = strpos($content, ',')) !== false){
+            if (($pos = strpos($content, ',')) !== false) {
 
                 $encoding = substr($content, 0, $pos);
 
                 $content = substr($content, $pos + 1);
-
             }
 
             $this->contents = ($encoding == 'base64') ? base64_decode($content) : $content;
 
-            if($content_type)
+            if ($content_type)
                 $this->set_mime_content_type($content_type);
 
-            if(count($info) > 0){
+            if (count($info) > 0) {
 
                 $attributes = array_unflatten($info);
 
-                if(array_key_exists('name', $attributes))
+                if (array_key_exists('name', $attributes))
                     $this->source_file = $attributes['name'];
-
             }
 
             return true;
-
         }
 
         return false;
-
     }
 
     /**
@@ -553,10 +554,16 @@ class File implements File\_Interface, \JsonSerializable {
      * 
      * @return string
      */
-    public function get_encoded_contents(){
+    public function get_encoded_contents() {
 
-        return 'data:' . $this->mime_content_type() . ';base64,' . \base64_encode($this->get_contents());
+        $data = 'data:' . $this->mime_content_type() . ';';
 
+        if ($this->source_file)
+            $data .= 'name=' . basename($this->source_file) . ';';
+
+        $data .= 'base64,' . \base64_encode($this->get_contents());
+
+        return $data;
     }
 
     /**
@@ -569,7 +576,6 @@ class File implements File\_Interface, \JsonSerializable {
     public function save() {
 
         return $this->put_contents($this->get_contents(), TRUE);
-
     }
 
     /**
@@ -584,7 +590,6 @@ class File implements File\_Interface, \JsonSerializable {
     public function saveAs($filename, $overwrite = FALSE) {
 
         return $this->manager->write($filename, $this->get_contents(), $this->mime_content_type(), $overwrite);
-
     }
 
     /**
@@ -594,19 +599,16 @@ class File implements File\_Interface, \JsonSerializable {
      */
     public function unlink() {
 
-        if(! $this->exists())
+        if (!$this->exists())
             return FALSE;
 
-        if($this->is_dir()) {
+        if ($this->is_dir()) {
 
             return $this->manager->rmdir($this->source_file, TRUE);
-
         } else {
 
             return $this->manager->unlink($this->source_file);
-
         }
-
     }
 
     /**
@@ -618,11 +620,10 @@ class File implements File\_Interface, \JsonSerializable {
 
         //Otherwise use the md5 provided by the backend.  This is because some backend providers (such as dropbox) provide
         //a cheap method of calculating the checksum
-        if(($md5 = $this->manager->md5Checksum($this->source_file)) === false)
+        if (($md5 = $this->manager->md5Checksum($this->source_file)) === false)
             $md5 = md5($this->get_contents());
 
         return $md5;
-
     }
 
     /**
@@ -633,7 +634,6 @@ class File implements File\_Interface, \JsonSerializable {
     public function base64() {
 
         return base64_encode($this->get_contents());
-
     }
 
     /**
@@ -652,12 +652,11 @@ class File implements File\_Interface, \JsonSerializable {
 
         $json = $this->get_contents();
 
-        $bom = pack('H*','EFBBBF');
+        $bom = pack('H*', 'EFBBBF');
 
         $json = preg_replace("/^$bom/", '', $json);
 
         return json_decode($json, $assoc);
-
     }
 
     public function moveTo($destination, $overwrite = false, $create_dest = FALSE, $dstManager = NULL) {
@@ -666,22 +665,20 @@ class File implements File\_Interface, \JsonSerializable {
 
         $file = $this->copyTo($destination, $overwrite, $create_dest, $dstManager);
 
-        if(!$file instanceof File)
+        if (!$file instanceof File)
             return false;
 
-        if($move){
+        if ($move) {
 
             $this->manager->unlink($this->source_file);
 
             $this->source_file = $destination . '/' . $this->basename();
 
-            if($dstManager)
+            if ($dstManager)
                 $this->manager = $dstManager;
-
         }
 
         return $file;
-
     }
 
     /**
@@ -704,55 +701,51 @@ class File implements File\_Interface, \JsonSerializable {
      */
     public function copyTo($destination, $overwrite = false, $create_dest = FALSE, $dstManager = NULL) {
 
-        if(! $dstManager)
+        if (!$dstManager)
             $dstManager = $this->manager;
 
-        if($this->contents){
+        if ($this->contents) {
 
             $this->manager = $dstManager;
 
             $dir = new File\Dir($destination, $dstManager);
 
-            if(!$dir->exists()){
+            if (!$dir->exists()) {
 
-                if(!$create_dest)
+                if (!$create_dest)
                     throw new \Hazaar\Exception('Destination does not exist!');
 
                 $dir->create(true);
-
             }
 
             $this->source_file = $destination . '/' . $this->basename();
 
             return $this->save();
-
         }
 
-        if(!$this->exists())
+        if (!$this->exists())
             throw new File\Exception\SourceNotFound($this->source_file, $destination);
 
-        if(!$dstManager->exists($destination)) {
+        if (!$dstManager->exists($destination)) {
 
-            if($create_dest)
+            if ($create_dest)
                 $dstManager->mkdir($destination);
 
             else
                 throw new File\Exception\TargetNotFound($destination, $this->source_file);
-
         }
 
         $actual_destination = rtrim($destination, '/') . '/' . $this->basename();
 
-        if($dstManager === $this->manager)
+        if ($dstManager === $this->manager)
             $result = $dstManager->copy($this->source_file, $actual_destination, $this->manager, $overwrite);
         else
             $result = $dstManager->write($actual_destination, $this->get_contents(), $this->mime_content_type(), $overwrite);
 
-        if($result)
+        if ($result)
             return new File($actual_destination, $dstManager, $this->relative_path);
 
         return false;
-
     }
 
     /**
@@ -775,123 +768,110 @@ class File implements File\_Interface, \JsonSerializable {
      */
     public function copy($destination, $overwrite = false, $create_dest = FALSE, $dstManager = NULL) {
 
-        if(! $dstManager)
+        if (!$dstManager)
             $dstManager = $this->manager;
 
-        if($this->contents){
+        if ($this->contents) {
 
             $this->manager = $dstManager;
 
             $dir = new File\Dir($destination, $dstManager);
 
-            if(!$dir->exists()){
+            if (!$dir->exists()) {
 
-                if(!$create_dest)
+                if (!$create_dest)
                     throw new \Hazaar\Exception('Destination does not exist!');
 
                 $dir->create(true);
-
             }
 
             $this->source_file = $destination . '/' . $this->basename();
 
             return $this->save();
-
         }
 
-        if(!$this->exists())
+        if (!$this->exists())
             throw new File\Exception\SourceNotFound($this->source_file, $destination);
 
-        if(!$dstManager->exists(dirname($destination))) {
+        if (!$dstManager->exists(dirname($destination))) {
 
-            if(!$create_dest)
+            if (!$create_dest)
                 throw new \Hazaar\Exception('Destination does not exist!');
 
             $parts = explode('/', dirname($destination));
 
             $dir = '';
 
-            foreach($parts as $part){
+            foreach ($parts as $part) {
 
-                if($part === '')
+                if ($part === '')
                     continue;
 
                 $dir .= '/' . $part;
 
-                if(!$dstManager->exists($dir))
+                if (!$dstManager->exists($dir))
                     $dstManager->mkdir($dir);
-
             }
-
         }
 
-        if($dstManager === $this->manager)
+        if ($dstManager === $this->manager)
             $result = $dstManager->copy($this->source_file, $destination, $this->manager, $overwrite);
         else
             $result = $dstManager->write($destination, $this->get_contents(), $this->mime_content_type(), $overwrite);
 
         return new File($destination, $dstManager, $this->relative_path);
-
     }
 
     public function mime_content_type() {
 
-        if($this->mime_content_type)
+        if ($this->mime_content_type)
             return $this->mime_content_type;
 
         return $this->manager->mime_content_type($this->fullpath());
-
     }
 
     public function set_mime_content_type($type) {
 
         $this->mime_content_type = $type;
-
     }
 
     public function thumbnail($params = array()) {
 
         return $this->manager->thumbnail($this->fullpath(), $params);
-
     }
 
     public function preview_uri($params = array()) {
 
         return $this->manager->preview_uri($this->fullpath(), $params);
-
     }
 
     public function direct_uri() {
 
         return $this->manager->direct_uri($this->fullpath());
-
     }
 
-    public function media_uri($set_path = null){
+    public function media_uri($set_path = null) {
 
-        if($set_path !== null){
+        if ($set_path !== null) {
 
-            if(!($set_path instanceof \Hazaar\Http\Uri || $set_path instanceof \Hazaar\Application\Url))
+            if (!($set_path instanceof \Hazaar\Http\Uri || $set_path instanceof \Hazaar\Application\Url))
                 $set_path = new \Hazaar\Http\Uri($set_path);
 
             $this->__media_uri = $set_path;
-
         }
 
-        if($this->__media_uri)
+        if ($this->__media_uri)
             return $this->__media_uri;
 
-        if(!$this->manager)
+        if (!$this->manager)
             return null;
 
         return $this->manager->uri($this->fullpath());
-
     }
 
-    public function toArray($delimiter = "\n"){
+    public function toArray($delimiter = "\n") {
 
         return explode($delimiter, $this->get_contents());
-
     }
 
     /**
@@ -926,35 +906,35 @@ class File implements File\_Interface, \JsonSerializable {
 
     }
 
-    public function unzip($filenames = null, $target = null){
+    public function unzip($filenames = null, $target = null) {
 
-        if(!is_array($filenames))
+        if (!is_array($filenames))
             $filenames = array($filenames);
 
-        if($target === null)
+        if ($target === null)
             $target = new File\TempDir();
-        elseif(!$target instanceof \Hazaar\File\Dir)
+        elseif (!$target instanceof \Hazaar\File\Dir)
             $target = new \Hazaar\File\Dir($target, $this->manager, $this->manager);
 
         $files = array();
 
         $zip = zip_open($this->source_file);
 
-        if(!is_resource($zip))
+        if (!is_resource($zip))
             return false;
 
-        while($zip_entry = zip_read($zip)){
+        while ($zip_entry = zip_read($zip)) {
 
             $name = zip_entry_name($zip_entry);
 
-            if(!in_array(basename($name), $filenames))
+            if (!in_array(basename($name), $filenames))
                 continue;
 
             $file = $target->get($name);
 
             $dir = new \Hazaar\File\Dir($file->dirname());
 
-            if(!$dir->exists())
+            if (!$dir->exists())
                 $dir->create(true);
 
             $block_size = max(bytes_str(ini_get('memory_limit')) / 2, 1024000);
@@ -963,35 +943,32 @@ class File implements File\_Interface, \JsonSerializable {
 
             $file->open('w');
 
-            for($i = 1; $i <= (ceil($zip_entry_size / $block_size)); $i++)
+            for ($i = 1; $i <= (ceil($zip_entry_size / $block_size)); $i++)
                 $file->write(zip_entry_read($zip_entry, $block_size));
 
             $file->close();
 
             $files[] = $file;
-
         }
 
         zip_close($zip);
 
         return $files;
-
     }
 
-    public function ziplist(){
+    public function ziplist() {
 
         $list = array();
 
         $zip = zip_open($this->source_file);
 
-        if(!is_resource($zip))
+        if (!is_resource($zip))
             return false;
 
-        while($zip_entry = zip_read($zip))
+        while ($zip_entry = zip_read($zip))
             $list[] = zip_entry_name($zip_entry);
 
         return $list;
-
     }
 
     /**
@@ -1003,19 +980,17 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return resource
      */
-    public function open($mode = 'r'){
+    public function open($mode = 'r') {
 
-        if($this->handle)
+        if ($this->handle)
             return $this->handle;
 
         return $this->handle = fopen($this->manager->getBackend()->resolvePath($this->source_file), $mode);
-
     }
 
-    public function get_resource(){
+    public function get_resource() {
 
         return $this->handle;
-
     }
 
     /**
@@ -1023,9 +998,9 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return boolean
      */
-    public function close(){
+    public function close() {
 
-        if(!$this->handle)
+        if (!$this->handle)
             return false;
 
         fclose($this->handle);
@@ -1033,7 +1008,6 @@ class File implements File\_Interface, \JsonSerializable {
         $this->handle = null;
 
         return true;
-
     }
 
     /**
@@ -1043,10 +1017,9 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return boolean
      */
-    public function isOpen(){
+    public function isOpen() {
 
         return is_resource($this->handle);
-
     }
 
     /**
@@ -1054,14 +1027,12 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return string
      */
-    public function getc(){
+    public function getc() {
 
-        if(!$this->handle)
+        if (!$this->handle)
             return null;
 
         return fgetc($this->handle);
-
-
     }
 
     /**
@@ -1069,13 +1040,12 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return string
      */
-    public function gets(){
+    public function gets() {
 
-        if(!$this->handle)
+        if (!$this->handle)
             return null;
 
         return fgets($this->handle);
-
     }
 
     /**
@@ -1083,13 +1053,12 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return string
      */
-    public function getss($allowable_tags = null){
+    public function getss($allowable_tags = null) {
 
-        if(!$this->handle)
+        if (!$this->handle)
             return null;
 
         return strip_tags(fgets($this->handle), $allowable_tags);
-
     }
 
     /**
@@ -1107,22 +1076,20 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return \array|null
      */
-    public function getcsv($length = 0, $delimiter = ',', $enclosure = '"', $escape = '\\'){
+    public function getcsv($length = 0, $delimiter = ',', $enclosure = '"', $escape = '\\') {
 
-        if($this->handle)
+        if ($this->handle)
             return fgetcsv($this->handle, $length, $delimiter, $enclosure, $escape);
 
-        if(!is_array($this->contents)){
+        if (!is_array($this->contents)) {
 
             $this->contents = explode("\n", $this->contents);
 
             $line = reset($this->contents);
-
-        }elseif(!($line = next($this->contents)))
+        } elseif (!($line = next($this->contents)))
             return false;
 
         return str_getcsv($line, $delimiter, $enclosure, $escape);
-
     }
 
     /**
@@ -1140,18 +1107,17 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return integer|null
      */
-    public function putcsv($fields, $delimiter = ',', $enclosure = '"', $escape = '\\'){
+    public function putcsv($fields, $delimiter = ',', $enclosure = '"', $escape = '\\') {
 
-        if($this->handle && is_array($fields))
+        if ($this->handle && is_array($fields))
             return fputcsv($this->handle, $fields, $delimiter, $enclosure, $escape);
 
-        if(!is_array($this->contents))
+        if (!is_array($this->contents))
             $this->contents = array();
 
         $this->contents[] = $line = str_putcsv($fields, $delimiter, $enclosure, $escape);
 
         return strlen($line);
-
     }
 
     /**
@@ -1164,13 +1130,12 @@ class File implements File\_Interface, \JsonSerializable {
      *                      SEEK_END - Set position to end-of-file plus offset.
      * @return \boolean|integer
      */
-    public function seek($offset, $whence = SEEK_SET){
+    public function seek($offset, $whence = SEEK_SET) {
 
-        if(!$this->handle)
+        if (!$this->handle)
             return false;
 
         return fseek($this->handle, $offset, $whence);
-
     }
 
     /**
@@ -1178,13 +1143,12 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return \boolean|integer
      */
-    public function tell(){
+    public function tell() {
 
-        if(!$this->handle)
+        if (!$this->handle)
             return false;
 
         return ftell($this->handle);
-
     }
 
     /**
@@ -1194,13 +1158,12 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return boolean
      */
-    public function rewind(){
+    public function rewind() {
 
-        if(!$this->handle)
+        if (!$this->handle)
             return false;
 
         return rewind($this->handle);
-
     }
 
     /**
@@ -1208,13 +1171,12 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return boolean TRUE if the file pointer is at EOF or an error occurs; otherwise returns FALSE.
      */
-    public function eof(){
+    public function eof() {
 
-        if(!$this->handle)
+        if (!$this->handle)
             return false;
 
         return feof($this->handle);
-
     }
 
     /**
@@ -1229,13 +1191,12 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return boolean
      */
-    public function lock($operation, &$wouldblock = NULL){
+    public function lock($operation, &$wouldblock = NULL) {
 
-        if(!$this->handle)
+        if (!$this->handle)
             return false;
 
         return flock($this->handle, $operation, $wouldblock);
-
     }
 
     /**
@@ -1245,13 +1206,12 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return boolean
      */
-    public function truncate($size){
+    public function truncate($size) {
 
-        if(!$this->handle)
+        if (!$this->handle)
             return false;
 
         return ftruncate($this->handle, $size);
-
     }
 
     /**
@@ -1270,13 +1230,12 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return \boolean|string
      */
-    public function read($length){
+    public function read($length) {
 
-        if(!$this->handle)
+        if (!$this->handle)
             return false;
 
         return fread($this->handle, $length);
-
     }
 
     /**
@@ -1292,16 +1251,15 @@ class File implements File\_Interface, \JsonSerializable {
      *                      will be ignored and no slashes will be stripped from string.
      * @return \boolean|integer
      */
-    public function write($string, $length = NULL){
+    public function write($string, $length = NULL) {
 
-        if(!$this->handle)
+        if (!$this->handle)
             return false;
 
-        if($length === null)
+        if ($length === null)
             return fwrite($this->handle, $string);
 
         return fwrite($this->handle, $string, $length);
-
     }
 
     /**
@@ -1309,13 +1267,12 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return boolean
      */
-    public function flush(){
+    public function flush() {
 
-        if(!$this->handle)
+        if (!$this->handle)
             return false;
 
         return fflush($this->handle);
-
     }
 
     /**
@@ -1327,10 +1284,9 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return boolean
      */
-    public function rename($newname, $overwrite = false){
+    public function rename($newname, $overwrite = false) {
 
         return $this->manager->move($this->source_file, $this->dirname() . '/' . $newname, $overwrite);
-
     }
 
     /**
@@ -1338,32 +1294,30 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return boolean
      */
-    public function isEncrypted(){
+    public function isEncrypted() {
 
         if(!$this->exists())
             return false;
 
         $r = $this->open();
 
-        $bom = pack('H*','BADA55');  //Haha, Bad Ass!
+        $bom = pack('H*', 'BADA55');  //Haha, Bad Ass!
 
         $encrypted = (fread($r, 3) == $bom);
 
         $this->close();
 
         return $encrypted;
-
     }
 
-    private function getEncryptionKey(){
+    private function getEncryptionKey() {
 
-        if($key_file = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, '.key'))
+        if ($key_file = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, '.key'))
             $key = trim(file_get_contents($key_file));
         else
             $key = File::$default_key;
 
         return md5($key);
-
     }
 
     /**
@@ -1374,22 +1328,21 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @param mixed $content
      */
-    protected function filter_in(&$content){
+    protected function filter_in(&$content) {
 
-        if(is_array($content))
+        if (is_array($content))
             $content = implode("\n", $content);
 
-        if(array_key_exists(FILE_FILTER_IN, $this->filters)){
+        if (array_key_exists(FILE_FILTER_IN, $this->filters)) {
 
-            foreach($this->filters[FILE_FILTER_IN] as $filter)
+            foreach ($this->filters[FILE_FILTER_IN] as $filter)
                 call_user_func($filter, $content);
-
         }
 
         $bom = substr($content, 0, 3);
 
         //Check if we are encrypted
-        if($bom === pack('H*','BADA55')){  //Hazaar Encryption
+        if ($bom === pack('H*', 'BADA55')) {  //Hazaar Encryption
 
             $this->encrypted = true;
 
@@ -1403,17 +1356,15 @@ class File implements File\_Interface, \JsonSerializable {
 
             $content = substr($data, 8);
 
-            if($hash !== hash('crc32', $content))
+            if ($hash !== hash('crc32', $content))
                 throw new \Hazaar\Exception('Failed to decrypt file: ' . $this->source_file . '. Bad key?');
-
-        }elseif($bom === pack('H*','EFBBBF')){  //UTF-8
+        } elseif ($bom === pack('H*', 'EFBBBF')) {  //UTF-8
 
             $content = substr($content, 3);  //Just strip the BOM
 
         }
 
         return true;
-
     }
 
     /**
@@ -1424,20 +1375,19 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @param mixed $content
      */
-    protected function filter_out(&$content){
+    protected function filter_out(&$content) {
 
-        if(array_key_exists(FILE_FILTER_OUT, $this->filters)){
+        if (array_key_exists(FILE_FILTER_OUT, $this->filters)) {
 
-            foreach($this->filters[FILE_FILTER_OUT] as $filter)
+            foreach ($this->filters[FILE_FILTER_OUT] as $filter)
                 call_user_func_array($filter, array(&$content));
-
         }
 
-        if($this->encrypted === true){
+        if ($this->encrypted === true) {
 
-            $bom = pack('H*','BADA55');
+            $bom = pack('H*', 'BADA55');
 
-            if(substr($content, 0, 3) === $bom)
+            if (substr($content, 0, 3) === $bom)
                 return false;
 
             $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(File::$default_cipher));
@@ -1445,59 +1395,50 @@ class File implements File\_Interface, \JsonSerializable {
             $data = openssl_encrypt(hash('crc32', $content) . $content, File::$default_cipher, $this->getEncryptionKey(), OPENSSL_RAW_DATA, $iv);
 
             $content = $bom . $iv . $data;
-
         }
 
         return true;
-
     }
 
-    public function encrypt($write = true){
+    public function encrypt($write = true) {
 
         $this->encrypted = true;
 
-        if($write)
+        if ($write)
             $this->save();
-
     }
 
     /**
      * Writes the decrypted file to storage
      */
-    public function decrypt(){
+    public function decrypt() {
 
         $this->contents = $this->get_contents();
 
         $this->encrypted = false;
 
         return $this->save();
-
     }
 
-    static public function delete($path){
+    static public function delete($path) {
 
         $file = new File($path);
 
         return $file->unlink();
-
     }
 
-    public function jsonSerialize(){
+    public function jsonSerialize() {
 
         return $this->get_encoded_contents();
-
     }
 
-    public function perms(){
+    public function perms() {
 
         return $this->manager->fileperms($this->source_file);
-
     }
 
-    public function chmod($mode){
+    public function chmod($mode) {
 
         return $this->manager->chmod($this->source_file, $mode);
-        
     }
-
 }

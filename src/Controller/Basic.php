@@ -120,7 +120,7 @@ abstract class Basic extends \Hazaar\Controller {
 
                 array_unshift($this->__actionArgs, $this->name);
 
-                $this->__action = $action = '__default';
+                $action = '__default';
 
             } else {
 

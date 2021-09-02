@@ -11,16 +11,23 @@
 /**
  * @brief Array/Object value normalizer
  *
- * @detail Returns a value from an arraym or a property from an object, if it exists. If it doesn't exist a default
+ * @detail Returns a value from an array or a property from an object, if it exists. If it doesn't exist a default
  * value can be specified.  Otherwise null is returned.
  *
  * This helps prevent array key not found errors in the PHP interpreter.
  *
- * Keys may be specified using dot-notation.  This allows ake to called only once instead of for each
+ * Keys may be specified using dot-notation.  This allows ake to be called only once instead of for each
  * element in a reference chain.  For example, you can call `ake($myarray, 'object.child.other');` and each
  * reference will be recursed into if it exists.  If at any step the child does not exist (or is empty if
  * `$non_empty === TRUE`) then execution will stop and return the default value.  This will also handle things
  * if the child is not an array or object.
+ * 
+ * If the key contains round or square brackets, then this is taken as a search parameter, allowing the specified
+ * element to be search for child elements that match the search criteria.  This search parameter can, and is
+ * actually designed to, be used with dot-notation.  So for example, you can call `ake($myarray, 'items(type.id=1).name')
+ * to find an element in the `items` sub-element of `$myarray` that has it's own `type` element with another 
+ * sub-element of `id` with a value that matches `1`.  As you can imagine, this allows quite a power way of accessing
+ * sub-elements of arrays/objects using a simple dot-notation search parameter.
  * 
  * The `$key` parameter can also be an array of keys.  In this case, the array will be searched for each key
  * and the first value found will be returned.  This is handy if you need a value that could be stored under
@@ -50,18 +57,49 @@ function ake($array, $key, $default = NULL, $non_empty = FALSE) {
 
         if(is_object($array)){
 
-            if(property_exists($array, $key) && ($non_empty === false || is_string($array->$key) === false || ($non_empty === true && trim($array->$key) !== NULL)))
+            if(isset($array->$key) && ($non_empty === false || is_string($array->$key) === false || ($non_empty === true && trim($array->$key) !== NULL)))
                 return $array->$key;
             elseif($array instanceof \ArrayAccess && isset($array[$key]))
                 return $array[$key];
 
         }
 
-        if(strpos($key, '.') !== false){
+        if(strpos($key, '.') !== false || strpos($key, '(') !== false || strpos($key, '[') !== false){
 
-            $parts = explode('.', $key);
+            $parts = preg_split('/\.(?![^([]*[\)\]])/', $key);
 
-            foreach($parts as $part) if(($array = ake($array, $part, $default, $non_empty)) === $default) break;
+            foreach($parts as $part) {
+                
+                if(preg_match('/^(\w+)([\(\[])([\w\d\.=\s"\']+)[\)\]]$/', $part, $matches)){
+
+                    if(!(($array = ake($array, $matches[1], $default, $non_empty)) 
+                        && (is_array($array) || $array instanceof \stdClass || $array instanceof \ArrayAccess)) 
+                        || $array === $default) break;
+
+                    list($item, $criteria) = explode('=', $matches[3]);
+
+                    if(($criteria[0] === '"' || $criteria[0] === "'") && $criteria[0] === substr($criteria, -1))
+                        $criteria = trim($criteria, '"\'');
+                    elseif(strpos($criteria, '.'))
+                        $criteria = floatval($criteria);
+                    elseif(is_numeric($criteria))
+                        $criteria = intval($criteria);
+
+                    foreach($array as $elem){
+
+                        if((ake($elem, $item)) === $criteria){
+
+                            $array = $elem;
+
+                            break;
+
+                        }
+
+                    }
+
+                }elseif(($array = ake($array, $part, $default, $non_empty)) === $default) break;
+
+            }
 
             return $array;
 
@@ -1450,7 +1488,8 @@ function replace_recursive(){
 
     $items = func_get_args();
 
-    $target = array_shift($items);
+    if(!($target = array_shift($items)))
+        $target = new \stdClass;
 
     foreach($items as $item){
 
@@ -1463,7 +1502,6 @@ function replace_recursive(){
             if(is_array($target)){
 
                 if(array_key_exists($key, $target)
-                    && gettype($target[$key]) == gettype($value)
                     && (is_array($target[$key]) || $target[$key] instanceof stdClass))
                     $target[$key] = replace_recursive(ake($target, $key), $value);
                 else
@@ -1472,7 +1510,6 @@ function replace_recursive(){
             }elseif($target instanceof stdClass){
 
                 if(property_exists($target, $key)
-                    && gettype($target->$key) == gettype($value)
                     && (is_array(ake($target, $key)) || ake($target, $key) instanceof stdClass))
                     $target->$key = replace_recursive($target->$key, $value);
                 else
@@ -1485,6 +1522,42 @@ function replace_recursive(){
     }
 
     return $target;
+
+}
+
+/**
+ * Replaces a property in an object at key with another value
+ * 
+ * This allows a property in am object to be replaced.  Normally this would not be 
+ * difficult, unless the target property is an nth level deep object.  This function
+ * allows that property to be targeted with a key name in dot-notation.
+ * 
+ * @param $target object The target in which the property will be replaced.
+ * @param $key string|array A key in either an array or dot-notation
+ * @param $value mixed The value that will be used as the replacement.
+ * 
+ * @return boolean True if the value was found and replaced.  False otherwise. 
+ */
+function replace_property(&$target, $key, $value){
+
+    $cur =& $target;
+
+    $parts = is_array($key) ? $key : explode('.', $key);
+
+    $last = array_pop($parts);
+
+    foreach($parts as $part){
+
+        if(!property_exists($cur, $part))
+            return false;
+
+        $cur =& $cur->$part;
+
+    }
+
+    $cur->$last = $value;
+
+    return true;
 
 }
 
@@ -1591,19 +1664,20 @@ function array_diff_assoc_recursive() {
  * This is basically a recursive version of PHP's get_object_vars().
  *
  * @param object $object The object to convert.
- * @return array|boolean Returns the converted object as an array or false on failure.
+ * @return array Returns the converted object as an array or the $object parameter if it is not an object.
  */
 function object_to_array($object){
 
-    if(!is_object($object))
-        return false;
+    $array = is_object($object) ? get_object_vars($object) : $object;
 
-    $array = get_object_vars($object);
+    if(is_array($array)){
 
-    foreach($array as &$value) {
+        foreach($array as &$value) {
 
-        if(is_object($value))
-            $value = object_to_array($value);
+            if(is_object($value) || is_array($value))
+                $value = object_to_array($value);
+
+        }
 
     }
 
@@ -1743,5 +1817,44 @@ function array_pull(&$array, $key){
     unset($array[$key]);
 
     return $item;
+
+}
+
+/**
+ * Performs a deep clone on an object or array
+ * 
+ * The standard PHP clone function will only perform a shallow copy of the object.  PHP has implemented the __clone() magic
+ * method to allow objects to recursively clone properties.  However, this does not help when you are cloning a \stdClass
+ * object.  This function allows you to perform a deep clone of any object, including \stdClass and also clone all it's 
+ * properties recursively.
+ * 
+ * @param mixed $object The object to clone.  If the parameter is an array then it will be recursed.  If it is anything it simply returned as is.
+ * 
+ * @return object|array The cloned object or array of objects.
+ */
+function deep_clone($object){
+    
+    if(!(is_object($object) || is_array($object)))
+        return $object;
+
+    $nObject = is_array($object) ? [] : clone $object;
+
+    foreach($object as $key => &$property){
+
+        $nProperty = deep_clone($property);
+
+        if(is_array($nObject)){
+
+            $nObject[$key] = $nProperty;
+
+        }elseif(is_object($nObject)){
+
+            $nObject->$key = $nProperty;
+            
+        }
+        
+    }
+
+    return $nObject;
 
 }
