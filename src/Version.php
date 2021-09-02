@@ -11,7 +11,34 @@ namespace Hazaar;
  */
 class Version {
 
-    private $version;
+    static public $default_delimiter = '.';
+
+    private $__precision = null;
+
+    private $__version;
+
+    private $__version_parts;
+
+    /**
+     * Format a version number using the specified precision
+     * 
+     * @param $version mixed The version number to format.  Can be a string or a number.
+     * 
+     * @param $precision integer The precision of the version.  Normally 2 or 3, where 3 is Major/Minor/Revision.
+     * 
+     * @param $delimiter string Optionally override the version delimiter.  Normall a single character, ie: a full stop (.).  
+     *          This will be the global default of '.' if not specified.
+     */
+    static public function format($version, $precision, $delimiter = null) {
+
+        if(!$delimiter)
+            $delimiter = self::$default_delimiter;
+
+        $version = is_array($version) ? $version : explode($delimiter, $version);
+
+        return implode('.', array_pad($version, $precision, '0'));
+
+    }
 
     /**
      * Version constructor.
@@ -20,15 +47,35 @@ class Version {
      *
      * @throws \Exception
      */
-    public function __construct($version) {
+    public function __construct($version, $precision = null, $delimiter = null) {
 
-        if($version == NULL)
+        if(is_int($precision))
+            $this->__precision = $precision;
+
+        if(!$delimiter)
+            $delimiter = self::$default_delimiter;
+
+        $this->set($version, $delimiter);
+        
+    }
+
+    public function set($version, $delimiter = null) {
+
+        if($delimiter === null)
+            $delimiter = self::$default_delimiter;
+            
+        if($version === NULL)
             throw new \Hazaar\Exception('Version can not be null');
 
-        if(! preg_match('/[0-9]+(\\.[0-9]+)*/', $version))
+        if(!preg_match('/[0-9]+(\\' . $delimiter . '[0-9]+)*/', $version))
             throw new \Hazaar\Exception('Invalid version format');
 
-        $this->version = $version;
+        if(!is_int($this->__precision))
+            $this->__precision = substr_count($version, $delimiter) + 1;
+        
+        $this->__version_parts = preg_split('/\\' . $delimiter . '/', $version);
+
+        $this->__version = self::format($this->__version_parts, $this->__precision);
 
     }
 
@@ -39,7 +86,7 @@ class Version {
      */
     public final function get() {
 
-        return $this->version;
+        return $this->__version;
 
     }
 
@@ -54,6 +101,11 @@ class Version {
 
     }
 
+    public function getParts(){
+
+        return $this->__version_parts;
+
+    }
     /**
      * Compare the version to another version.
      *
@@ -66,23 +118,21 @@ class Version {
      *
      * @return int Either -1, 0 or 1 to indicate if the version is less than, equal to or greater than $that.
      */
-    public function compareTo($that) {
+    public function compareTo($that, $delimiter = null) {
 
         if($that == NULL)
             return 1;
 
         if(! $that instanceof Version)
-            $that = new Version($that);
+            $that = new Version($that, $this->__precision, $delimiter);
 
-        $thisParts = preg_split('/\\./', $this->get());
+        $thatParts = $that->getParts();
 
-        $thatParts = preg_split('/\\./', $that->get());
-
-        $length = max(count($thisParts), count($thatParts));
+        $length = max(count($this->__version_parts), count($thatParts));
 
         for($i = 0; $i < $length; $i++) {
 
-            $thisPart = $i < count($thisParts) ? intval($thisParts[$i]) : 0;
+            $thisPart = $i < count($this->__version_parts) ? intval($this->__version_parts[$i]) : 0;
 
             $thatPart = $i < count($thatParts) ? intval($thatParts[$i]) : 0;
 
@@ -117,6 +167,21 @@ class Version {
             return FALSE;
 
         return ($this->compareTo($that) == 0);
+
+    }
+
+    public function setIfHigher($version, $delimiter = null) {
+
+        if ($this->compareTo($version, $delimiter) === -1)
+            $this->set($version, $delimiter);
+
+    }
+
+    public function setIfLower($version, $delimiter = null) {
+
+        if ($this->compareTo($version, $delimiter) === 1)
+            $this->set($version, $delimiter);
+
     }
 
 }
