@@ -61,6 +61,9 @@ class Version {
 
     public function set($version, $delimiter = null) {
 
+        if($delimiter === null)
+            $delimiter = self::$default_delimiter;
+            
         if($version === NULL)
             throw new \Hazaar\Exception('Version can not be null');
 
