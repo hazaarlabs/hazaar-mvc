@@ -243,7 +243,7 @@ class Smarty {
 
     protected function parsePARAMS($params){
 
-        $parts = preg_split('/\s(?=([^"]*"[^"]*")*[^"]*$)/', $params);
+        $parts = preg_split("/['\"][^'\"]*['\"](*SKIP)(*F)|\x20/", $params);
 
         $params = array();
 
