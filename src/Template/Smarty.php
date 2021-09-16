@@ -243,12 +243,24 @@ class Smarty {
 
     protected function parsePARAMS($params){
 
-        $parts = preg_split("/['\"][^'\"]*['\"](*SKIP)(*F)|\x20/", $params);
+        $parts = preg_split("/['\"\`][^'\"\`]*['\"\`](*SKIP)(*F)|\x20/", $params);
 
         $params = array();
 
-        foreach($parts as $part)
-            $params = array_merge($params, array_unflatten($part));
+        foreach($parts as $part){
+
+            list($left, $right) = explode('=', $part, 2);
+
+            if(substr($right, 0, 1) === '"' && substr($right, -1, 1) === '"')
+                $right = "'" . trim($right, '"') . "'";
+            elseif(substr($right, 0, 1) === '`' && substr($right, -1, 1) === '`')
+                $right = trim($right, '`');
+
+            $params[$left] = $right;
+
+           // $params = array_merge($params, array_unflatten($part));
+
+        }
 
         return $params;
 
