@@ -406,7 +406,7 @@ class Smarty {
                 $func = array_shift($params);
 
                 if(Smarty\Modifier::has_function($func))
-                    $name = '$this->modify->' . $func . '(' . $name . ((count($params) > 0) ? ', "' . implode('", "', $params) : '') . '")';
+                    $name = '$this->modify->' . $func . '(' . $name . ((count($params) > 0) ? ', "' . implode('", "', $params) . '"' : '') . ')';
 
             }
 
