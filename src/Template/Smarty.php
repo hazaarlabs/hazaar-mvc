@@ -241,9 +241,9 @@ class Smarty {
 
     }
 
-    protected function parsePARAMS($params){
+    protected function parsePARAMS($params, $keep_quotes = true){
 
-        $parts = preg_split("/['\"\`][^'\"\`]*['\"\`](*SKIP)(*F)|\x20/", $params);
+        $parts = preg_split("/['\"][^'\"]*['\"](*SKIP)(*F)|\x20/", $params);
 
         $params = array();
 
@@ -251,14 +251,14 @@ class Smarty {
 
             list($left, $right) = explode('=', $part, 2);
 
-            if(substr($right, 0, 1) === '"' && substr($right, -1, 1) === '"')
-                $right = "'" . trim($right, '"') . "'";
-            elseif(substr($right, 0, 1) === '`' && substr($right, -1, 1) === '`')
-                $right = trim($right, '`');
+            if(preg_match_all("/`(.*)`/", $right, $matches)){
+
+                foreach($matches[0] as $id => $match)
+                    $right = str_replace($match, '{' . $this->compileVAR($matches[1][$id]) . '}', $right);
+
+            }
 
             $params[$left] = $right;
-
-           // $params = array_merge($params, array_unflatten($part));
 
         }
 
@@ -721,7 +721,7 @@ class Smarty {
 
         $value = preg_match('/(.+)/', $params['value'], $matches) ? $matches[1] : 'null';
 
-        return "<?php @$" . trim($params['var'], '"') . "=$value;?>";
+        return "<?php @$" . trim($params['var'], '"\'') . "=$value;?>";
 
     }
 
