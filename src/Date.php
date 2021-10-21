@@ -774,7 +774,7 @@ class Date extends \DateTime implements \JsonSerializable {
      */
     public function jsonSerialize(){
 
-        return $this->timestamp();
+        return ($this->instance_format ? parent::format($this->instance_format) : $this->timestamp());
 
     }
 
