@@ -795,6 +795,23 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     }
 
+    public function empty() {
+
+        foreach ($this->values as $key => &$value) {
+
+            if(!array_key_exists($key, $this->fields))
+                continue;
+
+            $def =& $this->fields[$key];
+
+            if ($value instanceof Strict || $value instanceof ChildArray)
+                $value->empty();
+            else $value = (array_key_exists('value', $def) ? $def['value'] : ake($def, 'default'));
+
+        }
+        
+    }
+
     /**
      * Append an element to an array item
      *

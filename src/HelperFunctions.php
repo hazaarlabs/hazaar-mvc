@@ -1858,3 +1858,66 @@ function deep_clone($object){
     return $nObject;
 
 }
+
+/**
+ * Computes the difference of arrays using keys for comparison recursively
+ * 
+ * This is the same as array_diff_key() except it will recurse into child arrays and return
+ * them in the result if they contain any key differences.
+ * 
+ * @param array $array1 The array to compare from.
+ *
+ * @param array $array2 The array to compare against.
+ *
+ * @param array ... More arrays to compare against.
+ *
+ * @return array
+ *
+ * @since 2.6.1
+ */
+function array_diff_key_recursive(){
+
+    $arrays = func_get_args();
+
+    $array1 = array_shift($arrays);
+
+    $diff = array();
+
+    foreach($array1 as $key => $value) {
+
+        if(is_int($key))
+            continue;
+
+        if($value instanceof \stdClass)
+            $value = (array)$value;
+
+        foreach($arrays as $array_compare){
+
+            if($array_compare instanceof \stdClass)
+                $array_compare = (array)$array_compare;
+            elseif(!is_array($array_compare))
+                continue;
+
+            if(array_key_exists($key, $array_compare)){
+
+                if(!(is_array($value) && is_array($array_compare[$key])))
+                    continue 2;
+
+                $value_diff = array_diff_key_recursive($value, $array_compare[$key]);
+    
+                if(count($value_diff) === 0)
+                    continue 2;
+
+                $value = $value_diff;
+
+            }
+
+        }
+
+        $diff[$key] = $value;
+
+    }
+
+    return $diff;
+
+}
