@@ -863,13 +863,7 @@ class View implements \ArrayAccess {
      */
     public function matchReplace($string){
 
-        $string = preg_replace_callback('/\{\{([\W]*)([\w\.]+)\}\}/', function($match){
-
-            return ake($this->_data, $match[2]);
-
-        }, $string);
-
-        return $string;
+        return match_replace($string, $this->_data);
 
     }
 
