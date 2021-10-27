@@ -398,6 +398,9 @@ class Date extends \DateTime implements \JsonSerializable {
      */
     public function diff($timestamp, $return_seconds = FALSE) {
 
+        if(!$timestamp)
+            return false;
+
         if ($return_seconds) {
 
             $diff = parent::diff($timestamp);
