@@ -108,6 +108,17 @@ class Smarty {
     }
 
     /**
+     * Returns the original un-compiled template.
+     * 
+     * @return string
+     */
+    public function getTemplate(){
+
+        return $this->__content;
+
+    }
+
+    /**
      * Render the template with the supplied parameters and return the rendered content
      *
      * @param mixed $params Parameters to use when embedding variables in the rendered template.
