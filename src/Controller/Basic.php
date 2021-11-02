@@ -42,13 +42,6 @@ abstract class Basic extends \Hazaar\Controller {
     protected $__stream        = FALSE;
 
     public function cacheAction($action, $timeout = 60, $public = false) {
-
-        /*
-         * To cache an action the caching library has to be installed
-         */
-        if(!class_exists('Hazaar\Cache'))
-            throw new \Hazaar\Exception('The Hazaar\Cache class is not available.  Please make sure the hazaar-cache library is correctly installed', 401);
-
         if(!Basic::$__cache instanceof \Hazaar\Cache)
             Basic::$__cache = new \Hazaar\Cache();
 

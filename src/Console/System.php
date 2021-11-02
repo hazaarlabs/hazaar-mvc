@@ -6,13 +6,13 @@ class System extends Module {
 
     public function load(){
 
-        $this->addMenuGroup('System', 'wrench');
+        $this->addMenuItem('System', 'wrench');
 
     }
 
     public function index(){
 
-        $this->view('phpinfo');
+        $this->view('system/phpinfo');
 
         $this->view->link('css/phpinfo.css');
 

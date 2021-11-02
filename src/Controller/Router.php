@@ -10,12 +10,14 @@ class Router extends \Hazaar\Controller {
 
     private $className;
 
+    public $use_metrics = false;
+
     public function __initialize(\Hazaar\Application\Request $request){
 
         parent::__initialize($request);
         
         if(!($path = trim($request->getPath(), '/')))
-            $this->redirect($this->url('console'));
+            return $this->redirect($this->url('console'));
 
         $parts = explode('/', $path);
 
@@ -43,6 +45,18 @@ class Router extends \Hazaar\Controller {
 
         }else{
 
+            $locale = $this->application->config['app']['locale'];
+
+            $timezone = $this->application->config['app']['timezone'];
+
+            //Reset the application view configuration to defaults so that we don't use any loaded view options
+            $this->application->config->view = [];
+
+            if(defined('RUNTIME_PATH'))
+                $this->application->config->app['runtimepath'] = RUNTIME_PATH;
+
+            $this->application->config['app']->extend(array('locale' => $locale, 'timezone' => $timezone));
+
             $this->module = new $this->className($this->moduleName, $this->application, false);
 
             if($path)
@@ -57,7 +71,7 @@ class Router extends \Hazaar\Controller {
 
         $this->module->base_path ='hazaar';
 
-        $this->module->__initialize($request);
+        return $this->module->__initialize($request);
 
     }
 

@@ -6,31 +6,36 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     protected $request;
 
-    private $handler;
+    protected $handler;
 
     public $view_path;
 
     public $notices = array();
 
-    final function __construct($name, $path, $application, Handler $handler){
+    private $module_info = array('label' => 'Module', 'icon' => 'bars');
 
-        $this->handler = $handler;
+    final function __construct($name, $path, $application){
 
         $this->view_path = $path;
 
         parent::__construct($name, $application, false);
 
-        $this->view->layout('@console/layout');
+    }
 
-        $this->view->notices = array();
+    final public function __configure(Handler $handler){
+
+        $this->handler = $handler;
 
     }
 
     public function __initialize(\Hazaar\Application\Request $request){
 
-        parent::__initialize($request);
+        if(!$this->handler instanceof Handler)
+            throw new \Exception('Module requires a console handler before being initialised!');
 
-        $this->view->link($this->application->url('hazaar/file/console/css/popup.css'));
+        $this->view->layout('@console/layout');
+
+        $this->view->link($this->application->url('hazaar/file/css/popup.css'));
 
         $this->view->link($this->application->url('hazaar/file/console/css/layout.css'));
 
@@ -38,15 +43,28 @@ abstract class Module extends \Hazaar\Controller\Action {
 
         $this->view->addHelper('jQuery');
 
-        $this->view->addHelper('fontawesome', array('version' => '4.7.0'));
+        $this->view->addHelper('fontawesome');
 
-        $this->view->requires($this->application->url('hazaar/file/console/js/popup.js'));
+        $this->view->requires($this->application->url('hazaar/file/js/popup.js'));
 
         $this->view->requires($this->application->url('hazaar/file/console/js/console.js'));
 
         $this->view->navitems = $this->handler->getNavItems();
 
-        $this->prepare();
+        $this->view->notices = array();
+
+        $this->view->user = array(
+            'fullname' => $this->handler->getUser(),
+            'group' => 'Administrator'
+        );
+
+        parent::__initialize($request);
+
+    }
+
+    public function load(){
+
+        return true;
 
     }
 
@@ -56,21 +74,9 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     }
 
-    public function prepare(){
+    protected function addMenuItem($label, $icon = null, $suffix = null){
 
-        return true;
-
-    }
-
-    public function addMenuGroup($label, $icon = null, $method = null){
-
-        $this->handler->addMenuGroup($this, $label, $icon, $method);
-
-    }
-
-    protected function addMenuItem($label, $method = null, $icon = null, $suffix = null){
-
-        $this->handler->addMenuItem($this, $label, $method, $icon, $suffix);
+        return $this->handler->addMenuItem($this, $label, null, $icon, $suffix);
 
     }
 
@@ -101,6 +107,22 @@ abstract class Module extends \Hazaar\Controller\Action {
             'class' => $class,
             'icon' => $icon
         );
+
+    }
+
+    public function setActiveMenu(MenuItem $item){
+
+        $this->module_info = array('label' => $item->label, 'icon' => $item->icon);
+
+    }
+
+    public function  getActiveMenu(){
+
+        return $this->view->html->div(array(
+            $this->view->html->i()->class('fa fa-' . $this->module_info['icon']),
+            ' ',
+            $this->module_info['label']
+        ));
 
     }
 
