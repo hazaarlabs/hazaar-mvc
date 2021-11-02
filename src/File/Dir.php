@@ -32,7 +32,9 @@ class Dir implements _Interface {
 
     function __construct($path, Manager $manager = null, $relative_path = null) {
 
-        if(!$manager)
+        if($path instanceof \Hazaar\File)
+            $manager = $path->getManager();
+        elseif(!$manager)
             $manager = new Manager();
 
         $this->manager = $manager;
@@ -431,16 +433,15 @@ class Dir implements _Interface {
 
             $this->files = $files;
 
-            if(($file = $this->rewind()) == FALSE)
-                return FALSE;
+            reset($this->files);
 
-        } else {
+        } 
 
-            if(($file = next($this->files)) === FALSE)
-                return FALSE;
+        if(($file = current($this->files)) === FALSE)
+            return FALSE;
 
-        }
-
+        next($this->files);
+            
         return $file;
 
     }

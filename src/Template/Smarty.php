@@ -108,6 +108,17 @@ class Smarty {
     }
 
     /**
+     * Returns the original un-compiled template.
+     * 
+     * @return string
+     */
+    public function getTemplate(){
+
+        return $this->__content;
+
+    }
+
+    /**
      * Render the template with the supplied parameters and return the rendered content
      *
      * @param mixed $params Parameters to use when embedding variables in the rendered template.
@@ -241,14 +252,26 @@ class Smarty {
 
     }
 
-    protected function parsePARAMS($params){
+    protected function parsePARAMS($params, $keep_quotes = true){
 
-        $parts = preg_split('/\s(?=([^"]*"[^"]*")*[^"]*$)/', $params);
+        $parts = preg_split("/['\"][^'\"]*['\"](*SKIP)(*F)|\x20/", $params);
 
         $params = array();
 
-        foreach($parts as $part)
-            $params = array_merge($params, array_unflatten($part));
+        foreach($parts as $part){
+
+            list($left, $right) = explode('=', $part, 2);
+
+            if(preg_match_all("/`(.*)`/", $right, $matches)){
+
+                foreach($matches[0] as $id => $match)
+                    $right = str_replace($match, '{' . $this->compileVAR($matches[1][$id]) . '}', $right);
+
+            }
+
+            $params[$left] = $right;
+
+        }
 
         return $params;
 
@@ -406,7 +429,7 @@ class Smarty {
                 $func = array_shift($params);
 
                 if(Smarty\Modifier::has_function($func))
-                    $name = '$this->modify->' . $func . '(' . $name . ((count($params) > 0) ? ', "' . implode('", "', $params) : '') . '")';
+                    $name = '$this->modify->' . $func . '(' . $name . ((count($params) > 0) ? ', "' . implode('", "', $params) . '"' : '') . ')';
 
             }
 
@@ -709,7 +732,7 @@ class Smarty {
 
         $value = preg_match('/(.+)/', $params['value'], $matches) ? $matches[1] : 'null';
 
-        return "<?php @$" . trim($params['var'], '"') . "=$value;?>";
+        return "<?php @$" . trim($params['var'], '"\'') . "=$value;?>";
 
     }
 
