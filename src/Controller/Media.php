@@ -206,7 +206,7 @@ class Media extends \Hazaar\Controller\WebDAV {
 
         }
 
-        if($this->file instanceof \Hazaar\File\Dir){
+        if($this->file->is_dir()){
 
             if($this->config->global->allow['dir'] !== true)
                 throw new \Hazaar\Exception('Directory listings are currently disabled.', 403);
@@ -221,7 +221,7 @@ class Media extends \Hazaar\Controller\WebDAV {
 
             $response->root = ($this->file->fullpath() === '/');
 
-            $response->dir = $this->file;
+            $response->dir = $this->file instanceof \Hazaar\File\Dir ? $this->file : new \Hazaar\File\Dir($this->file);
 
             return $response;
 

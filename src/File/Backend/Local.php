@@ -283,7 +283,7 @@ class Local implements _Interface {
 
         if((file_exists($realPath) || is_link($realPath)) && ! is_dir($realPath)) {
 
-            $ret = unlink($realPath);
+            $ret = @unlink($realPath);
 
             if($ret) {
 

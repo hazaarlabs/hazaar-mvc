@@ -106,6 +106,7 @@ class Date extends \DateTime implements \JsonSerializable {
                     $timezone = $datetime['timezone'];
 
                 $datetime = '@' . strtotime($datetime['date']) . '.' . $datetime['usec'];
+
             }else{
 
                 $datetime = null;
@@ -165,7 +166,9 @@ class Date extends \DateTime implements \JsonSerializable {
 
         } else {
 
-            if (!$timezone)
+            if(preg_match('/\d{2}\:\d{2}\:\d{2}([\+\-][\d\:]+)$/', $datetime, $matches))
+                $timezone = $matches[1];
+            elseif (!$timezone)
                 $timezone = date_default_timezone_get();
             elseif (is_numeric($timezone))
                 $timezone = timezone_identifiers_list()[(int) $timezone];
@@ -219,15 +222,19 @@ class Date extends \DateTime implements \JsonSerializable {
             if (is_numeric($timezone)) {
 
                 $timezone = timezone_name_from_abbr('', $timezone, FALSE);
+
             } elseif (preg_match('/([+-])?(\d+):(\d+)/', $timezone, $matches)) {
 
                 if (!$matches[1])
                     $matches[1] = '+';
 
-                $timezone = timezone_name_from_abbr('', ((int) ($matches[1] . (($matches[2] * 3600) + $matches[3]))), FALSE);
+                if($timezone_name = timezone_name_from_abbr('', ((int) ($matches[1] . (($matches[2] * 3600) + $matches[3]))), FALSE))
+                    $timezone = $timezone_name;
+
             }
 
             $timezone = new \Datetimezone($timezone);
+            
         }
 
         return parent::setTimezone($timezone);
@@ -390,6 +397,9 @@ class Date extends \DateTime implements \JsonSerializable {
      * @return \DateInterval|int
      */
     public function diff($timestamp, $return_seconds = FALSE) {
+
+        if(!$timestamp)
+            return false;
 
         if ($return_seconds) {
 
@@ -767,7 +777,7 @@ class Date extends \DateTime implements \JsonSerializable {
      */
     public function jsonSerialize(){
 
-        return $this->timestamp();
+        return ($this->instance_format ? parent::format($this->instance_format) : $this->timestamp());
 
     }
 

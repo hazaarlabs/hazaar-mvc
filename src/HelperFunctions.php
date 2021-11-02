@@ -1159,7 +1159,7 @@ if(!function_exists('http_response_code')){
 
             if ($text = http_response_text($code)) {
 
-                header($_SERVER['SERVER_PROTOCOL'] . ' ' . $code . ' ' . $matches[1]);
+                header($_SERVER['SERVER_PROTOCOL'] . ' ' . $code . ' ' . $text);
 
                 $_SERVER['HTTP_RESPONSE_CODE'] = $code;
 
@@ -1506,7 +1506,8 @@ function replace_recursive(){
 
     $items = func_get_args();
 
-    $target = array_shift($items);
+    if(!($target = array_shift($items)))
+        $target = new \stdClass;
 
     foreach($items as $item){
 
@@ -1519,7 +1520,6 @@ function replace_recursive(){
             if(is_array($target)){
 
                 if(array_key_exists($key, $target)
-                    && gettype($target[$key]) == gettype($value)
                     && (is_array($target[$key]) || $target[$key] instanceof stdClass))
                     $target[$key] = replace_recursive(ake($target, $key), $value);
                 else
@@ -1528,7 +1528,6 @@ function replace_recursive(){
             }elseif($target instanceof stdClass){
 
                 if(property_exists($target, $key)
-                    && gettype($target->$key) == gettype($value)
                     && (is_array(ake($target, $key)) || ake($target, $key) instanceof stdClass))
                     $target->$key = replace_recursive($target->$key, $value);
                 else
@@ -1541,6 +1540,42 @@ function replace_recursive(){
     }
 
     return $target;
+
+}
+
+/**
+ * Replaces a property in an object at key with another value
+ * 
+ * This allows a property in am object to be replaced.  Normally this would not be 
+ * difficult, unless the target property is an nth level deep object.  This function
+ * allows that property to be targeted with a key name in dot-notation.
+ * 
+ * @param $target object The target in which the property will be replaced.
+ * @param $key string|array A key in either an array or dot-notation
+ * @param $value mixed The value that will be used as the replacement.
+ * 
+ * @return boolean True if the value was found and replaced.  False otherwise. 
+ */
+function replace_property(&$target, $key, $value){
+
+    $cur =& $target;
+
+    $parts = is_array($key) ? $key : explode('.', $key);
+
+    $last = array_pop($parts);
+
+    foreach($parts as $part){
+
+        if(!property_exists($cur, $part))
+            return false;
+
+        $cur =& $cur->$part;
+
+    }
+
+    $cur->$last = $value;
+
+    return true;
 
 }
 
@@ -1800,5 +1835,135 @@ function array_pull(&$array, $key){
     unset($array[$key]);
 
     return $item;
+
+}
+
+/**
+ * Performs a deep clone on an object or array
+ * 
+ * The standard PHP clone function will only perform a shallow copy of the object.  PHP has implemented the __clone() magic
+ * method to allow objects to recursively clone properties.  However, this does not help when you are cloning a \stdClass
+ * object.  This function allows you to perform a deep clone of any object, including \stdClass and also clone all it's 
+ * properties recursively.
+ * 
+ * @param mixed $object The object to clone.  If the parameter is an array then it will be recursed.  If it is anything it simply returned as is.
+ * 
+ * @return object|array The cloned object or array of objects.
+ */
+function deep_clone($object){
+    
+    if(!(is_object($object) || is_array($object)))
+        return $object;
+
+    $nObject = is_array($object) ? [] : clone $object;
+
+    foreach($object as $key => &$property){
+
+        $nProperty = deep_clone($property);
+
+        if(is_array($nObject)){
+
+            $nObject[$key] = $nProperty;
+
+        }elseif(is_object($nObject)){
+
+            $nObject->$key = $nProperty;
+            
+        }
+        
+    }
+
+    return $nObject;
+
+}
+
+/**
+ * Computes the difference of arrays using keys for comparison recursively
+ * 
+ * This is the same as array_diff_key() except it will recurse into child arrays and return
+ * them in the result if they contain any key differences.
+ * 
+ * @param array $array1 The array to compare from.
+ *
+ * @param array $array2 The array to compare against.
+ *
+ * @param array ... More arrays to compare against.
+ *
+ * @return array
+ *
+ * @since 2.6.1
+ */
+function array_diff_key_recursive(){
+
+    $arrays = func_get_args();
+
+    $array1 = array_shift($arrays);
+
+    $diff = array();
+
+    foreach($array1 as $key => $value) {
+
+        if(is_int($key))
+            continue;
+
+        if($value instanceof \stdClass)
+            $value = (array)$value;
+
+        foreach($arrays as $array_compare){
+
+            if($array_compare instanceof \stdClass)
+                $array_compare = (array)$array_compare;
+            elseif(!is_array($array_compare))
+                continue;
+
+            if(array_key_exists($key, $array_compare)){
+
+                if(!(is_array($value) && is_array($array_compare[$key])))
+                    continue 2;
+
+                $value_diff = array_diff_key_recursive($value, $array_compare[$key]);
+    
+                if(count($value_diff) === 0)
+                    continue 2;
+
+                $value = $value_diff;
+
+            }
+
+        }
+
+        $diff[$key] = $value;
+
+    }
+
+    return $diff;
+
+}
+
+/**
+ * Use the match/replace algorithm on a string to replace mustache tags with view data
+ *
+ * This is similar code used in the Smarty view template renderer.
+ *
+ * So strings such as:
+ *
+ * * "Hello, {{entity}}" will replace {{entity}} with the value of `$data->entity`.
+ * * "The quick brown {{animal.one}}, jumped over the lazy {{animal.two}}" will replace the tags with values in a multi-dimensional array.
+ *
+ * @param mixed $string The string to perform the match/replace on.
+ * 
+ * @param mixed $data The data to use for matching.
+ *
+ * @return mixed The modified string with mustache tags replaced with view data, or removed if the view data does not exist.
+ */
+function match_replace($string, $data){
+
+    $string = preg_replace_callback('/\{\{([\W]*)([\w\.]+)\}\}/', function($match) use($data) {
+
+        return ake($data, $match[2]);
+
+    }, $string);
+
+    return $string;
 
 }
