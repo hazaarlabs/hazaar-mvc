@@ -95,7 +95,6 @@ class GeoData {
         $geodata_file->unlink(); //Cleanup now
 
         return count($files) === 1;
-
     }
 
     /**
@@ -383,36 +382,6 @@ class GeoData {
         $info = $this->country_info($country_code);
 
         return ake($info, 'users');
-
-    }
-
-    /**
-     * Return the currency used by a country by it's country code.
-     *
-     * @param mixed $country_code The 3 digit currency code
-     *
-     * @return mixed
-     */
-    public function country_currency_info($country_code){
-
-        $info = $this->country_info($country_code);
-
-        return ake($info, 'currency');
-
-    }
-
-    /**
-     * Return the currency used by a country by it's country code.
-     *
-     * @param mixed $country_code The 3 digit currency code
-     *
-     * @return mixed
-     */
-    public function country_currency($country_code){
-
-        $info = $this->country_currency_info($country_code);
-
-        return ake($info, 'code');
 
     }
 

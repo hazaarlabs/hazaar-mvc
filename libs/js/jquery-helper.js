@@ -340,7 +340,7 @@ dataBinder.prototype._update = function (key, do_update) {
     if (attr_item instanceof dataBinder || attr_item instanceof dataBinderArray) return;
     let sel = this._node_name(key);
     jQuery(sel).each(function (index, item) {
-        let o = jQuery(item), attr_value = attr_item ? attr_item.value : null;
+        let o = jQuery(item), attr_value = attr_item ? attr_item.value : null, func = null;
         if (o.is("input, textarea, select")) {
             if (o.attr('type') === 'checkbox')
                 o.prop('checked', attr_value);
@@ -354,7 +354,9 @@ dataBinder.prototype._update = function (key, do_update) {
                 if (attr_item && !attr_item.other && o.find('option[value="' + (attr_value === null ? '' : attr_value) + '"]').length > 0) o.val(attr_value !== null ? attr_value.toString() : null);
             } else o.val(attr_value);
         } else if (o.is("img")) {
-            o.attr('src',attr_value);
+            let value = attr_item ? attr_item.value : null;
+            if (o.is('[data-prefix]')) value = o.attr('data-prefix') + value;
+            o.attr('src', value);
         } else {
             if (o.attr('data-bind-label') === 'false')
                 o.html(attr_value);
@@ -362,7 +364,17 @@ dataBinder.prototype._update = function (key, do_update) {
                 o.html(attr_value);
             else o.html(attr_item ? attr_item.toString() : '');
         }
+        if ((func = $(item).attr('data-bind-update')) !== undefined) {
+            let e = new Function('value', 'item', func);
+            return e.call(item, attr_item.value, attr_item);
+        }
         if (do_update === true) o.trigger('update', [attr_name, attr_value]);
+    });
+    jQuery('[data-bind-watch="' + attr_name + '"]').each(function (index, item) {
+        let func = $(item).attr('data-bind-onwatch');
+        if (!func) return;
+        let e = new Function('value', 'item', func);
+        return e.call(item, attr_item.value, attr_item);
     });
 };
 
@@ -579,7 +591,7 @@ dataBinderArray.prototype._update = function (key, attr_element, do_update) {
             o.find('[data-bind-value="' + attr_element.value + '"]')
                 .toggleClass('active', !remove)
                 .children('input[type=checkbox]').prop('checked', !remove);
-        }
+        } o.html(attr_element.toString())
         if (do_update === true) o.trigger('update', [this._attr_name(key), attr_value]);
     });
 };
@@ -688,8 +700,8 @@ dataBinderArray.prototype.resync = function () {
                 parent.append(newitem);
                 if (this._watchers.length > 0) for (let watcher of this._watchers) watcher[0](this._elements[x], newitem, watcher[1]);
             }
-            if (this._elements[x] instanceof dataBinder || this._elements[x] instanceof dataBinderArray)
-                this._elements[x].resync();
+            if (this._elements[x] instanceof dataBinder || this._elements[x] instanceof dataBinderArray) this._elements[x].resync();
+            else if (this._elements[x] instanceof dataBinderValue) this._update(x, this._elements[x], true);
         }
     }
 };

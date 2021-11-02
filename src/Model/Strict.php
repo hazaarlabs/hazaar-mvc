@@ -218,8 +218,11 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @return array
      */
-    public function getDefinition($key){
+    public function getDefinition($key = null){
 
+        if($key === null)
+            return $this->fields;
+            
         if(strpos($key, '.') !== false){
 
             $item = ['items' => $this->fields];
@@ -985,9 +988,18 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     }
 
+    private function jsonFixDate($object){
+
+        if($object instanceof \stdClass || is_array($object)) foreach($object as $key => &$value) $value = $this->jsonFixDate($value);
+        elseif ($object instanceof \Hazaar\Date) $object = $object->getTimestamp();
+
+        return $object;
+
+    }
+
     public function jsonSerialize(){
 
-        return $this->resolveArray($this);
+        return $this->jsonFixDate($this->resolveArray($this));
 
     }
 
@@ -1095,6 +1107,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             }
 
+            if($ignore_nulls === true && $value === null)
+                continue;
+                
             $result[$key] = $value;
 
         }

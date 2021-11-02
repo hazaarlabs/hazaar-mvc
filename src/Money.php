@@ -254,7 +254,7 @@ class Money {
 
         if(!ake(Money::$exchange_rates, $base)){
 
-            if(!Money::$cache && class_exists('\Hazaar\Cache'))
+            if(!Money::$cache)
                 Money::$cache = new \Hazaar\Cache();
 
             $key = 'exchange_rate_' . $base;

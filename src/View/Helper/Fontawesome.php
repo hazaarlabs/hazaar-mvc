@@ -75,6 +75,31 @@ class Fontawesome extends \Hazaar\View\Helper {
      */
     public function icon($style, $size = NULL, $spin = FALSE, $border = FALSE, $args = array()) {
 
+        if(is_array($style)){
+
+            $span = new \Hazaar\Html\Span();
+
+            foreach($style as $id => $icon){
+
+                if(!is_array($icon))
+                    $icon = array($icon);
+
+                $i = $this->icon(ake($icon, 0))->addClass('fa-stack-' . ($id + 1) . 'x');
+
+                if(ake($icon, 1) === true)
+                    $i->addClass('fa-inverse');
+
+                $span->add($i);
+
+            }
+
+            if($size)
+                $span->addClass('fa-' . $size);
+
+            return $span->addClass('fa-stack');
+
+        }
+
         if($spin === TRUE)
             $style .= ' fa-spin';
 

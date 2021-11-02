@@ -15,7 +15,7 @@ namespace Hazaar;
 
 define('HAZAAR_EXEC_START', microtime(TRUE));
 
-define('HAZAAR_VERSION', '2.6');
+define('HAZAAR_VERSION', '3.0');
 
 /**
  * Constant containing the application environment current being used.
@@ -108,6 +108,8 @@ class Application {
 
     protected $response_type = null;
 
+    private $metrics = false; //Internal metrics settings.  This is disabled when using the console.
+
     /**
      * The main application constructor
      *
@@ -127,8 +129,7 @@ class Application {
      *
      * @since 1.0.0
      *
-     * @param string $env
-     *            The application environment name. eg: 'development' or 'production'
+     * @param string $env The application environment name. eg: 'development' or 'production'
      */
     function __construct($env) {
 
@@ -150,44 +151,7 @@ class Application {
 
             //Store the search paths in the GLOBALS container so they can be used in config includes.
             $this->GLOBALS['paths'] = $this->loader->getSearchPaths();
-
-            /**
-             * Set up some default config properties.
-             */
-            $defaults = array(
-                'app' => array(
-                    'root' => (php_sapi_name() === 'cli-server') ? null : dirname($_SERVER['SCRIPT_NAME']),
-                    'defaultController' => 'Index',
-                    'useDefaultController' => false,
-                    'favicon' => 'favicon.png',
-                    'timezone' => 'UTC',
-                    'rewrite' => true,
-                    'files' => array(
-                        'bootstrap' => 'bootstrap.php',
-                        'shutdown' => 'shutdown.php',
-                        'route' => 'route.php',
-                        'media' => 'media.php'
-                    ),
-                    'responseImageCache' => false,
-                    'runtimepath' => APPLICATION_PATH . DIRECTORY_SEPARATOR . '.runtime'
-                ),
-                'paths' => array(
-                    'model' => 'models',
-                    'view' => 'views',
-                    'controller' => 'controllers',
-                    'service' => 'services',
-                    'helper' => 'helpers'
-                ),
-                'view' => array(
-                    'prepare' => false
-                ),
-                'log' => array(
-                    'enable' => false,
-                    'level' => E_ERROR,
-                    'backend' => 'file'
-                )
-            );
-
+        
             Application\Config::$override_paths = array(
                 'server' . DIRECTORY_SEPARATOR . ake($_SERVER, 'SERVER_NAME'),
                 'host' . DIRECTORY_SEPARATOR . ake($_SERVER, 'HTTP_HOST'),
@@ -195,11 +159,11 @@ class Application {
             );
 
             /*
-            * Load it with a config object. if the file doesn't exist
-            * it will just be an empty object that will handle calls to
-            * it silently.
-            */
-            $this->config = new Application\Config('application', $env, $defaults, FILE_PATH_CONFIG);
+             * Load it with a config object. if the file doesn't exist
+             * it will just be an empty object that will handle calls to
+             * it silently.
+             */
+            $this->config = new Application\Config('application', $env, $this->getDefaultConfig(), FILE_PATH_CONFIG);
 
             if(!$this->config->loaded())
                 dieDieDie('Application is not configured!');
@@ -272,17 +236,17 @@ class Application {
             */
             if($this->config->has('log')  && $this->config->log['enable'] === true)
                 \Hazaar\Logger\Frontend::initialise($this->config->log->get('level'), $this->config->log->get('backend')); 
-
+                
             /*
-            * Check if we require SSL and if so, redirect here.
-            */
-            /*if($this->config->app->has('require_ssl') && boolify($_SERVER['HTTPS']) !== boolify($this->config->app->require_ssl)){
+             * Check if we require SSL and if so, redirect here.
+             */
+            if($this->config->app->has('require_ssl') && boolify($_SERVER['HTTPS']) !== boolify($this->config->app->require_ssl)){
 
-            header("Location: https://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]);
+                header("Location: https://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]);
 
-            exit;
+                exit;
 
-            }*/
+            }
 
         }catch(\Throwable $e){
             
@@ -296,7 +260,7 @@ class Application {
      * The main application destructor
      *
      * The destructor cleans up any application redirections. ifthe controller hasn't used it in this
-     * run then it loses it. This prevents stale redirect URLs from accidentally being used.
+     * run then it loses it. This prevents stale redirect URIs from accidentally being used.
      *
      * @since 1.0.0
      *
@@ -310,12 +274,89 @@ class Application {
             if(file_exists($shutdown))
                 include ($shutdown);
 
+            if($this->metrics === true){
+
+                $metric_file = $this->runtimePath('metrics.dat');
+
+                $metric = new \Hazaar\File\Metric($metric_file);
+
+                if(!$metric->exists()){
+
+                    $metric->addDataSource('hits', 'COUNTER', null, null, 'Hit Counter');
+
+                    $metric->addDataSource('exec', 'GAUGEZ', null, null, 'Execution Timer');
+
+                    $metric->addDataSource('mem', 'GAUGE', null, null, 'Memory Usage');
+
+                    $metric->addArchive('count_1hour', 'COUNT', 6, 60, 'Count per minute for last hour');
+
+                    $metric->addArchive('avg_1hour', 'AVERAGE', 6, 60, 'Average per minute for last hour');
+
+                    $metric->addArchive('count_1day', 'COUNT', 360, 24, 'Count per hour for last day');
+
+                    $metric->addArchive('avg_1day', 'AVERAGE', 360, 24, 'Average per hour for last day');
+
+                    $metric->addArchive('count_1week', 'COUNT', 360, 168, 'Count per hour for last week');
+
+                    $metric->addArchive('avg_1week', 'AVERAGE', 360, 168, 'Average per hour for last week');
+
+                    $metric->addArchive('count_1year', 'COUNT', 8640, 365, 'Count per day for last year');
+
+                    $metric->addArchive('avg_1year', 'AVERAGE', 8640, 365, 'Average per day for last year');
+
+                    $metric->create(10);
+
+                }
+
+                $metric->setValue('hits', 1);
+
+                $metric->setValue('exec', (microtime(true) - HAZAAR_EXEC_START) * 1000);
+
+                $metric->setValue('mem', memory_get_peak_usage());
+
+            }
+
         }
 
         \Hazaar\Logger\Frontend::i('CORE', '"' . ake($_SERVER, 'REQUEST_METHOD') . ' /' .  $this->request->getBasePath() . '" ' 
             . http_response_code()
             . ' "' . ake($_SERVER, 'HTTP_USER_AGENT') . '"'
         ); 
+
+    }
+
+    public function getDefaultConfig(){
+
+        return array(
+            'app' => array(
+                'root' => (php_sapi_name() === 'cli-server') ? null : dirname($_SERVER['SCRIPT_NAME']),
+                'defaultController' => 'Index',
+                'errorController' => null,
+                'useDefaultController' => false,
+                'favicon' => 'favicon.png',
+                'timezone' => 'UTC',
+                'rewrite' => true,
+                'files' => array(
+                    'bootstrap' => 'bootstrap.php',
+                    'shutdown' => 'shutdown.php',
+                    'route' => 'route.php',
+                    'media' => 'media.php'
+                ),
+                'responseImageCache' => false,
+                'runtimepath' => APPLICATION_PATH . DIRECTORY_SEPARATOR . '.runtime'
+            ),
+            'paths' => array(
+                'model' => 'models',
+                'view' => 'views',
+                'controller' => 'controllers',
+                'service' => 'services',
+                'helper' => 'helpers'
+            ),
+            'view' => array(
+                'prepare' => false
+            )
+
+        );
 
     }
 
@@ -354,7 +395,8 @@ class Application {
      * normal operation. For example, socket files for background scheduler communication, cached views,
      * and backend applications.
      *
-     * @var string $suffix An optional suffix to tack on the end of the path
+     * @param string $suffix An optional suffix to tack on the end of the path
+     * @param boolean $create_dir Automatically create the runtime directory if it does not exist.
      *
      * @since 1.0.0
      *
@@ -411,23 +453,21 @@ class Application {
      * This method allows access to the raw URL path part, relative to the current application request.
      *
      * @since 1.0.0
+     * 
+     * @param string $path Path suffix to append to the application path.
+     * @param boolean $force_realpath Return the real path to a file.  If the file does not exist, this will return false.
      */
-    static public function filePath($path = NULL, $file = NULL, $force_realpath = TRUE) {
+    static public function filePath($path = NULL, $force_realpath = TRUE) {
 
         if(strlen($path) > 0)
             $path = DIRECTORY_SEPARATOR . trim($path, DIRECTORY_SEPARATOR);
 
-        if($file)
-            $path .= DIRECTORY_SEPARATOR . $file;
-
         $path = APPLICATION_PATH . ($path ? $path : NULL);
 
-        $real = realpath($path);
+        if($force_realpath === true)
+            return realpath($path);
 
-        if($force_realpath === FALSE && $real == FALSE)
-            return $path;
-
-        return $real;
+        return $path;
 
     }
 
@@ -447,11 +487,13 @@ class Application {
      *
      * @since 1.0.0
      *
+     * @param string $suffix Application path suffix.
+     * 
      * @return string The resolved application path
      */
-    public function getApplicationPath($suffix = '') {
+    public function getApplicationPath($suffix = null) {
 
-        return realpath(APPLICATION_PATH . '/' . $suffix);
+        return realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . (string)$suffix);
 
     }
 
@@ -463,11 +505,13 @@ class Application {
      *
      * @since 1.0.0
      *
+     * @param string $suffix Application base path suffix.
+     * 
      * @return string The resolved base path
      */
-    public function getBasePath($suffix = '') {
+    public function getBasePath($suffix = null) {
 
-        return realpath(APPLICATION_PATH . '/../' . $suffix);
+        return realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . (string)$suffix);
 
     }
 
@@ -620,6 +664,9 @@ class Application {
 
             }
 
+            if($this->config->app['metrics'] === true)
+                $this->metrics = $controller->use_metrics;
+
             $this->url_default_part = $controller->url_default_action_name;
 
             /*
@@ -632,7 +679,7 @@ class Application {
 
                 $response->__writeOutput();
 
-                $controller->__shutdown();
+                $controller->__shutdown($response);
 
                 return 0;
 
@@ -668,7 +715,7 @@ class Application {
             /*
              * Shutdown the controller
              */
-            $controller->__shutdown();
+            $controller->__shutdown($this->response);
 
             if($this->timer) {
 
@@ -939,62 +986,54 @@ class Application {
      *
      * @since 1.0.0
      *
-     * @param $location string
-     *            The URL you want to redirect to
-     *
-     * @param $args array
-     *            An optional array of parameters to tack onto the URL
-     *
-     * @param $save_url boolean
-     *            Optionally save the URL so we can redirect back. See: Application::redirectBack()
+     * @param string $location  The URI you want to redirect to
+     * @param boolean $save_uri Optionally save the URI so we can redirect back. See: `Hazaar\Application::redirectBack()`
      */
-    public function redirect($location, $args = array(), $save_url = TRUE) {
+    public function redirect($location, $save_uri = false) {
 
-        if(!$args)
-            $args = array();
-
-        $url = $location . ((count($args) > 0) ? '?' . http_build_query($args) : NULL);
+        if(!$location)
+            return false;
 
         $headers = apache_request_headers();
 
-        if(array_key_exists('X-Requested-With', $headers) && $headers['X-Requested-With'] == 'XMLHttpRequest') {
+        if(array_key_exists('X-Requested-With', $headers) && $headers['X-Requested-With'] === 'XMLHttpRequest') {
 
-            echo "<script>document.location = '$url';</script>";
+            echo "<script>document.location = '$location';</script>";
 
-        } elseif(class_exists('Hazaar\Session')) {
+        } else {
 
             $sess = new \Hazaar\Session();
 
-            if($sess->has('REDIRECT') && $sess['REDIRECT'] == $location)
+            if($sess->has('REDIRECT') && $sess['REDIRECT'] === $location)
                 unset($sess['REDIRECT']);
 
-            if($save_url) {
+            if($save_uri) {
 
-                $sess['REDIRECT'] = array(
+                $data = array(
                     'URI' => $_SERVER['REQUEST_URI'],
                     'METHOD' => $_SERVER['REQUEST_METHOD']
                 );
 
-                if($_SERVER['REQUEST_METHOD'] == 'POST')
-                    $sess['REDIRECT']['POST'] = $_POST;
+                if($_SERVER['REQUEST_METHOD'] === 'POST')
+                    $data['POST'] = $_POST;
+
+                $sess['REDIRECT'] = $data;
 
             }
 
         }
 
-        header('Location: ' . $url);
-
-        exit();
+        return new \Hazaar\Controller\Response\HTTP\Redirect($location);
 
     }
 
     /**
-     * Redirect back to a URL saved during redirection
+     * Redirect back to a URI saved during redirection
      *
-     * This mechanism is used with the $save_url parameter of Application::redirect() so save the current
-     * URL into the session so that once we're done processing the request somewhere else we can come back
+     * This mechanism is used with the $save_uri parameter of `Hazaar\Application::redirect()` so save the current
+     * URI into the session so that once we're done processing the request somewhere else we can come back
      * to where we were. This is useful for when a user requests a page but isn't authenticated, we can
-     * redirect them to a login page and then that page can call this redirectBack() method to redirect the
+     * redirect them to a login page and then that page can call this `Hazaar\Application::redirectBack()` method to redirect the
      * user back to the page they were originally looking for.
      *
      * @since 1.0.0
@@ -1003,32 +1042,23 @@ class Application {
 
         $sess = new \Hazaar\Session();
 
-        if($sess->has('REDIRECT')) {
+        if(!($sess->has('REDIRECT') && ($uri = trim(ake($sess['REDIRECT'], 'URI')))))
+            return false;
 
-            if($uri = trim(ake($sess['REDIRECT'], 'URI'))) {
+        if(ake($sess['REDIRECT'], 'METHOD') === 'POST') {
 
-                if(ake($sess['REDIRECT'], 'METHOD') == 'POST') {
+            if(substr($uri, -1, 1) !== '?')
+                $uri .= '?';
+            else
+                $uri .= '&';
 
-                    if(substr($uri, -1, 1) !== '?')
-                        $uri .= '?';
-                    else
-                        $uri .= '&';
-
-                    $uri .= http_build_query(ake($sess['REDIRECT'], 'POST'));
-
-                }
-
-                unset($sess['REDIRECT']);
-
-                header('Location: ' . $uri);
-
-                exit();
-
-            }
+            $uri .= http_build_query(ake($sess['REDIRECT'], 'POST'));
 
         }
 
-        return FALSE;
+        unset($sess['REDIRECT']);
+
+        return new \Hazaar\Controller\Response\HTTP\Redirect($uri);
 
     }
 
@@ -1060,6 +1090,12 @@ class Application {
 
     }
 
+    /**
+     * Set the response type override for a request.
+     * 
+     * The response type should be set in the response object itself.  However, setting this allows that to be overridden.  This should
+     * be used sparingly but can be used from a controller to force reponses to a certain type, such as *application/json*.
+     */
     public function setResponseType($type){
 
         $this->response_type = $type;

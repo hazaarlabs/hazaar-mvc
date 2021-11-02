@@ -10,114 +10,64 @@
 
 </head>
 <body>
-
-    <?php
-    $module_info = array('label' => 'Module', 'icon' => 'bars');
-    ?>
-
-    <div class="hazaar-layout">
-        <div class="sidebar">
-            <div class="sidebar-header">
-                <div class="sidebar-logo"></div>
-                <a class="sidebar-brand" href="<?=$this->url();?>">
-                    Hazaar Admin
-                </a>
-                <div class="sidebar-sub" title="APPLICATION_ENV">
-                    <?=APPLICATION_ENV;?>
+    <div class="container">
+        <div class="hazaar-layout">
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <div class="sidebar-logo"></div>
+                    <a class="sidebar-brand" href="<?=$this->url();?>">
+                        Hazaar Admin
+                    </a>
+                    <div class="sidebar-sub" title="APPLICATION_ENV">
+                        <?=APPLICATION_ENV;?>
+                    </div>
                 </div>
-            </div>
-            <div class="sidebar-user-info">
-                <?=$this->gravatar('jamie@hazaarlabs.com')->class('sidebar-user-img');?>
-                <div class="sidebar-user-name">Jamie Carl</div>
-                <div class="sidebar-user-role">Administrator</div>
-            </div>
-            <div class="sidebar-nav">
-                <?php
-                $nav = $this->html->ul()->class('sidebar-nav-module');
-
-                foreach($this->navitems as $group_name => $section){
-
-                    $module_nav = $this->html->li()->class('sidebar-nav-item');
-
-                    $icon = ake($section, 'icon', 'cube');
-
-                    $target = ake($section, 'target');
-
-                    $module_nav->add($this->html->a($this->url($target), array(
-                        $this->fontawesome->icon($icon),
-                        ake($section, 'label'),
-                    )))->toggleClass('selected', $this->active($target));
-
-                    if($this->active($target))
-                        $module_info = array('label' => ake($section, 'label'), 'icon' => $icon);
-
-                    if($items = ake($section, 'items')){
-
-                        $nav_items = $this->html->ul()->class('sidebar-nav-items');
-
-                        foreach($items as $item){
-
-                            $target = ake($item, 'target');
-
-                            $link = $this->html->a($this->url($target), array(
-                                $this->html->i()->class('fa fa-' . ake($item, 'icon', 'none')),
-                                ake($item, 'label')
-                            ));
-
-                            if($suffix = ake($item, 'suffix'))
-                                $link->add($this->html->div(ake($suffix, 0))->class('suffix ' . ake($suffix, 1, 'default')));
-
-                            $nav_items->add($this->html->li($link)
-                                ->toggleClass('active', $this->active($target)));
-
-                        }
-
-                        $module_nav->add($nav_items);
-
-                    }
-
-                    $nav->add($module_nav);
-
-                }
-
-                echo $nav;
-
-                ?>
-            </div>
-        </div>
-        <div class="main-panel">
-            <div class="main-topbar">
-                <div class="main-label">
-                    <i class="fa fa-<?=$module_info['icon'];?>"></i>
-                    <?=$module_info['label'];?>
+                <div class="sidebar-user-info">
+                    <?=$this->html->i()->class('fa fa-user-circle fa-4x sidebar-user-img');?>
+                    <div class="sidebar-user-name">
+                        <?=$this->user['fullname'];?>
+                    </div>
+                    <div class="sidebar-user-role">
+                        <?=$this->user['group'];?>
+                    </div>
                 </div>
-                <ul class="navbar navbar-right navbar-buttons">
-                    <li>
-                        <a href="<?=$this->url('settings');?>">
-                            <i class="fa fa-cogs"></i>
-                            Settings
-                        </a>
-                    </li>
-                    <li>
-                        <a href="<?=$this->url('logout');?>">
-                            <i class="fa fa-sign-out"></i>
-                            Logout
-                        </a>
-                    </li>
-                </ul>
+                <nav class="sidebar-nav">
+                    <?=$this->partial('menu', array('items' => $this->navitems));?>
+                </nav>
             </div>
-            <div class="main">
-                <?php
-                if(is_array($this->notices)){
-                    foreach($this->notices as $notice)
-                        echo $this->html->div(array(
-                            $this->html->i()->class('fa fa-' . ake($notice, 'icon', 'bell')),
-                            ake($notice, 'msg')
-                        ))->class(trim('notice ' . ake($notice, 'class')));
+            <div class="main-panel">
+                <div class="main-topbar">
+                    <div class="main-label">
+                        <?=$this->getActiveMenu();?>
+                    </div>
+                    <ul class="navbar navbar-right navbar-buttons">
+                        <li>
+                            <a href="<?=$this->application->url();?>" target="_blank">
+                                <i class="fa fa-undo"></i>
+                                Back to App
+                            </a>
+                        </li>
+                        <li>
+                            <a href="<?=$this->url('logout');?>">
+                                <i class="fa fa-sign-out"></i>
+                                Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="main">
+                    <?php
+                    if(is_array($this->notices)){
+                        foreach($this->notices as $notice)
+                            echo $this->html->div(array(
+                                $this->html->i()->class('fa fa-' . ake($notice, 'icon', 'bell')),
+                                ake($notice, 'msg')
+                            ))->class(trim('notice ' . ake($notice, 'class')));
 
-                } ?>
-                <div class="main-content">
-                    <?=$this->layout();?>
+                    } ?>
+                    <div class="main-content">
+                        <?=$this->layout();?>
+                    </div>
                 </div>
             </div>
         </div>

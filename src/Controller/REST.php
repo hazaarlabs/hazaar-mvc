@@ -97,15 +97,15 @@ abstract class REST extends \Hazaar\Controller {
 
     protected $allow_directory = true;
 
-    private $__rest_endpoints = array();
+    protected $__rest_endpoints = array();
 
-    private $__endpoint;
+    protected $__endpoint;
 
-    private $__rest_cache;
+    protected $__rest_cache;
 
-    private $__rest_cache_enable_global = false;
+    protected $__rest_cache_enable_global = false;
 
-    static private $valid_types = array('boolean', 'bool', 'integer', 'int', 'double', 'float', 'string', 'array', 'null', 'date');
+    static protected $valid_types = array('boolean', 'bool', 'integer', 'int', 'double', 'float', 'string', 'array', 'null', 'date');
 
     protected function enableEndpointCaching($boolean){
 
@@ -117,10 +117,9 @@ abstract class REST extends \Hazaar\Controller {
 
         $application->setResponseType('json');
 
-        parent::__construct($name, $application, $use_app_config);
+        parent::__construct($name, $application);
 
-        if(class_exists('Hazaar\Cache'))
-            $this->__rest_cache = new \Hazaar\Cache();
+        $this->__rest_cache = new \Hazaar\Cache();
 
     }
 
@@ -381,12 +380,15 @@ abstract class REST extends \Hazaar\Controller {
 
                 $key = $matches[3];
 
-                if(!in_array($matches[1], REST::$valid_types))
+                if(!in_array($matches[1], REST::$valid_types) 
+                    || ($matches[1] === 'string' && is_numeric($value))
+                    || (($matches[1] === 'int' || $matches[1] === 'float') && !is_numeric($value))
+                    || ($matches[1] === 'bool' && !is_boolean($value)))
                     return false;
 
-                if($matches[1] == 'date')
+                if($matches[1] === 'date')
                     $value = new \Hazaar\Date($value);
-                elseif($matches[1] == 'bool' || $matches[1] == 'boolean')
+                elseif($matches[1] === 'bool' || $matches[1] === 'boolean')
                     $value = boolify($value);
                 else
                     settype($value, $matches[1]);

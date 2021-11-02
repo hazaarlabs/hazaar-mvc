@@ -29,6 +29,8 @@ class Config extends \Hazaar\Map {
 
     private $source;
 
+    private $global;
+
     private $loaded = false;
 
     private $secure_keys = [];
@@ -246,6 +248,11 @@ class Config extends \Hazaar\Map {
         if(!(\Hazaar\Map::is_array($options) && array_key_exists($env, $options)))
             return false;
 
+        if(!is_array($this->global))
+            $this->global = array();
+
+        $this->global = array_merge($this->global, $options);
+
         foreach($options[$env] as $key => $values) {
 
             if($key === 'include') {
@@ -304,6 +311,21 @@ class Config extends \Hazaar\Map {
 
     }
 
+    public function getEnvConfig($env = null){
+
+        if($env === null)
+            $env = $this->env;
+
+        return ake($this->global, $env);
+
+    }
+
+    public function getEnvironments(){
+
+        return array_keys($this->global);
+
+    }
+
     /**
      * @brief       Get the source file content from which the settings originated
      *
@@ -321,6 +343,17 @@ class Config extends \Hazaar\Map {
     public function getSourceFilename() {
 
         return $this->source;
+
+    }
+
+    /**
+     * Test if the current loaded source file is writable on the filesystem
+     *
+     * @return boolean
+     */
+    public function isWritable(){
+
+        return is_writable($this->source);
 
     }
 
@@ -389,16 +422,22 @@ class Config extends \Hazaar\Map {
 
         $options = new \Hazaar\Map();
 
+        //The file is a named config file ie: not an absolute file name
+        if(ake($info, 'dirname') === '.' && !array_key_exists('extension', $info))
+            $this->source = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $target . '.' . $type);
+
+        $source = new \Hazaar\File($this->source);
+
         //Grab the original file so we can merge into it
-        if($this->source && file_exists($this->source)){
+        if($source->exists()){
 
-            $info = pathinfo($this->source);
+            $source_type = $source->extension();
 
-            if($info['extension'] == 'json')
-                $options->fromJSON(file_get_contents($this->source));
+            if($source_type == 'json')
+                $options->fromJSON($source->get_contents());
 
-            elseif($info['extension'] == 'ini')
-                $options->fromDotNotation(parse_ini_file($this->source, TRUE, INI_SCANNER_RAW));
+            elseif($source_type == 'ini')
+                $options->fromDotNotation(parse_ini_string($source->get_contents(), TRUE, INI_SCANNER_RAW));
 
         }
 
@@ -412,18 +451,19 @@ class Config extends \Hazaar\Map {
 
                 $output .= "[$env]" . LINE_BREAK;
 
-                $output .= $option->todotnotation()
-                                  ->flatten(' = ', LINE_BREAK) . LINE_BREAK;
+                $output .= $option->todotnotation()->flatten(' = ', LINE_BREAK) . LINE_BREAK;
 
             }
 
         }else{
 
-            $output = json_encode($this->toArray());
+            $output = $options->toJSON(false, JSON_PRETTY_PRINT);
 
         }
 
-        $result = file_put_contents($target, $output);
+        $source->set_contents($output);
+
+        $result = $source->save();
 
         if($result === FALSE)
             return FALSE;
