@@ -4,170 +4,44 @@ namespace Hazaar\Console;
 
 class Handler {
 
-    private $passwd;
-
-    private $session_key = 'hazaar-console-user';
-
     private $modules = array();
+
+    private $libraries = array();
 
     private $menus = array();
 
     private $application;
 
-    public function __construct(){
+    public function __construct(\Hazaar\Application $application, \Hazaar\Auth\Adapter $auth){
 
-        $this->passwd = CONFIG_PATH . DIRECTORY_SEPARATOR . '.passwd';
+        $this->application = $application;
 
-        if(!file_exists($this->passwd))
-            dieDieDie('Hazaar admin console is currently disabled!');
-
-        session_start();
+        $this->auth = $auth;
 
     }
 
-    public function authenticated(){
+    public function getUser(){
 
-        if(ake($_SESSION, $this->session_key))
-            return true;
-
-        $headers = hazaar_request_headers();
-
-        if(!($authorization = ake($headers, 'Authorization')))
-            return false;
-
-        list($method, $code) = explode(' ', $authorization);
-
-        if(strtolower($method) != 'basic')
-            throw new \Hazaar\Exception('Unsupported authorization method: ' . $method);
-
-        list($identity, $credential) = explode(':', base64_decode($code));
-
-        return $this->authenticate($identity, $credential);
+        return $this->auth->getIdentity();
 
     }
 
-    public function authenticate($username, $password){
+    public function load(Module $module){
 
-        $users = array();
+        $name = $module->getName();
 
-        $lines = explode("\n", trim(file_get_contents($this->passwd)));
+        if(array_key_exists($name, $this->modules))
+            throw new \Exception('Module ' . $name . ' already loaded!');
 
-        foreach($lines as $line){
+        $module->__configure($this);
 
-            if(!$line)
-                continue;
+        $this->modules[$name] = $module;
 
-            list($identity, $userhash) = explode(':', $line);
-
-            $users[$identity] = $userhash;
-
-        }
-
-        $credential = trim(ake($users, $username));
-
-        if(strlen($credential) > 0){
-
-            $hash = '';
-
-            if(substr($credential, 0, 6) == '$apr1$'){                      //APR1-MD5
-
-                $BASE64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-
-                $APRMD5_ALPHABET = './0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-
-                $parts = explode('$', $credential);
-
-                $salt = substr($parts[2], 0, 8);
-
-                $max = strlen($password);
-
-                $context = $password . '$apr1$' . $salt;
-
-                $binary = pack('H32', md5($password . $salt . $password));
-
-                for($i=$max; $i>0; $i-=16)
-                    $context .= substr($binary, 0, min(16, $i));
-
-                for($i=$max; $i>0; $i>>=1)
-                    $context .= ($i & 1) ? chr(0) : $password[0];
-
-                $binary = pack('H32', md5($context));
-
-                for($i=0; $i<1000; $i++) {
-
-                    $new = ($i & 1) ? $password : $binary;
-
-                    if($i % 3) $new .= $salt;
-
-                    if($i % 7) $new .= $password;
-
-                    $new .= ($i & 1) ? $binary : $password;
-
-                    $binary = pack('H32', md5($new));
-
-                }
-
-                $hash = '';
-
-                for ($i = 0; $i < 5; $i++) {
-
-                    $k = $i + 6;
-
-                    $j = $i + 12;
-
-                    if($j == 16) $j = 5;
-
-                    $hash = $binary[$i] . $binary[$k] . $binary[$j] . $hash;
-
-                }
-
-                $hash = chr(0) . chr(0) . $binary[11] . $hash;
-
-                $hash = strtr(strrev(substr(base64_encode($hash), 2)), $BASE64_ALPHABET, $APRMD5_ALPHABET);
-
-                $hash = '$apr1$' . $salt . '$' . $hash;
-
-            }elseif(substr($credential, 0, 5) == '{SHA}'){                  //SHA1
-
-                $hash = '{SHA}' . base64_encode(sha1($password, TRUE));
-
-            }elseif(substr($credential, 0, 4) == '$2y$'){                   //Blowfish
-
-                $hash = crypt($password, substr($credential, 0, 29));       //Hash is $2y$ + two digit cost + $ + 22 character salt from stored credentail
-
-            }else{
-
-                throw new \Hazaar\Exception('Unsupported password encryption algorithm.');
-
-            }
-
-            if($hash == $credential){
-
-                $_SESSION[$this->session_key] = $username;
-
-                return true;
-
-            }
-
-        }
-
-        return false;
+        $module->load();
 
     }
 
-    public function deauth(){
-
-        session_unset();
-
-    }
-
-    public function loadModules($application){
-
-        $path = LIBRARY_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs' . DIRECTORY_SEPARATOR . 'console';
-
-        $this->modules['app'] = new Application('app', $path, $application, $this);
-
-        $this->modules['sys'] = new System('sys', $path, $application, $this);
+    public function loadComposerModules($application){
 
         $installed = ROOT_PATH
             . DIRECTORY_SEPARATOR . 'vendor'
@@ -176,20 +50,20 @@ class Handler {
 
         if(file_exists($installed)){
 
-            $libraries = json_decode(file_get_contents($installed));
+            $this->libraries = json_decode(file_get_contents($installed));
 
-            if($libraries instanceof \stdClass && isset($libraries->packages))
-                $libraries = $libraries->packages;
+            if($this->libraries instanceof \stdClass && isset($this->libraries->packages))
+                $this->libraries = $this->libraries->packages;
 
-            if(is_array($libraries)){
+            if(is_array($this->libraries)){
 
-                usort($libraries, function($a, $b){
+                usort($this->libraries, function($a, $b){
                     if ($a->name === $b->name)
                         return 0;
                     return ($a->name < $b->name) ? -1 : 1;
                 });
 
-                foreach($libraries as $library){
+                foreach($this->libraries as $library){
 
                     if(!(($name = substr(ake($library, 'name'), 18))
                         && ake($library, 'type') == 'library'
@@ -202,19 +76,13 @@ class Handler {
                     if(!($path = $this->getSupportPath($consoleClass)))
                         continue;
 
-                    $this->modules[$name] = new $consoleClass($name, $path . DIRECTORY_SEPARATOR . 'console', $application, $this);
+                    $this->load(new $consoleClass($name, $path . DIRECTORY_SEPARATOR . 'console', $application, $this));
 
                 }
 
             }
 
         }
-
-        foreach($this->modules as $module)
-            if(\method_exists($module, 'load'))
-                $module->load();
-
-        $this->application = $application;
 
         return;
 
@@ -241,9 +109,21 @@ class Handler {
 
     }
 
+    public function getModules(){
+
+        return $this->modules;
+
+    }
+
     public function moduleExists($name){
 
         return array_key_exists($name, $this->modules);
+
+    }
+
+    public function getLibraries(){
+
+        return $this->libraries;
 
     }
 
@@ -292,41 +172,10 @@ class Handler {
 
     }
 
-    public function addMenuGroup($module, $label, $icon = null, $url = null){
-
-        $name = $module->getName();
-
-        if(array_key_exists($name, $this->menus))
-            return false;
-
-        $this->menus[$name] = array(
-            'label' => $label,
-            'icon' => $icon,
-            'target' => $module->getName() . ($url? '/' . $url:null),
-            'items' => array()
-        );
-
-        return true;
-
-    }
-
     public function addMenuItem($module, $label, $url = null, $icon = null, $suffix = null){
 
-        $group = $module->getName();
-
-        if(!array_key_exists($group, $this->menus))
-            return false;
-
-        $this->menus[$group]['items'][] = array(
-            'label' => $label,
-            'target' => $module->getName() . ($url? '/' . $url:null),
-            'icon' => $icon,
-            'suffix' => (is_array($suffix)?$suffix:array($suffix))
-        );
-
-        return true;
+        return $this->menus[] = new MenuItem($module, $label, $url, $icon, $suffix);
 
     }
-
 
 }
