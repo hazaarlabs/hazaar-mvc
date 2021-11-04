@@ -345,6 +345,17 @@ class PDF extends \Hazaar\File {
 
         try {
 
+            $required_programs = ['ar' => 'ar -V', 'tar' => 'tar --version'];
+
+            foreach($required_programs as $prog => $test){
+                
+                $result = shell_exec($test);
+
+                if($result === null || $result === false)
+                    throw new \Exception("The program '$prog' is required for automated installation of wkhtmltopdf.");
+
+            }
+
             $cmd = $this->getCommand();
 
             $target = \Hazaar\Application::getInstance()->runtimePath('bin', true);
@@ -378,7 +389,10 @@ class PDF extends \Hazaar\File {
                 if(!(($info instanceof \stdClass) && ($assets = ake($info, 'assets'))))
                     continue;
 
-                foreach($assets as $asset){
+                foreach($assets as $index => $asset){
+
+                    if($index === 26)
+                        echo '';
 
                     if(substr($asset->name, -strlen($asset_suffix), strlen($asset_suffix)) != $asset_suffix)
                         continue;
