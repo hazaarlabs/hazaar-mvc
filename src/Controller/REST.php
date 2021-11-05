@@ -387,6 +387,8 @@ abstract class REST extends \Hazaar\Controller {
                     return false;
 
                 if($matches[1] === 'date')
+                    $value = new \Hazaar\Date($value . ' 00:00:00');
+                elseif($matches[1] === 'timestamp')
                     $value = new \Hazaar\Date($value);
                 elseif($matches[1] === 'bool' || $matches[1] === 'boolean')
                     $value = boolify($value);
