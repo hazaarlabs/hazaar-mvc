@@ -373,16 +373,18 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
         $headers = hazaar_request_headers();
 
+
         if($authorization = ake($headers, 'Authorization')){
 
             list($method, $code) = explode(' ', $authorization);
 
-            if(strtolower($method) != 'basic')
-                throw new \Exception('Unsupported authorization method: ' . $method);
+            if(strtolower($method) === 'basic'){
 
-            list($identity, $credential) = explode(':', base64_decode($code));
+                list($identity, $credential) = explode(':', base64_decode($code));
 
-            return $this->authenticate($identity, $credential);
+                return $this->authenticate($identity, $credential);
+
+            }
 
         }elseif($this->canAutoLogin()) {
 
