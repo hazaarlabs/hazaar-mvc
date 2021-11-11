@@ -90,17 +90,17 @@ jQuery.stream = function (url, options) {
  * @param {object} parent Parent object reference (used internally for recursion)
  * @return {object} A new dataBinder object.
  */
-let dataBinder = function (data, name, parent, namespace) {
-    if (this === window) return new dataBinder(data, name, parent, namespace);
+var dataBinder = function (data, name, parent, namespace) {
+    if (typeof window !== 'undefined' && this === window) return new dataBinder(data, name, parent, namespace);
     this._init(data, name, parent, namespace);
 };
 
-let dataBinderArray = function (data, name, parent, namespace) {
-    if (this === window) return new dataBinderArray(data, name, parent, namespace);
+var dataBinderArray = function (data, name, parent, namespace) {
+    if (typeof window !== 'undefined' && this === window) return new dataBinderArray(data, name, parent, namespace);
     this._init(data, name, parent, namespace);
 };
 
-let dataBinderValue = function (name, value, label, parent) {
+var dataBinderValue = function (name, value, label, parent) {
     if (!parent) throw "dataBinderValue requires a parent!";
     this._name = name;
     this._value = parent.__nullify(value);
@@ -211,7 +211,6 @@ dataBinderValue.prototype.data = function (name, value) {
 };
 
 dataBinder.prototype._init = function (data, name, parent, namespace) {
-    this._jquery = jQuery({});
     this._name = name;
     this._namespace = namespace;
     this._parent = parent;
@@ -325,7 +324,7 @@ dataBinder.prototype._copy_watchers = function (source) {
 dataBinder.prototype.remove = function (key) {
     if (!(key in this._attributes))
         return;
-    this._jquery.off(this._attr_name(key) + ':change');
+    jQuery.off(this._attr_name(key) + ':change');
     delete this[key];
     delete this._attributes[key];
 };
