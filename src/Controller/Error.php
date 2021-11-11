@@ -255,7 +255,7 @@ class Error extends \Hazaar\Controller\Action {
 
     public function __shutdown($response = null){
 
-        $this->report();
+        //$this->report();
 
     }
 
