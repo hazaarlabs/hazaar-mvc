@@ -481,7 +481,7 @@ class Smarty {
 
         if(is_string($params)){
 
-            if(preg_match_all('/\$\w[\w\.\$]+/', $params, $matches)){
+            if(preg_match_all('/\$\w[\w\.\$\-]+/', $params, $matches)){
 
                 foreach($matches[0] as $match)
                     $params = str_replace($match, $this->compileVAR($match), $params);
