@@ -180,9 +180,7 @@ abstract class Request implements Request\_Interface {
      */
     public function get($key, $default = NULL) {
 
-        if(array_key_exists($key, $this->params)){
-
-            $value = $this->params[$key];
+        if($value = ake($this->params, $key)){
 
             if($value === 'null')
                 $value = null;
