@@ -188,9 +188,13 @@ class Btree {
 
         $lookup = $this->lookup($key);
 
-        $leaf = end($lookup);
+        if(is_array($lookup)){
 
-        if ($leaf !== null && isset($leaf[$key])) return $leaf[$key];
+            $leaf = end($lookup);
+
+            if ($leaf !== null && isset($leaf[$key])) return $leaf[$key];
+
+        }
 
         return null;
 
