@@ -156,7 +156,11 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
         if($this->session->has('hazaar_auth_identity') && $this->session->has('hazaar_auth_token')){
 
-            if(hash($this->options->token['hash'], $this->getIdentifier($this->session->hazaar_auth_identity)) !== $this->session->hazaar_auth_token)
+            $id = $this->getIdentifier($this->session->hazaar_auth_identity);
+
+            $hash = $this->options->token['hash'];
+
+            if(hash($hash, $id) !== $this->session->hazaar_auth_token)
                 $this->deauth();
             
         }
@@ -243,11 +247,18 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
     protected function getIdentifier($identity){
 
-        return hash('sha1', $identity)
+        return hash('sha1', $identity);
+
+        /**
+         * Removed this because it appears that in some proxy situations this data can change, which causes
+         * the identifier to change and the session to be deauthorised.  For now we are just commenting this
+         * out so that the identity can be hashed.
+         */
+        /* 
             . (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '')
             . (isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : '')
-            . (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : 'unknown-ua');
-
+            . (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : 'unknown-ua'));
+        */
     }
 
     protected function setDataFields(array $fields) {
