@@ -155,8 +155,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
      */
     public function authenticated() {
 
-        if(parent::authenticated() 
-            && $this->session->has('oauth2_data')
+        if($this->session->has('oauth2_data')
             && ($this->session->has('oauth2_expiry') && $this->session->oauth2_expiry > time()))
             return (ake($this->session->oauth2_data, 'access_token', '') !== '');
 
