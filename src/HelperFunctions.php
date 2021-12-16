@@ -1501,16 +1501,20 @@ function replace_recursive(){
 
             if(is_array($target)){
 
+                //To recurse, both the source and target have to be an array/object, otherwise target is replaced.
                 if(array_key_exists($key, $target)
-                    && (is_array($target[$key]) || $target[$key] instanceof stdClass))
+                    && ((is_array($target[$key]) || $target[$key] instanceof stdClass)
+                        && (is_array($value) || $value instanceof stdClass)))
                     $target[$key] = replace_recursive(ake($target, $key), $value);
                 else
                     $target[$key] = $value;
 
             }elseif($target instanceof stdClass){
 
+                //To recurse, both the source and target have to be an array/object, otherwise target is replaced.
                 if(property_exists($target, $key)
-                    && (is_array(ake($target, $key)) || ake($target, $key) instanceof stdClass))
+                    && ((is_array(ake($target, $key)) || $target->$key instanceof stdClass)
+                        && (is_array($value) || $value instanceof stdClass)))
                     $target->$key = replace_recursive($target->$key, $value);
                 else
                     $target->$key = $value;
