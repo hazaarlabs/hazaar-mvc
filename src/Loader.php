@@ -228,6 +228,9 @@ class Loader {
      */
 	public function addSearchPath($type, $path){
 
+        if(!is_string($path))
+            return false;
+            
         $is_win = (strtoupper(substr(PHP_OS, 0, 3)) == 'WIN');
 
         if(($is_win && $path[1] != ':' && $path[2] != DIRECTORY_SEPARATOR)
