@@ -2,6 +2,8 @@
 
 namespace Hazaar\Html;
 
+use ReflectionClass;
+
 /**
  * @brief       Block HTML display element
  *
@@ -167,6 +169,36 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
         return $this;
 
+    }
+
+    /**
+     * Add a new HTML element
+     * 
+     * This function will create a new HTML element and pass the argument list to the constructor 
+     * before returning the new element.  This is a great shorthand method for creating and adding
+     * new HTML elements to block elements.
+     * 
+     * @param string $type The HTML element type to create.  Eg: DIV, SPAN, INPUT, etc.
+     * 
+     * @param mixed ... A list of arguments that will be passed to the constructor of the created element.
+     * 
+     * @return \Hazaar\Html\Element The created element.
+     */
+    public function addNew(){
+
+        $args = func_get_args();
+
+        if(!($type = array_shift($args)))
+            return false;
+
+        $class = new ReflectionClass('\\Hazaar\\Html\\' . ucfirst(strtolower($type)));
+
+        $element = $class->newInstanceArgs($args);
+
+        $this->add($element);
+
+        return $element;
+        
     }
 
     /**
