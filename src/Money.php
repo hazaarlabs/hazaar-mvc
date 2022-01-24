@@ -250,7 +250,7 @@ class Money {
         if(!ake(Money::$exchange_rates, $base)){
 
             if(!Money::$cache)
-                Money::$cache = new \Hazaar\Cache();
+                Money::$cache = new \Hazaar\Cache(['apc', 'file']);
 
             $key = 'exchange_rate_' . $base;
 
