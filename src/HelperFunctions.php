@@ -1939,16 +1939,31 @@ function array_diff_key_recursive(){
  * @param mixed $string The string to perform the match/replace on.
  * 
  * @param mixed $data The data to use for matching.
+ * 
+ * @param boolean $strict In strict mode, the function will return NULL if any of the matches are do not exist in data or are NULL.
  *
  * @return mixed The modified string with mustache tags replaced with view data, or removed if the view data does not exist.
  */
-function match_replace($string, $data){
+function match_replace($string, $data, $strict = false){
 
-    $string = preg_replace_callback('/\{\{([\W]*)([\w\.]+)\}\}/', function($match) use($data) {
+    try{
 
-        return ake($data, $match[2]);
+        $string = preg_replace_callback('/\{\{([\W]*)([\w\.]+)\}\}/', function($match) use($data, $strict) {
 
-    }, $string);
+            $value = ake($data, $match[2]);
+
+            if($strict === true && $value === null)
+                throw new \Exception();
+
+            return $value;
+            
+        }, $string);
+
+    }catch(\Exception $e){
+
+        return null;
+        
+    }
 
     return $string;
 
