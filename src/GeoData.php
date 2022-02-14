@@ -31,8 +31,8 @@ class GeoData {
      * @var array
      */
     static private $sources = array(
-        'url' => 'https://api.hazaarmvc.com/databases/geodata.zip',
-        'md5' => 'https://api.hazaarmvc.com/databases/geodata.zip.md5'
+        'url' => 'https://api.hazaar.io/databases/geodata.zip',
+        'md5' => 'https://api.hazaar.io/databases/geodata.zip.md5'
     );
 
     /**
