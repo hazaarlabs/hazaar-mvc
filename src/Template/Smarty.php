@@ -164,6 +164,14 @@ class Smarty {
 
         $params = array_merge($default_params, (array)$params);
 
+        if(array_key_exists('*', $params)){
+
+            $params['__DEFAULT_VAR__'] = $params['*'];
+
+            unset($params['*']);
+            
+        }
+
         $id = '_template_' . md5(uniqid());
 
         if(!$this->__compiled_content)
@@ -456,7 +464,7 @@ class Smarty {
 
         $var = $this->compileVAR($name);
 
-        return "<?php echo @$var;?>";
+        return "<?php echo (isset($var) ? @$var : (isset(\$__DEFAULT_VAR__) ? \$__DEFAULT_VAR__ : ''));?>";
 
     }
 
