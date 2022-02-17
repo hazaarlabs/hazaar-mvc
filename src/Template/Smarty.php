@@ -164,6 +164,14 @@ class Smarty {
 
         $params = array_merge($default_params, (array)$params);
 
+        if(array_key_exists('*', $params)){
+
+            $params['__DEFAULT_VAR__'] = $params['*'];
+
+            unset($params['*']);
+            
+        }
+
         $id = '_template_' . md5(uniqid());
 
         if(!$this->__compiled_content)
@@ -201,6 +209,12 @@ class Smarty {
                     return call_user_func_array(array(\$custom_handler, 'url'), func_get_args());
 
                 return new \Hazaar\Application\Url(urldecode(implode('/', func_get_args())));
+
+            }
+
+            private function write(\$var){
+
+                echo (\$var ? @\$var : \$this->params['__DEFAULT_VAR__']);
 
             }
 
@@ -362,7 +376,7 @@ class Smarty {
 
         $modifiers = array();
 
-        if($pos = strpos($name, '|')){
+        if(strpos($name, '|') !== false){
 
             $c_part = '';
 
@@ -456,7 +470,7 @@ class Smarty {
 
         $var = $this->compileVAR($name);
 
-        return "<?php echo @$var;?>";
+        return "<?php \$this->write($var); ?>";
 
     }
 
