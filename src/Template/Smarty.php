@@ -212,6 +212,12 @@ class Smarty {
 
             }
 
+            private function write(\$var){
+
+                echo (\$var ? @\$var : \$this->params['__DEFAULT_VAR__']);
+
+            }
+
         }";
 
         $errors = error_reporting();
@@ -370,7 +376,7 @@ class Smarty {
 
         $modifiers = array();
 
-        if($pos = strpos($name, '|')){
+        if(strpos($name, '|') !== false){
 
             $c_part = '';
 
@@ -464,7 +470,7 @@ class Smarty {
 
         $var = $this->compileVAR($name);
 
-        return "<?php echo (isset($var) ? @$var : (isset(\$__DEFAULT_VAR__) ? \$__DEFAULT_VAR__ : ''));?>";
+        return "<?php \$this->write($var); ?>";
 
     }
 
