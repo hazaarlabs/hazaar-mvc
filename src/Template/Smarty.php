@@ -170,7 +170,7 @@ class Smarty {
 
             unset($params['*']);
             
-        }
+        } else $params['__DEFAULT_VAR__'] = '';
 
         $id = '_template_' . md5(uniqid());
 
