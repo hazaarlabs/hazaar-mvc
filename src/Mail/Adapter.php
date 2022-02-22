@@ -375,4 +375,65 @@ class Adapter {
         
     }
 
+    /**
+     * Enables ALL Delivery Status Notification types
+     */
+    public function enableDSN(){
+
+        $this->dsn = ['success', 'failure', 'delay'];
+
+    }
+
+    /**
+     * Disable ALL Delivery Status Notifications
+     */
+    public function disableDSN(){
+        
+        $this->dsn = ['never'];
+
+    }
+
+    private function resetDSN(){
+
+        if (($key = array_search('never', $this->dsn)) !== false)
+            unset($$this->dsn[$key]);
+
+    }
+
+    /**
+     * Enables SUCCESS Delivery Status Notification types
+     */
+    public function enableDSNSuccess(){
+
+        $this->resetDSN();
+
+        if(!in_array('success', $this->dsn))
+            $this->dsn[] = 'success';
+
+    }
+
+    /**
+     * Enables SUCCESS Delivery Status Notification types
+     */
+    public function enableDSNFailure(){
+
+        $this->resetDSN();
+
+        if(!in_array('failure', $this->dsn))
+            $this->dsn[] = 'failure';
+
+    }
+
+    /**
+     * Enables SUCCESS Delivery Status Notification types
+     */
+    public function enableDSNDelay(){
+
+        $this->resetDSN();
+
+        if(!in_array('delay', $this->dsn))
+            $this->dsn[] = 'delay';
+
+    }
+
 }
