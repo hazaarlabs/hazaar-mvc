@@ -212,7 +212,7 @@ abstract class Request implements Request\_Interface {
 
         $value = $this->get($key, $default);
 
-        return ($value === null) ? $value : intval($value);
+        return ($value === null || $value === '') ? null : intval($value);
 
     }
 
