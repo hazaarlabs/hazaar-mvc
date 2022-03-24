@@ -28,6 +28,8 @@ class Adapter {
 
     private        $body    = array();
 
+    private        $dsn     = array();
+
     /**
      * The mail class constructor
      *
@@ -366,7 +368,7 @@ class Adapter {
         if(count($this->bcc) > 0)
             $headers['BCC'] = implode(', ', $this->bcc);
         
-        $result = $this->transport->send($this->to, $this->subject->render($params), $body, $headers);
+        $result = $this->transport->send($this->to, $this->subject->render($params), $body, $headers, $this->dsn);
 
         if($result)
             $this->clear();
