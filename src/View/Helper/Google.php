@@ -28,7 +28,7 @@ class Google extends \Hazaar\View\Helper {
 
     }
 
-    public function map($name, $location, $settings = array(), $args = array()) {
+    public function map($name, $location, $settings = [], $args = []) {
 
         $settings = new \Hazaar\Map($settings);
 

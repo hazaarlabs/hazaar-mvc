@@ -4,21 +4,21 @@ namespace Hazaar\Controller\Action\Helper;
 
 class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
-    private $view            = array();
+    private $view            = [];
 
-    private $_data           = array();
+    private $_data           = [];
 
-    private $callbacks       = array();
+    private $callbacks       = [];
 
     private $controller;
 
-    private $_requires       = array();
+    private $_requires       = [];
 
-    private $_requires_param = array();
+    private $_requires_param = [];
 
-    private $_links          = array();
+    private $_links          = [];
 
-    private $_scripts        = array();
+    private $_scripts        = [];
 
     function init($controller = NULL) {
 
@@ -43,7 +43,7 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
     }
 
-    public function addHelper($helper, $args = array(), $alias = null) {
+    public function addHelper($helper, $args = [], $alias = null) {
 
         if(!$this->view instanceof \Hazaar\View)
             throw new \Hazaar\Exception('Unable to add helper ' . $helper . '.  Please set a view first!');

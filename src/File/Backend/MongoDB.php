@@ -22,7 +22,7 @@ class MongoDB implements _Interface {
 
     }
     
-    public function __construct($options = array()) {
+    public function __construct($options = []) {
 
         $this->options = ($options instanceof \Hazaar\Map) ? $options : new \Hazaar\Map($options);
 
@@ -105,7 +105,7 @@ class MongoDB implements _Interface {
 
         $q = $this->collection->find($criteria);
 
-        $parent['items'] = array();
+        $parent['items'] = [];
 
         while($object = $q->getNext())
             $parent['items'][$object['filename']] = $object;
@@ -152,11 +152,11 @@ class MongoDB implements _Interface {
 
     public function fsck() {
 
-        $c = $this->collection->find(array(), array('filename' => TRUE, 'parents' => TRUE));
+        $c = $this->collection->find([], array('filename' => TRUE, 'parents' => TRUE));
 
         while($file = $c->getNext()) {
 
-            $update = array();
+            $update = [];
 
             if(! is_array($file['parents']))
                 continue;
@@ -206,7 +206,7 @@ class MongoDB implements _Interface {
         if(! array_key_exists('items', $parent))
             $this->loadObjects($parent);
 
-        $list = array();
+        $list = [];
 
         foreach($parent['items'] as $filename => $file) {
 
@@ -363,7 +363,7 @@ class MongoDB implements _Interface {
 
     }
 
-    public function thumbnail($path, $params = array()) {
+    public function thumbnail($path, $params = []) {
 
         return FALSE;
 
@@ -390,7 +390,7 @@ class MongoDB implements _Interface {
         if($ret->isAcknowledged()) {
 
             if(! array_key_exists('items', $parent))
-                $parent['items'] = array();
+                $parent['items'] = [];
 
             $parent['items'][$info['filename']] = $info;
 
@@ -523,7 +523,7 @@ class MongoDB implements _Interface {
             if($ret->isAcknowledged()) {
 
                 if(! array_key_exists('items', $parent))
-                    $parent['items'] = array();
+                    $parent['items'] = [];
 
                 $parent['items'][$info['filename']] = $info;
 
@@ -552,7 +552,7 @@ class MongoDB implements _Interface {
                 $fileInfo['length'] = strlen($bytes);
 
                 if(! array_key_exists('items', $parent))
-                    $parent['items'] = array();
+                    $parent['items'] = [];
 
                 $parent['items'][$fileInfo['filename']] = $fileInfo;
 
@@ -590,7 +590,7 @@ class MongoDB implements _Interface {
             if($ret->isAcknowledged()) {
 
                 if(! array_key_exists('items', $parent))
-                    $parent['items'] = array();
+                    $parent['items'] = [];
 
                 $parent['items'][$info['filename']] = $info;
 
@@ -616,7 +616,7 @@ class MongoDB implements _Interface {
                 $fileInfo['length'] = $file['size'];
 
                 if(! array_key_exists('items', $parent))
-                    $parent['items'] = array();
+                    $parent['items'] = [];
 
                 $parent['items'][$fileInfo['filename']] = $fileInfo;
 
@@ -663,7 +663,7 @@ class MongoDB implements _Interface {
         if($ret->isAcknowledged()) {
 
             if(! array_key_exists('items', $dstParent))
-                $dstParent['items'] = array();
+                $dstParent['items'] = [];
 
             $dstParent['items'][$source['filename']] = $source;
 
@@ -708,7 +708,7 @@ class MongoDB implements _Interface {
         if($ret->isAcknowledged()) {
 
             if(! array_key_exists('items', $dstParent))
-                $dstParent['items'] = array();
+                $dstParent['items'] = [];
 
             $dstParent['items'][$source['filename']] = $source;
 
@@ -768,7 +768,7 @@ class MongoDB implements _Interface {
         if($ret->isAcknowledged()) {
 
             if(! array_key_exists('items', $dstParent))
-                $dstParent['items'] = array();
+                $dstParent['items'] = [];
 
             $dstParent['items'][$source['filename']] = $source;
 
@@ -843,7 +843,7 @@ class MongoDB implements _Interface {
 
         if($target =& $this->info($path)) {
 
-            $data = array();
+            $data = [];
 
             foreach($values as $key => $value)
                 $data['meta.' . $key] = $value;

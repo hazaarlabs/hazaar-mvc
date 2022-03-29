@@ -145,7 +145,7 @@ class Request extends \Hazaar\Map {
 
         $this->multipart = true;
 
-        $this->body = ($this->body === null) ? array() : array($this->getContentType(), $this->body);
+        $this->body = ($this->body === null) ? [] : array($this->getContentType(), $this->body);
 
         if(!$boundary)
             $boundary = 'HazaarMVCMultipartBoundary_' . uniqid();
@@ -210,7 +210,7 @@ class Request extends \Hazaar\Map {
             $this->enableMultipart();
 
         if(!is_array($headers))
-            $headers = array();
+            $headers = [];
 
         $headers['Content-Type'] = $content_type;
 

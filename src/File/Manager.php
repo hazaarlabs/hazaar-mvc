@@ -25,7 +25,7 @@ class Manager implements Backend\_Interface {
             'dir' => true,          //Allow directory listings
             'filebrowser' => false  //Allow access to the JS file browser
         ),
-        'userdef' => array(),
+        'userdef' => [],
         'failover' => false,
         'log' => false
     );
@@ -38,7 +38,7 @@ class Manager implements Backend\_Interface {
 
     private        $backend_name;
 
-    private        $options = array();
+    private        $options = [];
 
     public         $name;
 
@@ -46,7 +46,7 @@ class Manager implements Backend\_Interface {
 
     private        $in_failover = false;
 
-    function __construct($backend = NULL, $backend_options = array(), $name = NULL) {
+    function __construct($backend = NULL, $backend_options = [], $name = NULL) {
 
         if(!$backend) {
 
@@ -214,7 +214,7 @@ class Manager implements Backend\_Interface {
         if(!($this->failover && $this->backend->is_dir('/')))
             return false;
 
-        $clean = array('dir' => array(), 'file' => array());
+        $clean = array('dir' => [], 'file' => []);
 
         $names = $this->failover->find();
 
@@ -313,7 +313,7 @@ class Manager implements Backend\_Interface {
      * @param array $options
      * @return bool
      */
-    public function authorize($options = array()) {
+    public function authorize($options = []) {
 
         return $this->authorise($options);
 
@@ -391,7 +391,7 @@ class Manager implements Backend\_Interface {
 
         $dir = $this->dir($path);
 
-        $list = array();
+        $list = [];
 
         while(($file = $dir->read()) != FALSE) {
 

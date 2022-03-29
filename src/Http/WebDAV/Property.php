@@ -6,9 +6,9 @@ class Property implements \ArrayAccess {
 
     private $namespace;
 
-    private $attributes = array();
+    private $attributes = [];
 
-    private $elements = array();
+    private $elements = [];
 
     function __construct(\DOMElement $dom = null) {
 

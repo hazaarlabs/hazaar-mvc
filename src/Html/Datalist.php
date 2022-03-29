@@ -21,7 +21,7 @@ class Datalist extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the span.
      */
-    function __construct($options = array(), $name = null, $params = array()) {
+    function __construct($options = [], $name = null, $params = []) {
 
         if(!$name)
             $name = uniqid();
