@@ -16,9 +16,9 @@ Multiple inheritance is the ability for a class to extend more than one class an
 class Story {
     protected $title = '';
     protected $topic = '';
-    protected $characters = array();
+    protected $characters = [];
 
-    public function __construct($title = '', $topic = '', $characters = array()) {
+    public function __construct($title = '', $topic = '', $characters = []) {
       $this->title = $title;
       $this->topic = $topic;
       $this->characters = $characters;

@@ -14,11 +14,11 @@ namespace Hazaar;
  */
 abstract class Extender {
 
-    private $children = array();
+    private $children = [];
 
-    private $methods = array();
+    private $methods = [];
 
-    private $properties = array();
+    private $properties = [];
 
     /**
      * @detail      Extend a class with a child class.
@@ -76,10 +76,10 @@ abstract class Extender {
                 if(! $method->isPrivate())
                     $method->setAccessible(true);
 
-                $this->methods[$method->name] = array(
+                $this->methods[$method->name] = [
                     $class,
                     $method
-                );
+                ];
 
             }
 
@@ -92,10 +92,10 @@ abstract class Extender {
                 if(! $property->isPrivate())
                     $property->setAccessible(true);
 
-                $this->properties[$property->name] = array(
+                $this->properties[$property->name] = [
                     $class,
                     $property
-                );
+                ];
 
             }
 
@@ -119,11 +119,11 @@ abstract class Extender {
      *
      * @throws      \Exception
      */
-    public function __call($method, $args = array()) {
+    public function __call($method, $args = []) {
 
         if(array_key_exists($method, $this->methods)
             || (array_key_exists('__call', $this->methods)
-                && ($args = array($method, $args))
+                && ($args = [$method, $args])
                 && ($method = '__call'))) {
 
             list($class, $rm) = $this->methods[$method];

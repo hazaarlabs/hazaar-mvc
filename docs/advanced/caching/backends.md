@@ -45,17 +45,17 @@ The chaining cache backend is slightly different to other backends in that it do
 The format of the array is dynamic. If no backend options are needed, then the member value can be the name of the backend. To pass backend options the key is the backend name and the value is the array of configuration parameters to send to it.
 
 ```php
-$config = array(
+$config = [
     'driver'   =>   'pgsql',
     'host'     =>   'localhost',
     'dbname'   =>   'hazaar_test',
     'user'     =>   'hazaar',
     'password' =>   'password'
-);
-$cache = new Hazaar\Cache('core', array(
-    'database' => array('config' => $config ),
+];
+$cache = new Hazaar\Cache('core', [
+    'database' => ['config' => $config ],
     'apc'
-));
+]);
 ```
 
 The above example shows how to instantiate the chain backend with two real backends, APC and Database. In this scenario the APC backend will be the primary backend as it is considered to be the faster of the two. Cache writes will occur on both backends but reads will occur on the APC backend. Only if the value does not exist will a read be performed on the Database backend and if that is successful, the APC backend will be updated with the found value.
