@@ -15,27 +15,27 @@ class View implements \ArrayAccess {
 
     private $_viewfile;
 
-    protected $_data = array();
+    protected $_data = [];
 
-    protected $_scripts = array();
+    protected $_scripts = [];
 
     /**
      * View Helpers
      */
-    protected $_helpers = array();
+    protected $_helpers = [];
 
     /**
      * Array for storing names of initialised helpers so we only initialise them once
      */
-    private $_helpers_init = array();
+    private $_helpers_init = [];
 
     private $_rendering = FALSE;
 
     protected $_methodHandler;
 
-    private $_prepared = array();
+    private $_prepared = [];
 
-    public function __construct($view, $init_helpers = array()) {
+    public function __construct($view, $init_helpers = []) {
 
         $this->load($view);
 
@@ -55,7 +55,7 @@ class View implements \ArrayAccess {
                 $load = $this->application->config->view->helper->load;
 
                 if (!Map::is_array($load))
-                    $load = new Map(array($load));
+                    $load = new Map([$load]);
 
                 $helpers = new Map();
 
@@ -75,7 +75,7 @@ class View implements \ArrayAccess {
 
                                 if($arg = trim($arg)) {
 
-                                    if (in_array(strtolower($arg), array('yes','no','true','false','on','off'))) {
+                                    if (in_array(strtolower($arg), ['yes','no','true','false','on','off'])) {
 
                                         $arg = boolify($arg);
 
@@ -97,7 +97,7 @@ class View implements \ArrayAccess {
                             //If there is no config and it is just the helper name, just convert it to the new format
                         }else{
 
-                            $helpers[$helper] = array();
+                            $helpers[$helper] = [];
 
                         }
 
@@ -150,7 +150,7 @@ class View implements \ArrayAccess {
 
         }else{
 
-            $extensions = array('phtml', 'tpl');
+            $extensions = ['phtml', 'tpl'];
 
             foreach($extensions as $extension){
 
@@ -371,17 +371,17 @@ class View implements \ArrayAccess {
 
         if (method_exists($this->_methodHandler, $method)) {
 
-            return call_user_func_array(array(
+            return call_user_func_array([
                 $this->_methodHandler,
                 $method
-            ), $args);
+            ], $args);
 
         } elseif (array_key_exists($method, $this->_helpers) && method_exists($this->_helpers[$method], '__default')) {
 
-            return call_user_func_array(array(
+            return call_user_func_array([
                 $this->_helpers[$method],
                 '__default'
-            ), $args);
+            ], $args);
         }
 
         throw new \Hazaar\Exception("Method not found calling " . get_class($this->_methodHandler) . ":$method()");
@@ -391,12 +391,12 @@ class View implements \ArrayAccess {
     /*
      * Dealing with Helpers
      */
-    public function addHelper($helper, $args = array(), $alias = null) {
+    public function addHelper($helper, $args = [], $alias = null) {
 
         if(is_array($helper)) {
 
             foreach ($helper as $alias => $h)
-                self::addHelper($h, array(), $alias);
+                self::addHelper($h, [], $alias);
 
         } elseif(is_object($helper)) {
 
@@ -438,7 +438,7 @@ class View implements \ArrayAccess {
         /**
          * Search paths for view helpers.  The order here matters because apps should be able to override built-in helpers.
          */
-        $search_prefixes = array('\\Application\\Helper\\View', '\\Hazaar\\View\\Helper');
+        $search_prefixes = ['\\Application\\Helper\\View', '\\Hazaar\\View\\Helper'];
 
         $name = \ucfirst($name);
 
@@ -793,7 +793,7 @@ class View implements \ArrayAccess {
      *
      * @return string
      */
-    public function yn($value, $labels = array('Yes','No')) {
+    public function yn($value, $labels = ['Yes','No']) {
 
         return (boolify($value) ? $labels[0] : $labels[1]);
 
@@ -820,7 +820,7 @@ class View implements \ArrayAccess {
 
     }
 
-    public function offsetExists($offset){
+    public function offsetExists($offset) : bool {
 
         return isset($this->_data[$offset]);
 
@@ -832,7 +832,7 @@ class View implements \ArrayAccess {
 
     }
 
-    public function offsetSet($offset, $value){
+    public function offsetSet($offset, $value) : void {
 
         if($offset === null)
             $this->_data[] = $value;
@@ -841,7 +841,7 @@ class View implements \ArrayAccess {
 
     }
 
-    public function offsetUnset($offset){
+    public function offsetUnset($offset) : void {
 
         unset($this->_data[$offset]);
 

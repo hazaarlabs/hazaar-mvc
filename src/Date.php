@@ -209,7 +209,7 @@ class Date extends \DateTime implements \JsonSerializable {
      *
      * @return boolean Returns the result of the parent [[DateTime::setTimezone]] call.
      */
-    public function setTimezone($timezone = NULL) {
+    public function setTimezone($timezone = NULL) : Date {
 
         if ($timezone === NULL)
             $timezone = date_default_timezone_get();
@@ -237,7 +237,9 @@ class Date extends \DateTime implements \JsonSerializable {
             
         }
 
-        return parent::setTimezone($timezone);
+        parent::setTimezone($timezone);
+
+        return $this;
 
     }
 
@@ -396,7 +398,7 @@ class Date extends \DateTime implements \JsonSerializable {
      *
      * @return \DateInterval|int
      */
-    public function diff($timestamp, $return_seconds = FALSE) {
+    public function diff($timestamp, $return_seconds = FALSE) : \DateInterval {
 
         if(!$timestamp)
             return false;
@@ -496,7 +498,7 @@ class Date extends \DateTime implements \JsonSerializable {
      *
      * @return Date
      */
-    public function add($interval, $return_new = FALSE) {
+    public function add($interval, $return_new = FALSE) : Date {
 
         if (!$interval instanceof \DateInterval)
             $interval = new \DateInterval($interval);
@@ -526,7 +528,7 @@ class Date extends \DateTime implements \JsonSerializable {
      *
      * @return Date
      */
-    public function sub($interval, $return_new = FALSE) {
+    public function sub($interval, $return_new = FALSE) : Date {
 
         if (!$interval instanceof \DateInterval)
             $interval = new \DateInterval($interval);
@@ -760,7 +762,7 @@ class Date extends \DateTime implements \JsonSerializable {
 
         if(preg_match('/(\d+)(\W)(\d+)(\W)(\d+)/', strftime('%c', mktime(0,0,0,12,1,2000)), $matches)){
 
-            $matrix = array(1 => 'D', 12 => 'M', 2000 => 'Y');
+            $matrix = [1 => 'D', 12 => 'M', 2000 => 'Y'];
 
             $format = $matrix[intval($matches[1])] . $matrix[intval($matches[3])] . $matrix[intval($matches[5])];
 

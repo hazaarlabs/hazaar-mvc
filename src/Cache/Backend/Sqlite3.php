@@ -38,10 +38,10 @@ class Sqlite3 extends \Hazaar\Cache\Backend {
 
     public function init($namespace) {
 
-        $this->configure(array(
-                             'cache_table' => 'cache_' . $namespace,
-                             'cache_db'    => \Hazaar\Application::getInstance()->runtimePath('cache', TRUE) . '/sqlite.db'
-                         ));
+        $this->configure([
+            'cache_table' => 'cache_' . $namespace,
+            'cache_db'    => \Hazaar\Application::getInstance()->runtimePath('cache', TRUE) . '/sqlite.db'
+        ]);
 
         if(! trim($this->options->cache_db))
             throw new Exception\NoSQLite3DBPath();

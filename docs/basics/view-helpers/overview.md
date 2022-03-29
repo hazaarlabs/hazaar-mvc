@@ -48,7 +48,7 @@ class MyController extends \Hazaar\Controller\Action {
 
         $this->view('index');
 
-        $this->view->addHelper('fontawesome', array('version' => '5.0.0'));
+        $this->view->addHelper('fontawesome', ['version' => '5.0.0']);
 
     }
 

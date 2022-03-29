@@ -41,7 +41,7 @@ if(!($result = $cache->get('dbi_result'))){
 
     $db = new Hazaar\DBI\Adapter();
 
-    $result = $db->mytable->findOne(array('id' => 1234));
+    $result = $db->mytable->findOne(['id' => 1234]);
 
     $cache->set('db_result', $result);
 

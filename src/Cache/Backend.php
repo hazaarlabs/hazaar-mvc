@@ -4,7 +4,7 @@ namespace Hazaar\Cache;
 
 abstract class Backend implements Backend\_Interface {
 
-    public    $options      = array();
+    public    $options      = [];
 
     /**
      * The backends list of capabilities
@@ -18,7 +18,7 @@ abstract class Backend implements Backend\_Interface {
      * * keepalive - When a value is accessed it's TTL can be reset to keep it alive in cache.
      * @var mixed
      */
-    private   $capabilities = array();
+    private   $capabilities = [];
 
     protected $weight       = 10;
 
@@ -35,8 +35,11 @@ abstract class Backend implements Backend\_Interface {
 
     function __destruct() {
 
-        if(method_exists($this, 'close'))
-            $this->close();
+        $this->close();
+
+    }
+
+    public function close(){
 
     }
 
