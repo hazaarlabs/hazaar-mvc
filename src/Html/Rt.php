@@ -21,7 +21,7 @@ class Rt extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($content, $parameters = array()) {
+    function __construct($content, $parameters = []) {
 
         parent::__construct('rt', $content, $parameters);
 

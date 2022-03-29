@@ -184,12 +184,12 @@ class Client {
     /**
      * @var array An array of registered event handlers
      */
-    private $events = array();
+    private $events = [];
 
     /**
      * @var array An array of user accessible variables for use in callbacks.
      */
-    private $data = array();
+    private $data = [];
 
     /**
      * The \Hazaar\Socket\Client constructor
@@ -437,7 +437,7 @@ class Client {
         $event = strtolower($event);
 
         if(! array_key_exists($event, $this->events) || ! is_array($this->events[$event]))
-            $this->events[$event] = array();
+            $this->events[$event] = [];
 
         $this->events[$event][] = $function;
 
@@ -560,9 +560,9 @@ class Client {
         if(! $this->connected)
             return FALSE;
 
-        $read = array(
+        $read = [
             $this->socket
-        );
+        ];
 
         $write = NULL;
 

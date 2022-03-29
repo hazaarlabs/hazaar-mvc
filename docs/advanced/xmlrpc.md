@@ -27,10 +27,10 @@ Servers are almost as easy to get up and running, but you just need to know the 
 ```php
 class XMLRPCController extends Hazaar\Controller\XMLRPC {
     public function doTest(){
-        return array(
+        return [
             'result' => 'OK',
             'string' => 'Hello, World!'
-        );
+        ];
     }
     public function getMethodList(){
         return $this->registered_methods;

@@ -11,7 +11,7 @@ namespace Hazaar\Html;
  */
 class Group extends Element {
 
-    private $content = array();
+    private $content = [];
 
     function __construct() {
 

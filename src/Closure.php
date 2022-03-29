@@ -113,7 +113,7 @@ class Closure implements \JsonSerializable {
 
     public function __sleep() {
 
-        return array('code');
+        return ['code'];
 
     }
 

@@ -69,12 +69,12 @@ class Element implements \ArrayAccess, \Iterator {
     /**
      * An array of namespaces defined on this node
      */
-    protected $__namespaces = array();
+    protected $__namespaces = [];
 
     /**
      * An array of attributed defined on this node
      */
-    protected $__attributes = array();
+    protected $__attributes = [];
 
     /**
      * An array to contain all the child nodes of this node element
@@ -201,7 +201,7 @@ class Element implements \ArrayAccess, \Iterator {
 
             $key = NULL;
 
-            $search = array($ns, $ns . ':');
+            $search = [$ns, $ns . ':'];
 
             foreach($search as $cur) {
 
@@ -404,10 +404,10 @@ class Element implements \ArrayAccess, \Iterator {
             $child->__namespaces = $this->__namespaces;
 
         if(! is_array($this->__children))
-            $this->__children = array();
+            $this->__children = [];
 
         if(! is_array($this->__children_index))
-            $this->__children_index = array();
+            $this->__children_index = [];
 
         $this->__children[] =& $child;
 
@@ -415,9 +415,9 @@ class Element implements \ArrayAccess, \Iterator {
 
             if(! is_array($this->__children_index[$name])) {
 
-                $this->__children_index[$name] = array(
+                $this->__children_index[$name] = [
                     $this->__children_index[$name]
-                );
+                ];
             }
 
             $this->__children_index[$name][] = $child;
@@ -730,7 +730,7 @@ class Element implements \ArrayAccess, \Iterator {
 
         $data = '';
 
-        $parents = array();
+        $parents = [];
 
         $parent = NULL;
 
@@ -943,7 +943,7 @@ class Element implements \ArrayAccess, \Iterator {
      *
      * @since 2.0.1
      *
-     * @param array $criteria An array of attribute criteria to search on.  Example: array('name' => 'test') will find elements who have a name attribute with a value of 'test'.
+     * @param array $criteria An array of attribute criteria to search on.  Example: ['name' => 'test'] will find elements who have a name attribute with a value of 'test'.
      *
      * @param string $name Optional node name to filter on.
      *
@@ -954,7 +954,7 @@ class Element implements \ArrayAccess, \Iterator {
 
         if($this->count() > 0) {
 
-            foreach(ake($this->__children_index, $name, array()) as $nodeName => $child) {
+            foreach(ake($this->__children_index, $name, []) as $nodeName => $child) {
 
                 foreach($criteria as $key => $value) {
 

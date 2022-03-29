@@ -9,7 +9,7 @@ This is probably the most used and most useful helper function.  Normally when w
 Something like this, perhaps:
 
 ```php
-$array = array('key' => 'value');
+$array = ['key' => 'value'];
 
 if(array_key_exists('key', $array) && $array['key'] !== '')
     echo $array['key'];
@@ -20,7 +20,7 @@ else
 What if you can handle all these situations in a single line of code?
 
 ```php
-$array = array('key' => 'value');
+$array = ['key' => 'value'];
 
 echo ake($array, 'key', 'Missing!', true);
 ```

@@ -50,17 +50,17 @@ class Application extends Module {
 
         if($this->metrics instanceof \Hazaar\File\Metric){
 
-            $count_month = array_filter(ake($this->metrics->graph('hits', 'count_1year'), 'ticks', array()),
+            $count_month = array_filter(ake($this->metrics->graph('hits', 'count_1year'), 'ticks', []),
                 function($value, $key) use($date_start){
                     return $key > $date_start;
                 }, ARRAY_FILTER_USE_BOTH);
 
-            $this->view->stats = array(
-                'hour' => array_sum(ake($this->metrics->graph('hits', 'count_1hour'), 'ticks', array())),
-                'day' => array_sum(ake($this->metrics->graph('hits', 'count_1day'), 'ticks', array())),
-                'week' => array_sum(ake($this->metrics->graph('hits', 'count_1week'), 'ticks', array())),
+            $this->view->stats = [
+                'hour' => array_sum(ake($this->metrics->graph('hits', 'count_1hour'), 'ticks', [])),
+                'day' => array_sum(ake($this->metrics->graph('hits', 'count_1day'), 'ticks', [])),
+                'week' => array_sum(ake($this->metrics->graph('hits', 'count_1week'), 'ticks', [])),
                 'month' => array_sum($count_month)
-            );
+            ];
 
         }
 
@@ -84,67 +84,68 @@ class Application extends Module {
         if(!$this->metrics instanceof \Hazaar\File\Metric)
             throw new \Exception('Metrics are not enabled!', 501);
 
-        $graphs = array();
+        $graphs = [];
 
         if($this->metrics->hasDataSource('hits')){
 
-            $graphs[] = array(
-                array(
+            $graphs[] = [
+                [
                     'ds'=> 'hits',
                     'archive'=> 'count_1hour',
                     'scale'=> 'Count',
                     'bgcolor'=> 'rgba(132, 99, 255, 0.2)',
                     'color'=> 'rgba(132,99,255,1)'
-                ),
-                array(
+                ],
+                [
                     'ds'=> 'hits',
                     'archive'=> 'avg_1day',
                     'scale'=> 'Count',
                     'bgcolor'=> 'rgba(132, 99, 255, 0.2)',
                     'color'=> 'rgba(132,99,255,1)'
-                )
-            );
+                ]
+            ];
 
         }
 
         if($this->metrics->hasDataSource('exec')){
 
-            $graphs[] =  array(
-                array(
+            $graphs[] =  [
+                [
                     'ds'=> 'exec',
                     'archive'=> 'count_1hour',
                     'scale'=> 'ms',
                     'bgcolor'=> 'rgba(255, 99, 132, 0.2)',
-                    'color'=> 'rgba(255,99,132,1)' ),
-                array(
+                    'color'=> 'rgba(255,99,132,1)'
+                ],
+                [
                     'ds'=> 'exec',
                     'archive'=> 'avg_1day',
                     'scale'=> 'ms',
                     'bgcolor'=> 'rgba(255, 99, 132, 0.2)',
                     'color'=> 'rgba(255,99,132,1)'
-                )
-            );
+                ]
+            ];
 
         }
 
         if($this->metrics->hasDataSource('mem')){
 
-            $graphs[] = array(
-                array(
+            $graphs[] = [
+                [
                     'ds'=> 'mem',
                     'archive'=> 'count_1hour',
                     'scale'=> 'bytes',
                     'bgcolor'=> 'rgba(132, 99, 255, 0.2)',
                     'color'=> 'rgba(132,99,255,1)'
-                ),
-                array(
+                ],
+                [
                     'ds'=> 'mem',
                     'archive'=> 'avg_1day',
                     'scale'=> 'bytes',
                     'bgcolor'=> 'rgba(255, 99, 132, 0.2)',
                     'color'=> 'rgba(255,99,132,1)'
-                )
-            );
+                ]
+            ];
 
         }
 
@@ -172,7 +173,7 @@ class Application extends Module {
         if($this->request->has('args'))
             $result['args'] = $this->request->args;
 
-        $ticks = array();
+        $ticks = [];
 
         foreach($result['ticks'] as $tick => $value)
             $ticks[date('H:i', $tick)] = $value;
@@ -187,7 +188,7 @@ class Application extends Module {
 
         $this->view('application/models');
 
-        $models = array();
+        $models = [];
 
         foreach($this->application->loader->getSearchPaths(FILE_PATH_MODEL) as $path){
 
@@ -206,7 +207,7 @@ class Application extends Module {
 
         $this->view('application/views');
 
-        $views = array();
+        $views = [];
 
         foreach($this->application->loader->getSearchPaths(FILE_PATH_VIEW) as $path){
 
@@ -224,7 +225,7 @@ class Application extends Module {
 
         $this->view('application/controllers');
 
-        $controllers = array();
+        $controllers = [];
 
         foreach($this->application->loader->getSearchPaths(FILE_PATH_CONTROLLER) as $path){
 
@@ -250,7 +251,7 @@ class Application extends Module {
             if($config->fromJSON($this->request->config)){
 
                 if($config->write())
-                    return $this->redirect($this->url('app/config', array('env' => $config->getEnv())));
+                    return $this->redirect($this->url('app/config', ['env' => $config->getEnv()]));
 
                 $this->notice('An error ocurred writing the config file.', 'exclamation-triangle', 'danger');
 
@@ -266,12 +267,12 @@ class Application extends Module {
 
         $this->view->requires('js/config.js');
 
-        $this->view->extend(array(
+        $this->view->extend([
             'config' => $data,
             'env' => $config->getEnv(),
             'envs' => $config->getEnvironments(),
             'writable' => $config->isWritable()
-        ));
+        ]);
 
     }
 
@@ -291,13 +292,13 @@ class Application extends Module {
                 else
                     $file->encrypt();
 
-                return array('encrypt' => $file->isEncrypted());
+                return ['encrypt' => $file->isEncrypted()];
 
             }
 
             $search_paths = $this->application->loader->getSearchPaths(FILE_PATH_CONFIG);
 
-            $files = array();
+            $files = [];
 
             foreach($search_paths as $path){
 
@@ -311,11 +312,11 @@ class Application extends Module {
 
                     $encrypted = $file->isEncrypted();
 
-                    $files[] = array(
+                    $files[] = [
                         'name' => trim(str_replace($path, '', $file->fullpath()), DIRECTORY_SEPARATOR),
                         'size' => $file->size(),
                         'encrypted' => $encrypted
-                    );
+                    ];
 
                 }
 

@@ -21,7 +21,7 @@ class Noscript extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($content = null, $parameters = array()) {
+    function __construct($content = null, $parameters = []) {
 
         if(!$content) $content = 'Your browser does not support JavaScript!';
         

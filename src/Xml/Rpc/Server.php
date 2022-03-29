@@ -6,7 +6,7 @@ abstract class Server extends \Hazaar\Controller {
 
     protected $request;
 
-    protected $registered_methods = array();
+    protected $registered_methods = [];
 
     public function __initialize(\Hazaar\Application\Request $request) {
 
@@ -43,10 +43,10 @@ abstract class Server extends \Hazaar\Controller {
 
     public function registerMethod($object, $method) {
 
-        $this->registered_methods[$method] = array(
+        $this->registered_methods[$method] = [
             $object,
             $method
-        );
+        ];
 
     }
 

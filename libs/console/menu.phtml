@@ -6,10 +6,10 @@
         if($active = $this->active($item->target))
             $this->setActiveMenu($item);
 
-        $a = $this->html->a($this->url($item->target), array(
+        $a = $this->html->a($this->url($item->target), [
             $item->icon ? $this->fontawesome->icon($item->icon) : null,
             $item->label
-        ))->class('nav-link');
+        ])->class('nav-link');
 
         if($item->suffix)
             $a->add($this->html->span(ake($item->suffix, 0))->class('suffix ' . ake($item->suffix, 1, 'default')));
@@ -17,7 +17,7 @@
         $li = $this->html->li($a)->class('nav-item')->toggleClass('selected', $active);
 
         if($item->items)
-            $li->add($this->partial('menu', array('items' => $item->items)));
+            $li->add($this->partial('menu', ['items' => $item->items]));
 
         echo $li;
 

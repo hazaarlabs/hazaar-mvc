@@ -20,7 +20,7 @@ class Ol extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($items = null, $parameters = array()) {
+    function __construct($items = null, $parameters = []) {
 
         parent::__construct('ol', null, $parameters);
 

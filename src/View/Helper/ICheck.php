@@ -34,9 +34,9 @@ class iCheck extends \Hazaar\View\Helper {
      * @detail      Initialise the view helper and include the buttons.css file.  Adds a requirement for the HTML view
      *              helper.
      */
-    public function init(\Hazaar\View\Layout $view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = []) {
 
-        $this->cdnjs->load('iCheck', array('skins/all.css', 'icheck.min.js'));
+        $this->cdnjs->load('iCheck', ['skins/all.css', 'icheck.min.js']);
 
         $this->theme = ake($args, 'theme', 'minimal');
 

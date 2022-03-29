@@ -55,8 +55,16 @@ abstract class Controller {
      */
     public function __shutdown($response) {
 
-        if(method_exists($this, 'shutdown'))
-            $this->shutdown($response);
+        $this->shutdown($response);
+
+    }
+
+    /**
+     * Placeholder shutdown function
+     */
+    public function shutdown($response){
+
+        return true;
 
     }
 
@@ -86,6 +94,8 @@ abstract class Controller {
      * Default run method.
      * 
      * The run method is where the controller does all it's work.  This default one does nothing.
+     * 
+     * @return boolean|Hazaar\Controller\Response
      */
     public function __run(){
 
@@ -173,14 +183,14 @@ abstract class Controller {
         $parts = func_get_args();
 
         if(count($parts) === 1 && strtolower(trim($parts[0])) === $this->url_default_action_name)
-            $parts = array();
+            $parts = [];
 
         $this_parts = explode('/', $this->name);
 
         if(count($parts) === 0 && $this_parts[count($this_parts)-1] === $this->url_default_action_name)
             array_pop($this_parts);
 
-        call_user_func_array(array($url, '__construct'), array_merge($this_parts, $parts));
+        call_user_func_array([$url, '__construct'], array_merge($this_parts, $parts));
 
         return $url;
 
@@ -208,7 +218,7 @@ abstract class Controller {
 
         $parts = func_get_args();
 
-        return call_user_func_array(array($this->application, 'active'), array_merge(array($this->name), $parts));
+        return call_user_func_array([$this->application, 'active'], array_merge([$this->name], $parts));
 
     }
 

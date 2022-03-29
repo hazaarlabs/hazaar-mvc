@@ -30,10 +30,10 @@ class GeoData {
      * The publicly available GeoData database data sources.
      * @var array
      */
-    static private $sources = array(
+    static private $sources = [
         'url' => 'https://api.hazaar.io/databases/geodata.zip',
         'md5' => 'https://api.hazaar.io/databases/geodata.zip.md5'
-    );
+    ];
 
     /**
      * The current GeoData database format version.
@@ -69,7 +69,7 @@ class GeoData {
      */
     private function __initialise(){
 
-        $data = array();
+        $data = [];
 
         GeoData::$db->reset_btree_file();
 
@@ -106,7 +106,7 @@ class GeoData {
      */
     private function __list(\Hazaar\Btree $db, $field = null){
 
-        $list = array();
+        $list = [];
 
         $codes = $db->range("\x00", "\xff");
 
@@ -188,7 +188,7 @@ class GeoData {
      */
     public function states($country_code){
 
-        $list = array();
+        $list = [];
 
         if($country = GeoData::$db->get(strtoupper($country_code))){
 
@@ -215,11 +215,11 @@ class GeoData {
      */
     public function cities($country_code, $state_code){
 
-        $list = array();
+        $list = [];
 
         if($country = GeoData::$db->get(strtoupper($country_code))){
 
-            $cities = ake(ake(ake($country, 'states'), $state_code), 'cities', array());
+            $cities = ake(ake(ake($country, 'states'), $state_code), 'cities', []);
 
             foreach($cities as $id){
 

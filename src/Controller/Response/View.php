@@ -8,9 +8,9 @@ class View extends \Hazaar\Controller\Response\Html {
 
     private $_view_name;
 
-    private $_data     = array();
+    private $_data     = [];
 
-    private $_requires = array();
+    private $_requires = [];
 
     function __construct($view) {
 
@@ -53,7 +53,7 @@ class View extends \Hazaar\Controller\Response\Html {
 
             $this->_view_name = $view;
 
-            $this->_view = new \Hazaar\View($view, array('html'));
+            $this->_view = new \Hazaar\View($view, ['html']);
 
         }
 
@@ -83,7 +83,7 @@ class View extends \Hazaar\Controller\Response\Html {
 
     public function __call($method, $param_arr) {
 
-        return call_user_func_array(array($this->_view, $method), $param_arr);
+        return call_user_func_array([$this->_view, $method], $param_arr);
 
     }
 
