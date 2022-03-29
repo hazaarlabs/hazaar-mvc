@@ -47,7 +47,7 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
             $this->allow_undefined = true;
 
         if(!is_array($values))
-            $values = ($values === null) ? [] : array($values);
+            $values = ($values === null) ? [] : [$values];
 
         foreach($values as $index => $value)
             $this->offsetSet($index, $value);
@@ -206,7 +206,7 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
         if (!is_callable($func) || substr($func, 0, 6) !== 'array_')
             throw new \BadMethodCallException(__CLASS__.'->'.$func);
 
-        return call_user_func_array($func, array_merge(array($this->values), $argv));
+        return call_user_func_array($func, array_merge([$this->values], $argv));
 
     }
 

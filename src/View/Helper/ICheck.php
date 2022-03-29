@@ -36,7 +36,7 @@ class iCheck extends \Hazaar\View\Helper {
      */
     public function init(\Hazaar\View\Layout $view, $args = []) {
 
-        $this->cdnjs->load('iCheck', array('skins/all.css', 'icheck.min.js'));
+        $this->cdnjs->load('iCheck', ['skins/all.css', 'icheck.min.js']);
 
         $this->theme = ake($args, 'theme', 'minimal');
 

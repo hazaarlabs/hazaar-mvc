@@ -107,12 +107,12 @@ class Packer {
 	private $_specialChars = false;
 	private $_removeSemicolons = true;
 
-	private $LITERAL_ENCODING = array(
+	private $LITERAL_ENCODING = [
 		'None' => 0,
 		'Numeric' => 10,
 		'Normal' => 62,
 		'High ASCII' => 95
-	);
+	];
 
 	public function __construct($_script, $_encoding = 62, $_fastDecode = true, $_specialChars = false, $_removeSemicolons = true)
 	{
@@ -139,7 +139,7 @@ class Packer {
 	// apply all parsing routines
 	private function _pack($script) {
 		for ($i = 0; isset($this->_parsers[$i]); $i++) {
-			$script = call_user_func(array(&$this,$this->_parsers[$i]), $script);
+			$script = call_user_func([&$this,$this->_parsers[$i]], $script);
 		}
 		return $script;
 	}
@@ -186,7 +186,7 @@ class Packer {
 		$parser = new ParseMaster();
 		// replace: $name -> n, $$name -> na
 		$parser->add('/((\\x24+)([a-zA-Z$_]+))(\\d*)/',
-					 array('fn' => '_replace_name')
+					 ['fn' => '_replace_name']
 		);
 		// replace: _name -> _0, double-underscore (__name) is ignored
 		$regexp = '/\\b_[A-Za-z\\d]\\w*/';
@@ -196,10 +196,10 @@ class Packer {
 		$encoded = $keywords['encoded'];
 
 		$parser->add($regexp,
-			array(
+			[
 				'fn' => '_replace_encoded',
 				'data' => $encoded
-			)
+			]
 		);
 		return $parser->exec($script);
 	}
@@ -219,10 +219,10 @@ class Packer {
 
 		// encode
 		$parser->add($regexp,
-			array(
+			[
 				'fn' => '_replace_encoded',
 				'data' => $encoded
-			)
+			]
 		);
 		if (empty($script)) return $script;
 		else {
@@ -258,7 +258,7 @@ class Packer {
 					// make a dictionary of all of the protected words in this script
 					//  these are words that might be mistaken for encoding
 					//if (is_string($encode) && method_exists($this, $encode))
-					$values[$j] = call_user_func(array(&$this, $encode), $j);
+					$values[$j] = call_user_func([&$this, $encode], $j);
 					$protected['$' . $values[$j]] = $j++;
 				}
 				// increment the word counter
@@ -290,7 +290,7 @@ class Packer {
 			// the ECMAscript standard does not guarantee this behaviour,
 			// and thus not all browsers (e.g. Mozilla versions dating back to at
 			// least 2003) respect this.
-			usort($unsorted, array(&$this, '_sortWords'));
+			usort($unsorted, [&$this, '_sortWords']);
 			$j = 0;
 			// because there are "protected" words in the list
 			//  we must add the sorted words around them
@@ -300,10 +300,10 @@ class Packer {
 				$_encoded[$_sorted[$i]] = $values[$i];
 			} while (++$i < count($unsorted));
 		}
-		return array(
+		return [
 			'sorted'  => $_sorted,
 			'encoded' => $_encoded,
-			'protected' => $_protected);
+			'protected' => $_protected];
 	}
 
 	private $_count = [];
@@ -359,7 +359,7 @@ class Packer {
 		if ($this->_fastDecode) {
 			// insert the decoder
 			$this->buffer = $decode;
-			$unpack = preg_replace_callback('/\\{/', array(&$this, '_insertFastDecode'), $unpack, 1);
+			$unpack = preg_replace_callback('/\\{/', [&$this, '_insertFastDecode'], $unpack, 1);
 		}
 		$unpack = preg_replace('/"/', "'", $unpack);
 		if ($this->_encoding > 62) { // high-ascii
@@ -369,7 +369,7 @@ class Packer {
 		if ($ascii > 36 || $this->_encoding > 62 || $this->_fastDecode) {
 			// insert the encode function
 			$this->buffer = $encode;
-			$unpack = preg_replace_callback('/\\{/', array(&$this, '_insertFastEncode'), $unpack, 1);
+			$unpack = preg_replace_callback('/\\{/', [&$this, '_insertFastEncode'], $unpack, 1);
 		} else {
 			// perform the encoding inline
 			$unpack = preg_replace($ENCODE, $inline, $unpack);
@@ -379,7 +379,7 @@ class Packer {
 		$unpack = $unpackPacker->pack();
 
 		// arguments
-		$params = array($packed, $ascii, $count, $keywords);
+		$params = [$packed, $ascii, $count, $keywords];
 		if ($this->_fastDecode) {
 			$params[] = 0;
 			$params[] = '{}';
@@ -458,7 +458,7 @@ class Packer {
 	private function _escape95($script) {
 		return preg_replace_callback(
 			'/[\\xa1-\\xff]/',
-			array(&$this, '_escape95Bis'),
+			[&$this, '_escape95Bis'],
 			$script
 		);
 	}
@@ -606,14 +606,14 @@ class ParseMaster {
 					// build a function to do the lookup
 					$quote = preg_match($this->QUOTE, $this->_internalEscape($replacement))
 					         ? '"' : "'";
-					$replacement = array(
+					$replacement = [
 						'fn' => '_backReferences',
-						'data' => array(
+						'data' => [
 							'replacement' => $replacement,
 							'length' => $length,
 							'quote' => $quote
-						)
-					);
+						]
+					];
 				}
 			}
 		}
@@ -637,10 +637,10 @@ class ParseMaster {
 		$string = $this->_escape($string, $this->escapeChar);
 		$string = preg_replace_callback(
 			$regexp,
-			array(
+			[
 				&$this,
 				'_replacement'
-			),
+			],
 			$string
 		);
 		$string = $this->_unescape($string, $this->escapeChar);
@@ -678,7 +678,7 @@ class ParseMaster {
 				if (is_array($replacement) && isset($replacement['fn'])) {
 
 					if (isset($replacement['data'])) $this->buffer = $replacement['data'];
-					return call_user_func(array(&$this, $replacement['fn']), $arguments, $i);
+					return call_user_func([&$this, $replacement['fn']], $arguments, $i);
 
 				} elseif (is_int($replacement)) {
 					return $arguments[$replacement + $i];
@@ -727,7 +727,7 @@ class ParseMaster {
 			$this->buffer = $escapeChar;
 			return preg_replace_callback(
 				'/\\' . $escapeChar . '(.)' .'/',
-				array(&$this, '_escapeBis'),
+				[&$this, '_escapeBis'],
 				$string
 			);
 
@@ -744,11 +744,11 @@ class ParseMaster {
 	private function _unescape($string, $escapeChar) {
 		if ($escapeChar) {
 			$regexp = '/'.'\\'.$escapeChar.'/';
-			$this->buffer = array('escapeChar'=> $escapeChar, 'i' => 0);
+			$this->buffer = ['escapeChar'=> $escapeChar, 'i' => 0];
 			return preg_replace_callback
 			(
 				$regexp,
-				array(&$this, '_unescapeBis'),
+				[&$this, '_unescapeBis'],
 				$string
 			);
 

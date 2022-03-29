@@ -223,7 +223,7 @@ class Error extends \Hazaar\Controller\Action {
     final public function __run() {
 
         if ($this->response && method_exists($this, $this->response))
-            $response = call_user_func(array($this, $this->response));
+            $response = call_user_func([$this, $this->response]);
         elseif (method_exists($this, 'run'))
             $response = $this->run();
         else
@@ -276,15 +276,15 @@ class Error extends \Hazaar\Controller\Action {
 
     private function json(){
 
-        $error = array(
+        $error = [
             'ok' => FALSE,
-            'error' => array(
+            'error' => [
                 'type' => $this->errno,
                 'status' => $this->status,
                 'str' => $this->errstr
-            ),
+            ],
             'timestamp' => time()
-        );
+        ];
 
         if(ini_get('display_errors')){
 
@@ -390,7 +390,7 @@ class Error extends \Hazaar\Controller\Action {
 
         $view->type = $this->type;
 
-        $view->err = array(
+        $view->err = [
             'code' => $this->errno,
             'message' => $this->errstr,
             'file' => $this->errfile,
@@ -400,7 +400,7 @@ class Error extends \Hazaar\Controller\Action {
             'type' => $this->errtype,
             'short_message' => ($this->short_message ? $this->short_message : $this->status),
             'config' => array_to_dot_notation($this->application->config->toSecureArray())
-        );
+        ];
 
         $view->trace = $this->callstack;
 
@@ -455,29 +455,29 @@ class Error extends \Hazaar\Controller\Action {
 
         $url = 'https://api.hazaarmvc.com/api/report/' . $type;
 
-        $data = json_encode(array(
+        $data = json_encode([
             'status' => $this->code,
-            'error' => array(
+            'error' => [
                 'type' => $this->errno,
                 'status' => $this->status,
                 'line' => $this->errline,
                 'file' => $this->errfile,
                 'context' => $this->errcontext,
                 'str' => $this->errstr
-            ),
+            ],
             'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
             'config' => $this->application->config->toArray()
-        ));
+        ]);
 
         if(ini_get('allow_url_fopen') ) {
 
-            $options = array(
-                    'http' => array(
+            $options = [
+                    'http' => [
                     'header'  => "Content-type: application/json\r\n",
                     'method'  => 'POST',
                     'content' => $data,
-                )
-            );
+                ]
+                    ];
 
             $result = file_get_contents($url, false, stream_context_create($options));
 
@@ -496,10 +496,10 @@ class Error extends \Hazaar\Controller\Action {
 
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 'Content-Type: application/json',
-                'Content-Length: ' . strlen($data))
-            );
+                'Content-Length: ' . strlen($data)
+            ]);
 
             return curl_exec($ch);
 

@@ -14,11 +14,11 @@ class WebDAV extends \Hazaar\Http\Client {
 
     private $allow       = [];
 
-    private $propertyMap = array(
+    private $propertyMap = [
         'collection' => '\Hazaar\Http\WebDAV\Collection',
         'exclusive'  => '\Hazaar\Http\WebDAV\Lock\Scope\Exclusive',
         'write'      => '\Hazaar\Http\WebDAV\Lock\Type\Write'
-    );
+    ];
 
     function __construct($settings) {
 
@@ -115,7 +115,7 @@ class WebDAV extends \Hazaar\Http\Client {
 
         $responseList = $dom->child('response');
         if(! is_array($responseList))
-            $responseList = array($responseList);
+            $responseList = [$responseList];
 
         foreach($responseList as $response) {
 
@@ -369,9 +369,9 @@ class WebDAV extends \Hazaar\Http\Client {
         if(substr($dir_url, -1, 1) != '/')
             $dir_url .= '/';
 
-        $url = $dir_url . $file->getBasename();
+        $url = $dir_url . $file->basename();
 
-        return self::put($url, $file->getContents(), $file->getMimeType());
+        return self::put($url, $file->get_contents(), $file->mime_content_type());
 
     }
 

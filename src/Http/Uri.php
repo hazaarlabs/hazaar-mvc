@@ -4,20 +4,20 @@ namespace Hazaar\Http;
 
 class Uri implements \ArrayAccess {
 
-    private $parts  = array(
+    private $parts  = [
         'scheme' => 'http',
         'host' => 'localhost',
         'path' => '/',
         'query' => null
-    );
+    ];
 
     private $params = [];
 
-    public $common_ports = array(
+    public $common_ports = [
         'ftp' => 21,
         'http' => 80,
         'https' => 443
-    );
+    ];
 
     function __construct($uri = null) {
 

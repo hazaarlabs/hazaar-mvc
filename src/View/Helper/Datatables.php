@@ -24,10 +24,10 @@ class Datatables extends \Hazaar\View\Helper {
 
     public function init(\Hazaar\View\Layout $view, $args = []) {
 
-        $files = array(
+        $files = [
             'js/jquery.dataTables.min.js',
             'css/jquery.dataTables.min.css'
-        );
+        ];
 
         $this->cdnjs->load('datatables', null, $files);
 

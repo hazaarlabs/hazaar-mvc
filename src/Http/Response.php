@@ -19,7 +19,7 @@ class Response {
     private $buffer;
 
     //The actual body of the response
-    public $body;
+    public $body = '';
 
     //Parsing input
     private $headers_parsed = FALSE;
@@ -105,7 +105,7 @@ class Response {
 
                         if(! is_array($this->headers[$param])) {
 
-                            $this->headers[$param] = array($this->headers[$param]);
+                            $this->headers[$param] = [$this->headers[$param]];
 
                         }
 
@@ -386,7 +386,7 @@ class Response {
 
                 }
 
-                $this->body[] = array('headers' => $headers, 'body' => substr($parts[$i], $offset));
+                $this->body[] = ['headers' => $headers, 'body' => substr($parts[$i], $offset)];
 
             }
 

@@ -207,7 +207,7 @@ class FileBrowser {
      */
     public function previewsize($width = NULL, $height = NULL) {
 
-        return $this->set('previewsize', array('w' => $width, 'h' => $height));
+        return $this->set('previewsize', ['w' => $width, 'h' => $height]);
 
     }
 

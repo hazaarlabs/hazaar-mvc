@@ -34,10 +34,10 @@ class Figure extends Block {
             if(!$caption instanceof Figcaption)
                 $caption = new Figcaption($caption);
 
-            $content = array(
+            $content = [
                 $image,
                 $caption
-            );
+            ];
 
         } else {
 

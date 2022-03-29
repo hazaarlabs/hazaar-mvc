@@ -8,7 +8,7 @@ class Chain extends \Hazaar\Logger\Backend {
 
     public function init() {
 
-        $this->setDefaultOption('chain', array('backend' => array('file')));
+        $this->setDefaultOption('chain', ['backend' => ['file']]);
 
         $chain = $this->getOption('chain');
 

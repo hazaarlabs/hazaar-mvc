@@ -28,11 +28,11 @@ namespace Hazaar\File;
  *
  *      $bytes = $upload->read('my_new_file');
  *
- *      $db->insert('file_contents', array(
+ *      $db->insert('file_contents', [
  *          'created' => 'Now()',
  *          'filename' => $upload->my_new_file['name'],
  *          'bytes' => $bytes
- *      ));
+ *      ]);
  *
  * }
  * ```
@@ -62,7 +62,7 @@ class Upload {
     public function uploaded($op_keys = NULL) {
 
         if($op_keys && ! is_array($op_keys))
-            $op_keys = array($op_keys);
+            $op_keys = [$op_keys];
 
         if($op_keys) {
 
@@ -222,7 +222,7 @@ class Upload {
             $files = $this->getFile($key);
 
             if(!is_array($files))
-                $files = array($files);
+                $files = [$files];
 
             foreach($files as $file){
 
@@ -257,7 +257,7 @@ class Upload {
             return FALSE;
 
         if(!is_array($files))
-            $files = array($files);
+            $files = [$files];
 
         foreach($files as $file)
             $file->copyTo($destination, $overwrite);

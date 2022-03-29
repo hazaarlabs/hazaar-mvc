@@ -201,7 +201,7 @@ class Element implements \ArrayAccess, \Iterator {
 
             $key = NULL;
 
-            $search = array($ns, $ns . ':');
+            $search = [$ns, $ns . ':'];
 
             foreach($search as $cur) {
 
@@ -415,9 +415,9 @@ class Element implements \ArrayAccess, \Iterator {
 
             if(! is_array($this->__children_index[$name])) {
 
-                $this->__children_index[$name] = array(
+                $this->__children_index[$name] = [
                     $this->__children_index[$name]
-                );
+                ];
             }
 
             $this->__children_index[$name][] = $child;
@@ -943,7 +943,7 @@ class Element implements \ArrayAccess, \Iterator {
      *
      * @since 2.0.1
      *
-     * @param array $criteria An array of attribute criteria to search on.  Example: array('name' => 'test') will find elements who have a name attribute with a value of 'test'.
+     * @param array $criteria An array of attribute criteria to search on.  Example: ['name' => 'test'] will find elements who have a name attribute with a value of 'test'.
      *
      * @param string $name Optional node name to filter on.
      *

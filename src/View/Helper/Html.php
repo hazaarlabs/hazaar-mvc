@@ -70,10 +70,10 @@ class Html extends \Hazaar\View\Helper {
 
         $image = $this->html->img($this->application->url('hazaar/file/hazaarpowered.png'));
 
-        return $this->a('http://www.hazaarmvc.com', $image, array(
+        return $this->a('http://www.hazaarmvc.com', $image, [
             'target' => '_blank',
             'class'  => $class
-        ));
+        ]);
 
     }
 

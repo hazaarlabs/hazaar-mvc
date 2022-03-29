@@ -40,7 +40,7 @@ class BrowserConnector {
             if(! file_exists($source))
                 throw new Exception\BrowserRootNotFound();
 
-            $source = new Manager('local', array('root' => rtrim($source, '/\\')));
+            $source = new Manager('local', ['root' => rtrim($source, '/\\')]);
 
         }
 
@@ -127,7 +127,7 @@ class BrowserConnector {
 
         $downloadURL = $linkURL . '?download=true';
 
-        $info = array(
+        $info = [
             'id'           => $fileId,
             'kind'         => $file->type(),
             'name'         => $file->basename(),
@@ -140,7 +140,7 @@ class BrowserConnector {
             'mime'         => (($file->type() == 'file') ? $file->mime_content_type() : 'dir'),
             'read'         => $file->is_readable(),
             'write'        => $file->is_writable()
-        );
+        ];
 
         if($is_dir) {
 
@@ -202,7 +202,7 @@ class BrowserConnector {
 
             }else{
 
-                $tree = array($this->info($source, $dir));
+                $tree = [$this->info($source, $dir)];
 
             }
 
@@ -279,17 +279,17 @@ class BrowserConnector {
 
         }
 
-        $result = array(
-            'cwd'   => array(
+        $result = [
+            'cwd'   => [
                 'id'     => $this->target($source, $path),
                 'name'   => $path,
                 'source' => array_search($source, $this->sources)
-            ),
-            'sys'   => array(
+            ],
+            'sys'   => [
                 'max_upload_size' => min(bytes_str(ini_get('upload_max_filesize')), bytes_str(ini_get('post_max_size')))
-            ),
+            ],
             'files' => $files
-        );
+        ];
 
         if(boolify($tree) === true)
             $result['tree'] = $this->tree($target, $depth);
@@ -342,11 +342,11 @@ class BrowserConnector {
 
         if($source->mkdir($path)) {
 
-            return array('tree' => array($this->info($source, $source->get($path))));
+            return ['tree' => [$this->info($source, $source->get($path))]];
 
         }
 
-        return array('ok' => FALSE);
+        return ['ok' => FALSE];
 
     }
 
@@ -358,16 +358,16 @@ class BrowserConnector {
 
         $result = $source->rmdir($path, $recurse);
 
-        return array('ok' => $result);
+        return ['ok' => $result];
 
     }
 
     public function unlink($target) {
 
         if(! is_array($target))
-            $target = array($target);
+            $target = [$target];
 
-        $out = array('items' => []);
+        $out = ['items' => []];
 
         foreach($target as $item) {
 
@@ -395,7 +395,7 @@ class BrowserConnector {
         $files = $srcSource->find(NULL, $srcPath);
 
         if($this->progressCallBack)
-            call_user_func_array($this->progressCallBack, array('copy', array('init' => count($files))));
+            call_user_func_array($this->progressCallBack, ['copy', ['init' => count($files)]]);
 
         $dstSource = $this->source($to);
 
@@ -413,16 +413,16 @@ class BrowserConnector {
             $info = $this->info($dstSource, $file);
 
             if($info['kind'] == 'dir')
-                $out['tree'] = array($info);
+                $out['tree'] = [$info];
 
             else
-                $out['items'] = array($info);
+                $out['items'] = [$info];
 
             return $out;
 
         }
 
-        return array('ok' => FALSE);
+        return ['ok' => FALSE];
 
     }
 
@@ -449,15 +449,15 @@ class BrowserConnector {
 
             if($info['kind'] == 'dir') {
 
-                $out['rmdir'] = array($from);
+                $out['rmdir'] = [$from];
 
-                $out['tree'] = array($info);
+                $out['tree'] = [$info];
 
             } else {
 
-                $out['unlink'] = array($from);
+                $out['unlink'] = [$from];
 
-                $out['items'] = array($info);
+                $out['items'] = [$info];
 
             }
 
@@ -465,7 +465,7 @@ class BrowserConnector {
 
         }
 
-        return array('ok' => FALSE);
+        return ['ok' => FALSE];
 
     }
 
@@ -486,11 +486,11 @@ class BrowserConnector {
             if($with_meta)
                 $info['meta'] = $file->get_meta();
 
-            return array('ok' => TRUE, 'rename' => array($target => $info));
+            return ['ok' => TRUE, 'rename' => [$target => $info]];
 
         }
 
-        return array('ok' => FALSE);
+        return ['ok' => FALSE];
 
     }
 
@@ -539,7 +539,7 @@ class BrowserConnector {
             $fullpath = $path . $file['name'];
 
             if(! ($f = $source->get($fullpath)))
-                return array('ok' => FALSE);
+                return ['ok' => FALSE];
 
             $info['file'] = $this->info($source, $f);
 
@@ -547,7 +547,7 @@ class BrowserConnector {
 
         }
 
-        return array('ok' => FALSE);
+        return ['ok' => FALSE];
 
     }
 
@@ -558,9 +558,9 @@ class BrowserConnector {
         $path = $this->path($target);
 
         if($meta = $source->get_meta($path, $key))
-            return array('ok' => TRUE, 'value' => $meta);
+            return ['ok' => TRUE, 'value' => $meta];
 
-        return array('ok' => FALSE);
+        return ['ok' => FALSE];
     }
 
     public function set_meta($target, $values) {
@@ -570,15 +570,15 @@ class BrowserConnector {
         $path = $this->path($target);
 
         if($source->set_meta($path, $values))
-            return array('ok' => TRUE);
+            return ['ok' => TRUE];
 
-        return array('ok' => FALSE);
+        return ['ok' => FALSE];
 
     }
 
     public function snatch($url, $target) {
 
-        $out = array('ok' => FALSE, 'reason' => 'unknown');
+        $out = ['ok' => FALSE, 'reason' => 'unknown'];
 
         $client = new \Hazaar\Http\Client();
 
@@ -596,11 +596,11 @@ class BrowserConnector {
 
                 $file = $source->get($path);
 
-                $items = array(
+                $items = [
                     $this->info($source, $file)
-                );
+                ];
 
-                return array('ok' => TRUE, 'items' => $items);
+                return ['ok' => TRUE, 'items' => $items];
 
             } else {
 

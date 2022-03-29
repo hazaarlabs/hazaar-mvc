@@ -30,18 +30,18 @@ class RRD {
 
     private $lastWrite       = [];
 
-    private $dataSourceTypes = array(
+    private $dataSourceTypes = [
         'GAUGE'    => 0x01,
         'COUNTER'  => 0x02,
         'ABSOLUTE' => 0x03
-    );
+    ];
 
-    private $archiveCFs      = array(
+    private $archiveCFs      = [
         'AVERAGE' => 0x01,
         'MIN'     => 0x02,
         'MAX'     => 0x03,
         'LAST'    => 0x04
-    );
+    ];
 
     public function __construct($rrdfile, $tickSec = 60) {
 
@@ -75,14 +75,14 @@ class RRD {
         if(! array_key_exists($type, $this->dataSourceTypes))
             return FALSE;
 
-        $this->dataSources[$dsname] = array(
+        $this->dataSources[$dsname] = [
             'name'      => $dsname,
             'desc'      => $description,
             'type'      => $this->dataSourceTypes[$type],
             'heartbeat' => ($heartbeat == NULL ? 0 : $heartbeat),
             'min'       => $min,
             'max'       => $max
-        );
+        ];
 
         return TRUE;
 
@@ -103,7 +103,7 @@ class RRD {
         if(! array_key_exists($cf, $this->archiveCFs))
             return FALSE;
 
-        $this->archives[$archiveID] = array(
+        $this->archives[$archiveID] = [
             'id'    => $archiveID,
             'desc'  => $description,
             'cf'    => $this->archiveCFs[$cf],      //Consolidation function
@@ -111,7 +111,7 @@ class RRD {
             'ticks' => $ticks,                      //Number of ticks to consolidate into a row
             'rows'  => $rows,                       //Number of rows to store in the archive
             'last'  => -1                           //Pointer to the current row
-        );
+        ];
 
         return TRUE;
 
@@ -197,14 +197,14 @@ class RRD {
 
                     $foot = unpack('Vhb/fmin/fmax', fread($h, 12));
 
-                    $ds = array(
+                    $ds = [
                         'name'      => $name,
                         'desc'      => $desc,
                         'type'      => $head['type'],
                         'heartbeat' => $foot['hb'],
                         'min'       => ($foot['min'] == -1) ? NULL : $foot['min'],
                         'max'       => ($foot['max'] == -1) ? NULL : $foot['max']
-                    );
+                    ];
 
                     $this->dataSources[$name] = $ds;
 
@@ -719,11 +719,11 @@ class RRD {
 
         ksort($data);
 
-        return array(
+        return [
             'dataSource' => $this->dataSources[$dsname],
             'archive'    => $archive,
             'ticks'      => $data
-        );
+        ];
 
     }
 

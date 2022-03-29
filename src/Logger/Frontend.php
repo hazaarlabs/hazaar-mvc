@@ -77,11 +77,11 @@ class Frontend {
 
         } elseif(is_array(Frontend::$message_buffer)) {
 
-            Frontend::$message_buffer[] = array(
+            Frontend::$message_buffer[] = [
                 $tag,
                 $message,
                 $level
-            );
+            ];
 
         }
 

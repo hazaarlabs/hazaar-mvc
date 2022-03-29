@@ -45,7 +45,7 @@ abstract class Basic extends \Hazaar\Controller {
         if(!Basic::$__cache instanceof \Hazaar\Cache)
             Basic::$__cache = new \Hazaar\Cache();
 
-        $this->__cachedActions[$this->name . '::' . $action] = array('timeout' => $timeout, 'public' => $public);
+        $this->__cachedActions[$this->name . '::' . $action] = ['timeout' => $timeout, 'public' => $public];
 
         return true;
 
@@ -277,7 +277,7 @@ abstract class Basic extends \Hazaar\Controller {
 
         $target->__initialize($this->request);
 
-        return call_user_func_array(array($target, $action), $actionArgs);
+        return call_user_func_array([$target, $action], $actionArgs);
 
     }
 

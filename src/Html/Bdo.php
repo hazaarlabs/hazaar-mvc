@@ -26,14 +26,8 @@ class Bdo extends Block {
         if(!$dir)
             $dir = 'rtl';
 
-        if($dir && in_array(strtolower($dir), array(
-            'rtl',
-            'ltr'
-        ))) {
-
+        if($dir && in_array(strtolower($dir), ['rtl', 'ltr']))
             $parameters['dir'] = $dir;
-
-        }
 
         parent::__construct('bdo', $content, $parameters);
 

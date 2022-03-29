@@ -111,7 +111,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         $this->loaded = true;
 
         if (method_exists($this, 'construct'))
-            call_user_func_array(array($this, 'construct'), $this->args);
+            call_user_func_array([$this, 'construct'], $this->args);
 
     }
 
@@ -245,7 +245,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         $def = ake($this->fields, $key);
 
         if(is_string($def))
-            $def = array('type' => $def);
+            $def = ['type' => $def];
 
         return $def;
 
@@ -257,7 +257,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             throw new \Exception('Trying to add field that already exists: ' . $field);
 
         if (!is_array($def))
-            $def = array('type' => $def);
+            $def = ['type' => $def];
 
         $this->fields[$field] = $def;
 
@@ -428,7 +428,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         $def = ake($this->fields, $key, ake($this->fields, '*'));
 
         if (!is_array($def))
-            $def = array('type' => $def);
+            $def = ['type' => $def];
 
         if(array_key_exists('scope', $def) && !in_array($def['scope'], $this->scopes))
             return $null;
@@ -542,7 +542,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             elseif ($this->allow_undefined === false)
                 throw new Exception\FieldUndefined($key);
 
-            $this->fields[$key] = array('type' => gettype($value));
+            $this->fields[$key] = ['type' => gettype($value)];
 
         }
 
@@ -558,7 +558,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             return false;
 
         if (!is_array($def))
-            $def = array('type' => $def);
+            $def = ['type' => $def];
 
         /*
          * Ready-Only check.
@@ -883,11 +883,11 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                 $callback = array_slice($cb_def, 0, 2);
 
-                $params = array(
+                $params = [
                     $value,
                     $key,
                     $def
-                );
+                ];
 
                 if (array_key_exists(2, $cb_def) && is_array($cb_def[2]))
                     $params = array_merge($params, $cb_def[2]);
@@ -907,7 +907,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         } elseif (method_exists($this, $cb_def)){
             
-            $value = call_user_func(array($this, $cb_def), $value, $key, $def);
+            $value = call_user_func([$this, $cb_def], $value, $key, $def);
 
         }
 
@@ -1032,7 +1032,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             $def = ake($this->fields, $key, ake($this->fields, '*'));
 
             if (!is_array($def))
-                $def = array('type' => $def);
+                $def = ['type' => $def];
 
             /**
              * If the field has a scope and the scope is not set, skip it immediately.
@@ -1047,10 +1047,10 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
              * Legacy 'hide' filter
              * 
              * If the filter is just a boolean, then we are trying to do the old `$show_hidden` style so we need to convert that.  Here if
-             * `show_hidden=false` (the default) we want to filter out hidden fields so the filter becomes `array('hide' => true)`, otherwise
+             * `show_hidden=false` (the default) we want to filter out hidden fields so the filter becomes `['hide' => true]`, otherwise
              * we want to show hidden so we don't need a filter, hence we set it null.
              */
-            if (is_boolean($filter)) $filter = ($filter === false) ? array('hide' => true) : null;
+            if (is_boolean($filter)) $filter = ($filter === false) ? ['hide' => true] : null;
 
             /*
              * Hiding fields
@@ -1126,7 +1126,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
     /**
      * Array Access Methods
      */
-    public function offsetExists($offset) {
+    public function offsetExists($offset) : bool {
 
         return array_key_exists($offset, $this->values);
 
@@ -1138,13 +1138,13 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     }
 
-    public function offsetSet($offset, $value) {
+    public function offsetSet($offset, $value) : void {
 
-        return $this->set($offset, $value);
+        $this->set($offset, $value);
 
     }
 
-    public function offsetUnset($offset) {
+    public function offsetUnset($offset) : void {
 
         unset($this->values[$offset]);
 
@@ -1155,7 +1155,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         if(($key = key($this->values)) === null)
             return false;
 
-        $item = array('key' => $key, 'value' => current($this->values));
+        $item = ['key' => $key, 'value' => current($this->values)];
 
         next($this->values);
 
@@ -1370,7 +1370,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                         if(!array_key_exists('items', $values[$key]))
                             $values[$key]['items'] = [];
 
-                        $values[$key]['items'][] = array('label' => $subKey, 'value' => $subValue);
+                        $values[$key]['items'][] = ['label' => $subKey, 'value' => $subValue];
 
                     }
 
@@ -1477,7 +1477,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         $values = $this->values;
 
-        if($result = call_user_func_array($func, array_merge(array($values), $argv)))
+        if($result = call_user_func_array($func, array_merge([$values], $argv)))
             $this->extend($values);
 
         return $result;

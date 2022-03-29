@@ -55,7 +55,7 @@ class Router extends \Hazaar\Controller {
             if(defined('RUNTIME_PATH'))
                 $this->application->config->app['runtimepath'] = RUNTIME_PATH;
 
-            $this->application->config['app']->extend(array('locale' => $locale, 'timezone' => $timezone));
+            $this->application->config['app']->extend(['locale' => $locale, 'timezone' => $timezone]);
 
             $this->module = new $this->className($this->moduleName, $this->application, false);
 
