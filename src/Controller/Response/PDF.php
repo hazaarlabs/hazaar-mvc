@@ -27,7 +27,7 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
     public function __call($method, $args) {
 
         if(method_exists($this->pdf_file, $method))
-            return call_user_func_array(array($this->pdf_file, $method), $args);
+            return call_user_func_array([$this->pdf_file, $method], $args);
 
         return false;
 

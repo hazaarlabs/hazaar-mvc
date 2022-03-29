@@ -29,7 +29,7 @@ class Shm extends \Hazaar\Cache\Backend {
 
     private $shm;
 
-    private $index = array();
+    private $index = [];
 
     static public function available(){
 
@@ -51,7 +51,7 @@ class Shm extends \Hazaar\Cache\Backend {
 
         }else{
 
-            $namespaces = array(0 => 'index');
+            $namespaces = [0 => 'index'];
 
             shm_put_var($shm_index, 0, $namespaces);
 
@@ -143,7 +143,7 @@ class Shm extends \Hazaar\Cache\Backend {
 
         }
 
-        $info = array('data' => $value);
+        $info = ['data' => $value];
 
         if($timeout !== null){
 
@@ -174,7 +174,7 @@ class Shm extends \Hazaar\Cache\Backend {
 
         if(shm_remove($this->shm)){
 
-            $this->index = array();
+            $this->index = [];
 
             return true;
 
@@ -186,7 +186,7 @@ class Shm extends \Hazaar\Cache\Backend {
 
     public function toArray(){
 
-        $array = array();
+        $array = [];
 
         foreach($this->index as $index =>  $key){
 

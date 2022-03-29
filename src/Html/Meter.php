@@ -21,7 +21,7 @@ class Meter extends Inline {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($content, $value = null, $min = null, $max = null, $parameters = array()) {
+    function __construct($content, $value = null, $min = null, $max = null, $parameters = []) {
 
         if($value)
             $parameters['value'] = (float)$value;

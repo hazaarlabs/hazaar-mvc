@@ -457,9 +457,9 @@ class Socket {
         if (! is_resource($this->resource))
             return false;
         
-        $read = array(
+        $read = [
                 $this->resource
-        );
+        ];
         
         $write = null;
         
@@ -496,9 +496,9 @@ class Socket {
         
         $read = null;
         
-        $write = array(
+        $write = [
                 $this->resource
-        );
+        ];
         
         $exempt = null;
         

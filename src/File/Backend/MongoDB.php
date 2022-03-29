@@ -22,7 +22,7 @@ class MongoDB implements _Interface {
 
     }
     
-    public function __construct($options = array()) {
+    public function __construct($options = []) {
 
         $this->options = ($options instanceof \Hazaar\Map) ? $options : new \Hazaar\Map($options);
 
@@ -38,9 +38,9 @@ class MongoDB implements _Interface {
 
         $this->collection = $this->db->selectCollection($filesName->getValue($this->gridFS));
 
-        //$this->collection->ensureIndex(array('filename' => 1, 'parents' => 1), array('unique' => TRUE));
+        //$this->collection->ensureIndex(['filename' => 1, 'parents' => 1], ['unique' => TRUE]);
 
-        //$this->collection->ensureIndex(array('md5' => 1), array('unique' => TRUE, 'sparse' => TRUE));
+        //$this->collection->ensureIndex(['md5' => 1], ['unique' => TRUE, 'sparse' => TRUE]);
 
         $this->loadRootObject();
 
@@ -54,9 +54,9 @@ class MongoDB implements _Interface {
 
     public function loadRootObject() {
 
-        if(! ($this->rootObject = $this->collection->findOne(array('parents' => array('$type' => 10))))) {
+        if(! ($this->rootObject = $this->collection->findOne(['parents' => ['$type' => 10]]))) {
 
-            $root = array(
+            $root = [
                 'kind'         => 'dir',
                 'filename'     => 'ROOT',
                 'parents'      => NULL,
@@ -64,7 +64,7 @@ class MongoDB implements _Interface {
                 'modifiedDate' => NULL,
                 'length'       => 0,
                 'mime_type'    => 'directory'
-            );
+            ];
 
             $this->collection->insertOne($root);
 
@@ -76,11 +76,11 @@ class MongoDB implements _Interface {
              * b) Screwed - In which case this should make everything work again.
              *
              */
-            $this->collection->updateOne(array('parents' => array('$not' => array('$type' => 10))), array(
-                '$set' => array(
-                    'parents' => array($root['_id'])
-                )
-            ), array('multiple' => TRUE));
+            $this->collection->updateOne(['parents' => ['$not' => ['$type' => 10]]], [
+                '$set' => [
+                    'parents' => [$root['_id']]
+                ]
+            ], ['multiple' => TRUE]);
 
             $this->rootObject = $root;
 
@@ -95,17 +95,17 @@ class MongoDB implements _Interface {
         if(! is_array($parent))
             return FALSE;
 
-        $criteria = array(
-            '$and'    => array(
-                array('filename' => array('$exists' => TRUE)),
-                array('filename' => array('$ne' => NULL)),
-            ),
+        $criteria = [
+            '$and'    => [
+                ['filename' => ['$exists' => TRUE]],
+                ['filename' => ['$ne' => NULL]],
+            ],
             'parents' => $parent['_id']
-        );
+        ];
 
         $q = $this->collection->find($criteria);
 
-        $parent['items'] = array();
+        $parent['items'] = [];
 
         while($object = $q->getNext())
             $parent['items'][$object['filename']] = $object;
@@ -152,11 +152,11 @@ class MongoDB implements _Interface {
 
     public function fsck() {
 
-        $c = $this->collection->find(array(), array('filename' => TRUE, 'parents' => TRUE));
+        $c = $this->collection->find([], ['filename' => TRUE, 'parents' => TRUE]);
 
         while($file = $c->getNext()) {
 
-            $update = array();
+            $update = [];
 
             if(! is_array($file['parents']))
                 continue;
@@ -168,7 +168,7 @@ class MongoDB implements _Interface {
              */
             foreach($file['parents'] as $index => $parentID) {
 
-                $parent = $this->collection->findOne(array('_id' => $parentID));
+                $parent = $this->collection->findOne(['_id' => $parentID]);
 
                 if(! $parent)
                     $update[] = $index;
@@ -184,9 +184,9 @@ class MongoDB implements _Interface {
                  * Fix up any parentless objects
                  */
                 if(count($file['parents']) == 0)
-                    $file['parents'] = array($this->rootObject['_id']);
+                    $file['parents'] = [$this->rootObject['_id']];
 
-                $this->collection->updateOne(array('_id' => $file['_id']), array('$set' => array('parents' => $file['parents'])));
+                $this->collection->updateOne(['_id' => $file['_id']], ['$set' => ['parents' => $file['parents']]]);
 
             }
 
@@ -206,7 +206,7 @@ class MongoDB implements _Interface {
         if(! array_key_exists('items', $parent))
             $this->loadObjects($parent);
 
-        $list = array();
+        $list = [];
 
         foreach($parent['items'] as $filename => $file) {
 
@@ -312,9 +312,9 @@ class MongoDB implements _Interface {
 
         $parent =& $this->info(dirname($path));
 
-        $data = array('$set'  => array('modifiedDate' => new \MongoDB\BSON\UTCDateTime));
+        $data = ['$set'  => ['modifiedDate' => new \MongoDB\BSON\UTCDateTime]];
 
-        $ret = $this->collection->updateOne(array('_id' => $info['_id']), $data);
+        $ret = $this->collection->updateOne(['_id' => $info['_id']], $data);
 
         return $ret->isAcknowledged();
 
@@ -363,7 +363,7 @@ class MongoDB implements _Interface {
 
     }
 
-    public function thumbnail($path, $params = array()) {
+    public function thumbnail($path, $params = []) {
 
         return FALSE;
 
@@ -376,21 +376,21 @@ class MongoDB implements _Interface {
 
         $parent =& $this->info(dirname($path));
 
-        $info = array(
+        $info = [
             'kind'         => 'dir',
-            'parents'      => array($parent['_id']),
+            'parents'      => [$parent['_id']],
             'filename'     => basename($path),
             'length'       => 0,
             'uploadDate'   => new \MongoDB\BSON\UTCDateTime(),
             'modifiedDate' => NULL
-        );
+        ];
 
         $ret = $this->collection->insertOne($info);
 
         if($ret->isAcknowledged()) {
 
             if(! array_key_exists('items', $parent))
-                $parent['items'] = array();
+                $parent['items'] = [];
 
             $parent['items'][$info['filename']] = $info;
 
@@ -412,16 +412,16 @@ class MongoDB implements _Interface {
 
                 if(count($info['parents']) > 1) {
 
-                    $data = array(
-                        '$set'  => array('modifiedDate' => new \MongoDB\BSON\UTCDateTime),
-                        '$pull' => array('parents' => $info['parents'][$index])
-                    );
+                    $data = [
+                        '$set'  => ['modifiedDate' => new \MongoDB\BSON\UTCDateTime],
+                        '$pull' => ['parents' => $info['parents'][$index]]
+                    ];
 
-                    $ret = $this->collection->updateOne(array('_id' => $info['_id']), $data);
+                    $ret = $this->collection->updateOne(['_id' => $info['_id']], $data);
 
                 } else {
 
-                    $ret = $this->gridFS->remove(array('_id' => $info['_id']));
+                    $ret = $this->gridFS->remove(['_id' => $info['_id']]);
 
                 }
 
@@ -490,10 +490,10 @@ class MongoDB implements _Interface {
         if(! ($item = $this->info($path)))
             return FALSE;
 
-        if(! ($file = $this->gridFS->findOne(array('_id' => $item['_id']))))
+        if(! ($file = $this->gridFS->findOne(['_id' => $item['_id']])))
             return FALSE;
 
-        $this->collection->updateOne(array('_id' => $item['_id']), array('$inc' => array('accessCount' => 1), '$set' => array('accessDate' => new \MongoDB\BSON\UTCDateTime())));
+        $this->collection->updateOne(['_id' => $item['_id']], ['$inc' => ['accessCount' => 1], '$set' => ['accessDate' => new \MongoDB\BSON\UTCDateTime()]]);
 
         return $file->getBytes();
 
@@ -508,22 +508,22 @@ class MongoDB implements _Interface {
 
         $md5 = md5($bytes);
 
-        if($info = $this->collection->findOne(array('md5' => $md5))) {
+        if($info = $this->collection->findOne(['md5' => $md5])) {
 
             if(in_array($parent['_id'], $info['parents']))
                 return FALSE;
 
-            $data = array(
-                '$set'  => array('modifiedDate' => new \MongoDB\BSON\UTCDateTime),
-                '$push' => array('parents' => $parent['_id'])
-            );
+            $data = [
+                '$set'  => ['modifiedDate' => new \MongoDB\BSON\UTCDateTime],
+                '$push' => ['parents' => $parent['_id']]
+            ];
 
-            $ret = $this->collection->updateOne(array('_id' => $info['_id']), $data);
+            $ret = $this->collection->updateOne(['_id' => $info['_id']], $data);
 
             if($ret->isAcknowledged()) {
 
                 if(! array_key_exists('items', $parent))
-                    $parent['items'] = array();
+                    $parent['items'] = [];
 
                 $parent['items'][$info['filename']] = $info;
 
@@ -533,14 +533,14 @@ class MongoDB implements _Interface {
 
         } else {
 
-            $fileInfo = array(
+            $fileInfo = [
                 'kind'         => 'file',
-                'parents'      => array($parent['_id']),
+                'parents'      => [$parent['_id']],
                 'filename'     => basename($path),
                 'mime_type'    => $content_type,
                 'modifiedDate' => NULL,
                 'md5'          => $md5
-            );
+            ];
 
             if($info = $this->info($path))
                 $fileInfo['meta'] = ake($info, 'meta');
@@ -552,7 +552,7 @@ class MongoDB implements _Interface {
                 $fileInfo['length'] = strlen($bytes);
 
                 if(! array_key_exists('items', $parent))
-                    $parent['items'] = array();
+                    $parent['items'] = [];
 
                 $parent['items'][$fileInfo['filename']] = $fileInfo;
 
@@ -575,22 +575,22 @@ class MongoDB implements _Interface {
 
         $md5 = md5_file($file['tmp_name']);
 
-        if($info = $this->collection->findOne(array('md5' => $md5))) {
+        if($info = $this->collection->findOne(['md5' => $md5])) {
 
             if(in_array($parent['_id'], $info['parents']))
                 return FALSE;
 
-            $data = array(
-                '$set'  => array('modifiedDate' => new \MongoDB\BSON\UTCDateTime),
-                '$push' => array('parents' => $parent['_id'])
-            );
+            $data = [
+                '$set'  => ['modifiedDate' => new \MongoDB\BSON\UTCDateTime],
+                '$push' => ['parents' => $parent['_id']]
+            ];
 
-            $ret = $this->collection->updateOne(array('_id' => $info['_id']), $data);
+            $ret = $this->collection->updateOne(['_id' => $info['_id']], $data);
 
             if($ret->isAcknowledged()) {
 
                 if(! array_key_exists('items', $parent))
-                    $parent['items'] = array();
+                    $parent['items'] = [];
 
                 $parent['items'][$info['filename']] = $info;
 
@@ -600,14 +600,14 @@ class MongoDB implements _Interface {
 
         } else {
 
-            $fileInfo = array(
+            $fileInfo = [
                 'kind'         => 'file',
-                'parents'      => array($parent['_id']),
+                'parents'      => [$parent['_id']],
                 'filename'     => $file['name'],
                 'mime_type'    => $file['type'],
                 'modifiedDate' => NULL,
                 'md5'          => $md5
-            );
+            ];
 
             if($id = $this->gridFS->storeFile($file['tmp_name'], $fileInfo)) {
 
@@ -616,7 +616,7 @@ class MongoDB implements _Interface {
                 $fileInfo['length'] = $file['size'];
 
                 if(! array_key_exists('items', $parent))
-                    $parent['items'] = array();
+                    $parent['items'] = [];
 
                 $parent['items'][$fileInfo['filename']] = $fileInfo;
 
@@ -651,19 +651,19 @@ class MongoDB implements _Interface {
         if(! $dstParent)
             return FALSE;
 
-        $data = array(
-            '$set' => array('modifiedDate' => new \MongoDB\BSON\UTCDateTime)
-        );
+        $data = [
+            '$set' => ['modifiedDate' => new \MongoDB\BSON\UTCDateTime]
+        ];
 
         if(! in_array($dstParent['_id'], $source['parents']))
-            $data['$push'] = array('parents' => $dstParent['_id']);
+            $data['$push'] = ['parents' => $dstParent['_id']];
 
-        $ret = $this->collection->updateOne(array('_id' => $source['_id']), $data);
+        $ret = $this->collection->updateOne(['_id' => $source['_id']], $data);
 
         if($ret->isAcknowledged()) {
 
             if(! array_key_exists('items', $dstParent))
-                $dstParent['items'] = array();
+                $dstParent['items'] = [];
 
             $dstParent['items'][$source['filename']] = $source;
 
@@ -696,19 +696,19 @@ class MongoDB implements _Interface {
         if(! $dstParent)
             return FALSE;
 
-        $data = array(
-            '$set' => array('modifiedDate' => new \MongoDB\BSON\UTCDateTime)
-        );
+        $data = [
+            '$set' => ['modifiedDate' => new \MongoDB\BSON\UTCDateTime]
+        ];
 
         if(! in_array($dstParent['_id'], $source['parents']))
-            $data['$push'] = array('parents' => $dstParent['_id']);
+            $data['$push'] = ['parents' => $dstParent['_id']];
 
-        $ret = $this->collection->updateOne(array('_id' => $source['_id']), $data);
+        $ret = $this->collection->updateOne(['_id' => $source['_id']], $data);
 
         if($ret->isAcknowledged()) {
 
             if(! array_key_exists('items', $dstParent))
-                $dstParent['items'] = array();
+                $dstParent['items'] = [];
 
             $dstParent['items'][$source['filename']] = $source;
 
@@ -730,9 +730,9 @@ class MongoDB implements _Interface {
 
         $srcParent =& $this->info(dirname($src));
 
-        $data = array(
-            '$set' => array('modifiedDate' => new \MongoDB\BSON\UTCDateTime)
-        );
+        $data = [
+            '$set' => ['modifiedDate' => new \MongoDB\BSON\UTCDateTime]
+        ];
 
         $dstParent =& $this->info($dst);
 
@@ -761,14 +761,14 @@ class MongoDB implements _Interface {
         }
 
         if(! in_array($dstParent['_id'], $source['parents']))
-            $data['$push'] = array('parents' => $dstParent['_id']);
+            $data['$push'] = ['parents' => $dstParent['_id']];
 
-        $ret = $this->collection->updateOne(array('_id' => $source['_id']), $data);
+        $ret = $this->collection->updateOne(['_id' => $source['_id']], $data);
 
         if($ret->isAcknowledged()) {
 
             if(! array_key_exists('items', $dstParent))
-                $dstParent['items'] = array();
+                $dstParent['items'] = [];
 
             $dstParent['items'][$source['filename']] = $source;
 
@@ -776,7 +776,7 @@ class MongoDB implements _Interface {
 
                 unset($srcParent['items'][$source['filename']]);
 
-                $this->collection->updateOne(array('_id' => $source['_id']), array('$pull' => array('parents' => $srcParent['_id'])));
+                $this->collection->updateOne(['_id' => $source['_id']], ['$pull' => ['parents' => $srcParent['_id']]]);
 
             }
 
@@ -797,7 +797,7 @@ class MongoDB implements _Interface {
 
             $target['mode'] = $mode;
 
-            $ret = $this->collection->updateOne(array('_id' => $target['_id']), array('$set' => array('mode' => $mode)));
+            $ret = $this->collection->updateOne(['_id' => $target['_id']], ['$set' => ['mode' => $mode]]);
 
             return $ret->isAcknowledged();
 
@@ -813,7 +813,7 @@ class MongoDB implements _Interface {
 
             $target['owner'] = $user;
 
-            $ret = $this->collection->updateOne(array('_id' => $target['_id']), array('$set' => array('owner' => $user)));
+            $ret = $this->collection->updateOne(['_id' => $target['_id']], ['$set' => ['owner' => $user]]);
 
             return $ret->isAcknowledged();
 
@@ -829,7 +829,7 @@ class MongoDB implements _Interface {
 
             $target['group'] = $group;
 
-            $ret = $this->collection->updateOne(array('_id' => $target['_id']), array('$set' => array('group' => $group)));
+            $ret = $this->collection->updateOne(['_id' => $target['_id']], ['$set' => ['group' => $group]]);
 
             return $ret->isAcknowledged();
 
@@ -843,12 +843,12 @@ class MongoDB implements _Interface {
 
         if($target =& $this->info($path)) {
 
-            $data = array();
+            $data = [];
 
             foreach($values as $key => $value)
                 $data['meta.' . $key] = $value;
 
-            $ret = $this->collection->updateOne(array('_id' => $target['_id']), array('$set' => $data));
+            $ret = $this->collection->updateOne(['_id' => $target['_id']], ['$set' => $data]);
 
             return $ret->isAcknowledged();
 

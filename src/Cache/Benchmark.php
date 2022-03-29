@@ -16,10 +16,10 @@ class Benchmark {
 
     private $configs;
 
-    function __construct($backends = array(), $configs = array()){
+    function __construct($backends = [], $configs = []){
 
         if($backends && !is_array($backends))
-            $backends = array($backends);
+            $backends = [$backends];
 
         if(count($backends) == 0)
             $backends = $this->getAvailableBackends();
@@ -32,9 +32,9 @@ class Benchmark {
 
     static public function getAvailableBackends(){
 
-        $all = array('apc', 'database', 'file', 'memcached', 'redis', 'session', 'shm', 'sqlite3');
+        $all = ['apc', 'database', 'file', 'memcached', 'redis', 'session', 'shm', 'sqlite3'];
 
-        $available = array();
+        $available = [];
 
         foreach($all as $backend){
 
@@ -51,13 +51,13 @@ class Benchmark {
 
     public function run($start = 2, $end = 2048){
 
-        $results = array();
+        $results = [];
 
         foreach($this->backends as $backend){
 
             try{
 
-                $tests = array();
+                $tests = [];
 
                 $cache = new \Hazaar\Cache($backend, ake($this->configs, $backend));
 

@@ -59,7 +59,7 @@ class File extends \Hazaar\Logger\Backend {
 
         $remote = ake($_SERVER, 'REMOTE_ADDR', '--');
 
-        $line = array();
+        $line = [];
 
         if($this->getOption('write_ip'))
             $line[] = $remote;

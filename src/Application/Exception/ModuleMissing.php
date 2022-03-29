@@ -10,7 +10,7 @@ class ModuleMissing extends \Hazaar\Exception {
 
         if(! is_array($modules)) {
 
-            $modules = array($modules);
+            $modules = [$modules];
 
         }
 

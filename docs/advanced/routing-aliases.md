@@ -61,8 +61,8 @@ Routes can be set in the form of controller/action/arg1/arg2/argx where all fiel
 #### Example route.php to load routes from a MongoDB database
 
 ```php
-$db = new Hazaar\Db\MongoDB(array('database' => 'system'));
-$route = $db->route->findOne(array('_id' => $this->get()));
+$db = new Hazaar\Db\MongoDB(['database' => 'system']);
+$route = $db->route->findOne(['_id' => $this->get()]);
 if($route){
     $this->set($route['target']);
 }
