@@ -11,7 +11,7 @@ class Uri implements \ArrayAccess {
         'query' => null
     );
 
-    private $params = array();
+    private $params = [];
 
     public $common_ports = array(
         'ftp' => 21,

@@ -33,7 +33,7 @@ class Error extends \Hazaar\Controller\Action {
 
     protected $response = 'html';
 
-    private $status_codes = array();
+    private $status_codes = [];
 
     public $use_metrics = false;
 
@@ -86,7 +86,7 @@ class Error extends \Hazaar\Controller\Action {
 
     private function loadStatusCodes() {
 
-        $status_codes = array();
+        $status_codes = [];
 
         if ($file = \Hazaar\Loader::getFilePath(FILE_PATH_SUPPORT, 'Http_Status.dat')) {
 

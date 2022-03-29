@@ -10,9 +10,9 @@ class WebDAV extends \Hazaar\Http\Client {
 
     private $password;
 
-    private $settings    = array();
+    private $settings    = [];
 
-    private $allow       = array();
+    private $allow       = [];
 
     private $propertyMap = array(
         'collection' => '\Hazaar\Http\WebDAV\Collection',
@@ -69,7 +69,7 @@ class WebDAV extends \Hazaar\Http\Client {
 
     protected function parseProperties(\Hazaar\Xml\Element $dom) {
 
-        $properties = array();
+        $properties = [];
 
         if($dom->count() > 0) {
 
@@ -111,7 +111,7 @@ class WebDAV extends \Hazaar\Http\Client {
 
         $dom->setDefaultNamespace('DAV');
 
-        $result = array();
+        $result = [];
 
         $responseList = $dom->child('response');
         if(! is_array($responseList))
@@ -166,7 +166,7 @@ class WebDAV extends \Hazaar\Http\Client {
 
     }
 
-    public function propfind($url, $properties = array(), $depth = 1, $return_response = FALSE, $namespaces = array()) {
+    public function propfind($url, $properties = [], $depth = 1, $return_response = FALSE, $namespaces = []) {
 
         if(!in_array('PROPFIND', $this->allow))
             throw new \Exception('Host does not support PROPFIND command!');
@@ -233,17 +233,17 @@ class WebDAV extends \Hazaar\Http\Client {
 
             $result = current($result);
 
-            return isset($result[200]) ? $result[200] : array();
+            return isset($result[200]) ? $result[200] : [];
 
         }
 
-        $newResult = array();
+        $newResult = [];
 
         foreach($result as $href => $statusList) {
 
             $path = $this->path($href);
 
-            $newResult[$path] = isset($statusList[200]) ? $statusList[200] : array();
+            $newResult[$path] = isset($statusList[200]) ? $statusList[200] : [];
 
         }
 

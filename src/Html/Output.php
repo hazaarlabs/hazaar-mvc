@@ -21,7 +21,7 @@ class Output extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($name, $for, $parameters = array()) {
+    function __construct($name, $for, $parameters = []) {
 
         $parameters['name'] = $name;
 

@@ -7,7 +7,7 @@ class Response implements Response\_Interface {
     /*
      * Use text/html as the default type as it is the most widely accepted.
      */
-    protected $headers      = array();
+    protected $headers      = [];
 
     protected $headers_set  = FALSE;
 
@@ -60,7 +60,7 @@ class Response implements Response\_Interface {
         } else {
 
             if(!(array_key_exists($key, $this->headers) && is_array($this->headers[$key])))
-                $this->headers[$key] = isset($this->headers[$key]) ? array($this->headers[$key]) : array();
+                $this->headers[$key] = isset($this->headers[$key]) ? array($this->headers[$key]) : [];
 
             $this->headers[$key][] = $value;
 
@@ -111,7 +111,7 @@ class Response implements Response\_Interface {
 
     public function clearHeaders() {
 
-        $this->headers = array();
+        $this->headers = [];
 
     }
 

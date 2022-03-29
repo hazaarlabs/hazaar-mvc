@@ -319,7 +319,7 @@ class Dir implements _Interface {
         if($recursive !== true)
             return $this->manager->mkdir($this->path);
 
-        $parents = array();
+        $parents = [];
 
         $last = $this->path;
 
@@ -468,7 +468,7 @@ class Dir implements _Interface {
      */
     public function find($pattern, $show_hidden = FALSE, $case_sensitive = TRUE, $depth = null) {
 
-        $list = array();
+        $list = [];
 
         if(!($dir = $this->manager->scandir($this->path, NULL, TRUE, $this->relative_path)))
             return null;

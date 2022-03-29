@@ -21,7 +21,7 @@ class Progress extends Inline {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($value, $max = 100, $parameters = array()) {
+    function __construct($value, $max = 100, $parameters = []) {
 
         $parameters['value'] = $value;
 

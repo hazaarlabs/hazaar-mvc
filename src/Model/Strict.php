@@ -45,13 +45,13 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      * The field definition.
      * @var mixed
      */
-    protected $fields = array();
+    protected $fields = [];
 
     /**
      * The current values of all defined fields.
      * @var mixed
      */
-    protected $values = array();
+    protected $values = [];
 
     /**
      * Internal loaded flag.  This allows read only fields to be set during startup.
@@ -69,7 +69,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      * Scopes can be defined so that some fields are not available if the scope is not set.
      * @var array
      */
-    protected $scopes = array();
+    protected $scopes = [];
 
     /**
      * Strict model constructor
@@ -120,7 +120,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         if (!method_exists($this, 'init'))
             throw new Exception\InitMissing(get_class($this));
 
-        $params = array();
+        $params = [];
 
         $parent = new \ReflectionClass($this);
 
@@ -1021,7 +1021,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     private function resolveArray($array, $disable_callbacks = false, $depth = null, $filter = false, $export_data_binder = true, $ignore_nulls = false) {
 
-        $result = array();
+        $result = [];
 
         $callback_state = $this->disable_callbacks;
 
@@ -1174,7 +1174,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         $value = $this->current['value'];
 
-        $def = ake($this->fields, $key, ake($this->fields, '*', array()));
+        $def = ake($this->fields, $key, ake($this->fields, '*', []));
 
         /*
          * Run any pre-read callbacks
@@ -1283,7 +1283,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         if(!is_array($array))
             return null;
 
-        $values = array();
+        $values = [];
 
         foreach($array as $key => $value){
 
@@ -1292,7 +1292,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             //If there is no key definition (because we are export_all=true) then use an empty array so things don't break
             if(!is_array($key_def))
-                $key_def = array();
+                $key_def = [];
 
             if(ake($key_def, 'force_hide') === true)
                 continue;
@@ -1363,12 +1363,12 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                         $subDef = $key_def;
 
-                        $values[$key]['collection'][] = $this->exportHMVArray($subValue, (is_array($subDef)?$subDef:array()), $hide_empty, $export_all, $object);
+                        $values[$key]['collection'][] = $this->exportHMVArray($subValue, (is_array($subDef)?$subDef:[]), $hide_empty, $export_all, $object);
 
                     }else{
 
                         if(!array_key_exists('items', $values[$key]))
-                            $values[$key]['items'] = array();
+                            $values[$key]['items'] = [];
 
                         $values[$key]['items'][] = array('label' => $subKey, 'value' => $subValue);
 
@@ -1391,7 +1391,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     }
 
-    public function find($field, $criteria = array(), $multiple = false){
+    public function find($field, $criteria = [], $multiple = false){
 
         if(!(array_key_exists($field, $this->values) && $this->values[$field] instanceof ChildArray))
             return false;

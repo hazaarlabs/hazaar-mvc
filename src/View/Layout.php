@@ -15,17 +15,17 @@ class Layout extends \Hazaar\View {
 
     private $_rendered_views = null;
 
-    private $_views   = array();
+    private $_views   = [];
 
     protected $_priority = 0;
 
-    protected $_links = array();
+    protected $_links = [];
 
-    protected $_requires = array();
+    protected $_requires = [];
 
-    protected $_requires_param = array();
+    protected $_requires_param = [];
 
-    protected $_postItems = array();
+    protected $_postItems = [];
 
     private $cacheDir;
 
@@ -407,7 +407,7 @@ class Layout extends \Hazaar\View {
             if(!($content = @file_get_contents($url)))
                 throw new \Hazaar\Exception('Unable to cache from source ' . $url, 502);
 
-            $headers = array();
+            $headers = [];
 
             foreach($http_response_header as $idx => $hdr){
 

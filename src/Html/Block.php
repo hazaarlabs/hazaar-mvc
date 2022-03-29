@@ -16,7 +16,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     private   $close;
 
-    private   $content = array();
+    private   $content = [];
 
     /**
      * @detail  The HTML block element constructor.  This allows a block element of any type to be constructed.
@@ -38,7 +38,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
      *                              sequence to drop the PHP interpreter back into HTML output mode to render more
      *                              content that will appear inside the block.
      */
-    function __construct($type = null, $content = NULL, $parameters = array(), $close = TRUE) {
+    function __construct($type = null, $content = NULL, $parameters = [], $close = TRUE) {
 
         parent::__construct($type, $parameters);
 
@@ -67,7 +67,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
      */
     public function renderElement($element) {
 
-        $out = array();
+        $out = [];
 
         if(is_array($element)) {
 
@@ -101,7 +101,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
         if($this->type)
             $out .= '<' . $this->type . (($this->parameters->count() > 0) ? ' ' . $this->parameters : '') . '>';
 
-        $content = array();
+        $content = [];
 
         foreach($this->content as $child)
             $content[] = $this->renderElement($child);
@@ -124,7 +124,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
      */
     public function set() {
 
-        $this->content = array();
+        $this->content = [];
 
         return self::add(func_get_args());
 
@@ -252,7 +252,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
             //Split on a comma and any amount of adjacent white space
             $parts = preg_split('/\s*,\s*/', $selector);
 
-            $ruleset = array();
+            $ruleset = [];
 
             //Compile all the selector rules.
             foreach($parts as $part)

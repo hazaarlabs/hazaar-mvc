@@ -6,7 +6,7 @@ class Layout extends \Hazaar\Controller\Response\Html implements \ArrayAccess {
 
     private $_layout;
 
-    private $_data = array();
+    private $_data = [];
 
     function __construct($layout = NULL, $init_default_helpers = TRUE) {
 

@@ -77,7 +77,7 @@ class Media extends \Hazaar\Controller\WebDAV {
 
     }
 
-    private function loadSources($config, $connector, $names = array()) {
+    private function loadSources($config, $connector, $names = []) {
 
         if(!is_array($names))
             $names = array($names);
@@ -450,7 +450,7 @@ class Media extends \Hazaar\Controller\WebDAV {
 
         $params = $method->getParameters();
 
-        $args = array();
+        $args = [];
 
         $rqParams = $this->request->getParams();
 

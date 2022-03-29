@@ -61,7 +61,7 @@ class PDF {
 
         $this->page_top = 0;
 
-        $fonts = array();
+        $fonts = [];
 
         $document = new Block('div', null, array('class' => 'document'));
 

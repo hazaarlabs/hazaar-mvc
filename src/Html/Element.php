@@ -17,7 +17,7 @@ abstract class Element implements _Interface {
 
     protected $parameters;
 
-    protected $style = array();
+    protected $style = [];
 
     /**
      * @detail      The HTML element constructor takes two arguments.  The type of the element which is defined by
@@ -35,7 +35,7 @@ abstract class Element implements _Interface {
      *
      * @param       array $parameters An array of HTML parameters to apply to the element.
      */
-    function __construct($type = null, $parameters = array()) {
+    function __construct($type = null, $parameters = []) {
 
         $this->type = $type;
 

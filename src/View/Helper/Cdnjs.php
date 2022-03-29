@@ -20,7 +20,7 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     private $cache_local = false;
 
-    private $libraries = array();
+    private $libraries = [];
 
     static private $cache;
 
@@ -33,7 +33,7 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     }
 
-    public function init(\Hazaar\View\Layout $view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = []) {
 
         $this->cache_local = ake($args, 'cache_local');
 
@@ -176,7 +176,7 @@ class Cdnjs extends \Hazaar\View\Helper {
 
         if($files && is_array($files)){
 
-            $info['load'] = array();
+            $info['load'] = [];
 
             foreach($files as $file){
 

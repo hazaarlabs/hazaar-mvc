@@ -21,7 +21,7 @@ class Dd extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the div.
      */
-    function __construct($content = null, $params = array()) {
+    function __construct($content = null, $params = []) {
 
         parent::__construct('dd', $content, $params);
 

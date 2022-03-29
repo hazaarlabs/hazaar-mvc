@@ -22,7 +22,7 @@ class Datatables extends \Hazaar\View\Helper {
 
     }
 
-    public function init(\Hazaar\View\Layout $view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = []) {
 
         $files = array(
             'js/jquery.dataTables.min.js',
