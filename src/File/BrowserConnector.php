@@ -4,7 +4,7 @@ namespace Hazaar\File;
 
 class BrowserConnector {
 
-    private $sources = array();
+    private $sources = [];
 
     private $url;
 
@@ -167,7 +167,7 @@ class BrowserConnector {
 
     public function tree($target = NULL, $depth = NULL) {
 
-        $tree = array();
+        $tree = [];
 
         if($target) {
 
@@ -253,7 +253,7 @@ class BrowserConnector {
 
         $source->refresh();
 
-        $files = array();
+        $files = [];
 
         $path = rtrim($source->fixPath($this->path($target)), '/') . '/';
 
@@ -367,7 +367,7 @@ class BrowserConnector {
         if(! is_array($target))
             $target = array($target);
 
-        $out = array('items' => array());
+        $out = array('items' => []);
 
         foreach($target as $item) {
 
@@ -405,7 +405,7 @@ class BrowserConnector {
 
         if($result) {
 
-            $out = array();
+            $out = [];
 
             if(! ($file = $dstSource->get(rtrim($dstPath, '/') . '/' . basename($srcPath))))
                 return FALSE;
@@ -440,7 +440,7 @@ class BrowserConnector {
 
         if($result) {
 
-            $out = array();
+            $out = [];
 
             if(! ($file = $dstSource->get(rtrim($dstPath, '/') . '/' . basename($srcPath))))
                 return FALSE;
@@ -506,7 +506,7 @@ class BrowserConnector {
 
         $path = rtrim($this->path($parent), '/') . '/';
 
-        $info = array();
+        $info = [];
 
         if($relativePath) {
 

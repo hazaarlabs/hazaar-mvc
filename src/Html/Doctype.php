@@ -18,7 +18,7 @@ class Doctype extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($html = true, $level = 5, $strict = true, $parameters = array()) {
+    function __construct($html = true, $level = 5, $strict = true, $parameters = []) {
 
         $parameters[] = 'HTML';
 

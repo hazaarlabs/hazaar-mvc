@@ -84,7 +84,7 @@ class DataBinderValue implements \JsonSerializable {
      */
     static function resolve($object, $recursive = true){
 
-        $array = array();
+        $array = [];
 
         if(is_array($object) || $object instanceof \stdClass){
 

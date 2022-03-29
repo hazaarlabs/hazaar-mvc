@@ -12,9 +12,9 @@ class Client {
 
     private $connection_timeout = 5;
 
-    private $headers            = array();
+    private $headers            = [];
 
-    private $cookies            = array();
+    private $cookies            = [];
 
     private $local_cert         = NULL;
 
@@ -295,7 +295,7 @@ class Client {
 
     public function getCookies(){
 
-        $list = array();
+        $list = [];
 
         foreach($this->cookies as $cookie)
             $list[] = $cookie['name'] . '=' . $cookie['value'];
@@ -309,7 +309,7 @@ class Client {
 
     public function getCookie($name){
 
-        $list = array();
+        $list = [];
 
         foreach($this->cookies as $cookie){
 
@@ -349,7 +349,7 @@ class Client {
 
         if(\Hazaar\Map::is_array($cookie)){
 
-            $cookies = array();
+            $cookies = [];
 
             foreach($cookie as $c)
                 $cookies[] = $this->setCookie($c);
@@ -410,7 +410,7 @@ class Client {
 
         $path = explode('/', trim($uri->path(), '/'));
 
-        $cookies = array();
+        $cookies = [];
 
         foreach($this->cookies as $cookie_key => $cookie_data){
 
@@ -437,7 +437,7 @@ class Client {
 
             if($cookie_path = trim($cookie_data['path'], '/'))
                 $cookie_path = explode('/', $cookie_path);
-            else $cookie_path = array();
+            else $cookie_path = [];
 
             if(!(array_slice($path, 0, count($cookie_path)) === $cookie_path))
                 continue;
@@ -466,7 +466,7 @@ class Client {
 
         }else{
 
-            $cachable = array();
+            $cachable = [];
 
             foreach($this->cookies as $key => $cookie){
 
@@ -488,7 +488,7 @@ class Client {
         if($this->cookies = $cache->get('hazaar-http-client-cookies'))
             return TRUE;
 
-        $this->cookies = array();
+        $this->cookies = [];
 
         return FALSE;
 
@@ -496,7 +496,7 @@ class Client {
 
     public function deleteCookies(){
         
-        $this->cookies = array();
+        $this->cookies = [];
 
         return true;
 

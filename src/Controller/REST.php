@@ -97,7 +97,7 @@ abstract class REST extends \Hazaar\Controller {
 
     protected $allow_directory = true;
 
-    protected $__rest_endpoints = array();
+    protected $__rest_endpoints = [];
 
     protected $__endpoint;
 
@@ -147,7 +147,7 @@ abstract class REST extends \Hazaar\Controller {
                 'cache_timeout' => null,
                 'cache_ignore_params' => false,
                 'comment' => $comment,
-                'routes' => array()
+                'routes' => []
             );
 
             if(($pos = array_search('cache', $method_matches[2])) !== false){
@@ -206,7 +206,7 @@ abstract class REST extends \Hazaar\Controller {
                         }else{
 
                             if(!array_key_exists('properties', $args))
-                                $args['properties'] = array();
+                                $args['properties'] = [];
 
                             $args['properties'][] = trim($part);
 
@@ -299,7 +299,7 @@ abstract class REST extends \Hazaar\Controller {
 
     private function __describe_api(){
 
-        $api = array();
+        $api = [];
 
         foreach($this->__rest_endpoints as $endpoint)
             $this->__describe_endpoint($endpoint, $this->describe_full, $api);
@@ -310,7 +310,7 @@ abstract class REST extends \Hazaar\Controller {
 
     private function __describe_endpoint($endpoint, $describe_full = false, &$api = null){
 
-        if(!$api) $api = array();
+        if(!$api) $api = [];
 
         foreach($endpoint['routes'] as $route => $route_data){
 
@@ -325,7 +325,7 @@ abstract class REST extends \Hazaar\Controller {
 
                     if($doc->hasTag('param')){
 
-                        $info['parameters'] = array();
+                        $info['parameters'] = [];
 
                         foreach($doc->tag('param') as $name => $param){
 
@@ -355,7 +355,7 @@ abstract class REST extends \Hazaar\Controller {
 
     private function __match_route($request_method, $path, $route, $endpoint, &$args = null){
 
-        $args = array();
+        $args = [];
 
         $path = explode('/', ltrim($path, '/'));
 
@@ -417,14 +417,14 @@ abstract class REST extends \Hazaar\Controller {
 
     }
 
-    private function __exec_endpoint($endpoint, $args = array()){
+    private function __exec_endpoint($endpoint, $args = []){
 
         list($endpoint, $route, $args) = $endpoint;
 
         if(!($method = $route['func']) instanceof \ReflectionMethod)
             throw new \Hazaar\Exception('Method is no longer a method!?', 500);
 
-        $params = array();
+        $params = [];
 
         foreach($method->getParameters() as $p){
 
@@ -496,7 +496,7 @@ abstract class REST extends \Hazaar\Controller {
 
                     if(!array_key_exists('tags', $route)){
 
-                        $route['tags'] = array();
+                        $route['tags'] = [];
 
                         preg_match_all('/\*\s*@((\w+).*)/', $endpoint['comment'], $matches);
 

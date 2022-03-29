@@ -22,7 +22,7 @@ class Label extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($content = null, $for = null, $parameters = array()) {
+    function __construct($content = null, $for = null, $parameters = []) {
 
         if($for)
             $parameters['for'] = $for;

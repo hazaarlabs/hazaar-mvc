@@ -349,7 +349,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         foreach($parts as $part){
 
             if(!property_exists($folder, 'items'))
-                $folder->items = array();
+                $folder->items = [];
 
             if(!array_key_exists($part, $folder->items))
                 $folder->items[$part] = (object)array('Name' => $part);
@@ -505,9 +505,9 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
                 $value = $response;
             });
 
-            $folders = ake($responses[0]->body(), 'd.results', array(), true);
+            $folders = ake($responses[0]->body(), 'd.results', [], true);
 
-            $files = ake($responses[1]->body(), 'd.results', array(), true);
+            $files = ake($responses[1]->body(), 'd.results', [], true);
 
             $sort = function($a, $b){
                 if ($a->Name === $b->Name) return 0;
@@ -518,7 +518,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
             usort($files, $sort);
 
-            $items = array();
+            $items = [];
 
             foreach(array_merge($folders, $files) as $item)
                 $items[$item->Name] = $item;
@@ -534,7 +534,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
     //Get a directory listing
     public function scandir($path, $regex_filter = NULL, $show_hidden = FALSE) {
 
-        $files = array();
+        $files = [];
 
         if($info =& $this->info($path)){
 
@@ -720,7 +720,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
     }
 
-    public function thumbnail($path, $params = array()) {
+    public function thumbnail($path, $params = []) {
 
         return false;
 

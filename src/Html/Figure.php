@@ -21,7 +21,7 @@ class Figure extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($image = null, $caption = null, $parameters = array()) {
+    function __construct($image = null, $caption = null, $parameters = []) {
 
         if(!$image instanceof Img) {
 

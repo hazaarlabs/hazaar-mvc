@@ -21,7 +21,7 @@ class Param extends Inline {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($name, $value, $parameters = array()) {
+    function __construct($name, $value, $parameters = []) {
 
         $parameters['name'] = $name;
 

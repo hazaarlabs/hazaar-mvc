@@ -43,19 +43,19 @@ class Smarty {
 
     protected $__compiled_content = '';
 
-    protected $__custom_functions = array();
+    protected $__custom_functions = [];
 
-    protected $__includes = array();
+    protected $__includes = [];
 
-    protected $__include_funcs = array();
+    protected $__include_funcs = [];
 
-    private   $__custom_function_handlers = array();
+    private   $__custom_function_handlers = [];
 
-    private $__section_stack = array();
+    private $__section_stack = [];
 
-    private $__foreach_stack = array();
+    private $__foreach_stack = [];
 
-    private $__capture_stack = array();
+    private $__capture_stack = [];
 
     public $ldelim = '{';
 
@@ -125,7 +125,7 @@ class Smarty {
      *
      * @return string
      */
-    public function render($params = array()) {
+    public function render($params = []) {
 
         $app = \Hazaar\Application::getInstance();
 
@@ -135,10 +135,10 @@ class Smarty {
             'smarty' => array(
                 'now' => new \Hazaar\Date(),
                 'const' => get_defined_constants(),
-                'capture' => array(),
+                'capture' => [],
                 'config' => $app->config->toArray(),
-                'section' => array(),
-                'foreach' => array(),
+                'section' => [],
+                'foreach' => [],
                 'template' => null,
                 'version' => 2,
                 'ldelim' => $this->ldelim,
@@ -181,15 +181,15 @@ class Smarty {
 
             private \$modify;
 
-            private \$variables = array();
+            private \$variables = [];
 
-            private \$params = array();
+            private \$params = [];
 
-            private \$functions = array();
+            private \$functions = [];
 
             public  \$custom_handlers;
 
-            private \$include_funcs = array();
+            private \$include_funcs = [];
 
             function __construct(){ \$this->modify = new \Hazaar\Template\Smarty\Modifier; }
 
@@ -270,7 +270,7 @@ class Smarty {
 
         $parts = preg_split("/['\"][^'\"]*['\"](*SKIP)(*F)|\x20/", $params);
 
-        $params = array();
+        $params = [];
 
         foreach($parts as $part){
 
@@ -374,7 +374,7 @@ class Smarty {
 
     protected function compileVAR($name){
 
-        $modifiers = array();
+        $modifiers = [];
 
         if(strpos($name, '|') !== false){
 
@@ -484,7 +484,7 @@ class Smarty {
 
         if(is_array($params)){
 
-            $out = array();
+            $out = [];
 
             foreach($params as $p)
                 $out[] = $this->compilePARAMS($p);
@@ -544,7 +544,7 @@ class Smarty {
 
         $parts = preg_split('/\s+/', $params);
 
-        $params = array();
+        $params = [];
 
         foreach($parts as $part)
             $params += array_unflatten($part);
@@ -605,7 +605,7 @@ class Smarty {
 
         if($tag){
 
-            $nodes = array();
+            $nodes = [];
 
             $tags = preg_split('/\s+/', $tag);
 
@@ -784,7 +784,7 @@ class Smarty {
 
         if(count($params) > 0){
 
-            $parts = array();
+            $parts = [];
 
             foreach($params as $key => $value)
                 $parts[] = "'$key' => " . $this->compileVAR($value);
@@ -805,7 +805,7 @@ class Smarty {
 
         $reflect = new \ReflectionMethod($handler, $method);
 
-        $func_params = array();
+        $func_params = [];
 
         foreach($reflect->getParameters() as $p){
 

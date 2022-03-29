@@ -23,7 +23,7 @@ class Link extends Inline {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($href, $rel = null, $type = null, $parameters = array()) {
+    function __construct($href, $rel = null, $type = null, $parameters = []) {
 
         $parameters['href'] = $href;
 

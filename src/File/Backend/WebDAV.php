@@ -10,7 +10,7 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
 
     private $cache;
 
-    private $meta = array();
+    private $meta = [];
 
     static public function label(){
 
@@ -94,7 +94,7 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
         if(!(is_array($pathMeta['resourcetype']) && array_key_exists('collection', $pathMeta['resourcetype'])))
             return FALSE;
 
-        $list = array();
+        $list = [];
 
         foreach($this->meta as $name => $item) {
 
@@ -350,7 +350,7 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
 
     }
 
-    public function thumbnail($path, $params = array()) {
+    public function thumbnail($path, $params = []) {
 
         if(! ($info = $this->info($path)))
             return NULL;
@@ -559,7 +559,7 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
     public function set_meta($path, $values) {
 
         if(! ($meta = $this->cache->load($this->options['app_key'] . '::' . strtolower($path))))
-            $meta = array();
+            $meta = [];
 
         foreach($values as $key => $value)
             $meta[$key] = $value;

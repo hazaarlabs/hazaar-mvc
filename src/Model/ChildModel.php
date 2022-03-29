@@ -26,7 +26,7 @@ class ChildModel extends Strict {
      * @param mixed $field_definition The field definition for this strict model.
      * @param mixed $values The initial values to populate the model with.
      */
-    function __construct($field_definition, $values = array()) {
+    function __construct($field_definition, $values = []) {
 
         if(is_string($field_definition) && $field_definition === 'any'){
 

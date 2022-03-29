@@ -35,7 +35,7 @@ class Bootstrap extends \Hazaar\View\Helper {
      * @detail      Initialise the view helper and include the buttons.css file.  Adds a requirement for the HTML view
      *              helper.
      */
-    public function init(\Hazaar\View\Layout $view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = []) {
 
         $version = ake($args, 'version');
 
@@ -88,7 +88,7 @@ class Bootstrap extends \Hazaar\View\Helper {
      *
      * @param       Array  $args  An array of optional arguments to pass to the HTML block element.
      */
-    public function button($name, $label, $style = null, $size = null, $args = array()) {
+    public function button($name, $label, $style = null, $size = null, $args = []) {
 
         $class = 'btn';
 
@@ -119,12 +119,12 @@ class Bootstrap extends \Hazaar\View\Helper {
 
     }
 
-    public function buttonGroup($buttons, $args = array()) {
+    public function buttonGroup($buttons, $args = []) {
 
         if(! is_array($buttons))
             return null;
 
-        $btn_out = array();
+        $btn_out = [];
 
         foreach($buttons as $id => $btn) {
 

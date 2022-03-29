@@ -8,9 +8,9 @@ class View extends \Hazaar\Controller\Response\Html {
 
     private $_view_name;
 
-    private $_data     = array();
+    private $_data     = [];
 
-    private $_requires = array();
+    private $_requires = [];
 
     function __construct($view) {
 

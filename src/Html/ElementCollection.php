@@ -12,7 +12,7 @@ namespace Hazaar\Html;
  */
 class ElementCollection implements \ArrayAccess, \Iterator {
 
-    private $elements = array();
+    private $elements = [];
 
     private $original_selector;
 
@@ -30,7 +30,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
         //Split on a comma and any amount of adjacent white space
         $parts = preg_split('/\s*,\s*/', $selector);
 
-        $ruleset = array();
+        $ruleset = [];
 
         //Compile all the selector rules.
         foreach($parts as $part)
@@ -45,15 +45,15 @@ class ElementCollection implements \ArrayAccess, \Iterator {
         $rules = array(
                 'type' => null,
                 'id' => null,
-                'classes' => array(),
+                'classes' => [],
                 'attributes' => array(
-                    'match' => array(),
-                    'exists' => array()
+                    'match' => [],
+                    'exists' => []
                 ),
-                'ranges' => array(),
-                'pseudo-class' => array(),
-                'func' => array(),
-                'not' => array()
+                'ranges' => [],
+                'pseudo-class' => [],
+                'func' => [],
+                'not' => []
             );
 
         $selectors = preg_split('/\:/', $selector);
@@ -113,7 +113,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
                             $b = intval($bits[3]);
 
-                            $range = array();
+                            $range = [];
 
                             switch($func[1]){
                                 case 'nth-child':
@@ -173,7 +173,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
     static private function applyRuleset(&$objects, &$ruleset, $recursive = false){
 
-        $collection = array();
+        $collection = [];
 
         foreach($objects as $index => $object){
 
@@ -307,7 +307,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
     public function children($selector = null){
 
-        $elements = array();
+        $elements = [];
 
         foreach($this->elements as $element)
             $elements += $element->get();

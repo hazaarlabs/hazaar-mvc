@@ -21,7 +21,7 @@ class Source extends Inline {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($source = null, $type = null, $mime_prefix = null, $parameters = array()) {
+    function __construct($source = null, $type = null, $mime_prefix = null, $parameters = []) {
 
         if(!$type && $mime_prefix) {
 

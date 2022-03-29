@@ -22,7 +22,7 @@ class Dropzone extends \Hazaar\View\Helper {
 
     private $options;
 
-    private $dropzones = array();
+    private $dropzones = [];
 
     public function import() {
 
@@ -42,7 +42,7 @@ class Dropzone extends \Hazaar\View\Helper {
      *
      * @since       2.0.0
      */
-    public function init(\Hazaar\View\Layout $view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = []) {
 
         $files = array('min/dropzone.min.js', 'min/dropzone.min.css');
 
@@ -63,7 +63,7 @@ class Dropzone extends \Hazaar\View\Helper {
      *
      * @param       Array $args Optional additional arguments to pass to the Dropzone constructor.
      */
-    public function add($name, $target, $class = null, $args = array()) {
+    public function add($name, $target, $class = null, $args = []) {
 
         $div = $this->html->div()->id($name);
 

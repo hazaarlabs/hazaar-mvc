@@ -14,7 +14,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
     private $cache;
 
-    private $meta       = array();
+    private $meta       = [];
 
     private $meta_items = array(
         'kind',
@@ -88,7 +88,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
         unset($this->options['oauth2']);
 
-        $this->meta = array();
+        $this->meta = [];
 
         $this->cache->remove($this->oauth2ID);
 
@@ -265,7 +265,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
         if($reset || count($this->meta) == 0) {
 
-            $this->meta = array();
+            $this->meta = [];
 
             $request = new \Hazaar\Http\Request('https://www.googleapis.com/drive/v2/changes', 'GET');
 
@@ -314,9 +314,9 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
         if(! $response)
             return FALSE;
 
-        $items = array();
+        $items = [];
 
-        $deleted = array();
+        $deleted = [];
 
         foreach($response->items->toArray() as $item) {
 
@@ -420,7 +420,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
     private function resolveItem($item) {
 
-        $path = array();
+        $path = [];
 
         if($parents = ake($item, 'parents')) {
 
@@ -448,7 +448,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
         $parent = $this->resolvePath($path);
 
-        $items = array();
+        $items = [];
 
         foreach($this->meta as $item) {
 
@@ -664,7 +664,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
     }
 
-    public function thumbnail($path, $params = array()) {
+    public function thumbnail($path, $params = []) {
 
         return FALSE;
 

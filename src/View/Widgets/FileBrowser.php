@@ -24,7 +24,7 @@ class FileBrowser {
      *
      * @param       string $connect The URL to connect to
      */
-    function __construct($name, $settings, $params = array()) {
+    function __construct($name, $settings, $params = []) {
 
         $this->div = new \Hazaar\Html\Div(NULL, $params);
 

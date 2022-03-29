@@ -21,7 +21,7 @@ class Audio extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($autoplay = false, $controls = true, $parameters = array()) {
+    function __construct($autoplay = false, $controls = true, $parameters = []) {
 
         if($autoplay)
             $parameters[] = 'autoplay';
@@ -33,7 +33,7 @@ class Audio extends Block {
 
     }
 
-    public function source($source, $type = null, $params = array()) {
+    public function source($source, $type = null, $params = []) {
 
         if(is_array($source)) {
 

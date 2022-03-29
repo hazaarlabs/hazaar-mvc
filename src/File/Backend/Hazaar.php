@@ -8,11 +8,11 @@ class Hazaar implements _Interface {
     
     private $options;
 
-    private $pathCache = array();
+    private $pathCache = [];
 
     private $client;
 
-    private $meta      = array();
+    private $meta      = [];
 
     static public function label(){
 
@@ -20,7 +20,7 @@ class Hazaar implements _Interface {
 
     }
 
-    public function __construct($options = array()) {
+    public function __construct($options = []) {
 
         $this->options = new \Hazaar\Map(array(
                                              'url' => NULL
@@ -30,7 +30,7 @@ class Hazaar implements _Interface {
 
     }
 
-    private function request($cmd, $params = array(), $mime_parts = array()) {
+    private function request($cmd, $params = [], $mime_parts = []) {
 
         $request = new \Hazaar\Http\Request($this->options->url, 'POST');
 
@@ -63,7 +63,7 @@ class Hazaar implements _Interface {
 
     public function refresh($reset = FALSE) {
 
-        $this->pathCache = array();
+        $this->pathCache = [];
 
         return TRUE;
 
@@ -85,7 +85,7 @@ class Hazaar implements _Interface {
                     'read'   => TRUE,
                     'write'  => FALSE,
                     'dirs'   => 0,
-                    'files'  => array()
+                    'files'  => []
                 )
             );
 
@@ -126,7 +126,7 @@ class Hazaar implements _Interface {
 
         if(! array_key_exists('files', $this->pathCache[$path])) {
 
-            $this->pathCache[$path]['files'] = array();
+            $this->pathCache[$path]['files'] = [];
 
             if($info = $this->request('open', array('target' => $this->pathCache[$path]['id'], 'with_meta' => TRUE))) {
 
@@ -137,7 +137,7 @@ class Hazaar implements _Interface {
 
         }
 
-        $items = array();
+        $items = [];
 
         foreach($this->pathCache as $d) {
 
@@ -302,7 +302,7 @@ class Hazaar implements _Interface {
 
     }
 
-    public function thumbnail($path, $params = array()) {
+    public function thumbnail($path, $params = []) {
 
         if($link = ake($this->info($path), 'link')) {
 
@@ -515,7 +515,7 @@ class Hazaar implements _Interface {
 
         }
 
-        $this->meta[$path] = array_merge(ake($this->meta, $path, array()), $values);
+        $this->meta[$path] = array_merge(ake($this->meta, $path, []), $values);
 
         return TRUE;
 

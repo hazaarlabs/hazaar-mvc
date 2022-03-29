@@ -4,7 +4,7 @@ namespace Hazaar\Logger\Backend;
 
 class Chain extends \Hazaar\Logger\Backend {
 
-    private $backends = array();
+    private $backends = [];
 
     public function init() {
 
@@ -18,7 +18,7 @@ class Chain extends \Hazaar\Logger\Backend {
 
                 $backend_class = 'Hazaar_Logger_Backend_' . ucfirst($backend_name);
 
-                $backend = new $backend_class( array());
+                $backend = new $backend_class( []);
 
                 $this->backends[] = $backend;
 

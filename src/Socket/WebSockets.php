@@ -10,9 +10,9 @@ abstract class WebSocketServer extends Server {
 
     protected $master;
 
-    protected $sockets = array();
+    protected $sockets = [];
 
-    protected $users = array();
+    protected $users = [];
 
     protected $interactive = true;
 
@@ -193,7 +193,7 @@ abstract class WebSocketServer extends Server {
     protected function doHandshake($user, $buffer) {
 
         $magicGUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-        $headers = array();
+        $headers = [];
         $lines = explode("\n", $buffer);
         foreach ($lines as $line) {
             if (strpos($line, ":") !== false) {

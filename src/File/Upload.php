@@ -39,7 +39,7 @@ namespace Hazaar\File;
  */
 class Upload {
 
-    private $files = array();
+    private $files = [];
 
     /**
      * Constructor
@@ -143,7 +143,7 @@ class Upload {
 
         if($key === null){
 
-            $files = array();
+            $files = [];
 
             foreach($this->keys() as $key)
                 $files[$key] = $this->get($key);
@@ -165,7 +165,7 @@ class Upload {
             if(!is_array($info['name']))
                 return $info;
 
-            $files = array();
+            $files = [];
 
             foreach($info as $item => $item_info){
 
@@ -324,7 +324,7 @@ class Upload {
 
         }
 
-        $files = array();
+        $files = [];
 
         foreach($array as $key => $info)
             $files[$key] = $this->resolveFiles($info);

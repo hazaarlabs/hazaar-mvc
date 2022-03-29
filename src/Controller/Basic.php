@@ -31,9 +31,9 @@ abstract class Basic extends \Hazaar\Controller {
 
     protected $__action        = 'index';
 
-    protected $__actionArgs    = array();
+    protected $__actionArgs    = [];
 
-    protected $__cachedActions = array();
+    protected $__cachedActions = [];
 
     protected static $__cache  = null;
 

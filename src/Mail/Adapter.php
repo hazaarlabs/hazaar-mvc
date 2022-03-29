@@ -14,21 +14,21 @@ class Adapter {
 
     private        $transport;
 
-    private        $headers = array();
+    private        $headers = [];
 
     private        $from;
 
-    private        $to      = array();
+    private        $to      = [];
 
-    private        $cc      = array();
+    private        $cc      = [];
 
-    private        $bcc     = array();
+    private        $bcc     = [];
 
     private        $subject;
 
-    private        $body    = array();
+    private        $body    = [];
 
-    private        $dsn     = array();
+    private        $dsn     = [];
 
     /**
      * The mail class constructor
@@ -50,7 +50,7 @@ class Adapter {
 
     }
 
-    public function getTransportObject($transport = 'local', $config = array()){
+    public function getTransportObject($transport = 'local', $config = []){
 
         $transportClass = '\\Hazaar\\Mail\\Transport\\' . ucfirst($transport);
 
@@ -278,7 +278,7 @@ class Adapter {
      *
      * @return string The body of the email
      */
-    public function getBody($params = array()) {
+    public function getBody($params = []) {
 
         $message = '';
 
@@ -334,7 +334,7 @@ class Adapter {
      *
      * @return boolean True/false as to whether the transmission was successful
      */
-    public function send($params = array()) {
+    public function send($params = []) {
 
         if(! $this->transport instanceof Transport)
             throw new \Exception('No mail transport set while trying to send mail');

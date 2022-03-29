@@ -21,7 +21,7 @@ class Embed extends Inline {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($src, $parameters = array()) {
+    function __construct($src, $parameters = []) {
 
         $parameters['src'] = $src;
 

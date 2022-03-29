@@ -52,7 +52,7 @@ class Hmv extends \Hazaar\View\Helper {
         if(!is_array($items))
             return null;
 
-        $itemCollection = array();
+        $itemCollection = [];
 
         foreach($items as $key => $item){
 
@@ -122,7 +122,7 @@ class Hmv extends \Hazaar\View\Helper {
         if(!is_array($items))
             return null;
 
-        $itemCollection = array();
+        $itemCollection = [];
 
         foreach($items as $key => $item){
 
@@ -194,7 +194,7 @@ class Hmv extends \Hazaar\View\Helper {
 
     private function renderInputs(\Hazaar\Model\Strict $object, $prefix = null, $export_all = false){
 
-        $tableRows = array();
+        $tableRows = [];
 
         $typeMap = array(
             'string' => 'text',
@@ -215,7 +215,7 @@ class Hmv extends \Hazaar\View\Helper {
                 $name = $key;
 
             if(!($def = $object->getDefinition($key)))
-                $def = array();
+                $def = [];
 
             if(ake($def, 'hideInEdit') === true)
                 continue;
@@ -239,7 +239,7 @@ class Hmv extends \Hazaar\View\Helper {
 
             if(!$item && $object->isObject($key)){
 
-                $newItem = $object->set($key, array());
+                $newItem = $object->set($key, []);
 
                 if($newItem instanceof \Hazaar\Model\Strict)
                     $item = $newItem;
@@ -318,7 +318,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                         $input = $this->html->div();
 
-                        $values = array();
+                        $values = [];
 
                         if($valueKey = ake($def, 'valueKey')){
 
@@ -346,7 +346,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                 }elseif(ake($def, 'arrayOf')){
 
-                    $input = array();
+                    $input = [];
 
                     $delTR = $this->html->tr(array($this->html->td(), $this->html->td($this->html->span()->class('btnDelItem'))));
 
@@ -360,7 +360,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                     $table = $this->html->table()->class($this->container_class);
 
-                    $input[] = $table->add($this->renderInputs($object->append($key, array()), $name . '[]', $export_all), $delTR)
+                    $input[] = $table->add($this->renderInputs($object->append($key, []), $name . '[]', $export_all), $delTR)
                         ->addClass($this->newitem_class);
 
                     $input[] = $this->html->span()->class('btnNewItem');
@@ -421,7 +421,7 @@ class Hmv extends \Hazaar\View\Helper {
         if(!($source = ake($def, 'source')))
             return null;
 
-        $data = array();
+        $data = [];
 
         //If it's an array but not callable, it's an array of data
         if(is_array($source) && !is_callable($source)){
@@ -442,7 +442,7 @@ class Hmv extends \Hazaar\View\Helper {
 
             }
 
-            $data = call_user_func_array($source, ake($def, 'sourceArgs', array()));
+            $data = call_user_func_array($source, ake($def, 'sourceArgs', []));
 
         }
 

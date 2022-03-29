@@ -18,7 +18,7 @@ class Br extends Inline {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($parameters = array()) {
+    function __construct($parameters = []) {
 
         parent::__construct('br', $parameters);
 

@@ -10,7 +10,7 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
 
     private $cache;
 
-    private $meta = array();
+    private $meta = [];
 
     private $cursor;
 
@@ -227,7 +227,7 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
         if(! $pathMeta['is_dir'])
             return FALSE;
 
-        $list = array();
+        $list = [];
 
         foreach($this->meta as $name => $meta) {
 
@@ -448,7 +448,7 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
 
     }
 
-    public function thumbnail($path, $params = array()) {
+    public function thumbnail($path, $params = []) {
 
         if(! ($info = $this->info($path)))
             return NULL;
@@ -700,7 +700,7 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
     public function set_meta($path, $values) {
 
         if(! ($meta = $this->cache->get($this->options['app_key'] . '::' . strtolower($path))))
-            $meta = array();
+            $meta = [];
 
         $meta = array_merge($meta, $values);
 
@@ -718,7 +718,7 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
 
     }
 
-    public function preview_uri($path, $params = array()) {
+    public function preview_uri($path, $params = []) {
 
         $width = intval(ake($params, 'width', ake($params, 'height', 64)));
 

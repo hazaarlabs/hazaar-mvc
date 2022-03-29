@@ -4,9 +4,9 @@ namespace Hazaar\View\Helper;
 
 class Hazaar extends \Hazaar\View\Helper {
 
-    private $data = array();
+    private $data = [];
 
-    function init(\Hazaar\View\Layout $view, $args = array()){
+    function init(\Hazaar\View\Layout $view, $args = []){
 
         if(!$view instanceof \Hazaar\View\Layout)
             return;

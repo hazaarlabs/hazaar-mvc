@@ -289,7 +289,7 @@ class FirePHP {
      *
      * @var object
      */
-    protected $objectStack = array();
+    protected $objectStack = [];
 
     /**
      * Flag to enable/disable logging
@@ -670,7 +670,7 @@ class FirePHP {
      * @return true
      * @throws Exception
      */
-    public function log($Object, $Label = NULL, $Options = array()) {
+    public function log($Object, $Label = NULL, $Options = []) {
 
         return $this->fb($Object, $Label, FirePHP::LOG, $Options);
     }
@@ -686,7 +686,7 @@ class FirePHP {
      * @return true
      * @throws Exception
      */
-    public function info($Object, $Label = NULL, $Options = array()) {
+    public function info($Object, $Label = NULL, $Options = []) {
 
         return $this->fb($Object, $Label, FirePHP::INFO, $Options);
     }
@@ -702,7 +702,7 @@ class FirePHP {
      * @return true
      * @throws Exception
      */
-    public function warn($Object, $Label = NULL, $Options = array()) {
+    public function warn($Object, $Label = NULL, $Options = []) {
 
         return $this->fb($Object, $Label, FirePHP::WARN, $Options);
     }
@@ -718,7 +718,7 @@ class FirePHP {
      * @return true
      * @throws Exception
      */
-    public function error($Object, $Label = NULL, $Options = array()) {
+    public function error($Object, $Label = NULL, $Options = []) {
 
         return $this->fb($Object, $Label, FirePHP::ERROR, $Options);
     }
@@ -734,7 +734,7 @@ class FirePHP {
      * @return true
      * @throws Exception
      */
-    public function dump($Key, $Variable, $Options = array()) {
+    public function dump($Key, $Variable, $Options = []) {
 
         if(! is_string($Key)) {
             throw $this->newException('Key passed to dump() is not a string');
@@ -775,7 +775,7 @@ class FirePHP {
      * @return true
      * @throws Exception
      */
-    public function table($Label, $Table, $Options = array()) {
+    public function table($Label, $Table, $Options = []) {
 
         return $this->fb($Table, $Label, FirePHP::TABLE, $Options);
     }
@@ -855,7 +855,7 @@ class FirePHP {
             }
         }
 
-        static $insightGroupStack = array();
+        static $insightGroupStack = [];
 
         if(! $this->getEnabled()) {
             return FALSE;
@@ -873,7 +873,7 @@ class FirePHP {
 
         $Type = NULL;
         $Label = NULL;
-        $Options = array();
+        $Options = [];
 
         if(func_num_args() == 1) {
         } else if(func_num_args() == 2) {
@@ -956,7 +956,7 @@ class FirePHP {
             return FALSE;
         }
 
-        $meta = array();
+        $meta = [];
         $skipFinalObjectEncode = FALSE;
 
         if($Object instanceof Exception) {
@@ -1254,7 +1254,7 @@ class FirePHP {
         if($_cached_headers !== FALSE) {
             return $_cached_headers;
         }
-        $headers = array();
+        $headers = [];
         if(function_exists('getallheaders')) {
             foreach(getallheaders() as $name => $value) {
                 $headers[strtolower($name)] = $value;
@@ -1332,11 +1332,11 @@ class FirePHP {
         if(! $Table)
             return $Table;
 
-        $new_table = array();
+        $new_table = [];
         foreach($Table as $row) {
 
             if(is_array($row)) {
-                $new_row = array();
+                $new_row = [];
 
                 foreach($row as $item) {
                     $new_row[] = $this->encodeObject($item);
@@ -1364,7 +1364,7 @@ class FirePHP {
             return '** Max Depth (' . $this->options['maxDepth'] . ') **';
         }
 
-        $return = array();
+        $return = [];
 
         if(is_resource($Object)) {
 
@@ -1387,7 +1387,7 @@ class FirePHP {
             $class_lower = strtolower($class);
 
             $reflectionClass = new ReflectionClass($class);
-            $properties = array();
+            $properties = [];
             foreach($reflectionClass->getProperties() as $property) {
                 $properties[$property->getName()] = $property;
             }
@@ -1594,7 +1594,7 @@ class FirePHP {
     /**
      * Keep a list of objects as we descend into the array so we can detect recursion.
      */
-    private $json_objectStack = array();
+    private $json_objectStack = [];
 
     /**
      * convert a string from one UTF-8 char to one UTF-16 char

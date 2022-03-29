@@ -137,7 +137,7 @@ class Smarty extends \Hazaar\Template\Smarty {
 
     }
 
-    public function render($params = array()){
+    public function render($params = []){
 
         try{
 

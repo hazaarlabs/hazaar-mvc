@@ -18,17 +18,17 @@ class RRD {
 
     private $version         = 2;
 
-    private $dataSources     = array();
+    private $dataSources     = [];
 
-    private $archives        = array();
+    private $archives        = [];
 
-    private $data            = array();
+    private $data            = [];
 
     private $tickSec         = 0;
 
-    private $lastTick        = array();
+    private $lastTick        = [];
 
-    private $lastWrite       = array();
+    private $lastWrite       = [];
 
     private $dataSourceTypes = array(
         'GAUGE'    => 0x01,
@@ -212,7 +212,7 @@ class RRD {
 
                 case  0x83: //Archive definition
 
-                    $archive = array();
+                    $archive = [];
 
                     $head = unpack('Clen', fread($h, 1));
 
@@ -389,10 +389,10 @@ class RRD {
         foreach($this->archives as $archiveID => $archive) {
 
             if(! array_key_exists($archiveID, $this->data))
-                $this->data[$archiveID] = array();
+                $this->data[$archiveID] = [];
 
             if(! array_key_exists($dsname, $this->data[$archiveID]))
-                $this->data[$archiveID][$dsname] = array();
+                $this->data[$archiveID][$dsname] = [];
 
             $data =& $this->data[$archiveID][$dsname];
 
@@ -452,12 +452,12 @@ class RRD {
 
         $currentTick = $this->getTick();
 
-        $updates = array();
+        $updates = [];
 
         foreach($this->archives as $archiveID => &$archive) {
 
             if(! array_key_exists($archiveID, $this->data))
-                $this->data[$archiveID] = array();
+                $this->data[$archiveID] = [];
 
             $lastTick = $this->lastTick[$archiveID];    //lastTick is the tick that was last processed
 
@@ -470,7 +470,7 @@ class RRD {
                 foreach($this->dataSources as $dsname => $ds) {
 
                     if(! array_key_exists($dsname, $this->data[$archiveID]))
-                        $this->data[$archiveID][$dsname] = array();
+                        $this->data[$archiveID][$dsname] = [];
 
                     $dataPoints = &$this->data[$archiveID][$dsname];
 
@@ -487,7 +487,7 @@ class RRD {
                     //We do this by looking at the datapoints and pulling out those that are after the last update
                     ksort($dataPoints);
 
-                    $currentData = array();
+                    $currentData = [];
 
                     foreach($dataPoints as $tick => $dataPoint) {
 
@@ -508,7 +508,7 @@ class RRD {
 
                             $updates[$archiveID][$tick][$dsname] = $value;
 
-                            $currentData = array();
+                            $currentData = [];
 
                         }
 
@@ -662,7 +662,7 @@ class RRD {
         if(! $this->exists())
             return FALSE;
 
-        $data = array();
+        $data = [];
 
         if(! array_key_exists($dsname, $this->dataSources))
             return FALSE;

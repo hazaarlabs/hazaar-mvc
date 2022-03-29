@@ -77,7 +77,7 @@ class Smtp extends \Hazaar\Mail\Transport {
 
     }
 
-    public function send($to, $subject = null, $message = null, $extra_headers = array(), $dsn_types = array()){
+    public function send($to, $subject = null, $message = null, $extra_headers = [], $dsn_types = []){
         
         $from = ake($extra_headers, 'From');
 
@@ -106,7 +106,7 @@ class Smtp extends \Hazaar\Mail\Transport {
         $auth_methods = array_reduce($modules, function($carry, $item){
             if(substr($item, 0, 8) === 'AUTH') return array_merge($carry, explode(' ', substr($item, 9)));
             return $carry;
-        }, array());
+        }, []);
 
         if($dsn_active = is_array($dsn_types) && count($dsn_types) > 0 && in_array('DSN', $modules))
             $dsn_types = array_map('strtoupper', $dsn_types);
@@ -165,7 +165,7 @@ class Smtp extends \Hazaar\Mail\Transport {
             if(preg_match('/^(.*)<(.*)>$/', $x, $matches)){
 
                 if(!(array_key_exists('To', $extra_headers) && is_array($extra_headers['To'])))
-                    $extra_headers['To'] = (array_key_exists('To', $extra_headers) ? $extra_headers['To'] : array());
+                    $extra_headers['To'] = (array_key_exists('To', $extra_headers) ? $extra_headers['To'] : []);
 
                 $extra_headers['To'][] = $x;
 

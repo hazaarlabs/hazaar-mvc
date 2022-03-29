@@ -36,11 +36,11 @@ class Metric {
 
     private $tick_sec = 0;
 
-    private $data_sources = array();
+    private $data_sources = [];
 
-    private $archives = array();
+    private $archives = [];
 
-    private $lastTick = array('data' => array(), 'archive' => array());
+    private $lastTick = array('data' => [], 'archive' => []);
 
     private $dataSourceTypes = array(
         'GAUGE'    => 0x01,
@@ -313,7 +313,7 @@ class Metric {
 
                 case  METRIC_TYPE_AD: //Archive definition
 
-                    $archive = array();
+                    $archive = [];
 
                     $header = unpack('Clen', fread($this->h, 1));
 
@@ -617,11 +617,11 @@ class Metric {
 
         $current_tick = $this->getTick();
 
-        $updates = array();
+        $updates = [];
 
         foreach($this->archives as $archive_id => $archive){
 
-            $data = array();
+            $data = [];
 
             $last_tick = $this->lastTick['archive'][$archive_id];
 
@@ -664,7 +664,7 @@ class Metric {
 
                     ksort($data);
 
-                    $current_data = array();
+                    $current_data = [];
 
                     foreach($data as $tick => $value) {
 
@@ -679,7 +679,7 @@ class Metric {
 
                             $updates[$archive_id][$tick][$dsname] = $cvalue;
 
-                            $current_data = array();
+                            $current_data = [];
 
                         }
 
@@ -834,7 +834,7 @@ class Metric {
         if(! $this->exists())
             return FALSE;
 
-        $data = array();
+        $data = [];
 
         if(!array_key_exists($dsname, $this->data_sources))
             return FALSE;
@@ -905,7 +905,7 @@ class Metric {
      */
     public function data($dsname){
 
-        $data = array();
+        $data = [];
 
         $offset = $this->getDataSourceOffset($dsname);
 

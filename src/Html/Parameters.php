@@ -11,7 +11,7 @@ namespace Hazaar\Html;
  */
 class Parameters implements \Countable {
 
-    private $params       = array();
+    private $params       = [];
 
     private $delimeter    = '=';
 
@@ -34,7 +34,7 @@ class Parameters implements \Countable {
      *
      * @param       string $suffix Optionally specify a parameter value suffix.
      */
-    function __construct($params = array(), $delimeter = NULL, $quote_params = TRUE, $suffix = NULL) {
+    function __construct($params = [], $delimeter = NULL, $quote_params = TRUE, $suffix = NULL) {
 
         if($params) {
 
@@ -199,7 +199,7 @@ class Parameters implements \Countable {
 
     public function renderObject() {
 
-        $out = array();
+        $out = [];
 
         foreach($this->params as $key => $value) {
 

@@ -14,7 +14,7 @@ class Image extends File {
 
     private $cache = false;
 
-    private $cache_key = array();
+    private $cache_key = [];
 
     function __construct($filename = NULL, $quality = NULL, $backend = NULL, $enable_image_cache = false) {
 

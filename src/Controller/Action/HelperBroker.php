@@ -4,7 +4,7 @@ namespace Hazaar\Controller\Action;
 
 class HelperBroker {
 
-    private $helpers = array();
+    private $helpers = [];
 
     private $controller;
 

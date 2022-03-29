@@ -37,9 +37,9 @@ class Fontawesome extends \Hazaar\View\Helper {
      *
      * @since       1.0.0
      */
-    public function init(\Hazaar\View\Layout $view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = []) {
 
-        $files = array();
+        $files = [];
 
         if($version = ake($args, 'version')){
 
@@ -73,7 +73,7 @@ class Fontawesome extends \Hazaar\View\Helper {
      *
      * @param       Array $args Optional additional arguments to pass to the HTML element.
      */
-    public function icon($style, $size = NULL, $spin = FALSE, $border = FALSE, $args = array()) {
+    public function icon($style, $size = NULL, $spin = FALSE, $border = FALSE, $args = []) {
 
         if(is_array($style)){
 
