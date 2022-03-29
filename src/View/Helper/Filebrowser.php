@@ -26,11 +26,11 @@ class Filebrowser extends \Hazaar\View\Helper {
 
         $this->requires('html');
 
-        $this->requires('jQuery', array('ui' => TRUE));
+        $this->requires('jQuery', ['ui' => TRUE]);
 
-        $this->options = new \Hazaar\Map(array(
+        $this->options = new \Hazaar\Map([
             'stylesheet' => true
-        ));
+        ]);
 
     }
 

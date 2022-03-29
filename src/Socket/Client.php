@@ -560,9 +560,9 @@ class Client {
         if(! $this->connected)
             return FALSE;
 
-        $read = array(
+        $read = [
             $this->socket
-        );
+        ];
 
         $write = NULL;
 

@@ -16,14 +16,14 @@ class Stream extends \Hazaar\Controller\Response\HTTP\OK {
 
         if($final_packet instanceof \Exception){
 
-            $error = array(
+            $error = [
                 'ok' => false,
-                'error' => array(
+                'error' => [
                     'type' => $final_packet->getCode(),
                     'status' => 'Stream Error',
                     'str' => $final_packet->getMessage()
-                )
-             );
+                ]
+            ];
 
             if(ini_get('display_errors')){
 

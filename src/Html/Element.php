@@ -303,7 +303,7 @@ abstract class Element implements _Interface {
 
         $this->parameters->set('style', $this->style);
 
-        call_user_func_array(array($this->style, 'set'), func_get_args());
+        call_user_func_array([$this->style, 'set'], func_get_args());
 
         return $this;
 

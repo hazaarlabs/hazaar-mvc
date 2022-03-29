@@ -6,11 +6,11 @@ class Request extends \Hazaar\Map {
 
     public  $method  = 'GET';
 
-    private $headers = array(
+    private $headers = [
         'User-Agent'   => 'hazaarmvc-php/' . HAZAAR_VERSION . ' (PHP)',
         'Content-Type' => 'text/html',
         'Connection'   => 'close'
-    );
+    ];
 
     private $raw_uri;
 
@@ -145,7 +145,7 @@ class Request extends \Hazaar\Map {
 
         $this->multipart = true;
 
-        $this->body = ($this->body === null) ? [] : array($this->getContentType(), $this->body);
+        $this->body = ($this->body === null) ? [] : [$this->getContentType(), $this->body];
 
         if(!$boundary)
             $boundary = 'HazaarMVCMultipartBoundary_' . uniqid();
@@ -214,7 +214,7 @@ class Request extends \Hazaar\Map {
 
         $headers['Content-Type'] = $content_type;
 
-        $part = array($headers, $data);
+        $part = [$headers, $data];
 
         $this->body[] = $part;
 
@@ -251,7 +251,7 @@ class Request extends \Hazaar\Map {
 
         if(is_array($this->body)){
 
-            $this->body[] = array($content_type, $body);
+            $this->body[] = [$content_type, $body];
 
         }else{
 
@@ -312,7 +312,7 @@ class Request extends \Hazaar\Map {
         if($allow_multiple === true && array_key_exists($key, $this->headers)){
 
             if(!is_array($this->headers[$key]))
-                $this->headers[$key] = array($this->headers[$key]);
+                $this->headers[$key] = [$this->headers[$key]];
 
             $this->headers[$key][] = $value;
 
@@ -361,7 +361,7 @@ class Request extends \Hazaar\Map {
                     $body .= "--$boundary\r\n";
 
                     if(! is_array($part[0]))
-                        $part[0] = array('Content-Type' => $part[0]);
+                        $part[0] = ['Content-Type' => $part[0]];
 
                     if($content_type = ake($part[0], 'Content-Type')) {
 
@@ -475,7 +475,7 @@ class Request extends \Hazaar\Map {
         foreach($this->headers as $header => $value){
 
             if(!is_array($value))
-                $value = array($value);
+                $value = [$value];
 
             foreach($value as $hdr)
                 $http_request .= $header . ': ' . $hdr . "\r\n";

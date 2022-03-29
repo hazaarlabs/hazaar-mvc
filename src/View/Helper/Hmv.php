@@ -72,7 +72,7 @@ class Hmv extends \Hazaar\View\Helper {
                 foreach($children as $child)
                     $itemsTD->add($this->html->div($child));
 
-                $itemCollection[] = $this->html->tr(array($labelTD, $itemsTD));
+                $itemCollection[] = $this->html->tr([$labelTD, $itemsTD]);
 
             }elseif($no_value && ($children = ake($item, 'collection'))){
 
@@ -83,7 +83,7 @@ class Hmv extends \Hazaar\View\Helper {
                 foreach($children as $child)
                     $childTable->add($this->renderTABLEItems($child, $empty_val));
 
-                $itemCollection[] = $this->html->tr(array($section, $this->html->td($childTable)));
+                $itemCollection[] = $this->html->tr([$section, $this->html->td($childTable)]);
 
             }elseif($no_value && ($children = ake($item, 'items'))){
 
@@ -93,7 +93,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $childTable->add($this->renderTABLEItems($children, $empty_val));
 
-                $itemCollection[] = $this->html->tr(array($section, $this->html->td($childTable)));
+                $itemCollection[] = $this->html->tr([$section, $this->html->td($childTable)]);
 
             }else{
 
@@ -107,7 +107,7 @@ class Hmv extends \Hazaar\View\Helper {
                 if(is_bool($value))
                     $value = ucfirst(strbool($value));
 
-                $itemCollection[] = $this->html->tr(array($labelTD, $this->html->td($value)))->data('name', $key);
+                $itemCollection[] = $this->html->tr([$labelTD, $this->html->td($value)])->data('name', $key);
 
             }
 
@@ -135,7 +135,7 @@ class Hmv extends \Hazaar\View\Helper {
                 foreach($children as $child)
                     $itemsDiv->add($this->html->div($child));
 
-                $itemCollection[] = $this->html->div(array($label, $itemsDiv));
+                $itemCollection[] = $this->html->div([$label, $itemsDiv]);
 
             }elseif($children = ake($item, 'collection')){
 
@@ -146,7 +146,7 @@ class Hmv extends \Hazaar\View\Helper {
                 foreach($children as $child)
                     $childDiv->add($this->renderDIVItems($child, $empty_val));
 
-                $itemCollection[] = $this->html->div(array($section, $childDiv));
+                $itemCollection[] = $this->html->div([$section, $childDiv]);
 
             }elseif($children = ake($item, 'items')){
 
@@ -156,7 +156,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                 $childDiv->add($this->renderDIVItems($children, $empty_val));
 
-                $itemCollection[] = $this->html->div(array($section, $childDiv));
+                $itemCollection[] = $this->html->div([$section, $childDiv]);
 
             }else{
 
@@ -173,7 +173,7 @@ class Hmv extends \Hazaar\View\Helper {
                 if(is_bool($value))
                     $value = ucfirst(strbool($value));
 
-                $itemCollection[] = $this->html->div(array($label, $this->html->span($value)))->class($this->item_class)->data('name', $key);
+                $itemCollection[] = $this->html->div([$label, $this->html->span($value)])->class($this->item_class)->data('name', $key);
 
             }
 
@@ -196,14 +196,14 @@ class Hmv extends \Hazaar\View\Helper {
 
         $tableRows = [];
 
-        $typeMap = array(
+        $typeMap = [
             'string' => 'text',
             'bool' => 'checkbox',
             'boolean' => 'checkbox',
             'float' => 'number',
             'int' => 'number',
             'integer' => 'number'
-        );
+        ];
 
         $hiddenInputs = $this->html->td();
 
@@ -284,7 +284,7 @@ class Hmv extends \Hazaar\View\Helper {
                     $labelTD = $this->html->td($this->html->label($label)->for($name));
 
                     if(ake($def, 'nulls', true))
-                        $data = array('null' => 'Select...') + $data;
+                        $data = ['null' => 'Select...'] + $data;
 
                     if($valueKey = ake($def, 'valueKey'))
                         $value = $item->get($valueKey);
@@ -336,7 +336,7 @@ class Hmv extends \Hazaar\View\Helper {
                             if(in_array($itemName, $values))
                                 $checkbox->checked(true);
 
-                            $input->add($this->html->div($this->html->label(array($checkbox, $this->html->span($itemValue)))));
+                            $input->add($this->html->div($this->html->label([$checkbox, $this->html->span($itemValue)])));
 
                             $count++;
 
@@ -348,7 +348,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                     $input = [];
 
-                    $delTR = $this->html->tr(array($this->html->td(), $this->html->td($this->html->span()->class('btnDelItem'))));
+                    $delTR = $this->html->tr([$this->html->td(), $this->html->td($this->html->span()->class('btnDelItem'))]);
 
                     foreach($item as $index => $i){
 
@@ -405,7 +405,7 @@ class Hmv extends \Hazaar\View\Helper {
 
             }
 
-            $tableRows[] = $this->html->tr(array($labelTD, $this->html->td($input)))->data('name', $key);
+            $tableRows[] = $this->html->tr([$labelTD, $this->html->td($input)])->data('name', $key);
 
         }
 
@@ -436,7 +436,7 @@ class Hmv extends \Hazaar\View\Helper {
 
                 //Look for the method if it's a string
                 if(is_string($source) && method_exists($obj, $source))
-                    $source = array($obj, $source);
+                    $source = [$obj, $source];
                 else
                     return null;
 

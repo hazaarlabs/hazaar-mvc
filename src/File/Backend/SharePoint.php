@@ -34,22 +34,22 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $this->disableRedirect();
 
-        $this->options = new \Hazaar\Map(array(
+        $this->options = new \Hazaar\Map([
             'webURL'        => null,
             'username'      => null,
             'password'      => null,
             'root'          => 'Shared Documents',
             'cache_backend' => 'file',
             'direct'        => false
-        ), $options);
+        ], $options);
 
         if($this->options->webURL === null || $this->options->username === null || $this->options->password === null)
             throw new Exception\SharePointError('SharePoint filesystem backend requires a webURL, username and password.');
 
-        $cache_options = array(
+        $cache_options = [
             'use_pragma' => FALSE,
             'namespace' => 'sharepoint_' . md5($this->options->username . ':' . $this->options->password . '@' . $this->options->webURL)
-        );
+        ];
 
         $this->cache = new \Hazaar\Cache($this->options['cache_backend'], $cache_options);
 
@@ -255,9 +255,9 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
             }
 
-            if(in_array($response->status, array(200, 201)))
+            if(in_array($response->status, [200, 201]))
                 return $response->body();
-            elseif(in_array($response->status, array(401, 403))){
+            elseif(in_array($response->status, [401, 403])){
 
                 $this->requestFormDigest = null;
 
@@ -352,7 +352,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
                 $folder->items = [];
 
             if(!array_key_exists($part, $folder->items))
-                $folder->items[$part] = (object)array('Name' => $part);
+                $folder->items[$part] = (object)['Name' => $part];
 
             $folder =& $folder->items[$part];
 
@@ -471,7 +471,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
             $request->enableMultipart('multipart/mixed', 'batch_' . guid());
 
-            $headers = array('Content-Transfer-Encoding' => 'binary');
+            $headers = ['Content-Transfer-Encoding' => 'binary'];
 
             $request->addMultipart('GET ' . $this->_folder($path, 'folders')
                 . " HTTP/1.1\nAccept: application/json; OData=verbose\n", 'application/http', $headers);
@@ -620,7 +620,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
         if(!($info = $this->info($path)))
             return false;
 
-        $types = array('SP.Folder' => 'dir', 'SP.File' => 'file');
+        $types = ['SP.Folder' => 'dir', 'SP.File' => 'file'];
 
         return ake($types, $info->__metadata->type, false);
 
@@ -696,7 +696,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $url = $this->_object_url($path);
 
-        $result = $this->_query($url, 'POST', null, array('X-HTTP-Method' => 'DELETE'));
+        $result = $this->_query($url, 'POST', null, ['X-HTTP-Method' => 'DELETE']);
 
         return ($result !== false);
 
@@ -731,12 +731,12 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $url = $this->_web('folders');
 
-        $body = array(
-            '__metadata' => array(
+        $body = [
+            '__metadata' => [
                 'type' => 'SP.Folder'
-            ),
+            ],
             'ServerRelativeUrl' => $this->options['root'] . $path
-        );
+        ];
 
         $result = $this->_query($url, 'POST', $body);
 
@@ -748,7 +748,7 @@ class SharePoint extends \Hazaar\Http\Client implements _Interface {
 
         $url = $this->_folder($path);
 
-        $this->_query($url, 'POST', null, array('X-HTTP-Method' => 'DELETE'));
+        $this->_query($url, 'POST', null, ['X-HTTP-Method' => 'DELETE']);
 
         return true;
 

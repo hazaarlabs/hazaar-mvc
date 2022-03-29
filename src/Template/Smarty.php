@@ -13,13 +13,13 @@ namespace Hazaar\Template;
  *
  * ```
  * $tpl = new \Hazaar\Template\Smarty($template_content);
- * $tpl->render(array('tagname' => 'Hello, World!'));
+ * $tpl->render(['tagname' => 'Hello, World!']);
  * ```
  *
  */
 class Smarty {
 
-    static protected $tags = array(
+    static protected $tags = [
         'if',
         'elseif',
         'else',
@@ -37,7 +37,7 @@ class Smarty {
         //Hybrid Smarty 3.0 Bits
         'function',
         'call'
-    );
+    ];
 
     protected $__content = null;
 
@@ -129,10 +129,10 @@ class Smarty {
 
         $app = \Hazaar\Application::getInstance();
 
-        $default_params = array(
-            'hazaar' => array('version' => HAZAAR_VERSION),
+        $default_params = [
+            'hazaar' => ['version' => HAZAAR_VERSION],
             'application' => $app,
-            'smarty' => array(
+            'smarty' => [
                 'now' => new \Hazaar\Date(),
                 'const' => get_defined_constants(),
                 'capture' => [],
@@ -143,8 +143,8 @@ class Smarty {
                 'version' => 2,
                 'ldelim' => $this->ldelim,
                 'rdelim' => $this->rdelim
-            )
-        );
+            ]
+        ];
 
         if($this->allow_globals){
 
@@ -206,7 +206,7 @@ class Smarty {
                 if(\$custom_handler = current(array_filter(\$this->custom_handlers, function(\$item){
                     return method_exists(\$item, 'url');
                 })))
-                    return call_user_func_array(array(\$custom_handler, 'url'), func_get_args());
+                    return call_user_func_array([\$custom_handler, 'url'], func_get_args());
 
                 return new \Hazaar\Application\Url(urldecode(implode('/', func_get_args())));
 
@@ -301,7 +301,7 @@ class Smarty {
      */
     public function compile(){
 
-        $compiled_content = preg_replace(array('/\<\?/', '/\?\>/'), array('&lt;?','?&gt;'), $this->__content);
+        $compiled_content = preg_replace(['/\<\?/', '/\?\>/'], ['&lt;?','?&gt;'], $this->__content);
 
         $regex = '/\{([#\$\*][^\}]+|(\/?\w+)\s*([^\}]*))\}(\r?\n)?/';
 
@@ -553,8 +553,7 @@ class Smarty {
         if(!(($name = ake($params, 'name')) && ($loop = ake($params, 'loop'))))
             return '';
 
-        $this->__section_stack[] = array('name' => $name, 'else' => false);
-
+        $this->__section_stack[] = ['name' => $name, 'else' => false];
         $var = $this->compileVAR($loop);
 
         $index = '$smarty[\'section\'][\'' . $name . '\'][\'index\']';
@@ -633,7 +632,7 @@ class Smarty {
 
             $var = $this->compileVAR($from);
 
-            $this->__foreach_stack[] = array('name' => $name, 'else' => false);
+            $this->__foreach_stack[] = ['name' => $name, 'else' => false];
 
             $target = (($key = ake($params, 'key')) ? '$' . $key . ' => ' : '' ) . '$' . $item;
 
@@ -651,7 +650,7 @@ class Smarty {
 
             $target = $this->compileVAR(ake($params, 2));
 
-            $this->__foreach_stack[] = array('name' => $name, 'else' => false);
+            $this->__foreach_stack[] = ['name' => $name, 'else' => false];
 
             $code = "<?php \$smarty['foreach']['$name'] = ['index' => -1, 'total' => ((isset($var) && is_array($var))?count($var):0)]; ";
 
@@ -734,10 +733,10 @@ class Smarty {
 
             $parts = $this->parsePARAMS($params);
 
-            $params = array(
+            $params = [
                 'var' => $parts[0],
                 'value' => $parts[1]
-            );
+            ];
 
         }
 
@@ -831,7 +830,7 @@ class Smarty {
 
         $params = implode(', ', $func_params);
 
-        return "<?php echo call_user_func_array(array(\$this->custom_handlers[$index], '$method'), array($params)); ?>";
+        return "<?php echo call_user_func_array([\$this->custom_handlers[$index], '$method'], [$params]); ?>";
 
     }
 

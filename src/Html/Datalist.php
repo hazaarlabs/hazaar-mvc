@@ -52,7 +52,7 @@ class Datalist extends Block {
                 
             }else{
                 
-                parent::add(new Inline('option', array('value' => $arg)));
+                parent::add(new Inline('option', ['value' => $arg]));
                 
             }
 

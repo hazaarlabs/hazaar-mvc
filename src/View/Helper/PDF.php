@@ -27,9 +27,9 @@ class PDF extends \Hazaar\View\Helper {
 
     public function script($id, $source, $width = null, $height = null) {
 
-        $config = array(
+        $config = [
             'url' => $source
-        );
+        ];
 
         if($id)
             $config['id'] = $id;

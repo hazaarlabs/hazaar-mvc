@@ -39,9 +39,9 @@ class Adapter {
      */
     function __construct($transport = 'local') {
 
-        $config = new \Hazaar\Map(array(
+        $config = new \Hazaar\Map([
             'transport' => 'local'
-        ), \Hazaar\Application::getInstance()->config->get('mail'));
+        ], \Hazaar\Application::getInstance()->config->get('mail'));
 
         $this->transport = $this->getTransportObject($config->transport, $config);
 

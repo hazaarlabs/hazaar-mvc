@@ -22,11 +22,11 @@ class Database extends \Hazaar\Logger\Backend {
 
         $this->setDefaultOption('write_uri', true);
 
-        $config = array(
+        $config = [
             'driver' => $this->getOption('driver'),
             'host'   => $this->getOption('host'),
             'dbname' => $this->getOption('database')
-        );
+        ];
 
         if($this->hasOption('username'))
             $config['user'] = $this->getOption('username');
@@ -34,7 +34,7 @@ class Database extends \Hazaar\Logger\Backend {
         if($this->hasOption('password'))
             $config['password'] = $this->getOption('password');
 
-        $this->db = new \Hazaar\DBI($config);
+        $this->db = new \Hazaar\DBI\Adapter($config);
 
     }
 
@@ -45,11 +45,11 @@ class Database extends \Hazaar\Logger\Backend {
 
         try {
 
-            $row = array(
+            $row = [
                 'tag' => $tag,
                 'message' => $message,
                 'level'   => $level
-            );
+            ];
 
             $remote = $_SERVER['REMOTE_ADDR'];
 

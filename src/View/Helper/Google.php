@@ -21,10 +21,10 @@ class Google extends \Hazaar\View\Helper {
 
         $this->requires('html');
 
-        $this->settings = new \Hazaar\Map( array(
+        $this->settings = new \Hazaar\Map( [
             'api_key' => null,
             'gmaps_source' => "http://maps.googleapis.com/maps/api/js?sensor=false"
-        ), $this->args);
+        ], $this->args);
 
     }
 
@@ -32,12 +32,12 @@ class Google extends \Hazaar\View\Helper {
 
         $settings = new \Hazaar\Map($settings);
 
-        $settings->extend(array(
+        $settings->extend([
             'zoom' => 16,
             'type' => GMAP_TYPE_STREET
-        ), $this->settings);
+        ], $this->settings);
 
-        $args = new \Hazaar\Map( array('id' => $name), $args);
+        $args = new \Hazaar\Map( ['id' => $name], $args);
 
         if(!$location instanceof \Hazaar\Google\Location) {
 
@@ -59,12 +59,12 @@ class Google extends \Hazaar\View\Helper {
             map = new google.maps.Map(document.getElementById('$name'), mapOptions);
         }";
 
-        $init = $this->html->block('script', $code, array('type' => 'text/javascript'));
+        $init = $this->html->block('script', $code, ['type' => 'text/javascript']);
 
-        $loadArgs = array(
+        $loadArgs = [
             'type' => 'text/javascript',
             'src' => $settings->gmaps_source . '&key=' . $settings->api_key . '&callback=init_' . $name
-        );
+        ];
 
         $load = $this->html->block('script', null, $loadArgs);
 
@@ -86,7 +86,7 @@ class Google extends \Hazaar\View\Helper {
             })();
         ";
 
-        return $this->html->block('script', $code, array('type' => 'text/javascript'));
+        return $this->html->block('script', $code, ['type' => 'text/javascript']);
 
     }
 

@@ -60,7 +60,7 @@ class Local implements _Interface {
 
         $root = ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : DIRECTORY_SEPARATOR);
 
-        $this->options = new \Hazaar\Map(array('display_hidden' => false, 'root' => $root), $options);
+        $this->options = new \Hazaar\Map(['display_hidden' => false, 'root' => $root], $options);
 
     }
 
@@ -197,7 +197,7 @@ class Local implements _Interface {
             if($ret) {
 
                 if($srcMeta = $this->meta($rSrc))
-                    $this->meta[$rDst] = array($srcMeta, true);
+                    $this->meta[$rDst] = [$srcMeta, true];
 
                 return true;
 
@@ -263,7 +263,7 @@ class Local implements _Interface {
 
             if($srcMeta = $this->meta($rSrc)) {
 
-                $this->meta[$rDst] = array($srcMeta, true);
+                $this->meta[$rDst] = [$srcMeta, true];
 
                 unset($this->meta[$rSrc]);
 

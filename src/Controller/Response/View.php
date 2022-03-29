@@ -53,7 +53,7 @@ class View extends \Hazaar\Controller\Response\Html {
 
             $this->_view_name = $view;
 
-            $this->_view = new \Hazaar\View($view, array('html'));
+            $this->_view = new \Hazaar\View($view, ['html']);
 
         }
 
@@ -83,7 +83,7 @@ class View extends \Hazaar\Controller\Response\Html {
 
     public function __call($method, $param_arr) {
 
-        return call_user_func_array(array($this->_view, $method), $param_arr);
+        return call_user_func_array([$this->_view, $method], $param_arr);
 
     }
 

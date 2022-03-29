@@ -60,7 +60,7 @@ class Response implements Response\_Interface {
         } else {
 
             if(!(array_key_exists($key, $this->headers) && is_array($this->headers[$key])))
-                $this->headers[$key] = isset($this->headers[$key]) ? array($this->headers[$key]) : [];
+                $this->headers[$key] = isset($this->headers[$key]) ? [$this->headers[$key]] : [];
 
             $this->headers[$key][] = $value;
 
@@ -274,12 +274,12 @@ class Response implements Response\_Interface {
 
                 $tidy = new \tidy();
 
-                $config = array(
+                $config = [
                     'indent'         => TRUE,
                     'vertical-space' => 'no',
                     'doctype'        => 'auto',
                     'wrap'           => 0
-                );
+                ];
 
                 $content = $tidy->repairString($this->getContent(), $config);
 
@@ -323,7 +323,7 @@ class Response implements Response\_Interface {
 
     public function __sleep(){
 
-        return array('content', 'content_type', 'headers', 'status_code', 'tidy');
+        return ['content', 'content_type', 'headers', 'status_code', 'tidy'];
 
     }
 
