@@ -26,7 +26,7 @@ class Gui extends \Hazaar\View\Helper {
 
     }
 
-    public function init(\Hazaar\View\Layout $view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = []) {
 
         $view->requires($this->application->url('hazaar', 'file/js/popup.js'));
 
@@ -34,7 +34,7 @@ class Gui extends \Hazaar\View\Helper {
 
     }
 
-    public function popup($content, $args = array()) {
+    public function popup($content, $args = []) {
 
         $id = 'popup_' . uniqid();
 

@@ -23,7 +23,7 @@ class A extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($href = null, $content = NULL, $parameters = array()) {
+    function __construct($href = null, $content = NULL, $parameters = []) {
 
         if($href)
             $parameters['href'] = $href;

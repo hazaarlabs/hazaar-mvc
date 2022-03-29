@@ -4,7 +4,7 @@ namespace Hazaar\Mail\Mime;
 
 class Part {
 
-    protected $headers = array();
+    protected $headers = [];
 
     protected $content;
 

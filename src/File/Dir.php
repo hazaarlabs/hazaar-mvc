@@ -116,9 +116,9 @@ class Dir implements _Interface {
 
         if($path !== null){
 
-            if($path instanceof File)
+            if($path instanceof \Hazaar\File)
                 $path = $path->dirname();
-            if($path instanceof File\Dir)
+            if($path instanceof Dir)
                 $path = $path->fullpath();
             elseif(!is_string($path))
                 return false;
@@ -268,7 +268,7 @@ class Dir implements _Interface {
 
     public function parent() {
 
-        return new File\Dir($this->dirname(), $this->manager);
+        return new Dir($this->dirname(), $this->manager);
 
     }
 
@@ -319,7 +319,7 @@ class Dir implements _Interface {
         if($recursive !== true)
             return $this->manager->mkdir($this->path);
 
-        $parents = array();
+        $parents = [];
 
         $last = $this->path;
 
@@ -468,7 +468,7 @@ class Dir implements _Interface {
      */
     public function find($pattern, $show_hidden = FALSE, $case_sensitive = TRUE, $depth = null) {
 
-        $list = array();
+        $list = [];
 
         if(!($dir = $this->manager->scandir($this->path, NULL, TRUE, $this->relative_path)))
             return null;
@@ -527,7 +527,7 @@ class Dir implements _Interface {
                  * This gives the callback a chance to perform the copy itself in a special way, or ignore a
                  * file/directory
                  */
-                if(!call_user_func_array($transport_callback, array($cur->fullpath(), $target . '/' . $cur->basename())))
+                if(!call_user_func_array($transport_callback, [$cur->fullpath(), $target . '/' . $cur->basename()]))
                     continue;
 
             }
@@ -648,13 +648,13 @@ class Dir implements _Interface {
 
         }elseif(ini_get('allow_url_fopen') ) {
 
-            $options = array(
-                'http' => array(
+            $options = [
+                'http' => [
                     'method'  => 'GET',
                     'timeout' => $timeout,
                     'follow_location' => 1
-                )
-            );
+                ]
+            ];
 
             if(!($result = file_get_contents($url, false, stream_context_create($options))))
                 throw new \Hazaar\Exception('Download failed.  Zero bytes received.');

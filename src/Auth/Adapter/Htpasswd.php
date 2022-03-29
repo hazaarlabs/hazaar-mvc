@@ -8,7 +8,7 @@ class Htpasswd extends \Hazaar\Auth\Adapter implements _Interface {
 
     private $user_hash = '$apr1$';
 
-    function __construct($cache_config = array(), $cache_backend = 'session'){
+    function __construct($cache_config = [], $cache_backend = 'session'){
 
         if(!file_exists($this->passwd))
             die('Hazaar admin console is currently disabled!');
@@ -20,9 +20,9 @@ class Htpasswd extends \Hazaar\Auth\Adapter implements _Interface {
     /*
      * We must provide a queryAuth method for the auth base class to use to look up details
      */
-    public function queryAuth($identity, $extras = array()) {
+    public function queryAuth($identity, $extras = []) {
 
-        $users = array();
+        $users = [];
 
         $lines = explode("\n", trim(file_get_contents($this->passwd)));
 
@@ -40,7 +40,7 @@ class Htpasswd extends \Hazaar\Auth\Adapter implements _Interface {
         $this->user_hash = trim(ake($users, $identity));
 
         if(strlen($this->user_hash) > 0)
-            return array('identity' => $identity, 'credential' => $this->user_hash);
+            return ['identity' => $identity, 'credential' => $this->user_hash];
 
         return false;
 

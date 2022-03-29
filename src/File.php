@@ -45,7 +45,7 @@ class File implements File\_Interface, \JsonSerializable {
     /*
      * Content filters
      */
-    private $filters = array();
+    private $filters = [];
 
     function __construct($file = null, File\Manager $manager = null, $relative_path = null) {
 
@@ -153,10 +153,10 @@ class File implements File\_Interface, \JsonSerializable {
     public function registerFilter($type, $callable) {
 
         if (!array_key_exists($type, $this->filters))
-            $this->filters[$type] = array();
+            $this->filters[$type] = [];
 
         if (is_string($callable))
-            $callable = array($this, $callable);
+            $callable = [$this, $callable];
 
         if (!is_callable($callable))
             return false;
@@ -486,7 +486,7 @@ class File implements File\_Interface, \JsonSerializable {
         if (array_key_exists(FILE_FILTER_SET, $this->filters)) {
 
             foreach ($this->filters[FILE_FILTER_SET] as $filter)
-                call_user_func_array($filter, array(&$bytes));
+                call_user_func_array($filter, [&$bytes]);
         }
 
         $this->contents = $bytes;
@@ -835,12 +835,12 @@ class File implements File\_Interface, \JsonSerializable {
         $this->mime_content_type = $type;
     }
 
-    public function thumbnail($params = array()) {
+    public function thumbnail($params = []) {
 
         return $this->manager->thumbnail($this->fullpath(), $params);
     }
 
-    public function preview_uri($params = array()) {
+    public function preview_uri($params = []) {
 
         return $this->manager->preview_uri($this->fullpath(), $params);
     }
@@ -909,14 +909,14 @@ class File implements File\_Interface, \JsonSerializable {
     public function unzip($filenames = null, $target = null) {
 
         if (!is_array($filenames))
-            $filenames = array($filenames);
+            $filenames = [$filenames];
 
         if ($target === null)
             $target = new File\TempDir();
         elseif (!$target instanceof \Hazaar\File\Dir)
             $target = new \Hazaar\File\Dir($target, $this->manager, $this->manager);
 
-        $files = array();
+        $files = [];
 
         $zip = zip_open($this->source_file);
 
@@ -958,7 +958,7 @@ class File implements File\_Interface, \JsonSerializable {
 
     public function ziplist() {
 
-        $list = array();
+        $list = [];
 
         $zip = zip_open($this->source_file);
 
@@ -1113,7 +1113,7 @@ class File implements File\_Interface, \JsonSerializable {
             return fputcsv($this->handle, $fields, $delimiter, $enclosure, $escape);
 
         if (!is_array($this->contents))
-            $this->contents = array();
+            $this->contents = [];
 
         $this->contents[] = $line = str_putcsv($fields, $delimiter, $enclosure, $escape);
 
@@ -1380,7 +1380,7 @@ class File implements File\_Interface, \JsonSerializable {
         if (array_key_exists(FILE_FILTER_OUT, $this->filters)) {
 
             foreach ($this->filters[FILE_FILTER_OUT] as $filter)
-                call_user_func_array($filter, array(&$content));
+                call_user_func_array($filter, [&$content]);
         }
 
         if ($this->encrypted === true) {

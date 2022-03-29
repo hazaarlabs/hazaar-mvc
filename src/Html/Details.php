@@ -27,7 +27,7 @@ class Details extends Block {
      * @param       array $parameters An array of parameters to apply to the block element.
      *
      */
-    function __construct($content, $summary = null, $parameters = array()) {
+    function __construct($content, $summary = null, $parameters = []) {
 
         if($summary) {
 

@@ -11,7 +11,7 @@ namespace Hazaar\Application\Request;
 
 class Cli extends \Hazaar\Application\Request {
 
-    private $args = array();
+    private $args = [];
 
     function init($args) {
 

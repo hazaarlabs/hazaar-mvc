@@ -28,18 +28,18 @@ namespace Hazaar\File;
  *
  *      $bytes = $upload->read('my_new_file');
  *
- *      $db->insert('file_contents', array(
+ *      $db->insert('file_contents', [
  *          'created' => 'Now()',
  *          'filename' => $upload->my_new_file['name'],
  *          'bytes' => $bytes
- *      ));
+ *      ]);
  *
  * }
  * ```
  */
 class Upload {
 
-    private $files = array();
+    private $files = [];
 
     /**
      * Constructor
@@ -62,7 +62,7 @@ class Upload {
     public function uploaded($op_keys = NULL) {
 
         if($op_keys && ! is_array($op_keys))
-            $op_keys = array($op_keys);
+            $op_keys = [$op_keys];
 
         if($op_keys) {
 
@@ -143,7 +143,7 @@ class Upload {
 
         if($key === null){
 
-            $files = array();
+            $files = [];
 
             foreach($this->keys() as $key)
                 $files[$key] = $this->get($key);
@@ -165,7 +165,7 @@ class Upload {
             if(!is_array($info['name']))
                 return $info;
 
-            $files = array();
+            $files = [];
 
             foreach($info as $item => $item_info){
 
@@ -222,7 +222,7 @@ class Upload {
             $files = $this->getFile($key);
 
             if(!is_array($files))
-                $files = array($files);
+                $files = [$files];
 
             foreach($files as $file){
 
@@ -257,7 +257,7 @@ class Upload {
             return FALSE;
 
         if(!is_array($files))
-            $files = array($files);
+            $files = [$files];
 
         foreach($files as $file)
             $file->copyTo($destination, $overwrite);
@@ -324,7 +324,7 @@ class Upload {
 
         }
 
-        $files = array();
+        $files = [];
 
         foreach($array as $key => $info)
             $files[$key] = $this->resolveFiles($info);

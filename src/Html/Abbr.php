@@ -23,7 +23,7 @@ class Abbr extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($title, $abbr = null, $parameters = array()) {
+    function __construct($title, $abbr = null, $parameters = []) {
 
         if(!$abbr) {
 

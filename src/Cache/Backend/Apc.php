@@ -26,7 +26,7 @@ class Apc extends \Hazaar\Cache\Backend {
 
     private     $namespace;
 
-    private     $refresh = array();
+    private     $refresh = [];
 
     static public function available(){
 
@@ -106,7 +106,7 @@ class Apc extends \Hazaar\Cache\Backend {
 
         $iter = new \APCUIterator('/^' . $this->namespace . '::/');
 
-        $array = array();
+        $array = [];
 
         $pos = strlen($this->namespace) + 2;
 

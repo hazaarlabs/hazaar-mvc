@@ -40,23 +40,23 @@
 
             if($this->root === false){
 
-                echo $this->html->tr(array(
+                echo $this->html->tr([
                         $this->html->td($this->html->a($this->url(dirname($this->vpath)), '[parent]')),
                         $this->html->td(),
                         $this->html->td('-'),
                         $this->html->td()
-                    ));
+                    ]);
 
             }
 
             while($file = $this->dir->read()){
 
-                echo $this->html->tr(array(
+                echo $this->html->tr([
                     $this->html->td($this->html->a($this->url($this->vpath . '/' . $file->basename()), $file->basename())),
                     $this->html->td($this->datetime($file->mtime())),
                     $this->html->td(((($size = $file->size()) > 0) ? str_bytes($size) : '-')),
                     $this->html->td($file->get_meta('comment'))
-                ));
+                ]);
             }
                 ?>
             </tbody>

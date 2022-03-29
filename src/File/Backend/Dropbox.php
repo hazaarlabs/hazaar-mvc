@@ -10,7 +10,7 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
 
     private $cache;
 
-    private $meta = array();
+    private $meta = [];
 
     private $cursor;
 
@@ -24,18 +24,18 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
 
         parent::__construct();
 
-        $this->options = new \Hazaar\Map(array(
+        $this->options = new \Hazaar\Map([
             'oauth2_method' => 'POST',
             'oauth_version' => '2.0',
             'file_limit'    => 1000,
             'cache_backend' => 'file',
-            'oauth2'        => array('access_token' => NULL)
-        ), $options);
+            'oauth2'        => ['access_token' => NULL]
+        ], $options);
 
         if(! ($this->options->has('app_key') && $this->options->has('app_secret')))
             throw new Exception\DropboxError('Dropbox filesystem backend requires both app_key and app_secret.');
 
-        $this->cache = new \Hazaar\Cache($this->options['cache_backend'], array('use_pragma' => FALSE, 'namespace' => 'dropbox_' . $this->options->app_key));
+        $this->cache = new \Hazaar\Cache($this->options['cache_backend'], ['use_pragma' => FALSE, 'namespace' => 'dropbox_' . $this->options->app_key]);
 
         if(($oauth2 = $this->cache->get('oauth2_data')))
             $this->options['oauth2'] = $oauth2;
@@ -69,13 +69,13 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
 
             $request = new \Hazaar\Http\Request('https://api.dropbox.com/1/oauth2/token', $this->options['oauth2_method']);
 
-            $request->populate(array(
-                                   'code'          => $code,
-                                   'grant_type'    => 'authorization_code',
-                                   'client_id'     => $this->options['app_key'],
-                                   'client_secret' => $this->options['app_secret'],
-                                   'redirect_uri'  => $redirect_uri
-                               ));
+            $request->populate([
+                'code'          => $code,
+                'grant_type'    => 'authorization_code',
+                'client_id'     => $this->options['app_key'],
+                'client_secret' => $this->options['app_secret'],
+                'redirect_uri'  => $redirect_uri
+            ]);
 
             $response = $this->send($request);
 
@@ -108,12 +108,12 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
 
         $this->cache->set('oauth2_state', $state);
 
-        $params = array(
+        $params = [
             'response_type=code',
             'client_id=' . $this->options['app_key'],
             'redirect_uri=' . $redirect_uri,
             'state=' . $state
-        );
+        ];
 
         return 'https://www.dropbox.com/1/oauth2/authorize?' . implode('&', $params);
 
@@ -178,16 +178,18 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
         $this->cursor = $response->cursor;
 
         if($response->reset === TRUE)
-            $this->meta = array('/' => array(
-                'bytes'        => 0,
-                'icon'         => 'folder',
-                'path'         => '/',
-                'is_dir'       => TRUE,
-                'thumb_exists' => FALSE,
-                'root'         => 'app_folder',
-                'modified'     => 'Thu, 21 May 2015 06:06:57 +0000',
-                'size'         => '0 bytes'
-            ));
+            $this->meta = [
+                '/' => [
+                    'bytes'        => 0,
+                    'icon'         => 'folder',
+                    'path'         => '/',
+                    'is_dir'       => TRUE,
+                    'thumb_exists' => FALSE,
+                    'root'         => 'app_folder',
+                    'modified'     => 'Thu, 21 May 2015 06:06:57 +0000',
+                    'size'         => '0 bytes'
+                ]
+            ];
 
         foreach($response->entries as $entry) {
 
@@ -227,7 +229,7 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
         if(! $pathMeta['is_dir'])
             return FALSE;
 
-        $list = array();
+        $list = [];
 
         foreach($this->meta as $name => $meta) {
 
@@ -448,7 +450,7 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
 
     }
 
-    public function thumbnail($path, $params = array()) {
+    public function thumbnail($path, $params = []) {
 
         if(! ($info = $this->info($path)))
             return NULL;
@@ -700,7 +702,7 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
     public function set_meta($path, $values) {
 
         if(! ($meta = $this->cache->get($this->options['app_key'] . '::' . strtolower($path))))
-            $meta = array();
+            $meta = [];
 
         $meta = array_merge($meta, $values);
 
@@ -718,7 +720,7 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
 
     }
 
-    public function preview_uri($path, $params = array()) {
+    public function preview_uri($path, $params = []) {
 
         $width = intval(ake($params, 'width', ake($params, 'height', 64)));
 
@@ -733,10 +735,10 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
         else
             $size = 'w32h32';
 
-        $params = array(
+        $params = [
             'authorization=Bearer ' . $this->options['oauth2']['access_token'],
             'arg={"path":"' . $path . '","size":"' . $size . '"}'
-        );
+        ];
 
         return 'https://content.dropboxapi.com/2/files/get_thumbnail?' . implode('&', $params);
 

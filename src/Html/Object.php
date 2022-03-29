@@ -21,7 +21,7 @@ class Object extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($data, $type = null, $parameters = array()) {
+    function __construct($data, $type = null, $parameters = []) {
 
         $parameters['data'] = $data;
 
