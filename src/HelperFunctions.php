@@ -219,7 +219,7 @@ function is_boolean($value) {
     if (!is_string($value))
         return is_bool($value);
 
-    $accepted = array(
+    $accepted = [
         't',
         'true',
         'f',
@@ -230,7 +230,7 @@ function is_boolean($value) {
         'no',
         'on',
         'off'
-    );
+    ];
 
     return in_array(strtolower(trim($value)), $accepted);
 
@@ -316,7 +316,7 @@ function array_flatten($array, $delim = '=', $section_delim = ';') {
     if (!is_array($array))
         return NULL;
 
-    $items = array();
+    $items = [];
 
     foreach($array as $key => $value) {
 
@@ -332,7 +332,7 @@ function array_unflatten($items, $delim = '=', $section_delim = ';') {
     if (!is_array($items))
         $items = preg_split("/\s*\\$section_delim\s*/", trim($items));
 
-    $result = array();
+    $result = [];
 
     foreach($items as $item) {
 
@@ -367,7 +367,7 @@ function array_unflatten($items, $delim = '=', $section_delim = ';') {
  */
 function array_collate($array, $key_item, $value_item = null, $group_item = null){
 
-    $result = array();
+    $result = [];
 
     foreach($array as $item){
 
@@ -397,7 +397,7 @@ function array_build_html($array, $root = true){
     if(!is_array($array))
         return null;
 
-    $result = array();
+    $result = [];
 
     foreach($array as $key => $value){
 
@@ -453,7 +453,7 @@ function array_to_dot_notation($array, $separator = '.', $depth = null, $numeric
     if(!($depth === null || $depth > 1))
         return $array;
 
-    $rows = array();
+    $rows = [];
 
     $numeric_array = (is_string($numeric_array_separators) && strlen($numeric_array_separators) >= 2);
 
@@ -514,9 +514,9 @@ function array_to_dot_notation($array, $separator = '.', $depth = null, $numeric
 function array_from_dot_notation($array) {
 
     if(!is_array($array))
-        return array();
+        return [];
 
-    $new = array();
+    $new = [];
 
     foreach($array as $idx => $value) {
 
@@ -534,7 +534,7 @@ function array_from_dot_notation($array) {
                 $key = substr($part, 0, $pos);
 
                 if(!isset($cur[$key]))
-                    $cur[$key] = array();
+                    $cur[$key] = [];
 
                 $cur =& $cur[$key];
 
@@ -543,7 +543,7 @@ function array_from_dot_notation($array) {
                     if(is_numeric($match)) settype($match, 'int');
 
                     if(!isset($cur[$match]))
-                        $cur[$match] = array();
+                        $cur[$match] = [];
 
                     if(is_array($cur))
                         $cur =& $cur[$match];
@@ -553,7 +553,7 @@ function array_from_dot_notation($array) {
             }else{
 
                 if(!isset($cur[$part]))
-                    $cur[$part] = array();
+                    $cur[$part] = [];
 
                 if(is_array($cur))
                     $cur =& $cur[$part];
@@ -617,7 +617,7 @@ function array_seek(&$array, $count) {
  * @param array   $query     (optional) Array of parameters to send. ie: the stuff after the '?'. Uses http_build_query to generate string.
  * @param string  $fragment  (optional) Anything to go after the '#'.
  */
-function build_url($scheme = 'http', $host = 'localhost', $port = NULL, $user = NULL, $pass = NULL, $path = NULL, $query = array(), $fragment = NULL) {
+function build_url($scheme = 'http', $host = 'localhost', $port = NULL, $user = NULL, $pass = NULL, $path = NULL, $query = [], $fragment = NULL) {
 
     $url = strtolower(trim($scheme)) . '://';
 
@@ -1006,7 +1006,7 @@ function interval($seconds){
     if($seconds < 1)
         return 'No time at all';
 
-    $o = array();
+    $o = [];
 
     if(($d = floor(days($seconds))) > 0)
         $o[] = $d . ' day' . (($d > 1) ? 's' : '');
@@ -1087,9 +1087,9 @@ function http_response_text($code) {
 function hazaar_request_headers() {
 
     if (!is_array($_SERVER))
-        return array();
+        return [];
 
-    $headers = array();
+    $headers = [];
 
     foreach($_SERVER as $name => $value) {
 
@@ -1211,11 +1211,11 @@ function dump($data = NULL) {
 
     if($response == 'json'){
 
-        $dump = array(
+        $dump = [
             'data' => $data,
             'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
             'exec' => $exec_time
-        );
+        ];
 
         header('Content-Type: application/json');
 
@@ -1331,7 +1331,7 @@ if(!function_exists('money_format')){
 
             $value = floatval($number);
 
-            $flags = array(
+            $flags = [
                 'fillchar'  => preg_match('/\=(.)/', $fmatch[1], $match) ?
                                $match[1] : ' ',
                 'nogroup'   => preg_match('/\^/', $fmatch[1]) > 0,
@@ -1339,7 +1339,7 @@ if(!function_exists('money_format')){
                                $match[0] : '+',
                 'nosimbol'  => preg_match('/\!/', $fmatch[1]) > 0,
                 'isleft'    => preg_match('/\-/', $fmatch[1]) > 0
-            );
+            ];
 
             $width      = trim($fmatch[2]) ? (int)$fmatch[2] : 0;
 
@@ -1578,7 +1578,7 @@ function replace_property(&$target, $key, $value){
  */
 function recursive_iterator_to_array(\Traversable $it) {
 
-    $result = array();
+    $result = [];
 
     foreach($it as $key => $value) {
 
@@ -1617,7 +1617,7 @@ function array_diff_assoc_recursive() {
 
     $array1 = array_shift($arrays);
 
-    $diff = array();
+    $diff = [];
 
     foreach($array1 as $key => $value) {
 
@@ -1885,7 +1885,7 @@ function array_diff_key_recursive(){
 
     $array1 = array_shift($arrays);
 
-    $diff = array();
+    $diff = [];
 
     foreach($array1 as $key => $value) {
 

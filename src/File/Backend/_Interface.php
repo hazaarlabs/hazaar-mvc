@@ -57,7 +57,7 @@ interface _Interface {
 
     public function md5Checksum($path);
 
-    public function thumbnail($path, $params = array());
+    public function thumbnail($path, $params = []);
 
     //Create a directory
     public function mkdir($path);

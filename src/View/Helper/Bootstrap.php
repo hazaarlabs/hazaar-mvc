@@ -35,14 +35,14 @@ class Bootstrap extends \Hazaar\View\Helper {
      * @detail      Initialise the view helper and include the buttons.css file.  Adds a requirement for the HTML view
      *              helper.
      */
-    public function init(\Hazaar\View\Layout $view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = []) {
 
         $version = ake($args, 'version');
 
-        $files = array('js/bootstrap.min.js');
+        $files = ['js/bootstrap.min.js'];
 
         if($theme = ake($this->args, 'theme'))
-            $version = $this->cdnjs->load('bootswatch', $version, array($theme . '/bootstrap.min.css'));
+            $version = $this->cdnjs->load('bootswatch', $version, [$theme . '/bootstrap.min.css']);
         else
             $files[] = 'css/bootstrap.min.css';
 
@@ -50,7 +50,7 @@ class Bootstrap extends \Hazaar\View\Helper {
 
         //Check if we are
         if($version->compareTo('4.0') >= 0)
-            $this->cdnjs->load('popper.js', null, array('umd/popper.min.js'), 1);
+            $this->cdnjs->load('popper.js', null, ['umd/popper.min.js'], 1);
 
     }
 
@@ -88,7 +88,7 @@ class Bootstrap extends \Hazaar\View\Helper {
      *
      * @param       Array  $args  An array of optional arguments to pass to the HTML block element.
      */
-    public function button($name, $label, $style = null, $size = null, $args = array()) {
+    public function button($name, $label, $style = null, $size = null, $args = []) {
 
         $class = 'btn';
 
@@ -97,11 +97,11 @@ class Bootstrap extends \Hazaar\View\Helper {
 
         if($size) {
 
-            $valid = array(
+            $valid = [
                 'large',
                 'small',
                 'mini'
-            );
+            ];
 
             if(in_array($size, $valid)) {
 
@@ -119,12 +119,12 @@ class Bootstrap extends \Hazaar\View\Helper {
 
     }
 
-    public function buttonGroup($buttons, $args = array()) {
+    public function buttonGroup($buttons, $args = []) {
 
         if(! is_array($buttons))
             return null;
 
-        $btn_out = array();
+        $btn_out = [];
 
         foreach($buttons as $id => $btn) {
 

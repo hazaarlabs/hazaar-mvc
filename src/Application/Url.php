@@ -47,9 +47,9 @@ class Url {
         if(!func_num_args() > 0)
             return;
 
-        $parts = array();
+        $parts = [];
 
-        $params = array();
+        $params = [];
 
         foreach(\func_get_args() as $part){
 
@@ -61,7 +61,7 @@ class Url {
 
             }
 
-            $part_parts = (strpos($part, '/') === false) ? array($part) : explode('/', $part);
+            $part_parts = (strpos($part, '/') === false) ? [$part] : explode('/', $part);
 
             foreach($part_parts as $part_part){
 
@@ -92,7 +92,7 @@ class Url {
         $default = trim($app->config->app['defaultController']);
 
         if(count($parts) === 1 && $parts[0] === $default)
-            $parts = array();
+            $parts = [];
 
         if(count($parts) > 0)
             $this->path = implode('/', $parts);
@@ -115,7 +115,7 @@ class Url {
         $path = ($this->base_path ? $this->base_path . '/' : null);
 
         if(!is_array($params))
-            $params = array();
+            $params = [];
 
         if(Url::$rewrite && $encode !== true)
             $path .= $this->path;
@@ -187,8 +187,8 @@ class Url {
      * ## Example:
      *
      * ```php
-     * $url = new \Hazaar\Application\Url('controller', 'action', array('id' => '$id'));
-     * echo $url->toString(array('id' => 1234));
+     * $url = new \Hazaar\Application\Url('controller', 'action', ['id' => '$id']);
+     * echo $url->toString(['id' => 1234]);
      * ```
      *
      * This will output something like:
@@ -203,7 +203,7 @@ class Url {
      */
     public function toString($values = NULL) {
 
-        $params = array();
+        $params = [];
 
         if(is_array($values)) {
 

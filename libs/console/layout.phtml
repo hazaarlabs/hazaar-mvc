@@ -32,7 +32,7 @@
                     </div>
                 </div>
                 <nav class="sidebar-nav">
-                    <?=$this->partial('menu', array('items' => $this->navitems));?>
+                    <?=$this->partial('menu', ['items' => $this->navitems]);?>
                 </nav>
             </div>
             <div class="main-panel">
@@ -59,10 +59,10 @@
                     <?php
                     if(is_array($this->notices)){
                         foreach($this->notices as $notice)
-                            echo $this->html->div(array(
+                            echo $this->html->div([
                                 $this->html->i()->class('fa fa-' . ake($notice, 'icon', 'bell')),
                                 ake($notice, 'msg')
-                            ))->class(trim('notice ' . ake($notice, 'class')));
+                            ])->class(trim('notice ' . ake($notice, 'class')));
 
                     } ?>
                     <div class="main-content">
