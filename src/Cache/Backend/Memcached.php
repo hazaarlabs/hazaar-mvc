@@ -42,11 +42,11 @@ class Memcached extends \Hazaar\Cache\Backend {
 
         $this->namespace = $namespace;
 
-        $this->configure(array(
+        $this->configure([
             'server'          => 'localhost',
             'port'            => 11211,
             'use_compression' => FALSE
-        ));
+        ]);
 
         $this->addCapabilities('store_objects');
 
@@ -55,7 +55,7 @@ class Memcached extends \Hazaar\Cache\Backend {
         $servers = $this->options->server;
 
         if(!\Hazaar\Map::is_array($servers))
-            $servers = array($servers);
+            $servers = [$servers];
 
         foreach($servers as $server)
             $this->memcached->addServer($server, $this->options->port);

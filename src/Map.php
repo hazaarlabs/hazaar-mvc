@@ -20,7 +20,7 @@ namespace Hazaar;
  *
  *              ```php
  *              $map = new Hazaar\Map();
- *              $map->depth0->depth1->depth2 = array('foo', 'bar');
+ *              $map->depth0->depth1->depth2 = ['foo', 'bar'];
  *              echo $map->toJson();
  *              ```
  *
@@ -50,10 +50,10 @@ namespace Hazaar;
  *              ```php
  *              $callback = function($value, $key){
  *                  if(is_a('\Hazaar\Date', $value)){
- *                      $value = new Map(array(
+ *                      $value = new Map([
  *                          'datetime' => new MongoDate($value),
  *                          'timezone' => $value['timezone']
- *                      ));
+ *                      ]);
  *                  }
  *                  return $value;
  *              }
@@ -87,12 +87,12 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
     /**
      * Holds the original child objects and values
      */
-    protected $defaults = array();
+    protected $defaults = [];
 
     /**
      * Holds the active elements
      */
-    protected $elements = array();
+    protected $elements = [];
 
     /**
      * The current value for array access returned by Map::each()
@@ -109,7 +109,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      * elements.
      * * recurse - Whether this filter should be recursively added to new and existing child elements
      */
-    private $filter = array();
+    private $filter = [];
 
     /**
      * Allows the map to be locked so that it's values are not accidentally changed.
@@ -128,11 +128,11 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      *              ### Example
      *
      *              ```php
-     *                $config = array('enabled' => true);
-     *                $map = new Hazaar\Map(array(
+     *                $config = ['enabled' => true];
+     *                $map = new Hazaar\Map([
      *                  'enabled' => false,
      *                  'label' => 'Test Map'
-     *                ), $config);
+     *                ], $config);
      *
      *                var_dump($map->toArray());
      *              ```
@@ -157,7 +157,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      *
      * @param       Array $filter_def Optional filter definition
      */
-    function __construct($defaults = array(), $extend = array(), $filter_def = array()) {
+    function __construct($defaults = [], $extend = [], $filter_def = []) {
 
         /**
          * If we get a string, try and convert it from JSON
@@ -235,7 +235,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
             return FALSE;
 
         if($erase)
-            $this->defaults = array();
+            $this->defaults = [];
 
         if(Map::is_array($defaults)) {
 
@@ -328,7 +328,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      */
     public function clear() {
 
-        $this->elements = array();
+        $this->elements = [];
 
     }
 
@@ -385,7 +385,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
         if($this->locked)
             return FALSE;
 
-        $this->defaults = array();
+        $this->defaults = [];
 
         foreach($this->elements as $elem) {
 
@@ -409,7 +409,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      * @return      int The number of elements in this Map.
      */
 
-    public function count($ignorenulls = FALSE) {
+    public function count($ignorenulls = FALSE) : int {
 
         if($ignorenulls == false)
             return count($this->elements);
@@ -569,7 +569,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      */
     public function getRemoves() {
 
-        $removes = array();
+        $removes = [];
 
         if($removes = array_flip(array_diff(array_keys($this->defaults), array_keys($this->elements)))) {
 
@@ -613,7 +613,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
 
         $new = array_diff(array_keys($this->elements), array_keys($this->defaults));
 
-        $array = array();
+        $array = [];
 
         foreach($new as $key) {
 
@@ -823,7 +823,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
         if(! $callback)
             throw new Exception\BadFilterDeclaration();
 
-        $filter = array('callback' => $callback, 'field' => $filter_field);
+        $filter = ['callback' => $callback, 'field' => $filter_field];
 
         if($filter_type)
             $filter['type'] = $filter_type;
@@ -865,7 +865,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
         if(!is_callable($callback))
             throw new Exception\BadFilterDeclaration();
 
-        $filter = array('callback' => $callback, 'field' => $filter_field);
+        $filter = ['callback' => $callback, 'field' => $filter_field];
 
         if($filter_type)
             $filter['type'] = $filter_type;
@@ -954,7 +954,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
 
                     if(! is_array($filter['type'])) {
 
-                        $filter['type'] = array($filter['type']);
+                        $filter['type'] = [$filter['type']];
 
                     }
 
@@ -1143,7 +1143,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
     /**
      * @internal
      */
-    public function offsetExists($key) {
+    public function offsetExists($key) : bool {
 
         return array_key_exists($key, $this->elements);
 
@@ -1161,7 +1161,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
     /**
      * @private
      */
-    public function offsetSet($key, $value) {
+    public function offsetSet($key, $value) : void {
 
         $this->set($key, $value);
 
@@ -1170,7 +1170,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
     /**
      * @private
      */
-    public function offsetUnset($key) {
+    public function offsetUnset($key) : void {
 
         unset($this->elements[$key]);
 
@@ -1181,7 +1181,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
         if(($key = key($this->elements)) === null)
             return false;
 
-        $item = array('key' => $key, 'value' => current($this->elements));
+        $item = ['key' => $key, 'value' => current($this->elements)];
 
         next($this->elements);
 
@@ -1222,12 +1222,9 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      *
      * @since       1.0.0
      */
-    public function next() {
+    public function next() : void {
 
-        if($this->current = $this->each())
-            return TRUE;
-
-        return FALSE;
+        $this->current = $this->each();
 
     }
 
@@ -1236,7 +1233,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      *
      * @since       1.0.0
      */
-    public function rewind() {
+    public function rewind() : void {
 
         reset($this->elements);
 
@@ -1249,15 +1246,9 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      *
      * @since       1.0.0
      */
-    public function valid() {
+    public function valid() : bool {
 
-        if($this->current) {
-
-            return TRUE;
-
-        }
-
-        return FALSE;
+        return (bool)($this->current);
 
     }
 
@@ -1323,7 +1314,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
 
                 } else {
 
-                    $elem = array();
+                    $elem = [];
 
                 }
 
@@ -1383,7 +1374,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
         if(! Map::is_array($criteria))
             throw new Exception\InvalidSearchCriteria();
 
-        $elements = array();
+        $elements = [];
 
         foreach($this->elements as $id => $elem) {
 
@@ -1435,7 +1426,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
     public function & findOne($criteria, $field = null) {
 
         if($criteria instanceof \MongoDB\BSON\ObjectID)
-            $criteria = array('_id' => $criteria);
+            $criteria = ['_id' => $criteria];
 
         if(! Map::is_array($criteria))
             throw new Exception\InvalidSearchCriteria();
@@ -1626,9 +1617,9 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      *
      * @return      float Sum of all numeric values
      */
-    public function sum($criteria = NULL, $fields = array(), $recursive = FALSE) {
+    public function sum($criteria = NULL, $fields = [], $recursive = FALSE) {
 
-        $children = array();
+        $children = [];
 
         $sum = 0;
 
@@ -1705,9 +1696,9 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
 
     }
 
-    public function flatten($inner_glue = '=', $outer_glue = ' ', $ignore = array()) {
+    public function flatten($inner_glue = '=', $outer_glue = ' ', $ignore = []) {
 
-        $elements = array();
+        $elements = [];
 
         foreach($this->elements as $key => $value) {
 
@@ -1759,7 +1750,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
 
                 if(count($members) > 0) {
 
-                    $result = array();
+                    $result = [];
 
                     foreach($members as $key => $value) {
 
@@ -1848,7 +1839,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
         if(!is_array($array))
             return false;
 
-        $new = array();
+        $new = [];
 
         foreach($array as $idx => $value) {
 
@@ -1869,7 +1860,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
                     foreach($parts as $part) {
 
                         if(! array_key_exists($part, $cur))
-                            $cur[$part] = array();
+                            $cur[$part] = [];
 
                         if(is_array($cur))
                             $cur =& $cur[$part];
@@ -1937,7 +1928,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
 
     public function __sleep(){
 
-        return array('defaults', 'elements', 'current', 'locked');
+        return ['defaults', 'elements', 'current', 'locked'];
 
     }
 

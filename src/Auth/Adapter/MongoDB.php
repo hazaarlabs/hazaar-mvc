@@ -16,7 +16,7 @@ class MongoDB extends \Hazaar\Auth\Adapter implements _Interface {
      * Construct the new authentication object with the field names
      * in the model for id, user name, password and real name.
      */
-    function __construct(\Hazaar\MongoDB $mongoDB, $collection = 'users', $identity = '_id', $credential = 'password', $namespace = null, $cache_config = array(), $cache_backend = 'session') {
+    function __construct(\Hazaar\MongoDB $mongoDB, $collection = 'users', $identity = '_id', $credential = 'password', $namespace = null, $cache_config = [], $cache_backend = 'session') {
 
         $this->collection = $collection;
 
@@ -52,10 +52,10 @@ class MongoDB extends \Hazaar\Auth\Adapter implements _Interface {
 
         $collection = $this->mongoDB->selectCollection($this->collection);
 
-        $doc = array(
+        $doc = [
             $this->field_identity   => $identity,
             $this->field_credential => $this->getCredential($credential)
-        );
+        ];
 
         $collection->insert($doc);
 
@@ -67,14 +67,14 @@ class MongoDB extends \Hazaar\Auth\Adapter implements _Interface {
 
         $collection = $this->mongoDB->selectCollection($this->collection);
 
-        return $collection->remove(array($this->field_identity => $identity));
+        return $collection->remove([$this->field_identity => $identity]);
 
     }
 
     /*
      * We must provide a queryAuth method for the auth base class to use to look up details
      */
-    public function queryAuth($identity, $extras = array()) {
+    public function queryAuth($identity, $extras = []) {
 
         if(! $identity)
             return false;
@@ -88,7 +88,7 @@ class MongoDB extends \Hazaar\Auth\Adapter implements _Interface {
 
         }
 
-        $criteria = array($this->field_identity => $identity);
+        $criteria = [$this->field_identity => $identity];
 
         $extras['id'] = '_id';
 
@@ -100,14 +100,14 @@ class MongoDB extends \Hazaar\Auth\Adapter implements _Interface {
 
         }
 
-        $details = array('identity' => (string)$user[$this->field_identity]);
+        $details = ['identity' => (string)$user[$this->field_identity]];
 
         if($this->field_credential)
             $details['credential'] = $user[$this->field_credential];
 
         if(is_array($extras)) {
 
-            $details['data'] = array();
+            $details['data'] = [];
 
             foreach($extras as $map => $key) {
 

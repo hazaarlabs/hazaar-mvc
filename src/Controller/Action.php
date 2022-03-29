@@ -20,7 +20,7 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
     public    $_helper;
 
-    protected $methods       = array();
+    protected $methods       = [];
 
     public function __construct($name, \Hazaar\Application $application, $use_app_config = true) {
 

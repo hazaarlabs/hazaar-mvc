@@ -76,13 +76,13 @@ chdir(APPLICATION_PATH);
  */
 class Application {
 
-    public $GLOBALS = array(
-        'hazaar' => array('exec_start' => HAZAAR_EXEC_START, 'version' => HAZAAR_VERSION),
+    public $GLOBALS = [
+        'hazaar' => ['exec_start' => HAZAAR_EXEC_START, 'version' => HAZAAR_VERSION],
         'env' => APPLICATION_ENV,
         'path' => APPLICATION_PATH,
         'base' => APPLICATION_BASE,
         'name' => APPLICATION_NAME
-    );
+    ];
 
     public $request;
 
@@ -152,11 +152,11 @@ class Application {
             //Store the search paths in the GLOBALS container so they can be used in config includes.
             $this->GLOBALS['paths'] = $this->loader->getSearchPaths();
         
-            Application\Config::$override_paths = array(
+            Application\Config::$override_paths = [
                 'server' . DIRECTORY_SEPARATOR . ake($_SERVER, 'SERVER_NAME'),
                 'host' . DIRECTORY_SEPARATOR . ake($_SERVER, 'HTTP_HOST'),
                 'local'
-            );
+            ];
 
             /*
              * Load it with a config object. if the file doesn't exist
@@ -327,8 +327,8 @@ class Application {
 
     public function getDefaultConfig(){
 
-        return array(
-            'app' => array(
+        return [
+            'app' => [
                 'root' => (php_sapi_name() === 'cli-server') ? null : dirname($_SERVER['SCRIPT_NAME']),
                 'defaultController' => 'Index',
                 'errorController' => null,
@@ -336,27 +336,26 @@ class Application {
                 'favicon' => 'favicon.png',
                 'timezone' => 'UTC',
                 'rewrite' => true,
-                'files' => array(
+                'files' => [
                     'bootstrap' => 'bootstrap.php',
                     'shutdown' => 'shutdown.php',
                     'route' => 'route.php',
                     'media' => 'media.php'
-                ),
+                ],
                 'responseImageCache' => false,
                 'runtimepath' => APPLICATION_PATH . DIRECTORY_SEPARATOR . '.runtime'
-            ),
-            'paths' => array(
+            ],
+            'paths' => [
                 'model' => 'models',
                 'view' => 'views',
                 'controller' => 'controllers',
                 'service' => 'services',
                 'helper' => 'helpers'
-            ),
-            'view' => array(
+            ],
+            'view' => [
                 'prepare' => false
-            )
-
-        );
+            ]
+        ];
 
     }
 
@@ -737,7 +736,7 @@ class Application {
              * so we throw a normal exception that will be grabbed by ErrorControl as an unhandled exception.
              */
             if($controller instanceof Controller\Error)
-                dieDieDie($e->getErrorMessage());
+                dieDieDie($e->getMessage());
 
             else
                 throw $e;
@@ -777,7 +776,7 @@ class Application {
 
         $url = new Application\Url();
 
-        call_user_func_array(array($url, '__construct'), func_get_args());
+        call_user_func_array([$url, '__construct'], func_get_args());
 
         return $url;
 
@@ -801,11 +800,11 @@ class Application {
      */
     public function active() {
 
-        $parts = array();
+        $parts = [];
 
         foreach(func_get_args() as $part){
 
-            $part_parts = strpos($part, '/') ? array_map('strtolower', array_map('trim', explode('/', $part))) : array($part);
+            $part_parts = strpos($part, '/') ? array_map('strtolower', array_map('trim', explode('/', $part))) : [$part];
 
             foreach($part_parts as $part_part)
                 $parts[] = strtolower(trim($part_part));
@@ -820,7 +819,7 @@ class Application {
 
         }
 
-        $request_parts = $base_path ? array_map('strtolower', array_map('trim', explode('/', $base_path))) : array();
+        $request_parts = $base_path ? array_map('strtolower', array_map('trim', explode('/', $base_path))) : [];
 
         for($i = 0; $i < count($parts); $i++){
 
@@ -837,7 +836,7 @@ class Application {
     }
 
     /**
-     * Send an immediate redirect response to redirect the browser
+     * Generate a redirect response to redirect the browser
      *
      * It's quite common to redirect the user to an alternative URL. This may be to forward the request
      * to another website, forward them to an authentication page or even just remove processed request
@@ -868,10 +867,10 @@ class Application {
 
             if($save_uri) {
 
-                $data = array(
+                $data = [
                     'URI' => $_SERVER['REQUEST_URI'],
                     'METHOD' => $_SERVER['REQUEST_METHOD']
-                );
+                ];
 
                 if($_SERVER['REQUEST_METHOD'] === 'POST')
                     $data['POST'] = $_POST;

@@ -99,39 +99,39 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
     protected $credential;
 
     // Extra data fields to store from the user record
-    protected $extra = array();
+    protected $extra = [];
 
     private $no_credential_hashing = false;
 
-    function __construct($cache_config = array(), $cache_backend = null) {
+    function __construct($cache_config = [], $cache_backend = null) {
 
-        $this->options = new \Hazaar\Map(array(
-            'encryption' => array(
+        $this->options = new \Hazaar\Map([
+            'encryption' => [
                 'hash' => 'sha1',
                 'count' => 1,
                 'salt' => '',
                 'use_identity' => false
-            ),
-            'autologin' => array(
+            ],
+            'autologin' => [
                 'cookie' => 'hazaar-auth-autologin',
                 'period' => 1,
                 'hash'  => 'sha1'
-            ),
-            'token' => array(
+            ],
+            'token' => [
                 'hash' => 'sha1'
-            ),
+            ],
             'timeout' => 3600,
-            'cache' => array(
+            'cache' => [
                 'backend' => 'session',
                 'cookie' => 'hazaar-auth'
-            )
-        ), \Hazaar\Application::getInstance()->config['auth']);
+            ]
+            ], \Hazaar\Application::getInstance()->config['auth']);
 
-        $cache_config = new \Hazaar\Map(array(
+        $cache_config = new \Hazaar\Map([
             'use_pragma' => FALSE,
             'lifetime' => $this->options->timeout,
             'session_name' => $this->options->cache['cookie']
-        ), $cache_config);
+        ], $cache_config);
 
         if($cache_backend instanceof \Hazaar\Cache){
 
@@ -219,7 +219,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
         $algos = $this->options->encryption['hash'];
 
         if(!\Hazaar\Map::is_array($algos))
-            $algos = array($algos);
+            $algos = [$algos];
 
         $salt = $this->options->encryption['salt'];
 
@@ -341,10 +341,10 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
                      * stored encrypted and the developer should re-think their auth strategy but
                      * we offer some minor protection from that stupidity here.
                      */
-                    $data = base64_encode(http_build_query(array(
+                    $data = base64_encode(http_build_query([
                         'identity' => $identity,
                         'hash' => hash($this->options->autologin['hash'], $this->getIdentifier($auth['credential'] . $identity))
-                    )));
+                    ]));
 
                     $cookie = $this->getAutologinCookieName();
 
@@ -537,7 +537,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
      * These methods allows accessing user data as array attributes of the auth object. These methods do not allow this
      * data to be modified in any way.
      */
-    public function offsetExists($key) {
+    public function offsetExists($key) : bool {
 
         return $this->session->has($key);
 
@@ -554,15 +554,15 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
     }
 
-    public function offsetSet($key, $value) {
+    public function offsetSet($key, $value) : void {
 
         $this->session->set($key, $value);
 
     }
 
-    public function offsetUnset($key) {
+    public function offsetUnset($key) : void {
 
-        $this->session->unset($key);
+        $this->session->remove($key);
 
     }
 

@@ -12,7 +12,7 @@ class MenuItem {
 
     public $suffix;
 
-    public $items = array();
+    public $items = [];
 
     function __construct($target, $label, $url = null, $icon = null, $suffix = null){
 
@@ -23,7 +23,7 @@ class MenuItem {
         $this->icon = $icon;
 
         if($suffix)
-            $this->suffix = (is_array($suffix) ? $suffix : array($suffix));
+            $this->suffix = (is_array($suffix) ? $suffix : [$suffix]);
 
     }
 

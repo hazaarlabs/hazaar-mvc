@@ -53,30 +53,30 @@ class Cron {
      *
      * @var mixed
      */
-    private $ranges = array(
-        IDX_MINUTE  => array('min' => 0,
+    private $ranges = [
+        IDX_MINUTE  => ['min' => 0,
                              'max' => 59,
-                             'name' => 'i'),    // Minutes
-        IDX_HOUR    => array('min' => 0,
+                             'name' => 'i'],    // Minutes
+        IDX_HOUR    => ['min' => 0,
                              'max' => 23,
-                             'name' => 'G'),    // Hours
-        IDX_DAY     => array('min' => 1,
+                             'name' => 'G'],    // Hours
+        IDX_DAY     => ['min' => 1,
                              'max' => 31,
-                             'name' => 'd'),    // Days
-        IDX_MONTH   => array('min' => 1,
+                             'name' => 'd'],    // Days
+        IDX_MONTH   => ['min' => 1,
                              'max' => 12,
-                             'name' => 'm'),    // Months
-        IDX_WEEKDAY => array('min' => 0,
+                             'name' => 'm'],    // Months
+        IDX_WEEKDAY => ['min' => 0,
                              'max' => 7,
-                             'name' => 'w')    // Weekdays
-    );
+                             'name' => 'w']    // Weekdays
+    ];
 
     /**
      * Named intervals.
      *
      * @var mixed
      */
-    private $intervals = array(
+    private $intervals = [
         '@yearly'   => '0 0 1 1 *',
         '@annualy'  => '0 0 1 1 *',
         '@monthly'  => '0 0 1 * *',
@@ -85,15 +85,15 @@ class Cron {
         '@daily'    => '0 0 * * *',
         '@hourly'   => '0 * * * *',
         '@reboot'   => 'now'
-    );
+    ];
 
     /**
      * Possible keywords for months/weekdays.
      *
      * @var mixed
      */
-    private $keywords = array(
-        IDX_MONTH   => array(
+    private $keywords = [
+        IDX_MONTH   => [
             '/(january|januar|jan)/i'           => 1,
             '/(february|februar|feb)/i'         => 2,
             '/(march|maerz|m�rz|mar|mae|m�r)/i' => 3,
@@ -106,8 +106,8 @@ class Cron {
             '/(october|oktober|okt|oct)/i'      => 10,
             '/(november|nov)/i'                 => 11,
             '/(december|dezember|dec|dez)/i'    => 12
-        ),
-        IDX_WEEKDAY => array(
+        ],
+        IDX_WEEKDAY => [
             '/(sunday|sonntag|sun|son|su|so)/i'      => 0,
             '/(monday|montag|mon|mo)/i'              => 1,
             '/(tuesday|dienstag|die|tue|tu|di)/i'    => 2,
@@ -115,8 +115,8 @@ class Cron {
             '/(thursday|donnerstag|don|thu|th|do)/i' => 4,
             '/(friday|freitag|fre|fri|fr)/i'         => 5,
             '/(saturday|samstag|sam|sat|sa)/i'       => 6
-        )
-    );
+        ]
+    ];
 
     /**
      * @var string The parsed CRON expression
@@ -500,7 +500,7 @@ class Cron {
         if(count($cron) !== 5)
             return FALSE;
 
-        $dummy = array();
+        $dummy = [];
 
         // Yup, 5 segments... lets see if we can work with them
         foreach($cron as $idx => $segment){
@@ -552,7 +552,7 @@ class Cron {
             return FALSE;
 
         // At this point our string should be OK - lets convert it to an array
-        $result = array();
+        $result = [];
 
         $atoms = explode(',', $segment);
 
@@ -601,7 +601,7 @@ class Cron {
      */
     private function parseAtom($atom) {
 
-        $expanded = array();
+        $expanded = [];
 
         if(preg_match('/^(\d+)-(\d+)(\/(\d+))?/i', $atom, $matches)) {
 
@@ -611,7 +611,7 @@ class Cron {
 
             if($low > $high) {
 
-                list($low, $high) = array($high, $low);
+                list($low, $high) = [$high, $low];
 
             }
 

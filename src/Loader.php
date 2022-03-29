@@ -116,7 +116,7 @@ class Loader {
 
 	private $application;
 
-	public $paths = array();
+	public $paths = [];
 
 	private static $instance;
 
@@ -187,7 +187,7 @@ class Loader {
      */
 	public function register(){
 
-		spl_autoload_register(array($this,'loadClassFromFile'));
+		spl_autoload_register([$this,'loadClassFromFile']);
 
 	}
 
@@ -198,7 +198,7 @@ class Loader {
      */
 	public function unregister(){
 
-		spl_autoload_unregister(array($this,'loadClassFromFile'));
+		spl_autoload_unregister([$this,'loadClassFromFile']);
 
 	}
 
@@ -264,7 +264,7 @@ class Loader {
      */
     public function setSearchPath($type, $path){
 
-        $this->paths[$type] = array();
+        $this->paths[$type] = [];
 
         return $this->addSearchPath($type, $path);
 
@@ -514,7 +514,7 @@ class Loader {
             }else{
 
                 //Build a list of controllers to search for
-                $controller_class_search = array();
+                $controller_class_search = [];
 
                 $parts = explode('/', $controller);
 

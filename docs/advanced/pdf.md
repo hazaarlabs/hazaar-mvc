@@ -41,7 +41,7 @@ class GetPDFController extends Hazaar\Controller\Action {
         $pdf = new Hazaar\Controller\Response\PDF();
         $content = file_get_contents(Hazaar\Loader::getFilePath(FILE_PATH_VIEW, 'pdf/testpdf.html'));
         $template = new Hazaar\Template\Smarty($content);
-        $data = array('header' => 'This is a header!', 'string' => 'This is a string of text!');
+        $data = ['header' => 'This is a header!', 'string' => 'This is a string of text!'];
         $pdf->setContent($template->render($data);
         return $pdf;
     }

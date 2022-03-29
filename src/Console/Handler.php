@@ -4,11 +4,11 @@ namespace Hazaar\Console;
 
 class Handler {
 
-    private $modules = array();
+    private $modules = [];
 
-    private $libraries = array();
+    private $libraries = [];
 
-    private $menus = array();
+    private $menus = [];
 
     private $application;
 

@@ -11,7 +11,7 @@ namespace Hazaar\Application;
 
 class Router {
 
-    private $aliases = array();
+    private $aliases = [];
 
     private $file;
 
@@ -29,14 +29,14 @@ class Router {
 
     public $is_default_controller = false;
 
-    static public $internal = array(
+    static public $internal = [
         'hazaar'        => 'Hazaar\Controller\Router',
         'media'         => 'Hazaar\Controller\Media',
         'style'         => 'Hazaar\Controller\Style',
         'script'        => 'Hazaar\Controller\Script',
         'favicon.png'   => 'Hazaar\Controller\Favicon',
         'favicon.ico'   => 'Hazaar\Controller\Favicon'
-    );
+    ];
 
     function __construct(Config $config) {
 
