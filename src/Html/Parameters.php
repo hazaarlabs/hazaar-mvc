@@ -39,7 +39,7 @@ class Parameters implements \Countable {
         if($params) {
 
             if(! is_array($params))
-                $params = array($params);
+                $params = [$params];
 
             $this->params = $params;
 

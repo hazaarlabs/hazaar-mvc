@@ -34,7 +34,7 @@ class Layout extends \Hazaar\View {
         if(! $view)
             $view = 'application';
 
-        parent::__construct($view, array('html', 'hazaar'));
+        parent::__construct($view, ['html', 'hazaar']);
 
         if ($this->application->config->has('view')) {
 

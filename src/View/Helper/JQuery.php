@@ -35,7 +35,7 @@ class JQuery extends \Hazaar\View\Helper {
      */
     public function init(\Hazaar\View\Layout $view, $args = []) {
 
-        $settings = new \Hazaar\Map(array('noload' => FALSE), $this->args);
+        $settings = new \Hazaar\Map(['noload' => FALSE], $this->args);
 
         if($settings['noload'] !== TRUE) {
 
@@ -52,7 +52,7 @@ class JQuery extends \Hazaar\View\Helper {
 
                 $ui_version = $settings->has('ui-version') ? $settings->get('ui-version') : null;
 
-                $files = array('jquery-ui.min.js');
+                $files = ['jquery-ui.min.js'];
 
                 if($settings->has('ui-theme'))
                     $files[] = 'themes/' . $settings->get('ui-theme') . '/jquery-ui.min.css';

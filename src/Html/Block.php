@@ -45,7 +45,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
         if($content !== NULL) {
 
             if(! is_array($content))
-                $content = array($content);
+                $content = [$content];
 
             $this->content = $content;
 
@@ -264,7 +264,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
                     if(ElementCollection::matchElement($element, $rules, $index, $count)){
 
-                        array_splice($this->content, $index + $offset, $length, array($content));
+                        array_splice($this->content, $index + $offset, $length, [$content]);
 
                         return $this;
 
@@ -292,7 +292,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     }
 
-    public function offsetExists($key) {
+    public function offsetExists($key) : bool{
 
         return array_key_exists($key, $this->content);
 
@@ -310,7 +310,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     }
 
-    public function offsetSet($key, $value) {
+    public function offsetSet($key, $value) : void {
 
         if(is_null($key)) {
 
@@ -324,7 +324,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     }
 
-    public function offsetUnset($key) {
+    public function offsetUnset($key) : void {
 
         if(array_key_exists($key, $this->content)) {
 

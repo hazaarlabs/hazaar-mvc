@@ -54,10 +54,10 @@ class Layout extends \Hazaar\Controller\Response\Html implements \ArrayAccess {
 
     public function __call($method, $param_arr) {
 
-        return call_user_func_array(array(
+        return call_user_func_array([
             $this->_layout,
             $method
-        ), $param_arr);
+        ], $param_arr);
 
     }
 
@@ -67,19 +67,19 @@ class Layout extends \Hazaar\Controller\Response\Html implements \ArrayAccess {
 
     }
 
-    public function offsetSet($key, $value) {
+    public function offsetSet($key, $value) : void{
 
         $this->_layout->set($key, $value);
 
     }
 
-    public function offsetUnset($key) {
+    public function offsetUnset($key) : void {
 
         $this->_layout->remove($key);
 
     }
 
-    public function offsetExists($key) {
+    public function offsetExists($key) : bool {
 
         return $this->_layout->has($key);
 

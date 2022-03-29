@@ -39,10 +39,10 @@ class Bootstrap extends \Hazaar\View\Helper {
 
         $version = ake($args, 'version');
 
-        $files = array('js/bootstrap.min.js');
+        $files = ['js/bootstrap.min.js'];
 
         if($theme = ake($this->args, 'theme'))
-            $version = $this->cdnjs->load('bootswatch', $version, array($theme . '/bootstrap.min.css'));
+            $version = $this->cdnjs->load('bootswatch', $version, [$theme . '/bootstrap.min.css']);
         else
             $files[] = 'css/bootstrap.min.css';
 
@@ -50,7 +50,7 @@ class Bootstrap extends \Hazaar\View\Helper {
 
         //Check if we are
         if($version->compareTo('4.0') >= 0)
-            $this->cdnjs->load('popper.js', null, array('umd/popper.min.js'), 1);
+            $this->cdnjs->load('popper.js', null, ['umd/popper.min.js'], 1);
 
     }
 
@@ -97,11 +97,11 @@ class Bootstrap extends \Hazaar\View\Helper {
 
         if($size) {
 
-            $valid = array(
+            $valid = [
                 'large',
                 'small',
                 'mini'
-            );
+            ];
 
             if(in_array($size, $valid)) {
 

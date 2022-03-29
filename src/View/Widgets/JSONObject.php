@@ -63,13 +63,13 @@ class JSONObject extends \Hazaar\View\ViewableObject {
 
             $assoc = is_assoc($items);
 
-            list($in, $out) = ($assoc ? array(
+            list($in, $out) = ($assoc ? [
                 '{ ',
                 ' }'
-            ) : array(
+            ] : [
                 '[ ',
                 ' ]'
-            ));
+            ]);
 
         } else {
 

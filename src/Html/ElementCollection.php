@@ -42,19 +42,19 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
     static public function compileRules($selector, $count){
 
-        $rules = array(
-                'type' => null,
-                'id' => null,
-                'classes' => [],
-                'attributes' => array(
-                    'match' => [],
-                    'exists' => []
-                ),
-                'ranges' => [],
-                'pseudo-class' => [],
-                'func' => [],
-                'not' => []
-            );
+        $rules = [
+            'type' => null,
+            'id' => null,
+            'classes' => [],
+            'attributes' => [
+                'match' => [],
+                'exists' => []
+            ],
+            'ranges' => [],
+            'pseudo-class' => [],
+            'func' => [],
+            'not' => []
+        ];
 
         $selectors = preg_split('/\:/', $selector);
 
@@ -234,7 +234,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
         if(count($rules['pseudo-class']) > 0){
 
-            $group_classes = array('first-child', 'last-child');
+            $group_classes = ['first-child', 'last-child'];
 
             foreach($rules['pseudo-class'] as $pseudo){
 
@@ -327,7 +327,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
         if(is_array($this->elements)){
 
             foreach($this->elements as $element)
-                call_user_func_array(array($element, $method), $args);
+                call_user_func_array([$element, $method], $args);
 
         }
 
@@ -352,7 +352,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
     }
 
-    public function offsetExists($offset){
+    public function offsetExists($offset) : bool {
 
         return array_key_exists($offset, $this->elements);
 
@@ -367,7 +367,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
     }
 
-    public function offsetSet($offset, $value){
+    public function offsetSet($offset, $value) : void {
 
         if(!$value instanceof Element)
             return;
@@ -376,7 +376,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
     }
 
-    public function offsetUnset($offset){
+    public function offsetUnset($offset) : void {
 
         if(array_key_exists($offset, $this->elements))
             unset($this->elements[$offset]);

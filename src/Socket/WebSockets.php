@@ -483,7 +483,7 @@ abstract class WebSocketServer extends Server {
 
     protected function extractHeaders($message) {
 
-        $header = array(
+        $header = [
                 'fin' => $message[0] & chr(128),
                 'rsv1' => $message[0] & chr(64),
                 'rsv2' => $message[0] & chr(32),
@@ -492,7 +492,7 @@ abstract class WebSocketServer extends Server {
                 'hasmask' => $message[1] & chr(128),
                 'length' => 0,
                 'mask' => ""
-        );
+        ];
         $header['length'] = (ord($message[1]) >= 128) ? ord($message[1]) - 128 : ord($message[1]);
         
         if ($header['length'] == 126) {

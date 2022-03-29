@@ -22,11 +22,11 @@ class Client {
 
     private $auto_redirect      = TRUE;
 
-    private $redirect_methods   = array(
+    private $redirect_methods   = [
         'GET',
         'OPTIONS',
         'PROPFIND'
-    );
+    ];
 
     private $username;
 
@@ -362,7 +362,7 @@ class Client {
 
         list($name, $value) = explode('=', array_shift($parts), 2);
 
-        $data = array(
+        $data = [
             'name' => $name,
             'value' => $value,
             'domain' => null,
@@ -370,7 +370,7 @@ class Client {
             'expires' => null,
             'secure' => false,
             'httponly' => false
-        );
+        ];
 
         foreach($parts as $part){
 

@@ -42,7 +42,7 @@ class Cdnjs extends \Hazaar\View\Helper {
             foreach($libs as $lib){
 
                 if(!is_array($lib))
-                    $lib = array('name' => $lib);
+                    $lib = ['name' => $lib];
 
                 if(!array_key_exists('name', $lib))
                     continue;
@@ -185,7 +185,7 @@ class Cdnjs extends \Hazaar\View\Helper {
 
             }
 
-        }else $info['load'] = array($info['default']);
+        }else $info['load'] = [$info['default']];
 
         $this->libraries[$name] = $info;
 

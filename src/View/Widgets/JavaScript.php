@@ -23,7 +23,7 @@ class JavaScript extends \Hazaar\View\ViewableObject {
     public function setArgs($argdef = []) {
 
         if(!is_array($argdef))
-            $argdef = array($argdef);
+            $argdef = [$argdef];
 
         $this->argdef = $argdef;
 

@@ -6,9 +6,9 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
     public  $separator  = '/';
     
-    private $scope      = array(
+    private $scope      = [
         'https://www.googleapis.com/auth/drive'
-    );
+    ];
 
     private $options;
 
@@ -16,7 +16,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
     private $meta       = [];
 
-    private $meta_items = array(
+    private $meta_items = [
         'kind',
         'id',
         'title',
@@ -33,7 +33,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
         'thumbnailLink',
         'webContentLink',
         'md5Checksum'
-    );
+    ];
 
     private $cursor;
 
@@ -47,21 +47,21 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
         parent::__construct();
 
-        $this->options = new \Hazaar\Map(array(
+        $this->options = new \Hazaar\Map([
             'cache_backend'    => 'file',
-            'oauth2'           => array('access_token' => NULL),
+            'oauth2'           => ['access_token' => NULL],
             'refresh_attempts' => 5,
             'maxResults'       => 100,
             'root'             => '/'
-        ), $options);
+        ], $options);
 
         if(! ($this->options->has('client_id') && $this->options->has('client_secret')))
             throw new Exception\DropboxError('Google Drive filesystem backend requires both client_id and client_secret.');
 
-        $cacheOps = array(
+        $cacheOps = [
             'use_pragma' => FALSE,
             'namespace'  => 'googledrive_' . $this->options->client_id
-        );
+        ];
 
         $this->cache = new \Hazaar\Cache($this->options['cache_backend'], $cacheOps);
 
@@ -174,7 +174,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
         $this->cache->set('oauth2_state', $state, 300);
 
-        $params = array(
+        $params = [
             'response_type=code',
             'access_type=offline',
             'approval_prompt=force',
@@ -182,7 +182,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
             'scope=' . implode(' ', $this->scope),
             'redirect_uri=' . $redirect_uri,
             'state=' . $state
-        );
+        ];
 
         return 'https://accounts.google.com/o/oauth2/auth?' . implode('&', $params);
 
@@ -680,7 +680,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
         $request->title = basename($path);
 
-        $request->parents = array(array('id' => $parent['id']));
+        $request->parents = [['id' => $parent['id']]];
 
         $request->mimeType = 'application/vnd.google-apps.folder';
 
@@ -747,7 +747,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
         $request->title = $item['title'];
 
-        $request->parents = array(array('id' => $parent['id']));
+        $request->parents = [['id' => $parent['id']]];
 
         $response = $this->sendRequest($request);
 
@@ -793,7 +793,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
         $request = new \Hazaar\Http\Request('https://www.googleapis.com/drive/v2/files/' . $item['id'] . '/parents', 'POST', 'application/json');
 
-        $request->populate(array('id' => $dstParent['id']));
+        $request->populate(['id' => $dstParent['id']]);
 
         $response = $this->sendRequest($request);
 
@@ -853,7 +853,7 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
         $request = new \Hazaar\Http\Request('https://www.googleapis.com/upload/drive/v2/files?uploadType=multipart', 'POST');
 
-        $request->addMultipart(array('title' => basename($file), 'parents' => array(array('id' => $parent['id']))), 'application/json');
+        $request->addMultipart(['title' => basename($file), 'parents' => [['id' => $parent['id']]]], 'application/json');
 
         $request->addMultipart($data, $content_type);
 

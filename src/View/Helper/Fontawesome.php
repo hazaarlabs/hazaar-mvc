@@ -82,7 +82,7 @@ class Fontawesome extends \Hazaar\View\Helper {
             foreach($style as $id => $icon){
 
                 if(!is_array($icon))
-                    $icon = array($icon);
+                    $icon = [$icon];
 
                 $i = $this->icon(ake($icon, 0))->addClass('fa-stack-' . ($id + 1) . 'x');
 

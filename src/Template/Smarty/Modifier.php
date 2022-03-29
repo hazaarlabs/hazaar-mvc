@@ -4,7 +4,7 @@ namespace Hazaar\Template\Smarty;
 
 class Modifier {
 
-    static private $modifiers = array(
+    static private $modifiers = [
         'capitalize',
         'cat',
         'count_characters',
@@ -30,7 +30,7 @@ class Modifier {
 
         //Custom Hazaar MVC Modifiers
         'implode'
-    );
+    ];
 
     static public function has_function($func){
 

@@ -90,7 +90,7 @@ class Select extends Block {
 
     public function addOptgroup($label, $options = []) {
 
-        return self::addOption(array('label' => $label, 'items' => $options));
+        return self::addOption(['label' => $label, 'items' => $options]);
 
     }
 
