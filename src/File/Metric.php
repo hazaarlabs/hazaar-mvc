@@ -36,26 +36,26 @@ class Metric {
 
     private $tick_sec = 0;
 
-    private $data_sources = array();
+    private $data_sources = [];
 
-    private $archives = array();
+    private $archives = [];
 
-    private $lastTick = array('data' => array(), 'archive' => array());
+    private $lastTick = ['data' => [], 'archive' => []];
 
-    private $dataSourceTypes = array(
+    private $dataSourceTypes = [
         'GAUGE'    => 0x01,
         'COUNTER'  => 0x02,
         'ABSOLUTE' => 0x03,
         'GAUGEZ'   => 0x04
-    );
+    ];
 
-    private $archiveCFs      = array(
+    private $archiveCFs      = [
         'AVERAGE' => 0x01,
         'MIN'     => 0x02,
         'MAX'     => 0x03,
         'LAST'    => 0x04,
         'COUNT'   => 0x05
-    );
+    ];
 
     public function __construct($file) {
 
@@ -104,7 +104,7 @@ class Metric {
         if(! array_key_exists($type, $this->dataSourceTypes))
             return false;
 
-        $this->data_sources[$dsname] = array(
+        $this->data_sources[$dsname] = [
             'name'      => $dsname,
             'desc'      => $description,
             'type'      => $this->dataSourceTypes[$type],
@@ -112,7 +112,7 @@ class Metric {
             'min'       => $min,
             'max'       => $max,
             'last'      => -1
-        );
+        ];
 
         return true;
 
@@ -138,14 +138,14 @@ class Metric {
         if(!array_key_exists($cf, $this->archiveCFs))
             return false;
 
-        $this->archives[$archive_id] = array(
+        $this->archives[$archive_id] = [
             'id'    => $archive_id,
             'desc'  => $description,
             'cf'    => $this->archiveCFs[$cf],      //Consolidation function
             'ticks' => $ticks,                      //Number of ticks to consolidate into a row
             'rows'  => $rows,                       //Number of rows to store in the archive
             'last'  => -1                           //Pointer to the current row
-        );
+        ];
 
         return true;
 
@@ -275,7 +275,7 @@ class Metric {
 
                     $foot = unpack('vticks/fmin/fmax/llast', fread($this->h, 6 + (2 * METRIC_FLOAT_LEN)));
 
-                    $ds = array(
+                    $ds = [
                         'name'      => $name,
                         'desc'      => $desc,
                         'type'      => $header['type'],
@@ -283,7 +283,7 @@ class Metric {
                         'min'       => ($foot['min'] == -1) ? NULL : $foot['min'],
                         'max'       => ($foot['max'] == -1) ? NULL : $foot['max'],
                         'last'      => $foot['last']
-                    );
+                    ];
 
                     $this->data_sources[$name] = $ds;
 
@@ -313,7 +313,7 @@ class Metric {
 
                 case  METRIC_TYPE_AD: //Archive definition
 
-                    $archive = array();
+                    $archive = [];
 
                     $header = unpack('Clen', fread($this->h, 1));
 
@@ -617,11 +617,11 @@ class Metric {
 
         $current_tick = $this->getTick();
 
-        $updates = array();
+        $updates = [];
 
         foreach($this->archives as $archive_id => $archive){
 
-            $data = array();
+            $data = [];
 
             $last_tick = $this->lastTick['archive'][$archive_id];
 
@@ -664,7 +664,7 @@ class Metric {
 
                     ksort($data);
 
-                    $current_data = array();
+                    $current_data = [];
 
                     foreach($data as $tick => $value) {
 
@@ -679,7 +679,7 @@ class Metric {
 
                             $updates[$archive_id][$tick][$dsname] = $cvalue;
 
-                            $current_data = array();
+                            $current_data = [];
 
                         }
 
@@ -834,7 +834,7 @@ class Metric {
         if(! $this->exists())
             return FALSE;
 
-        $data = array();
+        $data = [];
 
         if(!array_key_exists($dsname, $this->data_sources))
             return FALSE;
@@ -888,11 +888,11 @@ class Metric {
 
         ksort($data);
 
-        return array(
+        return [
             'ds'      => $this->data_sources[$dsname],
             'archive' => $archive,
             'ticks'   => $data
-        );
+        ];
 
     }
 
@@ -905,7 +905,7 @@ class Metric {
      */
     public function data($dsname){
 
-        $data = array();
+        $data = [];
 
         $offset = $this->getDataSourceOffset($dsname);
 
@@ -926,7 +926,7 @@ class Metric {
 
         $foot = unpack('vticks/fmin/fmax/llast', fread($this->h, 6 + (2 * METRIC_FLOAT_LEN)));
 
-        $ds = array(
+        $ds = [
             'name'      => $name,
             'desc'      => $desc,
             'type'      => $header['type'],
@@ -934,7 +934,7 @@ class Metric {
             'min'       => ($foot['min'] == -1) ? NULL : $foot['min'],
             'max'       => ($foot['max'] == -1) ? NULL : $foot['max'],
             'last'      => $foot['last']
-        );
+        ];
 
         while($type = fread($this->h, 2)) {
 
@@ -952,10 +952,10 @@ class Metric {
 
         ksort($data);
 
-        return array(
+        return [
             'ds' => $ds,
             'ticks' => $data
-        );
+        ];
 
     }
 

@@ -35,7 +35,7 @@ class Http extends \Hazaar\Application\Request {
     /**
      * Array of headers, one line per element.
      */
-    private $headers = array();
+    private $headers = [];
 
     /**
      * Request body.  This is only used in certain circumstances such as with XML-RPC or REST.

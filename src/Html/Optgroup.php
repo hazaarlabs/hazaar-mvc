@@ -25,7 +25,7 @@ class Optgroup extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the span.
      */
-    function __construct($label, $options = NULL, $value = NULL, $params = array(), $use_options_index_as_value = true) {
+    function __construct($label, $options = NULL, $value = NULL, $params = [], $use_options_index_as_value = true) {
 
         $params['label'] = $label;
 
@@ -65,7 +65,7 @@ class Optgroup extends Block {
 
     }
 
-    public function addOption($label, $value = NULL, $params = array()) {
+    public function addOption($label, $value = NULL, $params = []) {
 
         if(is_array($label) && array_key_exists('items', $label)) {
 

@@ -12,13 +12,30 @@ abstract class Model extends \Hazaar\Auth\Adapter implements _Interface {
      * Construct the new authentication object with the field names
      * in the model for id, user name, password and real name.
      */
-    function __construct($args = null, $cache_config = array(), $cache_backend = 'session') {
+    function __construct($args = null, $cache_config = [], $cache_backend = 'session') {
 
         parent::__construct($cache_config, $cache_backend);
 
-        if(method_exists($this, 'init'))
-            $this->init($args);
+        $this->init($args);
 
+    }
+
+    public function init(){
+
+        return false;
+
+    }
+
+    public function insert(){
+
+        return false;
+        
+    }
+
+    public function delete(){
+
+        return false;
+        
     }
 
     public function setIdentityField($identity) {
@@ -35,16 +52,16 @@ abstract class Model extends \Hazaar\Auth\Adapter implements _Interface {
 
     public function addUser($identity, $credential) {
 
-        $this->insert(array(
+        $this->insert([
             $this->field_identity => $identity,
             $this->field_credential => $credential
-        ));
+        ]);
 
     }
 
     public function delUser($identity) {
 
-        $this->delete(array($this->field_identity => $identity));
+        $this->delete([$this->field_identity => $identity]);
 
     }
 

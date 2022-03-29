@@ -4,13 +4,13 @@ namespace Hazaar\Controller;
 
 class Media extends \Hazaar\Controller\WebDAV {
 
-    private $allowPreview   = array(
+    private $allowPreview   = [
         '/^image\//'
-    );
+    ];
 
-    private $cachableParams = array(
+    private $cachableParams = [
         'width', 'height', 'format', 'quality', 'format', 'xwidth', 'xheight', 'filter'
-    );
+    ];
 
     private $auth;
 
@@ -33,7 +33,7 @@ class Media extends \Hazaar\Controller\WebDAV {
 
         $this->connector = new \Hazaar\File\BrowserConnector($this->url(), $this->allowPreview);
 
-        $this->connector->setProgressCallback(array($this, 'progress'));
+        $this->connector->setProgressCallback([$this, 'progress']);
 
         if(($this->config = $this->loadConfig()) === false)
             throw new \Hazaar\Exception('Media controller has not been configured!');
@@ -42,7 +42,7 @@ class Media extends \Hazaar\Controller\WebDAV {
             return;
 
         if($this->config->global['log'] === true)
-            $this->log = new \Hazaar\Logger\Frontend(E_NOTICE, 'file', array('logfile' => \Hazaar\Application::getInstance()->runtimePath('media.log'))); 
+            $this->log = new \Hazaar\Logger\Frontend(E_NOTICE, 'file', ['logfile' => \Hazaar\Application::getInstance()->runtimePath('media.log')]); 
 
         //Check for global command authentication
         if($this->config->global->has('auth')
@@ -63,7 +63,7 @@ class Media extends \Hazaar\Controller\WebDAV {
 
     private function loadConfig() {
 
-        $defaults = array('global' =>  \Hazaar\File\Manager::$default_config);
+        $defaults = ['global' =>  \Hazaar\File\Manager::$default_config];
 
         $config = new \Hazaar\Application\Config('media', APPLICATION_ENV, $defaults);
 
@@ -77,10 +77,10 @@ class Media extends \Hazaar\Controller\WebDAV {
 
     }
 
-    private function loadSources($config, $connector, $names = array()) {
+    private function loadSources($config, $connector, $names = []) {
 
         if(!is_array($names))
-            $names = array($names);
+            $names = [$names];
 
         foreach($config as $id => $source) {
 
@@ -127,7 +127,7 @@ class Media extends \Hazaar\Controller\WebDAV {
 
         if($data instanceof \Hazaar\File) {
 
-            $data = array(
+            $data = [
                 'kind'     => $data->type(),
                 'name'     => $data->basename(),
                 'path'     => $data->fullpath(),
@@ -136,11 +136,11 @@ class Media extends \Hazaar\Controller\WebDAV {
                 'mime'     => (($data->type() == 'file') ? $data->mime_content_type() : 'dir'),
                 'read'     => $data->is_readable(),
                 'write'    => $data->is_writable()
-            );
+            ];
 
         }
 
-        $this->stream(array('progress' => array('operation' => $operation, 'data' => $data)));
+        $this->stream(['progress' => ['operation' => $operation, 'data' => $data]]);
 
     }
 
@@ -405,7 +405,7 @@ class Media extends \Hazaar\Controller\WebDAV {
             if($targets = $this->request->get('target')){
 
                 if(!is_array($targets)) 
-                    $targets = array($targets);
+                    $targets = [$targets];
 
                 foreach($targets as $target)
                     $messages[] = ake($connector->source($target), 'name') . ':' . $connector->path($target);
@@ -435,7 +435,7 @@ class Media extends \Hazaar\Controller\WebDAV {
         } else {
 
             if(($auth = $connector->authorised()) !== TRUE)
-                $this->stream(array('auth' => $auth));
+                $this->stream(['auth' => $auth]);
 
         }
 
@@ -450,7 +450,7 @@ class Media extends \Hazaar\Controller\WebDAV {
 
         $params = $method->getParameters();
 
-        $args = array();
+        $args = [];
 
         $rqParams = $this->request->getParams();
 

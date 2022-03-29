@@ -10,7 +10,7 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
 
     private $cache;
 
-    private $meta = array();
+    private $meta = [];
 
     static public function label(){
 
@@ -20,10 +20,10 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
 
     public function __construct($options) {
 
-        $this->options = new \Hazaar\Map(array(
+        $this->options = new \Hazaar\Map([
             'cache_backend' => 'file',
             'cache_meta'    => TRUE
-        ), $options);
+        ], $options);
 
         if(! $this->options->has('baseuri'))
             throw new \Hazaar\Exception('WebDAV file browser backend requires a URL!');
@@ -31,7 +31,7 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
         if($this->options->has('cookies'))
             $this->setCookie($this->options->cookies);
 
-        $this->cache = new \Hazaar\Cache($this->options['cache_backend'], array('use_pragma' => FALSE, 'namespace' => 'webdav_' . $this->options->baseuri . '_' . $this->options->username));
+        $this->cache = new \Hazaar\Cache($this->options['cache_backend'], ['use_pragma' => FALSE, 'namespace' => 'webdav_' . $this->options->baseuri . '_' . $this->options->username]);
 
         if($this->options->get('cache_meta', FALSE)) {
 
@@ -94,7 +94,7 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
         if(!(is_array($pathMeta['resourcetype']) && array_key_exists('collection', $pathMeta['resourcetype'])))
             return FALSE;
 
-        $list = array();
+        $list = [];
 
         foreach($this->meta as $name => $item) {
 
@@ -350,7 +350,7 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
 
     }
 
-    public function thumbnail($path, $params = array()) {
+    public function thumbnail($path, $params = []) {
 
         if(! ($info = $this->info($path)))
             return NULL;
@@ -559,7 +559,7 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
     public function set_meta($path, $values) {
 
         if(! ($meta = $this->cache->load($this->options['app_key'] . '::' . strtolower($path))))
-            $meta = array();
+            $meta = [];
 
         foreach($values as $key => $value)
             $meta[$key] = $value;

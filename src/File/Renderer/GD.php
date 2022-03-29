@@ -238,7 +238,7 @@ class GD extends BaseRenderer {
 
     public function filter($filter_def) {
 
-        $filters = array();
+        $filters = [];
 
         if(is_array($filter_def)) {
 

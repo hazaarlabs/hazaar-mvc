@@ -4,7 +4,7 @@ namespace Hazaar\Controller\Response;
 
 class Json extends \Hazaar\Controller\Response implements \ArrayAccess {
 
-    protected $content = array();
+    protected $content = [];
 
     /*
      * If the callback is set, such as in a JSONP request, we use the callback to return
@@ -12,7 +12,7 @@ class Json extends \Hazaar\Controller\Response implements \ArrayAccess {
      */
     private $callback;
 
-    function __construct($data = array(), $status = 200) {
+    function __construct($data = [], $status = 200) {
 
         if(! function_exists('json_encode')) {
             throw new Exception\JsonNotSupported();

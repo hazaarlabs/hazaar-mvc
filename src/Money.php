@@ -55,7 +55,7 @@ class Money {
 
     static private  $db;
 
-    static private  $exchange_rates = array();
+    static private  $exchange_rates = [];
 
     static private  $cache;
 

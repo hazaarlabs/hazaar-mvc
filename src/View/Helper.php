@@ -15,7 +15,7 @@ abstract class Helper implements Helper\_Interface {
 
     protected $args;
 
-    final function __construct($view = NULL, $args = array()) {
+    final function __construct($view = NULL, $args = []) {
 
         $this->view = $view;
 
@@ -67,7 +67,7 @@ abstract class Helper implements Helper\_Interface {
 
     }
 
-    public function requires($helper, $args = array()) {
+    public function requires($helper, $args = []) {
 
         if($this->view && ! $this->view->hasHelper($helper)) {
 
@@ -93,7 +93,7 @@ abstract class Helper implements Helper\_Interface {
 
     }
 
-    public function init(\Hazaar\View\Layout $view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = []) {
 
         //Do nothing by default.
 

@@ -27,7 +27,7 @@ class Script extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the span.
      */
-    function __construct($content = NULL, $type = 'text/javascript', $params = array()) {
+    function __construct($content = NULL, $type = 'text/javascript', $params = []) {
 
         if(! $type)
             $type = 'text/javascript';

@@ -13,14 +13,14 @@ namespace Hazaar\View\Widgets;
  */
 class JSONObject extends \Hazaar\View\ViewableObject {
 
-    private $properties = array();
+    private $properties = [];
 
     /**
      * @detail      JSON Object Constructor
      *
      * @param       array $properties Optional array of properties to populate the object with.
      */
-    function __construct($properties = array()) {
+    function __construct($properties = []) {
 
         $this->properties = $properties;
 
@@ -63,13 +63,13 @@ class JSONObject extends \Hazaar\View\ViewableObject {
 
             $assoc = is_assoc($items);
 
-            list($in, $out) = ($assoc ? array(
+            list($in, $out) = ($assoc ? [
                 '{ ',
                 ' }'
-            ) : array(
+            ] : [
                 '[ ',
                 ' ]'
-            ));
+            ]);
 
         } else {
 
@@ -81,7 +81,7 @@ class JSONObject extends \Hazaar\View\ViewableObject {
 
         }
 
-        $json = array();
+        $json = [];
 
         foreach($items as $key => $value) {
 
@@ -227,7 +227,7 @@ class JSONObject extends \Hazaar\View\ViewableObject {
      *
      * @return      Hazaar\\Widgets\\JSONObject
      */
-    public function setFunction($key, $code, $argdef = array()) {
+    public function setFunction($key, $code, $argdef = []) {
 
         if(!$code instanceof JavaScript)
             $code = new JavaScript($code, $argdef);

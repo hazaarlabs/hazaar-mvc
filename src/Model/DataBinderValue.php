@@ -48,7 +48,7 @@ class DataBinderValue implements \JsonSerializable {
     public function __toString(){
 
         if($this->name)
-            return (string)new \Hazaar\Html\Span(coalesce($this->label, $this->value), array('data-bind' => $this->name));
+            return (string)new \Hazaar\Html\Span(coalesce($this->label, $this->value), ['data-bind' => $this->name]);
 
         if(!$this->value && $this->other)
             return $this->other;
@@ -67,7 +67,7 @@ class DataBinderValue implements \JsonSerializable {
 
         if(!($this->label || $this->other)) return $this->value;
 
-        $array = array('__hz_value' => $this->value, '__hz_label' => $this->label);
+        $array = ['__hz_value' => $this->value, '__hz_label' => $this->label];
 
         if($this->other) $array['__hz_other'] = $this->other;
 
@@ -84,7 +84,7 @@ class DataBinderValue implements \JsonSerializable {
      */
     static function resolve($object, $recursive = true){
 
-        $array = array();
+        $array = [];
 
         if(is_array($object) || $object instanceof \stdClass){
 

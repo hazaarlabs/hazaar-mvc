@@ -21,7 +21,7 @@ class Map extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($content = null, $name = null, $parameters = array()) {
+    function __construct($content = null, $name = null, $parameters = []) {
 
         if(!$name)
             $name = uniqid();

@@ -18,7 +18,7 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     private $allow_undefined = false;
 
-    private $values = array();
+    private $values = [];
 
     /**
      * ChildArray Constructor
@@ -31,7 +31,7 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
      * @param mixed $values The initial array of items to populate the object with.
      * @throws \Exception
      */
-    function __construct($type, $values = array()){
+    function __construct($type, $values = []){
 
         if(!(is_array($type) 
             || is_object($type) 
@@ -47,16 +47,16 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
             $this->allow_undefined = true;
 
         if(!is_array($values))
-            $values = ($values === null) ? array() : array($values);
+            $values = ($values === null) ? [] : [$values];
 
         foreach($values as $index => $value)
             $this->offsetSet($index, $value);
 
     }
 
-    public function find($criteria = array(), $multiple = false){
+    public function find($criteria = [], $multiple = false){
 
-        $values = array();
+        $values = [];
 
         foreach($this->values as $value){
 
@@ -77,7 +77,7 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function remove($criteria = array(), $multiple = false, $empty_only = false){
+    public function remove($criteria = [], $multiple = false, $empty_only = false){
 
         $result = false;
 
@@ -206,7 +206,7 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
         if (!is_callable($func) || substr($func, 0, 6) !== 'array_')
             throw new \BadMethodCallException(__CLASS__.'->'.$func);
 
-        return call_user_func_array($func, array_merge(array($this->values), $argv));
+        return call_user_func_array($func, array_merge([$this->values], $argv));
 
     }
 
@@ -337,13 +337,13 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function push($value = array()){
+    public function push($value = []){
         
         return $this->append($value);
 
     }
 
-    public function append($value = array()){
+    public function append($value = []){
 
         if(is_array($this->type))
             $value = new ChildModel($this->type, $value);
@@ -379,13 +379,13 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     public function empty(){
 
-        $this->values = array();
+        $this->values = [];
 
     }
 
     public function collate($key_field, $value_field = null){
 
-        $items = array();
+        $items = [];
 
         foreach($this->values as $value)
             $items[$value[$key_field]] = ($value_field === null) ? $value : $value[$value_field];

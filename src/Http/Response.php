@@ -13,13 +13,13 @@ class Response {
     //HTTP Version of the response
     public $version;
 
-    public $headers = array();
+    public $headers = [];
 
     //Temporary buffer used while parsing responses
     private $buffer;
 
     //The actual body of the response
-    public $body;
+    public $body = '';
 
     //Parsing input
     private $headers_parsed = FALSE;
@@ -37,7 +37,7 @@ class Response {
 
     public $bytes_remaining = -1;
 
-    function __construct(int $status = NULL, array $headers = array(), $version = 'HTTP/1.1') {
+    function __construct(int $status = NULL, array $headers = [], $version = 'HTTP/1.1') {
 
         $this->status = $status;
 
@@ -105,7 +105,7 @@ class Response {
 
                         if(! is_array($this->headers[$param])) {
 
-                            $this->headers[$param] = array($this->headers[$param]);
+                            $this->headers[$param] = [$this->headers[$param]];
 
                         }
 
@@ -315,7 +315,7 @@ class Response {
 
     }
 
-    public function getContentType(&$args = array()){
+    public function getContentType(&$args = []){
 
         $header = str_replace('; ', ';', $this->getHeader('content-type'));
 
@@ -351,13 +351,13 @@ class Response {
             if(!($parts[0] === '' && $parts[count($parts)-1] === '--'))
                 throw new \Hazaar\Exception('Invalid multipart response received!');
 
-            $this->body = array();
+            $this->body = [];
 
             for($i = 1; $i < (count($parts) - 1); $i++){
 
                 $offset = 2;
 
-                $headers = array();
+                $headers = [];
 
                 while(($del = strpos($parts[$i], "\r\n", $offset)) !== FALSE) {
 
@@ -386,7 +386,7 @@ class Response {
 
                 }
 
-                $this->body[] = array('headers' => $headers, 'body' => substr($parts[$i], $offset));
+                $this->body[] = ['headers' => $headers, 'body' => substr($parts[$i], $offset)];
 
             }
 

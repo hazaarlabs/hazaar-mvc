@@ -21,19 +21,13 @@ class Bdo extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($content = null, $dir = null, $parameters = array()) {
+    function __construct($content = null, $dir = null, $parameters = []) {
 
         if(!$dir)
             $dir = 'rtl';
 
-        if($dir && in_array(strtolower($dir), array(
-            'rtl',
-            'ltr'
-        ))) {
-
+        if($dir && in_array(strtolower($dir), ['rtl', 'ltr']))
             $parameters['dir'] = $dir;
-
-        }
 
         parent::__construct('bdo', $content, $parameters);
 

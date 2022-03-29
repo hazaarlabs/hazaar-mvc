@@ -16,7 +16,7 @@ Adding a map to your view is as simple as adding the helper to the view from you
 class IndexController extends \Hazaar\Controller\Action {
     public function index() {
         $this->view('index');
-        $this->view->addHelper('GMaps', array('api_key' => 'eicaquahvahnaeshaich5Ooqu'));
+        $this->view->addHelper('GMaps', ['api_key' => 'eicaquahvahnaeshaich5Ooqu']);
     }
 
 }

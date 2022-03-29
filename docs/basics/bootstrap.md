@@ -13,13 +13,13 @@ Hazaar_View::$dateformat = $this->config->app['dateformat'];
 You could also use it to configure your database once so that you don't have to do it each time a database object is required:
 
 ```php
-Hazaar_Db_Adapter_Pgsql::configure(array(
+Hazaar_Db_Adapter_Pgsql::configure([
       'host' => $this->config->db['host'],
       'port' => $this->config->db['port'],
       'database' => $this->config->db['database']
       'username' => $this->config->db['username']
       'password' => $this->config->db['password']
-));
+]);
 ```
 
 Or, a shortcut in this case could be:
