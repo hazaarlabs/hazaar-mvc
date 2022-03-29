@@ -4,9 +4,9 @@ namespace Hazaar\Mail\Mime;
 
 class Message {
 
-    private $parts = array();
+    private $parts = [];
 
-    private $headers = array();
+    private $headers = [];
 
     private $msgid = null;
 
@@ -14,7 +14,7 @@ class Message {
 
     protected $crlf = "\r\n";
 
-    function __construct($parts = array()) {
+    function __construct($parts = []) {
 
         $this->parts = $parts;
 
@@ -22,10 +22,10 @@ class Message {
 
         $this->boundary = '----msg_border_' . $this->msgid;
 
-        $this->addHeaders(array(
+        $this->addHeaders([
             'MIME-Version' => '1.0',
             'Content-Type' => 'multipart/mixed; boundary="' . $this->boundary . '"'
-        ));
+        ]);
 
     }
 
@@ -38,7 +38,7 @@ class Message {
     public function addHeaders($headers) {
 
         if(!is_array($headers))
-            $headers = array($headers);
+            $headers = [$headers];
 
         $this->headers = array_merge($this->headers, $headers);
 

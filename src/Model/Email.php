@@ -22,18 +22,18 @@ class Email extends Strict {
      */
     function init() {
 
-        return array(
-            'address' => array(
+        return [
+            'address' => [
                 'type' => 'string',
-                'validate' => array('with' => '/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i')
-            )
-        );
+                'validate' => ['with' => '/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i']
+            ]
+        ];
 
     }
 
     public function __construct($data){
 
-        parent::__construct(array('address' => $data));
+        parent::__construct(['address' => $data]);
 
     }
 

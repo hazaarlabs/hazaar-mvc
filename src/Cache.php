@@ -40,7 +40,7 @@ class Cache implements \ArrayAccess {
      *
      * @throws Cache\Exception\InvalidFrontend
      */
-    function __construct($backend = NULL, $config_options = array(), $namespace = 'default') {
+    function __construct($backend = NULL, $config_options = [], $namespace = 'default') {
 
         $options = new \Hazaar\Map();
 
@@ -50,7 +50,7 @@ class Cache implements \ArrayAccess {
         if (!$backend){
 
             //Set up a default backend chain
-            $backend = array('apc', 'session');
+            $backend = ['apc', 'session'];
 
             //Grab the application context so we can load any cache settings
             if (($app = \Hazaar\Application::getInstance()) instanceof \Hazaar\Application) {
@@ -69,13 +69,13 @@ class Cache implements \ArrayAccess {
 
         $this->options = $options;
 
-        $this->configure(array(
+        $this->configure([
             'lifetime' => 3600,
             'use_pragma' => TRUE
-        ));
+        ]);
 
         if(!is_array($backend))
-            $backend = array($backend);
+            $backend = [$backend];
 
         //We set this now as it is an absolute safe fallback
         $backendClass = '\\Hazaar\\Cache\\Backend\\File';
@@ -129,7 +129,7 @@ class Cache implements \ArrayAccess {
 
     public function setBackendOption($key, $value){
 
-        $this->backend->options->extend(array($key => $value));
+        $this->backend->options->extend([$key => $value]);
 
     }
 
@@ -357,7 +357,7 @@ class Cache implements \ArrayAccess {
     /*
      * ARRAYACCESS METHODS
      */
-    public function offsetExists($offset) {
+    public function offsetExists($offset) : bool{
 
         return $this->has($offset);
 
@@ -369,15 +369,15 @@ class Cache implements \ArrayAccess {
 
     }
 
-    public function offsetSet($offset, $value) {
+    public function offsetSet($offset, $value) : void {
 
-        return $this->set($offset, $value);
+        $this->set($offset, $value);
 
     }
 
-    public function offsetUnset($offset) {
+    public function offsetUnset($offset) : void {
 
-        return $this->remove($offset);
+        $this->remove($offset);
 
     }
 

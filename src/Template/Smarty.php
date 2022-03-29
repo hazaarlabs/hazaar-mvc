@@ -13,13 +13,13 @@ namespace Hazaar\Template;
  *
  * ```
  * $tpl = new \Hazaar\Template\Smarty($template_content);
- * $tpl->render(array('tagname' => 'Hello, World!'));
+ * $tpl->render(['tagname' => 'Hello, World!']);
  * ```
  *
  */
 class Smarty {
 
-    static protected $tags = array(
+    static protected $tags = [
         'if',
         'elseif',
         'else',
@@ -37,25 +37,25 @@ class Smarty {
         //Hybrid Smarty 3.0 Bits
         'function',
         'call'
-    );
+    ];
 
     protected $__content = null;
 
     protected $__compiled_content = '';
 
-    protected $__custom_functions = array();
+    protected $__custom_functions = [];
 
-    protected $__includes = array();
+    protected $__includes = [];
 
-    protected $__include_funcs = array();
+    protected $__include_funcs = [];
 
-    private   $__custom_function_handlers = array();
+    private   $__custom_function_handlers = [];
 
-    private $__section_stack = array();
+    private $__section_stack = [];
 
-    private $__foreach_stack = array();
+    private $__foreach_stack = [];
 
-    private $__capture_stack = array();
+    private $__capture_stack = [];
 
     public $ldelim = '{';
 
@@ -125,26 +125,26 @@ class Smarty {
      *
      * @return string
      */
-    public function render($params = array()) {
+    public function render($params = []) {
 
         $app = \Hazaar\Application::getInstance();
 
-        $default_params = array(
-            'hazaar' => array('version' => HAZAAR_VERSION),
+        $default_params = [
+            'hazaar' => ['version' => HAZAAR_VERSION],
             'application' => $app,
-            'smarty' => array(
+            'smarty' => [
                 'now' => new \Hazaar\Date(),
                 'const' => get_defined_constants(),
-                'capture' => array(),
+                'capture' => [],
                 'config' => $app->config->toArray(),
-                'section' => array(),
-                'foreach' => array(),
+                'section' => [],
+                'foreach' => [],
                 'template' => null,
                 'version' => 2,
                 'ldelim' => $this->ldelim,
                 'rdelim' => $this->rdelim
-            )
-        );
+            ]
+        ];
 
         if($this->allow_globals){
 
@@ -181,15 +181,15 @@ class Smarty {
 
             private \$modify;
 
-            private \$variables = array();
+            private \$variables = [];
 
-            private \$params = array();
+            private \$params = [];
 
-            private \$functions = array();
+            private \$functions = [];
 
             public  \$custom_handlers;
 
-            private \$include_funcs = array();
+            private \$include_funcs = [];
 
             function __construct(){ \$this->modify = new \Hazaar\Template\Smarty\Modifier; }
 
@@ -206,7 +206,7 @@ class Smarty {
                 if(\$custom_handler = current(array_filter(\$this->custom_handlers, function(\$item){
                     return method_exists(\$item, 'url');
                 })))
-                    return call_user_func_array(array(\$custom_handler, 'url'), func_get_args());
+                    return call_user_func_array([\$custom_handler, 'url'], func_get_args());
 
                 return new \Hazaar\Application\Url(urldecode(implode('/', func_get_args())));
 
@@ -270,7 +270,7 @@ class Smarty {
 
         $parts = preg_split("/['\"][^'\"]*['\"](*SKIP)(*F)|\x20/", $params);
 
-        $params = array();
+        $params = [];
 
         foreach($parts as $part){
 
@@ -301,7 +301,7 @@ class Smarty {
      */
     public function compile(){
 
-        $compiled_content = preg_replace(array('/\<\?/', '/\?\>/'), array('&lt;?','?&gt;'), $this->__content);
+        $compiled_content = preg_replace(['/\<\?/', '/\?\>/'], ['&lt;?','?&gt;'], $this->__content);
 
         $regex = '/\{([#\$\*][^\}]+|(\/?\w+)\s*([^\}]*))\}(\r?\n)?/';
 
@@ -374,7 +374,7 @@ class Smarty {
 
     protected function compileVAR($name){
 
-        $modifiers = array();
+        $modifiers = [];
 
         if(strpos($name, '|') !== false){
 
@@ -484,7 +484,7 @@ class Smarty {
 
         if(is_array($params)){
 
-            $out = array();
+            $out = [];
 
             foreach($params as $p)
                 $out[] = $this->compilePARAMS($p);
@@ -544,7 +544,7 @@ class Smarty {
 
         $parts = preg_split('/\s+/', $params);
 
-        $params = array();
+        $params = [];
 
         foreach($parts as $part)
             $params += array_unflatten($part);
@@ -553,8 +553,7 @@ class Smarty {
         if(!(($name = ake($params, 'name')) && ($loop = ake($params, 'loop'))))
             return '';
 
-        $this->__section_stack[] = array('name' => $name, 'else' => false);
-
+        $this->__section_stack[] = ['name' => $name, 'else' => false];
         $var = $this->compileVAR($loop);
 
         $index = '$smarty[\'section\'][\'' . $name . '\'][\'index\']';
@@ -605,7 +604,7 @@ class Smarty {
 
         if($tag){
 
-            $nodes = array();
+            $nodes = [];
 
             $tags = preg_split('/\s+/', $tag);
 
@@ -633,7 +632,7 @@ class Smarty {
 
             $var = $this->compileVAR($from);
 
-            $this->__foreach_stack[] = array('name' => $name, 'else' => false);
+            $this->__foreach_stack[] = ['name' => $name, 'else' => false];
 
             $target = (($key = ake($params, 'key')) ? '$' . $key . ' => ' : '' ) . '$' . $item;
 
@@ -651,7 +650,7 @@ class Smarty {
 
             $target = $this->compileVAR(ake($params, 2));
 
-            $this->__foreach_stack[] = array('name' => $name, 'else' => false);
+            $this->__foreach_stack[] = ['name' => $name, 'else' => false];
 
             $code = "<?php \$smarty['foreach']['$name'] = ['index' => -1, 'total' => ((isset($var) && is_array($var))?count($var):0)]; ";
 
@@ -734,10 +733,10 @@ class Smarty {
 
             $parts = $this->parsePARAMS($params);
 
-            $params = array(
+            $params = [
                 'var' => $parts[0],
                 'value' => $parts[1]
-            );
+            ];
 
         }
 
@@ -784,7 +783,7 @@ class Smarty {
 
         if(count($params) > 0){
 
-            $parts = array();
+            $parts = [];
 
             foreach($params as $key => $value)
                 $parts[] = "'$key' => " . $this->compileVAR($value);
@@ -805,7 +804,7 @@ class Smarty {
 
         $reflect = new \ReflectionMethod($handler, $method);
 
-        $func_params = array();
+        $func_params = [];
 
         foreach($reflect->getParameters() as $p){
 
@@ -831,7 +830,7 @@ class Smarty {
 
         $params = implode(', ', $func_params);
 
-        return "<?php echo call_user_func_array(array(\$this->custom_handlers[$index], '$method'), array($params)); ?>";
+        return "<?php echo call_user_func_array([\$this->custom_handlers[$index], '$method'], [$params]); ?>";
 
     }
 

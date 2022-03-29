@@ -8,7 +8,7 @@ abstract class DataTypeConverter  {
      * The list of known variable types that are supported by strict models.
      * @var mixed
      */
-    protected static $known_types = array(
+    protected static $known_types = [
         'boolean',
         'integer',
         'int',
@@ -23,20 +23,20 @@ abstract class DataTypeConverter  {
         'NULL',
         'model',
         'mixed'
-    );
+    ];
 
     /**
      * Aliases for any special variable types that we support that will be used for system functions.
      * @var mixed
      */
-    protected static $type_aliases = array(
+    protected static $type_aliases = [
         'bool' => 'boolean',
         'number' => 'float',
         'text' => 'string',
         'date' => 'Hazaar\Date',
         'time' => 'Hazaar\Date',
         'timestamp' => 'Hazaar\Date'
-    );
+    ];
 
     /**
      * Remove any null values from array fields.  Disabled by default for backwards compatibility.
@@ -169,7 +169,7 @@ abstract class DataTypeConverter  {
                         $reflector = new \ReflectionClass($type);
 
                         if(!is_array($value) || $reflector->isSubclassOf('Hazaar\Model\Strict'))
-                            $value = array($value);
+                            $value = [$value];
 
                         $value = $reflector->newInstanceArgs($value);
 

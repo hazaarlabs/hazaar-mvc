@@ -12,7 +12,7 @@ class Controller extends \Hazaar\Controller\Action {
 
     public function init(){
 
-        $this->auth = new \Hazaar\Auth\Adapter\Htpasswd(array('session_name' => 'HAZAAR_CONSOLE'));
+        $this->auth = new \Hazaar\Auth\Adapter\Htpasswd(['session_name' => 'HAZAAR_CONSOLE']);
 
         if($this->getAction() === 'login')
             return;

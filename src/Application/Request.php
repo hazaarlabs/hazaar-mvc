@@ -13,7 +13,7 @@ abstract class Request implements Request\_Interface {
 
     protected $dispatched = FALSE;
 
-    protected $params     = array();
+    protected $params     = [];
 
     protected $exception;
 
@@ -34,7 +34,7 @@ abstract class Request implements Request\_Interface {
         $args = func_get_args();
 
         if(method_exists($this, 'init'))
-            $this->base_path = call_user_func_array(array($this,'init'), $args);
+            $this->base_path = call_user_func_array([$this,'init'], $args);
 
         $this->path = $this->base_path;
 
@@ -273,7 +273,7 @@ abstract class Request implements Request\_Interface {
          */
 
         if(!is_array($keys))
-            $keys = array($keys);
+            $keys = [$keys];
 
         $result = false;
 
@@ -331,7 +331,7 @@ abstract class Request implements Request\_Interface {
         if($filter_in){
             
             if(!is_array($filter_in))
-                $filter_in = array($filter_in);
+                $filter_in = [$filter_in];
 
             $params = array_intersect_key($params, array_flip($filter_in));
 
@@ -340,7 +340,7 @@ abstract class Request implements Request\_Interface {
         if($filter_out){
 
             if(!is_array($filter_out))
-                $filter_out = array($filter_out);
+                $filter_out = [$filter_out];
 
             $params = array_diff_key($params, array_flip($filter_out));
 
@@ -397,7 +397,7 @@ abstract class Request implements Request\_Interface {
     /*
      * This is used to store an exception that has occurred during the processing of the request
      */
-    public function setException(Exception $e) {
+    public function setException(\Exception $e) {
 
         $this->exception = $e;
 
@@ -405,7 +405,7 @@ abstract class Request implements Request\_Interface {
 
     public function hasException() {
 
-        return ($this->exception instanceof Exception);
+        return ($this->exception instanceof \Exception);
     }
 
     public function getException() {

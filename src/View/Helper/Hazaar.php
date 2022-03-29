@@ -4,9 +4,9 @@ namespace Hazaar\View\Helper;
 
 class Hazaar extends \Hazaar\View\Helper {
 
-    private $data = array();
+    private $data = [];
 
-    function init(\Hazaar\View\Layout $view, $args = array()){
+    function init(\Hazaar\View\Layout $view, $args = []){
 
         if(!$view instanceof \Hazaar\View\Layout)
             return;
@@ -18,13 +18,13 @@ class Hazaar extends \Hazaar\View\Helper {
 
         $view->requires($this->application->url('hazaar/file/js/hazaar.js'));
 
-        $options = array(
+        $options = [
             'url' => (string)$url,
             'data' => ($this->data ? $this->data : null),
             'rewrite' => boolify($this->application->config->app->get('rewrite')),
             'pathParam' => \Hazaar\Application\Request\Http::$pathParam,
             'queryParam' => \Hazaar\Application\Request\Http::$queryParam
-        );
+        ];
 
         $script = 'var hazaar = new HazaarJSHelper(' . json_encode($options) . ');';
 

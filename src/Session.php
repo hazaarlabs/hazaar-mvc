@@ -26,12 +26,12 @@ class Session extends \Hazaar\Cache {
 
     private $session_init = false;
 
-    public function __construct($options = array(), $backend = null) {
+    public function __construct($options = [], $backend = null) {
 
-        $options = new \Hazaar\Map(array(
+        $options = new \Hazaar\Map([
                 'hash_algorithm' => 'ripemd128',
                 'session_name' => 'hazaar-session'
-        ), $options);
+        ], $options);
 
         if($options->has('session_name'))
             $this->session_name = $options->get('session_name');
@@ -51,7 +51,7 @@ class Session extends \Hazaar\Cache {
         if($backend === NULL
             && ($app = \Hazaar\Application::getInstance()) instanceof \Hazaar\Application
             && !$app->config->cache->has('backend'))
-            $backend = array('apc', 'session');
+            $backend = ['apc', 'session'];
 
         parent::__construct($backend, $options, $this->session_id);
 

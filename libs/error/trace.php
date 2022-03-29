@@ -102,7 +102,7 @@
 
                 if($args = ake($t, 'args')){
 
-                    $arglist = array();
+                    $arglist = [];
 
                     foreach($args as $a){
 

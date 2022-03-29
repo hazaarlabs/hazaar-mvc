@@ -26,11 +26,11 @@ class Filebrowser extends \Hazaar\View\Helper {
 
         $this->requires('html');
 
-        $this->requires('jQuery', array('ui' => TRUE));
+        $this->requires('jQuery', ['ui' => TRUE]);
 
-        $this->options = new \Hazaar\Map(array(
+        $this->options = new \Hazaar\Map([
             'stylesheet' => true
-        ));
+        ]);
 
     }
 
@@ -39,7 +39,7 @@ class Filebrowser extends \Hazaar\View\Helper {
      *
      * @since       2.0.0
      */
-    public function init(\Hazaar\View\Layout $view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = []) {
 
         $view->requires($this->application->url('hazaar', 'file/js/filebrowser.js'));
 
@@ -50,7 +50,7 @@ class Filebrowser extends \Hazaar\View\Helper {
 
     }
 
-    public function get($name, $settings = null, $params = array()) {
+    public function get($name, $settings = null, $params = []) {
 
         return new \Hazaar\View\Widgets\FileBrowser($name, $this->options->merge($settings), $params);
 

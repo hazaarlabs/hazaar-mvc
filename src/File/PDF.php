@@ -117,20 +117,20 @@ class PDF extends \Hazaar\File {
      */
     private static function _pipeExec($cmd, $input = '') {
 
-        $proc = proc_open($cmd, array(
-            0 => array(
+        $proc = proc_open($cmd, [
+            0 => [
                 'pipe',
                 'r'
-            ),
-            1 => array(
+            ],
+            1 => [
                 'pipe',
                 'w'
-            ),
-            2 => array(
+            ],
+            2 => [
                 'pipe',
                 'w'
-            )
-        ), $pipes);
+            ]
+        ], $pipes);
 
         fwrite($pipes[0], $input);
 
@@ -146,11 +146,11 @@ class PDF extends \Hazaar\File {
 
         $rtn = proc_close($proc);
 
-        return array(
+        return [
             'stdout' => $stdout,
             'stderr' => $stderr,
             'return' => $rtn
-        );
+        ];
 
     }
 
@@ -255,7 +255,7 @@ class PDF extends \Hazaar\File {
      */
     public function setSource($url) {
 
-        parent::setContent(null);
+        parent::set_contents(null);
 
         $this->source_url = $url;
 
@@ -476,7 +476,7 @@ class PDF extends \Hazaar\File {
 
         if($left === null) $left = $right;
 
-        $this->margins = array('T' => $top, 'R' => $right, 'B' => $bottom, 'L' => $left);
+        $this->margins = ['T' => $top, 'R' => $right, 'B' => $bottom, 'L' => $left];
 
     }
 

@@ -35,14 +35,14 @@ $this->application->url(null, 'action');
 // http://localhost/controller/action
 $this->application->url('controller', 'action');       
 // http://localhost/controller/action 
-$this->application->url(array('controller', 'action'));
+$this->application->url(['controller', 'action']);
 // http://localhost/index/action
-$this->application->url(array(null,action);
+$this->application->url([null,action];
 // http://localhost
 "> http://localhost
 $this->application->url(null, null);       
 // http://localhost             
-$this->application->url(array(null, null));
+$this->application->url([null, null]);
 ```
 
 ## With Parameters
@@ -59,5 +59,5 @@ $application->url('controller?myParam=myValue');
 $application->url('controller', 'action?myParam=myValue');                   
 // http://localhost/controller/action?myParam=myValue
 "> http://localhost/controller/action?myParam=myValue
-$application->url('controller', 'action', array('myParam' => 'myValue'))
+$application->url('controller', 'action', ['myParam' => 'myValue'])
 ```

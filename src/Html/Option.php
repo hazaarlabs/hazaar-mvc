@@ -22,7 +22,7 @@ class Option extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the span.
      */
-    function __construct($label, $value = null, $params = array()) {
+    function __construct($label, $value = null, $params = []) {
 
         if (!is_null($value))
             $params['value'] = $value;

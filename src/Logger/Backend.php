@@ -4,9 +4,9 @@ namespace Hazaar\Logger;
 
 abstract class Backend implements Backend\_Interface {
 
-    private $options      = array();
+    private $options      = [];
 
-    private $capabilities = array();
+    private $capabilities = [];
 
     protected $levels;
 
@@ -22,7 +22,7 @@ abstract class Backend implements Backend\_Interface {
          * Set the options we were given which will overwrite any defaults
          */
         if(! is_array($options))
-            $options = array();
+            $options = [];
 
         $this->options = $options;
 

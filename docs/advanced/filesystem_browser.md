@@ -24,14 +24,14 @@ Our own propriatary file storage service. - Based on HazaarMVC and MongoDB.
 You can configure the backend at the time of instantiation:
 
 ```php
-$options = array('app_key' => 'mn3b45kjv543jhg54', 'app_secret' => '89867zxcas98da');
+$options = ['app_key' => 'mn3b45kjv543jhg54', 'app_secret' => '89867zxcas98da'];
 $browser = new \Hazaar\File\Browser('dropbox', $options);
 ```
 
 Or, if you find that you are doing this over and over again you can configure some defaults in your bootstrap.php file as follows:
 
 ```php
-$options = array('app_key' => 'mn3b45kjv543jhg54', 'app_secret' => '89867zxcas98da');
+$options = ['app_key' => 'mn3b45kjv543jhg54', 'app_secret' => '89867zxcas98da'];
 Hazaar\File\Browser::configure('dropbox', $options);
 ```
 
@@ -192,7 +192,7 @@ if(!$this instanceof Hazaar\Application){
     die("Something has gone terribly wrong!");
 }
 Hazaar\Currency::$default_currency = 'AUD';
-Hazaar\File\Browser::configure('dropbox', array('app_key' => 'mn3b45kjv543jhg54', 'app_secret' => '89867zxcas98da'));
+Hazaar\File\Browser::configure('dropbox', ['app_key' => 'mn3b45kjv543jhg54', 'app_secret' => '89867zxcas98da']);
 ```
 
 ### application\controllers\Index.php

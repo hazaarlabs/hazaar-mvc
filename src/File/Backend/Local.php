@@ -10,7 +10,7 @@ class Local implements _Interface {
 
     static  $mime_types = null;
 
-    private $meta = array();
+    private $meta = [];
 
     static public function label(){
 
@@ -22,7 +22,7 @@ class Local implements _Interface {
 
         if(! is_array(self::$mime_types)) {
 
-            self::$mime_types = array();
+            self::$mime_types = [];
 
             $mt_file = \Hazaar\Loader::getFilePath(FILE_PATH_SUPPORT, 'mime.types');
 
@@ -56,11 +56,11 @@ class Local implements _Interface {
 
     }
 
-    public function __construct($options = array()) {
+    public function __construct($options = []) {
 
         $root = ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : DIRECTORY_SEPARATOR);
 
-        $this->options = new \Hazaar\Map(array('display_hidden' => false, 'root' => $root), $options);
+        $this->options = new \Hazaar\Map(['display_hidden' => false, 'root' => $root], $options);
 
     }
 
@@ -90,7 +90,7 @@ class Local implements _Interface {
 
     public function scandir($path, $regex_filter = null, $show_hidden = false) {
 
-        $list = array();
+        $list = [];
 
         $path = $this->resolvePath($path);
 
@@ -197,7 +197,7 @@ class Local implements _Interface {
             if($ret) {
 
                 if($srcMeta = $this->meta($rSrc))
-                    $this->meta[$rDst] = array($srcMeta, true);
+                    $this->meta[$rDst] = [$srcMeta, true];
 
                 return true;
 
@@ -263,7 +263,7 @@ class Local implements _Interface {
 
             if($srcMeta = $this->meta($rSrc)) {
 
-                $this->meta[$rDst] = array($srcMeta, true);
+                $this->meta[$rDst] = [$srcMeta, true];
 
                 unset($this->meta[$rSrc]);
 
@@ -342,7 +342,7 @@ class Local implements _Interface {
 
     }
 
-    public function thumbnail($path, $params = array()) {
+    public function thumbnail($path, $params = []) {
 
         return false;
 
@@ -592,7 +592,7 @@ class Local implements _Interface {
 
         if(!($meta = $db->get($fullpath))){
 
-            $meta = array();
+            $meta = [];
 
             /**
              * Generate Image Meta

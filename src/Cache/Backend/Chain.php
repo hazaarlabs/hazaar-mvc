@@ -25,9 +25,9 @@ namespace Hazaar\Cache\Backend;
  */
 class Chain extends \Hazaar\Cache\Backend {
 
-    private $backends = array();
+    private $backends = [];
 
-    private $order    = array();
+    private $order    = [];
 
     static public function available(){
 
@@ -75,7 +75,7 @@ class Chain extends \Hazaar\Cache\Backend {
 
     public function get($key) {
 
-        $store = array();
+        $store = [];
 
         $value = FALSE;
 
