@@ -47,8 +47,6 @@ function errorAndDie() {
         if(!$controller instanceof \Hazaar\Controller\Error)
             $controller = new \Hazaar\Controller\Error('Error', $app);
 
-        $controller->__initialize($app->request);
-
         call_user_func_array([$controller, 'setError'], $args);
 
         $controller->clean_output_buffer();
