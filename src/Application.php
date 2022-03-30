@@ -318,10 +318,14 @@ class Application {
 
         }
 
-        \Hazaar\Logger\Frontend::i('CORE', '"' . ake($_SERVER, 'REQUEST_METHOD') . ' /' .  $this->request->getBasePath() . '" ' 
-            . http_response_code()
-            . ' "' . ake($_SERVER, 'HTTP_USER_AGENT') . '"'
-        ); 
+        if($this->request){
+
+            \Hazaar\Logger\Frontend::i('CORE', '"' . ake($_SERVER, 'REQUEST_METHOD') . ' /' .  $this->request->getBasePath() . '" ' 
+                . http_response_code()
+                . ' "' . ake($_SERVER, 'HTTP_USER_AGENT') . '"'
+            ); 
+
+        }
 
     }
 
