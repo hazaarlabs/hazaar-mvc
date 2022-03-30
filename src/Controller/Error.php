@@ -49,7 +49,11 @@ class Error extends \Hazaar\Controller\Action {
 
         if ($request instanceof \Hazaar\Application\Request\Http && function_exists('apache_request_headers')) {
 
-            if(!($this->response = $this->application->getResponseType())){
+            if($response = $this->application->getResponseType()){
+
+                $this->response = $response;
+
+            }else{
 
                 $h = apache_request_headers();
 
@@ -266,7 +270,7 @@ class Error extends \Hazaar\Controller\Action {
             
     }
 
-    private function runner(){
+    public function runner(){
 
         echo "Runner Error #{$this->errno} at line #{$this->errline} in file {$this->errfile}\n\n{$this->errstr}\n\n";
 
@@ -274,7 +278,7 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
-    private function json(){
+    public function json(){
 
         $error = [
             'ok' => FALSE,
@@ -304,7 +308,7 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
-    private function xmlrpc(){
+    public function xmlrpc(){
 
         $xml = new \SimpleXMLElement('<xml/>');
 
@@ -344,7 +348,7 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
-    private function text(){
+    public function text(){
 
         $out = "*****************************\n\tEXCEPTION\n*****************************\n\n";
 
@@ -380,7 +384,7 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
-    private function html(){
+    public function html(){
 
         $response = new Response\Html($this->code);
 
