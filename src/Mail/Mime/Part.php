@@ -10,11 +10,18 @@ class Part {
 
     protected $crlf = "\r\n";
 
-    function __construct($content = null, $content_type = 'text/plain') {
+    function __construct($content = null, $headers = []) {
 
         $this->setContent($content);
 
-        $this->setContentType($content_type);
+        $this->setHeaders($headers);
+
+    }
+
+    public function setHeaders($headers){
+
+        foreach($headers as $name => $content)
+            $this->setHeader($name, $content);
 
     }
 
@@ -54,6 +61,12 @@ class Part {
 
     }
 
+    public function getContent(){
+
+        return $this->content;
+
+    }
+
     public function detect_break($content, $default = "\r\n"){
 
         if(($pos = strpos($content, "\n")) == false)
@@ -77,6 +90,18 @@ class Part {
 
         return $message;
 
+    }
+
+    static public function decode($data){
+
+        $pos = strpos($data, "\n\n");
+
+        $headers = \Hazaar\Mail\Mime\Message::parseMessageHeaders(substr($data, 0, $pos));
+
+        $content = substr($data, $pos + 2);
+
+        return new Part($content, $headers);
+        
     }
 
 }
