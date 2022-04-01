@@ -10,9 +10,12 @@ class Part {
 
     protected $crlf = "\r\n";
 
-    function __construct($content = null, $headers = []) {
+    function __construct($content = null, $content_type = 'text/plain', $headers = []) {
 
         $this->setContent($content);
+
+        if($content_type)
+            $this->setContentType($content_type);
 
         $this->setHeaders($headers);
 
@@ -20,8 +23,13 @@ class Part {
 
     public function setHeaders($headers){
 
+        if(!is_array($headers))
+            return false;
+
         foreach($headers as $name => $content)
             $this->setHeader($name, $content);
+
+        return true;
 
     }
 
@@ -100,7 +108,7 @@ class Part {
 
         $content = substr($data, $pos + 2);
 
-        return new Part($content, $headers);
+        return new Part($content, null, $headers);
         
     }
 
