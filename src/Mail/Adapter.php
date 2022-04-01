@@ -16,6 +16,8 @@ class Adapter {
 
     private        $headers = [];
 
+    private        $recipient_headers = [];
+
     private        $from;
 
     private        $to      = [];
@@ -329,6 +331,15 @@ class Adapter {
 
     }
 
+    public function setRecipientHeaders($headers) {
+
+        foreach($headers as $key => $value)
+            $this->recipient_headers[$key] = $value;
+
+        return TRUE;
+
+    }
+
     /**
      * Send the email using the current transport backend
      *
@@ -342,7 +353,7 @@ class Adapter {
         /*
          * Add the from address to the extra headers
          */
-        $headers = $this->headers;
+        $headers = array_merge($this->headers, $this->recipient_headers);
 
         $headers['From'] = $this->from;
 
@@ -435,6 +446,18 @@ class Adapter {
 
         if(!in_array('delay', $this->dsn))
             $this->dsn[] = 'delay';
+
+    }
+    
+    public function reset(){
+
+        $this->to = [];
+
+        $this->cc = [];
+
+        $this->bcc = [];
+
+        $this->recipient_headers = [];
 
     }
 
