@@ -134,6 +134,8 @@ class Adapter {
 
         $this->bcc = [];
 
+        $this->recipient_headers = [];
+
     }
 
     /**
@@ -449,16 +451,4 @@ class Adapter {
 
     }
     
-    public function reset(){
-
-        $this->to = [];
-
-        $this->cc = [];
-
-        $this->bcc = [];
-
-        $this->recipient_headers = [];
-
-    }
-
 }
