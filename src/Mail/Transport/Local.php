@@ -34,7 +34,9 @@ class Local extends \Hazaar\Mail\Transport {
 
         $mail_headers = implode("\n", $mail_headers);
 
-        $params = [];
+        $params = [
+            '-R' => 'hdrs'
+        ];
 
         if($sendmail_from)
             $params['-f'] = $sendmail_from;
