@@ -151,7 +151,7 @@ class Message {
             if(!preg_match('/^(\S+)\:\s(.*)/', $line, $matches))
                 continue;
 
-            $headers[$last_header = $matches[1]] = $matches[2];
+            $headers[$last_header = trim($matches[1])] = trim($matches[2]);
 
         }
 
