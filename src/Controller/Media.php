@@ -273,7 +273,7 @@ class Media extends \Hazaar\Controller\WebDAV {
                     $cache_dir = $this->application->runtimePath('imagecache', TRUE);
 
                 }
-                catch(Exception $e) {
+                catch(\Exception $e) {
 
                     $cache = FALSE;
 
