@@ -59,9 +59,9 @@ class Controller extends \Hazaar\Controller\Action {
 
         $path = LIBRARY_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs' . DIRECTORY_SEPARATOR . 'console';
 
-        $this->handler->load(new Application('app', $path, $this->application));
+        $this->handler->load(new Application('app', $path));
 
-        $this->handler->load(new System('sys', $path, $this->application));
+        $this->handler->load(new System('sys', $path));
 
         $this->handler->loadComposerModules($this->application);
 
