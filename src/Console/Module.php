@@ -14,17 +14,18 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     private $module_info = ['label' => 'Module', 'icon' => 'bars'];
 
-    final function __construct($name, $path, $application){
+    final function __construct($name, $path){
 
         $this->view_path = $path;
 
-        parent::__construct($name, $application, false);
+        parent::__construct($name);
 
     }
 
     final public function __configure(Handler $handler){
 
         $this->handler = $handler;
+
 
     }
 
@@ -58,7 +59,26 @@ abstract class Module extends \Hazaar\Controller\Action {
             'group' => 'Administrator'
         ];
 
-        parent::__initialize($request);
+        $this->request = $request;
+
+        $response = null;
+
+        if(!($this->__action = $request->shiftPath()))
+            $this->__action = 'index';
+
+        if(method_exists($this, 'init')) {
+
+            $response = $this->init($request);
+
+            if($response === FALSE)
+                throw new \Hazaar\Exception('Failed to initialize action controller! ' . get_class($this) . '::init() returned false!');
+
+        }
+
+        if($request->getPath())
+            $this->__actionArgs = explode('/', $request->getPath());
+
+        return $response;
 
     }
 
