@@ -9,6 +9,8 @@
 
 namespace Hazaar\Controller;
 
+use Hazaar\Application\Request;
+
 /**
  * @brief       Abstract controller action class
  *
@@ -22,9 +24,7 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
     protected $methods       = [];
 
-    public function __construct($name, \Hazaar\Application $application, $use_app_config = true) {
-
-        parent::__construct($name, $application);
+    public function __initialize(Request $request){
 
         $this->_helper = new Action\HelperBroker($this);
 
@@ -39,6 +39,8 @@ abstract class Action extends \Hazaar\Controller\Basic {
                 $this->_helper->ViewRenderer->link($this->application->config->app['favicon'], 'shortcut icon');
 
         }
+
+        parent::__initialize($request);
 
     }
 
