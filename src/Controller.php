@@ -32,6 +32,8 @@ abstract class Controller {
 
     public $use_metrics = true;
 
+    private $_helpers = [];
+
     /**
      * Base controller constructor
      * 
@@ -42,6 +44,8 @@ abstract class Controller {
     public function __construct($name) {
 
         $this->name = strtolower($name);
+
+        $this->addHelper('response');
 
     }
 
@@ -232,14 +236,91 @@ abstract class Controller {
 
     }
 
-    public function __get($plugin) {
+    public function __get($helper) {
 
-        throw new \Hazaar\Exception('Controller plugins not supported yet.  Called: ' . $plugin);
+        return $this->get($helper);
 
-        if(array_key_exists($plugin, $this->plugins))
-            return $this->plugins[$plugin];
+    }
+
+    public function get($helper) {
+
+        if(array_key_exists($helper, $this->_helpers))
+            return $this->_helpers[$helper];
 
         return NULL;
+
+    }
+
+    /*
+     * Dealing with Helpers
+     */
+    public function addHelper($helper, $args = [], $alias = null) {
+
+        if(is_array($helper)) {
+
+            foreach ($helper as $alias => $h)
+                self::addHelper($h, [], $alias);
+
+        } elseif(is_object($helper)) {
+
+            if (! $helper instanceof Controller\Helper)
+                return NULL;
+
+            if($alias === null)
+                $alias = strtolower($helper->getName());
+
+            $this->_helpers[$alias] = $helper;
+
+        } elseif($helper !== null) {
+
+            if($alias === null)
+                $alias = strtolower($helper);
+
+            if(! array_key_exists($alias, $this->_helpers)) {
+
+                if(!($class = $this->findHelper($helper)))
+                    throw new \Exception("View helper '$helper' does not exist");
+
+                $obj = new $class($this, $args);
+
+                $this->_helpers[$alias] = $obj;
+
+            } else {
+
+                if (($obj = $this->_helpers[$alias]) instanceof View\Helper)
+                    $obj->extendArgs($args);
+
+            }
+
+        }
+
+    }
+
+    public function hasHelper($helper){
+
+        return array_key_exists($helper, $this->_helpers);
+        
+    }
+
+    private function findHelper($name){
+
+        /**
+         * Search paths for view helpers.  The order here matters because apps should be able to override built-in helpers.
+         */
+        $search_prefixes = ['\\Application\\Helper\\Controller', '\\Hazaar\\Controller\\Helper'];
+
+        $name = \ucfirst($name);
+
+        foreach($search_prefixes as $prefix){
+
+            $class = $prefix . '\\' . $name;
+
+            if(\class_exists($class))
+                return $class;
+
+        }
+
+        return null;
 
     }
 
