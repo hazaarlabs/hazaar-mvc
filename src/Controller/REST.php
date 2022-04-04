@@ -113,20 +113,14 @@ abstract class REST extends \Hazaar\Controller {
 
     }
 
-    public function __construct($name, \Hazaar\Application $application, $use_app_config = true) {
-
-        $application->setResponseType('json');
-
-        parent::__construct($name, $application);
-
-        $this->__rest_cache = new \Hazaar\Cache();
-
-    }
-
     public function __initialize(\Hazaar\Application\Request $request) {
 
         parent::__initialize($request);
 
+        $this->__rest_cache = new \Hazaar\Cache();
+
+        $this->application->setResponseType('json');
+        
         $class = new \ReflectionClass($this);
 
         foreach($class->getMethods(\ReflectionMethod::IS_PUBLIC) as $method){

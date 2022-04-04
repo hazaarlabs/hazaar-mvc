@@ -114,8 +114,6 @@ define('SUPPORT_PATH', realpath(LIBRARY_PATH . DIRECTORY_SEPARATOR . '..' . DIRE
  */
 class Loader {
 
-	private $application;
-
 	public $paths = [];
 
 	private static $instance;
@@ -126,9 +124,7 @@ class Loader {
      * !!! warning
      * Do NOT instantiate this class directly. See Loader::getInstance() on how to get a new Loader instance.
      */
-	function __construct($application){
-
-		$this->application = $application;
+	function __construct(){
 
 		if(! Loader::$instance instanceof Loader)
 			Loader::$instance = $this;
@@ -159,24 +155,13 @@ class Loader {
      *
      * @since 1.0.0
      *
-     * @param Application $application
-     *        	The current application instance
      */
-	static function getInstance($application = NULL){
+	static function getInstance(){
 
 		if(! Loader::$instance instanceof Loader)
-			Loader::$instance = new Loader($application);
-
-		elseif($application)
-			Loader::$instance->setApplication($application);
+			Loader::$instance = new Loader();
 
 		return Loader::$instance;
-
-	}
-
-	public function setApplication($application){
-
-		$this->application = $application;
 
 	}
 
@@ -509,7 +494,7 @@ class Loader {
              */
             if(array_key_exists($controller, \Hazaar\Application\Router::$internal)){
 
-                $newController = new \Hazaar\Application\Router::$internal[$controller]($controller, $this->application);
+                $newController = new \Hazaar\Application\Router::$internal[$controller]($controller);
 
             }else{
 
@@ -534,7 +519,7 @@ class Loader {
                     if(!class_exists($controller_class))
                         continue;
 
-                    $newController = new $controller_class($controller_name, $this->application);
+                    $newController = new $controller_class($controller_name);
 
                     break;
 
