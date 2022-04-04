@@ -66,12 +66,16 @@ class Message {
 
     public function findPart($content_type){
 
-        $types = is_array($content_type) ? $content_type : [$content_type];
+        if(is_array($this->parts)){
 
-        foreach($this->parts as $part){
+            $types = is_array($content_type) ? $content_type : [$content_type];
 
-            if(in_array($part->getContentType(), $types))
-                return $part;
+            foreach($this->parts as $part){
+
+                if(in_array($part->getContentType(), $types))
+                    return $part;
+
+            }
 
         }
 
