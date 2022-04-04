@@ -643,6 +643,8 @@ class Application {
      */
     public function run(Controller $controller = NULL) {
 
+        $code = 0;
+
         try {
 
             if($this->timer){
@@ -679,14 +681,19 @@ class Application {
              */
             $response = $controller->__initialize($this->request);
 
+            if(is_int($response)){
+
+                return $response;
+
             //If we get a response now, the controller wants out, so display it and quit.
-            if($response instanceof \Hazaar\Controller\Response){
+            }elseif($response instanceof \Hazaar\Controller\Response){ 
+                
 
                 $response->__writeOutput();
 
                 $controller->__shutdown($response);
 
-                return 0;
+                return $code;
 
             }
 
@@ -695,39 +702,50 @@ class Application {
              */
             $this->response = $controller->__run();
 
-            if(!$this->response->hasController())
-                $this->response->setController($controller);
+            if(is_int($this->response)){
 
-            /*
-             * The run method should have returned a response object that we can output to the client
-             */
-            if(!($this->response instanceof Controller\Response))
-                throw new Application\Exception\ResponseInvalid();
+                $code = $this->response;
 
-            /*
-             * If the controller has specifically requested a return status code, set it now.
-             */
-            if($status = $controller->getStatus())
-                $this->response->setStatus($status);
+            }else{
 
-            $this->response->setCompression($this->config->app->get('compress', false));
-            
-            /*
-             * Finally, write the response to the output buffer.
-             */
-            $this->response->__writeOutput();
+                if(!$this->response instanceof \Hazaar\Controller\Response)
+                    $this->response = new \Hazaar\Controller\Response\HTTP\NoContent();
 
-            /*
-             * Shutdown the controller
-             */
-            $controller->__shutdown($this->response);
+                if(!$this->response->hasController())
+                    $this->response->setController($controller);
 
-            if($this->timer) {
+                /*
+                * The run method should have returned a response object that we can output to the client
+                */
+                if(!($this->response instanceof Controller\Response))
+                    throw new Application\Exception\ResponseInvalid();
 
-                $this->timer->start('shutdown');
-    
-                $this->timer->stop('exec');
-    
+                /*
+                * If the controller has specifically requested a return status code, set it now.
+                */
+                if($status = $controller->getStatus())
+                    $this->response->setStatus($status);
+
+                $this->response->setCompression($this->config->app->get('compress', false));
+                
+                /*
+                * Finally, write the response to the output buffer.
+                */
+                $this->response->__writeOutput();
+
+                /*
+                * Shutdown the controller
+                */
+                $controller->__shutdown($this->response);
+
+                if($this->timer) {
+
+                    $this->timer->start('shutdown');
+        
+                    $this->timer->stop('exec');
+        
+                }
+
             }
 
         }catch(Controller\Exception\HeadersSent $e) {
@@ -737,10 +755,10 @@ class Application {
         }catch(\Exception $e) {
 
             /*
-             * Here we check if the controller we tried to execute was already an error
-             * if it is and we try and execute another error we could end up in an endless loop
-             * so we throw a normal exception that will be grabbed by ErrorControl as an unhandled exception.
-             */
+            * Here we check if the controller we tried to execute was already an error
+            * if it is and we try and execute another error we could end up in an endless loop
+            * so we throw a normal exception that will be grabbed by ErrorControl as an unhandled exception.
+            */
             if($controller instanceof Controller\Error)
                 dieDieDie($e->getMessage());
 
@@ -749,7 +767,7 @@ class Application {
 
         }
 
-        return 0;
+        return $code;
 
     }
 
