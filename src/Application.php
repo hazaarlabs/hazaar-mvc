@@ -667,6 +667,8 @@ class Application {
 
             }
 
+            $controller->setApplication($this);
+
             if($this->config->app['metrics'] === true)
                 $this->metrics = $controller->use_metrics;
 

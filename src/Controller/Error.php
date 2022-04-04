@@ -37,12 +37,6 @@ class Error extends \Hazaar\Controller\Action {
 
     public $use_metrics = false;
 
-    function __construct($name, \Hazaar\Application $application){
-
-        parent::__construct($name, $application, false);
-
-    }
-
     function __initialize(\Hazaar\Application\Request $request = NULL) {
 
         parent::__initialize($request);

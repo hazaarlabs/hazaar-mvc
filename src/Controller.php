@@ -39,11 +39,21 @@ abstract class Controller {
      * 
      * @param \Hazaar\Application $application An application instance.
      */
-    public function __construct($name, \Hazaar\Application $application) {
+    public function __construct($name) {
 
         $this->name = strtolower($name);
 
+    }
+
+    public function setApplication($application){
+        
         $this->application = $application;
+
+    }
+
+    public function hasApplication(){
+
+        return $this->application instanceof \Hazaar\Application;
 
     }
 

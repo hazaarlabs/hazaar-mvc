@@ -64,6 +64,8 @@ class Router extends \Hazaar\Controller {
 
         }
 
+        $this->module->setApplication($this->application);
+
         $request->setPath(implode('/', $parts));
 
         if(!$this->module instanceof \Hazaar\Controller)
