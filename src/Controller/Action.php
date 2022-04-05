@@ -46,7 +46,7 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
         }
 
-        parent::__initialize($request);
+        return parent::__initialize($request);
 
     }
 

@@ -33,7 +33,7 @@ abstract class WebDAV extends Basic {
 
     public function __initialize(\Hazaar\Application\Request $request){
 
-        parent::__initialize($request);
+        $response = parent::__initialize($request);
 
         if($this->__action !== 'index'){
 
@@ -41,6 +41,8 @@ abstract class WebDAV extends Basic {
                 throw new \Exception('Unknown media source!', 404);
 
         }
+
+        return $response;
 
     }
 
