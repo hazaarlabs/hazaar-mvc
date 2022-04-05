@@ -39,7 +39,7 @@ class Error extends \Hazaar\Controller\Action {
 
     function __initialize(\Hazaar\Application\Request $request = NULL) {
 
-        parent::__initialize($request);
+        $response = parent::__initialize($request);
 
         if ($request instanceof \Hazaar\Application\Request\Http && function_exists('apache_request_headers')) {
 
@@ -80,6 +80,8 @@ class Error extends \Hazaar\Controller\Action {
 
         $this->status_codes = $this->loadStatusCodes();
 
+        return $response;
+        
     }
 
     private function loadStatusCodes() {
