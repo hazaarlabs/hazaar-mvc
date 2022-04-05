@@ -238,12 +238,6 @@ abstract class Controller {
 
     public function __get($helper) {
 
-        return $this->get($helper);
-
-    }
-
-    public function get($helper) {
-
         if(array_key_exists($helper, $this->_helpers))
             return $this->_helpers[$helper];
 
