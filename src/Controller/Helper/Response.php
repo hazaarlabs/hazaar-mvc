@@ -56,6 +56,12 @@ class Response extends \Hazaar\Controller\Helper {
 
     }
 
+    public function view($name){
+
+        return new \Hazaar\Controller\Response\View($name);
+
+    }
+
     public function xml($content, $status = 200){
 
         return new \Hazaar\Controller\Response\Xml($content, $status);
