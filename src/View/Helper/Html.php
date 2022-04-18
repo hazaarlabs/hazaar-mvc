@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/View/Helper/Html.php
  *
- * @author      Jamie Carl jamie@hazaarlabs.com
+ * @author      Jamie Carl jamie@hazaar.io
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar\View\Helper;
@@ -70,7 +70,7 @@ class Html extends \Hazaar\View\Helper {
 
         $image = $this->html->img($this->application->url('hazaar/file/hazaarpowered.png'));
 
-        return $this->a('http://www.hazaarmvc.com', $image, [
+        return $this->a('http://hazaar.io', $image, [
             'target' => '_blank',
             'class'  => $class
         ]);
