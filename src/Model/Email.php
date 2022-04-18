@@ -9,7 +9,7 @@ namespace Hazaar\Model;
  * 
  * It currently has a single field called 'address' that is used to validate the email address format.
  * 
- * @author Jamie Carl <jamie@hazaarlabs.com>
+ * @author Jamie Carl <jamie@hazaar.io>
  * 
  * @since 2.2
  */

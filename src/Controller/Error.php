@@ -3,9 +3,9 @@
 /**
  * @file        Controller/Error.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 namespace Hazaar\Controller;
 
@@ -453,7 +453,7 @@ class Error extends \Hazaar\Controller\Action {
 
         }
 
-        $url = 'https://api.hazaarmvc.com/api/report/' . $type;
+        $url = 'https://api.hazaar.io/api/report/' . $type;
 
         $data = json_encode([
             'status' => $this->code,

@@ -22,7 +22,7 @@ namespace Hazaar;
  *
  * @since 2.3.44
  *
- * @author Jamie Carl <jamie@hazaarlabs.com>
+ * @author Jamie Carl <jamie@hazaar.io>
  */
 class GeoData {
 

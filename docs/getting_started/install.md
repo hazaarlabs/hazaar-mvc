@@ -106,14 +106,14 @@ Coming soon...
 
 # Getting Started
 
-A great place to get up to speed quickly on Hazaar MVC is by reading the [Hazaar MVC Quickstar Guide](http://hazaarmvc.com/quickstart).
+A great place to get up to speed quickly on Hazaar MVC is by reading the [Hazaar MVC Quickstar Guide](http://hazaar.io/quickstart).
 
 The QuickStart covers some of the most commonly used components of Hazaar MVC.
 
 # Contributing
 
-Please contact [support@hazaarlabs.com](mailto:support@hazaarlabs.com) if you would like to get involved!
+Please contact [support@hazaar.io](mailto:support@hazaar.io) if you would like to get involved!
 
 # Licence
 
-The files in this archive are released under the Apache 2.0 License. You can find a copy of this license in [LICENCE.md](https://git.hazaarlabs.com/hazaar/hazaar-mvc/blob/master/LICENCE.md).
+The files in this archive are released under the Apache 2.0 License. You can find a copy of this license in [LICENCE.md](https://git.hazaar.io/hazaar/hazaar-mvc/blob/master/LICENCE.md).

@@ -3,9 +3,9 @@
 /**
  * @file        Cache.php
  *
- * @author      Jamie Carl <jamie@hazaarmvc.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarmvc.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://hazaar.io)
  *
  * @version     $Id: Application.php 24593 2012-08-29 20:35:02Z jamie $
  */
