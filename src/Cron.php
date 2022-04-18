@@ -3,7 +3,7 @@
  * @file        Hazaar/Cron.php
  *
  * @author      Christian Land http://tagdocs.de
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
  */
 

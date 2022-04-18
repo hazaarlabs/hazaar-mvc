@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/Application/Protocol.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2018 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2018 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar\Application;

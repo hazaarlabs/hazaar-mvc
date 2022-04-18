@@ -2,9 +2,9 @@
 /**
  * @file        Controller/REST.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2017 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2017 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar\Controller;

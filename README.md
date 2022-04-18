@@ -7,7 +7,7 @@ to ensure that Hazaar is cross-platform compatible, particularly with Windows su
 I am now developing under Windows daily so Hazaar MVC has become quite stable under Windows.
 
 If you hit any problems, please feel free to create a support issue so they can be fixed
-at https://git.hazaarlabs.com/hazaar/hazaar-mvc/issues.
+at https://git.hazaar.io/hazaar/hazaar-mvc/issues.
 
 Hazaar MVC is installed with [Composer](http://getcomposer.org) and available via
 [Packagist](http://packagist.org). 
@@ -75,7 +75,7 @@ $ composer create-project hazaarlabs/example path/to/install
 That's it.  You should now have the example application and Hazaar MVC downloaded and ready
 to go. Now all you need to do is set up your web server and you're good to go.  
 
-You can now have a read of our [Online Documentation](http://hazaarmvc.com/docs) for tips
+You can now have a read of our [Online Documentation](https://scroly.io/hazaarmvc) for tips
 on setting up a web server to run your new application.
 
 ## Test your new project
@@ -95,16 +95,16 @@ http://localhost:8080.
 # Getting Started with Development
 
 A great place to get up to speed quickly on Hazaar MVC is by reading the
-[Hazaar MVC Getting Started Guide](http://hazaarmvc.com/docs/getting-started).
+[Hazaar MVC Getting Started Guide](https://scroly.io/hazaarmvc/latest/getting_started/requirements.md).
 
 The QuickStart covers some of the most commonly used components of Hazaar MVC.
 
 # Contributing
 
-Please contact [support@hazaarlabs.com](mailto:support@hazaarlabs.com) if you would like to
+Please contact [support@hazaar.io](mailto:support@hazaar.io) if you would like to
 get involved!
 
 # Licence
 
 The files in this archive are released under the Apache 2.0 License. You can find a
- copy of this license in [LICENCE.md](https://git.hazaarlabs.com/hazaar/hazaar-mvc/blob/master/LICENCE.md).
+ copy of this license in [LICENCE.md](https://git.hazaar.io/hazaar/hazaar-mvc/blob/master/LICENCE.md).
