@@ -152,11 +152,7 @@ class Application {
             //Store the search paths in the GLOBALS container so they can be used in config includes.
             $this->GLOBALS['paths'] = $this->loader->getSearchPaths();
         
-            Application\Config::$override_paths = [
-                'server' . DIRECTORY_SEPARATOR . ake($_SERVER, 'SERVER_NAME'),
-                'host' . DIRECTORY_SEPARATOR . ake($_SERVER, 'HTTP_HOST'),
-                'local'
-            ];
+            Application\Config::$override_paths = self::getConfigOverridePaths();
 
             /*
              * Load it with a config object. if the file doesn't exist
@@ -253,6 +249,16 @@ class Application {
             dieDieDie($e);
 
         }
+
+    }
+
+    static public function getConfigOverridePaths(){
+
+        return [
+            'server' . DIRECTORY_SEPARATOR . ake($_SERVER, 'SERVER_NAME'),
+            'host' . DIRECTORY_SEPARATOR . ake($_SERVER, 'HTTP_HOST'),
+            'local'
+        ];
 
     }
 
