@@ -422,8 +422,20 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         $null = null;
 
-        if (!array_key_exists($key, $this->values))
+        if (!array_key_exists($key, $this->values)){
+
+            if(property_exists($this, $key)){
+
+                $ref = new \ReflectionProperty($this, $key);
+
+                if($ref->isPublic())
+                    return $this->$key;
+
+            }
+
             return $null;
+
+        }
 
         $def = ake($this->fields, $key, ake($this->fields, '*'));
 
