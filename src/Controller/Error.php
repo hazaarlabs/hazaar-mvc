@@ -33,11 +33,20 @@ class Error extends \Hazaar\Controller\Action {
 
     protected $response = 'html';
 
-    private $status_codes = [];
+    private static $status_codes = null;
 
     public $use_metrics = false;
 
-    function __initialize(\Hazaar\Application\Request $request = NULL) {
+    function __construct($name){
+
+        if(!is_array(self::$status_codes))
+            self::$status_codes = $this->loadStatusCodes();
+
+        parent::__construct($name);
+        
+    }
+
+    public function __initialize(\Hazaar\Application\Request $request = NULL) {
 
         $response = parent::__initialize($request);
 
@@ -78,8 +87,6 @@ class Error extends \Hazaar\Controller\Action {
 
         }
 
-        $this->status_codes = $this->loadStatusCodes();
-
         return $response;
         
     }
@@ -95,7 +102,7 @@ class Error extends \Hazaar\Controller\Action {
             while($line = fgets($h)) {
 
                 if (preg_match('/^(\d*)\s(.*)$/', $line, $matches))
-                    $status_codes[$matches[1]] = $matches[2];
+                    $status_codes[intval($matches[1])] = $matches[2];
                     
             }
         }
@@ -109,7 +116,7 @@ class Error extends \Hazaar\Controller\Action {
         if($code === null)
             $code = $this->code;
 
-        return (array_key_exists($code, $this->status_codes) ? $this->status_codes[$code] : NULL);
+        return (array_key_exists($code, self::$status_codes) ? self::$status_codes[$code] : NULL);
 
     }
 
@@ -134,22 +141,13 @@ class Error extends \Hazaar\Controller\Action {
             if ($e instanceof \Hazaar\Exception)
                 $this->short_message = $e->getShortMessage();
 
-            if ($e instanceof \Hazaar\Exception) {
-
-                $context = $e->getName();
-            } else {
-
-                $context = get_class($e);
-            }
-
-            $this->errclass = $context;
+            $this->errclass = ($e instanceof \Hazaar\Exception) ? $e->getName() : get_class($e);
 
             $this->callstack = $e->getTrace();
 
-            if (!array_key_exists($this->code = $e->getCode(), $this->status_codes)) {
-
+            if (!array_key_exists(($this->code = $e->getCode()), self::$status_codes))
                 $this->code = 500;
-            }
+
         } elseif (is_array($args[0])) {
 
             $this->type = ERR_TYPE_SHUTDOWN;
