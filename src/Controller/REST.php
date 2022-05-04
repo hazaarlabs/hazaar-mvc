@@ -265,6 +265,9 @@ abstract class REST extends \Hazaar\Controller {
 
         if(!$this->__endpoint){
 
+            if(is_array($full_path))
+                $full_path = implode('/', $full_path);
+
             if($full_path == '/'){
 
                 if(!$this->allow_directory)
@@ -347,11 +350,12 @@ abstract class REST extends \Hazaar\Controller {
 
     }
 
-    private function __match_route($request_method, $path, $route, $endpoint, &$args = null){
+    private function __match_route($request_method, &$path, $route, $endpoint, &$args = null){
 
         $args = [];
 
-        $path = explode('/', ltrim($path, '/'));
+        if(!is_array($path))
+            $path = explode('/', ltrim($path, '/'));
 
         $route = explode('/', ltrim($route, '/'));
 
