@@ -62,7 +62,7 @@ class Session extends \Hazaar\Cache {
 
     public function set($key, $value, $timeout = NULL) {
 
-        if($this->session_init !== true){
+        if($this->session_init !== true && strpos(php_sapi_name(), 'cli') === false){
 
             setcookie($this->session_name, $this->session_id, 0,  \Hazaar\Application::path());
 
