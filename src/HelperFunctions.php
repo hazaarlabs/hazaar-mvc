@@ -36,11 +36,19 @@
  * @since 1.0.0
  *
  * @param mixed   $array     The array to search.  Objects with public properties are also supported.
- * @param mixed   $key       The array key or object property name to look for.  This can now also be an array of keys and the first one found will be returned.
+ * @param mixed   $key       The array key or object property name to look for.  The following key specifications
+ *                           are supported:
+ *                           * _string_ - Single key. 
+ *                           * _string_ - Dot notation key for decending into multi-dimensional arrays/objects.
+ *                           * _array_  - Array of keys to search for where the first found is returned. 
  * @param mixed   $default   An optional default value to return if the key or property does not exist.
- * @param boolean $non_empty Indicates that empty values, such as empty arrays and strings should be treated as NULL, even if they exist as elements in the array/object.
+ *                           This default can also be a callback function (closure).  If so, the default
+*                            value will be the value returned by the closure.  Usefull of using objects as defaults.
+ * @param boolean $non_empty Indicates that empty values, such as empty arrays and strings should be
+ *                           treated as NULL, even if they exist as elements in the array/object.
  *
- * @return mixed The value if it exists in the array. Returns the default if it does not. Default is null if no other default is specified.
+ * @return mixed The value if it exists in the array. Returns the default if it does not. Default is null
+ *               if no other default is specified.
  */
 function ake($array, $key, $default = NULL, $non_empty = FALSE) {
 
@@ -116,7 +124,7 @@ function ake($array, $key, $default = NULL, $non_empty = FALSE) {
 
     }
 
-    return $default;
+    return is_callable($default) ? $default($key) : $default;
 
 }
 
