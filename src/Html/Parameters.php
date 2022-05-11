@@ -56,7 +56,7 @@ class Parameters implements \Countable {
 
     }
 
-    public function count() {
+    public function count() : int {
 
         return count($this->params);
 

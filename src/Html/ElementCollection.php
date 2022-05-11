@@ -358,7 +358,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
     }
 
-    public function offsetGet($offset){
+    public function offsetGet($offset) : mixed {
 
         if(array_key_exists($offset, $this->elements))
             return $this->elements[$offset];

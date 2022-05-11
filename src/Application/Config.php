@@ -475,7 +475,7 @@ class Config extends \Hazaar\Map {
     public function parseString($elem, $key){
 
         $allowed_values = [
-            'GLOBALS' => &$GLOBALS,
+            'GLOBALS' => $GLOBALS,
             '_SERVER' => &$_SERVER,
             '_GET' => &$_GET,
             '_POST' => &$_POST,

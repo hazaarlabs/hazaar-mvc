@@ -168,7 +168,7 @@ class Style {
     /**
      * Array Access Methods
      */
-    public function offsetExists($offset) {
+    public function offsetExists($offset) : bool {
 
         return array_key_exists($offset, $this->selectors);
 
@@ -183,13 +183,13 @@ class Style {
 
     }
 
-    public function offsetSet($offset, $value) {
+    public function offsetSet($offset, $value) : void {
 
         $this->selectors[$offset] = $value;
 
     }
 
-    public function offsetUnset($offset) {
+    public function offsetUnset($offset) : void {
 
         unset($this->selectos[$offset]);
 

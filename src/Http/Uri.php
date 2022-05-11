@@ -176,13 +176,13 @@ class Uri implements \ArrayAccess {
 
     }
 
-    public function offsetExists($key) {
+    public function offsetExists($offset) : bool {
 
         return array_key_exists($key, $this->parts['query']);
 
     }
 
-    public function offsetGet($key) {
+    public function offsetGet($offset) : mixed {
 
         return $this->get($key);
 

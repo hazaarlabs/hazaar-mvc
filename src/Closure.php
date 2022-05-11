@@ -135,7 +135,7 @@ class Closure implements \JsonSerializable {
 
     }
 
-    public function jsonSerialize(){
+    public function jsonSerialize() : mixed {
 
         return [
             'code' => $this->code

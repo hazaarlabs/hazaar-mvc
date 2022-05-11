@@ -251,19 +251,19 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function offsetExists($offset){
+    public function offsetExists($offset) : bool {
 
         return array_key_exists($offset, $this->values);
 
     }
 
-    public function offsetGet($offset){
+    public function offsetGet($offset) : mixed {
 
         return $this->values[$offset];
 
     }
 
-    public function offsetSet($offset, $value){
+    public function offsetSet($offset, $value) : void {
 
         if(is_array($this->type))
             $value = new ChildModel($this->type, $value);
@@ -281,7 +281,7 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function offsetUnset($offset){
+    public function offsetUnset($offset) : void {
 
         unset($this->values[$offset]);
 
@@ -289,37 +289,37 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function current(){
+    public function current() : mixed{
 
         return current($this->values);
 
     }
 
-    public function next(){
+    public function next() : void {
 
-        return next($this->values);
+        next($this->values);
 
     }
 
-    public function key(){
+    public function key() : mixed{
 
         return key($this->values);
 
     }
 
-    public function valid(){
+    public function valid() : bool {
 
         return (key($this->values) !== null);
 
     }
 
-    public function rewind(){
+    public function rewind() : void{
 
-        return reset($this->values);
+        reset($this->values);
 
     }
 
-    public function count(){
+    public function count() : int {
 
         return count($this->values);
 
@@ -371,7 +371,7 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function jsonSerialize(){
+    public function jsonSerialize() : mixed {
 
         return $this->values;
 
