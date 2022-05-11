@@ -168,6 +168,9 @@ class Application {
 
             Application\Url::$rewrite = $this->config->app->get('rewrite');
 
+            if($this->config->app['polyfill'] === true)
+                require_once('Polyfill.php');
+
             /*
             * Create the request object
             */
@@ -345,6 +348,7 @@ class Application {
                 'useDefaultController' => false,
                 'favicon' => 'favicon.png',
                 'timezone' => 'UTC',
+                'polyfill' => true,
                 'rewrite' => true,
                 'files' => [
                     'bootstrap' => 'bootstrap.php',
