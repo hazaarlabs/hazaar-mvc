@@ -21,11 +21,11 @@ class ElementCollection implements \ArrayAccess, \Iterator {
         $this->original_selector = $selector;
 
         if(is_array($objects) && count($objects) > 0)
-            $this->elements = $this->match($objects, $this->original_selector,$recursive);
+            $this->elements = self::matchObjects($objects, $this->original_selector,$recursive);
 
     }
 
-    static private function match(&$objects, $selector = null, $recursive = false){
+    static private function matchObjects(&$objects, $selector = null, $recursive = false){
 
         //Split on a comma and any amount of adjacent white space
         $parts = preg_split('/\s*,\s*/', $selector);
@@ -275,7 +275,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
         foreach($this->elements as $id => $object){
 
-            if(!$this->match($object, $selector))
+            if(!self::matchObjects($object, $selector))
                 unset($this->elements[$id]);
 
         }
