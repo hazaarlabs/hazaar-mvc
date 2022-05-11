@@ -292,13 +292,13 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     }
 
-    public function offsetExists($key) : bool{
+    public function offsetExists($key) : bool {
 
         return array_key_exists($key, $this->content);
 
     }
 
-    public function offsetGet($key) {
+    public function offsetGet($offset) : mixed {
 
         if(array_key_exists($key, $this->content)) {
 
@@ -334,37 +334,37 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     }
 
-    public function rewind() {
+    public function rewind() : void {
 
-        return reset($this->content);
-
-    }
-
-    public function next() {
-
-        return next($this->content);
+        reset($this->content);
 
     }
 
-    public function current() {
+    public function next() : void {
+
+        next($this->content);
+
+    }
+
+    public function current() : mixed {
 
         return current($this->content);
 
     }
 
-    public function valid() {
+    public function valid() : bool {
 
         return (current($this->content));
 
     }
 
-    public function key() {
+    public function key() : mixed {
 
         return key($this->content);
 
     }
 
-    public function count() {
+    public function count() : int {
 
         return count($this->content);
 

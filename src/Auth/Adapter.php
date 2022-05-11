@@ -543,7 +543,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
     }
 
-    public function &offsetGet($key) {
+    public function &offsetGet($key) : mixed {
 
         if($this->session->has($key))
             return $this->session->get($key);

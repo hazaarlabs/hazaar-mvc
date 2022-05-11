@@ -441,7 +441,7 @@ class Application {
 
         $path = realpath($path);
 
-        if(!($suffix = trim($suffix)))
+        if($suffix === null || !($suffix = trim($suffix)))
             return $path;
 
         if($suffix && substr($suffix, 0, 1) != DIRECTORY_SEPARATOR)
