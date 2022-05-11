@@ -1152,7 +1152,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
     /**
      * @private
      */
-    public function & offsetGet($key) {
+    public function & offsetGet($key) : mixed {
 
         return $this->get($key);
 
@@ -1194,7 +1194,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      *
      * @since       1.0.0
      */
-    public function current() {
+    public function current() : mixed {
 
         $key = $this->current['key'];
 
@@ -1211,7 +1211,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable {
      *
      * @since       1.0.0
      */
-    public function key() {
+    public function key() : mixed {
 
         return $this->current['key'];
 

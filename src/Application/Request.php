@@ -376,7 +376,7 @@ abstract class Request implements Request\_Interface {
 
     }
 
-    public function count() {
+    public function count() : int {
 
         return count($this->params);
 

@@ -273,6 +273,9 @@ class Manager implements Backend\_Interface {
     
     public function fixPath($path, $file = NULL) {
 
+        if(!$path)
+            return '';
+
         $path = '/' . trim(str_replace('\\', '/', $path), '/');
 
         if($file)
@@ -437,7 +440,7 @@ class Manager implements Backend\_Interface {
 
     }
 
-    public function read($file, $offset = NULL, $maxlen = NULL) {
+    public function read($file, $offset = -1, $maxlen = NULL) {
 
         $bytes = null;
 
