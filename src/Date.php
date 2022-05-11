@@ -148,7 +148,7 @@ class Date extends \DateTime implements \JsonSerializable {
 
             $day = 4;
 
-            $time = date_parse(strftime('%x', mktime(0, 0, 0, $month, $day, $year)));
+            $time = date_parse(str_ftime('%x', mktime(0, 0, 0, $month, $day, $year)));
 
             if ($time['month'] !== $month && preg_match('/\d+\/\d+\/\d+/', $datetime))
                 $datetime = str_replace('/', '-', $datetime);
@@ -760,7 +760,7 @@ class Date extends \DateTime implements \JsonSerializable {
 
         $format = null;
 
-        if(preg_match('/(\d+)(\W)(\d+)(\W)(\d+)/', strftime('%c', mktime(0,0,0,12,1,2000)), $matches)){
+        if(preg_match('/(\d+)(\W)(\d+)(\W)(\d+)/', str_ftime('%c', mktime(0,0,0,12,1,2000)), $matches)){
 
             $matrix = [1 => 'D', 12 => 'M', 2000 => 'Y'];
 
