@@ -227,3 +227,66 @@ function humanFileSize(bytes, si) {
 Number.prototype.toBytes = function (si) {
     return humanFileSize(this, si);
 };
+
+String.prototype.replaceTaggedText = function (data) {
+    return this.replaceAll(/\{\{([\W]*)([\w\.]+)\}\}/g, function (item, m1, m2) {
+        return m2.split('.').reduce((o, i) => o[i] ? o[i] : '', data);
+    });
+}
+
+HTMLElement.prototype.parseTemplate = function (data, callbacks) {
+    let container = document.createElement('div'), clone = this.content.cloneNode(true);
+    for (let element of clone.children) {
+        element.matchReplace(data, callbacks);
+        container.appendChild(element);
+    }
+    return container;
+};
+
+HTMLElement.prototype.matchCondition = function (value) {
+    let val = null;
+    return !(((val = this.attributes.getNamedItem('data-value')) && value != val.value)
+        || ((val = this.attributes.getNamedItem('data-match')) && !value.match(new RegExp(val.value)))
+        || !value);
+}
+
+HTMLElement.prototype.matchReplace = function (data, callbacks) {
+    let iffing = false, iffed = false;
+    for (let item of this.children) {
+        let attr = null, string = null;
+        if ((attr = item.attributes.getNamedItem('data-if'))) {
+            iffing = true;
+            if (!item.matchCondition(data[attr.value])) {
+                $(item).hide();
+                continue;
+            }
+            iffed = true;
+        } else if (iffing === true) {
+            if ((attr = item.attributes.getNamedItem('data-elseif'))) {
+                if (iffed === true || !item.matchCondition(data[attr.value])) {
+                    $(item).hide();
+                    continue;
+                }
+                iffed = true;
+            } else if ((attr = item.attributes.getNamedItem('data-else')) && iffed === true) {
+                $(item).hide();
+                continue;
+            } else {
+                iffing = iffed = false;
+            }
+        }
+        for (let attr of item.attributes) attr.value = attr.value.replaceTaggedText(data);
+        if (item.childElementCount > 0) {
+            item.matchReplace(data, callbacks);
+            continue;
+        }
+        string = item.textContent.replaceTaggedText(data);
+        if (callbacks) {
+            let cbs = item.getAttributeNames().filter(value => Object.keys(callbacks).includes(value));
+            if (cbs.length > 0) {
+                for (let x in cbs) string = callbacks[cbs[x]](string, item.attributes.getNamedItem(cbs[x]));
+            }
+        }
+        item.textContent = string;
+    };
+};
