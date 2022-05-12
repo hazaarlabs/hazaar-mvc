@@ -1,4 +1,4 @@
-﻿function HazaarJSHelper(options) {
+function HazaarJSHelper(options) {
     this.extend = function () {
         var target = arguments[0];
         for (var x = 1; x < arguments.length; x++) {
@@ -227,3 +227,9 @@ function humanFileSize(bytes, si) {
 Number.prototype.toBytes = function (si) {
     return humanFileSize(this, si);
 };
+
+String.prototype.replaceTaggedText = function (data) {
+    return this.replaceAll(/\{\{([\W]*)([\w\.]+)\}\}/g, function (item, m1, m2) {
+        return m2.split('.').reduce((o, i) => o[i] ? o[i] : '', data);
+    });
+}
