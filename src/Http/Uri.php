@@ -188,13 +188,13 @@ class Uri implements \ArrayAccess {
 
     }
 
-    public function offsetSet($key, $value) {
+    public function offsetSet($key, $value) : void {
 
         $this->set($key, $value);
 
     }
 
-    public function offsetUnSet($key) {
+    public function offsetUnSet($key) : void {
 
         unset($this->params[$key]);
 
