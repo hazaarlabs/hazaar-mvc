@@ -27,6 +27,9 @@
     "hmvc"
   ],
   "autoload": {
+    "files": [
+      "src/ErrorControl.php"
+    ],
     "psr-4": {
       "Hazaar\\": "src/"
     }
