@@ -32,6 +32,8 @@ class Adapter {
 
     private        $dsn     = [];
 
+    private        $last_to = [];
+
     /**
      * The mail class constructor
      *
@@ -48,7 +50,7 @@ class Adapter {
         $this->transport = $this->getTransportObject($config->transport, $config);
 
         if($config->has('from'))
-            $this->from = $this->encodeEmailAddress(ake($config->from, 'email'), ake($config->from, 'name'));
+            $this->from = self::encodeEmailAddress(ake($config->from, 'email'), ake($config->from, 'name'));
 
     }
 
@@ -83,7 +85,7 @@ class Adapter {
      *
      * @param string $name The name part
      */
-    private function encodeEmailAddress($email, $name) {
+    static private function encodeEmailAddress($email, $name) {
 
         $email = trim($email);
 
@@ -102,7 +104,7 @@ class Adapter {
      */
     public function setFrom($email, $name = NULL) {
 
-        $this->from = $this->encodeEmailAddress($email, $name);
+        $this->from = self::encodeEmailAddress($email, $name);
 
     }
 
@@ -115,9 +117,9 @@ class Adapter {
      */
     public function setReplyTo($email, $name = NULL) {
 
-        $this->headers['Reply-To'] = $this->encodeEmailAddress($email, $name);
+        $this->headers['Reply-To'] = self::encodeEmailAddress($email, $name);
 
-        $this->headers['Return-Path'] = $this->encodeEmailAddress($email, $name);
+        $this->headers['Return-Path'] = self::encodeEmailAddress($email, $name);
 
     }
 
@@ -147,8 +149,20 @@ class Adapter {
      */
     public function addTo($email, $name = NULL) {
 
-        $this->to[] = $this->encodeEmailAddress($email, $name);
+        $this->to[] = [$email, $name];
 
+    }
+
+    public function getTo(){
+
+        return $this->to;
+
+    }
+
+    public function getLastTo(){
+
+        return $this->last_to;
+        
     }
 
     /**
@@ -160,7 +174,13 @@ class Adapter {
      */
     public function addCC($email, $name = NULL) {
 
-        $this->cc[] = $this->encodeEmailAddress($email, $name);
+        $this->cc[] = [$email, $name];
+
+    }
+
+    public function getCC(){
+
+        return $this->cc;
 
     }
 
@@ -173,7 +193,13 @@ class Adapter {
      */
     public function addBCC($email, $name = NULL) {
 
-        $this->bcc[] = $this->encodeEmailAddress($email, $name);
+        $this->bcc[] = [$email, $name];
+
+    }
+
+    public function getBCC(){
+
+        return $this->bcc;
 
     }
 
@@ -352,6 +378,9 @@ class Adapter {
         if(! $this->transport instanceof Transport)
             throw new \Exception('No mail transport set while trying to send mail');
 
+        if(!$this->from)
+            throw new \Exception('No From address specified');
+
         /*
          * Add the from address to the extra headers
          */
@@ -375,13 +404,23 @@ class Adapter {
 
         }
 
+        $map_func = function($item){
+
+            return Adapter::encodeEmailAddress($item[0], $item[1]);
+
+        };
+
         if(count($this->cc) > 0)
-            $headers['CC'] = implode(', ', $this->cc);
+            $headers['CC'] = implode(', ', array_map($map_func, $this->cc));
 
         if(count($this->bcc) > 0)
-            $headers['BCC'] = implode(', ', $this->bcc);
-        
-        $result = $this->transport->send($this->to, $this->subject->render($params), $body, $headers, $this->dsn);
+            $headers['BCC'] = implode(', ', array_map($map_func, $this->bcc));
+
+        $to = array_map($map_func, $this->to);
+
+        $result = $this->transport->send($to, $this->subject->render($params), $body, $headers, $this->dsn);
+
+        $this->last_to = $this->to;
 
         if($result)
             $this->clear();
