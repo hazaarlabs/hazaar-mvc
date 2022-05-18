@@ -13,8 +13,6 @@
  */
 namespace Hazaar;
 
-define('HAZAAR_EXEC_START', microtime(TRUE));
-
 define('HAZAAR_VERSION', '3.0');
 
 /**
