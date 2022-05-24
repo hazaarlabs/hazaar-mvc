@@ -257,5 +257,15 @@ class Url {
 
     }
 
+    public function getOrigin(){
+
+        $url = $this->renderObject();
+
+        preg_match('/(\w+\:\/\/[\w\.]+)\//', $url, $matches);
+
+        return $matches[1];
+        
+    }
+
 }
 
