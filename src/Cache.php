@@ -53,15 +53,12 @@ class Cache implements \ArrayAccess {
             $backend = ['apc', 'session'];
 
             //Grab the application context so we can load any cache settings
-            if (($app = \Hazaar\Application::getInstance()) instanceof \Hazaar\Application) {
+            if(($app = \Hazaar\Application::getInstance())
+                && $app->config->cache->has('backend')){
 
-                if($app->config->cache->has('backend')){
+                $backend = $app->config->cache['backend'];
 
-                    $backend = $app->config->cache['backend'];
-
-                    $options->extend($app->config->cache['options']);
-
-                }
+                $options->extend($app->config->cache['options']);
 
             }
 
