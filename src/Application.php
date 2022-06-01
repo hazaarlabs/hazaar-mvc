@@ -401,7 +401,10 @@ class Application {
      */
     static public function &getInstance() {
 
-        return Application::$instance;
+        if(Application::$instance instanceof Application)
+            return Application::$instance;
+
+        return false;
 
     }
 
