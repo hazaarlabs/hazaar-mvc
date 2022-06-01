@@ -153,90 +153,36 @@ class Application {
              * it will just be an empty object that will handle calls to
              * it silently.
              */
-            $this->config = new Application\Config('application', $env, $this->getDefaultConfig(), FILE_PATH_CONFIG);
+            $config = new Application\Config('application', $env, $this->getDefaultConfig(), FILE_PATH_CONFIG);
 
-            if(!$this->config->loaded())
+            if(!$config->loaded())
                 dieDieDie('Application is not configured!');
 
-            Application\Url::$base = $this->config->app->get('base');
-
-            Application\Url::$rewrite = $this->config->app->get('rewrite');
-
             /*
-            * Create the request object
-            */
-            $this->request = Application\Request\Loader::load();
-
-            //Allow the root to be configured but the default absolutely has to be set so here we double
-            $this->config->app->addInputFilter(function($value){
-                Application::setRoot($value);
-            }, 'root');
-
-            Application::setRoot($this->config->app['root']);
-
-            /*
-            * PHP root elements can be set directly with the PHP ini_set function
-            */
-            if($this->config->has('php')){
-
-                $php_values = $this->config->php->toDotNotation()->toArray();
-
-                foreach($php_values as $directive => $php_value)
-                    ini_set($directive, $php_value);
-
-            }
-
-            /**
-             * Check the load average and protect ifneeded
+             * Check if we require SSL and don't have and if so, redirect here.
              */
-            if($this->config->app->has('maxload') && function_exists('sys_getloadavg')) {
-
-                $la = sys_getloadavg();
-
-                if($la[0] > $this->config->app['maxload'])
-                    throw new Application\Exception\ServerBusy();
-
-            }
-
-            /*
-            * Use the config to add search paths to the loader
-            */
-            $this->loader->addSearchPaths($this->config->get('paths'));
-
-            /*
-            * Create a new router object for evaluating routes
-            */
-            $this->router = new Application\Router($this->config);
-
-            /*
-            * Create a timer for performance measuring
-            */
-            if($this->config->app->has('timer') && $this->config->app['timer'] == TRUE) {
-
-                $this->timer = new Timer();
-
-                $this->timer->start('init', HAZAAR_INIT_START);
-
-                $this->timer->stop('init');
-
-            }
-
-            /*
-            * Enable application logging
-            */
-            if($this->config->has('log')  && $this->config->log['enable'] === true)
-                \Hazaar\Logger\Frontend::initialise($this->config->log->get('level'), $this->config->log->get('backend')); 
-                
-            /*
-             * Check if we require SSL and if so, redirect here.
-             */
-            if($this->config->app->has('require_ssl') && boolify($_SERVER['HTTPS']) !== boolify($this->config->app->require_ssl)){
+            if($config->app->has('require_ssl') && boolify($_SERVER['HTTPS']) !== boolify($config->app->require_ssl)){
 
                 header("Location: https://" . $_SERVER["HTTP_HOST"] . $_SERVER["REQUEST_URI"]);
 
                 exit;
 
             }
+
+            /*
+             * Configure the application
+             */
+            $this->configure($config);
+
+            /*
+             * Create the request object
+             */
+            $this->request = Application\Request\Loader::load();
+
+            /*
+             * Create a new router object for evaluating routes
+             */
+            $this->router = new Application\Router($this->config);
 
         }catch(\Throwable $e){
             
@@ -361,6 +307,86 @@ class Application {
             ]
         ];
 
+    }
+
+    public function configure(\Hazaar\Map $config){
+
+        if(!$config->has('app'))
+            throw new \Exception('Invalid application configuration!');
+
+        $this->config = $config;
+        
+        if($this->config->app->has('alias'))
+            Application\Url::$__aliases = $this->config->app->getArray('alias');
+
+        //Allow the root to be configured but the default absolutely has to be set so here we double
+        $this->config->app->addInputFilter(function($value){
+            Application::setRoot($value);
+        }, 'root');
+
+        Application::setRoot($this->config->app['root']);
+
+        /*
+         * PHP root elements can be set directly with the PHP ini_set function
+         */
+        if($this->config->has('php')){
+
+            $php_values = $this->config->php->toDotNotation()->toArray();
+
+            foreach($php_values as $directive => $php_value)
+                ini_set($directive, $php_value);
+
+        }
+
+        /*
+         * Check the load average and protect ifneeded
+         */
+        if($this->config->app->has('maxload') && function_exists('sys_getloadavg')) {
+
+            $la = sys_getloadavg();
+
+            if($la[0] > $this->config->app['maxload'])
+                throw new Application\Exception\ServerBusy();
+
+        }
+
+        /*
+         * Use the config to add search paths to the loader
+         */
+        $this->loader->addSearchPaths($this->config->get('paths'));
+
+        /*
+         * Initialise any configured modules
+         * 
+         * These modules may setup things to run in the background or make certain functions availble
+         * and this is where we can start them up if they have valid configuration.
+         */
+        $initialisers = [
+            'app'  => '\Hazaar\Application\Url',
+            'log'  => '\Hazaar\Logger\Frontend'
+        ];
+
+        foreach($initialisers as $property => $class){
+
+            if($this->config->has($property) && class_exists($class))
+                $class::initialise($this->config->get($property));
+
+        }
+             
+        
+        /*
+         * Create a timer for performance measuring
+         */
+        if($this->config->app->has('timer') && $this->config->app['timer'] == TRUE) {
+
+            $this->timer = new Timer();
+
+            $this->timer->start('init', HAZAAR_INIT_START);
+
+            $this->timer->stop('init');
+
+        }
+        
     }
 
     /**
@@ -571,8 +597,6 @@ class Application {
             if(!date_default_timezone_set($tz))
                 throw new Application\Exception\BadTimezone($tz);
 
-            Application\Url::$aliases = $this->config->app->getArray('alias');
-
             if(!$this->router->evaluate($this->request))
                 throw new Application\Exception\RouteNotFound($this->request->getPath());
 
@@ -687,7 +711,6 @@ class Application {
 
             //If we get a response now, the controller wants out, so display it and quit.
             }elseif($response instanceof \Hazaar\Controller\Response){ 
-                
 
                 $response->__writeOutput();
 
@@ -835,13 +858,8 @@ class Application {
 
         }
 
-        if(!($base_path = $this->request->getBasePath())){
-
-            $app = \Hazaar\Application::getInstance();
-
-            $base_path = strtolower($app->config->app['defaultController']);
-
-        }
+        if(!($base_path = $this->request->getBasePath()))
+            $base_path = strtolower(Application\Url::$__default_controller);
 
         $request_parts = $base_path ? array_map('strtolower', array_map('trim', explode('/', $base_path))) : [];
 
