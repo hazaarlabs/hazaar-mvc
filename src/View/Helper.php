@@ -37,7 +37,7 @@ abstract class Helper implements Helper\_Interface {
 
     public function extendArgs($args) {
 
-        if(! is_array($args))
+        if(!\Hazaar\Map::is_array($args))
             return;
 
         $this->args = array_merge($this->args, $args);
