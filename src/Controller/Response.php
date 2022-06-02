@@ -77,10 +77,20 @@ class Response implements Response\_Interface {
 
         if($cache_config->has('reply'))
             $cache_control[] = $cache_config->get('reply');
+        elseif($cache_config->get('no-store') === true)
+            $cache_control[] = 'no-store';
+        elseif($cache_config->get('no-cache') === true)
+            $cache_control[] = 'no-cache';
         elseif($cache_config->has('public'))
             $cache_control[] = $cache_config->get('public') ? 'public' : 'private';
+        elseif($cache_config->has('private'))
+            $cache_control[] = $cache_config->get('private') ? 'private' : 'public';
 
-        if($cache_config->has('max-age') && !($cache_config->reply === 'no-cache' || $cache_config->reply === 'no-store'))
+        if($cache_config->has('max-age') 
+            && !($cache_config->reply === 'no-cache' 
+                || $cache_config->reply === 'no-store'
+                || $cache_config->get('no-cache') === true
+                || $cache_config->get('no-store') === true))
             $cache_control[] = 'max-age=' . $cache_config->get('max-age');
 
         if(count($cache_control) > 0)
