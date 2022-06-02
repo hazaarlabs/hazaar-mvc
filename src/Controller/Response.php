@@ -25,78 +25,11 @@ class Response implements Response\_Interface {
 
     public static $encryption_key;
 
-     /**
-     * Default cache control
-     * 
-     * Public with max age is 5 minutes
-     */
-    static public $__default_cache_control_directives = [
-        'public'  => false,
-        'max-age' => 300
-    ];
-
     function __construct($type = "text/html", $status = 501) {
 
         $this->content_type = $type;
 
         $this->status_code = $status;
-
-        $this->initialiseCacheControl();
-
-    }
-
-    public function initialiseCacheControl(){
-
-        $cache_config = \Hazaar\Application::getInstance()->config->get('http.cacheControl', self::$__default_cache_control_directives, true);
-
-        if($cacheControlHeader = ake(apache_request_headers(), 'Cache-Control')){
-
-            $replyable = ['no-cache', 'no-store', 'no-transform'];
-
-            $parts = explode(',', $cacheControlHeader);
-
-            foreach($parts as $part){
-
-                if(substr($part, 0, 7) === 'max-age'){
-
-                    $cache_config->set('max-age', intval(substr($part, strpos($part, '=', 7) + 1)));
-
-                    break;
-
-                }elseif(in_array(strtolower(trim($part)), $replyable)){
-                    
-                    $cache_config->set('reply', $part);
-
-                }
-                
-            }
-
-        }
-
-        $cache_control = [];
-
-        if($cache_config->has('reply'))
-            $cache_control[] = $cache_config->get('reply');
-        elseif($cache_config->get('no-store') === true)
-            $cache_control[] = 'no-store';
-        elseif($cache_config->get('no-cache') === true)
-            $cache_control[] = 'no-cache';
-        elseif($cache_config->has('public'))
-            $cache_control[] = $cache_config->get('public') ? 'public' : 'private';
-        elseif($cache_config->has('private'))
-            $cache_control[] = $cache_config->get('private') ? 'private' : 'public';
-
-        if($cache_config->has('max-age') 
-            && !($cache_config->reply === 'no-cache' 
-                || $cache_config->reply === 'no-store'
-                || $cache_config->get('no-cache') === true
-                || $cache_config->get('no-store') === true))
-            $cache_control[] = 'max-age=' . $cache_config->get('max-age');
-
-        if(count($cache_control) > 0)
-            return $this->setHeader('Cache-Control', implode(', ', $cache_control));
-
-        return false;
 
     }
 
