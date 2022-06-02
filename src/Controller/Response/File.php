@@ -23,8 +23,6 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
 
         parent::__construct();
 
-        $this->setHeader('Cache-Control', 'public, max-age=300');
-
         if($file !== NULL)
             $this->load($file, $backend);
 
