@@ -315,7 +315,7 @@ class Application {
             throw new \Exception('Invalid application configuration!');
 
         $this->config = $config;
-        
+
         if($this->config->app->has('alias'))
             Application\Url::$__aliases = $this->config->app->getArray('alias');
 
@@ -368,8 +368,16 @@ class Application {
 
         foreach($initialisers as $property => $class){
 
-            if($this->config->has($property) && class_exists($class))
-                $class::initialise($this->config->get($property));
+            if($this->config->has($property) && class_exists($class)){
+
+                $module_config = $this->config->get($property);
+
+                if(!$module_config instanceof \Hazaar\Map)
+                    throw new \Exception('Invalid configuration module: ' . $property);
+
+                $class::initialise($module_config);
+
+            }
 
         }
              
