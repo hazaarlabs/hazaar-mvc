@@ -407,7 +407,7 @@ class Application {
      *
      * @return \Hazaar\Application The application instance
      */
-    static public function &getInstance() {
+    static public function getInstance() {
 
         if(Application::$instance instanceof Application)
             return Application::$instance;
