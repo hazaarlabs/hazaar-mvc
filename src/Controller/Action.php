@@ -37,7 +37,9 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
     public function __initialize(Request $request){
 
-        if($this->application->config->app->has('layout')) {
+        if($request instanceof Request\Http
+            && $request->isXmlHttpRequest() === false 
+            && $this->application->config->app->has('layout')) {
 
             $this->_helper->ViewRenderer->layout($this->application->config->app['layout']);
 
