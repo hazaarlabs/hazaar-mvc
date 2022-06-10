@@ -7,7 +7,25 @@ namespace Hazaar\Mail;
  *
  * This class provides a common interface for send emails via transport backends.  These backends can be anything from
  * local sendmail execution via the PHP mail() command, or directly using SMTP.
+ * 
+ * ## Configuration Settings
+ * 
+ * * _enable_ - BOOLEAN - This is TRUE by default.  Setting to FALSE will cause any calls to `Adapter::send()` to throw an `\Exception`.
+ * * _transport_ - STRING - This is the default transport to use when one is not specified.  Currently supports 'local' and 'smtp'.
+ * * _testmode_ - BOOLEAN - This is FALSE by default.  Setting it to TRUE will activate test mode.  This is exactly the same as disabling
+ *   emails with `enable = FALSE` except that it will simulate a successful transmission.
+ * * _override_ - This allows recipient emails to be overriden with the email address listed.
+ *   * _to_ - ARRAY - Override all 'to' recipient addresses with the list provided.
+ *   * _cc_ - ARRAY - Override all 'cc' recipient addresses with the list provided.
+ *   * _bcc_ - ARRAY - Override all 'bcc' recipient addresses with the list provided.
+ * * _noOverrideMatch_ - REGEX - Do not override any 'to' recipient email address that match this regex.
  *
+ * Override email address can be either plain strings, or an Array where index 0 is the email address, and index 1 is the recipient name.
+ * 
+ * Example #1: `[ "support@hazaar.io" ]`
+ * 
+ * Example #2: `[ [ "support@hazaar.io", "Hazaar Labs Support" ] ]`
+ * 
  * @since 1.0.0
  */
 class Adapter {
