@@ -50,7 +50,7 @@ class Adapter {
         $this->config = new \Hazaar\Map([
             'enable' => true,
             'testmode' => false,
-            'transport' => self::$default_transport
+            'transport' => $transport !== null ? $transport : self::$default_transport
         ], \Hazaar\Application::getInstance()->config->get('mail'));
 
         $this->transport = $this->getTransportObject($this->config->transport, $this->config);
@@ -418,17 +418,24 @@ class Adapter {
 
         $map_func = function($item){
 
-            return Adapter::encodeEmailAddress($item[0], $item[1]);
+            return is_array($item) ? Adapter::encodeEmailAddress($item[0], $item[1]) : $item;
 
         };
 
-        if(count($this->cc) > 0)
+        if($cc = $this->config->getArray('override.cc'))
+            $headers['CC'] = implode(', ', array_map($map_func, (array)$cc));
+        elseif(count($this->cc) > 0)
             $headers['CC'] = implode(', ', array_map($map_func, $this->cc));
 
-        if(count($this->bcc) > 0)
+        if($bcc = $this->config->getArray('override.bcc'))
+            $headers['BCC'] = implode(', ', array_map($map_func, (array)$bcc));
+        elseif(count($this->bcc) > 0)
             $headers['BCC'] = implode(', ', array_map($map_func, $this->bcc));
 
-        $to = array_map($map_func, $this->to);
+        if($to = $this->config->getArray('override.to'))
+            $to = array_map($map_func, (array)$to);
+        else
+            $to = array_map($map_func, $this->to);
             
         if($subjectPrefix = $this->config->get('subjectPrefix'))
             $this->subject->prepend($subjectPrefix);
