@@ -432,9 +432,26 @@ class Adapter {
         elseif(count($this->bcc) > 0)
             $headers['BCC'] = implode(', ', array_map($map_func, $this->bcc));
 
-        if($to = $this->config->getArray('override.to'))
+        if(($o_to = $this->config->getArray('override.to'))){
+
+            $to = [];
+
+            if($this->config->has('noOverrideMatch')){
+
+                foreach($this->to as $rcpt)
+                    if(preg_match('/' . $this->config->noOverrideMatch . '/', $rcpt[0]))
+                        $to[] = $rcpt;
+
+            }
+
+            if(count($to) === 0)
+                $to = $o_to;
+            
             $to = array_map($map_func, (array)$to);
-        else
+
+            dump($to);
+
+        }else
             $to = array_map($map_func, $this->to);
             
         if($subjectPrefix = $this->config->get('subjectPrefix'))
