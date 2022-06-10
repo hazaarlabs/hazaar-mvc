@@ -429,6 +429,9 @@ class Adapter {
             $headers['BCC'] = implode(', ', array_map($map_func, $this->bcc));
 
         $to = array_map($map_func, $this->to);
+            
+        if($subjectPrefix = $this->config->get('subjectPrefix'))
+            $this->subject->prepend($subjectPrefix);
 
         $result = $this->transport->send($to, $this->subject->render($params), $body, $headers, $this->dsn);
 
