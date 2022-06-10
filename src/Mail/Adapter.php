@@ -12,6 +12,8 @@ namespace Hazaar\Mail;
  */
 class Adapter {
 
+    static private $default_transport = 'local';
+
     private        $transport;
 
     private        $headers = [];
@@ -34,6 +36,8 @@ class Adapter {
 
     private        $last_to = [];
 
+    private        $config;
+
     /**
      * The mail class constructor
      *
@@ -41,16 +45,18 @@ class Adapter {
      *
      * @param string $transport The name of the transport backend to use.
      */
-    function __construct($transport = 'local') {
+    function __construct($transport = null) {
 
-        $config = new \Hazaar\Map([
-            'transport' => 'local'
+        $this->config = new \Hazaar\Map([
+            'enable' => true,
+            'testmode' => false,
+            'transport' => $transport !== null ? $transport : self::$default_transport
         ], \Hazaar\Application::getInstance()->config->get('mail'));
 
-        $this->transport = $this->getTransportObject($config->transport, $config);
+        $this->transport = $this->getTransportObject($this->config->transport, $this->config);
 
-        if($config->has('from'))
-            $this->from = self::encodeEmailAddress(ake($config->from, 'email'), ake($config->from, 'name'));
+        if($this->config->has('from'))
+            $this->from = self::encodeEmailAddress(ake($this->config->from, 'email'), ake($this->config->from, 'name'));
 
     }
 
@@ -70,11 +76,11 @@ class Adapter {
     /**
      * Set the transport backend that should be used
      *
-     * @param \Hazaar\Mail\Transport\Local $transport The transport backend to use.
+     * @param string $transport The transport backend to use.  Options are local, or smtp.
      */
-    static public function setDefaultTransport(Transport $transport) {
+    static public function setDefaultTransport($transport) {
 
-        Adapter::$default_transport = $transport;
+        self::$default_transport = $transport;
 
     }
 
@@ -375,11 +381,17 @@ class Adapter {
      */
     public function send($params = []) {
 
+        if($this->config->enable !== true)
+            throw new \Exception('Mail subsystem is disabled!');
+
         if(! $this->transport instanceof Transport)
             throw new \Exception('No mail transport set while trying to send mail');
 
         if(!$this->from)
             throw new \Exception('No From address specified');
+
+        if($this->config->get('testmode') === true)
+            return true;
 
         /*
          * Add the from address to the extra headers
@@ -406,17 +418,42 @@ class Adapter {
 
         $map_func = function($item){
 
-            return Adapter::encodeEmailAddress($item[0], $item[1]);
+            return is_array($item) ? Adapter::encodeEmailAddress($item[0], $item[1]) : $item;
 
         };
 
-        if(count($this->cc) > 0)
+        if($cc = $this->config->getArray('override.cc'))
+            $headers['CC'] = implode(', ', array_map($map_func, (array)$cc));
+        elseif(count($this->cc) > 0)
             $headers['CC'] = implode(', ', array_map($map_func, $this->cc));
 
-        if(count($this->bcc) > 0)
+        if($bcc = $this->config->getArray('override.bcc'))
+            $headers['BCC'] = implode(', ', array_map($map_func, (array)$bcc));
+        elseif(count($this->bcc) > 0)
             $headers['BCC'] = implode(', ', array_map($map_func, $this->bcc));
 
-        $to = array_map($map_func, $this->to);
+        if(($o_to = $this->config->getArray('override.to'))){
+
+            $to = [];
+
+            if($this->config->has('noOverrideMatch')){
+
+                foreach($this->to as $rcpt)
+                    if(preg_match('/' . $this->config->noOverrideMatch . '/', $rcpt[0]))
+                        $to[] = $rcpt;
+
+            }
+
+            if(count($to) === 0)
+                $to = $o_to;
+            
+            $to = array_map($map_func, (array)$to);
+
+        }else
+            $to = array_map($map_func, $this->to);
+            
+        if($subjectPrefix = $this->config->get('subjectPrefix'))
+            $this->subject->prepend($subjectPrefix);
 
         $result = $this->transport->send($to, $this->subject->render($params), $body, $headers, $this->dsn);
 
