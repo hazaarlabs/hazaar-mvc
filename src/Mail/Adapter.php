@@ -36,6 +36,8 @@ class Adapter {
 
     private        $last_to = [];
 
+    private        $config;
+
     /**
      * The mail class constructor
      *
@@ -45,15 +47,16 @@ class Adapter {
      */
     function __construct($transport = null) {
 
-        $config = new \Hazaar\Map([
-            'transport' => 'local'
+        $this->config = new \Hazaar\Map([
+            'enable' => true,
+            'testmode' => false,
             'transport' => self::$default_transport
         ], \Hazaar\Application::getInstance()->config->get('mail'));
 
-        $this->transport = $this->getTransportObject($config->transport, $config);
+        $this->transport = $this->getTransportObject($this->config->transport, $this->config);
 
-        if($config->has('from'))
-            $this->from = self::encodeEmailAddress(ake($config->from, 'email'), ake($config->from, 'name'));
+        if($this->config->has('from'))
+            $this->from = self::encodeEmailAddress(ake($this->config->from, 'email'), ake($this->config->from, 'name'));
 
     }
 
@@ -378,11 +381,17 @@ class Adapter {
      */
     public function send($params = []) {
 
+        if($this->config->enable !== true)
+            throw new \Exception('Mail subsystem is disabled!');
+
         if(! $this->transport instanceof Transport)
             throw new \Exception('No mail transport set while trying to send mail');
 
         if(!$this->from)
             throw new \Exception('No From address specified');
+
+        if($this->config->get('testmode') === true)
+            return true;
 
         /*
          * Add the from address to the extra headers
