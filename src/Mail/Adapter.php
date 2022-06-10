@@ -12,6 +12,8 @@ namespace Hazaar\Mail;
  */
 class Adapter {
 
+    static private $default_transport = 'local';
+
     private        $transport;
 
     private        $headers = [];
@@ -41,10 +43,11 @@ class Adapter {
      *
      * @param string $transport The name of the transport backend to use.
      */
-    function __construct($transport = 'local') {
+    function __construct($transport = null) {
 
         $config = new \Hazaar\Map([
             'transport' => 'local'
+            'transport' => self::$default_transport
         ], \Hazaar\Application::getInstance()->config->get('mail'));
 
         $this->transport = $this->getTransportObject($config->transport, $config);
@@ -70,11 +73,11 @@ class Adapter {
     /**
      * Set the transport backend that should be used
      *
-     * @param \Hazaar\Mail\Transport\Local $transport The transport backend to use.
+     * @param string $transport The transport backend to use.  Options are local, or smtp.
      */
-    static public function setDefaultTransport(Transport $transport) {
+    static public function setDefaultTransport($transport) {
 
-        Adapter::$default_transport = $transport;
+        self::$default_transport = $transport;
 
     }
 
