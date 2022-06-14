@@ -40,6 +40,21 @@ define('APPLICATION_NAME', array_values(array_slice(explode(DIRECTORY_SEPARATOR,
 putenv('HOME=' . APPLICATION_PATH);
 
 /**
+ * @brief Constant containing the absolute filesystem path that contains the whole project.
+ */
+define('ROOT_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..'));
+
+/**
+ * @brief Constant containing the absolute filesystem path to the default configuration directory.
+ */
+define('CONFIG_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'configs'));
+
+/**
+ * @brief Constant containing the absolute filesystem path to the application public directory.
+ */
+define('PUBLIC_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'public'));
+
+/**
  * Change the current working directory to the application path so that all paths are relative to it.
  */
 chdir(APPLICATION_PATH);
