@@ -28,7 +28,8 @@
   ],
   "autoload": {
     "files": [
-      "src/ErrorControl.php"
+      "src/ErrorControl.php",
+      "src/Loader.php"
     ],
     "psr-4": {
       "Hazaar\\": "src/"
