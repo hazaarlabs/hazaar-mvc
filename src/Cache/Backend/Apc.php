@@ -80,6 +80,9 @@ class Apc extends \Hazaar\Cache\Backend {
         if(!$timeout && $this->options->lifetime > 0)
             $timeout = $this->options->lifetime;
 
+        if(array_key_exists($key, $this->refresh))
+            unset($this->refresh[$key]);
+
         return apcu_store($this->key($key), $value, $timeout);
 
     }
