@@ -75,7 +75,7 @@ class Cache implements \ArrayAccess {
             $backend = [$backend];
 
         //We set this now as it is an absolute safe fallback
-        $backendClass = '\\Hazaar\\Cache\\Backend\\File';
+        $backend[] = 'file';
 
         foreach($backend as $name){
 
