@@ -654,8 +654,7 @@ function getApplicationPath($search_path = null){
     if($path = getenv('APPLICATION_PATH'))
         return $path;
 
-    if($search_path === null)
-        $search_path = getcwd();
+    $search_path = ($search_path === null) ? getcwd() : realpath($search_path);
 
     $count = 0;
 
@@ -674,6 +673,6 @@ function getApplicationPath($search_path = null){
 
     }while($search_path = dirname($search_path));
 
-    die('Unable to determine application path!');
+    die('Unable to determine application path: search_path=' . $search_path);
 
 }
