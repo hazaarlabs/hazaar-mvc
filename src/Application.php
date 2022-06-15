@@ -21,16 +21,6 @@ define('HAZAAR_VERSION', '3.0');
 defined('APPLICATION_ENV') || define('APPLICATION_ENV', (getenv('APPLICATION_ENV') ? getenv('APPLICATION_ENV') : 'development'));
 
 /**
- * Constant containing the path in which the current application resides.
- */
-defined('APPLICATION_PATH') || define('APPLICATION_PATH', realpath(dirname($_SERVER['SCRIPT_FILENAME']) . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'application'));
-
-/**
- * Constant containing the application base path relative to the document root.
- */
-define('APPLICATION_BASE', dirname($_SERVER['SCRIPT_NAME']));
-
-/**
  * Constant containing the detected 'name' of the application.
  *
  * Essentially this is the name of the directory the application is stored in.
