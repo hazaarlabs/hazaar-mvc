@@ -22,7 +22,9 @@ class File extends \Hazaar\Logger\Backend {
 
         $this->setDefaultOption('logfile', \Hazaar\Application::getInstance()->runtimePath('hazaar.log'));
 
-        if(($log_file = $this->getOption('logfile')) && is_writable(dirname($log_file))){
+        if(($log_file = $this->getOption('logfile')) 
+            && is_writable(dirname($log_file))
+            && (!\file_exists($log_file) || \is_writable($log_file))){
 
             if(($this->hLog = fopen($log_file, 'a')) == false)
                 throw new Exception\OpenLogFileFailed($log_file);
@@ -31,7 +33,9 @@ class File extends \Hazaar\Logger\Backend {
         
         $this->setDefaultOption('errfile', \Hazaar\Application::getInstance()->runtimePath('error.log'));
 
-        if(($error_file = $this->getOption('errfile')) && is_writable(dirname($error_file))){
+        if(($error_file = $this->getOption('errfile')) 
+            && is_writable(dirname($error_file))
+            && (!\file_exists($error_file) || \is_writeable($error_file))){
 
             if(($this->hErr = fopen($error_file, 'a')) == false)
                 throw new Exception\OpenLogFileFailed($error_file);
