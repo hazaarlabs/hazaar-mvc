@@ -33,7 +33,7 @@ class Apc extends \Hazaar\Cache\Backend {
         //Make sure APCU extension is loaded
         return in_array('apcu', get_loaded_extensions()) 
             //Check that we are either not on the CLI or that APCU CLI is enabled.
-            && (\php_sapi_name() !== 'cli' || ini_get('apc.cli_enable') === 1); 
+            && (\php_sapi_name() !== 'cli' || ini_get('apc.enable_cli') === '1'); 
 
     }
 
