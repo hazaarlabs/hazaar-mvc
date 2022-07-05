@@ -402,8 +402,15 @@ class Hmv extends \Hazaar\View\Helper {
 
                 }
 
-                if($input instanceof \Hazaar\Html\Element && $placeholder = ake($def, 'placeholder'))
+            }
+
+            if($input instanceof \Hazaar\Html\Element){
+
+                if($placeholder = ake($def, 'placeholder'))
                     $input->placeholder($placeholder);
+
+                if(ake($def, 'disabled') === true)
+                    $input->prop('disabled');
 
             }
 
