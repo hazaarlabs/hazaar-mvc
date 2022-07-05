@@ -279,7 +279,9 @@ class Hmv extends \Hazaar\View\Helper {
             }elseif($item instanceof \Hazaar\Model\Strict){
 
                 //If the object definition has a data source, use that to create the select
-                if($data = $this->getItemData($def, $item)){
+                $data = $this->getItemData($def, $item);
+
+                if(is_array($data)){
 
                     $labelTD = $this->html->td($this->html->label($label)->for($name));
 
