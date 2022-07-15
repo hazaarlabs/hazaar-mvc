@@ -561,7 +561,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             elseif ($this->allow_undefined === false)
                 throw new Exception\FieldUndefined($key);
 
-            $this->fields[$key] = ['type' => gettype($value)];
+            $type = gettype($value);
+
+            $this->fields[$key] = ['type' => (($type === 'array' && is_assoc($value)) ? 'model' : $type)];
 
         }
 
