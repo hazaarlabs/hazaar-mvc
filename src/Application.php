@@ -148,6 +148,9 @@ class Application {
             if(!$config->loaded())
                 dieDieDie('Application is not configured!');
 
+            if($config->app['polyfill'] === true)
+                require_once('Polyfill.php');
+
             /*
              * Check if we require SSL and don't have and if so, redirect here.
              */
@@ -275,6 +278,7 @@ class Application {
                 'useDefaultController' => false,
                 'favicon' => 'favicon.png',
                 'timezone' => 'UTC',
+                'polyfill' => true,
                 'rewrite' => true,
                 'files' => [
                     'bootstrap' => 'bootstrap.php',
@@ -462,7 +466,7 @@ class Application {
 
         $path = realpath($path);
 
-        if(!($suffix = trim($suffix)))
+        if($suffix === null || !($suffix = trim($suffix)))
             return $path;
 
         if($suffix && substr($suffix, 0, 1) != DIRECTORY_SEPARATOR)

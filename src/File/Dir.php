@@ -446,12 +446,12 @@ class Dir implements _Interface {
 
     }
 
-    public function rewind() {
+    public function rewind() : void {
 
         if(! is_array($this->files))
-            return FALSE;
+            return;
 
-        return reset($this->files);
+        reset($this->files);
 
     }
 

@@ -820,7 +820,8 @@ class View implements \ArrayAccess {
 
     }
 
-    public function offsetGet($offset){
+    #[\ReturnTypeWillChange]
+    public function offsetGet($offset) {
 
         return $this->_data[$offset];
 

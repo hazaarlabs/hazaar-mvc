@@ -382,32 +382,35 @@ class Loader {
 
 		$loader = Loader::getInstance();
 
-        $search_file = Loader::fixDirectorySeparator($search_file);
+        if($search_file){
 
-        //If the search file is an absolute path just return it if it exists.
-        if(Loader::isAbsolutePath($search_file)){
+            $search_file = Loader::fixDirectorySeparator($search_file);
 
-            return Loader::resolveRealPath($search_file);
+            //If the search file is an absolute path just return it if it exists.
+            if(Loader::isAbsolutePath($search_file))
+                return Loader::resolveRealPath($search_file);
 
-        }elseif($paths = $loader->getSearchPaths($type)){
+        }
 
-			foreach($paths as $path){
+        if($paths = $loader->getSearchPaths($type)){
 
-				$filename = $path . DIRECTORY_SEPARATOR . $search_file;
+            foreach($paths as $path){
 
-				if($realpath = Loader::resolveRealPath($filename, $case_insensitive))
-					return $realpath;
+                $filename = $path . DIRECTORY_SEPARATOR . $search_file;
 
-			}
+                if($realpath = Loader::resolveRealPath($filename, $case_insensitive))
+                    return $realpath;
 
-		} else {
+            }
 
-			$absolute_path = $base_path . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR . $search_file;
+        } else {
 
-			if(file_exists($absolute_path))
-				return realpath($absolute_path);
+            $absolute_path = $base_path . DIRECTORY_SEPARATOR . $type . DIRECTORY_SEPARATOR . $search_file;
 
-		}
+            if(file_exists($absolute_path))
+                return realpath($absolute_path);
+
+        }
 
 		return NULL;
 
