@@ -39,7 +39,7 @@ class View implements \ArrayAccess {
 
         $this->load($view);
 
-        $this->_helpers['application'] = Application::getInstance();
+        $this->_helpers['application'] = $app = Application::getInstance();
 
         if (is_array($init_helpers) && count($init_helpers) > 0){
 
@@ -48,69 +48,63 @@ class View implements \ArrayAccess {
 
         }
 
-        if (substr($view, 0, 1) !== '@' && $this->application->config->has('view')) {
+        if (substr($view, 0, 1) !== '@' 
+            && ($config = $app->config->get('view'))
+            && $config->has('helper')) {
 
-            if ($this->application->config->view->has('helper')) {
+            $load = $this->application->config->view->helper->load;
 
-                $load = $this->application->config->view->helper->load;
+            if (!Map::is_array($load))
+                $load = new Map([$load]);
 
-                if (!Map::is_array($load))
-                    $load = new Map([$load]);
+            $helpers = new Map();
 
-                $helpers = new Map();
+            foreach($load as $key => $helper) {
 
-                foreach($load as $key => $helper) {
+                //Check if the helper is in the old INI file format and parse it if it is.
+                if (Map::is_array($helper)){
 
-                    //Check if the helper is in the old INI file format and parse it if it is.
-                    if (!Map::is_array($helper)){
+                    $this->addHelper($key, $helper->toArray());
 
-                        if(preg_match('/(\w*)\[(.*)\]/', trim($helper), $matches)) {
-
-                            $key = $matches[1];
-
-                            $helper = array_unflatten($matches[2], '=', ',');
-
-                            //Fix the values so they are the correct types
-                            foreach($helper as &$arg) {
-
-                                if($arg = trim($arg)) {
-
-                                    if (in_array(strtolower($arg), ['yes','no','true','false','on','off'])) {
-
-                                        $arg = boolify($arg);
-
-                                    } elseif (is_numeric($arg)) {
-
-                                        if (strpos($arg, '.') === FALSE)
-                                            settype($arg, 'int');
-                                        else
-                                            settype($arg, 'float');
-
-                                    }
-
-                                }
-
-                            }
-
-                            $helpers[$key]->fromDotNotation($helper);
-
-                            //If there is no config and it is just the helper name, just convert it to the new format
-                        }else{
-
-                            $helpers[$helper] = [];
-
-                        }
-
-                    }else{
-
-                        $helpers[$key] = $helper;
-
-                    }
+                    continue;
 
                 }
 
-                foreach($helpers as $helper => $args)
-                    $this->addHelper($helper, $args->toArray());
+                $args = [];
+
+                if(preg_match('/(\w*)\[(.*)\]/', trim($helper), $matches)) {
+
+                    $key = $matches[1];
+
+                    $helper = array_unflatten($matches[2], '=', ',');
+
+                    //Fix the values so they are the correct types
+                    foreach($helper as &$arg) {
+
+                        if($arg = trim($arg)) {
+
+                            if (in_array(strtolower($arg), ['yes','no','true','false','on','off'])) {
+
+                                $arg = boolify($arg);
+
+                            } elseif (is_numeric($arg)) {
+
+                                if (strpos($arg, '.') === FALSE)
+                                    settype($arg, 'int');
+                                else
+                                    settype($arg, 'float');
+
+                            }
+
+                        }
+
+                    }
+
+                    $args = array_from_dot_notation($helper);
+
+                }
+
+                $this->addHelper($key, $args);
 
             }
 

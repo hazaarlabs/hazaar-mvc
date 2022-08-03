@@ -377,7 +377,7 @@ class Layout extends \Hazaar\View {
 
         $app_url = (string)\Hazaar\Application::getInstance()->url();
 
-        if(!substr($request->referer(), 0, strlen($app_url)) == $app_url)
+        if(substr($request->referer(), 0, strlen($app_url)) !== $app_url)
             throw new \Hazaar\Exception('You are not allowed to access this resource!', 403);
 
         $this->application->config->app['compress'] = false;

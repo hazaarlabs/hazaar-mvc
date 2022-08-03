@@ -92,6 +92,12 @@ class Response implements Response\_Interface {
 
     }
 
+    public function getHeaders(){
+
+        return $this->headers;
+
+    }
+    
     public function & getHeader($key) {
 
         if($header = ake($this->headers, $key)) {

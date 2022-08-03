@@ -50,29 +50,24 @@ class Error extends \Hazaar\Controller\Action {
 
         $response = parent::__initialize($request);
 
-        if ($request instanceof \Hazaar\Application\Request\Http && function_exists('apache_request_headers')) {
+        if ($request instanceof \Hazaar\Application\Request\Http) {
 
             if($response = $this->application->getResponseType()){
 
                 $this->response = $response;
 
-            }else{
+            }elseif($x_requested_with = $request->getHeader('X-Requested-With')){
 
-                $h = apache_request_headers();
+                switch ($x_requested_with) {
+                    case 'XMLHttpRequest' :
+                        $this->response = 'json';
 
-                if (array_key_exists('X-Requested-With', $h)) {
+                        break;
 
-                    switch ($h['X-Requested-With']) {
-                        case 'XMLHttpRequest' :
-                            $this->response = 'json';
+                    case 'XMLRPCRequest' :
+                        $this->response = 'xmlrpc';
 
-                            break;
-
-                        case 'XMLRPCRequest' :
-                            $this->response = 'xmlrpc';
-
-                            break;
-                    }
+                        break;
                 }
 
             }

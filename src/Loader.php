@@ -62,6 +62,16 @@ define('FILE_PATH_PUBLIC', 'public');
 define('LINE_BREAK', ((substr(PHP_OS, 0, 3) == 'WIN')?"\r\n":"\n"));
 
 /**
+ * Constant containing the path in which the current application resides.
+ */
+defined('APPLICATION_PATH') || define('APPLICATION_PATH', getApplicationPath($_SERVER['SCRIPT_FILENAME']));
+
+/**
+ * Constant containing the application base path relative to the document root.
+ */
+define('APPLICATION_BASE', dirname($_SERVER['SCRIPT_NAME']));
+
+/**
  * @brief Constant containing the absolute filesystem path that contains the whole project.
  */
 define('ROOT_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..'));
@@ -639,5 +649,33 @@ class Loader {
 		return FALSE;
 
 	}
+
+}
+
+function getApplicationPath($search_path = null){
+
+    if($path = getenv('APPLICATION_PATH'))
+        return $path;
+
+    $search_path = ($search_path === null) ? getcwd() : realpath($search_path);
+
+    $count = 0;
+
+    do{
+
+        if(substr($search_path, 1, 1) === ':')
+            $search_path = substr($search_path, 2);
+
+        if(file_exists($search_path . DIRECTORY_SEPARATOR . 'application')
+            && file_exists($search_path . DIRECTORY_SEPARATOR . 'public')
+            && file_exists($search_path . DIRECTORY_SEPARATOR . 'vendor'))
+            return realpath($search_path . DIRECTORY_SEPARATOR . 'application');
+
+        if($search_path === DIRECTORY_SEPARATOR || ++$count >= 16)
+            break;
+
+    }while($search_path = dirname($search_path));
+
+    die('Unable to determine application path: search_path=' . $search_path);
 
 }

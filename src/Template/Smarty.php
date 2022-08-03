@@ -119,6 +119,28 @@ class Smarty {
     }
 
     /**
+     * Prepend a string to the existing content.
+     * 
+     * @var string $string The string to prepend.
+     */
+    public function prepend($string){
+
+        $this->__content = $string . $this->__content;
+
+    }
+
+    /**
+     * Append a string to the existing content.
+     * 
+     * @var string $string The string to append.
+     */
+    public function append($string){
+
+        $this->__content .= $string;
+
+    }
+
+    /**
      * Render the template with the supplied parameters and return the rendered content
      *
      * @param mixed $params Parameters to use when embedding variables in the rendered template.
