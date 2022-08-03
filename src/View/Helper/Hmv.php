@@ -279,7 +279,9 @@ class Hmv extends \Hazaar\View\Helper {
             }elseif($item instanceof \Hazaar\Model\Strict){
 
                 //If the object definition has a data source, use that to create the select
-                if($data = $this->getItemData($def, $item)){
+                $data = $this->getItemData($def, $item);
+
+                if(is_array($data)){
 
                     $labelTD = $this->html->td($this->html->label($label)->for($name));
 
@@ -400,8 +402,15 @@ class Hmv extends \Hazaar\View\Helper {
 
                 }
 
-                if($input instanceof \Hazaar\Html\Element && $placeholder = ake($def, 'placeholder'))
+            }
+
+            if($input instanceof \Hazaar\Html\Element){
+
+                if($placeholder = ake($def, 'placeholder'))
                     $input->placeholder($placeholder);
+
+                if(ake($def, 'disabled') === true)
+                    $input->prop('disabled');
 
             }
 

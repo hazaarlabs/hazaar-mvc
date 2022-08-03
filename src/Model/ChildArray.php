@@ -14,11 +14,11 @@ namespace Hazaar\Model;
  */
 class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable {
 
-    private $type;
+    protected $type;
 
-    private $allow_undefined = false;
+    protected $allow_undefined = false;
 
-    private $values = [];
+    protected $values = [];
 
     /**
      * ChildArray Constructor

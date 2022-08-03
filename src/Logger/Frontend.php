@@ -54,9 +54,12 @@ class Frontend {
 
     }
 
-    static public function initialise($level = NULL, $backend = NULL, $backend_options = []) {
-
-        Frontend::$logger = new Frontend($level, $backend, $backend_options);
+    static public function initialise(\Hazaar\Map $config) {
+          
+        if($config->enable !== true)
+            return;
+            
+        Frontend::$logger = new Frontend($config->get('level'), $config->get('backend'), $config->get('options'));
 
         eval('class log extends \Hazaar\Logger\Frontend{};');
 

@@ -7,10 +7,30 @@ namespace Hazaar\Mail;
  *
  * This class provides a common interface for send emails via transport backends.  These backends can be anything from
  * local sendmail execution via the PHP mail() command, or directly using SMTP.
+ * 
+ * ## Configuration Settings
+ * 
+ * * _enable_ - BOOLEAN - This is TRUE by default.  Setting to FALSE will cause any calls to `Adapter::send()` to throw an `\Exception`.
+ * * _transport_ - STRING - This is the default transport to use when one is not specified.  Currently supports 'local' and 'smtp'.
+ * * _testmode_ - BOOLEAN - This is FALSE by default.  Setting it to TRUE will activate test mode.  This is exactly the same as disabling
+ *   emails with `enable = FALSE` except that it will simulate a successful transmission.
+ * * _override_ - This allows recipient emails to be overriden with the email address listed.
+ *   * _to_ - ARRAY - Override all 'to' recipient addresses with the list provided.
+ *   * _cc_ - ARRAY - Override all 'cc' recipient addresses with the list provided.
+ *   * _bcc_ - ARRAY - Override all 'bcc' recipient addresses with the list provided.
+ * * _noOverrideMatch_ - REGEX - Do not override any 'to' recipient email address that match this regex.
  *
+ * Override email address can be either plain strings, or an Array where index 0 is the email address, and index 1 is the recipient name.
+ * 
+ * Example #1: `[ "support@hazaar.io" ]`
+ * 
+ * Example #2: `[ [ "support@hazaar.io", "Hazaar Labs Support" ] ]`
+ * 
  * @since 1.0.0
  */
 class Adapter {
+
+    static private $default_transport = 'local';
 
     private        $transport;
 
@@ -32,6 +52,10 @@ class Adapter {
 
     private        $dsn     = [];
 
+    private        $last_to = [];
+
+    private        $config;
+
     /**
      * The mail class constructor
      *
@@ -39,16 +63,18 @@ class Adapter {
      *
      * @param string $transport The name of the transport backend to use.
      */
-    function __construct($transport = 'local') {
+    function __construct($transport = null) {
 
-        $config = new \Hazaar\Map([
-            'transport' => 'local'
+        $this->config = new \Hazaar\Map([
+            'enable' => true,
+            'testmode' => false,
+            'transport' => $transport !== null ? $transport : self::$default_transport
         ], \Hazaar\Application::getInstance()->config->get('mail'));
 
-        $this->transport = $this->getTransportObject($config->transport, $config);
+        $this->transport = $this->getTransportObject($this->config->transport, $this->config);
 
-        if($config->has('from'))
-            $this->from = $this->encodeEmailAddress(ake($config->from, 'email'), ake($config->from, 'name'));
+        if($this->config->has('from'))
+            $this->from = self::encodeEmailAddress(ake($this->config->from, 'email'), ake($this->config->from, 'name'));
 
     }
 
@@ -68,11 +94,11 @@ class Adapter {
     /**
      * Set the transport backend that should be used
      *
-     * @param \Hazaar\Mail\Transport\Local $transport The transport backend to use.
+     * @param string $transport The transport backend to use.  Options are local, or smtp.
      */
-    static public function setDefaultTransport(Transport $transport) {
+    static public function setDefaultTransport($transport) {
 
-        Adapter::$default_transport = $transport;
+        self::$default_transport = $transport;
 
     }
 
@@ -83,7 +109,7 @@ class Adapter {
      *
      * @param string $name The name part
      */
-    private function encodeEmailAddress($email, $name) {
+    static private function encodeEmailAddress($email, $name) {
 
         $email = trim($email);
 
@@ -102,7 +128,7 @@ class Adapter {
      */
     public function setFrom($email, $name = NULL) {
 
-        $this->from = $this->encodeEmailAddress($email, $name);
+        $this->from = self::encodeEmailAddress($email, $name);
 
     }
 
@@ -115,9 +141,9 @@ class Adapter {
      */
     public function setReplyTo($email, $name = NULL) {
 
-        $this->headers['Reply-To'] = $this->encodeEmailAddress($email, $name);
+        $this->headers['Reply-To'] = self::encodeEmailAddress($email, $name);
 
-        $this->headers['Return-Path'] = $this->encodeEmailAddress($email, $name);
+        $this->headers['Return-Path'] = self::encodeEmailAddress($email, $name);
 
     }
 
@@ -147,8 +173,20 @@ class Adapter {
      */
     public function addTo($email, $name = NULL) {
 
-        $this->to[] = $this->encodeEmailAddress($email, $name);
+        $this->to[] = [$email, $name];
 
+    }
+
+    public function getTo(){
+
+        return $this->to;
+
+    }
+
+    public function getLastTo(){
+
+        return $this->last_to;
+        
     }
 
     /**
@@ -160,7 +198,13 @@ class Adapter {
      */
     public function addCC($email, $name = NULL) {
 
-        $this->cc[] = $this->encodeEmailAddress($email, $name);
+        $this->cc[] = [$email, $name];
+
+    }
+
+    public function getCC(){
+
+        return $this->cc;
 
     }
 
@@ -173,7 +217,13 @@ class Adapter {
      */
     public function addBCC($email, $name = NULL) {
 
-        $this->bcc[] = $this->encodeEmailAddress($email, $name);
+        $this->bcc[] = [$email, $name];
+
+    }
+
+    public function getBCC(){
+
+        return $this->bcc;
 
     }
 
@@ -349,8 +399,17 @@ class Adapter {
      */
     public function send($params = []) {
 
+        if($this->config->enable !== true)
+            throw new \Exception('Mail subsystem is disabled!');
+
         if(! $this->transport instanceof Transport)
             throw new \Exception('No mail transport set while trying to send mail');
+
+        if(!$this->from)
+            throw new \Exception('No From address specified');
+
+        if($this->config->get('testmode') === true)
+            return true;
 
         /*
          * Add the from address to the extra headers
@@ -375,13 +434,48 @@ class Adapter {
 
         }
 
-        if(count($this->cc) > 0)
-            $headers['CC'] = implode(', ', $this->cc);
+        $map_func = function($item){
 
-        if(count($this->bcc) > 0)
-            $headers['BCC'] = implode(', ', $this->bcc);
-        
-        $result = $this->transport->send($this->to, $this->subject->render($params), $body, $headers, $this->dsn);
+            return is_array($item) ? Adapter::encodeEmailAddress($item[0], $item[1]) : $item;
+
+        };
+
+        if($cc = $this->config->getArray('override.cc'))
+            $headers['CC'] = implode(', ', array_map($map_func, (array)$cc));
+        elseif(count($this->cc) > 0)
+            $headers['CC'] = implode(', ', array_map($map_func, $this->cc));
+
+        if($bcc = $this->config->getArray('override.bcc'))
+            $headers['BCC'] = implode(', ', array_map($map_func, (array)$bcc));
+        elseif(count($this->bcc) > 0)
+            $headers['BCC'] = implode(', ', array_map($map_func, $this->bcc));
+
+        if(($o_to = $this->config->getArray('override.to'))){
+
+            $to = [];
+
+            if($this->config->has('noOverrideMatch')){
+
+                foreach($this->to as $rcpt)
+                    if(preg_match('/' . $this->config->noOverrideMatch . '/', $rcpt[0]))
+                        $to[] = $rcpt;
+
+            }
+
+            if(count($to) === 0)
+                $to = $o_to;
+            
+            $to = array_map($map_func, (array)$to);
+
+        }else
+            $to = array_map($map_func, $this->to);
+            
+        if($subjectPrefix = $this->config->get('subjectPrefix'))
+            $this->subject->prepend($subjectPrefix);
+
+        $result = $this->transport->send($to, $this->subject->render($params), $body, $headers, $this->dsn);
+
+        $this->last_to = $this->to;
 
         if($result)
             $this->clear();

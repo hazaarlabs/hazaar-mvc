@@ -107,7 +107,7 @@ abstract class DataTypeConverter  {
 
                     $value = boolify($value);
 
-                }elseif($type == 'list'){
+                }elseif($type === 'list' || $type === 'array'){
 
                     if(!$value instanceof ChildArray){
 
