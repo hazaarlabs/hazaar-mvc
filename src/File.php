@@ -1427,7 +1427,8 @@ class File implements File\_Interface, \JsonSerializable {
         return $file->unlink();
     }
 
-    public function jsonSerialize() : mixed {
+    #[\ReturnTypeWillChange]
+    public function jsonSerialize() {
 
         return $this->get_encoded_contents();
     }

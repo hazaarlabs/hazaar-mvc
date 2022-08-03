@@ -1075,7 +1075,8 @@ class Element implements \ArrayAccess, \Iterator {
     /**
      * Return the current child element
      */
-    public function current() : mixed {
+    #[\ReturnTypeWillChange]
+    public function current() {
 
         if(! is_array($this->__children))
             return ($this->__reset ? $this : NULL);
@@ -1087,7 +1088,8 @@ class Element implements \ArrayAccess, \Iterator {
     /**
      * Move to the next child element
      */
-    public function next() : mixed {
+    #[\ReturnTypeWillChange]
+    public function next() {
 
         if(! is_array($this->__children))
             return ($this->__reset = FALSE);
@@ -1099,7 +1101,8 @@ class Element implements \ArrayAccess, \Iterator {
     /**
      * Return the key of the current child element
      */
-    public function key() : mixed {
+    #[\ReturnTypeWillChange]
+    public function key() {
 
         if(! is_array($this->__children))
             return ($this->__reset ? $this->__name : NULL);

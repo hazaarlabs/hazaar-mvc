@@ -257,7 +257,8 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function offsetGet($offset) : mixed {
+    #[\ReturnTypeWillChange]
+    public function offsetGet($offset) {
 
         return $this->values[$offset];
 
@@ -289,7 +290,8 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function current() : mixed{
+    #[\ReturnTypeWillChange]
+    public function current() {
 
         return current($this->values);
 
@@ -301,7 +303,8 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function key() : mixed{
+    #[\ReturnTypeWillChange]
+    public function key() {
 
         return key($this->values);
 
@@ -371,7 +374,8 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function jsonSerialize() : mixed {
+    #[\ReturnTypeWillChange]
+    public function jsonSerialize() {
 
         return $this->values;
 
