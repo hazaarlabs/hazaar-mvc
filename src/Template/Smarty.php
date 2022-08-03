@@ -296,17 +296,23 @@ class Smarty {
 
         foreach($parts as $part){
 
-            list($left, $right) = explode('=', $part, 2);
+            $part_parts = explode('=', $part, 2);
 
-            if(preg_match_all("/`(.*)`/", $right, $matches)){
+            if(count($part_parts) >= 2){
 
-                foreach($matches[0] as $id => $match)
-                    $right = str_replace($match, '{' . $this->compileVAR($matches[1][$id]) . '}', $right);
+                list($left, $right) = $part_parts;
 
-            }
+                if(preg_match_all("/`(.*)`/", $right, $matches)){
 
-            $params[$left] = $right;
+                    foreach($matches[0] as $id => $match)
+                        $right = str_replace($match, '{' . $this->compileVAR($matches[1][$id]) . '}', $right);
 
+                }
+
+                $params[$left] = $right;
+
+            }else $params[] = $part;
+            
         }
 
         return $params;
