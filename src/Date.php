@@ -777,7 +777,8 @@ class Date extends \DateTime implements \JsonSerializable {
     /**
      * Outputs the UTC timestamp (EPOCH) When an object is included in a json_encode call.
      */
-    public function jsonSerialize() : mixed {
+    #[\ReturnTypeWillChange]
+    public function jsonSerialize() {
 
         return ($this->instance_format ? parent::format($this->instance_format) : $this->timestamp());
 

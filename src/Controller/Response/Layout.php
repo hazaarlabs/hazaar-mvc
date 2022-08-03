@@ -61,9 +61,10 @@ class Layout extends \Hazaar\Controller\Response\Html implements \ArrayAccess {
 
     }
 
-    public function offsetGet($offset) : mixed {
+    #[\ReturnTypeWillChange]
+    public function offsetGet($offset) {
 
-        return $this->_layout->get($key);
+        return $this->_layout->get($offset);
 
     }
 

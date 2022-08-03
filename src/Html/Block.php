@@ -298,11 +298,12 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     }
 
-    public function offsetGet($offset) : mixed {
+    #[\ReturnTypeWillChange]
+    public function offsetGet($offset) {
 
-        if(array_key_exists($key, $this->content)) {
+        if(array_key_exists($offset, $this->content)) {
 
-            return $this->content[$key];
+            return $this->content[$offset];
 
         }
 
@@ -346,7 +347,8 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     }
 
-    public function current() : mixed {
+    #[\ReturnTypeWillChange]
+    public function current()  {
 
         return current($this->content);
 
@@ -358,7 +360,8 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     }
 
-    public function key() : mixed {
+    #[\ReturnTypeWillChange]
+    public function key() {
 
         return key($this->content);
 

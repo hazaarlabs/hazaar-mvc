@@ -104,7 +104,8 @@ class Property implements \ArrayAccess {
 
     }
 
-    public function offsetGet($offset) : mixed {
+    #[\ReturnTypeWillChange]
+    public function offsetGet($offset) {
 
         $offset = $this->fkey($offset);
 
