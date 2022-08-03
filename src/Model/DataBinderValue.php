@@ -57,7 +57,8 @@ class DataBinderValue implements \JsonSerializable {
 
     }
 
-    public function jsonSerialize(){
+    #[\ReturnTypeWillChange]
+    public function jsonSerialize() {
 
         return $this->toArray();
 

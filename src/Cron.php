@@ -251,7 +251,7 @@ class Cron {
                 // to use later to find the right date. The following line probably looks
                 // a little odd but thats the easiest way of adding/substracting a day without
                 // screwing up the date. Just trust me on that one ;-)
-                $rtime = explode(',', strftime('%M,%H,%d,%m,%w,%Y', mktime($rtime[IDX_HOUR], $rtime[IDX_MINUTE], 0, $rtime[IDX_MONTH], $rtime[IDX_DAY], $rtime[IDX_YEAR]) + ((($next) ? 1 : -1) * 86400)));
+                $rtime = explode(',', str_ftime('%M,%H,%d,%m,%w,%Y', mktime($rtime[IDX_HOUR], $rtime[IDX_MINUTE], 0, $rtime[IDX_MONTH], $rtime[IDX_DAY], $rtime[IDX_YEAR]) + ((($next) ? 1 : -1) * 86400)));
 
             } else {
 
@@ -270,7 +270,7 @@ class Cron {
 
                         $nhour = reset($cron[IDX_HOUR]);
 
-                        $rtime = explode(',', strftime('%M,%H,%d,%m,%w,%Y', mktime($nhour, $nminute, 0, $rtime[IDX_MONTH], $rtime[IDX_DAY], $rtime[IDX_YEAR]) + ((($next) ? 1 : -1) * 86400)));
+                        $rtime = explode(',', str_ftime('%M,%H,%d,%m,%w,%Y', mktime($nhour, $nminute, 0, $rtime[IDX_MONTH], $rtime[IDX_DAY], $rtime[IDX_YEAR]) + ((($next) ? 1 : -1) * 86400)));
 
                     } else {
 
@@ -346,7 +346,7 @@ class Cron {
                                     if(in_array($dow, $cron[IDX_WEEKDAY])) {
 
                                         // WIN! :-) We found a valid date...
-                                        $rtime = explode(',', strftime('%M,%H,%d,%m,%w,%Y', mktime($rtime[IDX_HOUR], $rtime[IDX_MINUTE], 0, $nmonth, $nday, $nyear)));
+                                        $rtime = explode(',', str_ftime('%M,%H,%d,%m,%w,%Y', mktime($rtime[IDX_HOUR], $rtime[IDX_MINUTE], 0, $nmonth, $nday, $nyear)));
 
                                         return mktime($rtime[1], $rtime[0], 0, $rtime[3], $rtime[2], $rtime[5]);
 
@@ -395,7 +395,7 @@ class Cron {
         if(is_null($timestamp))
             $timestamp = time();
 
-        $arr = explode(',', strftime('%M,%H,%d,%m,%w,%Y', $timestamp));
+        $arr = explode(',', str_ftime('%M,%H,%d,%m,%w,%Y', $timestamp));
 
         // Remove leading zeros (or we'll get in trouble ;-)
         array_walk($arr, function(&$value){ $value = intval($value); });

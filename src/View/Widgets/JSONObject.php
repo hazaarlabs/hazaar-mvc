@@ -164,7 +164,7 @@ class JSONObject extends \Hazaar\View\ViewableObject {
      *
      * @return      int
      */
-    public function count() {
+    public function count() : int {
 
         return count($this->properties);
 

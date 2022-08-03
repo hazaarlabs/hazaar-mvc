@@ -431,7 +431,7 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return mixed
      */
-    public function get_contents($offset = null, $maxlen = NULL) {
+    public function get_contents($offset = -1, $maxlen = NULL) {
 
         if ($this->contents)
             return is_array($this->contents) ? implode("\n", $this->contents) : $this->contents;
@@ -1158,12 +1158,12 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * @return boolean
      */
-    public function rewind() {
+    public function rewind() : void {
 
         if (!$this->handle)
-            return false;
+            return;
 
-        return rewind($this->handle);
+        rewind($this->handle);
     }
 
     /**
@@ -1427,6 +1427,7 @@ class File implements File\_Interface, \JsonSerializable {
         return $file->unlink();
     }
 
+    #[\ReturnTypeWillChange]
     public function jsonSerialize() {
 
         return $this->get_encoded_contents();

@@ -1018,7 +1018,8 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     }
 
-    public function jsonSerialize(){
+    #[\ReturnTypeWillChange]
+    public function jsonSerialize() {
 
         return $this->jsonFixDate($this->resolveArray($this));
 
@@ -1153,7 +1154,8 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     }
 
-    public function &offsetGet($offset) {
+    #[\ReturnTypeWillChange]
+    public function &offsetGet($offset)  {
 
         return $this->get($offset);
 
@@ -1171,7 +1173,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     }
 
-    public function each(){
+    public function each() {
 
         if(($key = key($this->values)) === null)
             return false;
@@ -1189,7 +1191,8 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @since 1.0.0
      */
-    public function current() {
+    #[\ReturnTypeWillChange]
+    public function current()  {
 
         $key = $this->current['key'];
 
@@ -1212,6 +1215,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @since 1.0.0
      */
+    #[\ReturnTypeWillChange]
     public function key() {
 
         return $this->current['key'];
@@ -1223,12 +1227,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @since 1.0.0
      */
-    public function next() {
+    public function next() : void {
 
-        if ($this->current = $this->each())
-            return true;
-
-        return false;
+        $this->current = $this->each();
 
     }
 
@@ -1237,7 +1238,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @since 1.0.0
      */
-    public function rewind() {
+    public function rewind() : void {
 
         reset($this->values);
 
@@ -1250,7 +1251,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @since 1.0.0
      */
-    public function valid() {
+    public function valid() : bool {
 
         if ($this->current)
             return true;
@@ -1266,7 +1267,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
      *
      * @since 1.3.0
      */
-    public function count() {
+    public function count() : int {
 
         return count($this->values);
 

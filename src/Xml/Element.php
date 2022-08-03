@@ -491,7 +491,7 @@ class Element implements \ArrayAccess, \Iterator {
      *
      * @return integer
      */
-    public function count() {
+    public function count() : int {
 
         if(! is_array($this->__children))
             return 0;
@@ -1075,6 +1075,7 @@ class Element implements \ArrayAccess, \Iterator {
     /**
      * Return the current child element
      */
+    #[\ReturnTypeWillChange]
     public function current() {
 
         if(! is_array($this->__children))
@@ -1087,6 +1088,7 @@ class Element implements \ArrayAccess, \Iterator {
     /**
      * Move to the next child element
      */
+    #[\ReturnTypeWillChange]
     public function next() {
 
         if(! is_array($this->__children))
@@ -1099,6 +1101,7 @@ class Element implements \ArrayAccess, \Iterator {
     /**
      * Return the key of the current child element
      */
+    #[\ReturnTypeWillChange]
     public function key() {
 
         if(! is_array($this->__children))
@@ -1111,7 +1114,7 @@ class Element implements \ArrayAccess, \Iterator {
     /**
      * Test if the current child element is valid
      */
-    public function valid() {
+    public function valid() : bool {
 
         if(! is_array($this->__children))
             return $this->__reset;
@@ -1123,12 +1126,12 @@ class Element implements \ArrayAccess, \Iterator {
     /**
      * Reset the internal pointer to the first child element.
      */
-    public function rewind() {
+    public function rewind() : void {
 
         if(! is_array($this->__children))
-            return ($this->__reset = TRUE);
+            ($this->__reset = TRUE);
 
-        return reset($this->__children);
+        reset($this->__children);
 
     }
 
