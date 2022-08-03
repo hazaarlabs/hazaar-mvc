@@ -258,6 +258,13 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         if (!is_array($def))
             $def = ['type' => $def];
+         
+        /**
+         * If $type is 'array' but there is no 'arrayOf' property, assume user has messed up
+         * and set it to 'mixed' for backwards compatibility. 
+         */
+        if(ake($def, 'type') === 'array' && !array_key_exists('arrayOf', $def))
+            $def['type'] = 'mixed';
 
         $this->fields[$field] = $def;
 
@@ -554,7 +561,9 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             elseif ($this->allow_undefined === false)
                 throw new Exception\FieldUndefined($key);
 
-            $this->fields[$key] = ['type' => gettype($value)];
+            $type = gettype($value);
+
+            $this->fields[$key] = ['type' => (($type === 'array' && is_assoc($value)) ? 'model' : $type)];
 
         }
 

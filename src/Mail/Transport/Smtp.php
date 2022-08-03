@@ -160,7 +160,15 @@ class Smtp extends \Hazaar\Mail\Transport {
         if(!$this->read(250, 1024, $result))
             throw new \Exception('Bad response on mail from: ' . $result);
 
-        foreach($to as $x){
+        $rcpt = $to;
+
+        if($cc = ake($extra_headers, 'CC'))
+            $rcpt = array_merge($rcpt, array_map('trim', explode(',', $cc)));
+
+        if($bcc = ake($extra_headers, 'BCC'))
+            $rcpt = array_merge($rcpt, array_map('trim', explode(',', $bcc)));
+
+        foreach($rcpt as $x){
 
             if(preg_match('/^(.*)<(.*)>$/', $x, $matches)){
 
