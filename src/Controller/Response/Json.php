@@ -94,13 +94,14 @@ class Json extends \Hazaar\Controller\Response implements \ArrayAccess {
 
     public function offsetExists($offset) : bool {
 
-        return array_key_exists($key, $this->content);
+        return array_key_exists($offset, $this->content);
 
     }
 
-    public function offsetGet($offset) : mixed {
+    #[\ReturnTypeWillChange]
+    public function offsetGet($offset) {
 
-        if(array_key_exists($key, $this->content))
+        if(array_key_exists($offset, $this->content))
             return $this->content[$offset];
 
         $null = NULL;
