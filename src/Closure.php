@@ -135,7 +135,8 @@ class Closure implements \JsonSerializable {
 
     }
 
-    public function jsonSerialize(){
+    #[\ReturnTypeWillChange]
+    public function jsonSerialize() {
 
         return [
             'code' => $this->code

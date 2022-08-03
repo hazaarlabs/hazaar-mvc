@@ -360,6 +360,7 @@ class Cache implements \ArrayAccess {
 
     }
 
+    #[\ReturnTypeWillChange]
     public function offsetGet($offset) {
 
         return $this->get($offset);

@@ -94,7 +94,7 @@ class Modifier {
 
         if(!$format) $format = '%c';
 
-        return strftime($format, $item->getTimestamp());
+        return str_ftime($format, $item->getTimestamp());
 
     }
 
