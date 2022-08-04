@@ -190,6 +190,16 @@ function shutdown_handler() {
 
     }
 
+    global $__shutdown_tasks;
+
+    if(count($__shutdown_tasks) > 0){
+
+        foreach($__shutdown_tasks as $task)
+            $task();
+
+    }
+        
+
 }
 
 function basic_handler($errno, $errstr, $errfile = NULL, $errline = NULL, $errcontext = NULL) {
@@ -216,5 +226,22 @@ function traceAndDie(){
             . DIRECTORY_SEPARATOR . 'trace.php'));
 
 	exit;
+
+}
+
+function register_shutdown_task($callback, $uniq_id = null){
+
+    if($uniq_id === null)
+        $uniq_id = uniqid();
+
+    global $__shutdown_tasks;
+
+    if(!is_array($__shutdown_tasks))
+        $__shutdown_tasks = [];
+
+    if(array_key_exists($uniq_id, $__shutdown_tasks))
+        return;
+
+    $__shutdown_tasks[$uniq_id] = $callback;
 
 }
