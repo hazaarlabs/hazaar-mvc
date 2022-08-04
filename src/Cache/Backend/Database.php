@@ -63,7 +63,7 @@ class Database extends \Hazaar\Cache\Backend {
 
         $this->db = \Hazaar\DBI\Adapter::getInstance($this->options->get('config'));
 
-        if(!$this->db->table('__meta__')->exists()){
+        if(!$this->db->tableExists('__meta__')){
 
             $fields = [
                 'namespace'    => 'TEXT PRIMARY KEY',
@@ -75,7 +75,7 @@ class Database extends \Hazaar\Cache\Backend {
 
         }
 
-        if(!$this->db->table($this->options->cache_table)->exists()){
+        if(!$this->db->tableExists($this->options->cache_table)){
 
             $fields = [
                 'key'    => 'TEXT PRIMARY KEY',
@@ -88,7 +88,7 @@ class Database extends \Hazaar\Cache\Backend {
         }
 
         //If the lifetime value is greater than 0 then we support namespace timeouts.
-        if($this->options->lifetime > 0){
+        if($this->options->lifetime > 0 && $this->db->tableExists($this->namespace)){
 
             $this->addCapabilities('expire_ns', 'keepalive');
 
