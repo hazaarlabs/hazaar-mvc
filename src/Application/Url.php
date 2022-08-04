@@ -63,11 +63,11 @@ class Url {
 
             }
 
-            $part_parts = (strpos($part, '/') === false) ? [$part] : explode('/', $part);
+            $part_parts = (strpos((string)$part, '/') === false) ? [$part] : explode('/', (string)$part);
 
             foreach($part_parts as $part_part){
 
-                if(strpos($part_part, '?') !== false){
+                if(strpos((string)$part_part, '?') !== false){
 
                     list($part_part, $part_params) = explode('?', $part_part, 2);
 
@@ -77,7 +77,7 @@ class Url {
 
                 }
 
-                if(!($part_part = trim($part_part)))
+                if(!($part_part = trim((string)$part_part)))
                     continue;
 
                 $parts[] = $part_part;
