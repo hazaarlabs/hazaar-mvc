@@ -89,7 +89,7 @@ class Cache implements \ArrayAccess {
         }
 
         if (!isset($backendClass))
-            throw new Cache\Exception\NoBackendAvailable($backendClass);
+            throw new Cache\Exception\NoBackendAvailable();
 
         $this->backend = new $backendClass($options, $namespace);
 
