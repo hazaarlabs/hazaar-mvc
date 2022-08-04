@@ -192,7 +192,7 @@ function shutdown_handler() {
 
     global $__shutdown_tasks;
 
-    if(count($__shutdown_tasks) > 0){
+    if(is_array($__shutdown_tasks) && count($__shutdown_tasks) > 0){
 
         foreach($__shutdown_tasks as $task)
             $task();
