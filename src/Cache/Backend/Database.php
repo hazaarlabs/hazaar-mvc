@@ -39,6 +39,8 @@ class Database extends \Hazaar\Cache\Backend {
 
     private   $timeout;
 
+    private   $cache_clean_period = 0;
+
     static public function available(){
 
         return true;
@@ -52,10 +54,11 @@ class Database extends \Hazaar\Cache\Backend {
         $this->addCapabilities('array', 'keepalive');
 
         $this->configure([
-            'cache_table' => 'cache_' . $namespace
+            'cache_table' => 'cache_' . $namespace,
+            'cache_clean_period' => 60
         ]);
 
-        if(! trim($this->options->cache_table))
+        if(!trim($this->options->cache_table))
             throw new Exception\NoDBTable();
 
         if($this->options->has('schema'))
@@ -66,12 +69,20 @@ class Database extends \Hazaar\Cache\Backend {
         if(!$this->db->tableExists('__meta__')){
 
             $fields = [
-                'namespace'    => 'TEXT PRIMARY KEY',
-                'tablename'    => 'TEXT',
-                'timeout'  => 'integer'
+                'namespace'     => 'TEXT PRIMARY KEY',
+                'tablename'     => 'TEXT',
+                'timeout'       => 'integer',
+                'created_on'    => 'TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()'
             ];
 
             $this->db->createTable('__meta__', $fields);
+
+            $index = [
+                'columns'   =>  ['namespace'],
+                'unique'    => true
+            ];
+
+            $this->db->createIndex('meta_namespace_idx', '__meta__', $index);
 
         }
 
@@ -87,23 +98,11 @@ class Database extends \Hazaar\Cache\Backend {
 
         }
 
-        //If the lifetime value is greater than 0 then we support namespace timeouts.
-        if($this->options->lifetime > 0 && $this->db->tableExists($this->namespace)){
+        if($this->options->lifetime > 0){
 
             $this->addCapabilities('expire_ns', 'keepalive');
 
-            //If a timeout exists, load it and check if we need to drop the namespace.
-            if(!($timeout = $this->db->table('__meta__')->find(['namespace' => $this->namespace], ['timeout'])->execute()->fetchColumn(0)))
-                $timeout = 0;
-
-            //If the namespace has expired, drop it
-            if(time() >= $timeout){
-
-                $this->db->dropTable($this->namespace);
-
-                $this->timeout = time() + $this->options->lifetime;
-
-            }
+            $this->cache_clean_period = $this->options->cache_clean_period;
 
         }
 
@@ -119,22 +118,39 @@ class Database extends \Hazaar\Cache\Backend {
         if(!$this->db)
             return;
 
+        $meta_table = $this->db->table('__meta__');
+
         if($this->timeout > 0)
-            $this->db->table('__meta__')->insert(['namespace' => $this->namespace, 'tablename' => $this->options->cache_table, 'timeout' => $this->timeout], null, 'namespace', true);
+            $meta_table->insert(['namespace' => $this->namespace, 'tablename' => $this->options->cache_table, 'timeout' => $this->timeout], null, 'namespace', true);
 
-        $this->db->beginTransaction();
+        if($this->cache_clean_period > 0){
 
-        //Cleanup any expired namespace tables
-        $dead_tables = $this->db->table('__meta__')->find(['timeout' => ['$lt' => time()]]);
+            $meta = $meta_table->findOne(['namespace' => '__meta__']);
 
-        while($meta = $dead_tables->fetch()){
+            //Cleanup namespace tables at most every {$cache_clean_period} seconds
+            if($meta === null || ($meta['timeout'] + $this->cache_clean_period) <= time()){
+                
+                $meta_table->insert(['namespace' => '__meta__', 'timeout' => time()], null, 'namespace', true);
 
-            if($this->db->dropTable($meta['tablename']))
-                $this->db->table('__meta__')->delete(['namespace' => $meta['namespace']]);
+                $meta_table->delete(['timeout' => ['$lt' => time()], 'namespace' => ['$ne' => '__meta__']]);
+
+                $all_tables = $meta_table->select('tablename')->find(['namespace' => ['$ne' => '__meta__']])->collate('tablename');
+
+                $zombie_tables = $this->db->listTables();
+
+                foreach($zombie_tables as $table){
+
+                    if($table['name'] === '__meta__')
+                        continue;
+
+                    if(!array_key_exists($table['name'], $all_tables))
+                        $this->db->dropTable($table['name']);
+
+                }
+
+            }
 
         }
-
-        $this->db->commit();
 
     }
 
