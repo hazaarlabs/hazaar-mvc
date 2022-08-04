@@ -117,20 +117,20 @@ class PDF extends \Hazaar\File {
      */
     private static function _pipeExec($cmd, $input = '') {
 
-        $proc = proc_open($cmd, array(
-            0 => array(
+        $proc = proc_open($cmd, [
+            0 => [
                 'pipe',
                 'r'
-            ),
-            1 => array(
+            ],
+            1 => [
                 'pipe',
                 'w'
-            ),
-            2 => array(
+            ],
+            2 => [
                 'pipe',
                 'w'
-            )
-        ), $pipes);
+            ]
+        ], $pipes);
 
         fwrite($pipes[0], $input);
 
@@ -146,11 +146,11 @@ class PDF extends \Hazaar\File {
 
         $rtn = proc_close($proc);
 
-        return array(
+        return [
             'stdout' => $stdout,
             'stderr' => $stderr,
             'return' => $rtn
-        );
+        ];
 
     }
 
@@ -255,7 +255,7 @@ class PDF extends \Hazaar\File {
      */
     public function setSource($url) {
 
-        parent::setContent(null);
+        parent::set_contents(null);
 
         $this->source_url = $url;
 
@@ -345,6 +345,17 @@ class PDF extends \Hazaar\File {
 
         try {
 
+            $required_programs = ['ar' => 'ar -V', 'tar' => 'tar --version'];
+
+            foreach($required_programs as $prog => $test){
+                
+                $result = shell_exec($test);
+
+                if($result === null || $result === false)
+                    throw new \Exception("The program '$prog' is required for automated installation of wkhtmltopdf.");
+
+            }
+
             $cmd = $this->getCommand();
 
             $target = \Hazaar\Application::getInstance()->runtimePath('bin', true);
@@ -361,7 +372,7 @@ class PDF extends \Hazaar\File {
 
             $client = new \Hazaar\Http\Client();
 
-            $request = new \Hazaar\Http\Request('https://api.github.com/repos/wkhtmltopdf/wkhtmltopdf/releases');
+            $request = new \Hazaar\Http\Request('https://api.github.com/repos/wkhtmltopdf/packaging/releases');
 
             if(!($response = $client->send($request)))
                 throw new \Hazaar\Exception('No response returned from Github API call!');
@@ -378,7 +389,10 @@ class PDF extends \Hazaar\File {
                 if(!(($info instanceof \stdClass) && ($assets = ake($info, 'assets'))))
                     continue;
 
-                foreach($assets as $asset){
+                foreach($assets as $index => $asset){
+
+                    if($index === 26)
+                        echo '';
 
                     if(substr($asset->name, -strlen($asset_suffix), strlen($asset_suffix)) != $asset_suffix)
                         continue;
@@ -462,7 +476,7 @@ class PDF extends \Hazaar\File {
 
         if($left === null) $left = $right;
 
-        $this->margins = array('T' => $top, 'R' => $right, 'B' => $bottom, 'L' => $left);
+        $this->margins = ['T' => $top, 'R' => $right, 'B' => $bottom, 'L' => $left];
 
     }
 

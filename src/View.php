@@ -3,9 +3,9 @@
 /**
  * @file        Hazaar/View/View.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 namespace Hazaar;
 
@@ -15,31 +15,31 @@ class View implements \ArrayAccess {
 
     private $_viewfile;
 
-    protected $_data = array();
+    protected $_data = [];
 
-    protected $_scripts = array();
+    protected $_scripts = [];
 
     /**
      * View Helpers
      */
-    protected $_helpers = array();
+    protected $_helpers = [];
 
     /**
      * Array for storing names of initialised helpers so we only initialise them once
      */
-    private $_helpers_init = array();
+    private $_helpers_init = [];
 
     private $_rendering = FALSE;
 
     protected $_methodHandler;
 
-    private $_prepared = array();
+    private $_prepared = [];
 
-    public function __construct($view, $init_helpers = array()) {
+    public function __construct($view, $init_helpers = []) {
 
         $this->load($view);
 
-        $this->_helpers['application'] = Application::getInstance();
+        $this->_helpers['application'] = $app = Application::getInstance();
 
         if (is_array($init_helpers) && count($init_helpers) > 0){
 
@@ -48,69 +48,63 @@ class View implements \ArrayAccess {
 
         }
 
-        if (substr($view, 0, 1) !== '@' && $this->application->config->has('view')) {
+        if (substr($view, 0, 1) !== '@' 
+            && ($config = $app->config->get('view'))
+            && $config->has('helper')) {
 
-            if ($this->application->config->view->has('helper')) {
+            $load = $this->application->config->view->helper->load;
 
-                $load = $this->application->config->view->helper->load;
+            if (!Map::is_array($load))
+                $load = new Map([$load]);
 
-                if (!Map::is_array($load))
-                    $load = new Map(array($load));
+            $helpers = new Map();
 
-                $helpers = new Map();
+            foreach($load as $key => $helper) {
 
-                foreach($load as $key => $helper) {
+                //Check if the helper is in the old INI file format and parse it if it is.
+                if (Map::is_array($helper)){
 
-                    //Check if the helper is in the old INI file format and parse it if it is.
-                    if (!Map::is_array($helper)){
+                    $this->addHelper($key, $helper->toArray());
 
-                        if(preg_match('/(\w*)\[(.*)\]/', trim($helper), $matches)) {
-
-                            $key = $matches[1];
-
-                            $helper = array_unflatten($matches[2], '=', ',');
-
-                            //Fix the values so they are the correct types
-                            foreach($helper as &$arg) {
-
-                                if($arg = trim($arg)) {
-
-                                    if (in_array(strtolower($arg), array('yes','no','true','false','on','off'))) {
-
-                                        $arg = boolify($arg);
-
-                                    } elseif (is_numeric($arg)) {
-
-                                        if (strpos($arg, '.') === FALSE)
-                                            settype($arg, 'int');
-                                        else
-                                            settype($arg, 'float');
-
-                                    }
-
-                                }
-
-                            }
-
-                            $helpers[$key]->fromDotNotation($helper);
-
-                            //If there is no config and it is just the helper name, just convert it to the new format
-                        }else{
-
-                            $helpers[$helper] = array();
-
-                        }
-
-                    }else{
-
-                        $helpers[$key] = $helper;
-
-                    }
+                    continue;
 
                 }
 
-                foreach($helpers as $helper => $args)
-                    $this->addHelper($helper, $args->toArray());
+                $args = [];
+
+                if(preg_match('/(\w*)\[(.*)\]/', trim($helper), $matches)) {
+
+                    $key = $matches[1];
+
+                    $helper = array_unflatten($matches[2], '=', ',');
+
+                    //Fix the values so they are the correct types
+                    foreach($helper as &$arg) {
+
+                        if($arg = trim($arg)) {
+
+                            if (in_array(strtolower($arg), ['yes','no','true','false','on','off'])) {
+
+                                $arg = boolify($arg);
+
+                            } elseif (is_numeric($arg)) {
+
+                                if (strpos($arg, '.') === FALSE)
+                                    settype($arg, 'int');
+                                else
+                                    settype($arg, 'float');
+
+                            }
+
+                        }
+
+                    }
+
+                    $args = array_from_dot_notation($helper);
+
+                }
+
+                $this->addHelper($key, $args);
 
             }
 
@@ -150,7 +144,7 @@ class View implements \ArrayAccess {
 
         }else{
 
-            $extensions = array('phtml', 'tpl');
+            $extensions = ['phtml', 'tpl'];
 
             foreach($extensions as $extension){
 
@@ -371,17 +365,17 @@ class View implements \ArrayAccess {
 
         if (method_exists($this->_methodHandler, $method)) {
 
-            return call_user_func_array(array(
+            return call_user_func_array([
                 $this->_methodHandler,
                 $method
-            ), $args);
+            ], $args);
 
         } elseif (array_key_exists($method, $this->_helpers) && method_exists($this->_helpers[$method], '__default')) {
 
-            return call_user_func_array(array(
+            return call_user_func_array([
                 $this->_helpers[$method],
                 '__default'
-            ), $args);
+            ], $args);
         }
 
         throw new \Hazaar\Exception("Method not found calling " . get_class($this->_methodHandler) . ":$method()");
@@ -391,12 +385,12 @@ class View implements \ArrayAccess {
     /*
      * Dealing with Helpers
      */
-    public function addHelper($helper, $args = array(), $alias = null) {
+    public function addHelper($helper, $args = [], $alias = null) {
 
         if(is_array($helper)) {
 
             foreach ($helper as $alias => $h)
-                self::addHelper($h, array(), $alias);
+                self::addHelper($h, [], $alias);
 
         } elseif(is_object($helper)) {
 
@@ -438,7 +432,7 @@ class View implements \ArrayAccess {
         /**
          * Search paths for view helpers.  The order here matters because apps should be able to override built-in helpers.
          */
-        $search_prefixes = array('\\Application\\Helper\\View', '\\Hazaar\\View\\Helper');
+        $search_prefixes = ['\\Application\\Helper\\View', '\\Hazaar\\View\\Helper'];
 
         $name = \ucfirst($name);
 
@@ -793,7 +787,7 @@ class View implements \ArrayAccess {
      *
      * @return string
      */
-    public function yn($value, $labels = array('Yes','No')) {
+    public function yn($value, $labels = ['Yes','No']) {
 
         return (boolify($value) ? $labels[0] : $labels[1]);
 
@@ -820,19 +814,20 @@ class View implements \ArrayAccess {
 
     }
 
-    public function offsetExists($offset){
+    public function offsetExists($offset) : bool {
 
         return isset($this->_data[$offset]);
 
     }
 
-    public function offsetGet($offset){
+    #[\ReturnTypeWillChange]
+    public function offsetGet($offset) {
 
         return $this->_data[$offset];
 
     }
 
-    public function offsetSet($offset, $value){
+    public function offsetSet($offset, $value) : void {
 
         if($offset === null)
             $this->_data[] = $value;
@@ -841,7 +836,7 @@ class View implements \ArrayAccess {
 
     }
 
-    public function offsetUnset($offset){
+    public function offsetUnset($offset) : void {
 
         unset($this->_data[$offset]);
 
@@ -863,13 +858,7 @@ class View implements \ArrayAccess {
      */
     public function matchReplace($string){
 
-        $string = preg_replace_callback('/\{\{([\W]*)([\w\.]+)\}\}/', function($match){
-
-            return ake($this->_data, $match[2]);
-
-        }, $string);
-
-        return $string;
+        return match_replace($string, $this->_data);
 
     }
 

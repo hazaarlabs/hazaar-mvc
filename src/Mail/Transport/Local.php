@@ -4,11 +4,11 @@ namespace Hazaar\Mail\Transport;
 
 class Local extends \Hazaar\Mail\Transport {
 
-    public function send($to, $subject = NULL, $message = NULL, $headers = array(), $dsn_types = array()) {
+    public function send($to, $subject = NULL, $message = NULL, $headers = [], $dsn_types = []) {
 
         $sendmail_from = '';
 
-        $mail_headers = array();
+        $mail_headers = [];
 
         foreach($headers as $key => $value) {
 
@@ -34,7 +34,9 @@ class Local extends \Hazaar\Mail\Transport {
 
         $mail_headers = implode("\n", $mail_headers);
 
-        $params = [];
+        $params = [
+            '-R' => 'hdrs'
+        ];
 
         if($sendmail_from)
             $params['-f'] = $sendmail_from;

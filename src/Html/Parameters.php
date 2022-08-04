@@ -11,13 +11,15 @@ namespace Hazaar\Html;
  */
 class Parameters implements \Countable {
 
-    private $params       = array();
+    private $params       = [];
 
     private $delimeter    = '=';
 
     private $suffix;
 
     private $quote_params = TRUE;
+
+    private $multi_value = [];
 
     /**
      * @detail      HTML parameter class constructor
@@ -32,12 +34,12 @@ class Parameters implements \Countable {
      *
      * @param       string $suffix Optionally specify a parameter value suffix.
      */
-    function __construct($params = array(), $delimeter = NULL, $quote_params = TRUE, $suffix = NULL) {
+    function __construct($params = [], $delimeter = NULL, $quote_params = TRUE, $suffix = NULL) {
 
         if($params) {
 
             if(! is_array($params))
-                $params = array($params);
+                $params = [$params];
 
             $this->params = $params;
 
@@ -54,7 +56,7 @@ class Parameters implements \Countable {
 
     }
 
-    public function count() {
+    public function count() : int {
 
         return count($this->params);
 
@@ -102,29 +104,90 @@ class Parameters implements \Countable {
 
         }
 
+        if(array_key_exists($key, $this->multi_value)){
+
+            $this->params[$key] = explode($this->multi_value[$key], trim($value, $this->multi_value[$key]));
+
+            return $value;
+
+        }
+
         return $this->params[$key] = $value;
 
     }
 
-    public function remove($key){
+    /**
+     * Remove a parameter, optionally for only a specific value
+     * 
+     * If only $key is specified, then the entire parameter is removed.  If the $value is specified and the parameter
+     * is a multi-value enabled parameter, then only the specified value in the parameter is removed.
+     * 
+     * @param string $key The name of the parameter.
+     * 
+     * @param string $value The optional parameter value to be removed.
+     */
+    public function remove($key, $value = null){
 
         if(!array_key_exists($key, $this->params))
             return false;
 
-        unset($this->params[$key]);
+        if(is_array($this->params[$key]) && array_key_exists($key, $this->multi_value) && ($delimeter = $this->multi_value[$key])){
+
+            if (($index = array_search(trim($value, $delimeter), $this->params[$key])) !== false)
+                unset($this->params[$key][$index]);
+
+        }else unset($this->params[$key]);
 
         return true;
 
     }
 
+    /**
+     * Adds or appends a value to a parameter
+     * 
+     * If the value is a multi-value parameter, then this value is added as an entirely new value.
+     * 
+     * If the value is a standard string value, then this value is concatenated to any existing value (legacy behaviour).
+     * 
+     * @param string $key The parameter to add/append to.
+     * 
+     * @param string $value The value to add/append.
+     * 
+     * @return boolean
+     */
+    public function append($key, $value) {
+
+        if(array_key_exists($key, $this->multi_value)){
+
+            if(!(array_key_exists($key, $this->params) && is_array($this->params[$key])))
+                $this->params[$key] = [];
+
+            $this->params[$key] = array_unique(array_merge($this->params[$key], explode($this->multi_value[$key], trim($value, $this->multi_value[$key]))));
+
+        }elseif(array_key_exists($key, $this->params))
+            $this->params[$key] .= $value;
+        else
+            $this->params[$key] = $value;
+
+        return true;
+
+    }
+
+    /**
+     * Appends a value to a parameter but only if the parameter already exists
+     * 
+     * @param string $key The parameter to add/append to.
+     * 
+     * @param string $value The value to add/append.
+     * 
+     * @return boolean
+     */
     public function appendTo($key, $value) {
 
         if(! array_key_exists($key, $this->params))
-            return FALSE;
+            return false;
 
-        $this->params[$key] .= $value;
-
-        return TRUE;
+        return $this->append($key, $value);
 
     }
 
@@ -136,7 +199,7 @@ class Parameters implements \Countable {
 
     public function renderObject() {
 
-        $out = array();
+        $out = [];
 
         foreach($this->params as $key => $value) {
 
@@ -153,6 +216,9 @@ class Parameters implements \Countable {
                 $out[] = $value;
 
             } else {
+
+                if(is_array($value))
+                    $value = implode((array_key_exists($key, $this->multi_value) ? $this->multi_value[$key] : ''), $value);
 
                 if($this->quote_params)
                     $value = '"' . htmlspecialchars($value) . '"';
@@ -177,18 +243,15 @@ class Parameters implements \Countable {
 
     }
 
-    public function append($key, $value) {
-
-        if(array_key_exists($key, $this->params))
-            $this->params[$key] .= $value;
-        else
-            $this->params[$key] = $value;
-
-    }
-
     public function toArray(){
 
         return $this->params;
+
+    }
+
+    public function setMultiValue($key, $delimeter = ','){
+
+        $this->multi_value[$key] = $delimeter;
 
     }
 

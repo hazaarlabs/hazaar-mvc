@@ -4,11 +4,11 @@ namespace Hazaar\Console;
 
 class Handler {
 
-    private $modules = array();
+    private $modules = [];
 
-    private $libraries = array();
+    private $libraries = [];
 
-    private $menus = array();
+    private $menus = [];
 
     private $application;
 
@@ -32,6 +32,8 @@ class Handler {
 
         if(array_key_exists($name, $this->modules))
             throw new \Exception('Module ' . $name . ' already loaded!');
+
+        $module->setApplication($this->application);
 
         $module->__configure($this);
 

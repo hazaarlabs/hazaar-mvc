@@ -10,9 +10,9 @@ abstract class WebSocketServer extends Server {
 
     protected $master;
 
-    protected $sockets = array();
+    protected $sockets = [];
 
-    protected $users = array();
+    protected $users = [];
 
     protected $interactive = true;
 
@@ -193,7 +193,7 @@ abstract class WebSocketServer extends Server {
     protected function doHandshake($user, $buffer) {
 
         $magicGUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-        $headers = array();
+        $headers = [];
         $lines = explode("\n", $buffer);
         foreach ($lines as $line) {
             if (strpos($line, ":") !== false) {
@@ -483,7 +483,7 @@ abstract class WebSocketServer extends Server {
 
     protected function extractHeaders($message) {
 
-        $header = array(
+        $header = [
                 'fin' => $message[0] & chr(128),
                 'rsv1' => $message[0] & chr(64),
                 'rsv2' => $message[0] & chr(32),
@@ -492,7 +492,7 @@ abstract class WebSocketServer extends Server {
                 'hasmask' => $message[1] & chr(128),
                 'length' => 0,
                 'mask' => ""
-        );
+        ];
         $header['length'] = (ord($message[1]) >= 128) ? ord($message[1]) - 128 : ord($message[1]);
         
         if ($header['length'] == 126) {

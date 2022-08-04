@@ -4,7 +4,7 @@ namespace Hazaar\Auth;
 
 class Helper extends Adapter {
 
-    function __construct($cache_config = array(), $cache_backend = 'session'){
+    function __construct($cache_config = [], $cache_backend = 'session'){
 
         parent::__construct($cache_config, $cache_backend);
 
@@ -12,7 +12,7 @@ class Helper extends Adapter {
 
     }
 
-    public function queryAuth($identity, $credential = null, $extra = array()) {
+    public function queryAuth($identity, $credential = null, $extra = []) {
 
         /*
          * Helper does not support queryAuth as it doesn't know how to look up credentials

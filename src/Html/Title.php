@@ -18,7 +18,7 @@ class Title extends Block {
      *
      * @param       string $href The URL to set as the HREF parameter. (required)
      */
-    function __construct($content, $parameters = array()) {
+    function __construct($content, $parameters = []) {
 
         parent::__construct('title', $content, $parameters);
 

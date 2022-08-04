@@ -10,7 +10,7 @@ class JavaScript extends \Hazaar\View\ViewableObject {
 
     private $anon = false;
 
-    function __construct($value, $argdef = array(), $anon = false) {
+    function __construct($value, $argdef = [], $anon = false) {
 
         $this->value = $value;
 
@@ -20,10 +20,10 @@ class JavaScript extends \Hazaar\View\ViewableObject {
 
     }
 
-    public function setArgs($argdef = array()) {
+    public function setArgs($argdef = []) {
 
         if(!is_array($argdef))
-            $argdef = array($argdef);
+            $argdef = [$argdef];
 
         $this->argdef = $argdef;
 
@@ -65,7 +65,7 @@ class JavaScript extends \Hazaar\View\ViewableObject {
         
         if(is_array($obj)){
             
-            $code = array();
+            $code = [];
             
             foreach($obj as $child) $code[] = $this->renderChildObject($child);
             

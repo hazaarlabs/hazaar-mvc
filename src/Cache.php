@@ -3,9 +3,9 @@
 /**
  * @file        Cache.php
  *
- * @author      Jamie Carl <jamie@hazaarmvc.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarmvc.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://hazaar.io)
  *
  * @version     $Id: Application.php 24593 2012-08-29 20:35:02Z jamie $
  */
@@ -40,7 +40,7 @@ class Cache implements \ArrayAccess {
      *
      * @throws Cache\Exception\InvalidFrontend
      */
-    function __construct($backend = NULL, $config_options = array(), $namespace = 'default') {
+    function __construct($backend = NULL, $config_options = [], $namespace = 'default') {
 
         $options = new \Hazaar\Map();
 
@@ -50,18 +50,15 @@ class Cache implements \ArrayAccess {
         if (!$backend){
 
             //Set up a default backend chain
-            $backend = array('apc', 'session');
+            $backend = ['apc', 'session'];
 
             //Grab the application context so we can load any cache settings
-            if (($app = \Hazaar\Application::getInstance()) instanceof \Hazaar\Application) {
+            if(($app = \Hazaar\Application::getInstance())
+                && $app->config->cache->has('backend')){
 
-                if($app->config->cache->has('backend')){
+                $backend = $app->config->cache['backend'];
 
-                    $backend = $app->config->cache['backend'];
-
-                    $options->extend($app->config->cache['options']);
-
-                }
+                $options->extend($app->config->cache['options']);
 
             }
 
@@ -69,16 +66,16 @@ class Cache implements \ArrayAccess {
 
         $this->options = $options;
 
-        $this->configure(array(
+        $this->configure([
             'lifetime' => 3600,
             'use_pragma' => TRUE
-        ));
+        ]);
 
         if(!is_array($backend))
-            $backend = array($backend);
+            $backend = [$backend];
 
         //We set this now as it is an absolute safe fallback
-        $backendClass = '\\Hazaar\\Cache\\Backend\\File';
+        $backend[] = 'file';
 
         foreach($backend as $name){
 
@@ -92,7 +89,7 @@ class Cache implements \ArrayAccess {
         }
 
         if (!isset($backendClass))
-            throw new Cache\Exception\NoBackendAvailable($backendClass);
+            throw new Cache\Exception\NoBackendAvailable();
 
         $this->backend = new $backendClass($options, $namespace);
 
@@ -129,7 +126,7 @@ class Cache implements \ArrayAccess {
 
     public function setBackendOption($key, $value){
 
-        $this->backend->options->extend(array($key => $value));
+        $this->backend->options->extend([$key => $value]);
 
     }
 
@@ -357,27 +354,28 @@ class Cache implements \ArrayAccess {
     /*
      * ARRAYACCESS METHODS
      */
-    public function offsetExists($offset) {
+    public function offsetExists($offset) : bool{
 
         return $this->has($offset);
 
     }
 
+    #[\ReturnTypeWillChange]
     public function offsetGet($offset) {
 
         return $this->get($offset);
 
     }
 
-    public function offsetSet($offset, $value) {
+    public function offsetSet($offset, $value) : void {
 
-        return $this->set($offset, $value);
+        $this->set($offset, $value);
 
     }
 
-    public function offsetUnset($offset) {
+    public function offsetUnset($offset) : void {
 
-        return $this->remove($offset);
+        $this->remove($offset);
 
     }
 

@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/Application/Url.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar\Application;
@@ -36,20 +36,22 @@ class Url {
 
     private $encoded = false;
 
-    public static $base = null;
+    public static $__base_url = null;
 
-    public static $rewrite = true;
+    public static $__rewrite_url = true;
 
-    public static $aliases;
+    public static $__aliases;
+
+    public static $__default_controller = 'Index';
 
     function __construct() {
 
         if(!func_num_args() > 0)
             return;
 
-        $parts = array();
+        $parts = [];
 
-        $params = array();
+        $params = [];
 
         foreach(\func_get_args() as $part){
 
@@ -61,11 +63,11 @@ class Url {
 
             }
 
-            $part_parts = (strpos($part, '/') === false) ? array($part) : explode('/', $part);
+            $part_parts = (strpos((string)$part, '/') === false) ? [$part] : explode('/', (string)$part);
 
             foreach($part_parts as $part_part){
 
-                if(strpos($part_part, '?') !== false){
+                if(strpos((string)$part_part, '?') !== false){
 
                     list($part_part, $part_params) = explode('?', $part_part, 2);
 
@@ -75,7 +77,7 @@ class Url {
 
                 }
 
-                if(!($part_part = trim($part_part)))
+                if(!($part_part = trim((string)$part_part)))
                     continue;
 
                 $parts[] = $part_part;
@@ -84,20 +86,23 @@ class Url {
 
         }
 
-            /*
-            * Grab the default controller ready for testing
-            */
-        $app = \Hazaar\Application::getInstance();
-
-        $default = trim($app->config->app['defaultController']);
-
-        if(count($parts) === 1 && $parts[0] === $default)
-            $parts = array();
+        if(count($parts) === 1 && $parts[0] === self::$__default_controller)
+            $parts = [];
 
         if(count($parts) > 0)
             $this->path = implode('/', $parts);
 
         $this->params = $params;
+
+    }
+
+    public static function initialise(\Hazaar\Map $config){
+
+        self::$__base_url = $config->get('base');
+
+        self::$__rewrite_url = $config->get('rewrite');
+
+        self::$__default_controller = trim($config->get('defaultController'));
 
     }
 
@@ -115,9 +120,9 @@ class Url {
         $path = ($this->base_path ? $this->base_path . '/' : null);
 
         if(!is_array($params))
-            $params = array();
+            $params = [];
 
-        if(Url::$rewrite && $encode !== true)
+        if(Url::$__rewrite_url && $encode !== true)
             $path .= $this->path;
 
         elseif($this->path)
@@ -126,9 +131,9 @@ class Url {
         if(is_array($this->params))
             $params = array_merge($this->params, $params);
 
-        if(Url::$base){
+        if(Url::$__base_url){
 
-            $url = rtrim(trim(Url::$base), '/') . '/' . $path;
+            $url = rtrim(trim(Url::$__base_url), '/') . '/' . $path;
 
         } else {
 
@@ -187,8 +192,8 @@ class Url {
      * ## Example:
      *
      * ```php
-     * $url = new \Hazaar\Application\Url('controller', 'action', array('id' => '$id'));
-     * echo $url->toString(array('id' => 1234));
+     * $url = new \Hazaar\Application\Url('controller', 'action', ['id' => '$id']);
+     * echo $url->toString(['id' => 1234]);
      * ```
      *
      * This will output something like:
@@ -203,7 +208,7 @@ class Url {
      */
     public function toString($values = NULL) {
 
-        $params = array();
+        $params = [];
 
         if(is_array($values)) {
 
@@ -255,6 +260,16 @@ class Url {
 
         return $this;
 
+    }
+
+    public function getOrigin(){
+
+        $url = $this->renderObject();
+
+        preg_match('/(\w+\:\/\/[\w\.]+)\//', $url, $matches);
+
+        return $matches[1];
+        
     }
 
 }

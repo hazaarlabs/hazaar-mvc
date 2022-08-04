@@ -12,7 +12,7 @@ namespace Hazaar\Html;
  */
 class ElementCollection implements \ArrayAccess, \Iterator {
 
-    private $elements = array();
+    private $elements = [];
 
     private $original_selector;
 
@@ -21,16 +21,16 @@ class ElementCollection implements \ArrayAccess, \Iterator {
         $this->original_selector = $selector;
 
         if(is_array($objects) && count($objects) > 0)
-            $this->elements = $this->match($objects, $this->original_selector,$recursive);
+            $this->elements = self::matchObjects($objects, $this->original_selector,$recursive);
 
     }
 
-    static private function match(&$objects, $selector = null, $recursive = false){
+    static private function matchObjects(&$objects, $selector = null, $recursive = false){
 
         //Split on a comma and any amount of adjacent white space
         $parts = preg_split('/\s*,\s*/', $selector);
 
-        $ruleset = array();
+        $ruleset = [];
 
         //Compile all the selector rules.
         foreach($parts as $part)
@@ -42,19 +42,19 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
     static public function compileRules($selector, $count){
 
-        $rules = array(
-                'type' => null,
-                'id' => null,
-                'classes' => array(),
-                'attributes' => array(
-                    'match' => array(),
-                    'exists' => array()
-                ),
-                'ranges' => array(),
-                'pseudo-class' => array(),
-                'func' => array(),
-                'not' => array()
-            );
+        $rules = [
+            'type' => null,
+            'id' => null,
+            'classes' => [],
+            'attributes' => [
+                'match' => [],
+                'exists' => []
+            ],
+            'ranges' => [],
+            'pseudo-class' => [],
+            'func' => [],
+            'not' => []
+        ];
 
         $selectors = preg_split('/\:/', $selector);
 
@@ -113,7 +113,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
                             $b = intval($bits[3]);
 
-                            $range = array();
+                            $range = [];
 
                             switch($func[1]){
                                 case 'nth-child':
@@ -173,7 +173,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
     static private function applyRuleset(&$objects, &$ruleset, $recursive = false){
 
-        $collection = array();
+        $collection = [];
 
         foreach($objects as $index => $object){
 
@@ -204,7 +204,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
         if($rules['id'] && $rules['id'] != $element->attr('id'))
             return false;
 
-        if(count($rules['classes']) > 0 && count(array_diff($rules['classes'], explode(' ', $element->attr('class')))) > 0)
+        if(count($rules['classes']) > 0 && count(array_diff($rules['classes'], (array)$element->attr('class'))) > 0)
             return false;
 
         if(count($rules['attributes']['exists']) > 0 && count(array_diff($rules['attributes']['exists'], array_keys($element->parameters()->toArray()))) > 0)
@@ -234,7 +234,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
         if(count($rules['pseudo-class']) > 0){
 
-            $group_classes = array('first-child', 'last-child');
+            $group_classes = ['first-child', 'last-child'];
 
             foreach($rules['pseudo-class'] as $pseudo){
 
@@ -275,7 +275,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
         foreach($this->elements as $id => $object){
 
-            if(!$this->match($object, $selector))
+            if(!self::matchObjects($object, $selector))
                 unset($this->elements[$id]);
 
         }
@@ -307,7 +307,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
     public function children($selector = null){
 
-        $elements = array();
+        $elements = [];
 
         foreach($this->elements as $element)
             $elements += $element->get();
@@ -327,7 +327,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
         if(is_array($this->elements)){
 
             foreach($this->elements as $element)
-                call_user_func_array(array($element, $method), $args);
+                call_user_func_array([$element, $method], $args);
 
         }
 
@@ -352,13 +352,14 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
     }
 
-    public function offsetExists($offset){
+    public function offsetExists($offset) : bool {
 
         return array_key_exists($offset, $this->elements);
 
     }
 
-    public function offsetGet($offset){
+    #[\ReturnTypeWillChange]
+    public function offsetGet($offset) {
 
         if(array_key_exists($offset, $this->elements))
             return $this->elements[$offset];
@@ -367,7 +368,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
     }
 
-    public function offsetSet($offset, $value){
+    public function offsetSet($offset, $value) : void {
 
         if(!$value instanceof Element)
             return;
@@ -376,7 +377,7 @@ class ElementCollection implements \ArrayAccess, \Iterator {
 
     }
 
-    public function offsetUnset($offset){
+    public function offsetUnset($offset) : void {
 
         if(array_key_exists($offset, $this->elements))
             unset($this->elements[$offset]);

@@ -6,9 +6,9 @@ class Property implements \ArrayAccess {
 
     private $namespace;
 
-    private $attributes = array();
+    private $attributes = [];
 
-    private $elements = array();
+    private $elements = [];
 
     function __construct(\DOMElement $dom = null) {
 
@@ -98,12 +98,13 @@ class Property implements \ArrayAccess {
 
     }
 
-    public function offsetExists($offset) {
+    public function offsetExists($offset) : bool {
 
         return array_key_exists($this->fkey($offset), $this->attributes);
 
     }
 
+    #[\ReturnTypeWillChange]
     public function offsetGet($offset) {
 
         $offset = $this->fkey($offset);
@@ -115,13 +116,13 @@ class Property implements \ArrayAccess {
 
     }
 
-    public function offsetSet($offset, $value) {
+    public function offsetSet($offset, $value) : void {
 
         $this->attributes[$this->fkey($offset)] = $value;
 
     }
 
-    public function offsetUnset($offset) {
+    public function offsetUnset($offset) : void {
 
         $offset = $this->fkey($offset);
 

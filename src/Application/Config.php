@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/Application/Config.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 /**
@@ -23,7 +23,7 @@ namespace Hazaar\Application;
  */
 class Config extends \Hazaar\Map {
 
-    static public $override_paths = array();
+    static public $override_paths = [];
 
     private $env;
 
@@ -53,7 +53,7 @@ class Config extends \Hazaar\Map {
      *
      * @param       mixed   $override_paths An array of subdirectory names to look for overrides.
      */
-    function __construct($source_file = null, $env = NULL, $defaults = array(), $path_type = FILE_PATH_CONFIG, $override_namespaces = false) {
+    function __construct($source_file = null, $env = NULL, $defaults = [], $path_type = FILE_PATH_CONFIG, $override_namespaces = false) {
 
         $config = null;
 
@@ -62,39 +62,39 @@ class Config extends \Hazaar\Map {
 
         $this->env = $env;
 
-        if($this->source = trim($source_file)){
+        if($source_file !== null && ($this->source = trim($source_file))){
 
             if($config = $this->load($this->source, $defaults, $path_type, Config::$override_paths, $override_namespaces))
                 $this->loaded = ($config->count() > 0);
 
         }
 
-        $filters = array(
-            'out' => array(
-                array(
+        $filters = [
+            'out' => [
+                [
                     'field' => null,
-                    'callback' => array($this, 'parseString')
-                )
-            )
-        );
+                    'callback' => [$this, 'parseString']
+                ]
+            ]
+        ];
 
         parent::__construct($config, null, $filters);
 
     }
 
-    public function load($source, $defaults = array(), $path_type = FILE_PATH_CONFIG, $override_paths = null, $override_namespaces = false) {
+    public function load($source, $defaults = [], $path_type = FILE_PATH_CONFIG, $override_paths = null, $override_namespaces = false) {
 
-        $options = array();
+        $options = [];
 
-        $sources = array(array('name' => $source, 'ns' => true));
+        $sources = [['name' => $source, 'ns' => true]];
 
         if($override_paths){
 
             if(!is_array($override_paths))
-                $override_paths = array($override_paths);
+                $override_paths = [$override_paths];
 
             foreach($override_paths as $override)
-                $sources[] = array('name' => $override . DIRECTORY_SEPARATOR . $source, 'ns' => $override_namespaces);
+                $sources[] = ['name' => $override . DIRECTORY_SEPARATOR . $source, 'ns' => $override_namespaces];
 
 
         }
@@ -110,7 +110,7 @@ class Config extends \Hazaar\Map {
 
             }else{ //Otherwise, search for files with supported extensions
 
-                $extensions = array('json', 'ini'); //Ordered by preference
+                $extensions = ['json', 'ini']; //Ordered by preference
 
                 foreach($extensions as $ext){
 
@@ -128,13 +128,13 @@ class Config extends \Hazaar\Map {
 
             $source_data = $this->loadSourceFile($source_file);
 
-            $options[] = ($source_info['ns'] === true) ? $source_data : array($this->env => $this->loadSourceFile($source_file));
+            $options[] = ($source_info['ns'] === true) ? $source_data : [$this->env => $this->loadSourceFile($source_file)];
 
         }
 
         if(!count($options) > 0) return false;
 
-        $combined = array();
+        $combined = [];
 
         foreach($options as $o){
 
@@ -156,7 +156,7 @@ class Config extends \Hazaar\Map {
 
     private function loadSourceFile($source){
 
-        $config = array();
+        $config = [];
 
         $cache_key = null;
 
@@ -249,7 +249,7 @@ class Config extends \Hazaar\Map {
             return false;
 
         if(!is_array($this->global))
-            $this->global = array();
+            $this->global = [];
 
         $this->global = array_merge($this->global, $options);
 
@@ -258,7 +258,7 @@ class Config extends \Hazaar\Map {
             if($key === 'include') {
 
                 if(!\Hazaar\Map::is_array($values))
-                    $values = array($values);
+                    $values = [$values];
 
                 foreach($values as $include_environment)
                     $this->loadConfigOptions($options, $config, $include_environment);
@@ -266,7 +266,7 @@ class Config extends \Hazaar\Map {
             } elseif($key === 'import') {
 
                 if(!\Hazaar\Map::is_array($values))
-                    $values = array($values);
+                    $values = [$values];
 
                 foreach($values as $import_file){
 
@@ -474,8 +474,8 @@ class Config extends \Hazaar\Map {
 
     public function parseString($elem, $key){
 
-        $allowed_values = array(
-            'GLOBALS' => &$GLOBALS,
+        $allowed_values = [
+            'GLOBALS' => $GLOBALS,
             '_SERVER' => &$_SERVER,
             '_GET' => &$_GET,
             '_POST' => &$_POST,
@@ -484,7 +484,7 @@ class Config extends \Hazaar\Map {
             '_SESSION' => &$_SESSION,
             '_REQUEST' => &$_REQUEST,
             '_ENV' => &$_ENV
-        );
+        ];
 
         if($app = \Hazaar\Application::getInstance())
             $allowed_values['_APP'] = &$app->GLOBALS;

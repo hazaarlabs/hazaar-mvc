@@ -1,22 +1,22 @@
 {
   "name": "hazaarlabs/hazaar-mvc",
   "description": "The MVC framework that makes PHP not suck!",
-  "homepage": "http://hazaarmvc.com",
+  "homepage": "http://hazaar.io",
   "license": "Apache-2.0",
   "authors": [
     {
       "name": "Jamie Carl",
-      "email": "jamie@hazaarlabs.com",
-      "homepage": "http://www.hazaarlabs.com",
+      "email": "jamie@hazaar.io",
+      "homepage": "http://www.hazaar.io",
       "role": "developer"
     }
   ],
   "support": {
-    "email": "support@hazaarlabs.com",
-    "issues": "https://git.hazaarlabs.com/hazaar/hazaar-mvc/issues",
-    "wiki": "https://git.hazaarlabs.com/hazaar/hazaar-mvc/wikis/home",
-    "docs": "https://hazaarmvc.com/docs",
-    "source": "https://git.hazaarlabs.com/hazaar/hazaar-mvc/tree/master"
+    "email": "support@hazaar.io",
+    "issues": "https://git.hazaar.io/hazaar/hazaar-mvc/issues",
+    "wiki": "https://git.hazaar.io/hazaar/hazaar-mvc/wikis/home",
+    "docs": "https://scroly.io/hazaarmvc",
+    "source": "https://git.hazaar.io/hazaar/hazaar-mvc/tree/master"
   },
   "type": "library",
   "keywords": [
@@ -27,15 +27,20 @@
     "hmvc"
   ],
   "autoload": {
+    "files": [
+      "src/ErrorControl.php",
+      "src/Loader.php"
+    ],
     "psr-4": {
       "Hazaar\\": "src/"
     }
   },
   "require": {
-    "php": "^5.6 || ^7.0"
+    "php": ">=5.6",
+    "hazaarlabs/hazaar-common": "dev-master as 3.0.0"
   },
   "require-dev": {
-    "phpunit/phpunit": "^8.1.0"
+    "phpunit/phpunit": ">=9.3.0"
   },
   "autoload-dev": {
     "psr-0": {

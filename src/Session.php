@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/Session.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar;
@@ -26,12 +26,12 @@ class Session extends \Hazaar\Cache {
 
     private $session_init = false;
 
-    public function __construct($options = array(), $backend = null) {
+    public function __construct($options = [], $backend = null) {
 
-        $options = new \Hazaar\Map(array(
+        $options = new \Hazaar\Map([
                 'hash_algorithm' => 'ripemd128',
                 'session_name' => 'hazaar-session'
-        ), $options);
+        ], $options);
 
         if($options->has('session_name'))
             $this->session_name = $options->get('session_name');
@@ -47,12 +47,6 @@ class Session extends \Hazaar\Cache {
 
         $options->keepalive = true;
 
-        //If there is no backend requested, and none configured, use SESSION
-        if($backend === NULL
-            && ($app = \Hazaar\Application::getInstance()) instanceof \Hazaar\Application
-            && !$app->config->cache->has('backend'))
-            $backend = array('apc', 'session');
-
         parent::__construct($backend, $options, $this->session_id);
 
         if(!$this->backend->can('keepalive'))
@@ -62,7 +56,7 @@ class Session extends \Hazaar\Cache {
 
     public function set($key, $value, $timeout = NULL) {
 
-        if($this->session_init !== true){
+        if($this->session_init !== true && strpos(php_sapi_name(), 'cli') === false){
 
             setcookie($this->session_name, $this->session_id, 0,  \Hazaar\Application::path());
 
@@ -80,7 +74,7 @@ class Session extends \Hazaar\Cache {
             return false;
 
         if(ake($_COOKIE, $this->session_name) === $this->session_id)
-            setcookie($this->session_name, null, time() - 3600,  \Hazaar\Application::path());
+            setcookie($this->session_name, '', time() - 3600,  \Hazaar\Application::path());
 
         return true;
 

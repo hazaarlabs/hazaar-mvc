@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/ErrorControl.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 set_error_handler('error_handler', E_ERROR);
@@ -47,9 +47,7 @@ function errorAndDie() {
         if(!$controller instanceof \Hazaar\Controller\Error)
             $controller = new \Hazaar\Controller\Error('Error', $app);
 
-        $controller->__initialize($app->request);
-
-        call_user_func_array(array($controller, 'setError'), $args);
+        call_user_func_array([$controller, 'setError'], $args);
 
         $controller->clean_output_buffer();
 
@@ -57,32 +55,32 @@ function errorAndDie() {
 
     } else {
 
-        $error = array(10500, 'An unknown error occurred!', __FILE__, __LINE__, null, array());
+        $error = [10500, 'An unknown error occurred!', __FILE__, __LINE__, null, []];
 
         if(count($args) > 0){
 
             if($args[0] instanceof \Exception
                 || $args[0] instanceof \Error){
 
-                $error = array(
+                $error = [
                     $args[0]->getCode(),
                     $args[0]->getMessage(),
                     $args[0]->getFile(),
                     $args[0]->getLine(),
                     null,
                     $args[0]->getTrace()
-                );
+                ];
 
-            }elseif(isset($arg[0]) && is_array($arg[0]) && array_key_exists('type', $arg[0])){
+            }elseif(isset($args[0]) && is_array($args[0]) && array_key_exists('type', $args[0])){
 
-                $error = array(
-                    $arg[0]['type'],
-                    $arg[0]['message'],
-                    $arg[0]['file'],
-                    $arg[0]['line'],
+                $error = [
+                    $args[0]['type'],
+                    $args[0]['message'],
+                    $args[0]['file'],
+                    $args[0]['line'],
                     null,
-                    (isset($arg[1]) ? $arg[1] : null)
-                );
+                    (isset($args[1]) ? $args[1] : null)
+                ];
 
             }else{
 
@@ -97,9 +95,9 @@ function errorAndDie() {
                 $die .= "$error[1]\n\n";
 
                 if(!is_array($error[5]))
-                    $error[5] = array();
+                    $error[5] = [];
 
-                $error[5][] = array('file' => $error[2], 'line' => $error[3], 'class' => '', 'function' => '');
+                $error[5][] = ['file' => $error[2], 'line' => $error[3], 'class' => '', 'function' => ''];
 
                 $die .= "Call stack:\n\n";
 
@@ -180,12 +178,12 @@ function shutdown_handler() {
 
     if($error = error_get_last()){
 
-        $ignored_errors = array(
+        $ignored_errors = [
             E_CORE_WARNING,
             E_COMPILE_WARNING,
             E_USER_WARNING,
             E_RECOVERABLE_ERROR
-        );
+        ];
 
         if(is_array($error) && !in_array($error['type'], $ignored_errors))
             errorAndDie($error, debug_backtrace());

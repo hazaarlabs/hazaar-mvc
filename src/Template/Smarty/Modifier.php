@@ -4,7 +4,7 @@ namespace Hazaar\Template\Smarty;
 
 class Modifier {
 
-    static private $modifiers = array(
+    static private $modifiers = [
         'capitalize',
         'cat',
         'count_characters',
@@ -30,7 +30,7 @@ class Modifier {
 
         //Custom Hazaar MVC Modifiers
         'implode'
-    );
+    ];
 
     static public function has_function($func){
 
@@ -94,7 +94,7 @@ class Modifier {
 
         if(!$format) $format = '%c';
 
-        return strftime($format, $item->getTimestamp());
+        return str_ftime($format, $item->getTimestamp());
 
     }
 

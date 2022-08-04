@@ -13,11 +13,11 @@ class jQuery extends Script {
 
     static private $instance = null;
 
-    private $pre_exec = array();
+    private $pre_exec = [];
 
-    private $exec = array();
+    private $exec = [];
 
-    private $post_exec = array();
+    private $post_exec = [];
 
     /**
      * @detail      The jQuery constructor.

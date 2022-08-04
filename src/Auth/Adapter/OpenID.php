@@ -12,7 +12,7 @@ namespace Hazaar\Auth\Adapter;
  */
 class OpenID extends \Hazaar\Auth\Adapter\OAuth2 {
 
-    function __construct($client_id, $client_secret, $grant_type = 'code', $cache_config = array(), $cache_backend = 'session') {
+    function __construct($client_id, $client_secret, $grant_type = 'code', $cache_config = [], $cache_backend = 'session') {
 
         parent::__construct($client_id, $client_secret, $grant_type, $cache_config, $cache_backend);
 

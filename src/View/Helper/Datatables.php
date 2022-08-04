@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/View/Helper/Datatables.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2016 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2016 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar\View\Helper;
@@ -22,12 +22,12 @@ class Datatables extends \Hazaar\View\Helper {
 
     }
 
-    public function init(\Hazaar\View\Layout $view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = []) {
 
-        $files = array(
+        $files = [
             'js/jquery.dataTables.min.js',
             'css/jquery.dataTables.min.css'
-        );
+        ];
 
         $this->cdnjs->load('datatables', null, $files);
 

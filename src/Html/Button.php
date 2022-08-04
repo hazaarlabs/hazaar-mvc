@@ -21,7 +21,7 @@ class Button extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($label = null, $type = 'button', $parameters = array()) {
+    function __construct($label = null, $type = 'button', $parameters = []) {
 
         if($type)
             $parameters['type'] = $type;

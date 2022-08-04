@@ -4,11 +4,11 @@ namespace Hazaar\Html;
 
 class Style {
 
-    private $selectors = array();
+    private $selectors = [];
 
     private $current;
 
-    function __construct($selector = NULL, $elements = array()) {
+    function __construct($selector = NULL, $elements = []) {
 
         $this->current = $selector;
 
@@ -76,7 +76,7 @@ class Style {
                 throw new \Hazaar\Exception('Argument should be an array when only passing one argument to Style::set()');
 
             if(! array_key_exists($this->current, $this->selectors) || ! is_array($this->selectors[$this->current]))
-                $this->selectors[$this->current] = array();
+                $this->selectors[$this->current] = [];
 
             $this->selectors[$this->current] = array_merge($this->selectors[$this->current], $value);
 
@@ -143,7 +143,7 @@ class Style {
         /*
          * Otherwise build a style block
          */
-        $selectors = array();
+        $selectors = [];
 
         foreach($this->selectors as $selector => $properties) {
 
@@ -168,7 +168,7 @@ class Style {
     /**
      * Array Access Methods
      */
-    public function offsetExists($offset) {
+    public function offsetExists($offset) : bool {
 
         return array_key_exists($offset, $this->selectors);
 
@@ -183,13 +183,13 @@ class Style {
 
     }
 
-    public function offsetSet($offset, $value) {
+    public function offsetSet($offset, $value) : void {
 
         $this->selectors[$offset] = $value;
 
     }
 
-    public function offsetUnset($offset) {
+    public function offsetUnset($offset) : void {
 
         unset($this->selectos[$offset]);
 

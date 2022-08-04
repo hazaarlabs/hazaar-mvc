@@ -26,10 +26,10 @@ class MongoDB extends \Hazaar\Logger\Backend {
 
         $this->setDefaultOption('write_uri', true);
 
-        $db = new \Hazaar\Mongo\DB(array(
+        $db = new \Hazaar\Mongo\DB([
             'hosts'    => $hosts,
             'database' => $this->getOption('database')
-        ));
+        ]);
 
         $this->collection = $db->selectCollection($this->getOption('collection'));
 
@@ -42,7 +42,7 @@ class MongoDB extends \Hazaar\Logger\Backend {
 
         try {
 
-            $doc = array('tag' => $tag, 'message' => $message);
+            $doc = ['tag' => $tag, 'message' => $message];
 
             $remote = $_SERVER['REMOTE_ADDR'];
 
