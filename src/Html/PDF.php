@@ -61,23 +61,23 @@ class PDF {
 
         $this->page_top = 0;
 
-        $fonts = array();
+        $fonts = [];
 
-        $document = new Block('div', null, array('class' => 'document'));
+        $document = new Block('div', null, ['class' => 'document']);
 
         $style = new Style();
 
-        $style->select('span.text')->set(array(
+        $style->select('span.text')->set([
             'position' => 'absolute',
             'white-space' => 'nowrap'
-        ));
+        ]);
 
-        $style->select('div.image')->set(array(
+        $style->select('div.image')->set([
             'position' => 'absolute',
             'background-color' => 'transparent',
             'background-repeat' => 'no-repeat',
             'background-size' => '100%'
-        ));
+        ]);
 
         $document->add($style);
 
@@ -111,19 +111,19 @@ class PDF {
          */
         $page_style = new Style();
 
-        $page_style->set(array(
+        $page_style->set([
             'position' => $xml['position'],
             'top' => $this->page_top . 'px',
             'width' => $xml['width'] . 'px',
             'height' => $xml['height'] . 'px'
-        ));
+        ]);
 
         $this->page_top += $xml['height'];
 
-        $page = new Block('div', null, array(
+        $page = new Block('div', null, [
             'class' => 'page',
             'style' => $page_style
-        ));
+        ]);
 
         foreach($xml as $element) {
 
@@ -166,22 +166,22 @@ class PDF {
 
                 $content = new \Hazaar\File($xml['src']);
 
-                $style->set('background-image', 'url(data:' . $content->getMimeType() . ';base64,' . $content->asBase64() . ')');
+                $style->set('background-image', 'url(data:' . $content->mime_content_type() . ';base64,' . $content->base64() . ')');
 
-                $element = new Block('div', null, array(
+                $element = new Block('div', null, [
                     'class' => 'image',
                     'style' => $style
-                ));
+                ]);
 
                 break;
 
             case 'text' :
                 $style->set('line-height', $xml['height'] . 'px');
 
-                $attr = array(
+                $attr = [
                     'class' => 'text',
                     'style' => $style
-                );
+                ];
 
                 if($xml->count() == 0) {
 

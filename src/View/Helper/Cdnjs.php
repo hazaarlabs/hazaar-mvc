@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/View/Helper/Cdnjs.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2016 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2016 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar\View\Helper;
@@ -20,7 +20,7 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     private $cache_local = false;
 
-    private $libraries = array();
+    private $libraries = [];
 
     static private $cache;
 
@@ -33,7 +33,7 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     }
 
-    public function init(\Hazaar\View\Layout $view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = []) {
 
         $this->cache_local = ake($args, 'cache_local');
 
@@ -42,7 +42,7 @@ class Cdnjs extends \Hazaar\View\Helper {
             foreach($libs as $lib){
 
                 if(!is_array($lib))
-                    $lib = array('name' => $lib);
+                    $lib = ['name' => $lib];
 
                 if(!array_key_exists('name', $lib))
                     continue;
@@ -161,13 +161,16 @@ class Cdnjs extends \Hazaar\View\Helper {
 
                 $info = $assets;
 
-                $info['default'] = $library_info['filename'];
-
                 break 2;
 
             }
 
         }
+
+        if($version && $info === null)
+            $info = $this->getLibraryVersion($name, $version, ($i > 0));
+
+        $info['default'] = $library_info['filename'];
 
         if(!is_array($info) > 0)
             throw new \Hazaar\Exception('CDNJS: Version ' . $version . ' is not available in package ' . $name);
@@ -176,7 +179,7 @@ class Cdnjs extends \Hazaar\View\Helper {
 
         if($files && is_array($files)){
 
-            $info['load'] = array();
+            $info['load'] = [];
 
             foreach($files as $file){
 
@@ -185,7 +188,7 @@ class Cdnjs extends \Hazaar\View\Helper {
 
             }
 
-        }else $info['load'] = array($info['default']);
+        }else $info['load'] = [$info['default']];
 
         $this->libraries[$name] = $info;
 
@@ -211,6 +214,35 @@ class Cdnjs extends \Hazaar\View\Helper {
 
         self::$cache->set($name, $info);
 
+        $this->unlock();
+
+        return $info;
+
+    }
+
+    public function getLibraryVersion($name, $version, $force_reload = false){
+
+        $cache_key = $name . '-' . $version;
+
+        if($force_reload === false && ($info = self::$cache->get($cache_key)) !== null)
+            return $info;
+
+        if($this->lock() !== true){
+
+            //Check again if we blocked getting the lock as someone else may have written the info
+            if(($info = self::$cache->get($cache_key)) !== null)
+                return $info;
+
+        }
+
+        if(!($content = @file_get_contents('https://api.cdnjs.com/libraries/' . $name . '/' . $version)))
+            throw new \Exception("CDNJS: Requested version ($version) of '$name' is not found!");
+            
+        if(!($info = json_decode($content, true)))
+            throw new \Hazaar\Exception('CDNJS: Error parsing package info!');
+
+        self::$cache->set($cache_key, $info);
+            
         $this->unlock();
 
         return $info;

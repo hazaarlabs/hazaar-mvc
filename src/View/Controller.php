@@ -33,7 +33,7 @@ class Controller extends \Hazaar\Controller {
 
                 $this->method = array_shift($parts);
 
-                $this->params = array($request);
+                $this->params = [$request];
 
                 break;
 
@@ -44,7 +44,7 @@ class Controller extends \Hazaar\Controller {
 
                 $this->method = 'lib';
 
-                $this->params = array($controller, $request);
+                $this->params = [$controller, $request];
 
                 break;
 
@@ -62,7 +62,7 @@ class Controller extends \Hazaar\Controller {
         if(!method_exists($this->helper, $this->method))
             throw new \Hazaar\Exception('Method not found!', 404);
 
-        $response = call_user_func_array(array($this->helper, $this->method), $this->params);
+        $response = call_user_func_array([$this->helper, $this->method], $this->params);
 
         return $response;
 

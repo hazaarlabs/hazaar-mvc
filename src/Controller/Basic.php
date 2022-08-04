@@ -2,9 +2,9 @@
 /**
  * @file        Controller/Basic.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar\Controller;
@@ -31,9 +31,9 @@ abstract class Basic extends \Hazaar\Controller {
 
     protected $__action        = 'index';
 
-    protected $__actionArgs    = array();
+    protected $__actionArgs    = [];
 
-    protected $__cachedActions = array();
+    protected $__cachedActions = [];
 
     protected static $__cache  = null;
 
@@ -45,7 +45,7 @@ abstract class Basic extends \Hazaar\Controller {
         if(!Basic::$__cache instanceof \Hazaar\Cache)
             Basic::$__cache = new \Hazaar\Cache();
 
-        $this->__cachedActions[$this->name . '::' . $action] = array('timeout' => $timeout, 'public' => $public);
+        $this->__cachedActions[$this->name . '::' . $action] = ['timeout' => $timeout, 'public' => $public];
 
         return true;
 
@@ -120,7 +120,7 @@ abstract class Basic extends \Hazaar\Controller {
 
                 array_unshift($this->__actionArgs, $this->name);
 
-                $this->__action = $action = '__default';
+                $action = '__default';
 
             } else {
 
@@ -277,7 +277,7 @@ abstract class Basic extends \Hazaar\Controller {
 
         $target->__initialize($this->request);
 
-        return call_user_func_array(array($target, $action), $actionArgs);
+        return call_user_func_array([$target, $action], $actionArgs);
 
     }
 

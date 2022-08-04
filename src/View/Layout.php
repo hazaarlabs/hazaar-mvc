@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/View/Layout.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar\View;
@@ -15,17 +15,17 @@ class Layout extends \Hazaar\View {
 
     private $_rendered_views = null;
 
-    private $_views   = array();
+    private $_views   = [];
 
     protected $_priority = 0;
 
-    protected $_links = array();
+    protected $_links = [];
 
-    protected $_requires = array();
+    protected $_requires = [];
 
-    protected $_requires_param = array();
+    protected $_requires_param = [];
 
-    protected $_postItems = array();
+    protected $_postItems = [];
 
     private $cacheDir;
 
@@ -34,7 +34,7 @@ class Layout extends \Hazaar\View {
         if(! $view)
             $view = 'application';
 
-        parent::__construct($view, array('html', 'hazaar'));
+        parent::__construct($view, ['html', 'hazaar']);
 
         if ($this->application->config->has('view')) {
 
@@ -377,7 +377,7 @@ class Layout extends \Hazaar\View {
 
         $app_url = (string)\Hazaar\Application::getInstance()->url();
 
-        if(!substr($request->referer(), 0, strlen($app_url)) == $app_url)
+        if(substr($request->referer(), 0, strlen($app_url)) !== $app_url)
             throw new \Hazaar\Exception('You are not allowed to access this resource!', 403);
 
         $this->application->config->app['compress'] = false;
@@ -407,7 +407,7 @@ class Layout extends \Hazaar\View {
             if(!($content = @file_get_contents($url)))
                 throw new \Hazaar\Exception('Unable to cache from source ' . $url, 502);
 
-            $headers = array();
+            $headers = [];
 
             foreach($http_response_header as $idx => $hdr){
 

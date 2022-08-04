@@ -58,7 +58,7 @@ class Btree {
     /**
      * @var array Node cache
      */
-    private $nodecache = array();
+    private $nodecache = [];
 
     public $LOCK_EX = LOCK_EX;
 
@@ -131,7 +131,7 @@ class Btree {
 
             }
 
-            $root = self::serialize(self::KVNODE, array());
+            $root = self::serialize(self::KVNODE, []);
 
             $to_write = pack('N', strlen($root)) . $root;
 
@@ -188,9 +188,13 @@ class Btree {
 
         $lookup = $this->lookup($key);
 
-        $leaf = end($lookup);
+        if(is_array($lookup)){
 
-        if ($leaf !== null && isset($leaf[$key])) return $leaf[$key];
+            $leaf = end($lookup);
+
+            if ($leaf !== null && isset($leaf[$key])) return $leaf[$key];
+
+        }
 
         return null;
 
@@ -218,11 +222,11 @@ class Btree {
 
         if (end($start) === null || end($end) === null) return null;
 
-        $upnodes = array();
+        $upnodes = [];
 
         while (!empty($start)) {
 
-            $nodes = array();
+            $nodes = [];
 
             foreach (array_merge(array_shift($start), $upnodes, array_shift($end)) as $k => $v) {
 
@@ -315,14 +319,14 @@ class Btree {
 
                 $new_index = current(array_keys($upnode));
 
-                $sibling = $prev = array(null, null);
+                $sibling = $prev = [null, null];
 
                 foreach ($upnode as $k => $v) {
 
                     if ($index === $k)
                         $sibling = $prev; // left sibling
                     else if ($index === $prev[0])
-                        $sibling = array($k, $v); // right sibling
+                        $sibling = [$k, $v]; // right sibling
 
                     if ($sibling[0] !== null) {
 
@@ -344,9 +348,9 @@ class Btree {
 
                     }
 
-                    $prev = array($k, $v);
+                    $prev = [$k, $v];
 
-                    $sibling = array(null, null);
+                    $sibling = [null, null];
 
                 }
 
@@ -357,11 +361,11 @@ class Btree {
             ksort($node, SORT_STRING);
 
             if (count($node) <= self::NODE_SLOTS)
-                $nodes = array($node);
+                $nodes = [$node];
             else
                 $nodes = array_chunk($node, ceil(count($node) / ceil(count($node) / self::NODE_SLOTS)), true);
 
-            $upnode = array_merge(array(), (array) array_pop($lookup));
+            $upnode = array_merge([], (array) array_pop($lookup));
 
             if ($new_index === null)
                 $new_index = current(array_keys($upnode));
@@ -451,9 +455,9 @@ class Btree {
             list($node_type, $node) = $this->root();
 
         if ($node_type === null || $node === null)
-            return array(null);
+            return [null];
 
-        $ret = array();
+        $ret = [];
 
         do {
 
@@ -486,7 +490,7 @@ class Btree {
 
                 list($node_type, $node) = $this->node($node[$keys[$l]]);
 
-                if ($node_type === null || $node === null) return array(null);
+                if ($node_type === null || $node === null) return [null];
 
             }
 
@@ -518,7 +522,7 @@ class Btree {
      */
     public function keys(){
 
-        $keys = array();
+        $keys = [];
 
         if(is_array($leaves = $this->leaves())){
 
@@ -564,13 +568,13 @@ class Btree {
         if ($node_type === null || $node === null)
             return null;
 
-        $nodes = array(array($node_type, $node, $p));
+        $nodes = [[$node_type, $node, $p]];
 
-        $ret = array();
+        $ret = [];
 
         do {
 
-            $new_nodes = array();
+            $new_nodes = [];
 
             foreach ($nodes as $_) {
 
@@ -592,7 +596,7 @@ class Btree {
                         if ($child_type === self::KVNODE)
                             $ret[current(array_keys($child))] = $i;
                         else
-                            $new_nodes[] = array($child_type, $child, $i);
+                            $new_nodes[] = [$child_type, $child, $i];
 
                     }
 
@@ -639,7 +643,7 @@ class Btree {
 
         }
 
-        $this->nodecache = array();
+        $this->nodecache = [];
 
         $this->file->close();
 
@@ -671,11 +675,11 @@ class Btree {
         if ($node_type === self::KPNODE){
 
             foreach ($node as $k => $v)
-                $node[$k] = array($v);
+                $node[$k] = [$v];
 
         }
 
-        $stack = array(array($node_type, $node));
+        $stack = [[$node_type, $node]];
 
         do {
 
@@ -697,13 +701,13 @@ class Btree {
                         if ($child_type === self::KPNODE){
 
                             foreach ($child as $k => $v)
-                                $child[$k] = array($v);
+                                $child[$k] = [$v];
 
                         }
 
-                        array_push($stack, array($node_type, $node));
+                        array_push($stack, [$node_type, $node]);
 
-                        array_push($stack, array($child_type, $child));
+                        array_push($stack, [$child_type, $child]);
 
                         $pushed = true;
 
@@ -720,7 +724,7 @@ class Btree {
             if (!empty($stack))
                 list($upnode_type, $upnode) = array_pop($stack);
             else
-                list($upnode_type, $upnode) = array(null, array());
+                list($upnode_type, $upnode) = [null, []];
 
             $serialized = self::serialize($node_type, $node);
 
@@ -735,7 +739,7 @@ class Btree {
             $upnode[current(array_keys($node))] = $p;
 
             if (!(empty($stack) && $upnode_type === null))
-                array_push($stack, array($upnode_type, $upnode));
+                array_push($stack, [$upnode_type, $upnode]);
 
         } while (!empty($stack));
 
@@ -746,12 +750,12 @@ class Btree {
     /**
      * Get root node
      *
-     * @return array 0 => node type, 1 => node; array(null, null) on failure
+     * @return array 0 => node type, 1 => node; [null, null] on failure
      */
     private function root() {
 
         if (($p = $this->roothunt()) === null)
-            return array(null, null);
+            return [null, null];
 
         return $this->node($p);
 
@@ -818,7 +822,7 @@ class Btree {
      *
      * @param int $p Pointer to node (offset in file)
      *
-     * @retrun array 0 => node type, 1 => node; array(null, null) on failure
+     * @retrun array 0 => node type, 1 => node; [null, null] on failure
      */
     private function node($p) {
 
@@ -828,15 +832,15 @@ class Btree {
                 array_pop($this->nodecache);
 
             if ($this->file->seek($p, SEEK_SET) === -1)
-                return array(null, null);
+                return [null, null];
 
             if (strlen($data = $this->file->read(self::SIZEOF_INT)) !== self::SIZEOF_INT)
-                return array(null, null);
+                return [null, null];
 
             list(,$n) = unpack('N', $data);
 
             if (strlen($node = $this->file->read($n)) !== $n)
-                return array(null, null);
+                return [null, null];
 
             $this->nodecache[$p] = self::unserialize($node);
 
@@ -869,7 +873,7 @@ class Btree {
      */
     private static function unserialize($str) {
 
-        return array(substr($str, 0, 2), unserialize(substr($str, 2)));
+        return [substr($str, 0, 2), unserialize(substr($str, 2))];
 
     }
 
@@ -891,7 +895,7 @@ class Btree {
 
     public function dropCache(){
         
-        $this->nodecache = array();
+        $this->nodecache = [];
 
     }
 

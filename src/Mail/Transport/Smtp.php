@@ -17,11 +17,16 @@ class Smtp extends \Hazaar\Mail\Transport {
         if(!$config->has('server'))
             throw new \Exception('Cannot send mail.  No SMTP mail server is configured!');
 
+        $config->populate([
+            'port' => 25,
+            'timeout' => 5
+        ], false);
+
         $this->server = $config->server;
 
-        $this->port = $config->get('port', 25);
+        $this->port = $config->get('port');
 
-        $this->read_timeout = $config->get('timeout', 5);
+        $this->read_timeout = $config->get('timeout');
 
     }
 
@@ -72,11 +77,11 @@ class Smtp extends \Hazaar\Mail\Transport {
 
     }
 
-    public function send($to, $subject = null, $message = null, $extra_headers = array()){
+    public function send($to, $subject = null, $message = null, $extra_headers = [], $dsn_types = []){
         
         $from = ake($extra_headers, 'From');
 
-        if(preg_match('/\<(\w+@.+)\>/', $from, $matches))
+        if(preg_match('/\<([^\>]+)\>/', $from, $matches))
             $from = $matches[1];
 
         $this->connect($this->server, $this->port);
@@ -89,10 +94,22 @@ class Smtp extends \Hazaar\Mail\Transport {
         if(!$this->read(250, 65535, $result, $response))
             throw new \Exception('Bad response on mail from: ' . $result);
         
-        $auth_methods = array_reduce(explode("\r\n", $response), function($carry, $item){
-            if(substr($item, 0, 8) === '250-AUTH') return array_merge($carry, explode(' ', substr($item, 9)));
+        $modules = explode("\r\n", $response);
+
+        foreach($modules as &$module){
+
+            if(substr($module, 0, 4) === '250-')
+                $module = strtoupper(substr($module, 4));
+
+        }
+
+        $auth_methods = array_reduce($modules, function($carry, $item){
+            if(substr($item, 0, 8) === 'AUTH') return array_merge($carry, explode(' ', substr($item, 9)));
             return $carry;
-        }, array());
+        }, []);
+
+        if($dsn_active = is_array($dsn_types) && count($dsn_types) > 0 && in_array('DSN', $modules))
+            $dsn_types = array_map('strtoupper', $dsn_types);
 
         if($this->options->has('username')){
 
@@ -138,17 +155,25 @@ class Smtp extends \Hazaar\Mail\Transport {
 
         }
 
-        $this->write("MAIL FROM: $from");
+        $this->write("MAIL FROM: $from" . ($dsn_active ? ' RET=HDRS' : ''));
 
         if(!$this->read(250, 1024, $result))
             throw new \Exception('Bad response on mail from: ' . $result);
 
-        foreach($to as $x){
+        $rcpt = $to;
+
+        if($cc = ake($extra_headers, 'CC'))
+            $rcpt = array_merge($rcpt, array_map('trim', explode(',', $cc)));
+
+        if($bcc = ake($extra_headers, 'BCC'))
+            $rcpt = array_merge($rcpt, array_map('trim', explode(',', $bcc)));
+
+        foreach($rcpt as $x){
 
             if(preg_match('/^(.*)<(.*)>$/', $x, $matches)){
 
                 if(!(array_key_exists('To', $extra_headers) && is_array($extra_headers['To'])))
-                    $extra_headers['To'] = (array_key_exists('To', $extra_headers) ? $extra_headers['To'] : array());
+                    $extra_headers['To'] = (array_key_exists('To', $extra_headers) ? $extra_headers['To'] : []);
 
                 $extra_headers['To'][] = $x;
 
@@ -156,7 +181,7 @@ class Smtp extends \Hazaar\Mail\Transport {
 
             }
 
-            $this->write("RCPT TO: <$x>");
+            $this->write("RCPT TO: <$x>" . ($dsn_active ? ' NOTIFY=' . implode(',', $dsn_types) : ''));
 
             if(!$this->read(250, 1024, $result))
                 throw new \Exception('Bad response on mail to: ' . $result);

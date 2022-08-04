@@ -3,9 +3,9 @@
 /**
  * @file        Hazaar/Cache/Backend/File.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 namespace Hazaar\Cache\Backend;
 
@@ -40,11 +40,11 @@ class File extends \Hazaar\Cache\Backend {
 
     private   $timeout;
 
-    private   $local = array();
+    private   $local = [];
 
     private   $store;
 
-    static private $__open_store = array();
+    static private $__open_store = [];
 
     static public function available(){
 
@@ -61,13 +61,13 @@ class File extends \Hazaar\Cache\Backend {
         else
             $cache_dir = sys_get_temp_dir();
 
-        $this->configure(array(
+        $this->configure([
             'cache_dir'   => $cache_dir,
             'file_prefix' => NULL,
             'use_zlib'    => false,
             'encode_fs'   => false,
             'keepalive'   => false
-        ));
+        ]);
 
         $cache_dir = $this->options->cache_dir
             . ( ($this->options->file_prefix ) ? DIRECTORY_SEPARATOR . $this->options->file_prefix : null )
@@ -223,7 +223,7 @@ class File extends \Hazaar\Cache\Backend {
         if($this->zlib && $this->options->use_zlib)
             $value = gzcompress($value, 9);
 
-        $data = array('data' => $value);
+        $data = ['data' => $value];
 
         if($timeout > 0)
             $data['expire'] = time() + $timeout;
@@ -254,7 +254,7 @@ class File extends \Hazaar\Cache\Backend {
 
     public function toArray(){
 
-        $array = array();
+        $array = [];
 
         $values = $this->store->range("\x00", "\xff");
 

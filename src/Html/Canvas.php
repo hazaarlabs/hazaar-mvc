@@ -21,7 +21,7 @@ class Canvas extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($name, $parameters = array()) {
+    function __construct($name, $parameters = []) {
 
         $parameters['id'] = $name;
 

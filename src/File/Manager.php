@@ -9,26 +9,26 @@ use \Hazaar\File\Dir;
 
 class Manager implements Backend\_Interface {
 
-    static private $backend_aliases = array(
+    static private $backend_aliases = [
         'googledrive' => 'GoogleDrive',
         'mongodb'     => 'MongoDB',
         'sharepoint'  => 'SharePoint',
         'webdav'      => 'WebDAV'
-    );
+    ];
 
-    static public  $default_config = array(
+    static public  $default_config = [
         'enabled' => true,
         'auth' => false,
-        'allow' => array(
+        'allow' => [
             'read' => false,        //Default disallow reads when auth enabled
             'cmd'  => false,        //Default disallow file manager commands
             'dir' => true,          //Allow directory listings
             'filebrowser' => false  //Allow access to the JS file browser
-        ),
-        'userdef' => array(),
+        ],
+        'userdef' => [],
         'failover' => false,
         'log' => false
-    );
+    ];
 
     static private $default_backend;
 
@@ -38,7 +38,7 @@ class Manager implements Backend\_Interface {
 
     private        $backend_name;
 
-    private        $options = array();
+    private        $options = [];
 
     public         $name;
 
@@ -46,7 +46,7 @@ class Manager implements Backend\_Interface {
 
     private        $in_failover = false;
 
-    function __construct($backend = NULL, $backend_options = array(), $name = NULL) {
+    function __construct($backend = NULL, $backend_options = [], $name = NULL) {
 
         if(!$backend) {
 
@@ -60,7 +60,7 @@ class Manager implements Backend\_Interface {
 
                 $backend = 'local';
 
-                $backend_options = array('root' => ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : '/'));
+                $backend_options = ['root' => ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : '/')];
 
             }
 
@@ -140,11 +140,11 @@ class Manager implements Backend\_Interface {
                 if(!class_exists($class))
                     continue;
 
-                $backend = array(
+                $backend = [
                     'name'  => strtolower($source),
                     'label' => $class::label(),
                     'class' => $class
-                );
+                ];
 
                 $backends[] = $backend;
 
@@ -203,9 +203,9 @@ class Manager implements Backend\_Interface {
 
     public function activateFailover(){
 
-        $this->failover = new Manager('local', array(
+        $this->failover = new Manager('local', [
             'root' => Application::getInstance()->runtimePath('media' . DIRECTORY_SEPARATOR . $this->name, true)
-        ));
+        ]);
 
     }
 
@@ -214,7 +214,7 @@ class Manager implements Backend\_Interface {
         if(!($this->failover && $this->backend->is_dir('/')))
             return false;
 
-        $clean = array('dir' => array(), 'file' => array());
+        $clean = ['dir' => [], 'file' => []];
 
         $names = $this->failover->find();
 
@@ -273,6 +273,9 @@ class Manager implements Backend\_Interface {
     
     public function fixPath($path, $file = NULL) {
 
+        if(!$path)
+            return '';
+
         $path = '/' . trim(str_replace('\\', '/', $path), '/');
 
         if($file)
@@ -313,7 +316,7 @@ class Manager implements Backend\_Interface {
      * @param array $options
      * @return bool
      */
-    public function authorize($options = array()) {
+    public function authorize($options = []) {
 
         return $this->authorise($options);
 
@@ -391,7 +394,7 @@ class Manager implements Backend\_Interface {
 
         $dir = $this->dir($path);
 
-        $list = array();
+        $list = [];
 
         while(($file = $dir->read()) != FALSE) {
 
@@ -437,7 +440,7 @@ class Manager implements Backend\_Interface {
 
     }
 
-    public function read($file, $offset = NULL, $maxlen = NULL) {
+    public function read($file, $offset = -1, $maxlen = NULL) {
 
         $bytes = null;
 
@@ -496,14 +499,12 @@ class Manager implements Backend\_Interface {
 
     public function store($source, $target) {
 
-        dir('revamp this');
-
         $file = new \Hazaar\File($source);
 
         if(substr(trim($target), -1, 1) != '/')
             $target .= '/';
 
-        return $this->backend->write($target . $file->filename(), $file->getContents(), $file->getMimeType());
+        return $this->backend->write($target . $file->name(), $file->get_contents(), $file->mime_content_type());
 
     }
 
@@ -525,7 +526,7 @@ class Manager implements Backend\_Interface {
         while(($f = $dir->read()) != FALSE) {
 
             if($progressCallback)
-                call_user_func_array($progressCallback, array('copy', $f));
+                call_user_func_array($progressCallback, ['copy', $f]);
 
             if($f->type() == 'dir')
                 $this->deepCopy($f->fullpath(), $dstPath, $srcManager, $progressCallback);

@@ -2,9 +2,9 @@
 /**
  * @file        Controller/Controller.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar;
@@ -32,6 +32,8 @@ abstract class Controller {
 
     public $use_metrics = true;
 
+    private $_helpers = [];
+
     /**
      * Base controller constructor
      * 
@@ -39,11 +41,23 @@ abstract class Controller {
      * 
      * @param \Hazaar\Application $application An application instance.
      */
-    public function __construct($name, \Hazaar\Application $application) {
+    public function __construct($name) {
 
         $this->name = strtolower($name);
 
+        $this->addHelper('response');
+
+    }
+
+    public function setApplication($application){
+        
         $this->application = $application;
+
+    }
+
+    public function hasApplication(){
+
+        return $this->application instanceof \Hazaar\Application;
 
     }
 
@@ -55,8 +69,16 @@ abstract class Controller {
      */
     public function __shutdown($response) {
 
-        if(method_exists($this, 'shutdown'))
-            $this->shutdown($response);
+        $this->shutdown($response);
+
+    }
+
+    /**
+     * Placeholder shutdown function
+     */
+    public function shutdown($response){
+
+        return true;
 
     }
 
@@ -86,6 +108,8 @@ abstract class Controller {
      * Default run method.
      * 
      * The run method is where the controller does all it's work.  This default one does nothing.
+     * 
+     * @return boolean|Hazaar\Controller\Response
      */
     public function __run(){
 
@@ -173,14 +197,14 @@ abstract class Controller {
         $parts = func_get_args();
 
         if(count($parts) === 1 && strtolower(trim($parts[0])) === $this->url_default_action_name)
-            $parts = array();
+            $parts = [];
 
         $this_parts = explode('/', $this->name);
 
         if(count($parts) === 0 && $this_parts[count($this_parts)-1] === $this->url_default_action_name)
             array_pop($this_parts);
 
-        call_user_func_array(array($url, '__construct'), array_merge($this_parts, $parts));
+        call_user_func_array([$url, '__construct'], array_merge($this_parts, $parts));
 
         return $url;
 
@@ -208,7 +232,89 @@ abstract class Controller {
 
         $parts = func_get_args();
 
-        return call_user_func_array(array($this->application, 'active'), array_merge(array($this->name), $parts));
+        return call_user_func_array([$this->application, 'active'], array_merge([$this->name], $parts));
+
+    }
+
+    public function __get($helper) {
+
+        if(array_key_exists($helper, $this->_helpers))
+            return $this->_helpers[$helper];
+
+        return NULL;
+
+    }
+
+    /*
+     * Dealing with Helpers
+     */
+    public function addHelper($helper, $args = [], $alias = null) {
+
+        if(is_array($helper)) {
+
+            foreach ($helper as $alias => $h)
+                self::addHelper($h, [], $alias);
+
+        } elseif(is_object($helper)) {
+
+            if (! $helper instanceof Controller\Helper)
+                return NULL;
+
+            if($alias === null)
+                $alias = strtolower($helper->getName());
+
+            $this->_helpers[$alias] = $helper;
+
+        } elseif($helper !== null) {
+
+            if($alias === null)
+                $alias = strtolower($helper);
+
+            if(! array_key_exists($alias, $this->_helpers)) {
+
+                if(!($class = $this->findHelper($helper)))
+                    throw new \Exception("View helper '$helper' does not exist");
+
+                $obj = new $class($this, $args);
+
+                $this->_helpers[$alias] = $obj;
+
+            } else {
+
+                if (($obj = $this->_helpers[$alias]) instanceof View\Helper)
+                    $obj->extendArgs($args);
+
+            }
+
+        }
+
+    }
+
+    public function hasHelper($helper){
+
+        return array_key_exists($helper, $this->_helpers);
+        
+    }
+
+    private function findHelper($name){
+
+        /**
+         * Search paths for view helpers.  The order here matters because apps should be able to override built-in helpers.
+         */
+        $search_prefixes = ['\\Application\\Helper\\Controller', '\\Hazaar\\Controller\\Helper'];
+
+        $name = \ucfirst($name);
+
+        foreach($search_prefixes as $prefix){
+
+            $class = $prefix . '\\' . $name;
+
+            if(\class_exists($class))
+                return $class;
+
+        }
+
+        return null;
 
     }
 

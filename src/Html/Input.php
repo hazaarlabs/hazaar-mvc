@@ -28,7 +28,7 @@ class Input extends Inline {
      *
      * @param       array  $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($type, $name, $value = NULL, $parameters = array()) {
+    function __construct($type, $name, $value = NULL, $parameters = []) {
 
         $parameters['type'] = $type;
 

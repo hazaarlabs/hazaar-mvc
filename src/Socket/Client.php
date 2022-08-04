@@ -156,7 +156,7 @@ class Client {
     private $protocol;
 
     /**
-     * @var resource The socket resource
+     * @var \Socket The socket resource
      */
     private $socket;
 
@@ -184,12 +184,12 @@ class Client {
     /**
      * @var array An array of registered event handlers
      */
-    private $events = array();
+    private $events = [];
 
     /**
      * @var array An array of user accessible variables for use in callbacks.
      */
-    private $data = array();
+    private $data = [];
 
     /**
      * The \Hazaar\Socket\Client constructor
@@ -249,7 +249,7 @@ class Client {
      */
     public function setSelectTimeout($milliseconds) {
 
-        $this->select_timeout = $usec;
+        $this->select_timeout = $milliseconds;
 
     }
 
@@ -341,7 +341,7 @@ class Client {
         if(! is_numeric($port))
             $port = getservbyname($port, ($this->protocol == SOL_TCP) ? 'tcp' : 'udp');
 
-        $this->connected = socket_connect($this->socket, $host, $port);
+        $this->connected = @socket_connect($this->socket, $host, $port);
 
         if($this->connected === TRUE)
             $this->onConnect();
@@ -431,15 +431,15 @@ class Client {
      */
     public function on($event, $callback) {
 
-        if(! is_callable($function))
+        if(! is_callable($callback))
             return FALSE;
 
         $event = strtolower($event);
 
         if(! array_key_exists($event, $this->events) || ! is_array($this->events[$event]))
-            $this->events[$event] = array();
+            $this->events[$event] = [];
 
-        $this->events[$event][] = $function;
+        $this->events[$event][] = $callback;
 
         return TRUE;
 
@@ -560,9 +560,9 @@ class Client {
         if(! $this->connected)
             return FALSE;
 
-        $read = array(
+        $read = [
             $this->socket
-        );
+        ];
 
         $write = NULL;
 

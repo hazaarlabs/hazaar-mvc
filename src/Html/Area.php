@@ -23,7 +23,7 @@ class Area extends Inline {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($href, $coords = null, $parameters = array()) {
+    function __construct($href, $coords = null, $parameters = []) {
 
         $parameters['href'] = $href;
 

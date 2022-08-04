@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/View/Helper/JQuery.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar\View\Helper;
@@ -33,9 +33,9 @@ class JQuery extends \Hazaar\View\Helper {
      * @param       string $version (Optional) version of the jQuery library to use from the Google hosted libraries
      *              server.
      */
-    public function init(\Hazaar\View\Layout $view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = []) {
 
-        $settings = new \Hazaar\Map(array('noload' => FALSE), $this->args);
+        $settings = new \Hazaar\Map(['noload' => FALSE], $this->args);
 
         if($settings['noload'] !== TRUE) {
 
@@ -52,7 +52,7 @@ class JQuery extends \Hazaar\View\Helper {
 
                 $ui_version = $settings->has('ui-version') ? $settings->get('ui-version') : null;
 
-                $files = array('jquery-ui.min.js');
+                $files = ['jquery-ui.min.js'];
 
                 if($settings->has('ui-theme'))
                     $files[] = 'themes/' . $settings->get('ui-theme') . '/jquery-ui.min.css';

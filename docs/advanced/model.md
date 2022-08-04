@@ -14,10 +14,10 @@ Simple definitions are just a flat array of key/value pairs with the key as the 
 class MyStrictModel extends \Hazaar\Model\Strict {
     
     public function init(){ 
-        $fields = array(
+        $fields = [
             'mystring' => 'string',
             'myint' => 'integer'
-        );
+        ];
         return $fields;
     }
 }
@@ -38,22 +38,22 @@ Complex definitions are more detailed and allow for the full functionality of st
 ```php
 class MyStrictModel extends \Hazaar\Model\Strict {
     public function init(){
-        $fields = array(
-            'mystr' => array(
+        $fields = [
+            'mystr' => [
                 'type' => 'string',
                 'default' => 'myteststring',
-                'validate' => array('with' => '/test/')
-            ),
-            'mynum' => array(
+                'validate' => ['with' => '/test/']
+            ],
+            'mynum' => [
                 'type' => 'integer',
                 'default' => 300,
-                'validate' => array('min' => 100, 'max' => 500)
-            ),
-            'mybool' => array(
+                'validate' => ['min' => 100, 'max' => 500]
+            ],
+            'mybool' => [
                 'type' => 'boolean',
                 'default' => false
-            )
-        );
+            ]
+        ];
         return $fields;
     }
      
@@ -99,9 +99,9 @@ You could use the callbacks to track changes to values, then you could use the s
 
 ```php
 public function init(){
-    $fields = array(
-        'mystr' => array(
-            'update' => array(
+    $fields = [
+        'mystr' => [
+            'update' => [
                 'pre' => function($value, $key){
                     //do your stuff here.  
                     //remember to return the new value.
@@ -112,9 +112,9 @@ public function init(){
                     //no need to return anything as the update is already done
                 }
             ),
-            'read' => array($this, 'mangleData')
-        )
-    );
+            'read' => [$this, 'mangleData']
+        ]
+    ];
     return $fields;
 }
 protected function mangleData($value, $key){
@@ -139,17 +139,17 @@ class MyStrictModel extends \Hazaar\Model\Strict {
 
     private $db;
     public function init(){ 
-        $fields = array(
+        $fields = [
             '_id' => '\MongoId',
             'name' => 'string',
             'age' => 'int',
             'dob' => '\Hazaar\Date'
-        );
+        ];
         return $fields;
     }
     public function construct($username){
         $this->db = new \Hazaar\Db\MongoDB();
-        $this->populate($this->db->users->findOne(array('name' => $username));
+        $this->populate($this->db->users->findOne(['name' => $username]);
     }
 }
 $model = new MyStrictModel('myusername');
@@ -163,6 +163,6 @@ The shutdown method is called just before the destructor and is used to allow de
 
 ```php
 public function shutdown(){
-    $this->db->users->update(array('name' => $this->name), $this->toArray());
+    $this->db->users->update(['name' => $this->name], $this->to[));
 }
 ```

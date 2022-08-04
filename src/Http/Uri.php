@@ -4,20 +4,20 @@ namespace Hazaar\Http;
 
 class Uri implements \ArrayAccess {
 
-    private $parts  = array(
+    private $parts  = [
         'scheme' => 'http',
         'host' => 'localhost',
         'path' => '/',
         'query' => null
-    );
+    ];
 
-    private $params = array();
+    private $params = [];
 
-    public $common_ports = array(
+    public $common_ports = [
         'ftp' => 21,
         'http' => 80,
         'https' => 443
-    );
+    ];
 
     function __construct($uri = null) {
 
@@ -176,25 +176,26 @@ class Uri implements \ArrayAccess {
 
     }
 
-    public function offsetExists($key) {
+    public function offsetExists($offset) : bool {
 
-        return array_key_exists($key, $this->parts['query']);
-
-    }
-
-    public function offsetGet($key) {
-
-        return $this->get($key);
+        return array_key_exists($offset, $this->parts['query']);
 
     }
 
-    public function offsetSet($key, $value) {
+    #[\ReturnTypeWillChange]
+    public function offsetGet($offset) {
+
+        return $this->get($offset);
+
+    }
+
+    public function offsetSet($key, $value) : void {
 
         $this->set($key, $value);
 
     }
 
-    public function offsetUnSet($key) {
+    public function offsetUnSet($key) : void {
 
         unset($this->params[$key]);
 

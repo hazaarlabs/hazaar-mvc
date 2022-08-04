@@ -10,9 +10,9 @@ class Frontend {
 
     static private $logger;
 
-    static private $message_buffer = array();
+    static private $message_buffer = [];
 
-    function __construct($level, $backend = NULL, $backend_options = array()) {
+    function __construct($level, $backend = NULL, $backend_options = []) {
 
         if(! $backend)
             $backend = 'file';
@@ -50,13 +50,16 @@ class Frontend {
 
         }
 
-        Frontend::$message_buffer = array();
+        Frontend::$message_buffer = [];
 
     }
 
-    static public function initialise($level = NULL, $backend = NULL, $backend_options = array()) {
-
-        Frontend::$logger = new Frontend($level, $backend, $backend_options);
+    static public function initialise(\Hazaar\Map $config) {
+          
+        if($config->enable !== true)
+            return;
+            
+        Frontend::$logger = new Frontend($config->get('level'), $config->get('backend'), $config->get('options'));
 
         eval('class log extends \Hazaar\Logger\Frontend{};');
 
@@ -77,11 +80,11 @@ class Frontend {
 
         } elseif(is_array(Frontend::$message_buffer)) {
 
-            Frontend::$message_buffer[] = array(
+            Frontend::$message_buffer[] = [
                 $tag,
                 $message,
                 $level
-            );
+            ];
 
         }
 

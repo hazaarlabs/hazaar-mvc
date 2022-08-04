@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/Application/Protocol.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2018 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2018 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar\Application;
@@ -22,7 +22,7 @@ namespace Hazaar\Application;
  */
 class Protocol {
 
-    static public $typeCodes = array(
+    static public $typeCodes = [
         //SYSTEM MESSAGES
         0x00 => 'NOOP',         //Null Opperation
         0x01 => 'SYNC',         //Sync client
@@ -74,7 +74,7 @@ class Protocol {
         //LOGGING/OUTPUT MESSAGES
         0x90 => 'LOG',          //Generic log message
         0x91 => 'DEBUG'
-    );
+    ];
 
     private $id;
 
@@ -155,11 +155,11 @@ class Protocol {
         if(($type = $this->check($type)) === false)
             return false;
 
-        $packet = (object) array(
+        $packet = (object) [
             'TYP' => $type,
             'SID' => $this->id,
             'TME' => time()
-        );
+        ];
 
         if($payload !== null)
             $packet->PLD = $payload;

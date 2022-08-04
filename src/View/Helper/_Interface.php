@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/View/Helper/_Interface.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 /**
@@ -19,6 +19,6 @@ interface _Interface {
 
     function import();
 
-    function init(\Hazaar\View\Layout $view, $args = array());
+    function init(\Hazaar\View\Layout $view, $args = []);
 
 }

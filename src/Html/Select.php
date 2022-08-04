@@ -32,7 +32,7 @@ class Select extends Block {
      * @param       boolean $use_options_index_as_value Normally not used, but this will disable the use of the options index and cause the
      *                                                  resulting SELECT OPTIONS to have no VALUE attribute.
      */
-    function __construct($name = NULL, $options = NULL, $value = NULL, $params = array(), $use_options_index_as_value = true) {
+    function __construct($name = NULL, $options = NULL, $value = NULL, $params = [], $use_options_index_as_value = true) {
 
         $params['name'] = $name;
 
@@ -88,13 +88,13 @@ class Select extends Block {
 
     }
 
-    public function addOptgroup($label, $options = array()) {
+    public function addOptgroup($label, $options = []) {
 
-        return self::addOption(array('label' => $label, 'items' => $options));
+        return self::addOption(['label' => $label, 'items' => $options]);
 
     }
 
-    public function addOption($label, $value = NULL, $params = array()) {
+    public function addOption($label, $value = NULL, $params = []) {
 
         if(is_array($label) && array_key_exists('items', $label)) {
 

@@ -9,7 +9,7 @@ namespace Hazaar\Model;
  * 
  * It currently has a single field called 'address' that is used to validate the email address format.
  * 
- * @author Jamie Carl <jamie@hazaarlabs.com>
+ * @author Jamie Carl <jamie@hazaar.io>
  * 
  * @since 2.2
  */
@@ -22,18 +22,18 @@ class Email extends Strict {
      */
     function init() {
 
-        return array(
-            'address' => array(
+        return [
+            'address' => [
                 'type' => 'string',
-                'validate' => array('with' => '/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i')
-            )
-        );
+                'validate' => ['with' => '/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i']
+            ]
+        ];
 
     }
 
     public function __construct($data){
 
-        parent::__construct(array('address' => $data));
+        parent::__construct(['address' => $data]);
 
     }
 

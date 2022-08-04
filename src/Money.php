@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/Money.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar;
@@ -42,11 +42,6 @@ namespace Hazaar;
 class Money {
 
     /**
-     * Default money format
-     */
-    static public   $money_format = '%!.2n';
-
-    /**
      * Default currency code
      */
     static public   $default_currency = NULL;
@@ -60,7 +55,7 @@ class Money {
 
     static private  $db;
 
-    static private  $exchange_rates = array();
+    static private  $exchange_rates = [];
 
     static private  $cache;
 
@@ -255,13 +250,13 @@ class Money {
         if(!ake(Money::$exchange_rates, $base)){
 
             if(!Money::$cache)
-                Money::$cache = new \Hazaar\Cache();
+                Money::$cache = new \Hazaar\Cache(['apc', 'file']);
 
             $key = 'exchange_rate_' . $base;
 
             if(!Money::$cache || (Money::$exchange_rates[$base] = Money::$cache->get($key)) == FALSE){
 
-                $url = 'https://api.hazaarmvc.com/api/money/latest?base=' . $base;
+                $url = 'https://api.hazaar.io/api/money/latest?base=' . $base;
 
                 $result = json_decode(file_get_contents($url), true);
 
@@ -305,12 +300,9 @@ class Money {
      */
     public function format($format = NULL) {
 
-        if(! $format)
-            $format = Money::$money_format;
+        $nm = new \NumberFormatter(setlocale(LC_MONETARY, 0), \NumberFormatter::CURRENCY);
 
-        $symbol = $this->getCurrencySymbol();
-
-        return $symbol . money_format($format, $this->value) . $this->getCode();
+        return $nm->formatCurrency($this->value, 'AUD');
 
     }
 

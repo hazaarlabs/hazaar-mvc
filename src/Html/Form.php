@@ -25,7 +25,7 @@ class Form extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($content = null, $action = null, $method = 'POST', $parameters = array()) {
+    function __construct($content = null, $action = null, $method = 'POST', $parameters = []) {
 
         if($action)
             $parameters['action'] = $action;

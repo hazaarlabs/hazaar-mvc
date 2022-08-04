@@ -16,7 +16,7 @@ class Router extends \Hazaar\Controller {
 
         parent::__initialize($request);
         
-        if(!($path = trim($request->getPath(), '/')))
+        if(!($path = trim((string)$request->getPath(), '/')))
             return $this->redirect($this->url('console'));
 
         $parts = explode('/', $path);
@@ -55,7 +55,7 @@ class Router extends \Hazaar\Controller {
             if(defined('RUNTIME_PATH'))
                 $this->application->config->app['runtimepath'] = RUNTIME_PATH;
 
-            $this->application->config['app']->extend(array('locale' => $locale, 'timezone' => $timezone));
+            $this->application->config['app']->extend(['locale' => $locale, 'timezone' => $timezone]);
 
             $this->module = new $this->className($this->moduleName, $this->application, false);
 
@@ -63,6 +63,8 @@ class Router extends \Hazaar\Controller {
                 \Hazaar\Loader::getInstance()->addSearchPath(FILE_PATH_SUPPORT, $path);
 
         }
+
+        $this->module->setApplication($this->application);
 
         $request->setPath(implode('/', $parts));
 
