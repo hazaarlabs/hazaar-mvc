@@ -66,13 +66,15 @@ class Database extends \Hazaar\Cache\Backend {
 
         $this->db = \Hazaar\DBI\Adapter::getInstance($this->options->get('config'));
 
+
         if(!$this->db->tableExists('__meta__')){
 
             $fields = [
                 'namespace'     => 'TEXT PRIMARY KEY',
                 'tablename'     => 'TEXT',
                 'timeout'       => 'integer',
-                'created_on'    => 'TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()'
+                'created_on'    => 'TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW()',
+                'host'          => 'TEXT'
             ];
 
             $this->db->createTable('__meta__', $fields);
@@ -104,6 +106,8 @@ class Database extends \Hazaar\Cache\Backend {
 
             $this->cache_clean_period = $this->options->cache_clean_period;
 
+            $this->timeout = time() + $this->options->lifetime;
+
         }
 
     }
@@ -118,37 +122,50 @@ class Database extends \Hazaar\Cache\Backend {
         if(!$this->db)
             return;
 
-        $meta_table = $this->db->table('__meta__');
+        if($this->timeout > 0){
 
-        if($this->timeout > 0)
-            $meta_table->insert(['namespace' => $this->namespace, 'tablename' => $this->options->cache_table, 'timeout' => $this->timeout], null, 'namespace', true);
+            $this->db->table('__meta__')->insert([
+                'namespace' => $this->namespace, 
+                'tablename' => $this->options->cache_table, 
+                'timeout'   => $this->timeout,
+                'host'      => ake($_SERVER, 'SERVER_NAME')
+            ], null, 'namespace', true);
 
+        }
+        
         if($this->cache_clean_period > 0){
 
-            $meta = $meta_table->findOne(['namespace' => '__meta__']);
+            register_shutdown_task(function(){
 
-            //Cleanup namespace tables at most every {$cache_clean_period} seconds
-            if($meta === null || ($meta['timeout'] + $this->cache_clean_period) <= time()){
-                
-                $meta_table->insert(['namespace' => '__meta__', 'timeout' => time()], null, 'namespace', true);
+                $meta = $this->db->table('__meta__')->findOne(['namespace' => '__meta__']);
 
-                $meta_table->delete(['timeout' => ['$lt' => time()], 'namespace' => ['$ne' => '__meta__']]);
+                $now = time();
 
-                $all_tables = $meta_table->select('tablename')->find(['namespace' => ['$ne' => '__meta__']])->collate('tablename');
+                //Cleanup namespace tables at most every {$cache_clean_period} seconds
+                if($meta === null || ($meta['timeout'] + $this->cache_clean_period) <= $now){
+                    
+                    $this->db->table('__meta__')->insert(['namespace' => '__meta__', 'timeout' => $now], null, 'namespace', true);
 
-                $zombie_tables = $this->db->listTables();
+                    //Delete anything with an expired timeout or the tablename is NULL except if the namespace is __meta__
+                    $this->db->table('__meta__')->delete(['$or' => ['timeout' => ['$lt' => $now], 'tablename' => null], 'namespace' => ['$ne' => '__meta__']]);
 
-                foreach($zombie_tables as $table){
+                    $active_tables = $this->db->table('__meta__')->select('tablename')->find(['namespace' => ['$ne' => '__meta__']])->collate('tablename');
+                    
+                    $all_tables = $this->db->listTables();
 
-                    if($table['name'] === '__meta__')
-                        continue;
+                    foreach($all_tables as $table){
 
-                    if(!array_key_exists($table['name'], $all_tables))
-                        $this->db->dropTable($table['name']);
+                        if($table['name'] === '__meta__')
+                            continue;
+
+                        if(!array_key_exists($table['name'], $active_tables))
+                            $this->db->dropTable($table['name']);
+
+                    }
 
                 }
 
-            }
+            }, '__hazaar_cache_cleanup');
 
         }
 
