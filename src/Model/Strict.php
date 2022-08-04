@@ -263,7 +263,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
          * If $type is 'array' but there is no 'arrayOf' property, assume user has messed up
          * and set it to 'mixed' for backwards compatibility. 
          */
-        if(ake($def, 'type') === 'array' && !array_key_exists('arrayOf', $def))
+        if(ake($def, 'type') === 'array' && !(array_key_exists('arrayOf', $def) || array_key_exists('items', $def)))
             $def['type'] = 'mixed';
 
         $this->fields[$field] = $def;
