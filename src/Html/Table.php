@@ -27,7 +27,7 @@ class Table extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($rows = null, $parameters = array()) {
+    function __construct($rows = null, $parameters = []) {
 
         parent::__construct('table', null, $parameters);
 

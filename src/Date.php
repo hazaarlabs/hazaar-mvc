@@ -3,9 +3,9 @@
 /**
  * @file        Hazaar/Date.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 namespace Hazaar;
 
@@ -106,6 +106,7 @@ class Date extends \DateTime implements \JsonSerializable {
                     $timezone = $datetime['timezone'];
 
                 $datetime = '@' . strtotime($datetime['date']) . '.' . $datetime['usec'];
+
             }else{
 
                 $datetime = null;
@@ -147,7 +148,7 @@ class Date extends \DateTime implements \JsonSerializable {
 
             $day = 4;
 
-            $time = date_parse(strftime('%x', mktime(0, 0, 0, $month, $day, $year)));
+            $time = date_parse(str_ftime('%x', mktime(0, 0, 0, $month, $day, $year)));
 
             if ($time['month'] !== $month && preg_match('/\d+\/\d+\/\d+/', $datetime))
                 $datetime = str_replace('/', '-', $datetime);
@@ -165,7 +166,9 @@ class Date extends \DateTime implements \JsonSerializable {
 
         } else {
 
-            if (!$timezone)
+            if(preg_match('/\d{2}\:\d{2}\:\d{2}([\+\-][\d\:]+)$/', $datetime, $matches))
+                $timezone = $matches[1];
+            elseif (!$timezone)
                 $timezone = date_default_timezone_get();
             elseif (is_numeric($timezone))
                 $timezone = timezone_identifiers_list()[(int) $timezone];
@@ -206,7 +209,7 @@ class Date extends \DateTime implements \JsonSerializable {
      *
      * @return boolean Returns the result of the parent [[DateTime::setTimezone]] call.
      */
-    public function setTimezone($timezone = NULL) {
+    public function setTimezone($timezone = NULL) : Date {
 
         if ($timezone === NULL)
             $timezone = date_default_timezone_get();
@@ -219,18 +222,24 @@ class Date extends \DateTime implements \JsonSerializable {
             if (is_numeric($timezone)) {
 
                 $timezone = timezone_name_from_abbr('', $timezone, FALSE);
+
             } elseif (preg_match('/([+-])?(\d+):(\d+)/', $timezone, $matches)) {
 
                 if (!$matches[1])
                     $matches[1] = '+';
 
-                $timezone = timezone_name_from_abbr('', ((int) ($matches[1] . (($matches[2] * 3600) + $matches[3]))), FALSE);
+                if($timezone_name = timezone_name_from_abbr('', ((int) ($matches[1] . (($matches[2] * 3600) + $matches[3]))), FALSE))
+                    $timezone = $timezone_name;
+
             }
 
             $timezone = new \Datetimezone($timezone);
+            
         }
 
-        return parent::setTimezone($timezone);
+        parent::setTimezone($timezone);
+
+        return $this;
 
     }
 
@@ -389,7 +398,10 @@ class Date extends \DateTime implements \JsonSerializable {
      *
      * @return \DateInterval|int
      */
-    public function diff($timestamp, $return_seconds = FALSE) {
+    public function diff($timestamp, $return_seconds = FALSE) : \DateInterval {
+
+        if(!$timestamp)
+            return false;
 
         if ($return_seconds) {
 
@@ -486,7 +498,7 @@ class Date extends \DateTime implements \JsonSerializable {
      *
      * @return Date
      */
-    public function add($interval, $return_new = FALSE) {
+    public function add($interval, $return_new = FALSE) : Date {
 
         if (!$interval instanceof \DateInterval)
             $interval = new \DateInterval($interval);
@@ -516,7 +528,7 @@ class Date extends \DateTime implements \JsonSerializable {
      *
      * @return Date
      */
-    public function sub($interval, $return_new = FALSE) {
+    public function sub($interval, $return_new = FALSE) : Date {
 
         if (!$interval instanceof \DateInterval)
             $interval = new \DateInterval($interval);
@@ -748,9 +760,9 @@ class Date extends \DateTime implements \JsonSerializable {
 
         $format = null;
 
-        if(preg_match('/(\d+)(\W)(\d+)(\W)(\d+)/', strftime('%c', mktime(0,0,0,12,1,2000)), $matches)){
+        if(preg_match('/(\d+)(\W)(\d+)(\W)(\d+)/', str_ftime('%c', mktime(0,0,0,12,1,2000)), $matches)){
 
-            $matrix = array(1 => 'D', 12 => 'M', 2000 => 'Y');
+            $matrix = [1 => 'D', 12 => 'M', 2000 => 'Y'];
 
             $format = $matrix[intval($matches[1])] . $matrix[intval($matches[3])] . $matrix[intval($matches[5])];
 
@@ -765,9 +777,10 @@ class Date extends \DateTime implements \JsonSerializable {
     /**
      * Outputs the UTC timestamp (EPOCH) When an object is included in a json_encode call.
      */
-    public function jsonSerialize(){
+    #[\ReturnTypeWillChange]
+    public function jsonSerialize() {
 
-        return $this->timestamp();
+        return ($this->instance_format ? parent::format($this->instance_format) : $this->timestamp());
 
     }
 

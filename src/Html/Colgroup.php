@@ -21,13 +21,13 @@ class Colgroup extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($parameters = array()) {
+    function __construct($parameters = []) {
 
         parent::__construct('colgroup', null, $parameters);
 
     }
 
-    public function col($parameters = array()) {
+    public function col($parameters = []) {
 
         $col = new Col($parameters);
 

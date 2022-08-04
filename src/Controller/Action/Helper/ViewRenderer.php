@@ -4,21 +4,21 @@ namespace Hazaar\Controller\Action\Helper;
 
 class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
-    private $view            = array();
+    private $view            = [];
 
-    private $_data           = array();
+    private $_data           = [];
 
-    private $callbacks       = array();
+    private $callbacks       = [];
 
     private $controller;
 
-    private $_requires       = array();
+    private $_requires       = [];
 
-    private $_requires_param = array();
+    private $_requires_param = [];
 
-    private $_links          = array();
+    private $_links          = [];
 
-    private $_scripts        = array();
+    private $_scripts        = [];
 
     function init($controller = NULL) {
 
@@ -31,25 +31,26 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
         /*
          * This helper has a method available to the controller so we register it
          */
-        $controller->__registerMethod('hasView', array($this, 'hasView'));
+        $controller->__registerMethod('hasView', [$this, 'hasView']);
 
-        $controller->__registerMethod('view', array($this, 'view'));
+        $controller->__registerMethod('view', [$this, 'view']);
 
-        $controller->__registerMethod('layout', array($this, 'layout'));
+        $controller->__registerMethod('layout', [$this, 'layout']);
 
-        $controller->__registerMethod('setNoLayout', array($this, 'setNoLayout'));
+        $controller->__registerMethod('setNoLayout', [$this, 'setNoLayout']);
 
-        $controller->__registerMethod('post', array($this, 'post'));
+        $controller->__registerMethod('post', [$this, 'post']);
 
     }
 
-    public function addHelper($helper, $args = array(), $alias = null) {
+    public function addHelper($helper, $args = [], $alias = null) {
 
         if(!$this->view instanceof \Hazaar\View)
-            throw new \Hazaar\Exception('Unable to add helper ' . $helper . '.  Please set a view first!');
+            return false;
 
         $this->view->addHelper($helper, $args, $alias);
 
+        return true;
     }
 
     public function getHelpers() {
@@ -242,7 +243,7 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
         if(! method_exists($this->view, 'requires'))
             throw new \Hazaar\Exception('The current view does not support script imports');
 
-        $this->_requires[] = array($script, $charset, $cache_local);
+        $this->_requires[] = [$script, $charset, $cache_local];
 
     }
 
@@ -251,7 +252,7 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
         if(! method_exists($this->view, 'link'))
             throw new \Hazaar\Exception('The current view does not support HTML links');
 
-        $this->_links[] = array($href, $rel, $cache_local);
+        $this->_links[] = [$href, $rel, $cache_local];
 
     }
 

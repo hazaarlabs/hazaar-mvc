@@ -17,7 +17,7 @@ abstract class Element implements _Interface {
 
     protected $parameters;
 
-    protected $style = array();
+    protected $style = [];
 
     /**
      * @detail      The HTML element constructor takes two arguments.  The type of the element which is defined by
@@ -35,19 +35,16 @@ abstract class Element implements _Interface {
      *
      * @param       array $parameters An array of HTML parameters to apply to the element.
      */
-    function __construct($type = null, $parameters = array()) {
+    function __construct($type = null, $parameters = []) {
 
         $this->type = $type;
 
-        if($parameters instanceof Parameters) {
-
+        if($parameters instanceof Parameters) 
             $this->parameters = $parameters;
-
-        } else {
-
+        else
             $this->parameters = new Parameters($parameters);
 
-        }
+        $this->parameters->setMultiValue('class', ' '); //Set class as a multi-value parameter with space delimeter
 
     }
 
@@ -130,6 +127,11 @@ abstract class Element implements _Interface {
 
     }
 
+    /**
+     * Get the parameters object
+     * 
+     * @return Hazaar\Html\Parameters 
+     */
     public function parameters() {
 
         return $this->parameters;
@@ -139,7 +141,7 @@ abstract class Element implements _Interface {
     /**
      * Adds a class to the HTML element
      *
-     * @param string $class
+     * @param string $class The name of the class to add
      *
      * @return $this
      *
@@ -150,6 +152,21 @@ abstract class Element implements _Interface {
             $class = ' ' . $class;
 
         $this->parameters->append('class', $class);
+
+        return $this;
+
+    }
+
+    /**
+     * Removes a class from the HTML element
+     *
+     * @param string $class The name of the class to remove
+     * 
+     * @return $this
+     */
+    public function removeClass($class){
+
+        $this->parameters->remove('class', $class);
 
         return $this;
 
@@ -189,6 +206,8 @@ abstract class Element implements _Interface {
 
         if($boolean)
             $this->addClass($class);
+        else
+            $this->removeClass($class);
 
         return $this;
 
@@ -284,7 +303,7 @@ abstract class Element implements _Interface {
 
         $this->parameters->set('style', $this->style);
 
-        call_user_func_array(array($this->style, 'set'), func_get_args());
+        call_user_func_array([$this->style, 'set'], func_get_args());
 
         return $this;
 

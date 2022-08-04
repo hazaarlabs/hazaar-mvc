@@ -4,15 +4,15 @@ namespace Hazaar\Cache;
 
 class Func extends \Hazaar\Cache {
 
-    function __construct($backend = NULL, $options = array()) {
+    function __construct($backend = NULL, $options = []) {
 
         parent::__construct($backend, $options);
 
-        $this->configure(array(
-                             'cache_by_default'     => TRUE,
-                             'cached_functions'     => array(),
-                             'non_cached_functions' => array()
-                         ));
+        $this->configure([
+            'cache_by_default'     => TRUE,
+            'cached_functions'     => [],
+            'non_cached_functions' => []
+        ]);
 
     }
 

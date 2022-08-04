@@ -2,12 +2,14 @@
 /**
  * @file        Controller/Action.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar\Controller;
+
+use Hazaar\Application\Request;
 
 /**
  * @brief       Abstract controller action class
@@ -20,18 +22,24 @@ abstract class Action extends \Hazaar\Controller\Basic {
 
     public    $_helper;
 
-    protected $methods       = array();
+    protected $methods       = [];
 
-    public function __construct($name, \Hazaar\Application $application, $use_app_config = true) {
+    public function __construct($name){
 
-        parent::__construct($name, $application);
+        parent::__construct($name);
 
         $this->_helper = new Action\HelperBroker($this);
 
         if(!($this->view = $this->_helper->addHelper('ViewRenderer')))
             throw new Exception\NoDefaultRenderer();
 
-        if($this->application->config->app->has('layout')) {
+    }
+
+    public function __initialize(Request $request){
+
+        if($request instanceof Request\Http
+            && $request->isXmlHttpRequest() === false 
+            && $this->application->config->app->has('layout')) {
 
             $this->_helper->ViewRenderer->layout($this->application->config->app['layout']);
 
@@ -39,6 +47,8 @@ abstract class Action extends \Hazaar\Controller\Basic {
                 $this->_helper->ViewRenderer->link($this->application->config->app['favicon'], 'shortcut icon');
 
         }
+
+        return parent::__initialize($request);
 
     }
 
@@ -59,17 +69,6 @@ abstract class Action extends \Hazaar\Controller\Basic {
             return call_user_func_array($this->methods[$method], $args);
 
         throw new Exception\MethodNotFound(get_class($this), $method);
-
-    }
-
-    public function __get($plugin) {
-
-        throw new \Hazaar\Exception('Controller plugins not supported yet.  Called: ' . $plugin);
-
-        if(array_key_exists($plugin, $this->plugins))
-            return $this->plugins[$plugin];
-
-        return NULL;
 
     }
 

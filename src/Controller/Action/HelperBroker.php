@@ -4,7 +4,7 @@ namespace Hazaar\Controller\Action;
 
 class HelperBroker {
 
-    private $helpers = array();
+    private $helpers = [];
 
     private $controller;
 
@@ -45,10 +45,10 @@ class HelperBroker {
 
             if(method_exists($obj, 'direct')) {
 
-                return call_user_func_array(array(
+                return call_user_func_array([
                     $obj,
                     'direct'
-                ), $args);
+                ], $args);
 
             }
 

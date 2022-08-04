@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/Application/Request/Http.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar\Application\Request;
@@ -35,19 +35,13 @@ class Http extends \Hazaar\Application\Request {
     /**
      * Array of headers, one line per element.
      */
-    private $headers = array();
+    private $headers = [];
 
     /**
      * Request body.  This is only used in certain circumstances such as with XML-RPC or REST.
      * @var string The request body
      */
     public $body;
-
-    /**
-     * In the case where the request is of content-type application/json this is the decoded JSON body.
-     * @var object|array Body decoded with json_decode()
-     */
-    public $bodyJSON;
 
     /**
      * @detail      The HTTP init method takes only a single optional argument which is the
@@ -102,7 +96,8 @@ class Http extends \Hazaar\Application\Request {
                 case 'application/javascript':
                 case 'application/x-javascript':
 
-                    $request = array_merge($request, json_decode($this->body, true));
+                    if($json_body = json_decode($this->body, true))
+                        $request = array_merge($request, $json_body);
 
                     break;
 
@@ -337,6 +332,20 @@ class Http extends \Hazaar\Application\Request {
     public function getRequestBody() {
 
         return $this->body;
+
+    }
+
+    /**
+     * @detail      Returns the JSON decoded body of the request.  This will normally be null unless the request is
+     *              a POST or PUT and content-type is application/json.  
+     * 
+     * 
+     *
+     * @return      string The request body.
+     */
+    public function getJSONBody() {
+
+        return ($this->getContentType() === 'application/json') ? json_decode($this->body) : null;
 
     }
 

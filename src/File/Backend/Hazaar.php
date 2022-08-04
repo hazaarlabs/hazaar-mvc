@@ -8,11 +8,11 @@ class Hazaar implements _Interface {
     
     private $options;
 
-    private $pathCache = array();
+    private $pathCache = [];
 
     private $client;
 
-    private $meta      = array();
+    private $meta      = [];
 
     static public function label(){
 
@@ -20,17 +20,17 @@ class Hazaar implements _Interface {
 
     }
 
-    public function __construct($options = array()) {
+    public function __construct($options = []) {
 
-        $this->options = new \Hazaar\Map(array(
-                                             'url' => NULL
-                                         ), $options);
+        $this->options = new \Hazaar\Map([
+            'url' => NULL
+        ], $options);
 
         $this->client = new \Hazaar\Http\Client();
 
     }
 
-    private function request($cmd, $params = array(), $mime_parts = array()) {
+    private function request($cmd, $params = [], $mime_parts = []) {
 
         $request = new \Hazaar\Http\Request($this->options->url, 'POST');
 
@@ -63,7 +63,7 @@ class Hazaar implements _Interface {
 
     public function refresh($reset = FALSE) {
 
-        $this->pathCache = array();
+        $this->pathCache = [];
 
         return TRUE;
 
@@ -73,8 +73,8 @@ class Hazaar implements _Interface {
 
         if(! $this->pathCache) {
 
-            $this->pathCache = array(
-                '/' => array(
+            $this->pathCache = [
+                '/' => [
                     'id'     => base64url_encode('/'),
                     'kind'   => 'dir',
                     'name'   => 'ROOT',
@@ -85,9 +85,9 @@ class Hazaar implements _Interface {
                     'read'   => TRUE,
                     'write'  => FALSE,
                     'dirs'   => 0,
-                    'files'  => array()
-                )
-            );
+                    'files'  => []
+                ]
+            ];
 
             if($paths = $this->request('tree')) {
 
@@ -126,9 +126,9 @@ class Hazaar implements _Interface {
 
         if(! array_key_exists('files', $this->pathCache[$path])) {
 
-            $this->pathCache[$path]['files'] = array();
+            $this->pathCache[$path]['files'] = [];
 
-            if($info = $this->request('open', array('target' => $this->pathCache[$path]['id'], 'with_meta' => TRUE))) {
+            if($info = $this->request('open', ['target' => $this->pathCache[$path]['id'], 'with_meta' => TRUE])) {
 
                 foreach($info['files'] as $file)
                     $this->pathCache[$path]['files'][$file['name']] = $file;
@@ -137,7 +137,7 @@ class Hazaar implements _Interface {
 
         }
 
-        $items = array();
+        $items = [];
 
         foreach($this->pathCache as $d) {
 
@@ -262,7 +262,7 @@ class Hazaar implements _Interface {
         if(! ($info = $this->info($path)))
             return FALSE;
 
-        $result = $this->request('unlink', array('target' => $info['id']));
+        $result = $this->request('unlink', ['target' => $info['id']]);
 
         if(is_array($result)) {
 
@@ -302,7 +302,7 @@ class Hazaar implements _Interface {
 
     }
 
-    public function thumbnail($path, $params = array()) {
+    public function thumbnail($path, $params = []) {
 
         if($link = ake($this->info($path), 'link')) {
 
@@ -344,7 +344,7 @@ class Hazaar implements _Interface {
 
         $parent = $this->info(dirname($path));
 
-        $result = $this->request('mkdir', array('parent' => $parent['id'], 'name' => basename($path)));
+        $result = $this->request('mkdir', ['parent' => $parent['id'], 'name' => basename($path)]);
 
         if($tree = ake($result, 'tree')) {
 
@@ -373,7 +373,7 @@ class Hazaar implements _Interface {
         if(! $info['kind'] == 'dir')
             return FALSE;
 
-        $result = $this->request('rmdir', array('target' => $info['id']));
+        $result = $this->request('rmdir', ['target' => $info['id']]);
 
         if(ake($result, 'ok', FALSE)) {
 
@@ -407,19 +407,19 @@ class Hazaar implements _Interface {
         if(! $parent)
             return FALSE;
 
-        $content = array($bytes, array(
+        $content = [$bytes, [
             'Content-Disposition' => 'form-data; name="file"; filename="' . basename($path) . '"',
             'Content-Type'        => $content_type
-        ));
+        ]];
 
-        $info = $this->request('upload', array('parent' => $parent['id'], 'overwrite' => $overwrite), array($content));
+        $info = $this->request('upload', ['parent' => $parent['id'], 'overwrite' => $overwrite], [$content]);
 
         if($info) {
 
             if($fileInfo = ake($info, 'file')) {
 
                 if($meta = ake($this->meta, $path))
-                    $this->request('set_meta', array('target' => $fileInfo['id'], 'values' => $meta));
+                    $this->request('set_meta', ['target' => $fileInfo['id'], 'values' => $meta]);
 
                 $source_path = '/' . explode(':', base64url_decode($fileInfo['parent']), 2)[0];
 
@@ -511,11 +511,11 @@ class Hazaar implements _Interface {
 
             $info['meta'] = array_merge(ake($info, 'meta'), $values);
 
-            return $this->request('set_meta', array('target' => $info['_id'], 'values' => $values));
+            return $this->request('set_meta', ['target' => $info['_id'], 'values' => $values]);
 
         }
 
-        $this->meta[$path] = array_merge(ake($this->meta, $path, array()), $values);
+        $this->meta[$path] = array_merge(ake($this->meta, $path, []), $values);
 
         return TRUE;
 

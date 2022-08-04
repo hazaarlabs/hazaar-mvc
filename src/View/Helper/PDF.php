@@ -2,16 +2,16 @@
 /**
  * @file        Hazaar/View/Helper/PDF.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar\View\Helper;
 
 class PDF extends \Hazaar\View\Helper {
 
-    public function init(\Hazaar\View\Layout $view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = []) {
 
         $view->requires($this->application->url() . '/hazaar/js/pdfobject.js');
 
@@ -19,7 +19,7 @@ class PDF extends \Hazaar\View\Helper {
 
     }
 
-    public function render($source, $params = array()) {
+    public function render($source, $params = []) {
 
         return new \Hazaar\Html\Div(new \Hazaar\Html\PDF($source), $params);
 
@@ -27,9 +27,9 @@ class PDF extends \Hazaar\View\Helper {
 
     public function script($id, $source, $width = null, $height = null) {
 
-        $config = array(
+        $config = [
             'url' => $source
-        );
+        ];
 
         if($id)
             $config['id'] = $id;

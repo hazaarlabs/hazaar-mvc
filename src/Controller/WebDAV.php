@@ -13,9 +13,9 @@ abstract class WebDAV extends Basic {
 
     private $__propset = '<http://apache.org/dav/propset/fs/1>';
 
-    private $__dav_classes = array(1);
+    private $__dav_classes = [1];
 
-    private $__allowed_methods = array(
+    private $__allowed_methods = [
         'OPTIONS',
         'GET',
         'HEAD',
@@ -27,13 +27,13 @@ abstract class WebDAV extends Basic {
         'COPY',
         'MOVE',
         'LOCK'
-    );
+    ];
 
     protected $manager;
 
     public function __initialize(\Hazaar\Application\Request $request){
 
-        parent::__initialize($request);
+        $response = parent::__initialize($request);
 
         if($this->__action !== 'index'){
 
@@ -41,6 +41,8 @@ abstract class WebDAV extends Basic {
                 throw new \Exception('Unknown media source!', 404);
 
         }
+
+        return $response;
 
     }
 
@@ -58,7 +60,7 @@ abstract class WebDAV extends Basic {
 
         }
 
-        $response = call_user_func(array($this, $method));
+        $response = call_user_func([$this, $method]);
 
         if($this->__stream)
             $response = new Response\Stream($response);

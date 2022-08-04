@@ -3,9 +3,9 @@
 /**
  * @file        Controller/Error.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 namespace Hazaar\Controller;
 
@@ -33,39 +33,41 @@ class Error extends \Hazaar\Controller\Action {
 
     protected $response = 'html';
 
-    private $status_codes = array();
+    private static $status_codes = null;
 
     public $use_metrics = false;
 
-    function __construct($name, \Hazaar\Application $application){
+    function __construct($name){
 
-        parent::__construct($name, $application, false);
+        if(!is_array(self::$status_codes))
+            self::$status_codes = $this->loadStatusCodes();
 
+        parent::__construct($name);
+        
     }
 
-    function __initialize(\Hazaar\Application\Request $request = NULL) {
+    public function __initialize(\Hazaar\Application\Request $request = NULL) {
 
-        parent::__initialize($request);
+        $response = parent::__initialize($request);
 
-        if ($request instanceof \Hazaar\Application\Request\Http && function_exists('apache_request_headers')) {
+        if ($request instanceof \Hazaar\Application\Request\Http) {
 
-            if(!($this->response = $this->application->getResponseType())){
+            if($response = $this->application->getResponseType()){
 
-                $h = apache_request_headers();
+                $this->response = $response;
 
-                if (array_key_exists('X-Requested-With', $h)) {
+            }elseif($x_requested_with = $request->getHeader('X-Requested-With')){
 
-                    switch ($h['X-Requested-With']) {
-                        case 'XMLHttpRequest' :
-                            $this->response = 'json';
+                switch ($x_requested_with) {
+                    case 'XMLHttpRequest' :
+                        $this->response = 'json';
 
-                            break;
+                        break;
 
-                        case 'XMLRPCRequest' :
-                            $this->response = 'xmlrpc';
+                    case 'XMLRPCRequest' :
+                        $this->response = 'xmlrpc';
 
-                            break;
-                    }
+                        break;
                 }
 
             }
@@ -80,13 +82,13 @@ class Error extends \Hazaar\Controller\Action {
 
         }
 
-        $this->status_codes = $this->loadStatusCodes();
-
+        return $response;
+        
     }
 
     private function loadStatusCodes() {
 
-        $status_codes = array();
+        $status_codes = [];
 
         if ($file = \Hazaar\Loader::getFilePath(FILE_PATH_SUPPORT, 'Http_Status.dat')) {
 
@@ -95,7 +97,7 @@ class Error extends \Hazaar\Controller\Action {
             while($line = fgets($h)) {
 
                 if (preg_match('/^(\d*)\s(.*)$/', $line, $matches))
-                    $status_codes[$matches[1]] = $matches[2];
+                    $status_codes[intval($matches[1])] = $matches[2];
                     
             }
         }
@@ -109,7 +111,7 @@ class Error extends \Hazaar\Controller\Action {
         if($code === null)
             $code = $this->code;
 
-        return (array_key_exists($code, $this->status_codes) ? $this->status_codes[$code] : NULL);
+        return (array_key_exists($code, self::$status_codes) ? self::$status_codes[$code] : NULL);
 
     }
 
@@ -134,22 +136,13 @@ class Error extends \Hazaar\Controller\Action {
             if ($e instanceof \Hazaar\Exception)
                 $this->short_message = $e->getShortMessage();
 
-            if ($e instanceof \Hazaar\Exception) {
-
-                $context = $e->getName();
-            } else {
-
-                $context = get_class($e);
-            }
-
-            $this->errclass = $context;
+            $this->errclass = ($e instanceof \Hazaar\Exception) ? $e->getName() : get_class($e);
 
             $this->callstack = $e->getTrace();
 
-            if (!array_key_exists($this->code = $e->getCode(), $this->status_codes)) {
-
+            if (!array_key_exists(($this->code = $e->getCode()), self::$status_codes))
                 $this->code = 500;
-            }
+
         } elseif (is_array($args[0])) {
 
             $this->type = ERR_TYPE_SHUTDOWN;
@@ -223,7 +216,7 @@ class Error extends \Hazaar\Controller\Action {
     final public function __run() {
 
         if ($this->response && method_exists($this, $this->response))
-            $response = call_user_func(array($this, $this->response));
+            $response = call_user_func([$this, $this->response]);
         elseif (method_exists($this, 'run'))
             $response = $this->run();
         else
@@ -255,7 +248,7 @@ class Error extends \Hazaar\Controller\Action {
 
     public function __shutdown($response = null){
 
-        $this->report();
+        //$this->report();
 
     }
 
@@ -266,7 +259,7 @@ class Error extends \Hazaar\Controller\Action {
             
     }
 
-    private function runner(){
+    public function runner(){
 
         echo "Runner Error #{$this->errno} at line #{$this->errline} in file {$this->errfile}\n\n{$this->errstr}\n\n";
 
@@ -274,17 +267,17 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
-    private function json(){
+    public function json(){
 
-        $error = array(
+        $error = [
             'ok' => FALSE,
-            'error' => array(
+            'error' => [
                 'type' => $this->errno,
                 'status' => $this->status,
                 'str' => $this->errstr
-            ),
+            ],
             'timestamp' => time()
-        );
+        ];
 
         if(ini_get('display_errors')){
 
@@ -304,7 +297,7 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
-    private function xmlrpc(){
+    public function xmlrpc(){
 
         $xml = new \SimpleXMLElement('<xml/>');
 
@@ -344,7 +337,7 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
-    private function text(){
+    public function text(){
 
         $out = "*****************************\n\tEXCEPTION\n*****************************\n\n";
 
@@ -380,7 +373,7 @@ class Error extends \Hazaar\Controller\Action {
 
     }
 
-    private function html(){
+    public function html(){
 
         $response = new Response\Html($this->code);
 
@@ -390,7 +383,7 @@ class Error extends \Hazaar\Controller\Action {
 
         $view->type = $this->type;
 
-        $view->err = array(
+        $view->err = [
             'code' => $this->errno,
             'message' => $this->errstr,
             'file' => $this->errfile,
@@ -400,7 +393,7 @@ class Error extends \Hazaar\Controller\Action {
             'type' => $this->errtype,
             'short_message' => ($this->short_message ? $this->short_message : $this->status),
             'config' => array_to_dot_notation($this->application->config->toSecureArray())
-        );
+        ];
 
         $view->trace = $this->callstack;
 
@@ -453,31 +446,31 @@ class Error extends \Hazaar\Controller\Action {
 
         }
 
-        $url = 'https://api.hazaarmvc.com/api/report/' . $type;
+        $url = 'https://api.hazaar.io/api/report/' . $type;
 
-        $data = json_encode(array(
+        $data = json_encode([
             'status' => $this->code,
-            'error' => array(
+            'error' => [
                 'type' => $this->errno,
                 'status' => $this->status,
                 'line' => $this->errline,
                 'file' => $this->errfile,
                 'context' => $this->errcontext,
                 'str' => $this->errstr
-            ),
+            ],
             'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS),
             'config' => $this->application->config->toArray()
-        ));
+        ]);
 
         if(ini_get('allow_url_fopen') ) {
 
-            $options = array(
-                    'http' => array(
+            $options = [
+                    'http' => [
                     'header'  => "Content-type: application/json\r\n",
                     'method'  => 'POST',
                     'content' => $data,
-                )
-            );
+                ]
+                    ];
 
             $result = file_get_contents($url, false, stream_context_create($options));
 
@@ -496,10 +489,10 @@ class Error extends \Hazaar\Controller\Action {
 
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
                 'Content-Type: application/json',
-                'Content-Length: ' . strlen($data))
-            );
+                'Content-Length: ' . strlen($data)
+            ]);
 
             return curl_exec($ch);
 

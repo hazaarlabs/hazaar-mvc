@@ -3,9 +3,9 @@
 /**
  * @file        Hazaar/Cache/Backend/Redis.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2016 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2016 Jamie Carl (http://www.hazaar.io)
  */
 namespace Hazaar\Cache\Backend;
 
@@ -39,11 +39,11 @@ class Redis extends \Hazaar\Cache\Backend {
 
     private $delim = "\r\n";
 
-    private $local = array();
+    private $local = [];
 
     private $update_expire = false;
 
-    private $garbage = array(); //This keeps a list of keys that should be deleted on close because they have expired.
+    private $garbage = []; //This keeps a list of keys that should be deleted on close because they have expired.
 
     static public function available(){
 
@@ -57,24 +57,24 @@ class Redis extends \Hazaar\Cache\Backend {
 
         $this->addCapabilities('store_objects', 'array', 'expire_ns', 'expire_val', 'keepalive');
 
-        $this->configure(array(
+        $this->configure([
            'server'          => 'localhost',
            'port'            => 6379,
            'dbIndex'         => 0,
            'keepalive'       => false,
            'keeplocalcopy'   => true
-        ));
+        ]);
 
         $this->socket = $this->connect($this->options['server'], $this->options['port']);
 
         if($this->options->has('serverpass') && ($serverpass = $this->options['serverpass']))
-            $this->cmd(array('AUTH', $serverpass));
+            $this->cmd(['AUTH', $serverpass]);
 
-        $cmds = array(
-            array('SELECT', (string)$this->options['dbIndex']),
-            array('ROLE'),
-            array('TTL', $this->namespace)
-        );
+        $cmds = [
+            ['SELECT', (string)$this->options['dbIndex']],
+            ['ROLE'],
+            ['TTL', $this->namespace]
+        ];
 
         $result = $this->cmd($cmds);
 
@@ -116,11 +116,11 @@ class Redis extends \Hazaar\Cache\Backend {
                     $this->master = $this->connect($this->role[1], $this->role[2]);
 
                     if($this->options->has('serverpass'))
-                        $this->cmd(array('AUTH', $this->options['serverpass']), true);
+                        $this->cmd(['AUTH', $this->options['serverpass']], true);
 
                     $index = (string)$this->options['dbIndex'];
 
-                    $result = $this->cmd(array('SELECT', $index), true);
+                    $result = $this->cmd(['SELECT', $index], true);
 
                     if(!$result)
                         throw new \Exception('Could not select DB ' . $index . ' on master');
@@ -149,13 +149,13 @@ class Redis extends \Hazaar\Cache\Backend {
         $count = count($packets);
 
         if(!$socket->send(implode('', $packets)) > 0)
-            throw new Exception\RedisError("Error sending $cmd packet!");
+            throw new Exception\RedisError("Error sending $count packets!");
 
         $this->offset = 0;
 
         $this->buffer = '';
 
-        $result = array();
+        $result = [];
 
         for($i=0;$i<$count;$i++)
             $result[] = $this->decode($socket);
@@ -244,7 +244,7 @@ class Redis extends \Hazaar\Cache\Backend {
                     if($count === -1)
                         return null;
 
-                    $array = array();
+                    $array = [];
 
                     for($i = 0; $i < $count; $i++)
                         $array[$i] = $this->decode($socket, $this->getChunk($socket));
@@ -260,11 +260,11 @@ class Redis extends \Hazaar\Cache\Backend {
     private function encode($data){
 
         if(!is_array($data))
-            $data = array(array($data));
+            $data = [[$data]];
         elseif(!is_array($data[0]))
-            $data = array($data);
+            $data = [$data];
 
-        $packets = array();
+        $packets = [];
 
         foreach($data as &$command){
 
@@ -301,7 +301,7 @@ class Redis extends \Hazaar\Cache\Backend {
 
     public function select($db){
 
-        return boolify($this->cmd(array('SELECT', "$db")));
+        return boolify($this->cmd(['SELECT', "$db"]));
 
     }
 
@@ -310,7 +310,7 @@ class Redis extends \Hazaar\Cache\Backend {
         if($this->socket){
 
             if($this->update_expire === true)
-                $this->cmd(array('EXPIRE', $this->namespace, (string)$this->options->lifetime));
+                $this->cmd(['EXPIRE', $this->namespace, (string)$this->options->lifetime]);
 
             $this->socket->close();
 
@@ -327,7 +327,7 @@ class Redis extends \Hazaar\Cache\Backend {
 
     public function has($key) {
 
-        return ($this->cmd(array('HEXISTS', $this->namespace, $key)) == 1);
+        return ($this->cmd(['HEXISTS', $this->namespace, $key]) == 1);
 
     }
 
@@ -341,7 +341,7 @@ class Redis extends \Hazaar\Cache\Backend {
 
         if(!array_key_exists($key, $this->local)){
 
-            if(!($data = unserialize($this->cmd(array('HGET', $this->namespace, $key)))))
+            if(!($data = unserialize($this->cmd(['HGET', $this->namespace, $key]))))
                 return null;
 
             if(array_key_exists('expire', $data) && time() > $data['expire']){
@@ -372,18 +372,18 @@ class Redis extends \Hazaar\Cache\Backend {
         if($this->options['keeplocalcopy'])
             $this->local[$key] = $value;
 
-        $data = array(
+        $data = [
             'value' => $value
-        );
+        ];
 
         if($timeout > 0)
             $data['expire'] = time() + $timeout;
 
         //Piplining!
-        $cmds = array(
-            array('EXISTS', $this->namespace),
-            array('HSET', $this->namespace, $key, serialize($data))
-        );
+        $cmds = [
+            ['EXISTS', $this->namespace],
+            ['HSET', $this->namespace, $key, serialize($data)]
+        ];
 
         $result = $this->cmd($cmds, true);
 
@@ -403,23 +403,23 @@ class Redis extends \Hazaar\Cache\Backend {
         if(array_key_exists($key, $this->local))
             unset($this->local[$key]);
 
-        return boolify($this->cmd(array('HDEL', $this->namespace, $key), true));
+        return boolify($this->cmd(['HDEL', $this->namespace, $key], true));
 
     }
 
     public function clear() {
 
-        $this->local = array();
+        $this->local = [];
 
-        return boolify($this->cmd(array('DEL', $this->namespace), true));
+        return boolify($this->cmd(['DEL', $this->namespace], true));
 
     }
 
     public function toArray(){
 
-        $array = array();
+        $array = [];
 
-        $items = $this->cmd(array('HGETALL', $this->namespace));
+        $items = $this->cmd(['HGETALL', $this->namespace]);
 
         for($i=0; $i<count($items);$i+=2){
 

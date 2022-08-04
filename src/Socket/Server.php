@@ -19,7 +19,7 @@ abstract class Server {
 
     protected $master;
 
-    protected $sockets = array();
+    protected $sockets = [];
 
     protected $running = false;
 

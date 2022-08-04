@@ -4,7 +4,7 @@ namespace Hazaar\Controller\Response;
 
 class Json extends \Hazaar\Controller\Response implements \ArrayAccess {
 
-    protected $content = array();
+    protected $content = [];
 
     /*
      * If the callback is set, such as in a JSONP request, we use the callback to return
@@ -12,7 +12,7 @@ class Json extends \Hazaar\Controller\Response implements \ArrayAccess {
      */
     private $callback;
 
-    function __construct($data = array(), $status = 200) {
+    function __construct($data = [], $status = 200) {
 
         if(! function_exists('json_encode')) {
             throw new Exception\JsonNotSupported();
@@ -78,7 +78,7 @@ class Json extends \Hazaar\Controller\Response implements \ArrayAccess {
 
     public function getContent() {
 
-        $data = json_encode($this->content, JSON_INVALID_UTF8_SUBSTITUTE);
+        $data = json_encode($this->content, JSON_INVALID_UTF8_SUBSTITUTE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         if($data === false)
             throw new \Hazaar\Exception('JSON Encode error: ' . json_last_error_msg());
@@ -92,16 +92,17 @@ class Json extends \Hazaar\Controller\Response implements \ArrayAccess {
 
     //ArrayAccess
 
-    public function offsetExists($key) {
+    public function offsetExists($offset) : bool {
 
-        return array_key_exists($key, $this->content);
+        return array_key_exists($offset, $this->content);
 
     }
 
-    public function & offsetGet($key) {
+    #[\ReturnTypeWillChange]
+    public function offsetGet($offset) {
 
-        if(array_key_exists($key, $this->content))
-            return $this->content[$key];
+        if(array_key_exists($offset, $this->content))
+            return $this->content[$offset];
 
         $null = NULL;
 
@@ -109,18 +110,18 @@ class Json extends \Hazaar\Controller\Response implements \ArrayAccess {
 
     }
 
-    public function offsetSet($key, $value) {
+    public function offsetSet($offset, $value) : void {
 
-        if($key === NULL)
+        if($offset === NULL)
             $this->content[] = $value;
         else
-            $this->content[$key] = $value;
+            $this->content[$offset] = $value;
 
     }
 
-    public function offsetUnset($key) {
+    public function offsetUnset($offset) : void {
 
-        unset($this->content[$key]);
+        unset($this->content[$offset]);
 
     }
 

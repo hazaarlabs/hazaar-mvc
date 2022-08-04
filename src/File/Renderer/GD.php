@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/File/Renderer/GD.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2018 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2018 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar\File\Renderer;
@@ -238,7 +238,7 @@ class GD extends BaseRenderer {
 
     public function filter($filter_def) {
 
-        $filters = array();
+        $filters = [];
 
         if(is_array($filter_def)) {
 

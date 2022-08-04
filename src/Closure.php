@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/Closure.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar;
@@ -14,11 +14,13 @@ namespace Hazaar;
  *
  * @since       1.0.0
  */
-class Closure {
+class Closure implements \JsonSerializable {
 
     protected $closure;
 
     protected $reflection;
+
+    private $code;
 
     function __construct($function = NULL) {
 
@@ -30,8 +32,18 @@ class Closure {
 
             $this->code = $this->_fetchCode();
 
-        }
+        }elseif($function instanceof \stdClass && isset($function->code)){
 
+            $this->code = $function->code;
+
+            eval('$function = ' . rtrim($function->code, ' ;') . ';');
+
+            $this->closure = $function;
+
+            $this->reflection = new \ReflectionFunction($function);
+
+        }
+        
     }
 
     public function __invoke() {
@@ -101,7 +113,7 @@ class Closure {
 
     public function __sleep() {
 
-        return array('code');
+        return ['code'];
 
     }
 
@@ -120,6 +132,15 @@ class Closure {
             throw new \Hazaar\Exception('Bad code: ' . $this->code);
 
         }
+
+    }
+
+    #[\ReturnTypeWillChange]
+    public function jsonSerialize() {
+
+        return [
+            'code' => $this->code
+        ];
 
     }
 

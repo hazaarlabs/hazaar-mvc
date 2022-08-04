@@ -3,9 +3,9 @@
 /**
  * @file        Hazaar/Cache/Backend/Session.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 namespace Hazaar\Cache\Backend;
 
@@ -29,7 +29,7 @@ class Session extends \Hazaar\Cache\Backend {
 
     private $timeout = 3600;
 
-    private $values = array();
+    private $values = [];
 
     protected $weight = 3;
 
@@ -136,10 +136,10 @@ class Session extends \Hazaar\Cache\Backend {
          * so we need to set that in the session first.
          */
         if (!array_key_exists(APPLICATION_BASE, $_SESSION))
-            $_SESSION[APPLICATION_BASE] = array();
+            $_SESSION[APPLICATION_BASE] = [];
 
         if (!(array_key_exists($this->namespace, $_SESSION[APPLICATION_BASE]) && is_array($_SESSION[APPLICATION_BASE][$this->namespace])))
-            $_SESSION[APPLICATION_BASE][$this->namespace] = array();
+            $_SESSION[APPLICATION_BASE][$this->namespace] = [];
 
         $this->values = & $_SESSION[APPLICATION_BASE][$this->namespace];
 
@@ -208,9 +208,9 @@ class Session extends \Hazaar\Cache\Backend {
 
     public function set($key, $value, $timeout = NULL) {
 
-        $cache = array(
+        $cache = [
             'data' => $value
-        );
+        ];
 
         if ($timeout > 0)
             $cache['expire'] = time() + $timeout;
@@ -251,7 +251,7 @@ class Session extends \Hazaar\Cache\Backend {
 
         $_SESSION['session']['created'] = time();
 
-        $_SESSION[APPLICATION_BASE][$this->namespace] = array();
+        $_SESSION[APPLICATION_BASE][$this->namespace] = [];
 
         return true;
 
@@ -268,7 +268,7 @@ class Session extends \Hazaar\Cache\Backend {
 
     public function toArray() {
 
-        $values = array();
+        $values = [];
 
         foreach($_SESSION[APPLICATION_BASE][$this->namespace] as $key => $item){
 

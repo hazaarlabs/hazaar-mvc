@@ -99,7 +99,7 @@ class Image extends \Hazaar\File {
 
             $this->checkLoaded();
 
-            return call_user_func_array(array($this->renderer, $func), $params);
+            return call_user_func_array([$this->renderer, $func], $params);
 
         }
 

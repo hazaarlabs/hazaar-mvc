@@ -3,9 +3,9 @@
 /**
  * @file        Hazaar/Timer.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar;
@@ -27,7 +27,7 @@ class Timer {
     /**
      * Array of timers
      */
-    private $timers = array();
+    private $timers = [];
 
     /**
      * The name of the last timer.  Used in checkpointing.
@@ -75,7 +75,7 @@ class Timer {
         if(!$when)
             $when = microtime(true);
 
-        $this->timers[$name] = array('start' => $when);
+        $this->timers[$name] = ['start' => $when];
 
         $this->last = $name;
 
@@ -177,7 +177,7 @@ class Timer {
      */
     public function all($precision = null) {
 
-        $results = array();
+        $results = [];
 
         foreach(array_keys($this->timers) as $name)
             $results[$name] = $this->get($name, $precision);

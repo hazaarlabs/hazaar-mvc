@@ -21,7 +21,7 @@ class Sub extends Block {
      *
      * @param       array $parameters Optional parameters to apply to the span.
      */
-    function __construct($content = null, $params = array()) {
+    function __construct($content = null, $params = []) {
 
         parent::__construct('sub', $content, $params);
 

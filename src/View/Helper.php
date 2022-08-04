@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/View/Helper.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar\View;
@@ -15,7 +15,7 @@ abstract class Helper implements Helper\_Interface {
 
     protected $args;
 
-    final function __construct($view = NULL, $args = array()) {
+    final function __construct($view = NULL, $args = []) {
 
         $this->view = $view;
 
@@ -37,7 +37,7 @@ abstract class Helper implements Helper\_Interface {
 
     public function extendArgs($args) {
 
-        if(! is_array($args))
+        if(!\Hazaar\Map::is_array($args))
             return;
 
         $this->args = array_merge($this->args, $args);
@@ -67,7 +67,7 @@ abstract class Helper implements Helper\_Interface {
 
     }
 
-    public function requires($helper, $args = array()) {
+    public function requires($helper, $args = []) {
 
         if($this->view && ! $this->view->hasHelper($helper)) {
 
@@ -93,7 +93,7 @@ abstract class Helper implements Helper\_Interface {
 
     }
 
-    public function init(\Hazaar\View\Layout $view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = []) {
 
         //Do nothing by default.
 

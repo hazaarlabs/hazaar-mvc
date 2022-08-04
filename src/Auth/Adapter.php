@@ -3,9 +3,9 @@
 /**
  * @file        Auth/Adapter.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 /**
@@ -99,37 +99,39 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
     protected $credential;
 
     // Extra data fields to store from the user record
-    protected $extra = array();
+    protected $extra = [];
 
-    function __construct($cache_config = array(), $cache_backend = null) {
+    private $no_credential_hashing = false;
 
-        $this->options = new \Hazaar\Map(array(
-            'encryption' => array(
+    function __construct($cache_config = [], $cache_backend = null) {
+
+        $this->options = new \Hazaar\Map([
+            'encryption' => [
                 'hash' => 'sha1',
                 'count' => 1,
                 'salt' => '',
                 'use_identity' => false
-            ),
-            'autologin' => array(
+            ],
+            'autologin' => [
                 'cookie' => 'hazaar-auth-autologin',
                 'period' => 1,
                 'hash'  => 'sha1'
-            ),
-            'token' => array(
+            ],
+            'token' => [
                 'hash' => 'sha1'
-            ),
+            ],
             'timeout' => 3600,
-            'cache' => array(
+            'cache' => [
                 'backend' => 'session',
                 'cookie' => 'hazaar-auth'
-            )
-        ), \Hazaar\Application::getInstance()->config['auth']);
+            ]
+            ], \Hazaar\Application::getInstance()->config['auth']);
 
-        $cache_config = new \Hazaar\Map(array(
+        $cache_config = new \Hazaar\Map([
             'use_pragma' => FALSE,
             'lifetime' => $this->options->timeout,
             'session_name' => $this->options->cache['cookie']
-        ), $cache_config);
+        ], $cache_config);
 
         if($cache_backend instanceof \Hazaar\Cache){
 
@@ -154,7 +156,11 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
         if($this->session->has('hazaar_auth_identity') && $this->session->has('hazaar_auth_token')){
 
-            if(hash($this->options->token['hash'], $this->getIdentifier($this->session->hazaar_auth_identity)) !== $this->session->hazaar_auth_token)
+            $id = $this->getIdentifier($this->session->hazaar_auth_identity);
+
+            $hash = $this->options->token['hash'];
+
+            if(hash($hash, $id) !== $this->session->hazaar_auth_token)
                 $this->deauth();
             
         }
@@ -200,7 +206,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
         if($credential === null)
             $credential = $this->credential;
 
-        if(!$credential)
+        if(!$credential || $this->no_credential_hashing === true)
             return $credential;
 
         $hash = false;
@@ -213,7 +219,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
         $algos = $this->options->encryption['hash'];
 
         if(!\Hazaar\Map::is_array($algos))
-            $algos = array($algos);
+            $algos = [$algos];
 
         $salt = $this->options->encryption['salt'];
 
@@ -241,11 +247,18 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
     protected function getIdentifier($identity){
 
-        return hash('sha1', $identity)
+        return hash('sha1', $identity);
+
+        /**
+         * Removed this because it appears that in some proxy situations this data can change, which causes
+         * the identifier to change and the session to be deauthorised.  For now we are just commenting this
+         * out so that the identity can be hashed.
+         */
+        /* 
             . (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '')
             . (isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : '')
-            . (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : 'unknown-ua');
-
+            . (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : 'unknown-ua'));
+        */
     }
 
     protected function setDataFields(array $fields) {
@@ -328,10 +341,10 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
                      * stored encrypted and the developer should re-think their auth strategy but
                      * we offer some minor protection from that stupidity here.
                      */
-                    $data = base64_encode(http_build_query(array(
+                    $data = base64_encode(http_build_query([
                         'identity' => $identity,
                         'hash' => hash($this->options->autologin['hash'], $this->getIdentifier($auth['credential'] . $identity))
-                    )));
+                    ]));
 
                     $cookie = $this->getAutologinCookieName();
 
@@ -371,16 +384,18 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
         $headers = hazaar_request_headers();
 
+
         if($authorization = ake($headers, 'Authorization')){
 
             list($method, $code) = explode(' ', $authorization);
 
-            if(strtolower($method) != 'basic')
-                throw new \Exception('Unsupported authorization method: ' . $method);
+            if(strtolower($method) === 'basic'){
 
-            list($identity, $credential) = explode(':', base64_decode($code));
+                list($identity, $credential) = explode(':', base64_decode($code));
 
-            return $this->authenticate($identity, $credential);
+                return $this->authenticate($identity, $credential);
+
+            }
 
         }elseif($this->canAutoLogin()) {
 
@@ -522,12 +537,13 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
      * These methods allows accessing user data as array attributes of the auth object. These methods do not allow this
      * data to be modified in any way.
      */
-    public function offsetExists($key) {
+    public function offsetExists($key) : bool {
 
         return $this->session->has($key);
 
     }
 
+    #[\ReturnTypeWillChange]
     public function &offsetGet($key) {
 
         if($this->session->has($key))
@@ -539,15 +555,15 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
     }
 
-    public function offsetSet($key, $value) {
+    public function offsetSet($key, $value) : void {
 
         $this->session->set($key, $value);
 
     }
 
-    public function offsetUnset($key) {
+    public function offsetUnset($key) : void {
 
-        $this->session->unset($key);
+        $this->session->remove($key);
 
     }
 
@@ -558,6 +574,21 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
      * be overridden.
      */
     protected function authenticationSuccess($identity, $data){
+
+    }
+
+    /**
+     * Toggles on/off the internal credential hashing algorithm.
+     * 
+     * This is useful is you want to authenticate with an already hashed credential.
+     * 
+     * WARNING:  This should NOT normally be used.  And if it IS used, it should only be used to authenticate credentials
+     * supplied internally by the application itself, and not provided by a user/client/etc.  Disabling password hash
+     * essentially turns this all into clear text credentials.
+     */
+    public function disableCredentialHashing($value = true){
+
+        $this->no_credential_hashing = boolify($value);
 
     }
 

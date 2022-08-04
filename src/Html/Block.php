@@ -2,6 +2,8 @@
 
 namespace Hazaar\Html;
 
+use ReflectionClass;
+
 /**
  * @brief       Block HTML display element
  *
@@ -14,7 +16,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     private   $close;
 
-    private   $content = array();
+    private   $content = [];
 
     /**
      * @detail  The HTML block element constructor.  This allows a block element of any type to be constructed.
@@ -36,14 +38,14 @@ class Block extends Element implements \ArrayAccess, \Iterator {
      *                              sequence to drop the PHP interpreter back into HTML output mode to render more
      *                              content that will appear inside the block.
      */
-    function __construct($type = null, $content = NULL, $parameters = array(), $close = TRUE) {
+    function __construct($type = null, $content = NULL, $parameters = [], $close = TRUE) {
 
         parent::__construct($type, $parameters);
 
         if($content !== NULL) {
 
             if(! is_array($content))
-                $content = array($content);
+                $content = [$content];
 
             $this->content = $content;
 
@@ -65,7 +67,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
      */
     public function renderElement($element) {
 
-        $out = array();
+        $out = [];
 
         if(is_array($element)) {
 
@@ -99,7 +101,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
         if($this->type)
             $out .= '<' . $this->type . (($this->parameters->count() > 0) ? ' ' . $this->parameters : '') . '>';
 
-        $content = array();
+        $content = [];
 
         foreach($this->content as $child)
             $content[] = $this->renderElement($child);
@@ -122,7 +124,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
      */
     public function set() {
 
-        $this->content = array();
+        $this->content = [];
 
         return self::add(func_get_args());
 
@@ -167,6 +169,36 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
         return $this;
 
+    }
+
+    /**
+     * Add a new HTML element
+     * 
+     * This function will create a new HTML element and pass the argument list to the constructor 
+     * before returning the new element.  This is a great shorthand method for creating and adding
+     * new HTML elements to block elements.
+     * 
+     * @param string $type The HTML element type to create.  Eg: DIV, SPAN, INPUT, etc.
+     * 
+     * @param mixed ... A list of arguments that will be passed to the constructor of the created element.
+     * 
+     * @return \Hazaar\Html\Element The created element.
+     */
+    public function addNew(){
+
+        $args = func_get_args();
+
+        if(!($type = array_shift($args)))
+            return false;
+
+        $class = new ReflectionClass('\\Hazaar\\Html\\' . ucfirst(strtolower($type)));
+
+        $element = $class->newInstanceArgs($args);
+
+        $this->add($element);
+
+        return $element;
+        
     }
 
     /**
@@ -220,7 +252,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
             //Split on a comma and any amount of adjacent white space
             $parts = preg_split('/\s*,\s*/', $selector);
 
-            $ruleset = array();
+            $ruleset = [];
 
             //Compile all the selector rules.
             foreach($parts as $part)
@@ -232,7 +264,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
                     if(ElementCollection::matchElement($element, $rules, $index, $count)){
 
-                        array_splice($this->content, $index + $offset, $length, array($content));
+                        array_splice($this->content, $index + $offset, $length, [$content]);
 
                         return $this;
 
@@ -260,17 +292,18 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     }
 
-    public function offsetExists($key) {
+    public function offsetExists($key) : bool {
 
         return array_key_exists($key, $this->content);
 
     }
 
-    public function offsetGet($key) {
+    #[\ReturnTypeWillChange]
+    public function offsetGet($offset) {
 
-        if(array_key_exists($key, $this->content)) {
+        if(array_key_exists($offset, $this->content)) {
 
-            return $this->content[$key];
+            return $this->content[$offset];
 
         }
 
@@ -278,7 +311,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     }
 
-    public function offsetSet($key, $value) {
+    public function offsetSet($key, $value) : void {
 
         if(is_null($key)) {
 
@@ -292,7 +325,7 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     }
 
-    public function offsetUnset($key) {
+    public function offsetUnset($key) : void {
 
         if(array_key_exists($key, $this->content)) {
 
@@ -302,39 +335,99 @@ class Block extends Element implements \ArrayAccess, \Iterator {
 
     }
 
-    public function rewind() {
+    public function rewind() : void {
 
-        return reset($this->content);
-
-    }
-
-    public function next() {
-
-        return next($this->content);
+        reset($this->content);
 
     }
 
-    public function current() {
+    public function next() : void {
+
+        next($this->content);
+
+    }
+
+    #[\ReturnTypeWillChange]
+    public function current()  {
 
         return current($this->content);
 
     }
 
-    public function valid() {
+    public function valid() : bool {
 
         return (current($this->content));
 
     }
 
+    #[\ReturnTypeWillChange]
     public function key() {
 
         return key($this->content);
 
     }
 
-    public function count() {
+    public function count() : int {
 
         return count($this->content);
+
+    }
+
+    /**
+     * Returns the content of the element as a string containing all inner HTML
+     * 
+     * If the element has only text content, then this content is returned as is.  If the element contains
+     * other elements, then these elements are rendered into HTML and returned.
+     * 
+     * This differs from Block::text() in that it renders the HTML instead of just returning the text.
+     */
+    public function html(){
+
+        $out = '';
+
+        if(is_array($this->content)){
+
+            foreach($this->content as $element)
+                $out .= (string)$element;
+
+        }else $out = $this->content;
+            
+        return $out;
+
+    }
+
+    /**
+     * Returns the contents of the element as plain text
+     * 
+     * If the element has only text content, then this content is returned as is.  If the element contains
+     * other elements, then the same text() function is called on these elements to return their plain text
+     * content.
+     * 
+     * Child block elements are appended with <cr><cr> to aid with formatting and potentially parsing with 
+     * other industry standard markup language processors.
+     * 
+     * This differs from Block::html() in that it does not render any HTML and instead just returns the plain
+     * text contents.
+     * 
+     */
+    public function text(){
+
+        $out = '';
+
+        if(is_array($this->content)){
+
+            foreach($this->content as $element){
+
+                if($element instanceof Inline)
+                    continue;
+
+                $out .= (string)trim((($element instanceof Block) ? $element->text() : $element), "\n") . "\n\n";
+
+            }
+
+        }
+
+        return $out;
 
     }
 

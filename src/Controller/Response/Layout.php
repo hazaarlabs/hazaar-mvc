@@ -6,7 +6,7 @@ class Layout extends \Hazaar\Controller\Response\Html implements \ArrayAccess {
 
     private $_layout;
 
-    private $_data = array();
+    private $_data = [];
 
     function __construct($layout = NULL, $init_default_helpers = TRUE) {
 
@@ -54,32 +54,33 @@ class Layout extends \Hazaar\Controller\Response\Html implements \ArrayAccess {
 
     public function __call($method, $param_arr) {
 
-        return call_user_func_array(array(
+        return call_user_func_array([
             $this->_layout,
             $method
-        ), $param_arr);
+        ], $param_arr);
 
     }
 
-    public function offsetGet($key) {
+    #[\ReturnTypeWillChange]
+    public function offsetGet($offset) {
 
-        return $this->_layout->get($key);
+        return $this->_layout->get($offset);
 
     }
 
-    public function offsetSet($key, $value) {
+    public function offsetSet($key, $value) : void{
 
         $this->_layout->set($key, $value);
 
     }
 
-    public function offsetUnset($key) {
+    public function offsetUnset($key) : void {
 
         $this->_layout->remove($key);
 
     }
 
-    public function offsetExists($key) {
+    public function offsetExists($key) : bool {
 
         return $this->_layout->has($key);
 

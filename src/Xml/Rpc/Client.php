@@ -40,7 +40,7 @@ class Client extends \Hazaar\Http\Client {
 
         $request = new \Hazaar\Http\Request($this->location, 'POST', 'text/xml');
 
-        $request->setBody(xmlrpc_encode_request($method, $args, array('version' => 'xmlrpc')));
+        $request->setBody(xmlrpc_encode_request($method, $args, ['version' => 'xmlrpc']));
 
         if($response = self::send($request)) {
 

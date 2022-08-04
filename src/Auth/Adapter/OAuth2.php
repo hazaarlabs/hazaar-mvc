@@ -20,13 +20,13 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     protected $http_client;
 
-    protected $metadata = array();
+    protected $metadata = [];
 
-    protected $scopes = array();
+    protected $scopes = [];
 
     private $authenticate_callback = null;
 
-    function __construct($client_id, $client_secret, $grant_type = 'code', $cache_config = array(), $cache_backend = 'session') {
+    function __construct($client_id, $client_secret, $grant_type = 'code', $cache_config = [], $cache_backend = 'session') {
 
         parent::__construct($cache_config, $cache_backend);
 
@@ -98,7 +98,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
         $key = hash('sha1', $uri);
 
         if(!$this->session->has('oauth2_metadata'))
-            $this->session->oauth2_metadata = array();
+            $this->session->oauth2_metadata = [];
 
         $metadata = $this->session->oauth2_metadata;
             
@@ -155,8 +155,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
      */
     public function authenticated() {
 
-        if(parent::authenticated() 
-            && $this->session->has('oauth2_data')
+        if($this->session->has('oauth2_data')
             && ($this->session->has('oauth2_expiry') && $this->session->oauth2_expiry > time()))
             return (ake($this->session->oauth2_data, 'access_token', '') !== '');
 
@@ -353,11 +352,11 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
             $this->session->redirect_uri = $this->getRedirectUri();
 
-            $params = array(
+            $params = [
                 'client_id' => $this->client_id,
                 'redirect_uri' => rawurlencode($this->session->redirect_uri),
                 'state' => $this->session->state
-            );
+            ];
 
             if($this->grant_type == 'implicit'){
 
@@ -471,7 +470,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     }
 
-    public function queryAuth($identity, $extra = array()){
+    public function queryAuth($identity, $extra = []){
 
         return false;
 

@@ -14,11 +14,11 @@ namespace Hazaar\Model;
  */
 class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \Countable, \JsonSerializable {
 
-    private $type;
+    protected $type;
 
-    private $allow_undefined = false;
+    protected $allow_undefined = false;
 
-    private $values = array();
+    protected $values = [];
 
     /**
      * ChildArray Constructor
@@ -31,7 +31,7 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
      * @param mixed $values The initial array of items to populate the object with.
      * @throws \Exception
      */
-    function __construct($type, $values = array()){
+    function __construct($type, $values = []){
 
         if(!(is_array($type) 
             || is_object($type) 
@@ -47,16 +47,16 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
             $this->allow_undefined = true;
 
         if(!is_array($values))
-            $values = ($values === null) ? array() : array($values);
+            $values = ($values === null) ? [] : [$values];
 
         foreach($values as $index => $value)
             $this->offsetSet($index, $value);
 
     }
 
-    public function find($criteria = array(), $multiple = false){
+    public function find($criteria = [], $multiple = false){
 
-        $values = array();
+        $values = [];
 
         foreach($this->values as $value){
 
@@ -77,7 +77,7 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function remove($criteria = array(), $multiple = false, $empty_only = false){
+    public function remove($criteria = [], $multiple = false, $empty_only = false){
 
         $result = false;
 
@@ -206,7 +206,7 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
         if (!is_callable($func) || substr($func, 0, 6) !== 'array_')
             throw new \BadMethodCallException(__CLASS__.'->'.$func);
 
-        return call_user_func_array($func, array_merge(array($this->values), $argv));
+        return call_user_func_array($func, array_merge([$this->values], $argv));
 
     }
 
@@ -251,19 +251,20 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function offsetExists($offset){
+    public function offsetExists($offset) : bool {
 
         return array_key_exists($offset, $this->values);
 
     }
 
-    public function offsetGet($offset){
+    #[\ReturnTypeWillChange]
+    public function offsetGet($offset) {
 
         return $this->values[$offset];
 
     }
 
-    public function offsetSet($offset, $value){
+    public function offsetSet($offset, $value) : void {
 
         if(is_array($this->type))
             $value = new ChildModel($this->type, $value);
@@ -281,7 +282,7 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function offsetUnset($offset){
+    public function offsetUnset($offset) : void {
 
         unset($this->values[$offset]);
 
@@ -289,37 +290,39 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function current(){
+    #[\ReturnTypeWillChange]
+    public function current() {
 
         return current($this->values);
 
     }
 
-    public function next(){
+    public function next() : void {
 
-        return next($this->values);
+        next($this->values);
 
     }
 
-    public function key(){
+    #[\ReturnTypeWillChange]
+    public function key() {
 
         return key($this->values);
 
     }
 
-    public function valid(){
+    public function valid() : bool {
 
         return (key($this->values) !== null);
 
     }
 
-    public function rewind(){
+    public function rewind() : void{
 
-        return reset($this->values);
+        reset($this->values);
 
     }
 
-    public function count(){
+    public function count() : int {
 
         return count($this->values);
 
@@ -337,13 +340,13 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function push($value = array()){
+    public function push($value = []){
         
         return $this->append($value);
 
     }
 
-    public function append($value = array()){
+    public function append($value = []){
 
         if(is_array($this->type))
             $value = new ChildModel($this->type, $value);
@@ -371,7 +374,8 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     }
 
-    public function jsonSerialize(){
+    #[\ReturnTypeWillChange]
+    public function jsonSerialize() {
 
         return $this->values;
 
@@ -379,13 +383,13 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
     public function empty(){
 
-        $this->values = array();
+        $this->values = [];
 
     }
 
     public function collate($key_field, $value_field = null){
 
-        $items = array();
+        $items = [];
 
         foreach($this->values as $value)
             $items[$value[$key_field]] = ($value_field === null) ? $value : $value[$value_field];

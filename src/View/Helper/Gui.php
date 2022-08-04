@@ -2,9 +2,9 @@
 /**
  * @file        Hazaar/View/Helper/Gui.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar\View\Helper;
@@ -26,15 +26,13 @@ class Gui extends \Hazaar\View\Helper {
 
     }
 
-    public function init(\Hazaar\View\Layout $view, $args = array()) {
+    public function init(\Hazaar\View\Layout $view, $args = []) {
 
         $view->requires($this->application->url('hazaar', 'file/js/popup.js'));
 
-        //$view->link($this->application->url('hazaar', 'file/css/popup.css'));
-
     }
 
-    public function popup($content, $args = array()) {
+    public function popup($content, $args = []) {
 
         $id = 'popup_' . uniqid();
 

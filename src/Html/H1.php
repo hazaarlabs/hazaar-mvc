@@ -21,7 +21,7 @@ class H1 extends Block {
      * 
      * @param       array $parameters Optional parameters to apply to the anchor.
      */
-    function __construct($content = null, $parameters = array()) {
+    function __construct($content = null, $parameters = []) {
 
         parent::__construct('h1', $content, $parameters);
 

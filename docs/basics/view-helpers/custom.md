@@ -20,7 +20,7 @@ class Example extends \Hazaar\View\Helper {
 
   public function tag($label){
 
-    return $this->html->div(array($this->html->h1('Example Tag'), $this->html->div($label)));
+    return $this->html->div([$this->html->h1('Example Tag'), $this->html->div($label)]);
 
   }
 

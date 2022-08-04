@@ -10,21 +10,22 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     public $view_path;
 
-    public $notices = array();
+    public $notices = [];
 
-    private $module_info = array('label' => 'Module', 'icon' => 'bars');
+    private $module_info = ['label' => 'Module', 'icon' => 'bars'];
 
-    final function __construct($name, $path, $application){
+    final function __construct($name, $path){
 
         $this->view_path = $path;
 
-        parent::__construct($name, $application, false);
+        parent::__construct($name);
 
     }
 
     final public function __configure(Handler $handler){
 
         $this->handler = $handler;
+
 
     }
 
@@ -39,7 +40,7 @@ abstract class Module extends \Hazaar\Controller\Action {
 
         $this->view->link($this->application->url('hazaar/file/console/css/layout.css'));
 
-        $this->view->addHelper('hazaar', array('base_url' => $this->application->url('hazaar/console')));
+        $this->view->addHelper('hazaar', ['base_url' => $this->application->url('hazaar/console')]);
 
         $this->view->addHelper('jQuery');
 
@@ -51,14 +52,33 @@ abstract class Module extends \Hazaar\Controller\Action {
 
         $this->view->navitems = $this->handler->getNavItems();
 
-        $this->view->notices = array();
+        $this->view->notices = [];
 
-        $this->view->user = array(
+        $this->view->user = [
             'fullname' => $this->handler->getUser(),
             'group' => 'Administrator'
-        );
+        ];
 
-        parent::__initialize($request);
+        $this->request = $request;
+
+        $response = null;
+
+        if(!($this->__action = $request->shiftPath()))
+            $this->__action = 'index';
+
+        if(method_exists($this, 'init')) {
+
+            $response = $this->init($request);
+
+            if($response === FALSE)
+                throw new \Hazaar\Exception('Failed to initialize action controller! ' . get_class($this) . '::init() returned false!');
+
+        }
+
+        if($request->getPath())
+            $this->__actionArgs = explode('/', $request->getPath());
+
+        return $response;
 
     }
 
@@ -80,7 +100,7 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     }
 
-    public function url($action = null, $params = array()){
+    public function url($action = null, $params = []){
 
         return $this->application->url('hazaar/console', $action, $params);
 
@@ -88,7 +108,7 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     public function active(){
 
-        return call_user_func_array(array($this->application, 'active'), array_merge(array('hazaar', 'console'), func_get_args()));
+        return call_user_func_array([$this->application, 'active'], array_merge(['hazaar', 'console'], func_get_args()));
 
     }
 
@@ -102,27 +122,27 @@ abstract class Module extends \Hazaar\Controller\Action {
 
     public function notice($msg, $icon = 'bell', $class = null){
 
-        $this->view->notices[] = array(
+        $this->view->notices[] = [
             'msg' => $msg,
             'class' => $class,
             'icon' => $icon
-        );
+        ];
 
     }
 
     public function setActiveMenu(MenuItem $item){
 
-        $this->module_info = array('label' => $item->label, 'icon' => $item->icon);
+        $this->module_info = ['label' => $item->label, 'icon' => $item->icon];
 
     }
 
     public function  getActiveMenu(){
 
-        return $this->view->html->div(array(
+        return $this->view->html->div([
             $this->view->html->i()->class('fa fa-' . $this->module_info['icon']),
             ' ',
             $this->module_info['label']
-        ));
+        ]);
 
     }
 

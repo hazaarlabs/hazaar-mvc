@@ -35,7 +35,7 @@ Available options are:
 ```php
 $cache = new Hazaar\Cache('basic', 'file');
 if(($data = $cache->load('my_cache_key')) === false){
-    $data = array();
+    $data = [];
     for($i=0;$i<1000;$i++){
         $data[$i] = uniqid();
     }
@@ -79,7 +79,7 @@ Calling a class method:
 
 ```php
 $cache = new Hazaar\Cache('func', 'file');
-$result = $cache->call(array($obj, 'myMethod'), 'a string', 1234);
+$result = $cache->call([$obj, 'myMethod'], 'a string', 1234);
 # Do something with result here
 ```
 

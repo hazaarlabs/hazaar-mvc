@@ -14,9 +14,9 @@ class MoneyTest extends \PHPUnit\Framework\TestCase {
 
         $this->assertIsFloat($b->toFloat());
 
-        $a->add($b);
+        $c = $a->add($b);
 
-        $this->assertIsFloat($a->toFloat());
+        $this->assertIsFloat($c->toFloat());
 
     }
 

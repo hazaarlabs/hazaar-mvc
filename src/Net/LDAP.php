@@ -3,9 +3,9 @@
 /**
  * @file        Hazaar/LDAP/LDAP.php
  *
- * @author      Jamie Carl <jamie@hazaarlabs.com>
+ * @author      Jamie Carl <jamie@hazaar.io>
  *
- * @copyright   Copyright (c) 2015 Jamie Carl (http://www.hazaarlabs.com)
+ * @copyright   Copyright (c) 2015 Jamie Carl (http://www.hazaar.io)
  */
 namespace Hazaar\Net;
 
@@ -95,7 +95,7 @@ class LDAP {
      *            The base DN for the directory.
      *
      * @param null $attributes
-     *            An array of the required attributes, e.g. array("mail", "sn", "cn"). Note that the "dn"
+     *            An array of the required attributes, e.g. ["mail", "sn", "cn"]. Note that the "dn"
      *            is always returned irrespective of which attributes types are requested.
      *
      *            Using this parameter is much more efficient than the default action (which is to return all attributes and their
