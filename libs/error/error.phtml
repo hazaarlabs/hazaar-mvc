@@ -73,7 +73,7 @@
                 <h2>Message:</h2>
 
                 <div>
-                    <?=$this->err['message'];?>
+                    <?=str_replace("\n", '<br/>', $this->err['message']);?>
                 </div>
 
                 <h2>File:</h2>
