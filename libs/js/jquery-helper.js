@@ -184,7 +184,7 @@ dataBinderValue.prototype.set = function (value, label, other, no_update) {
 dataBinderValue.prototype.save = function (no_label) {
     if ((this.value !== null && this.label !== null && this.label !== '' || this.value === null && this.other !== null) && no_label !== true)
         return { "__hz_value": this.value, "__hz_label": this.label, "__hz_other": this.other };
-    return this.value;
+    return !this.value && this.other ? this.other : this.value;
 };
 
 dataBinderValue.prototype.empty = function (no_update) {
