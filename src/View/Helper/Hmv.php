@@ -192,7 +192,7 @@ class Hmv extends \Hazaar\View\Helper {
     }
 
 
-    private function renderInputs(\Hazaar\Model\Strict $object, $prefix = null, $export_all = false){
+    private function renderInputs(\Hazaar\Model\Strict $object, $prefix = null, $export_all = false, $siblings = null, $uniqueKey = null){
 
         $tableRows = [];
 
@@ -293,6 +293,35 @@ class Hmv extends \Hazaar\View\Helper {
                     else
                         $value = (string)$item;
 
+                    if($uniqueKey !== null
+                        && is_array($siblings) 
+                        && count($siblings) > 0){
+
+                        $values = [];
+
+                        foreach($siblings as $sibling)
+                            $values[] = $sibling->get($uniqueKey);
+
+                        foreach($data as $index => $item){
+
+                            if($item instanceof \Hazaar\Html\Option){
+
+                                $value = $item->attr('value');
+                            
+                                if(in_array($value, $values))
+                                    unset($data[$index]);
+
+                            }else{
+
+                                if(in_array($index, $values))
+                                    unset($data[$index]);
+
+                            }
+
+                        }
+
+                    }
+
                     $input = $this->html->select($name, $data, $value)->class($this->input_class)->id($name);
 
                 }else{ //Otherwise, try and render the object as a sub-object.
@@ -350,6 +379,8 @@ class Hmv extends \Hazaar\View\Helper {
 
                     $input = [];
 
+                    $values = [];
+
                     $delTR = $this->html->tr([$this->html->td(), $this->html->td($this->html->span()->class('btnDelItem'))]);
 
                     foreach($item as $index => $i){
@@ -358,11 +389,13 @@ class Hmv extends \Hazaar\View\Helper {
 
                         $input[] = $table->add($this->renderInputs($i, $name . '[' . $index . ']', $export_all), $delTR);
 
+                        $values[] = $i;
+
                     }
 
                     $table = $this->html->table()->class($this->container_class);
 
-                    $input[] = $table->add($this->renderInputs($object->append($key, []), $name . '[]', $export_all), $delTR)
+                    $input[] = $table->add($this->renderInputs($object->append($key, []), $name . '[]', $export_all, $values, ake($def, 'unique')), $delTR)
                         ->addClass($this->newitem_class);
 
                     $input[] = $this->html->span()->class('btnNewItem');
