@@ -26,7 +26,7 @@ class Request extends \Hazaar\Map {
 
     private $dont_encode_uri = false;
 
-    private $json_encode_flags = null;
+    private $json_encode_flags = 0;
 
     private $json_encode_depth = 512;
 
