@@ -714,7 +714,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                         }else{
 
-                            if (strlen($value) > $data)
+                            if ($value && strlen($value) > $data)
                                 return false;
 
                         }

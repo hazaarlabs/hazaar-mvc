@@ -273,7 +273,7 @@ abstract class Controller {
             if(! array_key_exists($alias, $this->_helpers)) {
 
                 if(!($class = $this->findHelper($helper)))
-                    throw new \Exception("View helper '$helper' does not exist");
+                    throw new \Exception("Controller helper '$helper' does not exist");
 
                 $obj = new $class($this, $args);
 

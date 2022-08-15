@@ -37,7 +37,7 @@ class Htpasswd extends \Hazaar\Auth\Adapter implements _Interface {
 
         }
 
-        $this->user_hash = trim(ake($users, $identity));
+        $this->user_hash = trim(ake($users, $identity, ''));
 
         if(strlen($this->user_hash) > 0)
             return ['identity' => $identity, 'credential' => $this->user_hash];
