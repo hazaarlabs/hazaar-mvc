@@ -650,8 +650,23 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
             }
 
-        }elseif($value instanceof \Hazaar\Date && ($format = ake($def, 'format')))
-            $value->setFormat($format);
+        }
+        
+        if($value instanceof \Hazaar\Date){
+
+            if($format = ake($def, 'format'))
+                $value->setFormat($format);
+
+            if($timezone = ake($def, 'timezone')){
+
+                if($timezone === 'default')
+                    $timezone = date_default_timezone_get();
+
+                $value->setTimezone($timezone);
+                
+            }
+
+        }
 
         /*
          * Field validation
