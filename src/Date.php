@@ -214,14 +214,14 @@ class Date extends \DateTime implements \JsonSerializable {
         if ($timezone === NULL)
             $timezone = date_default_timezone_get();
 
-        if (is_numeric($timezone))
-            $timezone = timezone_identifiers_list()[(int) $timezone];
+        if (is_numeric($timezone) && ($tz = ake(timezone_identifiers_list(), (int) $timezone)))
+            $timezone = $tz;
 
         if (!$timezone instanceof \Datetimezone) {
 
-            if (is_numeric($timezone)) {
+            if (is_numeric($timezone) && ($tz = timezone_name_from_abbr('', $timezone, FALSE))){
 
-                $timezone = timezone_name_from_abbr('', $timezone, FALSE);
+                $timezone = $tz;
 
             } elseif (preg_match('/([+-])?(\d+):(\d+)/', $timezone, $matches)) {
 
