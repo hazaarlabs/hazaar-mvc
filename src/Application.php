@@ -774,6 +774,8 @@ class Application {
         
                 }
 
+                $code = $this->response->getStatus();
+
             }
 
         }catch(Controller\Exception\HeadersSent $e) {
