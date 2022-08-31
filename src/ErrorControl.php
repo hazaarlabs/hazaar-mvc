@@ -20,6 +20,8 @@ register_shutdown_function('shutdown_handler');
  */
 function errorAndDie() {
 
+    $code = 0;
+
     $app = \Hazaar\Application::getInstance();
 
     $headers = array_unflatten(headers_list(), ':', "\n");
@@ -51,7 +53,7 @@ function errorAndDie() {
 
         $controller->clean_output_buffer();
 
-        $app->run($controller);
+        $code = $app->run($controller);
 
     } else {
 
@@ -116,9 +118,11 @@ function errorAndDie() {
             . DIRECTORY_SEPARATOR . 'error'
             . DIRECTORY_SEPARATOR . 'fatal.php'));
 
+        $code = $error[0];
+
     }
 
-    exit;
+    exit($code);
 
 }
 
