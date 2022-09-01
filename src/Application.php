@@ -187,11 +187,17 @@ class Application {
 
     static public function getConfigOverridePaths(){
 
-        return [
+        $paths = [
             'server' . DIRECTORY_SEPARATOR . ake($_SERVER, 'SERVER_NAME'),
             'host' . DIRECTORY_SEPARATOR . ake($_SERVER, 'HTTP_HOST'),
+            'user' . DIRECTORY_SEPARATOR . APPLICATION_USER,
             'local'
         ];
+
+        if(\php_sapi_name() === 'cli')
+            $paths[] = 'cli';
+
+        return $paths;
 
     }
 
