@@ -10,52 +10,52 @@
 namespace Hazaar;
 
 /**
- * @brief Constant to indicate a path contains config files
+ * Constant to indicate a path contains config files
  */
 define('FILE_PATH_ROOT', 'root');
 
 /**
- * @brief Constant to indicate a path contains config files
+ * Constant to indicate a path contains config files
  */
 define('FILE_PATH_CONFIG', 'config');
 
 /**
- * @brief Constant to indicate a path contains model classes
+ * Constant to indicate a path contains model classes
  */
 define('FILE_PATH_MODEL', 'model');
 
 /**
- * @brief Constant to indicate a path contains view files
+ * Constant to indicate a path contains view files
  */
 define('FILE_PATH_VIEW', 'view');
 
 /**
- * @brief Constant to indicate a path contains controller classes
+ * Constant to indicate a path contains controller classes
  */
 define('FILE_PATH_CONTROLLER', 'controller');
 
 /**
- * @brief Constant to indicate a path contains service classes
+ * Constant to indicate a path contains service classes
  */
 define('FILE_PATH_SERVICE', 'service');
 
 /**
- * @brief Constant to indicate a path contains Support files
+ * Constant to indicate a path contains Support files
  */
 define('FILE_PATH_SUPPORT', 'support');
 
 /**
- * @brief Constant to indicate a path contains Helper files
+ * Constant to indicate a path contains Helper files
  */
 define('FILE_PATH_HELPER', 'helper');
 
 /**
- * @brief Constant to indicate a path in the library path
+ * Constant to indicate a path in the library path
  */
 define('FILE_PATH_LIB', 'library');
 
 /**
- * @brief Constant to indicate a path in the public path
+ * Constant to indicate a path in the public path
  */
 define('FILE_PATH_PUBLIC', 'public');
 
@@ -72,34 +72,39 @@ defined('APPLICATION_PATH') || define('APPLICATION_PATH', getApplicationPath($_S
 define('APPLICATION_BASE', dirname($_SERVER['SCRIPT_NAME']));
 
 /**
- * @brief Constant containing the absolute filesystem path that contains the whole project.
+ * Constant containing the name of the user running the script
+ */
+define('APPLICATION_USER', posix_getpwuid(posix_geteuid())['name']);
+
+/**
+ * Constant containing the absolute filesystem path that contains the whole project.
  */
 define('ROOT_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..'));
 
 /**
- * @brief Constant containing the absolute filesystem path to the default configuration directory.
+ * Constant containing the absolute filesystem path to the default configuration directory.
  */
 define('CONFIG_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . 'configs'));
 
 /**
- * @brief Constant containing the absolute filesystem path to the application public directory.
+ * Constant containing the absolute filesystem path to the application public directory.
  */
 define('PUBLIC_PATH', realpath(APPLICATION_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'public'));
 
 /**
- * @brief Constant containing the absolute filesystem path to the HazaarMVC library
+ * Constant containing the absolute filesystem path to the HazaarMVC library
  */
 define('LIBRARY_PATH', realpath(dirname(__FILE__)));
 
 /**
- * @brief Constant containing the absolute filesystem path to the HazaarMVC support library
+ * Constant containing the absolute filesystem path to the HazaarMVC support library
  */
 define('SUPPORT_PATH', realpath(LIBRARY_PATH . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'libs'));
 
 /**
- * @brief Global class file loader
+ * Global class file loader
  *
- * @detail This class contains methods for auto-loading classes from files in the Hazaar library path. Ordinarily
+ * This class contains methods for auto-loading classes from files in the Hazaar library path. Ordinarily
  * there will be no need for developers to use this class directly but it does contain a few methods for
  * working with paths and library files.
  *
@@ -129,7 +134,7 @@ class Loader {
 	private static $instance;
 
 	/**
-     * @brief Initialise a new loader
+     * Initialise a new loader
      *
      * !!! warning
      * Do NOT instantiate this class directly. See Loader::getInstance() on how to get a new Loader instance.
@@ -161,7 +166,7 @@ class Loader {
     }
 
 	/**
-     * @detail Return the current instance of the Loader object.
+     * Return the current instance of the Loader object.
      *
      * @since 1.0.0
      *
@@ -176,7 +181,7 @@ class Loader {
 	}
 
 	/**
-     * @detail Register this loader instance as a class autoloader
+     * Register this loader instance as a class autoloader
      *
      * @since 1.0.0
      */
@@ -187,7 +192,7 @@ class Loader {
 	}
 
 	/**
-     * @detail Unregister this loader instance as a class autoloader
+     * Unregister this loader instance as a class autoloader
      *
      * @since 1.0.0
      */
@@ -204,7 +209,7 @@ class Loader {
 	}
 
 	/**
-     * @detail Add a new search path for loading classes from library files
+     * Add a new search path for loading classes from library files
      *
      * The path type can be anything if you are using the loader to load your own library files. There are
      * built in path types for loading Hazaar library files.
@@ -266,7 +271,7 @@ class Loader {
     }
 
 	/**
-     * @detail Add multiple search paths from an array
+     * Add multiple search paths from an array
      *
      * @since 1.0.0
      *
@@ -285,7 +290,7 @@ class Loader {
 	}
 
 	/**
-     * @detail Return an array of search paths for this loader instance
+     * Return an array of search paths for this loader instance
      *
      * @since 1.0.0
      *
@@ -347,7 +352,7 @@ class Loader {
     }
 
 	/**
-     * @detail Return the absolute filesystem path to a file.
+     * Return the absolute filesystem path to a file.
      * By default this method uses the application
      * path as the base path.
      *
@@ -443,7 +448,7 @@ class Loader {
     }
 
 	/**
-     * @detail Resolve a filename within any of the search paths
+     * Resolve a filename within any of the search paths
      *
      * @since 1.0.0
      *
@@ -467,7 +472,7 @@ class Loader {
 	}
 
 	/**
-     * @detail This method is used to load a new instance of a controller class.
+     * This method is used to load a new instance of a controller class.
      * There are some
      * built-in 'magic controllers' that this method will automatically load upon request.
      *
@@ -552,7 +557,7 @@ class Loader {
 	}
 
 	/**
-     * @detail Loads a class from a source file.
+     * Loads a class from a source file.
      * This is the main class loader used by the __autoload()PHP
      * trigger. It is responsible for loading the files that hold class source definitions by determining
      * the correct file to load based on the class name.
@@ -631,7 +636,7 @@ class Loader {
 	}
 
 	/**
-     * @detail Check the library paths to make sure the file exists somewhere
+     * Check the library paths to make sure the file exists somewhere
      *
      * @since 1.0.0
      */
