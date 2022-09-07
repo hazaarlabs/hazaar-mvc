@@ -75,7 +75,8 @@ class Cache implements \ArrayAccess {
             $backend = [$backend];
 
         //We set this now as it is an absolute safe fallback
-        $backend[] = 'file';
+        if(!in_array('file', $backend))
+            $backend[] = 'file';
 
         foreach($backend as $name){
 
