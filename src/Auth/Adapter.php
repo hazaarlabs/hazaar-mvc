@@ -333,7 +333,9 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
                 $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($identity));
 
-                if(boolify($autologin) && $this->options->autologin['period'] > 0) {
+                if(\php_sapi_name() !== 'cli' &&
+                    boolify($autologin) 
+                    && $this->options->autologin['period'] > 0) {
 
                     /*
                      * $credential should be encrypted, as stored in the datasource (ie: database), so we
