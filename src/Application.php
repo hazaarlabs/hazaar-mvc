@@ -727,7 +727,7 @@ class Application {
 
                 $controller->__shutdown($response);
 
-                return $code;
+                return $response->getStatus();
 
             }
 
