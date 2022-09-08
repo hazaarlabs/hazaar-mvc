@@ -180,20 +180,6 @@ function shutdown_handler() {
     if(headers_sent())
         return;
 
-    if($error = error_get_last()){
-
-        $ignored_errors = [
-            E_CORE_WARNING,
-            E_COMPILE_WARNING,
-            E_USER_WARNING,
-            E_RECOVERABLE_ERROR
-        ];
-
-        if(is_array($error) && !in_array($error['type'], $ignored_errors))
-            errorAndDie($error, debug_backtrace());
-
-    }
-
     global $__shutdown_tasks;
 
     if(is_array($__shutdown_tasks) && count($__shutdown_tasks) > 0){
@@ -202,7 +188,6 @@ function shutdown_handler() {
             $task();
 
     }
-        
 
 }
 
