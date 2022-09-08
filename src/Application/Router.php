@@ -103,10 +103,7 @@ class Router {
 
             }
 
-            if(count($parts) > 0)
-                $this->path = implode('/', $parts);
-
-            $request->setPath($this->path);
+            $request->setPath(((count($parts) > 0) ? implode('/', $parts) : ''));
 
         }else $this->controller = $this->findController($this->default_controller);
 
