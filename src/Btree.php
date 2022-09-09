@@ -496,6 +496,8 @@ class Btree {
 
         } while ($node !== null);
 
+        $this->file->lock(LOCK_UN);
+            
         return $ret;
 
     }
