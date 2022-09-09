@@ -386,7 +386,6 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
         $headers = hazaar_request_headers();
 
-
         if($authorization = ake($headers, 'Authorization')){
 
             list($method, $code) = explode(' ', $authorization);
