@@ -240,6 +240,9 @@ class File extends \Hazaar\Cache\Backend {
 
         $this->keepalive();
 
+        if(array_key_exists($key, $this->local))
+            unset($this->local[$key]);
+
         return $this->store->remove($key);
 
     }
@@ -248,6 +251,8 @@ class File extends \Hazaar\Cache\Backend {
 
         $this->keepalive();
 
+        $this->local = [];
+        
         return $this->store->reset_btree_file();
 
     }
