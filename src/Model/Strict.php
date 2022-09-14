@@ -385,7 +385,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     public function &get($key, $exec_filters = true) {
 
-        if(strpos($key, '.') !== false){
+        if(strpos($key, '.') !== false || strpos($key, '[') !== false){
 
             $value = $this;
 
@@ -401,9 +401,17 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                     if(preg_match('/^(\w+)([\(\[])([\w\d\.=\s"\']+)[\)\]]$/', $part, $matches)){
 
-                        $exec_filters = ($matches[2] === '[') ? false : true;
+                        if ('[' === $matches[2]) {
 
-                        $value = $value->find($matches[1], array_unflatten($matches[3]));
+                            $exec_filters = true;
+
+                            $value = $value->find($matches[1], $matches[3]);
+
+                        }elseif($matches[2] === '('){
+
+                            $value = $value->find($matches[1], array_unflatten($matches[3]));
+
+                        }else throw new \Exception('Unknown search specifier: ' . $matches[2]);
 
                     }else{
 
