@@ -58,12 +58,22 @@ class ChildArray extends DataTypeConverter implements \ArrayAccess, \Iterator, \
 
         $values = [];
 
-        foreach($this->values as $value){
+        foreach($this->values as $key => $value){
 
             if(!\Hazaar\Map::is_array($value))
                 continue;
 
-            if($this->matchItem($value, $criteria)){
+            if(!is_array($criteria) && \is_numeric($criteria)){
+
+                if($key === intval($criteria)){
+
+                    if(!$multiple) return $value;
+
+                    $values[] = $value;
+                    
+                }
+
+            }elseif($this->matchItem($value, $criteria)){
 
                 if(!$multiple) return $value;
 
