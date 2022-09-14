@@ -282,6 +282,17 @@ class Response {
 
     }
 
+    public function setHeader($header, $content = null){
+
+        $header = strtolower($header);
+
+        if($content === null)
+            unset($this->headers[$header]);
+        else
+            $this->headers[$header] = $content;
+
+    }
+
     public function size() {
 
         return strlen($this->body);
