@@ -50,6 +50,7 @@ pages:
   - Administrators Guide:
     - Performance Tuning: admin/performance.md
   - Developer Reference:
+    - Constants: reference/constants.md
     - Error Codes: reference/errorcodes.md
     - HTTP Status Codes: reference/http-status-codes.md
   - A Simple Tutorial: 
