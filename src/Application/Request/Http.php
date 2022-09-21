@@ -343,9 +343,9 @@ class Http extends \Hazaar\Application\Request {
      *
      * @return      string The request body.
      */
-    public function getJSONBody() {
+    public function getJSONBody($assoc = null, $depth = 512) {
 
-        return ($this->getContentType() === 'application/json') ? json_decode($this->body) : null;
+        return (substr($this->getContentType(), 0, 16) === 'application/json') ? json_decode($this->body, $assoc, $depth) : null;
 
     }
 
