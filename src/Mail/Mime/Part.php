@@ -47,7 +47,7 @@ class Part {
 
     public function setContentType($type) {
 
-        $this->headers['Content-Type'] = $type . '; charset=utf-8';
+        $this->headers['Content-Type'] = $type . ';';
 
     }
 
@@ -91,10 +91,21 @@ class Part {
 
         $message = 'Date: ' . date('r', time()) . $this->crlf;
 
-        foreach($this->headers as $header => $content)
+        foreach($this->headers as $header => $content){
+
+            if(strtolower($header) === 'content-type'){
+
+                $encoding = function_exists('mb_detect_encoding') ? strtolower(mb_detect_encoding($this->content)) : 'utf-8';
+            
+                $content = trim($content, ' ;') . '; ' . $encoding;
+
+            }
+                
             $message .= $header . ': ' . $content . $this->crlf;
 
-        $message .= $this->crlf . utf8_encode(($width_limit > 0) ? wordwrap($this->content, $width_limit, $this->detect_break($this->content), true) : $this->content) . $this->crlf;
+        }
+
+        $message .= $this->crlf . (($width_limit > 0) ? wordwrap($this->content, $width_limit, $this->detect_break($this->content), true) : $this->content) . $this->crlf;
 
         return $message;
 
