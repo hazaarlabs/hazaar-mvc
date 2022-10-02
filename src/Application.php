@@ -293,7 +293,7 @@ class Application {
                     'media' => 'media.php'
                 ],
                 'responseImageCache' => false,
-                'runtimepath' => APPLICATION_PATH . DIRECTORY_SEPARATOR . '.runtime'
+                'runtimePath' => APPLICATION_PATH . DIRECTORY_SEPARATOR . '.runtime'
             ],
             'paths' => [
                 'model' => 'models',
@@ -444,7 +444,7 @@ class Application {
      */
     public function runtimePath($suffix = NULL, $create_dir = FALSE) {
 
-        $path = $this->config->app->get('runtimepath');
+        $path = $this->config->app->get('runtimePath');
 
         if(!file_exists($path)) {
 
