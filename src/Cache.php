@@ -380,4 +380,56 @@ class Cache implements \ArrayAccess {
 
     }
 
+    /**
+     * Increment key value
+     * 
+     * This method will increment a cached integer value by a defined amount (default is 1).  Once
+     * the value is incremented it will be stored back in the cache and the new value returned.
+     * 
+     * @param string $key The cache key
+     * 
+     * @param int $amount The amount to increment the value by.
+     * 
+     * @return int The new incremented value
+     */
+    public function increment($key, $amount = 1){
+
+        if(($value = $this->get($key)) === null || !is_int($value))
+            $value = 0;
+
+        if(!is_int($amount))
+            $amount = 1;
+
+        $this->set($key, $value += $amount);
+
+        return $value;
+        
+    }
+
+    /**
+     * Decrement key value
+     * 
+     * This method will decrement a cached integer value by a defined amount (default is 1).  Once
+     * the value is decremented it will be stored back in the cache and the new value returned.
+     * 
+     * @param string $key The cache key
+     * 
+     * @param int $amount The amount to decrement the value by.
+     * 
+     * @return int The new decremented value
+     */
+    public function decrement($key, $amount = 1){
+
+        if(($value = $this->get($key)) === null || !is_int($value))
+            $value = 0;
+
+        if(!is_int($amount))
+            $amount = 1;
+
+        $this->set($key, $value -= $amount);
+
+        return $value;
+
+    }
+
 }
