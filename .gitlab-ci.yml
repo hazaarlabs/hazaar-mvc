@@ -1,34 +1,22 @@
-# This file is a template, and might need editing before it works on your project.
-# You can copy and paste this template into a new `.gitlab-ci.yml` file.
-# You should not add this template to an existing `.gitlab-ci.yml` file by using the `include:` keyword.
-#
-# To contribute improvements to CI/CD templates, please follow the Development guide at:
-# https://docs.gitlab.com/ee/development/cicd/templates.html
-# This specific template is located at:
-# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/PHP.gitlab-ci.yml
+stages:
+  - docker
+  - test
 
-# Select image from https://hub.docker.com/_/php/
-image: php:latest
-
-# Select what we should cache between builds
-cache:
-  paths:
-    - vendor/
-
-before_script:
-  - apt-get update -yqq
-  - apt-get install -yqq git libpq-dev libcurl4-gnutls-dev libicu-dev libvpx-dev libjpeg-dev libpng-dev libxpm-dev zlib1g-dev libfreetype6-dev libxml2-dev libexpat1-dev libbz2-dev libgmp3-dev libldap2-dev unixodbc-dev libsqlite3-dev libaspell-dev libsnmp-dev libpcre3-dev libtidy-dev libonig-dev libzip-dev
-  # Install PHP extensions
-  - docker-php-ext-install mbstring pdo_pgsql curl intl gd xml zip bz2 opcache
-  # Install & enable Xdebug for code coverage reports
-  - pecl install xdebug
-  - docker-php-ext-enable xdebug
-  # Install and run Composer
-  - curl -sS https://getcomposer.org/installer | php
-  - php composer.phar install
-
-# Run our tests
-# If Xdebug was installed you can generate a coverage report and see code coverage metrics.
-test:
+Docker:
+  image: docker:20.10.12
+  before_script:
+    - echo "$DOCKER_PASSWORD" | docker login --username $DOCKER_USERNAME --password-stdin
   script:
-    - vendor/bin/phpunit --configuration phpunit.xml --coverage-text --colors=never
+    - docker build --pull --rm -f "Dockerfile" -t hazaar_cicd_image:latest "."
+    - docker tag hazaar_cicd_image $DOCKER_USERNAME/hazaar_cicd_image
+    - docker push $DOCKER_USERNAME/hazaar_cicd_image:latest
+  rules:
+    - changes:
+      - Dockerfile
+
+Test:
+  image: jamiecarl/hazaar_cicd_image
+  script:
+    - composer install
+    - vendor/bin/phplint src
+    - vendor/bin/phpunit
