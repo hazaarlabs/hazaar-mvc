@@ -27,16 +27,16 @@ abstract class Request implements Request\_Interface {
      *
      * @var mixed
      */
-    private $path;
+    private $path = '';
 
     function __construct() {
 
         $args = func_get_args();
 
         if(method_exists($this, 'init'))
-            $this->base_path = call_user_func_array([$this,'init'], $args);
+            $this->base_path = (string)call_user_func_array([$this,'init'], $args);
 
-        $this->path = $this->base_path;
+        $this->path = (string)$this->base_path;
 
     }
 
@@ -64,7 +64,7 @@ abstract class Request implements Request\_Interface {
         $path = ltrim($this->path, '/');
 
         if(($pos = strrpos($path, '/')) === false)
-            return null;
+            return '';
 
         return substr($path, 0, $pos) . '/';
 
