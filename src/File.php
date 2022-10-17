@@ -487,9 +487,12 @@ class File implements File\_Interface, \JsonSerializable {
 
             foreach ($this->filters[FILE_FILTER_SET] as $filter)
                 call_user_func_array($filter, [&$bytes]);
+
         }
 
         $this->contents = $bytes;
+
+        return strlen($bytes);
     }
 
     /**
