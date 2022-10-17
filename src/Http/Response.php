@@ -39,9 +39,7 @@ class Response {
 
     function __construct(int $status = NULL, array $headers = [], $version = 'HTTP/1.1') {
 
-        $this->status = $status;
-
-        $this->name = $this->getStatusMessage($this->status);
+        $this->setStatus($status);
 
         $this->version = $version;
 
@@ -49,6 +47,14 @@ class Response {
 
         if(count($this->headers) > 0)
             $this->headers_parsed = TRUE;
+
+    }
+
+    public function setStatus($status){
+
+        $this->status = $status === null ? $status : intval($status);
+
+        $this->name = $this->getStatusMessage($this->status);
 
     }
 
