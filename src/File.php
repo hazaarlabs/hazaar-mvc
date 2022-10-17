@@ -960,7 +960,12 @@ class File implements File\_Interface, \JsonSerializable {
 
         $list = [];
 
-        $zip = zip_open($this->source_file);
+        $file_path = $this->manager->getBackend()->resolvePath($this->source_file);
+
+        if(!\is_readable($file_path))
+            throw new \Exception('Permission denied accessing ' . $file_path);
+
+        $zip = zip_open($file_path);
 
         if (!is_resource($zip))
             return false;
@@ -985,7 +990,16 @@ class File implements File\_Interface, \JsonSerializable {
         if ($this->handle)
             return $this->handle;
 
-        return $this->handle = fopen($this->manager->getBackend()->resolvePath($this->source_file), $mode);
+        $file_path = $this->manager->getBackend()->resolvePath($this->source_file);
+
+        if(strpos($mode, 'r') !== false && !\is_readable($file_path))
+            throw new \Exception('Read permission denied accessing ' . $file_path);
+
+        if(((strpos($mode, 'w') !== false || strpos($mode, 'a') !== false) && file_exists($file_path) && !\is_writable($file_path))
+            || (!\file_exists($file_path) && !\is_writable(dirname($file_path))))
+            throw new \Exception('Write permission denied accessing ' . $file_path);
+
+        return $this->handle = fopen($file_path, $mode);
     }
 
     public function get_resource() {
