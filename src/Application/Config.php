@@ -268,13 +268,37 @@ class Config extends \Hazaar\Map {
                 if(!\Hazaar\Map::is_array($values))
                     $values = [$values];
 
-                foreach($values as $import_file){
+                if($import_file = current($values)){
 
-                    if(!($file = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $import_file)))
-                        continue;
+                    do {
 
-                    if($options = $this->loadSourceFile($file))
-                        $config->extend($options);
+                        if(!($file = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $import_file)))
+                            continue;
+
+                        if(is_dir($file)){
+
+                            $dir_iterator = new \RecursiveDirectoryIterator($file);
+
+                            $iterator = new \RecursiveIteratorIterator($dir_iterator, \RecursiveIteratorIterator::SELF_FIRST);
+
+                            foreach($iterator as $import_file){
+
+                                if(substr($import_file->getFileName(), 0, 1) === '.')
+                                    continue;
+
+                                array_push($values, $import_file->getRealPath());
+
+                            }
+
+                            continue;
+
+                        }
+
+                        if($options = $this->loadSourceFile($file))
+                            $config->extend($options);
+
+                        
+                    }while($import_file = next($values));
 
                 }
 

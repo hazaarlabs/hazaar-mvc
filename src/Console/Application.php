@@ -287,6 +287,9 @@ class Application extends Module {
 
                 $file = new \Hazaar\File($filename);
 
+                if(!$file->is_writable())
+                    throw new \Exception('Unable to complete action: file is not writable!', 400);
+
                 if($file->isEncrypted())
                     $file->decrypt();
                 else
@@ -315,6 +318,7 @@ class Application extends Module {
                     $files[] = [
                         'name' => trim(str_replace($path, '', $file->fullpath()), DIRECTORY_SEPARATOR),
                         'size' => $file->size(),
+                        'isWritable' => $file->is_writable(),
                         'encrypted' => $encrypted
                     ];
 
