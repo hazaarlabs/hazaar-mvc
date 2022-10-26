@@ -13,6 +13,7 @@
             tbody.append($('<tr>').html([
                 $('<td data-bind="files[' + x + '].name">').html(file.name.value),
                 $('<td data-bind="files[' + x + '].size">').html(file.size.value),
+                $('<td>').html(file.isWritable.value ? 'Yes' : 'No'),
                 $('<td>').html(action)
             ]).data('file', file));
         }
@@ -23,7 +24,7 @@
                 btn.toggleClass('btn-danger', data.encrypt)
                     .toggleClass('btn-success', !data.encrypt)
                     .html((data.encrypt ? 'Decrypt' : 'Encrypt'));
-            });
+            }).fail(handleError);
         });
-    });
+    }).fail(handleError);
 });

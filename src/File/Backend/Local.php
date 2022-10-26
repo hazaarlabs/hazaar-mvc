@@ -157,7 +157,7 @@ class Local implements _Interface {
         if(file_exists($file) && $overwrite == false)
             return false;
 
-        if(($ret = file_put_contents($file, $data)) !== false)
+        if(($ret = @file_put_contents($file, $data)) !== false)
             return true;
 
         return false;
