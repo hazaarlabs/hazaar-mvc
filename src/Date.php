@@ -40,8 +40,6 @@ if (!ini_get('date.timezone'))
  */
 class Date extends \DateTime implements \JsonSerializable {
 
-    public static $calendar = CAL_JULIAN;
-
     public $usec;
 
     /**
@@ -562,17 +560,6 @@ class Date extends \DateTime implements \JsonSerializable {
     }
 
     /**
-     * Returns the number of days in the current month.
-     *
-     * @return int
-     */
-    public function daysInMonth() {
-
-        return cal_days_in_month(Date::$calendar, $this->month(), $this->year());
-
-    }
-
-    /**
      * Returns the start time of the current date as a Date object.
      *
      * @return Date
@@ -624,17 +611,6 @@ class Date extends \DateTime implements \JsonSerializable {
     public function firstOfMonth() {
 
         return new Date($this->format('Y-m-01 00:00:00'), $this->getTimezone());
-
-    }
-
-    /**
-     * Returns the last day of the current month as a Date object.
-     *
-     * @return Date
-     */
-    public function lastOfMonth() {
-
-        return new Date($this->format('Y-m-' . $this->daysInMonth() . ' 23:59:59'), $this->getTimezone());
 
     }
 
