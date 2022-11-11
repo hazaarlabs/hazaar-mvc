@@ -150,10 +150,14 @@ function dieDieDie($err){
 
     http_response_code($code);
 
-    die('<h1>' . http_response_text(http_response_code()) . "</h1><pre>$err_string</pre>"
+    $msg = '<h1>' . http_response_text(http_response_code()) . "</h1><pre>$err_string</pre>"
         . "<hr/><i>Hazaar MVC/" . HAZAAR_VERSION 
-        . ' (' . php_uname('s') . ')'
-        . " Server at " . $_SERVER['SERVER_NAME'] . ' Port ' . $_SERVER['SERVER_PORT'] . "</i>");
+        . ' (' . php_uname('s') . ')';
+
+    if(array_key_exists('SERVER_NAME', $_SERVER))
+        $msg .= " Server at " . $_SERVER['SERVER_NAME'] . ' Port ' . $_SERVER['SERVER_PORT'] . "</i>";
+
+    die($msg);
 
 }
 

@@ -172,6 +172,10 @@ class Application {
              */
             $this->request = Application\Request\Loader::load();
 
+            if($this->request instanceof Application\Request\HTTP 
+                && ($base_url = $this->request->getHeader('X-Base-Url')))
+                \Hazaar\Application\Url::$__base_url = $base_url;
+
             /*
              * Create a new router object for evaluating routes
              */
