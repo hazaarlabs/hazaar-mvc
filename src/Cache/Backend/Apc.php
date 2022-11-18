@@ -61,9 +61,14 @@ class Apc extends \Hazaar\Cache\Backend {
 
     }
 
-    public function has($key) {
+    public function has($key, $check_empty = false) {
 
-        return apcu_exists($this->key($key));
+        if($check_empty === false)
+            return apcu_exists($this->key($key));
+
+        $value = $this->get($key);
+
+        return !empty($value);
 
     }
 
