@@ -148,9 +148,9 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
             $this->session = new \Hazaar\Cache($this->options->cache['backend'], $cache_config);
 
         }
-        
-        if($this->session->has('hazaar_auth_identity')
-            && $this->session->has('hazaar_auth_token')
+
+        if($this->session->has('hazaar_auth_identity', true)
+            && $this->session->has('hazaar_auth_token', true)
             && hash($this->options->token['hash'], $this->session->hazaar_auth_identity) === $this->session->hazaar_auth_token)
             $this->identity = $this->session->hazaar_auth_identity;
 
@@ -246,6 +246,9 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
     }
 
     protected function getIdentifier($identity){
+
+        if(!$identity)
+            return false;
 
         return hash('sha1', $identity);
 
@@ -378,7 +381,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
         if($this->session->has('hazaar_auth_identity')
             && $this->session->has('hazaar_auth_token')
-            && hash($this->options->token['hash'], $this->getIdentifier($this->session->hazaar_auth_identity)) === $this->session->hazaar_auth_token) {
+            && hash($this->options->get('token.hash'), $this->getIdentifier($this->session->hazaar_auth_identity)) === $this->session->hazaar_auth_token) {
 
             return true;
 

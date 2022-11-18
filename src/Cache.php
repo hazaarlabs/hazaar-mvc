@@ -202,11 +202,13 @@ class Cache implements \ArrayAccess {
      * @param mixed $key
      *            The value key to check for.
      *
+     * @param boolean $check_empty Normally this method will return try if the value exists with `$key`.  Setting `$check_empty` looks at the value
+     *              and will return false if it is an 'empty' value (ie: 0, null, [])
      * @return boolean Returns TRUE or FALSE indicating if the value is stored.
      */
-    public function has($key) {
+    public function has($key, $check_empty = false) {
 
-        return $this->backend->has($key);
+        return $this->backend->has($key, $check_empty);
 
     }
 
