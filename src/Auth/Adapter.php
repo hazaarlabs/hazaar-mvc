@@ -488,7 +488,7 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
 
             unset($_COOKIE[$cookie]);
 
-            setcookie($cookie, NULL, time() - 3600, \Hazaar\Application::path());
+            setcookie($cookie, '', time() - 3600, \Hazaar\Application::path());
 
         }
 
