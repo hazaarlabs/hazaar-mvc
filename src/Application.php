@@ -955,25 +955,26 @@ class Application {
      *
      * @since 1.0.0
      */
-    public function redirectBack() {
+    public function redirectBack($alt_url = null) {
 
         $sess = new \Hazaar\Session();
 
-        if(!($sess->has('REDIRECT') && ($uri = trim(ake($sess['REDIRECT'], 'URI')))))
-            return false;
+        if($sess->has('REDIRECT') && ($uri = trim(ake($sess['REDIRECT'], 'URI')))){
 
-        if(ake($sess['REDIRECT'], 'METHOD') === 'POST') {
+            if(ake($sess['REDIRECT'], 'METHOD') === 'POST') {
 
-            if(substr($uri, -1, 1) !== '?')
-                $uri .= '?';
-            else
-                $uri .= '&';
+                if(substr($uri, -1, 1) !== '?')
+                    $uri .= '?';
+                else
+                    $uri .= '&';
 
-            $uri .= http_build_query(ake($sess['REDIRECT'], 'POST'));
+                $uri .= http_build_query(ake($sess['REDIRECT'], 'POST'));
 
-        }
+            }
 
-        unset($sess['REDIRECT']);
+            unset($sess['REDIRECT']);
+
+        }else $uri = $alt_url;
 
         return new \Hazaar\Controller\Response\HTTP\Redirect($uri);
 

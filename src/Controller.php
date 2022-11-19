@@ -172,9 +172,9 @@ abstract class Controller {
      * a user requests a page but isn't authenticated, we can redirect them to a login page and then that page can call this
      * `Hazaar\Controller::redirectBack()` method to redirect the user back to the page they were originally looking for.
      */
-    public function redirectBack(){
+    public function redirectBack($alt_url = null){
 
-        return $this->application->redirectBack();
+        return $this->application->redirectBack($alt_url);
 
     }
 
