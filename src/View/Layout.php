@@ -263,6 +263,14 @@ class Layout extends \Hazaar\View {
 
     public function link($href, $rel = null, $cache_local = null) {
 
+        if(is_array($href)){
+
+            foreach($href as $h) $this->link($h, $rel, $cache_local);
+
+            return;
+
+        }
+
         if (! $rel) {
 
             $info = pathinfo($href);
