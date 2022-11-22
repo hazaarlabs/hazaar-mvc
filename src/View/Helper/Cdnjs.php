@@ -26,6 +26,8 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     static private $mutex;
 
+    private $lock_file;
+
     public function import() {
 
         if(!self::$cache instanceof \Hazaar\Btree)
@@ -57,15 +59,15 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     private function lock(){
 
-        if(Cdnjs::$mutex)
+        if(self::$mutex)
             return false;
 
-        $lock_file = \Hazaar\Application::getInstance()->runtimePath('cdnjs.lck');
+        $this->lock_file = \Hazaar\Application::getInstance()->runtimePath('cdnjs.lck');
 
         //hack to get this instance to block until other instances have finished using a MUTEX file.
-        Cdnjs::$mutex = fopen($lock_file, 'w');
+        self::$mutex = fopen($this->lock_file, 'w');
 
-        flock(Cdnjs::$mutex, LOCK_EX);
+        flock(self::$mutex, LOCK_EX);
 
         return true;
 
@@ -73,20 +75,23 @@ class Cdnjs extends \Hazaar\View\Helper {
 
     private function unlock(){
 
-        if(!Cdnjs::$mutex)
+        if(!self::$mutex)
             return;
 
-        flock(Cdnjs::$mutex, LOCK_UN);
+        flock(self::$mutex, LOCK_UN);
 
-        fclose(Cdnjs::$mutex);
+        fclose(self::$mutex);
 
-        Cdnjs::$mutex = null;
+        self::$mutex = null;
 
     }
 
     public function __destruct(){
 
         $this->unlock();
+
+        if($this->lock_file)
+            unlink($this->lock_file);
 
     }
 
@@ -135,64 +140,72 @@ class Cdnjs extends \Hazaar\View\Helper {
      * @return \Hazaar\Version  Returns a Hazaar\Version object detailing the version of the library
      *                          that was loaded.
      */
-    public function load($name, $version = null, $files = null, $priority = 0){
+    public function load($name, $requested_version = null, $files = null, $priority = 0){
 
         if(array_key_exists($name, $this->libraries))
             return null;
 
-        $info = null;
+        if($name === 'inputmask')
+            echo '';
 
-        //Load library info and retry at most once.  This will simply trigger a forced load from CDNjs on the second attempt.
-        for($i = 0; $i < 2; $i++){
+        $version_info = null;
 
-            if(!($library_info = $this->getLibraryInfo($name, ($i > 0))))
-                return null;
+        //Load library info.
+        if(!($library_info = $this->getLibraryInfo($name)))
+            return null;
 
-            if(!array_key_exists('assets', $library_info))
-                throw new \Hazaar\Exception('CDNJS: Package info for ' . $name . ' does not contain any assets!');
+        if(!array_key_exists('assets', $library_info))
+            throw new \Hazaar\Exception('CDNJS: Package info for ' . $name . ' does not contain any assets!');
 
-            if($version === null)
-                $version = $library_info['version'];
+        $load_version = ($requested_version === null) ? $library_info['version'] : $requested_version;
 
-            foreach($library_info['assets'] as $assets){
+        foreach($library_info['assets'] as $assets){
 
-                if($assets['version'] != $version)
-                    continue;
+            if($assets['version'] === $load_version){
 
-                $info = $assets;
+                $version_info = $assets;
 
-                break 2;
+                break;
 
             }
 
         }
 
-        if($version && $info === null)
-            $info = $this->getLibraryVersion($name, $version, ($i > 0));
+        if($version_info === null)
+            $version_info = $this->getLibraryVersion($name, $load_version);
 
-        $info['default'] = $library_info['filename'];
+        $version_info['default'] = $library_info['filename'];
 
-        if(!is_array($info) > 0)
-            throw new \Hazaar\Exception('CDNJS: Version ' . $version . ' is not available in package ' . $name);
+        if(!(is_array($version_info) > 0 
+            && array_key_exists('files', $version_info) 
+            && count($version_info['files']) > 0)){
 
-        $info['priority'] = $priority;
+            //A version was not requested and the current version has problems, so let's look for a good version
+            if($requested_version === null)
+                throw new \Hazaar\Exception('CDNJS: No version specified loading library (' . $name . ') but latest version (' . $load_version .') has no assets!  You might need to specify a specific version.');
+
+            throw new \Hazaar\Exception('CDNJS: Version ' . $load_version . ' is not available in package ' . $name);
+
+        }
+
+        $version_info['priority'] = $priority;
 
         if($files && is_array($files)){
 
-            $info['load'] = [];
+            $version_info['load'] = [];
 
             foreach($files as $file){
 
-                if(in_array($file, $info['files']))
-                    $info['load'][] = $file;
+                if(in_array($file, $version_info['files']))
+                    $version_info['load'][] = $file;
 
             }
 
-        }else $info['load'] = [$info['default']];
+        }else $version_info['load'] = [$version_info['default']];
 
-        $this->libraries[$name] = $info;
+        $this->libraries[$name] = $version_info;
 
-        return new \Hazaar\Version($version);
+        return new \Hazaar\Version($load_version);
 
     }
 
