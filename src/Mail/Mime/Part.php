@@ -95,9 +95,8 @@ class Part {
 
             if(strtolower($header) === 'content-type'){
 
-                $encoding = function_exists('mb_detect_encoding') ? strtolower(mb_detect_encoding($this->content)) : 'utf-8';
-            
-                $content = trim($content, ' ;') . '; ' . $encoding;
+                if(($encoding = function_exists('mb_detect_encoding') ? strtolower(mb_detect_encoding($this->content)) : 'utf-8'))
+                    $content = trim($content, ' ;') . '; charset=' . $encoding;
 
             }
                 
