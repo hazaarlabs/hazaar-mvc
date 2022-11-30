@@ -97,6 +97,9 @@ class PDF extends \Hazaar\File {
 
     private function getCommand() {
 
+        if($cmd = trim(shell_exec('which wkhtmltopdf')))
+            return $cmd;
+
         $path = \Hazaar\Application::getInstance()->runtimePath('bin');
 
         $cmd = 'wkhtmltox';
@@ -368,7 +371,7 @@ class PDF extends \Hazaar\File {
             if($winos = (substr(PHP_OS, 0, 3) == 'WIN'))
                 $asset_suffix = '-win' . ((php_uname('m') == 'i586') ? '64' : '32') . '.exe';
             else
-                $asset_suffix = '.focal_' . ((php_uname('m') == 'x86_64') ? 'amd64' : 'i386') . '.deb';
+                $asset_suffix = '.bullseye_' . ((php_uname('m') == 'x86_64') ? 'amd64' : 'i386') . '.deb';
 
             $client = new \Hazaar\Http\Client();
 
