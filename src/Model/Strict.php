@@ -597,6 +597,18 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
         if ((array_key_exists('readonly', $def) && $def['readonly'] && $this->loaded))
             return false;
 
+        /**
+         * Perform a trim if requested
+         */
+        if($value !== null && array_key_exists('trim', $def)){
+
+            if(is_string($def['trim']))
+                $value = trim($value, $def['trim']);
+            elseif($def['trim'] === true)
+                $value = trim($value);
+
+        }
+
         if(array_key_exists('prepare', $def))
             $value = $this->execCallback($def['prepare'], $value, $key, $def);
 
