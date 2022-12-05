@@ -4,6 +4,8 @@ stages:
 
 Docker:
   image: docker:20.10.12
+  services:
+    - docker:20.10.12-dind
   before_script:
     - echo "$DOCKER_PASSWORD" | docker login --username $DOCKER_USERNAME --password-stdin
   script:
