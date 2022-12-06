@@ -341,7 +341,9 @@ class Redis extends \Hazaar\Cache\Backend {
 
         if(!array_key_exists($key, $this->local)){
 
-            if(!($data = unserialize($this->cmd(['HGET', $this->namespace, $key]))))
+            $serial = $this->cmd(['HGET', $this->namespace, $key]);
+
+            if(!($serial && ($data = unserialize($serial))))
                 return null;
 
             if(array_key_exists('expire', $data) && time() > $data['expire']){
