@@ -976,7 +976,10 @@ class Application {
 
         }else $uri = $alt_url;
 
-        return new \Hazaar\Controller\Response\HTTP\Redirect($uri);
+        if($uri)
+            return new \Hazaar\Controller\Response\HTTP\Redirect($uri);
+
+        return false;
 
     }
 
