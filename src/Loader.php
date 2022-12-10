@@ -672,7 +672,6 @@ function getApplicationPath($search_path = null){
             $search_path = substr($search_path, 2);
 
         if(file_exists($search_path . DIRECTORY_SEPARATOR . 'application')
-            && file_exists($search_path . DIRECTORY_SEPARATOR . 'public')
             && file_exists($search_path . DIRECTORY_SEPARATOR . 'vendor'))
             return realpath($search_path . DIRECTORY_SEPARATOR . 'application');
 
