@@ -274,7 +274,7 @@ class Http extends \Hazaar\Application\Request {
      */
     public function getContentType(){
 
-        if($this->isPost())
+        if($this->isPost() || $this->isPut() || $this->isDelete())
             return $this->getHeader('Content-Type');
 
         return false;
