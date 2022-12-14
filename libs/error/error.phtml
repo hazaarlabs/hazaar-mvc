@@ -55,8 +55,14 @@
                     <div class="ohmy">Oh my!</div>
 
                     <div class="errstr">
-                        <?=$this->err['short_message']; ?>
+                        <?php
+                        
+                            if(!($message = ake($this->err, 'short_message')))
+                                $message = ake($this->err, 'message', 'An unknown error ocurred');
 
+                            echo $message;
+
+                        ?>
                     </div>
                     <div class="errcode">
                         Error code: <?=$this->code;?>
@@ -179,9 +185,9 @@
                     </table>
                 </div>
 
-                <?php endif; ?>
-
             </div>
+
+            <?php endif; ?>
 
         </div>
 
