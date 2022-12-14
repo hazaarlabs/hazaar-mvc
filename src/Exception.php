@@ -59,9 +59,9 @@ class Exception extends \Exception {
         $message = null;
 
         if ($this->code == 404)
-            $message = "We can't seem to find the page you are looking for!";
+            $message = "That page does not exist!";
         elseif ($this->code == 500)
-            $message = "It would appear that we may have broken something!";
+            $message = "Something seems to be broken!";
 
         return $message;
 
