@@ -1462,30 +1462,11 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     public function find($field, $criteria = [], $multiple = false){
 
-        if(is_array($criteria)){
+        if(!(array_key_exists($field, $this->values) && $this->values[$field] instanceof ChildArray))
+            return false;
 
-            if(!(array_key_exists($field, $this->values) && $this->values[$field] instanceof ChildArray))
-                return false;
+        return $this->values[$field]->find($criteria, $multiple);
 
-            return $this->values[$field]->find($criteria, $multiple);
-
-        }
-
-        $values = [];
-
-        foreach($this->values as $key => $value){
-
-            if($value[$field] !== $criteria)
-                continue;
-
-            if(!$multiple) return $value;
-
-            $values[$key] = $value;
-
-        }
-
-        return $multiple ? $values : null;
-        
     }
 
     /**
