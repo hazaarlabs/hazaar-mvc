@@ -74,7 +74,7 @@ class Date extends \DateTime implements \JsonSerializable {
      *            The timezone for this datetime value. If no timezone is specified then the default
      *            timezone is used.
      */
-    public function __construct($datetime = NULL, $timezone = NULL) {
+    public function __construct($datetime = NULL, $timezone = NULL, $usec = null) {
 
         if(is_object($datetime))
             $datetime = (array)$datetime;
