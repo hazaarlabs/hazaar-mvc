@@ -338,7 +338,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
         }
 
-        return array_key_exists($key, $this->fields);
+        return array_key_exists($key, $this->values);
 
     }
 
