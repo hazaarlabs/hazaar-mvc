@@ -196,7 +196,7 @@ abstract class Controller {
 
         $parts = func_get_args();
 
-        if(count($parts) === 1 && strtolower(trim($parts[0])) === $this->url_default_action_name)
+        if(count($parts) === 1 && strtolower(trim($parts[0] ?? '')) === $this->url_default_action_name)
             $parts = [];
 
         $this_parts = explode('/', $this->name);

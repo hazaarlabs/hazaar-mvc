@@ -61,7 +61,7 @@ abstract class Request implements Request\_Interface {
         if($strip_filename !== true)
             return $this->path;
 
-        $path = ltrim($this->path, '/');
+        $path = ltrim($this->path ?? '', '/');
 
         if(($pos = strrpos($path, '/')) === false)
             return '';

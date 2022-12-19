@@ -243,9 +243,9 @@ class Money {
         if(strcasecmp($this->local_currency['currencycode'], $foreign_currency) == 0)
             return 1;
 
-        $base = strtoupper(trim($this->local_currency['currencycode']));
+        $base = strtoupper(trim($this->local_currency['currencycode'] ?? ''));
 
-        $foreign_currency = strtoupper(trim($foreign_currency));
+        $foreign_currency = strtoupper(trim($foreign_currency ?? ''));
 
         if(!ake(Money::$exchange_rates, $base)){
 

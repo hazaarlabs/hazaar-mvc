@@ -58,7 +58,7 @@ class Router {
         if($this->file && file_exists($this->file))
             include($this->file);
 
-        if($this->route = trim($this->route, '/')){
+        if($this->route = trim($this->route ?? '', '/')){
 
             $parts = explode('/', $this->route);
 
@@ -200,7 +200,7 @@ class Router {
      */
     private function set($route) {
 
-        $this->route = trim($route, '/');
+        $this->route = trim($route ?? '', '/');
 
     }
 

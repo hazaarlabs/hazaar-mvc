@@ -128,8 +128,8 @@ class File implements File\_Interface, \JsonSerializable {
             list($type, $raw_params) = explode(';', $disposition);
 
             $params = array_map(function ($value) {
-                return trim($value, '"');
-            }, array_unflatten(trim($raw_params)));
+                return trim($value ?? '', '"');
+            }, array_unflatten(trim($raw_params ?? '')));
 
             if(isset($params['filename']))
                 $filename = $params['filename'];
@@ -215,7 +215,7 @@ class File implements File\_Interface, \JsonSerializable {
 
         $dir = $this->dirname();
 
-        return rtrim($dir, '/') . '/' . $this->basename();
+        return rtrim($dir ?? '', '/') . '/' . $this->basename();
     }
 
     /**
@@ -738,7 +738,7 @@ class File implements File\_Interface, \JsonSerializable {
                 throw new File\Exception\TargetNotFound($destination, $this->source_file);
         }
 
-        $actual_destination = rtrim($destination, '/') . '/' . $this->basename();
+        $actual_destination = rtrim($destination ?? '', '/') . '/' . $this->basename();
 
         if ($dstManager === $this->manager)
             $result = $dstManager->copy($this->source_file, $actual_destination, $this->manager, $overwrite);

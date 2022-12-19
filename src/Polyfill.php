@@ -92,11 +92,11 @@ if(!function_exists('money_format')){
                 'isleft'    => preg_match('/\-/', $fmatch[1]) > 0
             ];
 
-            $width      = trim($fmatch[2]) ? (int)$fmatch[2] : 0;
+            $width      = trim($fmatch[2] ?? '') ? (int)$fmatch[2] : 0;
 
-            $left       = trim($fmatch[3]) ? (int)$fmatch[3] : 0;
+            $left       = trim($fmatch[3] ?? '') ? (int)$fmatch[3] : 0;
 
-            $right      = trim($fmatch[4]) ? (int)$fmatch[4] : $locale['int_frac_digits'];
+            $right      = trim($fmatch[4] ?? '') ? (int)$fmatch[4] : $locale['int_frac_digits'];
 
             $conversion = $fmatch[5];
 

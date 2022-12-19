@@ -476,7 +476,7 @@ class Application {
 
         $path = realpath($path);
 
-        if($suffix === null || !($suffix = trim($suffix)))
+        if($suffix === null || !($suffix = trim($suffix ?? '')))
             return $path;
 
         if($suffix && substr($suffix, 0, 1) != DIRECTORY_SEPARATOR)
@@ -504,7 +504,7 @@ class Application {
     static public function filePath($path = NULL, $force_realpath = TRUE) {
 
         if(strlen($path) > 0)
-            $path = DIRECTORY_SEPARATOR . trim($path, DIRECTORY_SEPARATOR);
+            $path = DIRECTORY_SEPARATOR . trim($path ?? '', DIRECTORY_SEPARATOR);
 
         $path = APPLICATION_PATH . ($path ? $path : NULL);
 
@@ -821,7 +821,7 @@ class Application {
      */
     static public function path($path = NULL) {
 
-        return Application::$root . ($path ? trim($path, '/') : NULL);
+        return Application::$root . ($path ? trim($path ?? '', '/') : NULL);
 
     }
 
@@ -871,7 +871,7 @@ class Application {
             $part_parts = strpos($part, '/') ? array_map('strtolower', array_map('trim', explode('/', $part))) : [$part];
 
             foreach($part_parts as $part_part)
-                $parts[] = strtolower(trim($part_part));
+                $parts[] = strtolower(trim($part_part ?? ''));
 
         }
 
@@ -959,7 +959,7 @@ class Application {
 
         $sess = new \Hazaar\Session();
 
-        if($sess->has('REDIRECT') && ($uri = trim(ake($sess['REDIRECT'], 'URI')))){
+        if($sess->has('REDIRECT') && ($uri = trim(ake($sess['REDIRECT'], 'URI') ?? ''))){
 
             if(ake($sess['REDIRECT'], 'METHOD') === 'POST') {
 

@@ -77,7 +77,7 @@ class Url {
 
                 }
 
-                if(!($part_part = trim((string)$part_part)))
+                if(!($part_part = trim($part_part ?? '')))
                     continue;
 
                 $parts[] = $part_part;
