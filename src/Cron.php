@@ -479,7 +479,7 @@ class Cron {
     private function parse($expression) {
 
         // First of all we cleanup the expression and remove all duplicate tabs/spaces/etc.
-        $expression = preg_replace('/(\s+)/', ' ', strtolower(trim($expression)));
+        $expression = preg_replace('/(\s+)/', ' ', strtolower(trim($expression ?? '')));
 
         // Convert named expressions if neccessary
         if(substr($expression, 0, 1) == '@') {

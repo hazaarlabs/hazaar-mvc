@@ -111,9 +111,9 @@ class Adapter {
      */
     static private function encodeEmailAddress($email, $name) {
 
-        $email = trim($email);
+        $email = trim($email ?? '');
 
-        $name = trim($name);
+        $name = trim($name ?? '');
 
         return ($name ? "$name <$email>" : $email);
 
