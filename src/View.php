@@ -74,7 +74,7 @@ class View implements \ArrayAccess {
 
                 $args = [];
 
-                if(preg_match('/(\w*)\[(.*)\]/', trim($helper), $matches)) {
+                if(preg_match('/(\w*)\[(.*)\]/', trim($helper ?? ''), $matches)) {
 
                     $key = $matches[1];
 
@@ -83,7 +83,7 @@ class View implements \ArrayAccess {
                     //Fix the values so they are the correct types
                     foreach($helper as &$arg) {
 
-                        if($arg = trim($arg)) {
+                        if($arg = trim($arg ?? '')) {
 
                             if (in_array(strtolower($arg), ['yes','no','true','false','on','off'])) {
 
