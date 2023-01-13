@@ -74,7 +74,7 @@ class Socket {
             throw new \Exception('The sockets extension is not loaded.');
         }
         
-        if (is_resource($domain)) {
+        if (is_resource($domain) || ($domain && $domain instanceof \Socket)) {
             
             $this->resource = $domain;
         } else {
@@ -109,7 +109,7 @@ class Socket {
      */
     public function accept() {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return new Socket(socket_accept($this->resource));
@@ -134,7 +134,7 @@ class Socket {
      */
     public function bind($address, $port = 0) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_bind($this->resource, $address, $port);
@@ -150,7 +150,7 @@ class Socket {
      */
     public function clearError() {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_clear_error($this->resource);
@@ -165,11 +165,17 @@ class Socket {
      */
     public function close() {
 
-        if (! is_resource($this->resource))
-            return false;
-        
-        return socket_close($this->resource);
-    
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket))) 
+            return;
+
+        try{
+
+            socket_close($this->resource);
+            
+        }catch(\Throwable $e){
+
+        }
+
     }
 
     /**
@@ -179,7 +185,7 @@ class Socket {
      */
     public function cmsgSpace($level, $type) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_cmsg_space($this->resource, $level, $type);
@@ -201,7 +207,7 @@ class Socket {
      */
     public function connect($address, $port = 0) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_connect($this->resource, $address, $port);
@@ -221,7 +227,7 @@ class Socket {
      */
     public function getOption($level, $optname) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_get_option($this->resource, $level, $optname);
@@ -245,7 +251,7 @@ class Socket {
      */
     public function getPeerName(&$address, &$port) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_get_peername($this->resource, $address, $port);
@@ -266,7 +272,7 @@ class Socket {
      */
     public function getSockName(&$addr, &$port) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_get_sockname($this->resource, $addr, $port);
@@ -285,7 +291,7 @@ class Socket {
      */
     public function lastError() {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_last_error($this->resource);
@@ -309,7 +315,7 @@ class Socket {
      */
     public function listen($backlog = 0) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_listen($this->resource, $backlog);
@@ -335,7 +341,7 @@ class Socket {
      */
     public function read($length, $type = PHP_BINARY_READ) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_read($this->resource, $length, $type);
@@ -370,9 +376,9 @@ class Socket {
      *         the error.
      *        
      */
-    public function recv(&$buf, $len, $flags = NULL) {
+    public function recv(&$buf, $len, $flags = 0) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_recv($this->resource, $buf, $len, $flags);
@@ -416,7 +422,7 @@ class Socket {
      */
     public function recvFrom(&$buf, $len, $flags, &$name, &$port = 0) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_recv_from($this->resource, $buf, $len, $flags, $name, $port);
@@ -430,7 +436,7 @@ class Socket {
      */
     public function recvMsg($message, $flags = 0) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_recvmsg($this->resource, $message, $flags);
@@ -454,7 +460,7 @@ class Socket {
      */
     public function readSelect($tv_sec, $tv_usec = 0) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         $read = [
@@ -491,7 +497,7 @@ class Socket {
      */
     public function writeSelect($tv_sec, $tv_usec = 0) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         $read = null;
@@ -531,9 +537,9 @@ class Socket {
      *       
      * @return mixed Socket::send() returns the number of bytes sent, or FALSE on error.
      */
-    public function send($buf, $len, $flags = NULL) {
+    public function send($buf, $len, $flags = 0) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_send($this->resource, $buf, $len, $flags);
@@ -545,7 +551,7 @@ class Socket {
      */
     public function sendMsg($message, $flags) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_sendmsg($this->resource, $message, $flags);
@@ -579,7 +585,7 @@ class Socket {
      */
     public function sendTo($buf, $len, $flags, $addr, $port = 0) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_sendto($socket, $buf, $len, $flags, $addr, $port);
@@ -598,7 +604,7 @@ class Socket {
      */
     public function setBlock() {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_set_block($this->resource);
@@ -619,7 +625,7 @@ class Socket {
      */
     public function setNonblock() {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_set_nonblock($this->resource);
@@ -645,7 +651,7 @@ class Socket {
      */
     public function setOption($level, $optname, $optval) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_set_option($this->resource, $level, $optname, $optval);
@@ -669,7 +675,7 @@ class Socket {
      */
     public function shutdown($how = 2) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_shutdown($this->resource, $how);
@@ -688,7 +694,7 @@ class Socket {
      */
     public function strerror($errno) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_strerror($errno);
@@ -711,7 +717,7 @@ class Socket {
      */
     public function write($buffer, $length = 0) {
 
-        if (! is_resource($this->resource))
+        if(!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket)))
             return false;
         
         return socket_write($this->resource, $buffer, $length);
