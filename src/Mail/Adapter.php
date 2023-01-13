@@ -73,8 +73,13 @@ class Adapter {
 
         $this->transport = $this->getTransportObject($this->config->transport, $this->config);
 
-        if($this->config->has('from'))
-            $this->from = self::encodeEmailAddress(ake($this->config->from, 'email'), ake($this->config->from, 'name'));
+        if($this->config->has('from')){
+
+            $this->from = (is_object($this->config->from))
+                ? self::encodeEmailAddress(ake($this->config->from, 'email'), ake($this->config->from, 'name'))
+                : $this->from = $this->config->from;
+
+        }
 
     }
 
