@@ -364,7 +364,7 @@ class Adapter {
          */
         if($use_mime == TRUE) {
 
-            $message = new Mime\Message($this->body, $params);
+            $message = new Mime\Message($this->body);
 
         } else {
 
