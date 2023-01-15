@@ -35,10 +35,10 @@ class Smtp extends \Hazaar\Mail\Transport {
         if(is_resource($this->socket))
             fclose($this->socket);
 
-        $this->socket = stream_socket_client($this->server . ':' . $this->port, $errno, $errstr, 30);
+        $this->socket = @stream_socket_client($this->server . ':' . $this->port, $errno, $errstr, $this->read_timeout);
 
         if(!$this->socket)
-            throw new \Exception($errstr, $errno);
+            throw new \Exception('Unable to connect to ' . $this->server . ':' . $this->port . '. Reason: ' . $errstr, $errno);
 
         return true;
 
@@ -150,7 +150,7 @@ class Smtp extends \Hazaar\Mail\Transport {
                 $this->write('AUTH CRAM-MD5');
 
                 if(!$this->read(334, 128, $result))
-                    throw new \Exception('Server does not want to CRAM-MD5 authenticate!');
+                    throw new \Exception('Server does not want to CRAM-MD5 authenticate. Reason: ' . $result);
 
                 $this->write(base64_encode($username . ' ' . hash_hmac('MD5', base64_decode($result), $this->options->get('password'))));
 
@@ -159,15 +159,15 @@ class Smtp extends \Hazaar\Mail\Transport {
                 $this->write('AUTH LOGIN');
 
                 if(!$this->read(334, 128, $result))
-                    throw new \Exception('Server does not want to LOGIN authenticate!');
+                    throw new \Exception('Server does not want to LOGIN authenticate. Reason: ' . $result);
 
                 if(($prompt = base64_decode($result)) !== 'Username:')
                     throw new \Exception('Server is broken.  Sent weird username prompt \'' . $prompt . '\'');
 
-                $this->write(base64_encode($this->options->get('password')));
+                $this->write(base64_encode($username));
 
                 if(!$this->read(334, 128, $result))
-                    throw new \Exception('Server did not request password: ' . $result);
+                    throw new \Exception('Server did not request password.  Reason: ' . $result);
 
                 $this->write(base64_encode($this->options->get('password')));
                 
@@ -176,7 +176,7 @@ class Smtp extends \Hazaar\Mail\Transport {
                 $this->write('AUTH PLAIN');
 
                 if(!$this->read(334, 128, $result))
-                    throw new \Exception('Server does not want to do PLAIN authentication!');
+                    throw new \Exception('Server does not want to do PLAIN authentication. Reason: ' . $result);
 
                 $this->write(base64_encode("\0" . $username . "\0" . $this->options->get('password')));
 
