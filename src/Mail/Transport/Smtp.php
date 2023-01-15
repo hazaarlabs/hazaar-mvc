@@ -32,12 +32,15 @@ class Smtp extends \Hazaar\Mail\Transport {
 
     private function connect(){
 
-        if($this->socket instanceof \Hazaar\Socket)
-            $this->socket->close();
-        else
-            $this->socket = new \Hazaar\Socket();
+        if(is_resource($this->socket))
+            fclose($this->socket);
 
-        return $this->socket->connect($this->server, $this->port);
+        $this->socket = stream_socket_client($this->server . ':' . $this->port, $errno, $errstr, 30);
+
+        if(!$this->socket)
+            throw new \Exception($errstr, $errno);
+
+        return true;
 
     }
 
@@ -46,7 +49,7 @@ class Smtp extends \Hazaar\Mail\Transport {
         if(!$this->socket instanceof \Hazaar\Socket)
             return false;
 
-        $this->socket->close();
+        fclose($this->socket);
 
         $this->socket = null;
 
@@ -56,19 +59,32 @@ class Smtp extends \Hazaar\Mail\Transport {
 
     private function write($msg){
 
-        if(!($this->socket instanceof \Hazaar\Socket && is_string($msg) && strlen($msg) > 0))
+        if(!(is_resource($this->socket) && is_string($msg) && strlen($msg) > 0))
             return false;
 
-        return $this->socket->send($msg . "\r\n", strlen($msg) + 2);
+        return fwrite($this->socket, $msg . "\r\n", strlen($msg) + 2);
 
     }
 
     private function read($code, $len = 1024, &$message = null, &$response = null){
 
-        if(!$this->socket->readSelect($this->read_timeout))
+        if(!is_resource($this->socket))
+            return false;
+    
+        $read = [
+                $this->socket
+        ];
+        
+        $write = null;
+        
+        $exempt = null;
+        
+        stream_select($read, $write, $exempt, $this->read_timeout, 0);
+        
+        if(!(count($read) > 0 && $read[0] == $this->socket))
             throw new \Exception('SMTP data receive timeout');
 
-        $this->socket->recv($response, $len);
+        $response = fread($this->socket, $len);
 
         if($this->getMessageCode($response, $message) !== $code)
             return false;
@@ -103,8 +119,22 @@ class Smtp extends \Hazaar\Mail\Transport {
 
         }
 
+        if($this->options->has('starttls')){
+
+            if(!in_array('STARTTLS', $modules))
+                throw new \Exception('STARTTLS requested but server does not support it!');
+            
+            $this->write('STARTTLS');
+
+            if(!$this->read(220, 1024, $error))
+                throw new \Exception($error);
+
+            stream_socket_enable_crypto($this->socket, true, STREAM_CRYPTO_METHOD_SSLv23_CLIENT);
+
+        }
+
         $auth_methods = array_reduce($modules, function($carry, $item){
-            if(substr($item, 0, 8) === 'AUTH') return array_merge($carry, explode(' ', substr($item, 9)));
+            if(substr($item, 0, 4) === 'AUTH') return array_merge($carry, explode(' ', substr($item, 5)));
             return $carry;
         }, []);
 
@@ -204,8 +234,8 @@ class Smtp extends \Hazaar\Mail\Transport {
 
         $this->write($out);
 
-        if(!$this->read(250))
-            throw new \Exception('Server rejected out data!');
+        if(!$this->read(250, 1024, $reason))
+            throw new \Exception('Server rejected our data: ' . $reason);
 
         $this->write('QUIT');
 
