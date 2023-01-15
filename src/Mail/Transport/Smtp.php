@@ -141,7 +141,7 @@ class Smtp extends \Hazaar\Mail\Transport {
         if($dsn_active = is_array($dsn_types) && count($dsn_types) > 0 && in_array('DSN', $modules))
             $dsn_types = array_map('strtoupper', $dsn_types);
 
-        if($this->options->has('username')){
+        if(($username = $this->options->get('username'))){
 
             if(in_array('CRAM-MD5', $auth_methods)){
 
@@ -150,7 +150,7 @@ class Smtp extends \Hazaar\Mail\Transport {
                 if(!$this->read(334, 128, $result))
                     throw new \Exception('Server does not want to CRAM-MD5 authenticate!');
 
-                $this->write(base64_encode($this->options['username'] . ' ' . hash_hmac('MD5', base64_decode($result), $this->options['password'])));
+                $this->write(base64_encode($username . ' ' . hash_hmac('MD5', base64_decode($result), $this->options->get('password'))));
 
             }elseif(in_array('LOGIN', $auth_methods)){
 
@@ -162,22 +162,26 @@ class Smtp extends \Hazaar\Mail\Transport {
                 if(($prompt = base64_decode($result)) !== 'Username:')
                     throw new \Exception('Server is broken.  Sent weird username prompt \'' . $prompt . '\'');
 
-                $this->write(base64_encode($this->options['username']));
+                $this->write(base64_encode($this->options->get('password')));
 
                 if(!$this->read(334, 128, $result))
                     throw new \Exception('Server did not request password: ' . $result);
 
-                $this->write(base64_encode($this->options['password']));
+                $this->write(base64_encode($this->options->get('password')));
                 
             }elseif(in_array('PLAIN', $auth_methods)){
 
                 $this->write('AUTH PLAIN');
 
                 if(!$this->read(334, 128, $result))
-                    throw new \Exception('Server does not want to PLAIN authenticate!');
+                    throw new \Exception('Server does not want to do PLAIN authentication!');
 
-                $this->write(base64_encode("\0" . $this->options['username'] . "\0" . $this->options['password']));
+                $this->write(base64_encode("\0" . $username . "\0" . $this->options->get('password')));
 
+            }else{
+
+                throw new \Exception('Authentication not possible.  Only CRAM-MD5, LOGIN and PLAIN methods are supported.  Server needs: ' . grammatical_implode($auth_methods, 'or'));
+            
             }
 
             if(!$this->read(235, 1024, $result, $response))
