@@ -119,17 +119,19 @@ class Smtp extends \Hazaar\Mail\Transport {
 
         }
 
-        if($this->options->has('starttls')){
+        //Always use STARTTLS unless it has been explicitly disabled.
+        if(in_array('STARTTLS', $modules) && $this->options->get('starttls') !== false){
 
-            if(!in_array('STARTTLS', $modules))
-                throw new \Exception('STARTTLS requested but server does not support it!');
-            
             $this->write('STARTTLS');
 
             if(!$this->read(220, 1024, $error))
                 throw new \Exception($error);
 
             stream_socket_enable_crypto($this->socket, true, STREAM_CRYPTO_METHOD_SSLv23_CLIENT);
+
+        }elseif($this->options->get('starttls') === true){
+
+            throw new \Exception('STARTTLS is required but server does not support it.');
 
         }
 
