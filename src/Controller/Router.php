@@ -27,8 +27,14 @@ class Router extends \Hazaar\Controller {
 
         $this->className = '\Hazaar\\' . ucfirst($this->moduleName) . '\Controller';
 
-        if(!class_exists($this->className))
-            throw new \Hazaar\Exception("Module '{$this->moduleName}' not found!", 404);
+        if(!class_exists($this->className)){
+
+            $this->className = '\Hazaar\\' . strtoupper($this->moduleName) . '\Controller';
+
+            if(!class_exists($this->className))
+                throw new \Hazaar\Exception("Module '{$this->moduleName}' not found!", 404);
+
+        }
 
         $path = $this->getSupportPath($this->className);
 
