@@ -979,7 +979,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     }
 
-    public function extend($values, $exec_filters = true, $ignore_keys = null, $enhance = false) {
+    public function extend($values, $exec_filters = true, $ignore_keys = null) {
 
         if (\Hazaar\Map::is_array($values)) {
 
@@ -989,9 +989,6 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                     continue;
 
                 if ($this->ignore_undefined && !array_key_exists($key, $this->values))
-                    continue;
-                
-                if($enhance === true && $this->isEmpty($key) === false)
                     continue;
 
                 $def = ake($this->fields, $key);
@@ -1055,12 +1052,6 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     }
 
-    public function enhance($values, $exec_filters = true, $ignore_keys = null) {
-
-        return $this->extend($values, $exec_filters, $ignore_keys, true);
-
-    }
-    
     private function jsonFixDate($object){
 
         if($object instanceof \stdClass || is_array($object)) foreach($object as $key => &$value) $value = $this->jsonFixDate($value);
