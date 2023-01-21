@@ -500,6 +500,14 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     }
 
+    public function isEmpty($key){
+
+        $value = $this->get($key, false);
+
+        return empty($value);
+
+    }
+
     public function getType($key){
 
         if($field = ake($this->fields, $key)){
