@@ -288,6 +288,8 @@ class Btree {
 
         }
 
+        $root = null;
+        
         $cursor = $pos;
 
         // key lookup
@@ -334,7 +336,7 @@ class Btree {
 
                         if ($sibling_type === null || $sibling_node === null) {
 
-                            $this->file->ftruncate($pos);
+                            $this->file->truncate($pos);
 
                             $this->file->lock(LOCK_UN);
 
@@ -898,6 +900,12 @@ class Btree {
     public function dropCache(){
         
         $this->nodecache = [];
+
+    }
+
+    public function toArray(){
+
+        return $this->range("\x00", "\xff");
 
     }
 
