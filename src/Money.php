@@ -84,7 +84,13 @@ class Money {
      * @param       string $currency The name of the currency or country of origin.  Ie: 'USD' and 'US' will both resolve
      *              to US dollars.
      */
-    function __construct($value, $currency = NULL) {
+    function __construct($value = 0, $currency = NULL) {
+
+        if(!self::$default_currency)
+            self::$default_currency = trim(ake(localeconv(), 'int_curr_symbol'));
+
+        if($currency === null)
+            $currency = self::$default_currency;
 
         $this->set($value, $currency);
 
@@ -92,13 +98,23 @@ class Money {
 
     }
 
-    public function getCurrencyInfo($currency){
+    public function getCurrencyInfo($currency = null){
 
         if(!Money::$db instanceof Btree){
 
             $file = new \Hazaar\File(\Hazaar\Loader::getFilePath(FILE_PATH_SUPPORT, 'currency.db'));
 
             Money::$db = new Btree($file, true);
+
+        }
+
+        if($currency === null){
+
+            $currencies = Money::$db->toArray();
+
+            unset($currencies['__version__']);
+
+            return $currencies;
 
         }
 
