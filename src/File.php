@@ -911,7 +911,7 @@ class File implements File\_Interface, \JsonSerializable {
 
     public function unzip($filenames = null, $target = null) {
 
-        if (!is_array($filenames))
+        if ($filenames && !is_array($filenames))
             $filenames = [$filenames];
 
         if ($target === null)
@@ -921,42 +921,15 @@ class File implements File\_Interface, \JsonSerializable {
 
         $files = [];
 
-        $zip = zip_open($this->source_file);
+        $zip = new \ZipArchive();
 
-        if (!is_resource($zip))
+        if($zip->open($this->source_file, \ZipArchive::RDONLY) !== true)
             return false;
 
-        while ($zip_entry = zip_read($zip)) {
+        if(!$zip->extractTo((string)$target, $filenames))
+            return false;
 
-            $name = zip_entry_name($zip_entry);
-
-            if (!in_array(basename($name), $filenames))
-                continue;
-
-            $file = $target->get($name);
-
-            $dir = new \Hazaar\File\Dir($file->dirname());
-
-            if (!$dir->exists())
-                $dir->create(true);
-
-            $block_size = max(bytes_str(ini_get('memory_limit')) / 2, 1024000);
-
-            $zip_entry_size = zip_entry_filesize($zip_entry);
-
-            $file->open('w');
-
-            for ($i = 1; $i <= (ceil($zip_entry_size / $block_size)); $i++)
-                $file->write(zip_entry_read($zip_entry, $block_size));
-
-            $file->close();
-
-            $files[] = $file;
-        }
-
-        zip_close($zip);
-
-        return $files;
+        return $target;
     }
 
     public function ziplist() {
