@@ -71,6 +71,8 @@ class GeoData {
 
         $data = [];
 
+        $geodata_filename = 'geodata.db';
+
         GeoData::$db->reset_btree_file();
 
         $tmpdir = new \Hazaar\File\Dir(Application::getInstance()->runtimePath());
@@ -90,11 +92,11 @@ class GeoData {
         if($geodata_file->md5() !== $md5)
             throw new \Hazaar\Exception('GeoData source file MD5 signature does not match!');
 
-        $files = $geodata_file->unzip('geodata.db', $tmpdir);
+        $geodata_file->unzip($geodata_filename, $tmpdir);
 
         $geodata_file->unlink(); //Cleanup now
 
-        return count($files) === 1;
+        return $tmpdir->exists($geodata_filename) === true;
     }
 
     /**
