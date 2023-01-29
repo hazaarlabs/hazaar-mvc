@@ -9,6 +9,8 @@
 
 namespace Hazaar\Application;
 
+use JsonSerializable;
+
 /**
  * @brief       Generate a URL relative to the application
  *
@@ -24,7 +26,7 @@ namespace Hazaar\Application;
  * @since       1.0.0
  *
  */
-class Url {
+class Url implements JsonSerializable {
 
     public $path;
 
@@ -272,5 +274,9 @@ class Url {
         
     }
 
+    public function jsonSerialize(): mixed
+    {
+        return (string)$this;
+    }
 }
 
