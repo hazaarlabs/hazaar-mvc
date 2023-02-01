@@ -55,7 +55,7 @@ class GeoData {
 
         $file = new \Hazaar\File(\Hazaar\Application::getInstance()->runtimePath('geodata.db'));
 
-        GeoData::$db = new \Hazaar\Btree($file);
+        GeoData::$db = new \Hazaar\Btree($file, true);
 
         if($re_intialise === true || GeoData::$db->get('__version__') !== GeoData::$version)
             $this->__initialise();
@@ -68,8 +68,6 @@ class GeoData {
      * @return boolean
      */
     private function __initialise(){
-
-        $data = [];
 
         $geodata_filename = 'geodata.db';
 
