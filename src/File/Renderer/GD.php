@@ -94,11 +94,17 @@ class GD extends BaseRenderer {
 
     public function width(){
 
+        if(!$this->img)
+            return 0;
+
         return imagesx($this->img);
 
     }
 
     public function height(){
+
+        if(!$this->img)
+            return 0;
 
         return imagesy($this->img);
 
@@ -115,6 +121,8 @@ class GD extends BaseRenderer {
         /*
          * Initialize the source dimenstions
          */
+        if(!$this->img)
+            return false;
 
         $src_x = 0;
 
