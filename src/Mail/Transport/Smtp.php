@@ -129,7 +129,8 @@ class Smtp extends \Hazaar\Mail\Transport {
             if(!$this->read(220, 1024, $error))
                 throw new \Exception($error);
 
-            stream_socket_enable_crypto($this->socket, true, STREAM_CRYPTO_METHOD_SSLv23_CLIENT);
+            if(!stream_socket_enable_crypto($this->socket, true, STREAM_CRYPTO_METHOD_SSLv23_CLIENT))
+                throw new \Exception(ake(\error_get_last(), 'message'));
 
         }elseif($this->options->get('starttls') === true){
 
