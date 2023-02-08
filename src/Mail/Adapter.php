@@ -34,25 +34,27 @@ class Adapter {
 
     private        $transport;
 
-    private        $headers = [];
+    private        $headers             = [];
 
-    private        $recipient_headers = [];
+    private        $recipient_headers   = [];
 
     private        $from;
 
-    private        $to      = [];
+    private        $to                  = [];
 
-    private        $cc      = [];
+    private        $cc                  = [];
 
-    private        $bcc     = [];
+    private        $bcc                 = [];
 
     private        $subject;
 
-    private        $body    = [];
+    private        $body                = [];
 
-    private        $dsn     = [];
+    private        $attachments         = [];
 
-    private        $last_to = [];
+    private        $dsn                 = [];
+
+    private        $last_to             = [];
 
     private        $config;
 
@@ -157,7 +159,7 @@ class Adapter {
      * 
      * This is for working with templates that need to be sent/rendered multiple times to send to many recipients.
      */
-    public function clear(){
+    public function clear($clear_attachments = false){
 
         $this->to = [];
 
@@ -166,6 +168,9 @@ class Adapter {
         $this->bcc = [];
 
         $this->recipient_headers = [];
+
+        if($clear_attachments === true)
+            $this->attachments = [];
 
     }
 
@@ -287,7 +292,7 @@ class Adapter {
         if(!$file instanceof Attachment)
             $file = new Attachment($file, $name);
 
-        $this->body[] = $file;
+        $this->attachments[] = $file;
 
     }
 
@@ -364,7 +369,7 @@ class Adapter {
          */
         if($use_mime == TRUE) {
 
-            $message = new Mime\Message($this->body);
+            $message = new Mime\Message($this->body + $this->attachments);
 
         } else {
 
@@ -372,6 +377,9 @@ class Adapter {
 
             foreach($this->body as $part)
                 $message .= $part->render($params);
+
+            foreach($this->attachments as $attachment)
+                $message .= $attachment->render();
 
         }
 
