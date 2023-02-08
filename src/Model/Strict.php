@@ -1093,7 +1093,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
     }
 
-    private function resolveArray($array, $disable_callbacks = false, $depth = null, $filter = false, $export_data_binder = true, $ignore_nulls = false) {
+    public function resolveArray($array, $disable_callbacks = false, $depth = null, $filter = false, $export_data_binder = true, $ignore_nulls = false) {
 
         $result = [];
 
