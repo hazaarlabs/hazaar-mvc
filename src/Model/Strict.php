@@ -1140,7 +1140,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                 foreach($filter as $filter_name => $filter_value){
 
                     //Special filter to hide NULL values.
-                    if($filter_name === 'null' && $filter_value === false && $this->values[$key] === null)
+                    if($filter_name === 'null' && $filter_value === false && $value === null)
                         continue 2;
 
                     if(!array_key_exists($filter_name, $this->fields[$key]))
