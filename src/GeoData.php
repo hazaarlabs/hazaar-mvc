@@ -55,12 +55,12 @@ class GeoData {
 
         $file = new \Hazaar\File(\Hazaar\Application::getInstance()->runtimePath('geodata.db'));
 
-        if($file->exists())
-            $re_intialise = true;
+        if($re_intialise === true || !$file->exists())
+            $this->__initialise();
 
         GeoData::$db = new \Hazaar\Btree($file, true);
 
-        if($re_intialise === true || GeoData::$db->get('__version__') !== GeoData::$version)
+        if(GeoData::$db->get('__version__') !== GeoData::$version)
             $this->__initialise();
 
     }
@@ -74,7 +74,8 @@ class GeoData {
 
         $geodata_filename = 'geodata.db';
 
-        GeoData::$db->reset_btree_file();
+        if(self::$db instanceof GeoData)
+            GeoData::$db->close();
 
         $tmpdir = new \Hazaar\File\Dir(Application::getInstance()->runtimePath());
 
@@ -97,7 +98,17 @@ class GeoData {
 
         $geodata_file->unlink(); //Cleanup now
 
-        return $tmpdir->exists($geodata_filename) === true;
+        if($tmpdir->exists($geodata_filename) === true){
+
+            if(self::$db instanceof GeoData)
+                self::$db->open();
+
+            return true;
+
+        }
+
+        return false;
+
     }
 
     /**
