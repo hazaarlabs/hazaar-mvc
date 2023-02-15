@@ -62,12 +62,16 @@ class Btree {
 
     public $LOCK_EX = LOCK_EX;
 
+    private $read_only = false;
+
     /**
      * Use static method open() to get instance
      */
-    public function __construct($file, $ready_only = false) {
+    public function __construct($file, $read_only = false) {
 
-        if(!$this->open($file, $ready_only))
+        $this->read_only = (boolean)$read_only;
+        
+        if(!$this->open($file))
             throw new \Hazaar\Exception('Unable to open file: ' . $file);
 
     }
@@ -81,7 +85,7 @@ class Btree {
      *
      * @return boolean
      */
-    public function open($file = null, $read_only = false) {
+    public function open($file = null) {
 
         if($file === null){
 
@@ -110,7 +114,7 @@ class Btree {
         if($this->file->exists() && $this->file->size() < 0)
             throw new \Hazaar\Exception('File is too large.  On 32-bit PHP only files up to 2GB in size are supported.');
 
-        $this->file->open((($read_only === true) ? 'rb' : 'a+b'));
+        $this->file->open((($this->read_only === true) ? 'rb' : 'a+b'));
 
         // write default node if neccessary
         if ($this->file->seek(0, SEEK_END) === -1) {
@@ -173,7 +177,7 @@ class Btree {
 
         $this->file->unlink();
 
-        return $this->open($this->file);
+        return $this->open($this->file, $this->read_only);
 
     }
 
