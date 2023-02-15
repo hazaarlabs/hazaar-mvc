@@ -383,6 +383,8 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
             && $this->session->has('hazaar_auth_token')
             && hash($this->options->get('token.hash'), $this->getIdentifier($this->session->hazaar_auth_identity)) === $this->session->hazaar_auth_token) {
 
+            $this->identity = $this->session->hazaar_auth_identity;
+            
             return true;
 
         }
