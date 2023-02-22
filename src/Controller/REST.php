@@ -194,8 +194,10 @@ abstract class REST extends \Hazaar\Controller {
 
                             list($key, $value) = explode('=', $part, 2);
 
-                            if($value = json_decode(str_replace("'", '"', $value), true))
-                                $args[$key] = $value;
+                            if(($value = json_decode(str_replace("'", '"', $value), true)) === null)
+                                throw new \Exception('Invalid JSON parameter for: ' . $key);
+
+                            $args[$key] = $value;
 
                         }else{
 
