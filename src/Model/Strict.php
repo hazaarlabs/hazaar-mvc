@@ -413,11 +413,26 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
 
                         }else throw new \Exception('Unknown search specifier: ' . $matches[2]);
 
+                    }elseif(preg_match('/^(\w+)\(([\w\d\.\,\s"\']+)\)$/', $part, $matches)
+                        &&  method_exists($value, $matches[1])){
+
+                        $args = array_map('trim', explode(',', $matches[2]));
+                        
+                        $value = call_user_func_array([$value, $matches[1]], $args);
+
                     }else{
 
                         $value = $value->get($part, (($lastKey === $part_key) ? $exec_filters : false));
 
                     }
+
+                }elseif($value instanceof ChildArray
+                    && preg_match('/^(\w+)\(([\w\d\.\,\s"\']+)\)$/', $part, $matches)
+                        &&  method_exists($value, $matches[1])){
+
+                    $args = array_map('trim', explode(',', $matches[2]));
+                    
+                    $value = call_user_func_array([$value, $matches[1]], $args);
 
                 }elseif($value instanceof DataBinderValue){
 
