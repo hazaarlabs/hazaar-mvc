@@ -21,6 +21,23 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
     ];
 
     /**
+     * Byte-Order-Mark
+     * 
+     * This allows a byte-order-mark to be output at the beginning of the file content if one does not already exist.
+     */
+    private $bom = null; 
+
+    private $charset_map = [
+        'utf-8'     => "EFBBBF",
+        'utf-16'    => "FEFF",
+        'utf-16be'  => "FEFF",
+        'utf-16le'  => "FFFE",
+        'utf-32'    => "0000FEFF",
+        'utf-32be'  => "0000FEFF",
+        'utf-32le'  => "FFFE0000",
+    ];
+
+    /**
      * \Hazaar\File Constructor
      *
      * @param mixed $file Either a string filename to use or a \Hazaar\File object.
@@ -137,10 +154,20 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
     public function getContent() {
 
         if($this->file)
-            return $this->file->get_contents();
-
-        return parent::getContent();
-
+        {
+            $content = $this->file->get_contents();
+        }else
+        {
+            $content = parent::getContent();
+        }
+        foreach($this->charset_map as $bom)
+        {
+            if(substr($content, 0, strlen($bom)) !== $bom)
+                continue;
+            $this->bom = null;
+            break;
+        }
+        return $this->bom . $content;
     }
 
     public function getContentLength() {
@@ -224,6 +251,27 @@ class File extends \Hazaar\Controller\Response\HTTP\OK {
             $this->setHeader('Content-Disposition', 'inline; filename="' . $filename . '"');
 
         }
+
+    }
+
+    public function setContentType($type = null){
+
+        parent::setContentType($type);
+
+        if(($colon_pos = strpos($this->content_type, ';')) === false)
+            return;
+
+        $options = array_change_key_case(array_unflatten(trim(substr($this->content_type, $colon_pos + 1))), CASE_LOWER);
+
+        if(!array_key_exists('charset', $options))
+            return;
+
+        $options = array_map('strtolower', array_map('trim', $options));
+
+        if(!array_key_exists($options['charset'], $this->charset_map))
+            return;
+
+        $this->bom = pack('H*', $this->charset_map[$options['charset']]);
 
     }
 
