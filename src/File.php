@@ -906,7 +906,6 @@ class File implements File\_Interface, \JsonSerializable {
 
         return $data;
 
-
     }
 
     public function unzip($filenames = null, $target = null) {
