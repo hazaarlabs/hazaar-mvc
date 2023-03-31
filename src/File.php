@@ -192,9 +192,9 @@ class File implements File\_Interface, \JsonSerializable {
     /*
      * Standard filesystem functions
      */
-    public function basename() {
+    public function basename($suffix = '') {
 
-        return basename($this->source_file);
+        return basename($this->source_file, $suffix);
     }
 
     public function dirname() {
