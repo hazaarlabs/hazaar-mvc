@@ -210,7 +210,7 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
             $view->setRequiresParam($this->_requires_param);
 
             foreach($this->_requires as $req)
-                $view->requires($req[0], $req[1], $req[2]);
+                $view->requires($req[0], $req[1], $req[2], $req[3]);
 
         }
 
@@ -238,12 +238,12 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
     }
 
-    public function requires($script, $charset = NULL, $cache_local = null) {
+    public function requires($script, $charset = NULL, $cache_local = null, $defer = false) {
 
         if(! method_exists($this->view, 'requires'))
             throw new \Hazaar\Exception('The current view does not support script imports');
 
-        $this->_requires[] = [$script, $charset, $cache_local];
+        $this->_requires[] = [$script, $charset, $cache_local, $defer];
 
     }
 
