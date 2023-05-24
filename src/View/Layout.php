@@ -222,7 +222,7 @@ class Layout extends \Hazaar\View {
 
     }
 
-    public function requires($script, $charset = null, $cache_local = null) {
+    public function requires($script, $charset = null, $cache_local = null, $defer = false) {
 
         if (is_array($script)) {
 
@@ -254,6 +254,9 @@ class Layout extends \Hazaar\View {
 
             if ($charset)
                 $script->charset($charset);
+
+            if($defer === true)
+                $script->prop('defer');
 
         }
 
