@@ -43,6 +43,8 @@ class Http extends \Hazaar\Application\Request {
      */
     public $body;
 
+    public $response_type;
+
     /**
      * @detail      The HTTP init method takes only a single optional argument which is the
      *              request array provided by PHP ($_REQUEST).
@@ -360,10 +362,12 @@ class Http extends \Hazaar\Application\Request {
      */
     public function getRemoteAddr(){
 
-        if(array_key_exists('X-Forwarded-For', $this->headers))
-            return $this->headers['X-Forwarded-For'];
-
-        return ake($_SERVER, 'REMOTE_ADDR');
+        return getenv('HTTP_CLIENT_IP')?:
+                getenv('HTTP_X_FORWARDED_FOR')?:
+                getenv('HTTP_X_FORWARDED')?:
+                getenv('HTTP_FORWARDED_FOR')?:
+                getenv('HTTP_FORWARDED')?:
+                getenv('REMOTE_ADDR');
 
     }
 
