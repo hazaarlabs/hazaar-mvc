@@ -263,7 +263,7 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
     }
 
-    private function authenticateCredentials($identity, $credential, $grant_type = 'password'){
+    private function authenticateCredentials($identity, $credential, $grant_type = 'password', $scope = null){
 
         if(!($token_endpoint = ake($this->metadata, 'token_endpoint')))
             return false;
@@ -278,12 +278,19 @@ class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
 
         $request->client_secret = $this->client_secret;
 
-        $request->username = $identity;
+        if($identity !== NULL){
 
-        $request->password = $credential;
+            $request->username = $identity;
 
-        $this->http_client->auth($identity, $credential);
+            $request->password = $credential;
 
+            $this->http_client->auth($identity, $credential);
+
+        }
+
+        if(count($this->scopes))
+            $request->scope = implode(' ' , $this->scopes);
+        
         $response = $this->http_client->send($request);
 
         if($response->status == 200)
