@@ -720,7 +720,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
          * * with - string regular expression matching
          */
 
-        if ($exec_filters === true && array_key_exists('validate', $def)) {
+        if ($exec_filters === true && array_key_exists('validate', $def) && is_array($def['validate'])) {
 
             foreach($def['validate'] as $type => $data) {
 
