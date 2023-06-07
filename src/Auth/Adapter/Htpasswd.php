@@ -2,7 +2,7 @@
 
 namespace Hazaar\Auth\Adapter;
 
-class Htpasswd extends \Hazaar\Auth\Adapter implements _Interface {
+class Htpasswd extends Session implements _Interface {
 
     private $passwd = CONFIG_PATH . DIRECTORY_SEPARATOR . '.passwd';
 
