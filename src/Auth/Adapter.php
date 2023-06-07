@@ -11,6 +11,7 @@
 /**
  * User authentication namespace
  */
+
 namespace Hazaar\Auth;
 
 /**
@@ -46,24 +47,6 @@ namespace Hazaar\Auth;
  * For more security a salt value can be set which will be appended to each password when being hashed.  If
  * the password is being hashed multiple times then the salt is appended to the hash + password.
  *
- * ## autologin.period - default: 1
- * This is the period in which the autologin cookie will remain active (ie: will expire after this many
- * days).  The default is one day.
- *
- * # autologin.hash - default: md5
- * This is the hash algorithm used to encrypt the token placed in the cookie in the user's browser
- * session.  This data is hashed to ensure that it can not be manipulated by the user.
- *
- * ## token.hash - default: md5
- * The token hash is the value stored in the session cache and is used to confirm that a user
- * account is authenticated.  As an added security measure we apply a hash to this value so that plain
- * test passwords will never be stored in the session cache, even if there is no password encryption chain.
- *
- * ## timeout - default: 3600
- * For a standard login, this is the session expirey timeout.  Basically this is the maximum time in which
- * a session will ever be active.  If autologin is being used, then it is quite common to set this to a low
- * value to allow the user to be re-authenticated with the autologin token periodically.
- *
  * This is now more often used as a cache timeout value because on logon, certain data is obtained for a user
  * and stored in cache.  Sometimes obtaining this data can be processor intensive so we don't want to do it
  * on every page load.  Instead we do it, cache it, and then only do it again once this time passes.
@@ -73,38 +56,31 @@ namespace Hazaar\Auth;
  * ```
  * {
  *     "development": {
- *         "cache": {
- *             "encryption": {
- *                 "hash": [ "md5", "sha1", "sha256" ],
- *                 "salt": "mysupersecretsalt"
- *             },
- *             "autologin": {
- *                 "period": 365,
- *                 "hash": "sha1"
- *             },
- *             "timeout": 28800
- *         }
+ *         "encryption": {
+ *             "hash": [ "md5", "sha1", "sha256" ],
+ *             "salt": "mysupersecretsalt"
+ *         },
+ *         "autologin": {
+ *             "period": 365,
+ *             "hash": "sha1"
+ *         },
+ *         "timeout": 28800
  *     }
  * }
  * ```
  */
-abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
-
-    protected $session;
-
+abstract class Adapter implements Adapter\_Interface
+{
     protected $options;
-
     protected $identity;
-
     protected $credential;
 
     // Extra data fields to store from the user record
     protected $extra = [];
-
     private $no_credential_hashing = false;
 
-    function __construct($cache_config = [], $cache_backend = null) {
-
+    public function __construct($config = [])
+    {
         $this->options = new \Hazaar\Map([
             'encryption' => [
                 'hash' => 'sha1',
@@ -120,72 +96,27 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
             'token' => [
                 'hash' => 'sha1'
             ],
-            'timeout' => 3600,
-            'cache' => [
-                'backend' => 'session',
-                'cookie' => 'hazaar-auth'
-            ]
-            ], \Hazaar\Application::getInstance()->config['auth']);
-
-        $cache_config = new \Hazaar\Map([
-            'use_pragma' => FALSE,
-            'lifetime' => $this->options->timeout,
-            'session_name' => $this->options->cache['cookie']
-        ], $cache_config);
-
-        if($cache_backend instanceof \Hazaar\Cache){
-
-            $cache_backend->configure($cache_config);
-
-            $this->session = $cache_backend;
-
-        }elseif($this->options->cache['backend'] === 'session'){
-
-            $this->session = new \Hazaar\Session($cache_config);
-        
-        }else{
-
-            $this->session = new \Hazaar\Cache($this->options->cache['backend'], $cache_config);
-
-        }
-
-        if($this->session->has('hazaar_auth_identity', true)
-            && $this->session->has('hazaar_auth_token', true)
-            && hash($this->options->token['hash'], $this->session->hazaar_auth_identity) === $this->session->hazaar_auth_token)
-            $this->identity = $this->session->hazaar_auth_identity;
-
-        if($this->session->has('hazaar_auth_identity') && $this->session->has('hazaar_auth_token')){
-
-            $id = $this->getIdentifier($this->session->hazaar_auth_identity);
-
-            $hash = $this->options->token['hash'];
-
-            if(hash($hash, $id) !== $this->session->hazaar_auth_token)
-                $this->deauth();
-            
-        }
-
-        if($this->options->has('data_fields'))
+            'timeout' => 3600
+        ], \Hazaar\Application::getInstance()->config['auth']);
+        $this->options->extend($config);
+        if($this->options->has('data_fields')) {
             $this->setDataFields($this->options->data_fields->toArray());
-
+        }
     }
 
-    public function setIdentity($identity) {
-
+    public function setIdentity($identity)
+    {
         $this->identity = $identity;
-
     }
 
-    public function setCredential($credential) {
-
+    public function setCredential($credential)
+    {
         $this->credential = $credential;
-
     }
 
-    public function getIdentity() {
-
+    public function getIdentity()
+    {
         return $this->identity;
-
     }
 
     /**
@@ -201,253 +132,80 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
      * @param mixed $credential
      * @return \null|string
      */
-    public function getCredential($credential = NULL) {
-
-        if($credential === null)
+    public function getCredential($credential = null)
+    {
+        if($credential === null) {
             $credential = $this->credential;
-
-        if(!$credential || $this->no_credential_hashing === true)
-            return $credential;
-
-        $hash = false;
-
-        if($this->options->encryption['use_identity'] === true)
-            $credential =  $this->identity . ':' . $credential;
-
-        $count = $this->options->encryption['count'];
-
-        $algos = $this->options->encryption['hash'];
-
-        if(!\Hazaar\Map::is_array($algos))
-            $algos = [$algos];
-
-        $salt = $this->options->encryption['salt'];
-
-        $hash_algos = hash_algos();
-
-        if(!is_string($salt))
-            $salt = '';
-
-        for($i = 1; $i <= $count; $i++){
-
-            foreach($algos as $algo){
-
-                if(!in_array($algo, $hash_algos))
-                    continue;
-
-                $hash = hash($algo, $hash . $credential . $salt);
-
-            }
-
         }
-
+        if(!$credential || $this->no_credential_hashing === true) {
+            return $credential;
+        }
+        $hash = false;
+        if($this->options->encryption['use_identity'] === true) {
+            $credential =  $this->identity . ':' . $credential;
+        }
+        $count = $this->options->encryption['count'];
+        $algos = $this->options->encryption['hash'];
+        if(!\Hazaar\Map::is_array($algos)) {
+            $algos = [$algos];
+        }
+        $salt = $this->options->encryption['salt'];
+        $hash_algos = hash_algos();
+        if(!is_string($salt)) {
+            $salt = '';
+        }
+        for($i = 1; $i <= $count; $i++) {
+            foreach($algos as $algo) {
+                if(!in_array($algo, $hash_algos)) {
+                    continue;
+                }
+                $hash = hash($algo, $hash . $credential . $salt);
+            }
+        }
         return $hash;
-
     }
 
-    protected function getIdentifier($identity){
-
-        if(!$identity)
+    protected function getIdentifier($identity)
+    {
+        if(!$identity) {
             return false;
-
+        }
         return hash('sha1', $identity);
-
-        /**
-         * Removed this because it appears that in some proxy situations this data can change, which causes
-         * the identifier to change and the session to be deauthorised.  For now we are just commenting this
-         * out so that the identity can be hashed.
-         */
-        /* 
-            . (isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '')
-            . (isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : '')
-            . (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : 'unknown-ua'));
-        */
     }
 
-    protected function setDataFields(array $fields) {
-
+    protected function setDataFields(array $fields)
+    {
         $this->extra = $fields;
-
     }
 
-    public function &get($key) {
-
-        return $this->session->get($key);
-
-    }
-
-    public function &__get($key) {
-
-        return $this->get($key);
-
-    }
-
-    public function __set($key, $value) {
-
-        return $this->set($key, $value);
-
-    }
-
-    public function __isset($key) {
-
-        return $this->has($key);
-
-    }
-
-    public function set($key, $value) {
-
-        $this->session->set($key, $value);
-
-    }
-
-    public function has($key) {
-
-        return $this->session->has($key);
-
-    }
-
-    public function authenticate($identity = NULL, $credential = NULL, $autologin = FALSE) {
-
+    public function authenticate($identity = null, $credential = null, $autologin = false)
+    {
         /*
          * Save the authentication data
          */
-        if($identity)
+        if($identity) {
             $this->setIdentity($identity);
-
-        if($credential)
+        }
+        if($credential) {
             $this->setCredential($credential);
-
+        }
         $auth = $this->queryAuth($this->getIdentity(), $this->extra);
-
-        /*
-         * First, make sure the identity is correct.
-         */
-        if($auth && is_array($auth) && ake($auth, 'identity') === $this->getIdentity()) {
-
-            /*
-             * Check the credentials
-             */
-            if(ake($auth, 'credential') === $this->getCredential()) {
-
-                if(array_key_exists('data', $auth))
-                    $this->session->setValues($auth['data']);
-
-                $this->session->hazaar_auth_identity = $identity;
-
-                $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($identity));
-
-                if(\php_sapi_name() !== 'cli' &&
-                    boolify($autologin) 
-                    && $this->options->autologin['period'] > 0) {
-
-                    /*
-                     * $credential should be encrypted, as stored in the datasource (ie: database), so we
-                     * md5 that to totally obscure it. If it is not encrypted then it is not being
-                     * stored encrypted and the developer should re-think their auth strategy but
-                     * we offer some minor protection from that stupidity here.
-                     */
-                    $data = base64_encode(http_build_query([
-                        'identity' => $identity,
-                        'hash' => hash($this->options->autologin['hash'], $this->getIdentifier($auth['credential'] . $identity))
-                    ]));
-
-                    $cookie = $this->getAutologinCookieName();
-
-                    $timeout = (86400 * $this->options->autologin['period']);
-
-                    setcookie($cookie, $data, time() + $timeout, \Hazaar\Application::path());
-
-                }
-
-                $this->authenticationSuccess($identity, $this->extra);
-
-                return TRUE;
-
-            }
-
+        if($auth === false || !(is_array($auth)
+            && array_key_exists('identity', $auth)
+            && array_key_exists('credential', $auth))) {
+            $this->deauth();
+            return false;
         }
-
-        return FALSE;
-
+        if($auth['identity'] === $this->getIdentity()
+            && $auth['credential'] === $this->getCredential()) {
+            return $auth;
+        }
+        return false;
     }
 
-    public function getUserData() {
-
-        return $this->session->toArray();
-
-    }
-
-    public function authenticated() {
-
-        if($this->session->has('hazaar_auth_identity')
-            && $this->session->has('hazaar_auth_token')
-            && hash($this->options->get('token.hash'), $this->getIdentifier($this->session->hazaar_auth_identity)) === $this->session->hazaar_auth_token) {
-
-            $this->identity = $this->session->hazaar_auth_identity;
-            
-            return true;
-
-        }
-
-        $headers = hazaar_request_headers();
-
-        if($authorization = ake($headers, 'Authorization')){
-
-            list($method, $code) = explode(' ', $authorization);
-
-            if(strtolower($method) === 'basic'){
-
-                list($identity, $credential) = explode(':', base64_decode($code));
-
-                return $this->authenticate($identity, $credential);
-
-            }
-
-        }elseif($this->canAutoLogin()) {
-
-            /*
-             * If we've got a cookie set, use the identity to look up credentials
-             */
-            $cookie_name = $this->getAutologinCookieName();
-
-            parse_str(base64_decode(ake($_COOKIE, $cookie_name, '')), $cookie);
-
-            if($cookie){
-
-                if($identity = urldecode(ake($cookie, 'identity')))
-                    $this->setIdentity($identity);
-
-                if($auth = $this->queryAuth($identity, $this->extra)) {
-
-                    $hash = hash($this->options->autologin['hash'], $this->getIdentifier($auth['credential'] . $identity));
-
-                    /*
-                    * Check the cookie credentials against the ones we just got from the adapter
-                    */
-                    if($identity === $auth['identity']
-                        && $hash === ake($cookie, 'hash')) {
-
-                        if(array_key_exists('data', $auth))
-                            $this->session->setValues($auth['data']);
-
-                        $this->session->hazaar_auth_identity = $identity;
-
-                        $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($identity));
-
-                        $this->authenticationSuccess($identity, $this->extra);
-                        
-                        return TRUE;
-
-                    }else $this->deauth();
-
-                }
-
-            }
-
-        }
-
-        return FALSE;
-
+    public function authenticated()
+    {
+        return false;
     }
 
     /**
@@ -459,43 +217,24 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
      * @param mixed $credential
      * @return boolean
      */
-    public function check($credential) {
-
+    public function check($credential)
+    {
         $auth = $this->queryAuth($this->getIdentity(), $this->extra);
-
-        /*
-         * First, make sure the identity is correct.
-         */
-        if($auth && $auth['identity'] == $this->getIdentity()) {
-
-            /*
-             * Check the credentials
-             */
-            if($auth['credential'] == $this->getCredential($credential))
-                return TRUE;
-
+        if($auth === false || !(is_array($auth)
+            && array_key_exists('identity', $auth)
+            && array_key_exists('credential', $auth))) {
+            return false;
         }
-
-        return FALSE;
-
+        if($auth['identity'] === $this->getIdentity()
+            && $auth['credential'] === $this->getCredential($credential)) {
+            return true;
+        }
+        return false;
     }
 
-    public function deauth() {
-
-        $this->session->clear(true);
-
-        $cookie = $this->getAutologinCookieName();
-
-        if(isset($_COOKIE[$cookie])) {
-
-            unset($_COOKIE[$cookie]);
-
-            setcookie($cookie, '', time() - 3600, \Hazaar\Application::path());
-
-        }
-
-        return TRUE;
-
+    public function deauth()
+    {
+        return true;
     }
 
     /**
@@ -503,99 +242,39 @@ abstract class Adapter implements Adapter\_Interface, \ArrayAccess {
      *
      * @throws \Exception
      */
-    public function unauthorised(){
-
+    public function unauthorised()
+    {
         header('WWW-Authenticate: Basic');
-
         throw new \Exception('Unauthorised!', 401);
-
     }
 
-    protected function canAutoLogin() {
-
+    protected function canAutoLogin()
+    {
         $cookie = $this->getAutologinCookieName();
-
         return ($this->options['autologin']['period'] > 0 && isset($_COOKIE[$cookie]));
-
     }
 
-    protected function getAutologinCookieName() {
-
+    protected function getAutologinCookieName()
+    {
         return $this->options['autologin']['cookie'];
-
     }
 
-    public function getToken(){
-
-        return $this->session->hazaar_auth_token;
-
-    }
-
-    public function getTokenType(){
-
+    public function getTokenType()
+    {
         return 'Basic';
-
-    }
-
-    /**
-     * Array Access Methods
-     *
-     * These methods allows accessing user data as array attributes of the auth object. These methods do not allow this
-     * data to be modified in any way.
-     */
-    public function offsetExists($key) : bool {
-
-        return $this->session->has($key);
-
-    }
-
-    #[\ReturnTypeWillChange]
-    public function &offsetGet($key) {
-
-        if($this->session->has($key))
-            return $this->session->get($key);
-
-        $result = NULL; // Required to return variables by reference
-
-        return $result;
-
-    }
-
-    public function offsetSet($key, $value) : void {
-
-        $this->session->set($key, $value);
-
-    }
-
-    public function offsetUnset($key) : void {
-
-        $this->session->remove($key);
-
-    }
-
-    /**
-     * Overload function called when a user is successfully authenticated.
-     * 
-     * This can occur when calling authenticate() or authenticated() where a session has been saved.  This default method does nothing but can
-     * be overridden.
-     */
-    protected function authenticationSuccess($identity, $data){
-
     }
 
     /**
      * Toggles on/off the internal credential hashing algorithm.
-     * 
+     *
      * This is useful is you want to authenticate with an already hashed credential.
-     * 
+     *
      * WARNING:  This should NOT normally be used.  And if it IS used, it should only be used to authenticate credentials
      * supplied internally by the application itself, and not provided by a user/client/etc.  Disabling password hash
      * essentially turns this all into clear text credentials.
      */
-    public function disableCredentialHashing($value = true){
-
+    public function disableCredentialHashing($value = true)
+    {
         $this->no_credential_hashing = boolify($value);
-
     }
-
 }

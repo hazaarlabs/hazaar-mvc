@@ -2,7 +2,7 @@
 
 namespace Hazaar\Auth\Adapter;
 
-class MongoDB extends \Hazaar\Auth\Adapter implements _Interface {
+class MongoDB extends Session implements _Interface {
 
     private $mongoDB;
 
