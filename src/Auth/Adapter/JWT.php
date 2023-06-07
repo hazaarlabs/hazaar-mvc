@@ -145,14 +145,11 @@ abstract class JWT extends \Hazaar\Auth\Adapter implements \ArrayAccess
 
     private function buildRefreshTokenKey($credential)
     {
-        $clientIP =  getenv('HTTP_CLIENT_IP') ?:
-            getenv('HTTP_X_FORWARDED_FOR') ?:
-            getenv('HTTP_X_FORWARDED') ?:
-            getenv('HTTP_FORWARDED_FOR') ?:
-            getenv('HTTP_FORWARDED') ?:
-            getenv('REMOTE_ADDR');
         $fingerprint = $_SERVER['HTTP_USER_AGENT'];
-        if ($this->options->get('jwt.fingerprintIP')) {
+        if ($this->options->get('jwt.fingerprintIP')
+            && ($app = \Hazaar\Application::getInstance())
+            && ($request = $app->request) instanceof \Hazaar\Application\Request\Http
+            && ($clientIP = $request->getRemoteAddr())) {
             $fingerprint .= ':' . $clientIP;
         }
         return hash_hmac('sha256', $fingerprint, $credential);
