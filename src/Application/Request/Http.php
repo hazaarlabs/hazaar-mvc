@@ -362,12 +362,21 @@ class Http extends \Hazaar\Application\Request {
      */
     public function getRemoteAddr(){
 
-        return getenv('HTTP_CLIENT_IP')?:
-                getenv('HTTP_X_FORWARDED_FOR')?:
-                getenv('HTTP_X_FORWARDED')?:
-                getenv('HTTP_FORWARDED_FOR')?:
-                getenv('HTTP_FORWARDED')?:
+        $forwarded_ip = getenv('HTTP_X_FORWARDED_FOR')?:
+            getenv('HTTP_X_FORWARDED')?:
+            getenv('HTTP_FORWARDED_FOR')?:
+            getenv('HTTP_FORWARDED');
+
+        if(!$forwarded_ip){
+
+            return getenv('HTTP_CLIENT_IP')?:
                 getenv('REMOTE_ADDR');
+
+        }
+
+        $forwarded = explode(',', $forwarded_ip);
+
+        return trim($forwarded[0]);
 
     }
 

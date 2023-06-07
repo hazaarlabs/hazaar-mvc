@@ -10,7 +10,7 @@ namespace Hazaar\Auth\Adapter;
  * @version 1.0
  * @author jamiec
  */
-class OAuth2 extends \Hazaar\Auth\Adapter implements _Interface {
+class OAuth2 extends Session implements _Interface {
 
     protected $client_id;
 
