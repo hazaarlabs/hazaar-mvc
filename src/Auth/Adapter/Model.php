@@ -2,67 +2,57 @@
 
 namespace Hazaar\Auth\Adapter;
 
-abstract class Model extends \Hazaar\Auth\Adapter implements _Interface {
-
+abstract class Model extends Session
+{
     private $field_identity;
-
     private $field_credential;
 
     /*
      * Construct the new authentication object with the field names
      * in the model for id, user name, password and real name.
      */
-    function __construct($args = null, $cache_config = [], $cache_backend = 'session') {
-
+    public function __construct($args = null, $cache_config = [], $cache_backend = 'session')
+    {
         parent::__construct($cache_config, $cache_backend);
-
         $this->init($args);
-
     }
 
-    public function init(){
-
+    public function init()
+    {
         return false;
-
     }
 
-    public function insert(){
-
+    public function insert($data)
+    {
         return false;
-        
     }
 
-    public function delete(){
-
+    public function delete($criteria)
+    {
         return false;
-        
     }
 
-    public function setIdentityField($identity) {
-
+    public function setIdentityField($identity)
+    {
         $this->field_identity = $identity;
-
     }
 
-    public function setCredentialField($credential) {
-
+    public function setCredentialField($credential)
+    {
         $this->field_credential = $credential;
-
     }
 
-    public function addUser($identity, $credential) {
-
-        $this->insert([
+    public function addUser($identity, $credential)
+    {
+        return $this->insert([
             $this->field_identity => $identity,
             $this->field_credential => $credential
         ]);
-
     }
 
-    public function delUser($identity) {
-
-        $this->delete([$this->field_identity => $identity]);
-
+    public function delUser($identity)
+    {
+        return $this->delete([$this->field_identity => $identity]);
     }
 
 }
