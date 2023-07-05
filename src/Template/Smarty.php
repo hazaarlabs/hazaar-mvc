@@ -442,23 +442,21 @@ class Smarty {
 
         if(count($parts) > 0){
 
-            foreach($parts as $idx => $part){
+            $parts = array_map(
+                function($item){
+                    if(substr($item, 0, 1) == '$'){
+                        $item = "'.$item.'";
+                    }elseif(substr($item, -1) == ']' && !(substr($item, 0, 1) == "'" && substr($item, -2, 1) == substr($item, 0, 1))){
+                        $item = '$smarty[\'section\'][\'' . substr($item, 0, -1) . "']['index']";
+                    }
+                    return $item;
+                },
+                array_filter($parts, function($item){
+                    return !($item === '.' || $item === '->' || $item === '[' || $item === ']');
+                })
+            );
 
-                if(!$part || $part == '.' || $part == '->' || $part == '[') continue;
-
-                if(ake($parts, $idx-1) == '->')
-                    $name .= '->' . $part;
-                elseif(substr($part, 0, 1) == '$')
-                    $name .= "[$part]";
-                elseif(substr($part, -1) == ']'){
-                    if(substr($part, 0, 1) == "'" && substr($part, -2, 1) == substr($part, 0, 1))
-                        $name .= '[' . $part;
-                    else
-                        $name .= '[$smarty[\'section\'][\'' . substr($part, 0, -1) . "']['index']]";
-                }else
-                    $name .= "['$part']";
-
-            }
+            $name = "ake($name, \"" . implode(".", $parts) . "\")";
 
         }
 
