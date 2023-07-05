@@ -179,7 +179,6 @@ abstract class Session extends \Hazaar\Auth\Adapter implements \ArrayAccess
                 if($identity = urldecode(ake($cookie, 'identity'))) {
                     $this->setIdentity($identity);
                 }
-                die('autologin needs to be re-written');
                 if($auth = $this->queryAuth($identity, $this->extra)) {
                     $hash = hash($this->options->autologin['hash'], $this->getIdentifier($auth['credential'] . $identity));
                     /*
