@@ -2,7 +2,7 @@
 
 namespace Hazaar\Auth;
 
-class Helper extends Adapter {
+class Helper extends Adapter\Session {
 
     function __construct($cache_config = [], $cache_backend = 'session'){
 
