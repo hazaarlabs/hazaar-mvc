@@ -344,7 +344,8 @@ dataBinder.prototype._update = function (key, do_update) {
             if (o.attr('type') === 'checkbox')
                 o.prop('checked', attr_value);
             else if (o.attr('type') === 'radio') {
-                o.prop('checked', (o.attr('value') == attr_value));  //Ensure non-typed comparison for values
+                if (!((o.attr('value') == attr_value && o.attr('value') !== '') || (o.attr('value') === '' && attr_value === null))) return;
+                o.prop('checked', true);  //Ensure non-typed comparison for values
             } else if (o.attr('data-bind-label') === 'true')
                 o.val(attr_item ? attr_item.label : null);
             else if (o.attr('data-bind-other') === 'true')
