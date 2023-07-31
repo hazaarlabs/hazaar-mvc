@@ -208,7 +208,7 @@ abstract class Session extends \Hazaar\Auth\Adapter implements \ArrayAccess
         $cookie = $this->getAutologinCookieName();
         if(isset($_COOKIE[$cookie])) {
             unset($_COOKIE[$cookie]);
-            setcookie($cookie, '', time() - 3600, \Hazaar\Application::path());
+            setcookie($cookie, '', time() - 3600, \Hazaar\Application::path(), $_SERVER['HTTP_HOST'], true, true);
         }
         return true;
     }
