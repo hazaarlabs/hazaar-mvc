@@ -200,14 +200,19 @@ var handleError = function (response, status, xhr) {
         status = xhr;
     }
     if (status === 'error') {
-        var error = response.responseJSON.error;
-        var content = [$('<div class="adm-error-msg">').html(error.str)];
-        if (error.line)
-            content.push($('<div class="adm-error-line">').html([$('<label>').html('Line:'), $('<span>').html('#' + error.line)]));
-        if (error.file)
-            content.push($('<div class="adm-error-file">').html([$('<label>').html('File:'), $('<span>').html(error.file)]));
+        let content = [];
+        if (response.responseJSON) {
+            let error = response.responseJSON.error;
+            content.push($('<div class="adm-error-msg">').html(error.str));
+            if (error.line)
+                content.push($('<div class="adm-error-line">').html([$('<label>').html('Line:'), $('<span>').html('#' + error.line)]));
+            if (error.file)
+                content.push($('<div class="adm-error-file">').html([$('<label>').html('File:'), $('<span>').html(error.file)]));
+        } else {
+            content.push($('<div class="adm-error-msg">').html(response.statusText));
+        }
         $('<div>').html($('<div class="adm-error">').html(content)).popup({
-            title: "Server Error",
+            title: "Server Error # " + response.status,
             icon: "error",
             buttons: [
                 { label: "OK", action: "close" }
