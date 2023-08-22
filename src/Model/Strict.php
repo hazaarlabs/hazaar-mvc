@@ -482,7 +482,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
                 && !is_object($def['value'])
                 && $this->values[$key]->value = $def['value']) 
                     ? $this->values[$key] 
-                    : new dataBinderValue($def['value']);
+                    : new DataBinderValue($def['value']);
 
             if($type = ake($def, 'type'))
                 DataTypeConverter::convertType($value, $type);
@@ -663,10 +663,10 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
          * Static value check
          * 
          * If a value is "static" then it can not be changed.  However here, we look if the value being set
-         * is a dataBinderValue with the same value as the static value and if so, we let it through.  This 
+         * is a DataBinderValue with the same value as the static value and if so, we let it through.  This 
          * allows the same value to be set with a different label.
          */
-        if(array_key_exists('value', $def) && (!$value instanceof dataBinderValue || $value->value !== $def['value']))
+        if(array_key_exists('value', $def) && (!$value instanceof DataBinderValue || $value->value !== $def['value']))
             return false;
 
         /*
@@ -1125,7 +1125,7 @@ abstract class Strict extends DataTypeConverter implements \ArrayAccess, \Iterat
             if(array_key_exists('scope', $def) && !in_array($def['scope'], $this->scopes))
                 continue;
 
-            if(array_key_exists('value', $def) && (!$value instanceof dataBinderValue || $value->value !== $def['value']))
+            if(array_key_exists('value', $def) && (!$value instanceof DataBinderValue || $value->value !== $def['value']))
                 $value = $def['value'];
 
             /*
