@@ -108,6 +108,7 @@ var dataBinderValue = function (name, value, label, parent) {
     this._other = null;
     this._enabled = true;
     this._parent = parent;
+    this._default = null;
     this._data = {};
     Object.defineProperties(this, {
         "value": {
@@ -188,6 +189,7 @@ dataBinderValue.prototype.save = function (no_label) {
 };
 
 dataBinderValue.prototype.empty = function (no_update) {
+    if (this._default) return this.set(this._default.value, this._default.label, this._default.other, no_update);
     return this.set(null, null, null, no_update);
 };
 
@@ -209,6 +211,14 @@ dataBinderValue.prototype.find = function (selector) {
 dataBinderValue.prototype.data = function (name, value) {
     return typeof value === 'undefined' ? this._data[name] : this._data[name] = value;
 };
+
+dataBinderValue.prototype.default = function () {
+    this._default = {
+        value: this._value,
+        label: this._label,
+        other: this._other
+    };
+}
 
 dataBinder.prototype._init = function (data, name, parent, namespace) {
     this._name = name;
@@ -517,6 +527,13 @@ dataBinder.prototype.each = function (callback) {
 dataBinder.prototype.data = function (name, value) {
     return typeof value === 'undefined' ? this._data[name] : this._data[name] = value;
 };
+
+dataBinder.prototype.default = function () {
+    for (let x in this._attributes) {
+        if (this._attributes[x] instanceof dataBinder
+            || this._attributes[x] instanceof dataBinderValue) this._attributes[x].default();
+    }
+}
 
 dataBinderArray.prototype._init = function (data, name, parent, namespace) {
     if (!parent) throw "dataBinderArray requires a parent!";
