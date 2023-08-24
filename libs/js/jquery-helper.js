@@ -114,8 +114,12 @@ var dataBinderValue = function (name, value, label, parent) {
         "value": {
             set: function (value) {
                 if (value !== null && typeof value === 'object' || value === this._value) return;
-                this._value = this._parent.__nullify(value);
-                this._other = null;
+                if ('value' in this._default) {
+                    this._value = this._default.value;
+                } else {
+                    this._value = this._parent.__nullify(value);
+                }
+                this._other = 'other' in this._default ? this._default.other : null;
                 this._parent._update(this._name, true);
                 this._parent._trigger(this._name, this);
             },
@@ -293,21 +297,25 @@ dataBinder.prototype._defineProperty = function (key) {
     Object.defineProperty(this, key, {
         configurable: true,
         set: function (value) {
-            let attr = this._attributes[key];
-            if (value instanceof dataBinder) value = value.save(); //Export so that we trigger an import to reset the value names
-            value = this.__convert_type(key, value);
-            if (value === null && attr && attr.other) attr.other = null;
-            else if (value === null && attr instanceof dataBinder
-                || (attr instanceof dataBinderValue ? attr.value : attr) === (value instanceof dataBinderValue ? value.value : value)
-                && (attr && (!(attr instanceof dataBinderValue) || !(value instanceof dataBinderValue) || attr.label === value.label && attr.other === value.other)))
-                return; //If the value or label has not changed, then bugger off.
-            this._attributes[key] = value;
-            this._update(key, true)
-            this._trigger(key, value);
-            if (attr instanceof dataBinder && value instanceof dataBinder) {
-                value._parent = this;
-                value._copy_watchers(attr);
-                value._trigger_diff(attr);
+            if (this._attributes[key] instanceof dataBinderValue) {
+                this._attributes[key].set(value);
+            } else {
+                let attr = this._attributes[key];
+                if (value instanceof dataBinder) value = value.save(); //Export so that we trigger an import to reset the value names
+                value = this.__convert_type(key, value);
+                if (value === null && attr && attr.other) attr.other = null;
+                else if (value === null && attr instanceof dataBinder
+                    || (attr instanceof dataBinderValue ? attr.value : attr) === (value instanceof dataBinderValue ? value.value : value)
+                    && (attr && (!(attr instanceof dataBinderValue) || !(value instanceof dataBinderValue) || attr.label === value.label && attr.other === value.other)))
+                    return; //If the value or label has not changed, then bugger off.
+                this._attributes[key] = value;
+                this._update(key, true)
+                this._trigger(key, value);
+                if (attr instanceof dataBinder && value instanceof dataBinder) {
+                    value._parent = this;
+                    value._copy_watchers(attr);
+                    value._trigger_diff(attr);
+                }
             }
         },
         get: function () {
