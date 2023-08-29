@@ -174,11 +174,16 @@ dataBinderValue.prototype._node_name = function () {
 
 dataBinderValue.prototype.set = function (value, label, other, no_update) {
     value = this._parent.__nullify(value);
-    if (value !== null && typeof value === 'object'
-        || (value === this._value && label === this._label && (typeof other === 'undefined' || other === this._other))) return;
-    this._value = value;
-    this._label = label;
-    if (typeof other !== 'undefined') this._other = other;
+    if (value !== null && typeof value === 'object' && '__hz_value' in value) {
+        this._value = value.__hz_value;
+        this._label = value.__hz_label;
+        this._other = value.__hz_other;
+    } else if (value === this._value && label === this._label && (typeof other === 'undefined' || other === this._other)) return;
+    else {
+        this._value = value;
+        this._label = label;
+        if (typeof other !== 'undefined') this._other = other;
+    }
     if (no_update !== true) {
         this._parent._update(this._name, true);
         this._parent._trigger(this._name, this);
