@@ -141,7 +141,7 @@ abstract class Session extends \Hazaar\Auth\Adapter implements \ArrayAccess
                 ]));
                 $cookie = $this->getAutologinCookieName();
                 $timeout = (86400 * $this->options->autologin['period']);
-                setcookie($cookie, $data, time() + $timeout, \Hazaar\Application::path(), $_SERVER['HTTP_HOST'], true, true);
+                setcookie($cookie, $data, time() + $timeout, \Hazaar\Application::path(), null, true, true);
             }
             $this->authenticationSuccess($identity, $this->extra);
             return true;
@@ -208,7 +208,7 @@ abstract class Session extends \Hazaar\Auth\Adapter implements \ArrayAccess
         $cookie = $this->getAutologinCookieName();
         if(isset($_COOKIE[$cookie])) {
             unset($_COOKIE[$cookie]);
-            setcookie($cookie, '', time() - 3600, \Hazaar\Application::path(), $_SERVER['HTTP_HOST'], true, true);
+            setcookie($cookie, '', time() - 3600, \Hazaar\Application::path(), null, true, true);
         }
         return true;
     }
