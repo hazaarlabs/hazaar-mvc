@@ -114,12 +114,12 @@ var dataBinderValue = function (name, value, label, parent) {
         "value": {
             set: function (value) {
                 if (value !== null && typeof value === 'object' || value === this._value) return;
-                if ('value' in this._default) {
+                if (this._default && 'value' in this._default) {
                     this._value = this._default.value;
                 } else {
                     this._value = this._parent.__nullify(value);
                 }
-                this._other = 'other' in this._default ? this._default.other : null;
+                this._other = this._default && 'other' in this._default ? this._default.other : null;
                 this._parent._update(this._name, true);
                 this._parent._trigger(this._name, this);
             },
@@ -178,8 +178,13 @@ dataBinderValue.prototype.set = function (value, label, other, no_update) {
         this._value = value.__hz_value;
         this._label = value.__hz_label;
         this._other = value.__hz_other;
-    } else if (value === this._value && label === this._label && (typeof other === 'undefined' || other === this._other)) return;
-    else {
+    } else if (value === this._value && label === this._label && (typeof other === 'undefined' || other === this._other)) {
+        return;
+    } else if (value instanceof dataBinderValue) {
+        this._value = value.value;
+        this._label = value.label;
+        this._other = value.other;
+    } else {
         this._value = value;
         this._label = label;
         if (typeof other !== 'undefined') this._other = other;
