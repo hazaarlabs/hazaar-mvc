@@ -773,4 +773,10 @@ class Dropbox extends \Hazaar\Http\Client implements _Interface {
 
     }
 
+    public function cwd(){
+
+        return '/';
+        
+    }
+
 }

@@ -548,4 +548,10 @@ class Hazaar implements _Interface {
 
     }
 
+    public function cwd(){
+
+        return '/';
+        
+    }
+
 }
