@@ -181,7 +181,7 @@ function exception_handler($e) {
 
 function shutdown_handler() {
 
-    if(headers_sent())
+    if(php_sapi_name() !== 'cli' && headers_sent())
         return;
 
     global $__shutdown_tasks;
