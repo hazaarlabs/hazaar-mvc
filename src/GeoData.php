@@ -42,7 +42,7 @@ class GeoData {
      *
      * @var int
      */
-    static private $version = 2;
+    public const VERSION = 2;
 
     /**
      * The internal B-Tree database adapter
@@ -53,14 +53,16 @@ class GeoData {
 
     function __construct($re_intialise = false){
 
-        $file = new \Hazaar\File(\Hazaar\Application::getInstance()->runtimePath('geodata.db'));
+        $filename = \Hazaar\Application::getInstance()->runtimePath('geodata.db');
+        
+        $file = new \Hazaar\File($filename);
 
         if($re_intialise === true || !$file->exists())
             $this->__initialise();
 
         GeoData::$db = new \Hazaar\Btree($file, true);
 
-        if(GeoData::$db->get('__version__') !== GeoData::$version)
+        if(GeoData::$db->get('__version__') !== GeoData::VERSION)
             $this->__initialise();
 
     }
