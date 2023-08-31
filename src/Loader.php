@@ -74,7 +74,7 @@ define('APPLICATION_BASE', dirname($_SERVER['SCRIPT_NAME']));
 /**
  * Constant containing the name of the user running the script
  */
-define('APPLICATION_USER', posix_getpwuid(posix_geteuid())['name']);
+define('APPLICATION_USER', \posix_getpwuid(\posix_geteuid())['name']);
 
 /**
  * Constant containing the absolute filesystem path that contains the whole project.
