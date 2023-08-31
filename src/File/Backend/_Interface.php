@@ -90,4 +90,6 @@ interface _Interface {
 
     public function direct_uri($path);
 
+    public function cwd();
+
 }

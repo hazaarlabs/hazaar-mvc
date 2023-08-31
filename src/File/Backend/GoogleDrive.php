@@ -930,5 +930,11 @@ class GoogleDrive extends \Hazaar\Http\Client implements _Interface {
 
     }
 
+    public function cwd(){
+
+        return '/';
+        
+    }
+
 }
 

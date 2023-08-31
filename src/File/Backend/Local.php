@@ -661,4 +661,10 @@ class Local implements _Interface {
 
     }
 
+    public function cwd() {
+
+        return getcwd();
+
+    }
+
 }

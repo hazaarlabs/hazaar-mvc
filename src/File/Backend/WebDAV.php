@@ -590,4 +590,10 @@ class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
 
     }
 
+    public function cwd(){
+
+        return '/';
+        
+    }
+
 }

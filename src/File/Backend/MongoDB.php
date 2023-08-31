@@ -896,4 +896,10 @@ class MongoDB implements _Interface {
 
     }
 
+    public function cwd(){
+
+        return '/';
+        
+    }
+
 }
