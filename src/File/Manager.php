@@ -276,6 +276,9 @@ class Manager implements Backend\_Interface {
         if(!$path)
             return '';
 
+        if(substr($path, 0, 1) !== '/')
+            $path = rtrim($this->getBackend()->cwd(), '/') . '/' . $path;
+
         $path = '/' . trim(str_replace('\\', '/', $path), '/');
 
         if($file)
@@ -851,6 +854,12 @@ class Manager implements Backend\_Interface {
     public function direct_uri($path){
 
         return $this->backend->direct_uri($this->fixPath($path));
+        
+    }
+
+    public function cwd(){
+
+        return $this->backend->cwd();
         
     }
 
