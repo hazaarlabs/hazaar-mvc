@@ -209,7 +209,7 @@ class GeoData {
         if($country = GeoData::$db->get(strtoupper($country_code))){
 
             foreach(ake($country, 'states') as $code => $state)
-                $list[$code] = $state['name'];
+                $list[$state['code']] = $state['name'];
 
             asort($list);
 
