@@ -195,7 +195,7 @@ $.fn.popup = function () {
 };
 
 var handleError = function (response, status, xhr) {
-    if (typeof status === 'object') {
+    if (status && typeof status === 'object') {
         response = status;
         status = xhr;
     }
