@@ -55,7 +55,7 @@ class Redis extends \Hazaar\Cache\Backend {
 
         $this->namespace = $namespace;
 
-        $this->addCapabilities('store_objects', 'array', 'expire_ns', 'expire_val', 'keepalive');
+        $this->addCapabilities('store_objects', 'array', 'all', 'expire_ns', 'expire_val', 'keepalive');
 
         $this->configure([
            'server'          => 'localhost',
@@ -436,6 +436,44 @@ class Redis extends \Hazaar\Cache\Backend {
         }
 
         $this->local = $array;
+
+        return $array;
+
+    }
+
+    public function all(){
+
+        $array = [];
+
+        $cursor_id = 0;
+
+        do{
+
+            $result = $this->cmd(['SCAN', strval($cursor_id)]);
+
+            foreach($result[1] as $namespace){
+
+                $items = $this->cmd(['HGETALL', $namespace]);
+
+                $ns_array = [];
+
+                for($i=0; $i<count($items);$i+=2){
+
+                    if(!($data = unserialize($items[$i+1])))
+                        continue;
+
+                    if(array_key_exists('expire', $data) && time() > $data['expire'])
+                        continue;
+
+                    $ns_array[$items[$i]] = $data['value'];
+
+                }
+
+                $array[$namespace] = $ns_array;
+
+            }
+
+        }while(($cursor_id = intval($result[0]) > 0));
 
         return $array;
 
