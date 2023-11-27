@@ -309,6 +309,15 @@ class Cache implements \ArrayAccess {
         
     }
 
+    public function kill($namespace){
+
+        if(!$this->backend->can('all'))
+            return false;
+
+        return $this->backend->kill($namespace);
+        
+    }
+
     /**
      * Disable the use of cache
      *

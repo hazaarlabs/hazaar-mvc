@@ -141,4 +141,15 @@ class Apc extends \Hazaar\Cache\Backend {
         
     }
 
+    public function kill($namespace){
+
+        $iter = new \APCUIterator('/^' . $namespace . '::/');
+
+        foreach($iter as $ns_key => $value)
+            apcu_delete($ns_key);
+
+        return true;
+        
+    }
+
 }
