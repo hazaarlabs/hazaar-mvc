@@ -479,4 +479,10 @@ class Redis extends \Hazaar\Cache\Backend {
 
     }
 
+    public function kill($namespace){
+            
+        return boolify($this->cmd(['DEL', $namespace]));
+
+    }
+
 }
