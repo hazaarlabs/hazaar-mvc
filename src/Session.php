@@ -80,4 +80,28 @@ class Session extends \Hazaar\Cache {
 
     }
 
+    public function all(){
+
+        $all = $this->backend->all();
+
+        $sessions = [];
+
+        foreach($all as $key => $item){
+
+            if(strpos($key, '::') === false)
+                continue;
+
+            list($namespace_name, $item_key) = explode('::', $key, 2);
+
+            if(!array_key_exists($namespace_name, $sessions))
+                $sessions[$namespace_name] = [];
+
+            $sessions[$namespace_name][$item_key] = $item;
+
+        }
+
+        return $sessions;
+        
+    }
+
 }
