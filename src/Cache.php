@@ -300,6 +300,15 @@ class Cache implements \ArrayAccess {
 
     }
 
+    public function all(){
+
+        if(!$this->backend->can('all'))
+            return false;
+
+        return $this->backend->all();
+        
+    }
+
     /**
      * Disable the use of cache
      *

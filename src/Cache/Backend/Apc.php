@@ -41,7 +41,7 @@ class Apc extends \Hazaar\Cache\Backend {
 
         $this->namespace = $namespace;
 
-        $this->addCapabilities('store_objects', 'expire', 'array', 'expire_ns', 'expire_val', 'keepalive');
+        $this->addCapabilities('store_objects', 'expire', 'array', 'all', 'expire_ns', 'expire_val', 'keepalive');
 
     }
 
@@ -126,6 +126,19 @@ class Apc extends \Hazaar\Cache\Backend {
 
         return $array;
 
+    }
+
+    public function all(){
+
+        $iter = new \APCUIterator();
+
+        $array = [];
+
+        foreach($iter as $ns_key => $value)
+            $array[$ns_key] = $value['value'];
+
+        return $array;
+        
     }
 
 }
