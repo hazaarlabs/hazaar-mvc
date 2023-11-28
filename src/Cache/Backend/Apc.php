@@ -141,18 +141,23 @@ class Apc extends \Hazaar\Cache\Backend {
         
     }
 
-    public function kill($namespace){
+    public function kill($namespace, &$data = null){
 
         $iter = new \APCUIterator('/^' . $namespace . '::/');
 
-        foreach($iter as $ns_key => $value){
+        foreach($iter as $ns_key => $item){
+
+            list($_, $item_key) = explode('::', $ns_key, 2);
+
+            if(!is_array($data))
+                $data = []; 
+
+            $data[$item_key] = $item['value'];
 
             $result = apcu_delete($ns_key);
 
             if($result === false)
                 throw new \Exception('Failed to delete key: ' . $ns_key);
-
-            list($_, $item_key) = explode('::', $ns_key, 2);
 
             if($namespace === $this->namespace && \array_key_exists($item_key, $this->refresh))
                 unset($this->refresh[$item_key]);

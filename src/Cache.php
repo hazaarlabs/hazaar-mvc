@@ -309,12 +309,12 @@ class Cache implements \ArrayAccess {
         
     }
 
-    public function kill($namespace){
+    public function kill($namespace, &$data = null){
 
         if(!$this->backend->can('all'))
             return false;
 
-        return $this->backend->kill($namespace);
+        return $this->backend->kill($namespace, $data);
         
     }
 
