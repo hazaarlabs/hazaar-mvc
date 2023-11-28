@@ -86,17 +86,32 @@ class Session extends \Hazaar\Cache {
 
         $sessions = [];
 
-        foreach($all as $key => $item){
+        if($this->backend->can('hkey')){
 
-            if(strpos($key, '::') === false)
-                continue;
+            foreach($all as $namespace_name => $item){
 
-            list($namespace_name, $item_key) = explode('::', $key, 2);
+                if(!array_key_exists('hazaar_auth_identity', $item))
+                    continue;
 
-            if(!array_key_exists($namespace_name, $sessions))
-                $sessions[$namespace_name] = [];
+                $sessions[$namespace_name] = $item;
 
-            $sessions[$namespace_name][$item_key] = $item;
+            }
+
+        }else{
+
+            foreach($all as $key => $item){
+
+                if(strpos($key, '::') === false)
+                    continue;
+
+                list($namespace_name, $item_key) = explode('::', $key, 2);
+
+                if(!array_key_exists($namespace_name, $sessions))
+                    $sessions[$namespace_name] = [];
+
+                $sessions[$namespace_name][$item_key] = $item;
+
+            }
 
         }
 

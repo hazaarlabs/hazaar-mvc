@@ -55,7 +55,7 @@ class Redis extends \Hazaar\Cache\Backend {
 
         $this->namespace = $namespace;
 
-        $this->addCapabilities('store_objects', 'array', 'all', 'expire_ns', 'expire_val', 'keepalive');
+        $this->addCapabilities('store_objects', 'array', 'all', 'expire_ns', 'expire_val', 'keepalive', 'hkey');
 
         $this->configure([
            'server'          => 'localhost',
