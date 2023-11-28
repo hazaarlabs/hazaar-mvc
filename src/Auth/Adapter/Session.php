@@ -135,9 +135,12 @@ abstract class Session extends \Hazaar\Auth\Adapter implements \ArrayAccess
                  * stored encrypted and the developer should re-think their auth strategy but
                  * we offer some minor protection from that stupidity here.
                  */
+                $hash = array_key_exists('token', $auth)
+                    ? $auth['token']
+                    : hash($this->options->autologin['hash'], $this->getIdentifier($auth['credential'] . $identity));
                 $data = base64_encode(http_build_query([
                     'identity' => $identity,
-                    'hash' => hash($this->options->autologin['hash'], $this->getIdentifier($auth['credential'] . $identity))
+                    'hash' => $hash
                 ]));
                 $cookie = $this->getAutologinCookieName();
                 $timeout = (86400 * $this->options->autologin['period']);
@@ -180,7 +183,9 @@ abstract class Session extends \Hazaar\Auth\Adapter implements \ArrayAccess
                     $this->setIdentity($identity);
                 }
                 if($auth = $this->queryAuth($identity, $this->extra)) {
-                    $hash = hash($this->options->autologin['hash'], $this->getIdentifier($auth['credential'] . $identity));
+                    $hash = array_key_exists('token', $auth) 
+                        ? $auth['token']
+                        : hash($this->options->autologin['hash'], $this->getIdentifier($auth['credential'] . $identity));
                     /*
                     * Check the cookie credentials against the ones we just got from the adapter
                     */
