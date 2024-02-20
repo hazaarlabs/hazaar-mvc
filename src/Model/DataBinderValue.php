@@ -20,6 +20,8 @@ class DataBinderValue implements \JsonSerializable {
 
     public $other;
 
+    public $orgValue;
+
     function __construct($value, $label = null, $other = null){
 
         \call_user_func_array([$this, 'set'], func_get_args());
@@ -72,6 +74,8 @@ class DataBinderValue implements \JsonSerializable {
 
         if($this->other) $array['__hz_other'] = $this->other;
 
+        if($this->orgValue) $array['__hz_org_value'] = $this->orgValue;
+
         return $array;
 
     }
@@ -121,7 +125,12 @@ class DataBinderValue implements \JsonSerializable {
 
     public function set($value, $label = null, $other = null){
 
+        $orgValue = null;
+
         if(is_array($value)){
+
+            if(array_key_exists('__hz_org_value', $value))
+                $orgValue = $value['__hz_org_value'];
 
             if(array_key_exists('__hz_other', $value))
                 $other = $value['__hz_other'];
@@ -133,6 +142,9 @@ class DataBinderValue implements \JsonSerializable {
                 $value = $value['__hz_value'];
 
         }elseif($value instanceof \stdClass){
+
+            if(property_exists($value, '__hz_org_value'))
+                $orgValue = $value->__hz_org_value;
 
             if(property_exists($value, '__hz_other'))
                 $other = $value->__hz_other;
@@ -150,6 +162,8 @@ class DataBinderValue implements \JsonSerializable {
         $this->label = $label;
 
         $this->other = $other;
+
+        $this->orgValue = $orgValue;
 
     }
 
