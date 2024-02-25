@@ -18,9 +18,9 @@ class RateLimiter
     private int $windowLength;
     private int $requestLimit;
     private array $headers = [
-        'X-RateLimit-Window' => '{{windowLength}}',
-        'X-RateLimit-Limit' => '{{requestLimit}}',
-        'X-RateLimit-Remaining' => '{{currentAmmount}}'
+        'X-RateLimit-Window' => '{{window}}',
+        'X-RateLimit-Limit' => '{{limit}}',
+        'X-RateLimit-Remaining' => '{{remaining}}'
     ];
 
     public function __construct(array $options, Cache $cache = null)
@@ -40,6 +40,23 @@ class RateLimiter
     private function getKey(string $identifier): string
     {
         return $this->prefix . $identifier;
+    }
+
+    /**
+     * Retrieves information about a specific identifier.
+     *
+     * @param string $identifier The identifier to retrieve information for.
+     * @return array An array containing the information about the identifier.
+     */
+    public function getInfo(string $identifier): array
+    {
+        $log = $this->get($identifier);
+        return [
+            'attempts' => count($log),
+            'limit' => $this->requestLimit,
+            'window' => $this->windowLength,
+            'remaining' => $this->requestLimit - count($log)
+        ];
     }
 
     /**
@@ -80,7 +97,7 @@ class RateLimiter
         if (count($log) < $this->requestLimit) {
             // Log the current request timestamp
             $log[] = $now;
-            $this->cache->set($key, $log);
+            $this->cache->set($key, $log, $this->windowLength * 2);
             return true;
         }
         return false; // Request limit exceeded
@@ -90,12 +107,12 @@ class RateLimiter
      * Deletes a rate limiter entry identified by the given identifier.
      *
      * @param string $identifier The identifier of the rate limiter entry to delete.
-     * @return void
+     * @return boolean
      */
-    public function delete(string $identifier): void
+    public function delete(string $identifier): bool
     {
         $key = $this->getKey($identifier);
-        $this->cache->delete($key);
+        return $this->cache->remove($key);
     }
 
     /**
@@ -106,18 +123,11 @@ class RateLimiter
      */
     public function getHeaders(string $identifier): array
     {
-        $key = $this->getKey($identifier);
+        $info = $this->getInfo($identifier);
         $headers = [];
         foreach ($this->headers as $key => $value) {
-            $headers[$key] = preg_replace_callback('/{{(.*?)}}/', function ($matches) use ($identifier) {
-                switch ($matches[1]) {
-                    case 'currentAmmount':
-                        return $this->requestLimit - count($this->get($identifier));
-                    case 'windowLength':
-                        return $this->windowLength;
-                    case 'requestLimit':
-                        return $this->requestLimit;
-                }
+            $headers[$key] = preg_replace_callback('/{{(.*?)}}/', function ($matches) use ($identifier, $info) {
+                return ake($info, $matches[1], '');
             }, $value);
         }
 
