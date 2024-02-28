@@ -242,7 +242,11 @@ dataBinderValue.prototype.data = function (name, value) {
 };
 
 dataBinderValue.prototype.default = function () {
-    this._default = this._value;
+    this._default = {
+        value: this._value,
+        label: this._label,
+        other: this._other
+    };
 }
 
 dataBinderValue.prototype.commit = function () {
