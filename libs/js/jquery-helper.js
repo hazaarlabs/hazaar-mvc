@@ -205,7 +205,7 @@ dataBinderValue.prototype.set = function (value, label, other, no_update) {
 };
 
 dataBinderValue.prototype.save = function (no_label) {
-    if ((this.value && this.label || !this.value && this.other || this.orgValue != this.value) && no_label !== true) {
+    if ((this.value && this.label || !this.value && this.other || (this.orgValue && this.orgValue != this.value)) && no_label !== true) {
         let data = {
             "__hz_value": this.value
         };

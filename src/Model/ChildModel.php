@@ -44,7 +44,9 @@ class ChildModel extends Strict {
 
     public function set($key, $value, $exec_filters = true){
 
-        if($this->allow_undefined === true && (is_array($value) || $value instanceof \stdClass)){
+        if($this->allow_undefined === true && (
+            (is_array($value) && !array_key_exists('__hz_value', $value))
+            || ($value instanceof \stdClass && !property_exists($value, '__hz_value')))){
 
             if(is_array($value) && !is_assoc($value))
                 $value = new ChildArray('any', $value);
