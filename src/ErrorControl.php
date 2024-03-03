@@ -139,6 +139,8 @@ function dieDieDie($err){
 
         $err_string = $err->getMessage();
 
+        $code = $err->getCode();
+        
         if(boolify(ini_get('display_errors')))
             $err_string .= "\n\non line " . $err->getLine() . " of file " . $err->getFile() . "\n\n" . $err->getTraceAsString();
 
