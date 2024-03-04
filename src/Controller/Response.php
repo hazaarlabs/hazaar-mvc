@@ -25,6 +25,8 @@ class Response implements Response\_Interface {
 
     public static $encryption_key;
 
+    public static $defaultHeaders = [];
+
     function __construct($type = "text/html", $status = 501) {
 
         $this->content_type = $type;
@@ -237,7 +239,9 @@ class Response implements Response\_Interface {
 
         header('Content-Length: ' . $content_length);
 
-        foreach($this->headers as $name => $header) {
+        $headers = array_merge(self::$defaultHeaders, $this->headers);
+
+        foreach($headers as $name => $header) {
 
             if(is_array($header)) {
 

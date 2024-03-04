@@ -159,6 +159,11 @@ function dieDieDie($err){
     if(array_key_exists('SERVER_NAME', $_SERVER))
         $msg .= " Server at " . $_SERVER['SERVER_NAME'] . ' Port ' . $_SERVER['SERVER_PORT'] . "</i>";
 
+    if(is_array(\Hazaar\Controller\Response::$defaultHeaders)){
+        foreach(\Hazaar\Controller\Response::$defaultHeaders as $key => $value)
+            header("$key: $value");
+    }
+    
     die($msg);
 
 }
