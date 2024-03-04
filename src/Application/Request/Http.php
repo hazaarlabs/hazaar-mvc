@@ -360,23 +360,21 @@ class Http extends \Hazaar\Application\Request {
      *
      * @return mixed
      */
-    public function getRemoteAddr(){
+    static public function getRemoteAddr(){
 
-        $forwarded_ip = getenv('HTTP_X_FORWARDED_FOR')?:
-            getenv('HTTP_X_FORWARDED')?:
-            getenv('HTTP_FORWARDED_FOR')?:
+        $remote_ip = getenv('HTTP_X_FORWARDED_FOR') ?:
+            getenv('HTTP_X_FORWARDED') ?:
+            getenv('HTTP_FORWARDED_FOR') ?:
             getenv('HTTP_FORWARDED');
 
-        if(!$forwarded_ip){
-
-            return getenv('HTTP_CLIENT_IP')?:
+        if (!$remote_ip) {
+            return getenv('HTTP_CLIENT_IP') ?:
                 getenv('REMOTE_ADDR');
-
         }
 
-        $forwarded = explode(',', $forwarded_ip);
+        $remote_ip = explode(',', $remote_ip);
 
-        return trim($forwarded[0]);
+        return trim($remote_ip[0]);
 
     }
 
