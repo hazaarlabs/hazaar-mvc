@@ -19,11 +19,13 @@ class RateLimiter
         'X-RateLimit-Window' => '{{window}}',
         'X-RateLimit-Limit' => '{{limit}}',
         'X-RateLimit-Remaining' => '{{remaining}}',
+        'X-RateLimit-Identifier' => '{{identifier}}'
     ];
 
     public function __construct(array $options, Cache $cache = null)
     {
         $this->cache = $cache ?? new Cache();
+        $this->cache->on(); //Force cache on even if no_pragma is set
         $this->prefix = $options['prefix'] ?? $this->prefix;
         $this->windowLength = $options['window'] ?? 60;
         $this->requestLimit = $options['limit'] ?? 60;
@@ -45,6 +47,7 @@ class RateLimiter
             'limit' => $this->requestLimit,
             'window' => $this->windowLength,
             'remaining' => max(0, $this->requestLimit - count($info['log'])),
+            'identifier' => $identifier
         ];
     }
 
