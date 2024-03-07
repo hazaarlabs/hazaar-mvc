@@ -109,7 +109,6 @@ var dataBinderValue = function (name, value, label, parent) {
     this._enabled = true;
     this._parent = parent;
     this._default = null;
-    this._orgValue = null;
     this._data = {};
     Object.defineProperties(this, {
         "value": {
@@ -148,11 +147,6 @@ var dataBinderValue = function (name, value, label, parent) {
                 return this._other;
             }
         },
-        "orgValue": {
-            get: function (value) {
-                return this._orgValue;
-            }
-        },
         "parent": {
             get: function () {
                 return this._parent;
@@ -184,14 +178,12 @@ dataBinderValue.prototype.set = function (value, label, other, no_update) {
         this._value = value.__hz_value;
         this._label = value.__hz_label;
         this._other = value.__hz_other;
-        this._orgValue = value.__hz_org_value;
     } else if (value === this._value && label === this._label && (typeof other === 'undefined' || other === this._other)) {
         return;
     } else if (value instanceof dataBinderValue) {
         this._value = value.value;
         this._label = value.label;
         this._other = value.other;
-        this._orgValue = value.orgValue;
     } else {
         this._value = value;
         this._label = label;
@@ -205,15 +197,8 @@ dataBinderValue.prototype.set = function (value, label, other, no_update) {
 };
 
 dataBinderValue.prototype.save = function (no_label) {
-    if ((this.value && this.label || !this.value && this.other || (this.orgValue && this.orgValue != this.value)) && no_label !== true) {
-        let data = {
-            "__hz_value": this.value
-        };
-        if (this.label) data.__hz_label = this.label;
-        if (this.other) data.__hz_other = this.other;
-        if (this.orgValue) data.__hz_org_value = this.orgValue;
-        return data;
-    }
+    if ((this.value && this.label || !this.value && this.other) && no_label !== true)
+        return { "__hz_value": this.value, "__hz_label": this.label, "__hz_other": this.other };
     return !this.value && this.other ? this.other : this.value;
 };
 
@@ -254,9 +239,6 @@ dataBinderValue.prototype.commit = function () {
     return this._orgValue = this._value;
 };
 
-dataBinderValue.prototype.changed = function () {
-    return this._orgValue && this._orgValue !== this.value;
-};
 
 dataBinder.prototype._init = function (data, name, parent, namespace) {
     this._name = name;
@@ -306,7 +288,6 @@ dataBinder.prototype.__convert_type = function (key, value, parent) {
         else {
             let dba = new dataBinderValue(key, value.__hz_value, value.__hz_label, parent);
             if ('__hz_other' in value) dba.other = value.__hz_other;
-            if ('__hz_org_value' in value) dba._orgValue = value.__hz_org_value;
             value = dba;
         }
     } else if (value !== null && !(value instanceof dataBinder
@@ -603,15 +584,6 @@ dataBinder.prototype.reset = function () {
         else this[x] = this._default[x];
     }
     return true;
-};
-
-dataBinder.prototype.changed = function () {
-    for (let x in this._attributes) {
-        if (this._attributes[x] instanceof dataBinder || this._attributes[x] instanceof dataBinderArray) {
-            if (this._attributes[x].changed()) return true;
-        } else if (this._attributes[x] instanceof dataBinderValue && this._attributes[x].changed()) return true;
-    }
-    return false;
 };
 
 dataBinderArray.prototype._init = function (data, name, parent, namespace) {
