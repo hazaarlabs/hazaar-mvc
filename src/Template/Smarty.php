@@ -236,7 +236,7 @@ class Smarty {
 
             private function write(\$var){
 
-                echo (\$var ? @\$var : \$this->params['__DEFAULT_VAR__']);
+                echo (\$var !== null ? @(string)\$var : \$this->params['__DEFAULT_VAR__']);
 
             }
 
