@@ -56,12 +56,12 @@ class File extends \Hazaar\Logger\Backend {
 
     }
 
-    public function write($tag, $message, $level = LOG_NOTICE) {
+    public function write($tag, $message, $level = LOG_NOTICE, $request = null) {
 
         if(!$this->hLog)
             return false;
 
-        $remote = ake($_SERVER, 'REMOTE_ADDR', '--');
+        $remote = $request instanceof \Hazaar\Application\Request\Http ? $request->getRemoteAddr() : ake($_SERVER, 'REMOTE_ADDR', '--');
 
         $line = [];
 

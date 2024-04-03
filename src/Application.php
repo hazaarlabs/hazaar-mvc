@@ -271,7 +271,8 @@ class Application {
 
             \Hazaar\Logger\Frontend::i('CORE', '"' . ake($_SERVER, 'REQUEST_METHOD') . ' /' .  $this->request->getBasePath() . '" ' 
                 . http_response_code()
-                . ' "' . ake($_SERVER, 'HTTP_USER_AGENT') . '"'
+                . ' "' . ake($_SERVER, 'HTTP_USER_AGENT') . '"',
+                $this->request
             ); 
 
         }

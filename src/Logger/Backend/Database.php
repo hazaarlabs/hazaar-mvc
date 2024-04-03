@@ -38,17 +38,20 @@ class Database extends \Hazaar\Logger\Backend {
 
     }
 
-    public function write($tag, $message, $level = LOG_NOTICE) {
+    public function write($tag, $message, $level = LOG_NOTICE, $request = null) {
 
         if($this->failed)
             return null;
 
         try {
 
+            $remote = $request instanceof \Hazaar\Application\Request\Http ? $request->getRemoteAddr() : ake($_SERVER, 'REMOTE_ADDR', '--');
+
             $row = [
                 'tag' => $tag,
                 'message' => $message,
-                'level'   => $level
+                'level'   => $level,
+                'ip' => $remote
             ];
 
             $remote = $_SERVER['REMOTE_ADDR'];
