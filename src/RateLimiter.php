@@ -93,7 +93,7 @@ class RateLimiter
         $now = time();
         $key = $this->getKey($identifier);
         $info = $this->get($identifier, $now);
-        $info['last'] = $info['result'];
+        if(isset($info['result'])) $info['last'] = $info['result'];
         if (count($info['log']) < $this->requestLimit) {
             // Log the current request timestamp
             $info['log'][] = $now;
