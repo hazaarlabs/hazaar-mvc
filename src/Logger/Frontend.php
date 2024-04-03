@@ -58,8 +58,11 @@ class Frontend {
           
         if($config->enable !== true)
             return;
-            
-        Frontend::$logger = new Frontend($config->get('level'), $config->get('backend'), $config->get('options'));
+        
+        if(($options = $config->get('options')) instanceof \Hazaar\Map)
+            $options = $options->toArray();
+
+        Frontend::$logger = new Frontend($config->get('level'), $config->get('backend'), $options);
 
         eval('class log extends \Hazaar\Logger\Frontend{};');
 
@@ -72,18 +75,19 @@ class Frontend {
 
     }
 
-    static public function write($tag, $message, $level = E_NOTICE) {
+    static public function write($tag, $message, $level = E_NOTICE, $request = null) {
 
         if(Frontend::$logger instanceof Frontend) {
 
-            Frontend::$logger->writeLog($tag, $message, $level);
+            Frontend::$logger->writeLog($tag, $message, $level, $request);
 
         } elseif(is_array(Frontend::$message_buffer)) {
 
             Frontend::$message_buffer[] = [
                 $tag,
                 $message,
-                $level
+                $level,
+                $request
             ];
 
         }
@@ -93,45 +97,45 @@ class Frontend {
     /**
      * Log an ERROR message
      */
-    static public function e($tag, $message){
+    static public function e($tag, $message, $request = null){
 
-        Frontend::write($tag, $message, LOG_ERR);
+        Frontend::write($tag, $message, LOG_ERR, $request);
 
     }
 
     /**
      * Log a WARNING message
      */
-    static public function w($tag, $message){
+    static public function w($tag, $message, $request = null){
 
-        Frontend::write($tag, $message, LOG_WARNING);
+        Frontend::write($tag, $message, LOG_WARNING, $request);
 
     }
 
     /**
      * Log a NOTICE message
      */
-    static public function n($tag, $message){
+    static public function n($tag, $message, $request = null){
 
-        Frontend::write($tag, $message, LOG_NOTICE);
+        Frontend::write($tag, $message, LOG_NOTICE, $request);
 
     }
 
     /**
      * Log a INFO message
      */
-    static public function i($tag, $message){
+    static public function i($tag, $message, $request = null){
 
-        Frontend::write($tag, $message, LOG_INFO);
+        Frontend::write($tag, $message, LOG_INFO, $request);
 
     }
 
     /**
      * Log a DEBUG message
      */
-    static public function d($tag, $message){
+    static public function d($tag, $message, $request = null){
 
-        Frontend::write($tag, $message, LOG_DEBUG);
+        Frontend::write($tag, $message, LOG_DEBUG, $request);
 
     }
 
@@ -148,7 +152,7 @@ class Frontend {
 
     }
 
-    public function writeLog($tag, $message, $level = E_NOTICE) {
+    public function writeLog($tag, $message, $level = E_NOTICE, $request = NULL) {
 
         if(! ($level <= $this->level))
             return NULL;
@@ -160,7 +164,7 @@ class Frontend {
 
         }
 
-        $this->backend->write($tag, $message, $level);
+        $this->backend->write($tag, $message, $level, $request);
 
     }
 

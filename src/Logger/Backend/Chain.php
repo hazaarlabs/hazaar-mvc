@@ -16,9 +16,9 @@ class Chain extends \Hazaar\Logger\Backend {
 
             foreach($chain['backend'] as $backend_name) {
 
-                $backend_class = 'Hazaar_Logger_Backend_' . ucfirst($backend_name);
+                $backend_class = '\Hazaar\\Logger\\Backend\\' . ucfirst($backend_name);
 
-                $backend = new $backend_class( []);
+                $backend = new $backend_class([]);
 
                 $this->backends[] = $backend;
 
@@ -41,17 +41,17 @@ class Chain extends \Hazaar\Logger\Backend {
 
     }
 
-    public function write($message, $level = LOG_NOTICE) {
+    public function write($tag, $message, $level = LOG_NOTICE, $request = null) {
 
         foreach($this->backends as $backend) {
 
             if(!$backend->can('write_objects') && (is_array($message) || is_object($message))) {
 
-                $backend->write(preg_replace('/\s+/', ' ', print_r($message, true)), $level);
+                $backend->write($tag, preg_replace('/\s+/', ' ', print_r($message, true)), $level, $request);
 
             } else {
 
-                $backend->write($message, $level);
+                $backend->write($tag, $message, $level, $request);
 
             }
 
