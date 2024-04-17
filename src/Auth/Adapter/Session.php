@@ -117,9 +117,9 @@ abstract class Session extends \Hazaar\Auth\Adapter implements \ArrayAccess
         return $this->session->has($key);
     }
 
-    public function authenticate($identity = null, $credential = null, $autologin = false)
+    public function authenticate($identity = null, $credential = null, $autologin = false, &$data = null)
     {
-        $auth = parent::authenticate($identity, $credential, $autologin);
+        $auth = parent::authenticate($identity, $credential, $autologin, $data);
         if(is_array($auth)) {
             if(array_key_exists('data', $auth)) {
                 $this->session->setValues($auth['data']);
@@ -138,13 +138,13 @@ abstract class Session extends \Hazaar\Auth\Adapter implements \ArrayAccess
                 $hash = array_key_exists('token', $auth)
                     ? $auth['token']
                     : hash($this->options->autologin['hash'], $this->getIdentifier($auth['credential'] . $identity));
-                $data = base64_encode(http_build_query([
+                $cookie_data = base64_encode(http_build_query([
                     'identity' => $identity,
                     'hash' => $hash
                 ]));
                 $cookie = $this->getAutologinCookieName();
                 $timeout = (86400 * $this->options->autologin['period']);
-                setcookie($cookie, $data, time() + $timeout, \Hazaar\Application::path(), null, true, true);
+                setcookie($cookie, $cookie_data, time() + $timeout, \Hazaar\Application::path(), null, true, true);
             }
             return true;
         }
