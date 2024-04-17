@@ -146,7 +146,6 @@ abstract class Session extends \Hazaar\Auth\Adapter implements \ArrayAccess
                 $timeout = (86400 * $this->options->autologin['period']);
                 setcookie($cookie, $data, time() + $timeout, \Hazaar\Application::path(), null, true, true);
             }
-            $this->authenticationSuccess($identity, $this->extra);
             return true;
         }
         return false;
@@ -225,6 +224,17 @@ abstract class Session extends \Hazaar\Auth\Adapter implements \ArrayAccess
      * be overridden.
      */
     protected function authenticationSuccess($identity, $data)
+    {
+
+    }
+
+    /**
+     * Overload function called when a user fails to authenticate.
+     * 
+     * This can occur when calling authenticate() or authenticated() where a session has been saved.  This default method does nothing but can
+     * be overridden.
+     */
+    protected function authenticationFailure($identity, $data)
     {
 
     }
