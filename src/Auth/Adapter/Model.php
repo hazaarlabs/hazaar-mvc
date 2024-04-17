@@ -55,12 +55,12 @@ abstract class Model extends Session
         return $this->delete([$this->field_identity => $identity]);
     }
 
-    public function authenticate($identity = null, $credential = null, $autologin = false){
-        $result = parent::authenticate($identity, $credential, $autologin);
+    public function authenticate($identity = null, $credential = null, $autologin = false, &$data = null){
+        $result = parent::authenticate($identity, $credential, $autologin, $data);
         if($result === true)
-            $this->authenticationSuccess($identity, $this->extra);
+            $this->authenticationSuccess($identity, $data);
         else
-            $this->authenticationFailure($identity, $this->extra);
+            $this->authenticationFailure($identity, $data);
         return $result;
     }
 

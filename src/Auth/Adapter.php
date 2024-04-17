@@ -178,7 +178,7 @@ abstract class Adapter implements Adapter\_Interface
         $this->extra = $fields;
     }
 
-    public function authenticate($identity = null, $credential = null, $autologin = false)
+    public function authenticate($identity = null, $credential = null, $autologin = false, &$data = null)
     {
         /*
          * Save the authentication data
@@ -198,6 +198,9 @@ abstract class Adapter implements Adapter\_Interface
         }
         if($auth['identity'] === $this->getIdentity()
             && $auth['credential'] === $this->getCredential()) {
+            if(array_key_exists('data', $auth)) {
+                $data = $auth['data'];
+            }
             return $auth;
         }
         return false;
