@@ -192,9 +192,9 @@ class OAuth2 extends Session implements _Interface {
      *                              a new access token when it expires.
      * @return boolean              True if the authentication was successful.  False otherwise.
      */
-    public function authenticate($identity = NULL, $credential = NULL, $autologin = FALSE, $skip_auth_check = false){
+    public function authenticate($identity = NULL, $credential = NULL, $autologin = FALSE, &$data = null){
 
-        if($skip_auth_check !== true && $this->authenticated()){
+        if($this->authenticated()){
 
             if($uri = $this->session->redirect_uri){
 
