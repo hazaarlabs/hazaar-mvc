@@ -46,7 +46,7 @@ abstract class Model extends Session
     {
         return $this->insert([
             $this->field_identity => $identity,
-            $this->field_credential => $credential
+            $this->field_credential => $credential,
         ]);
     }
 
@@ -55,13 +55,54 @@ abstract class Model extends Session
         return $this->delete([$this->field_identity => $identity]);
     }
 
-    public function authenticate($identity = null, $credential = null, $autologin = false, &$data = null){
+    public function authenticate($identity = null, $credential = null, $autologin = false, &$data = null)
+    {
         $result = parent::authenticate($identity, $credential, $autologin, $data);
-        if($result === true)
+        if (true === $result) {
             $this->authenticationSuccess($identity, $data);
-        else
+        } else {
             $this->authenticationFailure($identity, $data);
+        }
+
         return $result;
     }
 
+    public function deauth()
+    {
+        $identity = $this->identity;
+        $this->authenticationTerminated($identity);
+
+        return parent::deauth();
+    }
+
+    /**
+     * Overload function called when a user is successfully authenticated.
+     *
+     * This can occur when calling authenticate() or authenticated() where a session has been saved.  This default method does nothing but can
+     * be overridden.
+     *
+     * @param string $identity
+     * @param mixed  $data
+     */
+    protected function authenticationSuccess($identity, $data) {}
+
+    /**
+     * Overload function called when a user fails to authenticate.
+     *
+     * This can occur when calling authenticate() or authenticated() where a session has been saved.  This default method does nothing but can
+     * be overridden.
+     *
+     * @param string $identity
+     * @param mixed  $data
+     */
+    protected function authenticationFailure($identity, $data) {}
+
+    /**
+     * Overload function called when a user is deauthenticated.
+     *
+     * This can occur when calling deauth().  This default method does nothing but can be overridden.
+     *
+     * @param string $identity
+     */
+    protected function authenticationTerminated($identity) {}
 }

@@ -195,7 +195,6 @@ abstract class Session extends \Hazaar\Auth\Adapter implements \ArrayAccess
                         }
                         $this->session->hazaar_auth_identity = $identity;
                         $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($identity));
-                        $this->authenticationSuccess($identity, $this->extra);
                         return true;
                     } else {
                         $this->deauth();
@@ -215,28 +214,6 @@ abstract class Session extends \Hazaar\Auth\Adapter implements \ArrayAccess
             setcookie($cookie, '', time() - 3600, \Hazaar\Application::path(), null, true, true);
         }
         return true;
-    }
-
-    /**
-     * Overload function called when a user is successfully authenticated.
-     *
-     * This can occur when calling authenticate() or authenticated() where a session has been saved.  This default method does nothing but can
-     * be overridden.
-     */
-    protected function authenticationSuccess($identity, $data)
-    {
-
-    }
-
-    /**
-     * Overload function called when a user fails to authenticate.
-     * 
-     * This can occur when calling authenticate() or authenticated() where a session has been saved.  This default method does nothing but can
-     * be overridden.
-     */
-    protected function authenticationFailure($identity, $data)
-    {
-
     }
 
     /**
