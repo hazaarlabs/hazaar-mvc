@@ -32,7 +32,7 @@ class Adapter {
 
     static private $default_transport = 'local';
 
-    private        $transport;
+    public        $transport;
 
     private        $headers             = [];
 
@@ -63,15 +63,26 @@ class Adapter {
      *
      * If a transport is not provided then the [[Hazaar\Mail\Transport\Local]] transport will be used.
      *
-     * @param string $transport The name of the transport backend to use.
+     * @param string|array<mixed> $transport The name of the transport backend to use.
      */
     function __construct($transport = null) {
+
+        if(is_array($transport)){
+            $config = $transport;
+            $transport = null;
+        }else{
+            $config = \Hazaar\Application::getInstance()->config->get('mail');
+        }
 
         $this->config = new \Hazaar\Map([
             'enable' => true,
             'testmode' => false,
-            'transport' => $transport !== null ? $transport : self::$default_transport
-        ], \Hazaar\Application::getInstance()->config->get('mail'));
+            'transport' => self::$default_transport
+        ], $config);
+
+        if($transport !== null){
+            $this->config->transport = $transport;
+        }
 
         $this->transport = $this->getTransportObject($this->config->transport, $this->config);
 
@@ -89,8 +100,15 @@ class Adapter {
 
         $transportClass = '\\Hazaar\\Mail\\Transport\\' . ucfirst($transport);
 
-        if(!class_exists($transportClass))
-            throw new \Exception("The configured mail transport class '$transport' does not exist!");
+        if(!class_exists($transportClass)){
+
+            if(class_exists($transport) && is_subclass_of($transport, Transport::class)){
+                $transportClass = $transport;
+            }else{
+                throw new \Exception("The configured mail transport class '$transport' does not exist!");
+            }
+
+        }
 
         $transportObject = new $transportClass($config);
 
