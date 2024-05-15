@@ -7,7 +7,8 @@ class Html extends \Hazaar\Mail\Mime\Part {
     private $boundary;
 
     private $html;
-
+    private $params = null;
+    
     function __construct($html) {
 
         parent::__construct();
@@ -20,9 +21,13 @@ class Html extends \Hazaar\Mail\Mime\Part {
 
     }
 
-    public function encode($width_limit = 998, $params = null) {
+    public function setParams($params){
+        $this->params = $params;
+    }
 
-        $html = $this->html->render($params);
+    public function encode($width_limit = 998) {
+
+        $html = $this->html->render($this->params);
 
         $text = new \Hazaar\Mail\Mime\Part(str_replace('<br>', "\r\n", strip_tags($html, '<br>')), 'text/plain');
 

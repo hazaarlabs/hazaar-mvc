@@ -387,7 +387,7 @@ class Adapter {
          */
         if($use_mime == TRUE) {
 
-            $message = new Mime\Message($this->body + $this->attachments);
+            $message = new Mime\Message($this->body);
 
         } else {
 
@@ -395,9 +395,6 @@ class Adapter {
 
             foreach($this->body as $part)
                 $message .= $part->render($params);
-
-            foreach($this->attachments as $attachment)
-                $message .= $attachment->render();
 
         }
 
@@ -455,13 +452,9 @@ class Adapter {
 
             $message->addHeaders($headers);
 
+            $message->setParams($params);
+
             $headers = $message->getHeaders();
-
-            $body = $message->encode($params);
-
-        } else {
-
-            $body = $message;
 
         }
 
@@ -504,7 +497,7 @@ class Adapter {
         if($subjectPrefix = $this->config->get('subjectPrefix'))
             $this->subject->prepend($subjectPrefix);
 
-        $result = $this->transport->send($to, $this->subject->render($params), $body, $headers, $this->dsn);
+        $result = $this->transport->send($to, $this->subject->render($params), $message, $headers, $this->attachments);
 
         $this->last_to = $this->to;
 
@@ -515,65 +508,4 @@ class Adapter {
         
     }
 
-    /**
-     * Enables ALL Delivery Status Notification types
-     */
-    public function enableDSN(){
-
-        $this->dsn = ['success', 'failure', 'delay'];
-
-    }
-
-    /**
-     * Disable ALL Delivery Status Notifications
-     */
-    public function disableDSN(){
-        
-        $this->dsn = ['never'];
-
-    }
-
-    private function resetDSN(){
-
-        if (($key = array_search('never', $this->dsn)) !== false)
-            unset($$this->dsn[$key]);
-
-    }
-
-    /**
-     * Enables SUCCESS Delivery Status Notification types
-     */
-    public function enableDSNSuccess(){
-
-        $this->resetDSN();
-
-        if(!in_array('success', $this->dsn))
-            $this->dsn[] = 'success';
-
-    }
-
-    /**
-     * Enables SUCCESS Delivery Status Notification types
-     */
-    public function enableDSNFailure(){
-
-        $this->resetDSN();
-
-        if(!in_array('failure', $this->dsn))
-            $this->dsn[] = 'failure';
-
-    }
-
-    /**
-     * Enables SUCCESS Delivery Status Notification types
-     */
-    public function enableDSNDelay(){
-
-        $this->resetDSN();
-
-        if(!in_array('delay', $this->dsn))
-            $this->dsn[] = 'delay';
-
-    }
-    
 }
