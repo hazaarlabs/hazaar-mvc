@@ -104,7 +104,7 @@ class Part {
 
         }
 
-        $message .= $this->crlf . (($width_limit > 0) ? wordwrap($this->content, $width_limit, $this->detect_break($this->content), true) : $this->content) . $this->crlf;
+        $message .= $this->crlf . (($width_limit > 0) ? wordwrap($this->getContent(), $width_limit, $this->detect_break($this->content), true) : $this->content) . $this->crlf;
 
         return $message;
 

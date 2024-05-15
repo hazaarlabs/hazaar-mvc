@@ -17,6 +17,10 @@ class Local extends Transport
 
         $mailHeaders = [];
 
+        if ($message instanceof Message && is_array($attachments) && count($attachments) > 0) {
+            $message = $message->addParts($attachments);
+        }
+        
         foreach ($headers as $key => $value) {
             if (!$value) {
                 continue;

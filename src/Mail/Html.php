@@ -2,45 +2,59 @@
 
 namespace Hazaar\Mail;
 
-class Html extends \Hazaar\Mail\Mime\Part {
+use Hazaar\Mail\Mime\Part;
 
+class Html extends Part
+{
     private $boundary;
 
     private $html;
-    private $params = null;
-    
-    function __construct($html) {
+    private $params;
 
+    public function __construct($html)
+    {
         parent::__construct();
 
-        $this->html = $html instanceof \Hazaar\Mail\Template ? $html : new \Hazaar\Mail\Template($html);
+        $this->html = $html instanceof Template ? $html : new Template($html);
 
-        $this->boundary = '----alt_border_' . uniqid();
+        $this->boundary = '----alt_border_'.uniqid();
 
-        parent::setContentType('multipart/alternative; boundary="' . $this->boundary . '"');
-
+        parent::setContentType('multipart/alternative; boundary="'.$this->boundary.'"');
     }
 
-    public function setParams($params){
+    public function setParams($params)
+    {
         $this->params = $params;
     }
 
-    public function encode($width_limit = 998) {
+    public function getContentType()
+    {
+        return 'text/html; charset=UTF-8';
+    }
 
+    public function getContent()
+    {
+        if (null === $this->content) {
+            return $this->html->render($this->params);
+        }
+
+        return $this->content;
+    }
+
+    public function encode($width_limit = 998)
+    {
         $html = $this->html->render($this->params);
 
-        $text = new \Hazaar\Mail\Mime\Part(str_replace('<br>', "\r\n", strip_tags($html, '<br>')), 'text/plain');
+        $text = new Part(str_replace('<br>', "\r\n", strip_tags($html, '<br>')), 'text/plain');
 
-        $html = new \Hazaar\Mail\Mime\Part($html, 'text/html');
+        $html = new Part($html, self::getContentType());
 
-        $message = '--' . $this->boundary . $this->crlf . $text->encode($width_limit) . $this->crlf;
+        $message = '--'.$this->boundary.$this->crlf.$text->encode($width_limit).$this->crlf;
 
-        $message .= '--' . $this->boundary . $this->crlf . $html->encode($width_limit) . $this->crlf . "--{$this->boundary}--" . $this->crlf . $this->crlf;
+        $message .= '--'.$this->boundary.$this->crlf.$html->encode($width_limit).$this->crlf."--{$this->boundary}--".$this->crlf.$this->crlf;
 
         $this->setContent($message);
 
         return parent::encode(0);
-
     }
-
 }
