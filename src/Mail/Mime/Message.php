@@ -14,6 +14,8 @@ class Message {
 
     protected $crlf = "\r\n";
 
+    private $params = null;
+
     function __construct($parts = [], $headers = []) {
 
         $this->parts = $parts;
@@ -31,10 +33,27 @@ class Message {
 
     }
 
+    public function setParams($params){
+
+        foreach($this->parts as $part){
+            if($part instanceof \Hazaar\Mail\Html)
+            $part->setParams($params);
+        }
+
+    }
+
     public function addPart(Part $part) {
 
         $this->parts[] = $part;
 
+    }
+
+    public function addParts(array $parts){
+            
+            foreach($parts as $part)
+                $this->addPart($part);
+    
+            return $this;
     }
 
     public function addHeaders($headers) {
@@ -83,7 +102,7 @@ class Message {
 
     }
 
-    public function encode($params = null) {
+    public function encode() {
 
         $message = $this->crlf . "This is a multipart message in MIME format" . $this->crlf . $this->crlf;
 
@@ -91,7 +110,7 @@ class Message {
 
             $message .= '--' . $this->boundary . $this->crlf;
 
-            $message .= $part->encode(998, $params);
+            $message .= $part->encode(998);
 
         }
 
@@ -163,4 +182,9 @@ class Message {
 
     }
 
+    public function __toString() {
+
+        return $this->encode();
+
+    }
 }
