@@ -15,20 +15,22 @@ class RateLimiter
     private string $prefix = 'rate_limiter_';
     private int $windowLength;
     private int $requestLimit;
+    private int $requestMinimumPeriod = 0;
     private array $headers = [
         'X-RateLimit-Window' => '{{window}}',
         'X-RateLimit-Limit' => '{{limit}}',
         'X-RateLimit-Remaining' => '{{remaining}}',
-        'X-RateLimit-Identifier' => '{{identifier}}'
+        'X-RateLimit-Identifier' => '{{identifier}}',
     ];
 
-    public function __construct(array $options, Cache $cache = null)
+    public function __construct(array $options, ?Cache $cache = null)
     {
         $this->cache = $cache ?? new Cache();
-        $this->cache->on(); //Force cache on even if no_pragma is set
+        $this->cache->on(); // Force cache on even if no_pragma is set
         $this->prefix = $options['prefix'] ?? $this->prefix;
         $this->windowLength = $options['window'] ?? 60;
         $this->requestLimit = $options['limit'] ?? 60;
+        $this->requestMinimumPeriod = $options['minimum'] ?? 0;
     }
 
     /**
@@ -47,7 +49,7 @@ class RateLimiter
             'limit' => $this->requestLimit,
             'window' => $this->windowLength,
             'remaining' => max(0, $this->requestLimit - count($info['log'])),
-            'identifier' => $identifier
+            'identifier' => $identifier,
         ];
     }
 
@@ -58,7 +60,7 @@ class RateLimiter
      *
      * @return array the rate limit information for the specified identifier
      */
-    public function get(string $identifier, int $time = null): array
+    public function get(string $identifier, ?int $time = null): array
     {
         $key = $this->getKey($identifier);
         $info = $this->cache->get($key);
@@ -93,13 +95,21 @@ class RateLimiter
         $now = time();
         $key = $this->getKey($identifier);
         $info = $this->get($identifier, $now);
-        if(isset($info['result'])) $info['last'] = $info['result'];
-        if (count($info['log']) < $this->requestLimit) {
-            // Log the current request timestamp
-            $info['log'][] = $now;
-            $info['result'] = true;
-        } else {
+        if (isset($info['result'])) {
+            $info['last_result'] = $info['result'];
+        }
+        if ($this->requestMinimumPeriod > 0
+            && $now < $info['last'] + $this->requestMinimumPeriod) {
             $info['result'] = false;
+        } else {
+            $info['last'] = $now;
+            if (count($info['log']) < $this->requestLimit) {
+                // Log the current request timestamp
+                $info['log'][] = $now;
+                $info['result'] = true;
+            } else {
+                $info['result'] = false;
+            }
         }
         $this->cache->set($key, $info, $this->windowLength * 2);
 
@@ -136,6 +146,13 @@ class RateLimiter
         }
 
         return $headers;
+    }
+
+    public function getLastRequestTime(string $identifier): int
+    {
+        $info = $this->get($identifier);
+
+        return ake($info, 'last', 0);
     }
 
     /**
