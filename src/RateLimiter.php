@@ -60,7 +60,7 @@ class RateLimiter
      *
      * @return array the rate limit information for the specified identifier
      */
-    public function get(string $identifier, ?int $time = null): array
+    public function get(string $identifier, ?int $time = null, ?string &$key = null): array
     {
         $key = $this->getKey($identifier);
         $info = $this->cache->get($key);
@@ -93,8 +93,7 @@ class RateLimiter
     public function check(string $identifier): bool
     {
         $now = time();
-        $key = $this->getKey($identifier);
-        $info = $this->get($identifier, $now);
+        $info = $this->get($identifier, $now, $key);
         if (isset($info['result'])) {
             $info['last_result'] = $info['result'];
         }
