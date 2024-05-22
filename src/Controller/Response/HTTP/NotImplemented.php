@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Controller\Response\HTTP;
 
-class NotImplemented extends \Hazaar\Controller\Response {
+use Hazaar\Controller\Response;
 
-    function __construct($content_type = "text/html") {
-
+class NotImplemented extends Response
+{
+    public function __construct(string $content_type = 'text/html')
+    {
         parent::__construct($content_type, 501);
-
     }
-
 }

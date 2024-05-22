@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\File\Exception;
 
-class SaveFailed extends \Hazaar\Exception {
+use Hazaar\Exception;
 
-    function __construct($key) {
-
-        parent::__construct("Can not save uploaded file at '$key'.  Requested key does not exist!");
-
+class SaveFailed extends Exception
+{
+    public function __construct(string $key)
+    {
+        parent::__construct("Can not save uploaded file at '{$key}'.  Requested key does not exist!");
     }
-
 }

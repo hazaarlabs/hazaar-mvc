@@ -1,17 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Logger\Backend;
 
-class Syslog extends \Hazaar\Logger\Backend {
+use Hazaar\Logger\Backend;
 
-    public function write($tag, $msg, $level = LOG_NOTICE) {
-
-        syslog($level, $tag . ': ' . $msg);
-
+class Syslog extends Backend
+{
+    public function write(string $tag, string $msg, int $level = LOG_NOTICE): void
+    {
+        syslog($level, $tag.': '.$msg);
     }
 
-    public function trace() {
-
-    }
-
+    public function trace(): void {}
 }

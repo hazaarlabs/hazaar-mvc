@@ -1,14 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\File\Exception;
 
-class InternalFileNotFound extends \Hazaar\Exception {
+use Hazaar\Exception;
 
-    function __construct($file) {
-
-        parent::__construct("Internal file not found while requesting file '$file'", 404);
-
+class InternalFileNotFound extends Exception
+{
+    public function __construct(string $file)
+    {
+        parent::__construct("Internal file not found while requesting file '{$file}'", 404);
     }
-
 }
-

@@ -1,23 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\File\Backend\Exception;
 
-class SharePointError extends \Hazaar\Exception {
+use Hazaar\Exception;
+use Hazaar\HTTP\Response;
 
-    public $response;
-    
-    function __construct($message, $response = null, $code = 500){
+class SharePointError extends Exception
+{
+    public Response $response;
 
+    public function __construct($message, Response $response = null, $code = 500)
+    {
         $this->response = $response;
 
-        return parent::__construct($message, $code);
-
+        parent::__construct($message, $code);
     }
 
-    public function getResponse(){
-
+    public function getResponse(): Response
+    {
         return $this->response;
-
     }
-
 }

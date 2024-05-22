@@ -2,48 +2,32 @@
 
 namespace Hazaar\Mail;
 
-class Attachment extends \Hazaar\Mail\Mime\Part {
+use Hazaar\File;
+use Hazaar\Mail\Mime\Part;
 
-    private $file;
-
-    function __construct($file, $name = null, $base64_encode = true) {
-
+class Attachment extends Part
+{
+    public function __construct(File $file, ?string $name = null, bool $base64_encode = true)
+    {
         parent::__construct();
-
-        if(!$file instanceof \Hazaar\File){
-
-            $file = new \Hazaar\File($file);
-
-            if(!$file->exists())
+        if (!$file instanceof File) {
+            $file = new File($file);
+            if (!$file->exists()) {
                 throw new \Exception('Can not attach non-existent file!');
-
+            }
         }
-
-        $this->file = $file;
-
-        parent::setContentType($file->mime_content_type());
-
-        if(!$name)
+        parent::setContentType($file->mimeContentType());
+        if (!$name) {
             $name = $file->basename();
-
-        $this->setContentType('application/octet-stream; name="' . $name . '"');
-
-        $this->setDescription($name);
-
-        $this->setHeader('Content-Disposition', "attachment; filename=\"$name\";\n\tsize=" . $file->size() .';');
-
-        if($base64_encode){
-
-            $this->setHeader('Content-Transfer-Encoding', 'base64');
-
-            $this->content = base64_encode($file->get_contents());
-
-        }else{
-
-            $this->content = $file->get_contents;
-
         }
-
+        $this->setContentType('application/octet-stream; name="'.$name.'"');
+        $this->setDescription($name);
+        $this->setHeader('Content-Disposition', "attachment; filename=\"{$name}\";\n\tsize=".$file->size().';');
+        if ($base64_encode) {
+            $this->setHeader('Content-Transfer-Encoding', 'base64');
+            $this->content = base64_encode($file->getContents());
+        } else {
+            $this->content = $file->getContents();
+        }
     }
-
 }

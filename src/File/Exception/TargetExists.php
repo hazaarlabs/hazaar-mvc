@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\File\Exception;
 
-class TargetExists extends \Hazaar\Exception {
+use Hazaar\Exception;
 
-    function __construct($target) {
-
-        parent::__construct("Destination file already exists at '$target'");
-
+class TargetExists extends Exception
+{
+    public function __construct(string $target)
+    {
+        parent::__construct("Destination file already exists at '{$target}'");
     }
-
 }
