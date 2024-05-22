@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\File\Backend\Exception;
 
-class ClassNotFound extends \Hazaar\Exception {
+use Hazaar\Exception;
 
-    function __construct() {
-
+class ClassNotFound extends Exception
+{
+    public function __construct()
+    {
         parent::__construct('Message');
-
     }
-
 }

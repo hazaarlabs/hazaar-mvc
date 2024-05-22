@@ -1,13 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @file        Hazaar/Cache/Backend/Memcached.php
  *
  * @author      Jamie Carl <jamie@hazaar.io>
- *
  * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
+
 namespace Hazaar\Cache\Backend;
+
+use Hazaar\Cache\Backend;
+use Hazaar\Map;
 
 /**
  * @brief The Memcached cache backend.
@@ -18,90 +23,73 @@ namespace Hazaar\Cache\Backend;
  * * server - The memcached server to connect to, or an array of servers.  Default: localhost.
  * * port - The port to connect to the server on.  Default: 11211
  * * use_compression - Enables compression on the communication link. Default: false
- *
- * @since 2.0.0
- *
  */
-class Memcached extends \Hazaar\Cache\Backend {
+class Memcached extends Backend
+{
+    protected int $weight = 2;
+    private \Memcached $memcached;
 
-    private   $memcached;
-
-    private   $namespace;
-
-    protected $weight = 2;
-
-    static public function available(){
-
+    public static function available(): bool
+    {
         $modules = get_loaded_extensions();
 
         return in_array('memcached', $modules);
-
     }
 
-    public function init($namespace) {
-
-        $this->namespace = $namespace;
-
+    public function init(string $namespace): void
+    {
         $this->configure([
-            'server'          => 'localhost',
-            'port'            => 11211,
-            'use_compression' => FALSE
+            'server' => 'localhost',
+            'port' => 11211,
+            'use_compression' => false,
         ]);
-
         $this->addCapabilities('store_objects');
-
-        $this->memcached = new \Memcached($this->options->read('persistent_id', NULL));
-
-        $servers = $this->options->server;
-
-        if(!\Hazaar\Map::is_array($servers))
+        $this->memcached = new \Memcached($this->options->read('persistent_id', null));
+        $servers = $this->options['server'];
+        if (!$servers instanceof Map) {
             $servers = [$servers];
-
-        foreach($servers as $server)
-            $this->memcached->addServer($server, $this->options->port);
-
-        $this->memcached->setOption(\Memcached::OPT_COMPRESSION, $this->options->use_compression);
-
+        }
+        foreach ($servers as $server) {
+            $this->memcached->addServer($server, $this->options['port']);
+        }
+        $this->memcached->setOption(\Memcached::OPT_COMPRESSION, $this->options['use_compression']);
     }
 
-    private function key($key) {
-
-        return $this->namespace . '::' . $key;
-
-    }
-
-    public function has($key) {
-
+    public function has(string $key, bool $check_empty = false): bool
+    {
         $this->memcached->get($this->key($key));
-
         $result = $this->memcached->getResultCode();
 
-        return ! ($result == \Memcached::RES_NOTFOUND);
-
+        return !(\Memcached::RES_NOTFOUND == $result);
     }
 
-    public function get($key) {
-
+    public function get(string $key): mixed
+    {
         return $this->memcached->get($this->key($key));
-
     }
 
-    public function set($key, $value, $timeout = NULL) {
-
+    public function set(string $key, mixed $value, int $timeout = 0): bool
+    {
         return $this->memcached->set($this->key($key), $value, $timeout);
-
     }
 
-    public function remove($key) {
-
-        $this->memcached->delete($this->key($key));
-
+    public function remove(string $key): bool
+    {
+        return $this->memcached->delete($this->key($key));
     }
 
-    public function clear() {
-
-        $this->memcached->flush();
-
+    public function clear(): bool
+    {
+        return $this->memcached->flush();
     }
 
+    public function toArray(): array
+    {
+        return [];
+    }
+
+    private function key(string $key): string
+    {
+        return $this->namespace.'::'.$key;
+    }
 }

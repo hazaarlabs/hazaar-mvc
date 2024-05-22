@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<ruleset name="DABOM">
+    <description>PHP CodeSniffer configuration for MyProject.</description>
+
+    <file>src</file>
+    <file>tests</file>
+
+    <!-- Include the PSR2 standard -->
+    <rule ref="PSR2" />
+
+    <!-- But ignore the bootstrap.php file -->
+    <exclude-pattern>tests/bootstrap.php</exclude-pattern>
+    <exclude-pattern>tests/_output</exclude-pattern>
+    <exclude-pattern>vendor</exclude-pattern>
+</ruleset>

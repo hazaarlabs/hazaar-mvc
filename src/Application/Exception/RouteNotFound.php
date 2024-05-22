@@ -1,15 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Application\Exception;
 
-class RouteNotFound extends \Hazaar\Exception {
+use Hazaar\Exception;
 
-    protected $name = 'Route Not Found';
+class RouteNotFound extends Exception
+{
+    protected string $name = 'Route Not Found';
 
-    function __construct($path) {
-
-        parent::__construct("No route found to handle '$path'.", 404);
-
+    public function __construct(string $path)
+    {
+        parent::__construct("No route found to handle '{$path}'.", 404);
     }
-
 }

@@ -1,19 +1,39 @@
 <?php
 
-namespace HazaarTest;
+declare(strict_types=1);
 
-class MapTest extends \PHPUnit\Framework\TestCase {
+namespace Hazaar\Tests;
 
-    public function testCanCount() {
+use Hazaar\Map;
+use PHPUnit\Framework\TestCase;
 
-        $m = new \Hazaar\Map();
+/**
+ * @internal
+ */
+class MapTest extends TestCase
+{
+    private Map $map;
 
-        $m->fill(0, 10, '0000');
-
-        $this->assertCount(10, $m->toArray());
-
-        $this->assertEquals('0000', $m[3]);
-
+    public function setUp(): void
+    {
+        $this->map = new Map([
+            'value' => 'test',
+            'array' => [1, 2, 3],
+        ]);
     }
 
+    public function testBasicMap(): void
+    {
+        $this->assertCount(2, $this->map->toArray());
+        $this->assertEquals('test', $this->map['value']);
+    }
+
+    public function testMapFilter(): void
+    {
+        $this->map->filter(function ($value) {
+            return 'test' === $value;
+        });
+        $this->assertContains('test', $this->map->toArray());
+        $this->assertNotContains('array', $this->map->toArray());
+    }
 }

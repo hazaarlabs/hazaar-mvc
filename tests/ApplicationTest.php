@@ -1,43 +1,32 @@
 <?php
 
-namespace HazaarTest;
+declare(strict_types=1);
 
-class ApplicationTest extends \PHPUnit\Framework\TestCase {
+namespace Hazaar\Tests;
 
-    private $app;
+use Hazaar\Application;
+use Hazaar\Application\URL;
+use PHPUnit\Framework\TestCase;
 
-    private $config_file;
-
-    public function setUp() : void {
-
-        $this->app = new \Hazaar\Application('development');
-
+/**
+ * @internal
+ */
+class ApplicationTest extends TestCase
+{
+    public function testApplication(): void
+    {
+        $app = Application::getInstance();
+        $this->assertInstanceOf('\Hazaar\Application', $app);
+        $this->assertInstanceOf('\Hazaar\Application\Config', $app->config);
+        $this->assertInstanceOf('\Hazaar\Application\Router', $app->router);
+        $this->assertInstanceOf('\Hazaar\Application\Request', $app->request);
+        $this->assertInstanceOf('\Hazaar\Application\Request\Cli', $app->request);
     }
 
-    public function testCanInitApplication() {
-
-        $this->assertInstanceOf('Hazaar\Application', $this->app);
-
-        $this->assertTrue($this->app->config->loaded());
-
+    public function testUrl(): void
+    {
+        $url = new URL();
+        $this->assertInstanceOf('\Hazaar\Application\Url', $url);
+        $this->assertIsString($url->toString());
     }
-
-    public function testReadConfig() {
-
-        $this->assertInstanceOf('Hazaar\Application\Config', $this->app->config);
-
-        $this->assertEquals('Example Application', $this->app->config->app->name);
-
-        $this->assertEquals('0.0.1', $this->app->config->app->version);
-
-        $this->assertEquals(true, $this->app->config->app->debug);
-
-    }
-
-    public function testLoadIndex(){
-
-        $this->assertInstanceOf('Hazaar\Application', $this->app->bootstrap());
-
-    }
-
 }

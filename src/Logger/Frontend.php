@@ -1,180 +1,156 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Logger;
 
-class Frontend {
+use Hazaar\Map;
 
-    private        $level          = E_ERROR;
+class Frontend
+{
+    private int $level = E_ERROR;
+    private Backend $backend;
+    private static ?Frontend $logger = null;
 
-    private        $backend;
+    /**
+     * @var array<mixed>
+     */
+    private static array $message_buffer = [];
 
-    static private $logger;
-
-    static private $message_buffer = [];
-
-    function __construct($level, $backend = NULL, $backend_options = []) {
-
-        if(! $backend)
+    /**
+     * @param array<mixed>|Map $backend_options
+     */
+    public function __construct(int|string $level, ?string $backend = null, array|Map $backend_options = [])
+    {
+        if (!$backend) {
             $backend = 'file';
-
-        if(strtolower($backend) == 'mongodb')
+        }
+        if ('mongodb' == strtolower($backend)) {
             $backend = 'MongoDB';
-
-        if(strtolower($backend) == 'database')
+        }
+        if ('database' == strtolower($backend)) {
             $backend = 'Database';
-
-        $backend_class = 'Hazaar\\Logger\\Backend\\' . ucfirst($backend);
-
-        if(!class_exists($backend_class))
+        }
+        $backend_class = 'Hazaar\\Logger\\Backend\\'.ucfirst($backend);
+        if (!class_exists($backend_class)) {
             throw new Exception\NoBackend();
-
-        if(!($this->backend = new $backend_class($backend_options)))
-            throw new Exception\NoBackend();
-
-        if(is_numeric($level)) {
-
+        }
+        $this->backend = new $backend_class(Map::_($backend_options));
+        if (is_numeric($level)) {
             $this->level = $level;
-
-        } elseif(($this->level = $this->backend->getLogLevelId($level)) === false){
-
+        } elseif (($this->level = $this->backend->getLogLevelId($level)) === false) {
             $this->level = E_ERROR;
-
         }
-
         $buf = Frontend::$message_buffer;
-
-        if(is_array($buf) && count($buf) > 0) {
-
-            foreach($buf as $msg)
+        if (is_array($buf) && count($buf) > 0) {
+            foreach ($buf as $msg) {
                 $this->writeLog($msg[0], $msg[1]);
-
+            }
         }
-
         Frontend::$message_buffer = [];
-
     }
 
-    static public function initialise(\Hazaar\Map $config) {
-          
-        if($config->enable !== true)
+    public static function initialise(Map $config): void
+    {
+        if (true !== $config['enable']) {
             return;
-            
+        }
         Frontend::$logger = new Frontend($config->get('level'), $config->get('backend'), $config->get('options'));
-
         eval('class log extends \Hazaar\Logger\Frontend{};');
-
     }
 
-    static public function destroy() {
-
-        if(Frontend::$logger instanceof Frontend)
+    public static function destroy(): void
+    {
+        if (Frontend::$logger instanceof Frontend) {
             Frontend::$logger->close();
-
+        }
     }
 
-    static public function write($tag, $message, $level = E_NOTICE) {
-
-        if(Frontend::$logger instanceof Frontend) {
-
+    public static function write(string $tag, string $message, int $level = E_NOTICE): void
+    {
+        if (Frontend::$logger instanceof Frontend) {
             Frontend::$logger->writeLog($tag, $message, $level);
-
-        } elseif(is_array(Frontend::$message_buffer)) {
-
+        } else {
             Frontend::$message_buffer[] = [
                 $tag,
                 $message,
-                $level
+                $level,
             ];
-
         }
-
     }
 
     /**
-     * Log an ERROR message
+     * Log an ERROR message.
      */
-    static public function e($tag, $message){
-
+    public static function e(string $tag, string $message): void
+    {
         Frontend::write($tag, $message, LOG_ERR);
-
     }
 
     /**
-     * Log a WARNING message
+     * Log a WARNING message.
      */
-    static public function w($tag, $message){
-
+    public static function w(string $tag, string $message): void
+    {
         Frontend::write($tag, $message, LOG_WARNING);
-
     }
 
     /**
-     * Log a NOTICE message
+     * Log a NOTICE message.
      */
-    static public function n($tag, $message){
-
+    public static function n(string $tag, string $message): void
+    {
         Frontend::write($tag, $message, LOG_NOTICE);
-
     }
 
     /**
-     * Log a INFO message
+     * Log a INFO message.
      */
-    static public function i($tag, $message){
-
+    public static function i(string $tag, string $message): void
+    {
         Frontend::write($tag, $message, LOG_INFO);
-
     }
 
     /**
-     * Log a DEBUG message
+     * Log a DEBUG message.
      */
-    static public function d($tag, $message){
-
+    public static function d(string $tag, string $message): void
+    {
         Frontend::write($tag, $message, LOG_DEBUG);
-
     }
 
-    static public function trace() {
-
-        if(Frontend::$logger instanceof Frontend)
+    public static function trace(): void
+    {
+        if (Frontend::$logger instanceof Frontend) {
             Frontend::$logger->backtrace();
-
-    }
-
-    static public function end_purge_mb() {
-
-        Frontend::$message_buffer = NULL;
-
-    }
-
-    public function writeLog($tag, $message, $level = E_NOTICE) {
-
-        if(! ($level <= $this->level))
-            return NULL;
-
-        if(! $this->backend->can('write_objects')) {
-
-            if(is_array($message) || is_object($message))
-                $message = "OBJECT DUMP:" . LINE_BREAK . preg_replace('/\n/', LINE_BREAK, print_r($message, TRUE));
-
         }
+    }
 
+    /**
+     * @param array<mixed>|object|string $message
+     */
+    public function writeLog(string $tag, array|object|string $message, int $level = E_NOTICE): void
+    {
+        if (!($level <= $this->level)) {
+            return;
+        }
+        if (!$this->backend->can('write_objects')) {
+            if (is_array($message) || is_object($message)) {
+                $message = 'OBJECT DUMP:'.LINE_BREAK.preg_replace('/\n/', LINE_BREAK, print_r($message, true));
+            }
+        }
         $this->backend->write($tag, $message, $level);
-
     }
 
-    public function backtrace() {
-
-        if($this->backend->can('write_trace'))
+    public function backtrace(): void
+    {
+        if ($this->backend->can('write_trace')) {
             $this->backend->trace();
-
+        }
     }
 
-    public function close() {
-
+    public function close(): void
+    {
         $this->backend->postRun();
-
     }
-
 }

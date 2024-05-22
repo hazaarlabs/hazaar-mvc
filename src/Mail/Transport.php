@@ -1,21 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Mail;
 
-abstract class Transport implements Transport\_Interface {
+use Hazaar\Map;
 
-    protected $options;
+abstract class Transport implements Interfaces\Transport
+{
+    protected Map $options;
 
-    final function __construct($options){
-
-        if(!$options instanceof \Hazaar\Map)
-            $options = new \Hazaar\Map($options);
-            
+    final public function __construct(Map $options)
+    {
         $this->options = $options;
-
-        if(\method_exists($this, 'init'))
-            $this->init($options);
-
+        $this->init($options);
     }
 
+    protected function init(Map $options): bool
+    {
+        return true;
+    }
 }

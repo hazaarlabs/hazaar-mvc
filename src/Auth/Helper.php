@@ -1,25 +1,35 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Auth;
 
-class Helper extends Adapter\Session {
+use Hazaar\Cache;
+use Hazaar\Map;
 
-    function __construct($cache_config = [], $cache_backend = 'session'){
-
-        parent::__construct($cache_config, $cache_backend);
-
-        $this->identity = $this->session->hazaar_auth_identity;
-
+class Helper extends Adapter\Session
+{
+    /**
+     * Construct the helper.
+     *
+     * @param Map   $cacheConfig  The cache configuration
+     * @param Cache $cacheBackend The cache backend to use
+     */
+    public function __construct(Map $cacheConfig = null, ?Cache $cacheBackend = null)
+    {
+        parent::__construct($cacheConfig, $cacheBackend);
+        $this->identity = $this->session['hazaar_auth_identity'];
     }
 
-    public function queryAuth($identity, $credential = null, $extra = []) {
-
-        /*
-         * Helper does not support queryAuth as it doesn't know how to look up credentials
-         */
-
+    /**
+     * Set the identity.
+     *
+     * @param string       $identity The identity
+     * @param array<mixed> $extra    The extra data
+     */
+    public function queryAuth(string $identity, array $extra = []): array|bool
+    {
+        // Helper does not support queryAuth as it doesn't know how to look up credentials
         return false;
-
     }
-
 }

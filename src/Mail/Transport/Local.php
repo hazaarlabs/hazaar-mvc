@@ -2,68 +2,75 @@
 
 namespace Hazaar\Mail\Transport;
 
-class Local extends \Hazaar\Mail\Transport {
+use Hazaar\Mail\Transport;
+use Hazaar\Mail\TransportMessage;
+use Hazaar\Map;
 
-    public function send($to, $subject = NULL, $message = NULL, $headers = [], $dsn_types = []) {
+class Local extends Transport
+{
+    public function init(Map $options): bool
+    {
+        if (!exec('which sendmail')) {
+            throw new Exception\NoSendmail();
+        }
 
+        return parent::init($options);
+    }
+
+    public function send(TransportMessage $message): mixed
+    {
         $sendmail_from = '';
-
         $mail_headers = [];
-
-        foreach($headers as $key => $value) {
-
-            if(!$value)
+        foreach ($message->headers as $key => $value) {
+            if (!$value) {
                 continue;
-
-            if(strtolower($key) == 'from') {
-
+            }
+            if ('from' == strtolower($key)) {
                 /*
                  * If this is the from header, try and extract the email address to use in sendmail -f.
                  * Sometimes emails will not send correctly if this fails
                  */
-                if(preg_match('/[\w\s]*\<(.*)\>/', $value, $matches))
+                if (preg_match('/[\w\s]*\<(.*)\>/', $value, $matches)) {
                     $sendmail_from = $matches[1];
-                else
+                } else {
                     $sendmail_from = $value;
-
+                }
             }
-
-            $mail_headers[] = $key . ':   ' . trim($value);
-
+            $mail_headers[] = $key.':   '.trim($value);
         }
-
         $mail_headers = implode("\n", $mail_headers);
-
         $params = [
-            '-R' => 'hdrs'
+            '-R' => 'hdrs',
         ];
-
-        if($sendmail_from)
+        if ($sendmail_from) {
             $params['-f'] = $sendmail_from;
-
-        if(is_array($dsn_types) && count($dsn_types) > 0)
-            $params['-N'] = '"' . implode(',', array_map('strtolower', $dsn_types)) . '"';
-
-        //The @ sign causes errors not to be thrown and allows things to continue.  the mail() command
-        //will just return false when not successful.
-        $ret = @mail($this->formatTo($to), $subject, $message, $mail_headers, (count($params) > 0 ? array_flatten($params, ' ', ' ') : NULL));
-
-        if(!$ret){
-
+        }
+        if (is_array($message->dsn) && count($message->dsn) > 0) {
+            $params['-N'] = '"'.implode(',', array_map('strtolower', $message->dsn)).'"';
+        }
+        // The @ sign causes errors not to be thrown and allows things to continue.  the mail() command
+        // will just return false when not successful.
+        $ret = @mail($this->formatTo($message->to), $message->subject, (string) $message->content, $mail_headers);
+        if (!$ret) {
             $error = error_get_last();
 
             throw new Exception\FailConnect(ake($error, 'message'), ake($error, 'type'));
-
         }
 
         return $ret;
-
     }
 
-    private function formatTo($tolist) {
+    /**
+     * @param array<mixed> $tolist
+     */
+    private function formatTo(array $tolist): string
+    {
+        foreach ($tolist as &$item) {
+            if (is_array($item)) {
+                $item = $item['name'] ? $item['name'].'<'.$item['email'].'>' : $item['email'];
+            }
+        }
 
         return implode(', ', $tolist);
-
     }
-
 }

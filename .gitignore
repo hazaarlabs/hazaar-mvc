@@ -14,3 +14,7 @@ vendor/
 composer.lock
 
 *.user
+.phplint.cache
+.phpunit.result.cache
+phpunit-test-results.xml
+phplint-test-results.xml
