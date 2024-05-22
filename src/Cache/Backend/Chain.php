@@ -1,13 +1,15 @@
 <?php
-
 /**
  * @file        Hazaar/Cache/Backend/Chain.php
  *
  * @author      Jamie Carl <jamie@hazaar.io>
- *
  * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
+
 namespace Hazaar\Cache\Backend;
+
+use Hazaar\Cache\Backend;
+use Hazaar\Exception;
 
 /**
  * @brief The cache backend chaining backend.
@@ -20,111 +22,120 @@ namespace Hazaar\Cache\Backend;
  * For example:
  *
  * [ 'file' => [ 'cache_dir' => '/tmp/cache' ], 'memcached' => [ 'server' => 'localhost' ] ]
- *
- * @since 1.0.0
  */
-class Chain extends \Hazaar\Cache\Backend {
+class Chain extends Backend
+{
+    /**
+     * @var array<Backend>
+     */
+    private array $backends = [];
 
-    private $backends = [];
+    /**
+     * @var array<string>
+     */
+    private array $order = [];
 
-    private $order    = [];
-
-    static public function available(){
-
+    public static function available(): bool
+    {
         return true;
-
     }
 
-    public function init($namespace) {
-
-        foreach($this->options as $backend => $backendOptions) {
-
-            if(is_int($backend)) {
-                $backend = $backendOptions;
-                $backendOptions = NULL;
-            }
-
+    public function init(string $namespace): void
+    {
+        if (!$this->options->has('backends')) {
+            throw new Exception('Chain cache backend requires a "backends" option to be set!');
+        }
+        foreach ($this->options['backends'] as $backend => $backendOptions) {
             $backend = strtolower($backend);
-
-            $backendClass = '\\Hazaar\\Cache\\Backend\\' . ucfirst($backend);
-
+            $backendClass = '\\Hazaar\\Cache\\Backend\\'.ucfirst($backend);
+            if (!(class_exists($backendClass) && $backendClass::available())) {
+                continue;
+            }
             $obj = new $backendClass($backendOptions, $namespace);
-
             $this->backends[$backend] = $obj;
-
             $this->order[$backend] = $obj->getWeight();
-
         }
-
         asort($this->order);
-
+        $this->addCapabilities('store_objects');
     }
 
-    public function has($key) {
-
-        foreach($this->backends as $backend) {
-
-            if($backend->test($key))
-                return TRUE;
-
+    public function has(string $key, bool $check_empty = false): bool
+    {
+        foreach ($this->backends as $backend) {
+            if ($backend->has($key, $check_empty)) {
+                return true;
+            }
         }
 
-        return FALSE;
-
+        return false;
     }
 
-    public function get($key) {
-
+    public function get(string $key): mixed
+    {
         $store = [];
-
-        $value = FALSE;
-
-        foreach($this->order as $backend => $weight) {
-
-            if(($value = $this->backends[$backend]->get($key)) === FALSE)
+        $value = false;
+        foreach ($this->order as $backend => $weight) {
+            if (($value = $this->backends[$backend]->get($key)) === false) {
                 $store[] = $backend;
-
-            else
+            } else {
                 break;
-
+            }
         }
-
-        if($value !== FALSE) {
-
-            foreach($store as $backend)
+        if (false !== $value) {
+            foreach ($store as $backend) {
                 $this->backends[$backend]->set($key, $value);
-
+            }
         }
 
         return $value;
-
     }
 
-    public function set($key, $value, $timeout = NULL) {
+    public function set(string $key, mixed $value, int $timeout = 0): bool
+    {
+        foreach ($this->backends as $backend) {
+            if (false === $backend->set($key, $value, $timeout)) {
+                return false;
+            }
+        }
 
-        foreach($this->backends as $backend)
-            $backend->set($key, $value, $timeout);
-
+        return true;
     }
 
-    public function remove($key) {
+    public function remove(string $key): bool
+    {
+        foreach ($this->backends as $backend) {
+            if (!$backend->remove($key)) {
+                return false;
+            }
+        }
 
-        foreach($this->backends as $backend)
-            $backend->remove($key);
-
+        return true;
     }
 
-    public function clear() {
+    public function clear(): bool
+    {
+        foreach ($this->backends as $backend) {
+            if (!$backend->clear()) {
+                return false;
+            }
+        }
 
-        foreach($this->backends as $backend)
-            $backend->clear();
-
+        return true;
     }
 
-    public function setExpireTimeout($timeout) {
-
-        $this->setOption('expire', $timeout);
-
+    public function setExpireTimeout(int $timeout): void
+    {
+        foreach ($this->backends as $backend) {
+            $backend->setOption('expire', $timeout);
+        }
     }
 
+    public function toArray(): array
+    {
+        if (0 === count($this->backends)) {
+            return [];
+        }
+
+        return $this->backends[array_key_first($this->backends)]->toArray();
+    }
 }

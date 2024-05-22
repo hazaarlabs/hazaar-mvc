@@ -1,158 +1,116 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @file        Controller/Action.php
  *
  * @author      Jamie Carl <jamie@hazaar.io>
- *
  * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
 namespace Hazaar\Controller;
 
+use Hazaar\Application;
 use Hazaar\Application\Request;
+use Hazaar\Application\Request\HTTP;
+use Hazaar\Controller;
+use Hazaar\Controller\Action\ViewRenderer;
+use Hazaar\View;
 
 /**
- * @brief       Abstract controller action class
+ * Abstract controller action class.
  *
- * @detail      This controller handles actions and responses using views
+ * This controller handles actions and responses using views
  */
-abstract class Action extends \Hazaar\Controller\Basic {
+abstract class Action extends Basic
+{
+    public ViewRenderer $view;
 
-    public    $view;
+    /**
+     * @var array<mixed>
+     */
+    protected array $methods = [];
 
-    public    $_helper;
-
-    protected $methods       = [];
-
-    public function __construct($name){
-
-        parent::__construct($name);
-
-        $this->_helper = new Action\HelperBroker($this);
-
-        if(!($this->view = $this->_helper->addHelper('ViewRenderer')))
-            throw new Exception\NoDefaultRenderer();
-
+    public function __construct(string $name, Application $application)
+    {
+        parent::__construct($name, $application);
+        $this->view = new ViewRenderer();
     }
 
-    public function __initialize(Request $request){
-
-        if($request instanceof Request\Http
-            && $request->isXmlHttpRequest() === false 
-            && $this->application->config->app->has('layout')) {
-
-            $this->_helper->ViewRenderer->layout($this->application->config->app['layout']);
-
-            if($this->application->config->app->has('favicon'))
-                $this->_helper->ViewRenderer->link($this->application->config->app['favicon'], 'shortcut icon');
-
+    public function __initialize(Request $request): ?Response
+    {
+        if ($request instanceof HTTP
+            && false === $request->isXmlHttpRequest()
+            && null !== $this->application
+            && $this->application->config['app']->has('layout')) {
+            $this->view->layout($this->application->config['app']['layout']);
         }
 
         return parent::__initialize($request);
-
     }
 
-    public function __registerMethod($name, $callback) {
-
-        if(array_key_exists($name, $this->methods))
+    public function __registerMethod(string $name, callable $callback): bool
+    {
+        if (array_key_exists($name, $this->methods)) {
             throw new Exception\MethodExists($name);
-
+        }
         $this->methods[$name] = $callback;
 
-        return TRUE;
-
+        return true;
     }
 
-    public function __call($method, $args) {
-
-        if(array_key_exists($method, $this->methods))
-            return call_user_func_array($this->methods[$method], $args);
-
-        throw new Exception\MethodNotFound(get_class($this), $method);
-
-    }
-
-    public function __run() {
-
+    public function __run(): Response
+    {
         $response = parent::__runAction();
-
-        if(!$response instanceof Response) {
-
-            if($response === NULL) {
-
-                $response = new Response\Html();
-
-                /*
-                 * Execute the action helpers.  These are responsible for actually rendering any views.
-                 */
-                $this->_helper->execAllHelpers($this, $response);
-
-                $response->enableTidy($this->application->config->app->get('tidy', false));
-
-            }elseif(is_string($response)){
-
-                $response = new Response\Text($response);
-
-            }elseif($response instanceof \Hazaar\Html\Element){
-
-                $html = new Response\Html();
-
-                $html->setContent($response);
-
-                $response = $html;
-
-            }elseif($response instanceof \Hazaar\File){
-
-                $response = new Response\File($response);
-
-            }else{
-
-                $response = new Response\Json($response);
-
+        if (!$response instanceof Response) {
+            if (null === $response) {
+                $response = new Response\HTML();
+                $this->view->__exec($response);
             }
-
         }
-
         $this->cacheResponse($response);
-
         $response->setController($this);
 
         return $response;
-
     }
 
     /**
-     * Forwards an action from the requested controller to another controller
-     * 
+     * Forwards an action from the requested controller to another controller.
+     *
      * This is some added magic to assist with poorly designed MVC applications where too much "common" code
      * has been implemented in a controller action.  This allows the action request to be forwarded and the
      * response returned.  The target action is executed as though it was called on the requested controller.
-     * This means that view data can be modified after the action has executed to modify the response.  
-     * 
+     * This means that view data can be modified after the action has executed to modify the response.
+     *
      * Note: If you don't need to modify any response data, then it would be more efficient to use an alias.
-     * 
-     * @param string $controller    The name of the controller to forward to.
-     * @param string $action        Optional. The name of the action to call on the target controller.  If ommitted, the 
-     *                              name of the requested action will be used.
-     * @param array  $actionArgs    Optional. An array of arguments to forward to the action.  If ommitted, the arguments
-     *                              sent to the calling action will be forwarded.
-     * @param Hazaar\Controller $target The target controller.  Allows direct access to the forward controller after it has
-     *                              been loaded.
-     * 
-     * @return mixed Retuns the same return value returned by the forward controller action.
+     *
+     * @param string       $controller the name of the controller to forward to
+     * @param string       $action     Optional. The name of the action to call on the target controller.  If ommitted, the
+     *                                 name of the requested action will be used.
+     * @param array<mixed> $actionArgs Optional. An array of arguments to forward to the action.  If ommitted, the arguments
+     *                                 sent to the calling action will be forwarded.
+     * @param Controller   $target     The target controller.  Allows direct access to the forward controller after it has
+     *                                 been loaded.
+     *
+     * @return Response retuns the same return value returned by the forward controller action
      */
-    public function forwardAction($controller, $action = null, $actionArgs = null, &$target = null){
-
+    public function forwardAction(string $controller, ?string $action = null, ?array $actionArgs = null, ?Controller &$target = null): Response
+    {
         $response = parent::forwardAction($controller, $action, $actionArgs, $target);
-
         $this->methods = $target->methods;
-
-        $this->_helper = $target->_helper;
-
         $this->view = $target->view;
 
         return $response;
-
     }
 
+    /**
+     * Loads a view.
+     *
+     * @param string $view the name of the view to load
+     */
+    protected function view(string $view): void
+    {
+        $this->view->view($view);
+    }
 }

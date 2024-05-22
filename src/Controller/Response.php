@@ -1,337 +1,233 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Controller;
 
-class Response implements Response\_Interface {
+use Hazaar\Controller;
+use Hazaar\HTTP\Client;
 
-    /*
-     * Use text/html as the default type as it is the most widely accepted.
+class Response implements Interfaces\Response
+{
+    public static ?string $encryptionKey = null;
+
+    // Use text/html as the default type as it is the most widely accepted.
+    /**
+     * @var array<string, array<string>|string>
      */
-    protected $headers      = [];
+    protected array $headers = [];
+    protected bool $headersSet = false;
+    protected string $contentType = 'text/plain';
+    protected int $statusCode = 0;
+    protected ?Controller $controller = null;
 
-    protected $headers_set  = FALSE;
-
-    protected $content;
-
-    protected $content_type = 'text/plain';
-
-    protected $status_code;
-
-    protected $controller;
-
-    protected $compress     = false;
-
-    protected $tidy         = FALSE;
-
-    public static $encryption_key;
-
-    function __construct($type = "text/html", $status = 501) {
-
-        $this->content_type = $type;
-
-        $this->status_code = $status;
-
-    }
-
-    public function setController($controller) {
-
-        $this->controller = $controller;
-
-    }
-
-    public function hasController(){
-
-        return ($this->controller instanceof \Hazaar\Controller);
-        
+    public function __construct(string $type = 'text/html', int $status = 501)
+    {
+        $this->contentType = $type;
+        $this->statusCode = $status;
     }
 
     /**
-     * Add Header Directive
+     * Write the response to the output buffer.
      */
-    public function setHeader($key, $value, $overwrite = TRUE) {
+    public function __writeOutput(): void
+    {
+        $content = '';
+        if (method_exists($this, '__prepare')) {
+            $this->__prepare($this->controller);
+        }
+        if ($this->modified()) {
+            $content = $this->getContent();
+        }
+        if (null !== Response::$encryptionKey) {
+            $encryptionCipher = Client::$encryptionDefaultCipher;
+            $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($encryptionCipher));
+            $content = base64_encode(openssl_encrypt($content, $encryptionCipher, Response::$encryptionKey, OPENSSL_RAW_DATA, $iv));
+            $this->setHeader(Client::$encryptionHeader, base64_encode($iv));
+        }
+        if ('cli' !== php_sapi_name() && true !== $this->headersSet) {
+            if (headers_sent()) {
+                throw new Exception\HeadersSent();
+            }
+            $this->writeHeaders(strlen($content));
+        }
+        echo $content;
+        flush();
+    }
 
-        if(strtolower($key) === 'content-length')
+    public function __sleep()
+    {
+        return ['content', 'contentType', 'headers', 'statusCode'];
+    }
+
+    public function setController(Controller $controller): void
+    {
+        $this->controller = $controller;
+    }
+
+    public function hasController(): bool
+    {
+        return $this->controller instanceof Controller;
+    }
+
+    /**
+     * Add Header Directive.
+     */
+    public function setHeader(string $key, string $value, bool $overwrite = true): bool
+    {
+        if ('content-length' === strtolower($key)) {
             return false;
-            
-        if($overwrite) {
-
+        }
+        if ($overwrite) {
             $this->headers[$key] = $value;
-
         } else {
-
-            if(!(array_key_exists($key, $this->headers) && is_array($this->headers[$key])))
+            if (!(array_key_exists($key, $this->headers) && is_array($this->headers[$key]))) {
                 $this->headers[$key] = isset($this->headers[$key]) ? [$this->headers[$key]] : [];
-
+            }
             $this->headers[$key][] = $value;
-
         }
 
         return true;
-
     }
 
     /**
-     * Add multiple headers
+     * Add multiple headers.
+     *
+     * @param array<array<string>|string> $headers
      */
-    public function setHeaders($headers, $overwrite = true){
-
-        if(!is_array($headers))
+    public function setHeaders(array $headers, bool $overwrite = true): bool
+    {
+        if (!is_array($headers)) {
             return false;
-
-        foreach($headers as $key => $value)
+        }
+        foreach ($headers as $key => $value) {
             $this->setHeader($key, $value, $overwrite);
+        }
 
         return true;
-        
     }
 
-    public function removeHeader($key) {
-
-        if(array_key_exists($key, $this->headers))
+    public function removeHeader(string $key): void
+    {
+        if (array_key_exists($key, $this->headers)) {
             unset($this->headers[$key]);
-
+        }
     }
 
-    public function getHeaders(){
-
+    /**
+     * @return array<string, array<string>|string>
+     */
+    public function getHeaders(): array
+    {
         return $this->headers;
-
     }
-    
-    public function & getHeader($key) {
 
-        if($header = ake($this->headers, $key)) {
-
-            if(is_array($header))
+    /**
+     * @return null|array<string>|string
+     */
+    public function &getHeader(string $key): null|array|string
+    {
+        if ($header = ake($this->headers, $key)) {
+            if (is_array($header)) {
                 return $header[0];
+            }
 
             return $this->headers[$key];
-
         }
-
-        $null = NULL;
+        $null = null;
 
         return $null;
-
     }
 
-    public function clearHeaders() {
-
+    public function clearHeaders(): void
+    {
         $this->headers = [];
-
     }
 
-    public function setCompression($toggle) {
-
-        $this->compress = boolify($toggle);
-
-    }
-
-    public function modified() {
-
-        return ($this->status_code !== 304);
-
+    public function modified(): bool
+    {
+        return 304 !== $this->statusCode;
     }
 
     /**
-     * Quick method to set the content type
+     * Quick method to set the content type.
      */
-    public function setContentType($type = NULL) {
-
-        if(! $type) {
-
-            /*
-             * Try and detect the mimetype of the data we have.
-             */
-
+    public function setContentType(?string $type = null): void
+    {
+        if (!$type) {
+            // Try and detect the mimetype of the data we have.
             $finfo = new \finfo(FILEINFO_MIME);
-
             $type = $finfo->buffer($this->getContent());
-
         }
-
-        $this->content_type = $type;
-
+        $this->contentType = $type;
     }
 
     /**
-     * Quick method to get the content type
+     * Quick method to get the content type.
      */
-    public function getContentType() {
-
-        return $this->content_type;
-
+    public function getContentType(): string
+    {
+        return $this->contentType;
     }
 
-    public function getContent() {
-
-        return $this->content;
-
+    public function getContent(): string
+    {
+        return '';
     }
 
-    public function setContent($content) {
+    public function setContent(mixed $content): void {}
 
-        $this->content = $content;
-
+    public function getContentLength(): int
+    {
+        return 0;
     }
 
-    public function getContentLength() {
-
-        return strlen($this->content);
-
+    public function hasContent(): bool
+    {
+        return false;
     }
 
-    public function hasContent() {
+    public function addContent(mixed $content): void {}
 
-        return (strlen($this->content) > 0);
-
+    public function setStatus(int $status): void
+    {
+        $this->statusCode = $status;
     }
 
-    public function addContent($content) {
-
-        $this->content .= $content;
-
+    public function getStatus(): int
+    {
+        return $this->statusCode;
     }
 
-    public function setStatus($status) {
-
-        $this->status_code = intval($status);
-
+    public function getStatusMessage(): string
+    {
+        return http_response_text($this->statusCode);
     }
 
-    public function getStatus() {
-
-        return $this->status_code;
-
+    public function ignoreHeaders(): void
+    {
+        $this->headersSet = true;
     }
 
-    public function getStatusMessage() {
-
-        return http_response_text($this->status_code);
-
-    }
-
-    public function enableTidy($state = TRUE) {
-
-        if($state && in_array('tidy', get_loaded_extensions())) {
-
-            $this->tidy = TRUE;
-
-        } else {
-
-            $this->tidy = FALSE;
-
+    private function writeHeaders(?int $content_length = null): void
+    {
+        http_response_code($this->statusCode);
+        if ($contentType = $this->getContentType()) {
+            header('Content-Type: '.$contentType);
         }
-
-    }
-
-    private function writeHeaders($content_length = NULL) {
-
-        http_response_code($this->status_code);
-
-        if($content_type = $this->getContentType())
-            header('Content-Type: ' . $content_type);
-
-        if($content_length === null)
+        if (null === $content_length) {
             $content_length = $this->getContentLength();
-
-        header('Content-Length: ' . $content_length);
-
-        foreach($this->headers as $name => $header) {
-
-            if(is_array($header)) {
-
-                foreach($header as $value)
-                    header($name . ': ' . $value, FALSE);
-
+        }
+        header('Content-Length: '.$content_length);
+        foreach ($this->headers as $name => $header) {
+            if (is_array($header)) {
+                foreach ($header as $value) {
+                    header($name.': '.$value, false);
+                }
             } else {
-
-                header($name . ': ' . $header);
-
+                header($name.': '.$header);
             }
-
         }
-
-        $this->headers_set = TRUE;
-
+        $this->headersSet = true;
     }
-
-    public function ignoreHeaders() {
-
-        $this->headers_set = TRUE;
-
-    }
-
-    /**
-     * Write the response to the output buffer
-     *
-     * @return null
-     */
-    public function __writeOutput() {
-
-        $content = '';
-
-        if(method_exists($this, '__prepare'))
-            $this->__prepare($this->controller);
-
-        if($this->modified()){
-
-            if($this->tidy && substr($this->getContentType(), 0, 4) === 'text') {
-
-                $tidy = new \tidy();
-
-                $config = [
-                    'indent'         => TRUE,
-                    'vertical-space' => 'no',
-                    'doctype'        => 'auto',
-                    'wrap'           => 0
-                ];
-
-                $content = $tidy->repairString($this->getContent(), $config);
-
-            } else {
-
-                $content = $this->getContent();
-
-            }
-
-            if(! $content)
-                $content = '';
-
-        }
-
-        if(Response::$encryption_key !== null){
-
-            $encryption_cipher = \Hazaar\Http\Client::$encryption_default_cipher;
-
-            $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($encryption_cipher));
-
-            $content = base64_encode(openssl_encrypt($content, $encryption_cipher, Response::$encryption_key, OPENSSL_RAW_DATA, $iv));
-
-            $this->setHeader(\Hazaar\Http\Client::$encryption_header, base64_encode($iv));
-
-        }
-
-        if(php_sapi_name() !== 'cli' && $this->headers_set !== true) {
-
-            if(headers_sent())
-                throw new Exception\HeadersSent();
-
-            $this->writeHeaders(strlen($content));
-
-        }
-
-        echo $content;
-
-        flush();
-
-    }
-
-    public function __sleep(){
-
-        return ['content', 'content_type', 'headers', 'status_code', 'tidy'];
-
-    }
-
 }
-

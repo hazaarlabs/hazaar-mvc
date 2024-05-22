@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\File\Exception;
 
-class TargetNotFound extends \Hazaar\Exception {
+use Hazaar\Exception;
 
-    function __construct($target, $source) {
-
-        parent::__construct("Destination '$target' does not exist while trying to copy '$source'.");
-
+class TargetNotFound extends Exception
+{
+    public function __construct(string $target, string $source)
+    {
+        parent::__construct("Destination '{$target}' does not exist while trying to copy '{$source}'.");
     }
-
 }

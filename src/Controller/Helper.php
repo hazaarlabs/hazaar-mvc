@@ -1,53 +1,64 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @file        Hazaar/Controller/Helper.php
  *
  * @author      Jamie Carl <jamie@hazaar.io>
- *
  * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
+
 namespace Hazaar\Controller;
 
-abstract class Helper {
+use Hazaar\Controller;
 
-    protected $controller;
+abstract class Helper
+{
+    protected ?Controller $controller;
 
-    protected $args;
-    
-    final function __construct(\Hazaar\Controller $controller = NULL, $args = []) {
+    /**
+     * @var array<mixed>
+     */
+    protected array $args;
 
+    /**
+     * @param array<mixed> $args
+     */
+    final public function __construct(?Controller $controller = null, array $args = [])
+    {
         $this->controller = $controller;
-        
         $this->args = $args;
-
         $this->import($args);
-
     }
 
-    public function getName() {
+    /**
+     * TODO: Maybe remove this method?
+     *
+     * @param array<mixed> $args
+     */
+    public function __requires(string $helper, array $args = []): bool
+    {
+        if (!$this->controller || $this->controller->hasHelper($helper)) {
+            return false;
+        }
+        //$this->view->addHelper($helper, $args);
 
+        return true;
+    }
+
+    public function getName(): string
+    {
         $class = get_class($this);
 
         return substr($class, strrpos($class, '\\') + 1);
-
     }
 
-    public function requires($helper, $args = []) {
-
-        if(!$this->controller || $this->controller->hasHelper($helper)) 
-            return false;
-
-        $this->view->addHelper($helper, $args);
-
-        return true;
-        
+    /**
+     * @param array<mixed> $args
+     */
+    public function import($args = []): void
+    {
+        // Do nothing by default.
     }
-
-    //Placeholder functions
-    public function import($args = []) {
-
-        //Do nothing by default.
-
-    }
-
 }

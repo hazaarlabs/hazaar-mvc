@@ -1,9 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\File;
 
+use Hazaar\Exception;
+use Hazaar\File;
+
 /**
- * The file upload manager class
+ * The file upload manager class.
  *
  * This class makes it much simpler to work with file uploaded via a POST request to the server.  Behind the scenes it
  * works with the PHP $_FILES global that contains information about any uploaded files.  This class then provides a few
@@ -37,153 +42,135 @@ namespace Hazaar\File;
  * }
  * ```
  */
-class Upload {
-
-    private $files = [];
+class Upload
+{
+    /**
+     * The uploaded files array.
+     *
+     * @var array<string, array<string,string>>
+     */
+    private array $files = [];
 
     /**
-     * Constructor
+     * Constructor.
      */
-    function __construct() {
-
+    public function __construct()
+    {
         $this->files = $_FILES;
-
     }
 
     /**
-     * Check to see if there are any files that have uploaded as part of the current request
+     * Magic method to get details about an uploaded file.
      *
-     * @param Mixed $op_keys A key, or array of keys to check for.  If any of the supplied keys do not exist then the
+     * @param string $key the key of the uploaded file to return details of
+     *
+     * @return array<mixed>
+     */
+    public function __get(string $key): array
+    {
+        return $this->get($key);
+    }
+
+    /**
+     * Check to see if there are any files that have uploaded as part of the current request.
+     *
+     * @param mixed $op_keys A key, or array of keys to check for.  If any of the supplied keys do not exist then the
      *                       method will return false.  If this parameter is not supplied this method will return true
      *                       if ANY file has been uploaded.
      *
-     * @return boolean
+     * @return bool
      */
-    public function uploaded($op_keys = NULL) {
-
-        if($op_keys && ! is_array($op_keys))
+    public function uploaded($op_keys = null)
+    {
+        if ($op_keys && !is_array($op_keys)) {
             $op_keys = [$op_keys];
-
-        if($op_keys) {
-
-            foreach($op_keys as $key) {
-
-                if(! array_key_exists($key, $this->files) || ! $this->files[$key]['tmp_name']) {
-
-                    return FALSE;
-
+        }
+        if ($op_keys) {
+            foreach ($op_keys as $key) {
+                if (!array_key_exists($key, $this->files) || !$this->files[$key]['tmp_name']) {
+                    return false;
                 }
-
             }
 
-            return TRUE;
-
-        } elseif(count($this->files) > 0) {
-
-            foreach($this->files as $file) {
-
-                if($file['tmp_name'])
-                    return TRUE;
-
+            return true;
+        }
+        if (count($this->files) > 0) {
+            foreach ($this->files as $file) {
+                if ($file['tmp_name']) {
+                    return true;
+                }
             }
-
         }
 
-        return FALSE;
-
+        return false;
     }
 
     /**
-     * Return an array of uploaded file keys
+     * Return an array of uploaded file keys.
      *
      * The keys are the 'name' attribute for the form element that was used to upload the file.
      *
-     * @return Array
+     * @return array<string>
      */
-    public function keys() {
-
+    public function keys(): array
+    {
         return array_keys($this->files);
-
     }
 
     /**
-     * Test the existence of a file upload key
+     * Test the existence of a file upload key.
      *
      * @param string $key The key to check for
      *
-     * @return boolean
+     * @return bool
      */
-    public function has($key) {
-
+    public function has($key)
+    {
         return array_key_exists($key, $this->files);
-
-    }
-
-    /**
-     * Magic method to get details about an uploaded file
-     *
-     * @param string $key The key of the uploaded file to return details of.
-     *
-     * @return Array
-     */
-    public function __get($key) {
-
-        return $this->get($key);
-
     }
 
     /**
      * Get details about an uploaded file.
      *
-     * @param string $key The key of the uploaded file to return details of.
+     * @param string $key the key of the uploaded file to return details of
      *
-     * @return Array
+     * @return array<mixed>
      */
-    public function get($key = null) {
-
-        if($key === null){
-
+    public function get(?string $key = null): ?array
+    {
+        if (null === $key) {
             $files = [];
-
-            foreach($this->keys() as $key)
+            foreach ($this->keys() as $key) {
                 $files[$key] = $this->get($key);
+            }
 
             return $files;
-
-        }elseif(($pos = strpos($key, '.')) > 0){
-
+        }
+        if (($pos = strpos($key, '.')) > 0) {
             $sub_key = substr($key, $pos + 1);
-
             $files = array_to_dot_notation($this->get(substr($key, 0, $pos)), '.', substr_count($sub_key, '.') + 1);
 
             return ake($files, $sub_key);
-
         }
-
-        if($info = ake($this->files, $key)) {
-
-            if(!is_array($info['name']))
+        if ($info = ake($this->files, $key)) {
+            if (!is_array($info['name'])) {
                 return $info;
-
+            }
             $files = [];
-
-            foreach($info as $item => $item_info){
-
-                foreach(array_to_dot_notation($item_info) as $name => $data)
-                    $files[$name . '.' . $item] = $data;
-
+            foreach ($info as $item => $item_info) {
+                foreach (array_to_dot_notation($item_info) as $name => $data) {
+                    $files[$name.'.'.$item] = $data;
+                }
             }
 
             return array_from_dot_notation($files);
-
         }
 
-        return NULL;
-
+        return null;
     }
 
     /**
-     * Save all the files that were uploaded to a single directory
+     * Save all the files that were uploaded to a single directory.
      *
      * This will iterate through all uploaded files and save them to the specified
      * destination directory.  If a callback function is specified then that function
@@ -207,146 +194,123 @@ class Upload {
      * });
      * ```
      *
-     * @param string  $destination The destination directory into which we copy the files
-     *
-     * @param Closure $callback    A callback function that will be called for each file.  This function must return
-     *                             true for the file to be copied. The $name field is passed byRef so the file can be
-     *                             renamed on the way through.
-     *
-     * @return void
+     * @param string   $destination The destination directory into which we copy the files
+     * @param \Closure $callback    A callback function that will be called for each file.  This function must return
+     *                              true for the file to be copied. The $name field is passed byRef so the file can be
+     *                              renamed on the way through.
      */
-    public function saveAll($destination, $overwrite = FALSE, \Closure $callback = NULL) {
-
-        foreach($this->keys() as $key) {
-
+    public function saveAll(string $destination, bool $overwrite = false, ?\Closure $callback = null): void
+    {
+        foreach ($this->keys() as $key) {
             $files = $this->getFile($key);
-
-            if(!is_array($files))
+            if (!is_array($files)) {
                 $files = [$files];
-
-            foreach($files as $file){
-
-                $save = TRUE;
-
-                if($callback instanceof \Closure)
-                    $save = $callback($key, $file);
-
-                if($save === TRUE)
-                    $file->copyTo($destination, $overwrite);
-
             }
+            foreach ($files as $file) {
+                $save = true;
+                if ($callback instanceof \Closure) {
+                    $save = $callback($key, $file);
+                }
+                if (true === $save) {
+                    $file->copyTo($destination, $overwrite);
+                }
+            }
+        }
+    }
 
+    /**
+     * Save an uploaded file to a destination.
+     *
+     * @param string $key         The index key of the file to save
+     * @param string $destination The destination file or directory to save the file to
+     * @param bool   $overwrite   Flag to indicate if existing files should be overwritten
+     *
+     * @return bool
+     */
+    public function save($key, $destination, $overwrite = false)
+    {
+        if (!($files = $this->getFile($key))) {
+            return false;
+        }
+        if (!is_array($files)) {
+            $files = [$files];
+        }
+        foreach ($files as $file) {
+            $file->copyTo($destination, $overwrite);
         }
 
-    }
-
-    /**
-     * Save an uploaded file to a destination
-     *
-     * @param string  $key         The index key of the file to save
-     *
-     * @param string  $destination The destination file or directory to save the file to
-     *
-     * @param boolean $overwrite   Flag to indicate if existing files should be overwritten
-     *
-     * @return boolean
-     */
-    public function save($key, $destination, $overwrite = FALSE) {
-
-        if(!($files = $this->getFile($key)))
-            return FALSE;
-
-        if(!is_array($files))
-            $files = [$files];
-
-        foreach($files as $file)
-            $file->copyTo($destination, $overwrite);
-
         return true;
-
     }
 
     /**
-     * Read the contents of an uploaded file and return the bytes
+     * Read the contents of an uploaded file and return the bytes.
      *
      * @param string $key The key name of the file to return.  Use \Hazaar\Upload\File::keys() to get this.
      *
-     * @return string The bytes for the uploaded file.
+     * @return string the bytes for the uploaded file
      */
-    public function read($key) {
-
-        if(array_key_exists($key, $this->files)) {
-
+    public function read($key): ?string
+    {
+        if (array_key_exists($key, $this->files)) {
             $file = $this->files[$key];
-
-            if(file_exists($file['tmp_name'])) {
-
+            if (file_exists($file['tmp_name'])) {
                 return file_get_contents($file['tmp_name']);
-
             }
-
         }
 
-        return NULL;
-
+        return null;
     }
 
     /**
      * Returns the uploaded file as a Hazaar\File object.
      *
-     * @param mixed $key
-     *
-     * @return \Hazaar\File|array
+     * @return array<File>|File
      */
-    public function getFile($key = null){
-
-        if(!($file = $this->get($key)))
+    public function getFile(?string $key = null): array|false|File
+    {
+        if (!($file = $this->get($key))) {
             return false;
-
-        return $this->resolveFiles($file);
-
-    }
-
-    private function resolveFiles($array){
-
-        if(array_key_exists('tmp_name', $array)){
-
-            if($array['error'] > 0)
-                throw new \Hazaar\Exception('Upload error processing ' . $array['name']);
-
-            $file = new \Hazaar\File($array['name']);
-
-            $file->set_mime_content_type($array['type']);
-
-            $file->set_contents(file_get_contents($array['tmp_name']));
-
-            return $file;
-
         }
 
-        $files = [];
-
-        foreach($array as $key => $info)
-            $files[$key] = $this->resolveFiles($info);
-
-        return $files;
-
+        return $this->resolveFiles($file);
     }
 
-    static public function getMaxUploadSize(){
-
+    public static function getMaxUploadSize(): int
+    {
         $max_size = -1;
-
-        if(($post_max_size = bytes_str(ini_get('post_max_size'))) > 0)
+        if (($post_max_size = bytes_str(ini_get('post_max_size'))) > 0) {
             $max_size = $post_max_size;
-
+        }
         $upload_max_filesize = bytes_str(ini_get('upload_max_filesize'));
-
-        if($upload_max_filesize > 0 && $upload_max_filesize < $max_size)
+        if ($upload_max_filesize > 0 && $upload_max_filesize < $max_size) {
             $max_size = $upload_max_filesize;
+        }
 
         return $max_size;
-
     }
 
+    /**
+     * @param array<string,mixed> $array
+     *
+     * @return array<File>|File
+     */
+    private function resolveFiles(array $array): array|File
+    {
+        if (array_key_exists('tmp_name', $array)) {
+            if ($array['error'] > 0) {
+                throw new Exception('Upload error processing '.$array['name']);
+            }
+            $file = new File($array['name']);
+            $file->setMimeContentType($array['type']);
+            $file->setContents(file_get_contents($array['tmp_name']));
+
+            return $file;
+        }
+        $files = [];
+        foreach ($array as $key => $info) {
+            $files[$key] = $this->resolveFiles($info);
+        }
+
+        return $files;
+    }
 }

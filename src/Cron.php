@@ -1,10 +1,12 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @file        Hazaar/Cron.php
  *
  * @author      Christian Land http://tagdocs.de
  * @author      Jamie Carl <jamie@hazaar.io>
- *
  */
 
 namespace Hazaar;
@@ -46,90 +48,94 @@ define('IDX_YEAR', 5);
  *
  * @license https://github.com/chland/tdCron/blob/master/LICENSE.md MIT License
  */
-class Cron {
-
+class Cron
+{
     /**
      * Ranges.
      *
-     * @var mixed
+     * @var array<mixed>
      */
     private $ranges = [
-        IDX_MINUTE  => ['min' => 0,
-                             'max' => 59,
-                             'name' => 'i'],    // Minutes
-        IDX_HOUR    => ['min' => 0,
-                             'max' => 23,
-                             'name' => 'G'],    // Hours
-        IDX_DAY     => ['min' => 1,
-                             'max' => 31,
-                             'name' => 'd'],    // Days
-        IDX_MONTH   => ['min' => 1,
-                             'max' => 12,
-                             'name' => 'm'],    // Months
+        IDX_MINUTE => ['min' => 0,
+            'max' => 59,
+            'name' => 'i'],    // Minutes
+        IDX_HOUR => ['min' => 0,
+            'max' => 23,
+            'name' => 'G'],    // Hours
+        IDX_DAY => ['min' => 1,
+            'max' => 31,
+            'name' => 'd'],    // Days
+        IDX_MONTH => ['min' => 1,
+            'max' => 12,
+            'name' => 'm'],    // Months
         IDX_WEEKDAY => ['min' => 0,
-                             'max' => 7,
-                             'name' => 'w']    // Weekdays
+            'max' => 7,
+            'name' => 'w'],    // Weekdays
     ];
 
     /**
      * Named intervals.
      *
-     * @var mixed
+     * @var array<string,string>
      */
     private $intervals = [
-        '@yearly'   => '0 0 1 1 *',
-        '@annualy'  => '0 0 1 1 *',
-        '@monthly'  => '0 0 1 * *',
-        '@weekly'   => '0 0 * * 0',
+        '@yearly' => '0 0 1 1 *',
+        '@annualy' => '0 0 1 1 *',
+        '@monthly' => '0 0 1 * *',
+        '@weekly' => '0 0 * * 0',
         '@midnight' => '0 0 * * *',
-        '@daily'    => '0 0 * * *',
-        '@hourly'   => '0 * * * *',
-        '@reboot'   => 'now'
+        '@daily' => '0 0 * * *',
+        '@hourly' => '0 * * * *',
+        '@reboot' => 'now',
     ];
 
     /**
      * Possible keywords for months/weekdays.
      *
-     * @var mixed
+     * @var array<mixed>
      */
     private $keywords = [
-        IDX_MONTH   => [
-            '/(january|januar|jan)/i'           => 1,
-            '/(february|februar|feb)/i'         => 2,
+        IDX_MONTH => [
+            '/(january|januar|jan)/i' => 1,
+            '/(february|februar|feb)/i' => 2,
             '/(march|maerz|m�rz|mar|mae|m�r)/i' => 3,
-            '/(april|apr)/i'                    => 4,
-            '/(may|mai)/i'                      => 5,
-            '/(june|juni|jun)/i'                => 6,
-            '/(july|juli|jul)/i'                => 7,
-            '/(august|aug)/i'                   => 8,
-            '/(september|sep)/i'                => 9,
-            '/(october|oktober|okt|oct)/i'      => 10,
-            '/(november|nov)/i'                 => 11,
-            '/(december|dezember|dec|dez)/i'    => 12
+            '/(april|apr)/i' => 4,
+            '/(may|mai)/i' => 5,
+            '/(june|juni|jun)/i' => 6,
+            '/(july|juli|jul)/i' => 7,
+            '/(august|aug)/i' => 8,
+            '/(september|sep)/i' => 9,
+            '/(october|oktober|okt|oct)/i' => 10,
+            '/(november|nov)/i' => 11,
+            '/(december|dezember|dec|dez)/i' => 12,
         ],
         IDX_WEEKDAY => [
-            '/(sunday|sonntag|sun|son|su|so)/i'      => 0,
-            '/(monday|montag|mon|mo)/i'              => 1,
-            '/(tuesday|dienstag|die|tue|tu|di)/i'    => 2,
+            '/(sunday|sonntag|sun|son|su|so)/i' => 0,
+            '/(monday|montag|mon|mo)/i' => 1,
+            '/(tuesday|dienstag|die|tue|tu|di)/i' => 2,
             '/(wednesdays|mittwoch|mit|wed|we|mi)/i' => 3,
             '/(thursday|donnerstag|don|thu|th|do)/i' => 4,
-            '/(friday|freitag|fre|fri|fr)/i'         => 5,
-            '/(saturday|samstag|sam|sat|sa)/i'       => 6
-        ]
+            '/(friday|freitag|fre|fri|fr)/i' => 5,
+            '/(saturday|samstag|sam|sat|sa)/i' => 6,
+        ],
     ];
 
     /**
-     * @var string The parsed CRON expression
+     * @var array<int> The parsed CRON expression
      */
-    private $pcron = NULL;
+    private array|false|int $pcron;
 
-    function __construct($expression) {
-
+    /**
+     * Creates a new instance of the Cron class.
+     *
+     * @param int|string $expression The CRON expression to parse
+     */
+    public function __construct(int|string $expression)
+    {
         $this->pcron = is_int($expression) ? $expression : $this->parse($expression);
-
-        if($this->pcron === false)
-            throw new \Hazaar\Exception('Invalid CRON time expression');
-
+        if (false === $this->pcron) {
+            throw new Exception('Invalid CRON time expression: '.$expression);
+        }
     }
 
     /**
@@ -137,23 +143,17 @@ class Cron {
      *
      * If a reference-time is passed, the next time and date after that time is calculated.
      *
-     * @param    int $timestamp optional reference-time
-     *
-     * @return    int|null
+     * @param int $timestamp optional reference-time
      */
-    public function getNextOccurrence($timestamp = NULL) {
-
-        if(!$this->pcron)
+    public function getNextOccurrence(?int $timestamp = null): ?int
+    {
+        if (!$this->pcron) {
             return null;
-
+        }
         $next = $this->getTimestamp($timestamp);
+        ++$next[IDX_MINUTE];
 
-        $next[IDX_MINUTE]++;
-
-        $next_time = $this->calculateDateTime($next);
-
-        return $next_time;
-
+        return $this->calculateDateTime($next);
     }
 
     /**
@@ -161,60 +161,46 @@ class Cron {
      *
      * If a reference-time is passed, the last time and date before that time is calculated.
      *
-     * @param    int $timestamp optional reference-time
-     *
-     * @return    int|null
+     * @param int $timestamp optional reference-time
      */
-    public function getLastOccurrence($timestamp = NULL) {
-
-        if(!$this->pcron)
+    public function getLastOccurrence(?int $timestamp = null): ?int
+    {
+        if (!$this->pcron) {
             return null;
-
+        }
         // Convert timestamp to array
         $last = $this->getTimestamp($timestamp);
 
         // Calculate date/time
-        $last_time = $this->calculateDateTime($last, FALSE);
-
+        return $this->calculateDateTime($last, false);
         // return calculated time
-        return $last_time;
-
     }
 
     /**
      * Calculates the time and date at which the next/last call of a cronjob is/was due.
      *
-     * @param    mixed $rtime reference-time
-     *
-     * @param    bool  $next  true = nextOccurence, false = lastOccurence
-     *
-     * @return   int|null
+     * @param array<int> $rtime reference-time
+     * @param bool       $next  true = nextOccurence, false = lastOccurence
      */
-    private function calculateDateTime($rtime, $next = TRUE) {
-
-        if(is_int($this->pcron)){
-
+    private function calculateDateTime(array $rtime, bool $next = true): ?int
+    {
+        if (is_int($this->pcron)) {
             $timestamp = mktime($rtime[1], $rtime[0], 0, $rtime[3], $rtime[2], $rtime[5]);
 
-            return ($next === true) ? (($this->pcron >= $timestamp) ? $this->pcron : null) : (($this->pcron < $timestamp) ? $this->pcron : null);
-
+            return (true === $next) ? (($this->pcron >= $timestamp) ? $this->pcron : null) : (($this->pcron < $timestamp) ? $this->pcron : null);
         }
-
         // Initialize vars
-        $calc_date = TRUE;
-
+        $calc_date = true;
         $cron = ($next ? $this->pcron : $this->arrayReverse($this->pcron));
-
-        if(! $cron)
+        if (!$cron) {
             return null;
-
+        }
         // OK, lets see if the day/month/weekday of the reference-date exist in our
         // $cron-array.
-        if(! in_array($rtime[IDX_DAY], $cron[IDX_DAY]) ||
-            ! in_array($rtime[IDX_MONTH], $cron[IDX_MONTH]) ||
-            ! in_array($rtime[IDX_WEEKDAY], $cron[IDX_WEEKDAY])
+        if (!in_array($rtime[IDX_DAY], $cron[IDX_DAY])
+            || !in_array($rtime[IDX_MONTH], $cron[IDX_MONTH])
+            || !in_array($rtime[IDX_WEEKDAY], $cron[IDX_WEEKDAY])
         ) {
-
             // OK, things are easy. The day/month/weekday of the reference time
             // can't be found in the $cron-array. This means that no matter what
             // happens, we WILL end up at at a different date than that of our
@@ -225,18 +211,12 @@ class Cron {
             // In both cases, the time can be found in the first elements of the
             // hour/minute cron-arrays.
             $rtime[IDX_HOUR] = reset($cron[IDX_HOUR]);
-
             $rtime[IDX_MINUTE] = reset($cron[IDX_MINUTE]);
-
         } else {
-
             // OK, things are getting a little bit more complicated...
             $nhour = $this->findValue($rtime[IDX_HOUR], $cron[IDX_HOUR], $next);
-
             // Meh. Such a cruel world. Something has gone awry. Lets see HOW awry it went.
-
-            if($nhour === FALSE) {
-
+            if (false === $nhour) {
                 // Ah, the hour-part went wrong. Thats easy. Wrong hour means that no
                 // matter what we do we'll end up at a different date. Thus we can use
                 // some simple operations to make things look pretty ;-)
@@ -244,132 +224,88 @@ class Cron {
                 // As alreasy mentioned before -> different date means earliest/latest
                 // time:
                 $rtime[IDX_HOUR] = reset($cron[IDX_HOUR]);
-
                 $rtime[IDX_MINUTE] = reset($cron[IDX_MINUTE]);
-
                 // Now all we have to do is add/subtract a day to get a new reference time
                 // to use later to find the right date. The following line probably looks
                 // a little odd but thats the easiest way of adding/substracting a day without
                 // screwing up the date. Just trust me on that one ;-)
                 $rtime = explode(',', str_ftime('%M,%H,%d,%m,%w,%Y', mktime($rtime[IDX_HOUR], $rtime[IDX_MINUTE], 0, $rtime[IDX_MONTH], $rtime[IDX_DAY], $rtime[IDX_YEAR]) + ((($next) ? 1 : -1) * 86400)));
-
             } else {
-
                 // OK, there is a higher/lower hour available. Check the minutes-part.
                 $nminute = $this->findValue($rtime[IDX_MINUTE], $cron[IDX_MINUTE], $next);
-
-                if($nminute === FALSE) {
-
+                if (false === $nminute) {
                     // No matching minute-value found... lets see what happens if we substract/add an hour
                     $nhour = $this->findValue($rtime[IDX_HOUR] + (($next) ? 1 : -1), $cron[IDX_HOUR], $next);
-
-                    if($nhour === FALSE) {
-
+                    if (false === $nhour) {
                         // No more hours available... add/substract a day... you know what happens ;-)
                         $nminute = reset($cron[IDX_MINUTE]);
-
                         $nhour = reset($cron[IDX_HOUR]);
-
                         $rtime = explode(',', str_ftime('%M,%H,%d,%m,%w,%Y', mktime($nhour, $nminute, 0, $rtime[IDX_MONTH], $rtime[IDX_DAY], $rtime[IDX_YEAR]) + ((($next) ? 1 : -1) * 86400)));
-
                     } else {
-
                         // OK, there was another hour. Set the right minutes-value
                         $rtime[IDX_HOUR] = $nhour;
-
                         $rtime[IDX_MINUTE] = (($next) ? reset($cron[IDX_MINUTE]) : end($cron[IDX_MINUTE]));
-
-                        $calc_date = FALSE;
-
+                        $calc_date = false;
                     }
-
                 } else {
-
                     // OK, there is a matching minute... reset minutes if hour has changed
-
-                    if($nhour <> $rtime[IDX_HOUR]) {
-
+                    if ($nhour != $rtime[IDX_HOUR]) {
                         $nminute = reset($cron[IDX_MINUTE]);
-
                     }
-
                     // Set time
                     $rtime[IDX_HOUR] = $nhour;
-
                     $rtime[IDX_MINUTE] = $nminute;
-
-                    $calc_date = FALSE;
-
+                    $calc_date = false;
                 }
-
             }
-
         }
-
         // If we have to calculate the date... we'll do so
-
-        if($calc_date) {
-
-            if(in_array($rtime[IDX_DAY], $cron[IDX_DAY]) && in_array($rtime[IDX_MONTH], $cron[IDX_MONTH]) && in_array($rtime[IDX_WEEKDAY], $cron[IDX_WEEKDAY])) {
-
+        if ($calc_date) {
+            if (in_array($rtime[IDX_DAY], $cron[IDX_DAY]) && in_array($rtime[IDX_MONTH], $cron[IDX_MONTH]) && in_array($rtime[IDX_WEEKDAY], $cron[IDX_WEEKDAY])) {
                 return mktime($rtime[1], $rtime[0], 0, $rtime[3], $rtime[2], $rtime[5]);
+            }
+            // OK, some searching necessary...
+            $cdate = mktime(0, 0, 0, $rtime[IDX_MONTH], $rtime[IDX_DAY], $rtime[IDX_YEAR]);
+            // OK, these three nested loops are responsible for finding the date...
+            //
+            // The class has 2 limitations/bugs right now:
+            //
+            //	-> it doesn't work for dates in 2036 or later!
+            //	-> it will most likely fail if you search for a Feburary, 29th with a given weekday
+            //	   (this does happen because the class only searches in the next/last 10 years! And
+            //	   while it usually takes less than 10 years for a "normal" date to iterate through
+            //	   all weekdays, it can take 20+ years for Feb, 29th to iterate through all weekdays!
+            for ($nyear = $rtime[IDX_YEAR]; ($next) ? ($nyear <= $rtime[IDX_YEAR] + 10) : ($nyear >= $rtime[IDX_YEAR] - 10); $nyear = $nyear + (($next) ? 1 : -1)) {
+                foreach ($cron[IDX_MONTH] as $nmonth) {
+                    foreach ($cron[IDX_DAY] as $nday) {
+                        if (checkdate($nmonth, $nday, $nyear)) {
+                            $ndate = mktime(0, 0, 1, $nmonth, $nday, $nyear);
+                            if (($next) ? ($ndate >= $cdate) : ($ndate <= $cdate)) {
+                                $dow = date('w', $ndate);
+                                // The date is "OK" - lets see if the weekday matches, too...
+                                if (in_array($dow, $cron[IDX_WEEKDAY])) {
+                                    // WIN! :-) We found a valid date...
+                                    $rtime = explode(',', str_ftime('%M,%H,%d,%m,%w,%Y', mktime($rtime[IDX_HOUR], $rtime[IDX_MINUTE], 0, $nmonth, $nday, $nyear)));
 
-            } else {
-
-                // OK, some searching necessary...
-                $cdate = mktime(0, 0, 0, $rtime[IDX_MONTH], $rtime[IDX_DAY], $rtime[IDX_YEAR]);
-
-                // OK, these three nested loops are responsible for finding the date...
-                //
-                // The class has 2 limitations/bugs right now:
-                //
-                //	-> it doesn't work for dates in 2036 or later!
-                //	-> it will most likely fail if you search for a Feburary, 29th with a given weekday
-                //	   (this does happen because the class only searches in the next/last 10 years! And
-                //	   while it usually takes less than 10 years for a "normal" date to iterate through
-                //	   all weekdays, it can take 20+ years for Feb, 29th to iterate through all weekdays!
-                for($nyear = $rtime[IDX_YEAR]; (($next) ? ($nyear <= $rtime[IDX_YEAR] + 10) : ($nyear >= $rtime[IDX_YEAR] - 10)); $nyear = $nyear + (($next) ? 1 : -1)) {
-
-                    foreach($cron[IDX_MONTH] as $nmonth) {
-
-                        foreach($cron[IDX_DAY] as $nday) {
-
-                            if(checkdate($nmonth, $nday, $nyear)) {
-
-                                $ndate = mktime(0, 0, 1, $nmonth, $nday, $nyear);
-
-                                if(($next) ? ($ndate >= $cdate) : ($ndate <= $cdate)) {
-
-                                    $dow = date('w', $ndate);
-
-                                    // The date is "OK" - lets see if the weekday matches, too...
-                                    if(in_array($dow, $cron[IDX_WEEKDAY])) {
-
-                                        // WIN! :-) We found a valid date...
-                                        $rtime = explode(',', str_ftime('%M,%H,%d,%m,%w,%Y', mktime($rtime[IDX_HOUR], $rtime[IDX_MINUTE], 0, $nmonth, $nday, $nyear)));
-
-                                        return mktime($rtime[1], $rtime[0], 0, $rtime[3], $rtime[2], $rtime[5]);
-
-                                    }
-
+                                    return mktime(
+                                        (int) $rtime[1],
+                                        (int) $rtime[0],
+                                        0,
+                                        (int) $rtime[3],
+                                        (int) $rtime[2],
+                                        (int) $rtime[5]
+                                    );
                                 }
-
                             }
-
                         }
-
                     }
-
                 }
-
             }
 
             return null;
-
         }
 
         return mktime($rtime[1], $rtime[0], 0, $rtime[3], $rtime[2], $rtime[5]);
-
     }
 
     /**
@@ -386,22 +322,20 @@ class Cron {
      *
      * The array is used by various functions.
      *
-     * @param    int $timestamp If none is given, the current time is used
+     * @param int $timestamp If none is given, the current time is used
      *
-     * @return    Array
+     * @return array<mixed>
      */
-    private function getTimestamp($timestamp = NULL) {
-
-        if(is_null($timestamp))
+    private function getTimestamp(?int $timestamp = null): array
+    {
+        if (is_null($timestamp)) {
             $timestamp = time();
-
+        }
         $arr = explode(',', str_ftime('%M,%H,%d,%m,%w,%Y', $timestamp));
-
         // Remove leading zeros (or we'll get in trouble ;-)
-        array_walk($arr, function(&$value){ $value = intval($value); });
+        array_walk($arr, function (&$value) { $value = (int) $value; });
 
         return $arr;
-
     }
 
     /**
@@ -410,40 +344,26 @@ class Cron {
      * If it does not exist, the next higher/lower value is returned (depending on $next). If no higher/lower value
      * exists, false is returned.
      *
-     * @param    int   $value
+     * @param int   $value
+     * @param mixed $data
+     * @param bool  $next
      *
-     * @param    mixed $data
-     *
-     * @param    bool  $next
-     *
-     * @return    mixed The next value or false if there isn't one.
+     * @return mixed the next value or false if there isn't one
      */
-    private function findValue($value, $data, $next = TRUE) {
-
-        if(in_array($value, $data)) {
-
-            return (int)$value;
-
-        } else {
-
-            if(($next) ? ($value <= end($data)) : ($value >= end($data))) {
-
-                foreach($data as $curval) {
-
-                    if(($next) ? ($value <= (int)$curval) : ($curval <= $value)) {
-
-                        return (int)$curval;
-
-                    }
-
+    private function findValue($value, $data, $next = true)
+    {
+        if (in_array($value, $data)) {
+            return (int) $value;
+        }
+        if (($next) ? ($value <= end($data)) : ($value >= end($data))) {
+            foreach ($data as $curval) {
+                if (($next) ? ($value <= (int) $curval) : ($curval <= $value)) {
+                    return (int) $curval;
                 }
-
             }
-
         }
 
-        return FALSE;
-
+        return false;
     }
 
     /**
@@ -451,20 +371,17 @@ class Cron {
      *
      * The reversed values are used for calculations that are run when getLastOccurence() is called.
      *
-     * @param  mixed $cron
+     * @param array<mixed> $cron
      *
-     * @return Array
+     * @return array<mixed>
      */
-    private function arrayReverse($cron) {
-
-        foreach($cron as $key => $value) {
-
+    private function arrayReverse(array $cron): array
+    {
+        foreach ($cron as $key => $value) {
             $cron[$key] = array_reverse($value);
-
         }
 
         return $cron;
-
     }
 
     /**
@@ -472,165 +389,117 @@ class Cron {
      *
      * If it can not be parsed then it returns FALSE
      *
-     * @param        string $expression The cron-expression to parse.
-     *
-     * @return       mixed
+     * @param string $expression the cron-expression to parse
      */
-    private function parse($expression) {
-
+    private function parse(string $expression): mixed
+    {
         // First of all we cleanup the expression and remove all duplicate tabs/spaces/etc.
-        $expression = preg_replace('/(\s+)/', ' ', strtolower(trim($expression ?? '')));
-
+        $expression = preg_replace('/(\s+)/', ' ', strtolower(trim($expression)));
         // Convert named expressions if neccessary
-        if(substr($expression, 0, 1) == '@') {
-
+        if ('@' == substr($expression, 0, 1)) {
             $expression = strtr($expression, $this->intervals);
-
-            if(substr($expression, 0, 1) == '@')
-                return FALSE;
-
+            if ('@' == substr($expression, 0, 1)) {
+                return false;
+            }
         }
-
-        if($expression === 'now')
-            return intval(floor(time() / 60) * 60);
-
+        if ('now' === $expression) {
+            return (int) (floor(time() / 60) * 60);
+        }
         // Next basic check... do we have 5 segments?
         $cron = explode(' ', $expression);
-
-        if(count($cron) !== 5)
-            return FALSE;
-
+        if (5 !== count($cron)) {
+            return false;
+        }
         $dummy = [];
-
         // Yup, 5 segments... lets see if we can work with them
-        foreach($cron as $idx => $segment){
-
-            if(($value = $this->expandSegment($idx, $segment)) === false)
+        foreach ($cron as $idx => $segment) {
+            if (($value = $this->expandSegment($idx, $segment)) === false) {
                 return false;
-
+            }
             $dummy[$idx] = $value;
-
         }
 
         return $dummy;
-
     }
 
     /**
-     * Analyses a single segment
+     * Analyses a single segment.
      *
-     * @param   int    $idx
-     * @param   string $segment
-     *
-     * @return  mixed
+     * @return array<mixed>
      */
-    private function expandSegment($idx, $segment) {
-
+    private function expandSegment(int $idx, string $segment): array|false
+    {
         // Replace months/weekdays like "January", "February", etc. with numbers
-        if(isset($this->keywords[$idx])) {
-
+        if (isset($this->keywords[$idx])) {
             $segment = preg_replace(
                 array_keys($this->keywords[$idx]),
                 array_values($this->keywords[$idx]),
                 $segment
             );
-
         }
-
         // Replace wildcards
         $token = substr($segment, 0, 1);
-
-        if($token === '*')
-            $segment = preg_replace('/^\*(\/\d+)?$/i', $this->ranges[$idx]['min'] . '-' . $this->ranges[$idx]['max'] . '$1', $segment);
-        elseif($token === '?')
-            $segment = preg_replace('/^\?(\/\d+)?$/i', date($this->ranges[$idx]['name']) . '$1', $segment);
-
+        if ('*' === $token) {
+            $segment = preg_replace('/^\*(\/\d+)?$/i', $this->ranges[$idx]['min'].'-'.$this->ranges[$idx]['max'].'$1', $segment);
+        } elseif ('?' === $token) {
+            $segment = preg_replace('/^\?(\/\d+)?$/i', date($this->ranges[$idx]['name']).'$1', $segment);
+        }
         // Make sure that nothing unparsed is left :)
         $dummy = preg_replace('/[0-9\-\/\,]/', '', $segment);
-
-        if(! empty($dummy))
-            return FALSE;
-
+        if (!empty($dummy)) {
+            return false;
+        }
         // At this point our string should be OK - lets convert it to an array
         $result = [];
-
         $atoms = explode(',', $segment);
-
-        foreach($atoms as $curatom)
+        foreach ($atoms as $curatom) {
             $result = array_merge($result, $this->parseAtom($curatom));
-
+        }
         // Get rid of duplicates and sort the array
         $result = array_unique($result);
-
         sort($result);
-
         // Check for invalid values
-        if($idx == IDX_WEEKDAY) {
-
-            if(end($result) == 7) {
-
-                if(reset($result) <> 0) {
-
+        if (IDX_WEEKDAY == $idx) {
+            if (7 == end($result)) {
+                if (0 != reset($result)) {
                     array_unshift($result, 0);
-
                 }
-
                 array_pop($result);
-
             }
-
         }
-
-        foreach($result as $key => $value) {
-
-            if(($value < $this->ranges[$idx]['min']) || ($value > $this->ranges[$idx]['max']))
-                return FALSE;
-
+        foreach ($result as $key => $value) {
+            if (($value < $this->ranges[$idx]['min']) || ($value > $this->ranges[$idx]['max'])) {
+                return false;
+            }
         }
 
         return $result;
-
     }
 
     /**
-     * Analyses a single segment
+     * Analyses a single segment.
      *
-     * @param        string $atom The segment to parse
+     * @param string $atom The segment to parse
      *
-     * @return       array
+     * @return array<mixed>
      */
-    private function parseAtom($atom) {
-
+    private function parseAtom(string $atom): array
+    {
         $expanded = [];
-
-        if(preg_match('/^(\d+)-(\d+)(\/(\d+))?/i', $atom, $matches)) {
-
+        if (preg_match('/^(\d+)-(\d+)(\/(\d+))?/i', $atom, $matches)) {
             $low = $matches[1];
-
             $high = $matches[2];
-
-            if($low > $high) {
-
+            if ($low > $high) {
                 list($low, $high) = [$high, $low];
-
             }
-
             $step = isset($matches[4]) ? $matches[4] : 1;
-
-            for($i = $low; $i <= $high; $i += $step) {
-
-                $expanded[] = (int)$i;
-
+            for ($i = $low; $i <= $high; $i += $step) {
+                $expanded[] = (int) $i;
             }
-
         } else {
-
-            $expanded[] = (int)$atom;
-
+            $expanded[] = (int) $atom;
         }
 
         return $expanded;
-
     }
-
 }

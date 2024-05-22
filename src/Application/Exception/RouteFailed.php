@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Application\Exception;
 
-class RouteFailed extends \Hazaar\Exception {
+use Hazaar\Exception;
 
-    function __construct() {
-
+class RouteFailed extends Exception
+{
+    public function __construct()
+    {
         parent::__construct('Failed to process routing information!');
-
     }
-
 }

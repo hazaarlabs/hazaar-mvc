@@ -1,599 +1,580 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\File\Backend;
 
-class WebDAV extends \Hazaar\Http\WebDAV implements _Interface {
+use Hazaar\Cache;
+use Hazaar\Exception;
+use Hazaar\File\Image;
+use Hazaar\File\Manager;
+use Hazaar\HTTP\Request;
+use Hazaar\HTTP\Response;
+use Hazaar\Map;
 
-    public  $separator  = '/';
+class WebDAV extends \Hazaar\HTTP\WebDAV implements Interfaces\Backend, Interfaces\Driver
+{
+    public string $separator = '/';
+    protected Manager $manager;
+    private Map $options;
+    private Cache $cache;
 
-    private $options;
-
-    private $cache;
-
-    private $meta = [];
-
-    static public function label(){
-
-        return "WebDAV";
-
-    }
-
-    public function __construct($options) {
-
-        $this->options = new \Hazaar\Map([
-            'cache_backend' => 'file',
-            'cache_meta'    => TRUE
-        ], $options);
-
-        if(! $this->options->has('baseuri'))
-            throw new \Hazaar\Exception('WebDAV file browser backend requires a URL!');
-
-        if($this->options->has('cookies'))
-            $this->setCookie($this->options->cookies);
-
-        $this->cache = new \Hazaar\Cache($this->options['cache_backend'], ['use_pragma' => FALSE, 'namespace' => 'webdav_' . $this->options->baseuri . '_' . $this->options->username]);
-
-        if($this->options->get('cache_meta', FALSE)) {
-
-            if(($meta = $this->cache->load('meta')) !== FALSE)
-                $this->meta = $meta;
-
-        }
-
-        parent::__construct($this->options->toArray());
-
-    }
-
-    public function __destruct() {
-
-        if($this->options->get('cache_meta', FALSE))
-            $this->cache->save('meta', $this->meta);
-
-    }
-
-    public function refresh($reset = TRUE) {
-
-        return TRUE;
-
-    }
-
-    private function updateMeta($path) {
-
-        if(!($meta = $this->propfind($path)))
-            return false;
-
-        $meta = array_merge($this->meta, $meta);
-
-        foreach($meta as $name => $info) {
-
-            $name = '/' . trim($name, '/');
-
-            $info['scanned'] = ($name == $path);
-
-            $this->meta[$name] = $info;
-
-        }
-
-        return true;
-
-    }
-
-    /*
-     * Metadata Operations
+    /**
+     * @var array<mixed>
      */
-    public function scandir($path, $regex_filter = NULL, $recursive = FALSE) {
+    private array $meta = [];
 
-        $path = '/' . trim($path, '/');
+    /**
+     * WebDAV constructor.
+     *
+     * @param array<mixed>|Map $options
+     */
+    public function __construct(array|Map $options, Manager $manager)
+    {
+        $this->manager = $manager;
+        $this->options = new Map([
+            'cache_backend' => 'file',
+            'cache_meta' => true,
+        ], $options);
+        if (!$this->options->has('baseuri')) {
+            throw new Exception('WebDAV file browser backend requires a URL!');
+        }
+        if ($this->options->has('cookies')) {
+            $this->setCookie($this->options['cookies']);
+        }
+        $this->cache = new Cache($this->options['cache_backend'], ['use_pragma' => false, 'namespace' => 'webdav_'.$this->options['baseuri'].'_'.$this->options['username']]);
+        if ($this->options->get('cache_meta', false)) {
+            if (($meta = $this->cache->get('meta')) !== false) {
+                $this->meta = $meta;
+            }
+        }
+        parent::__construct($this->options->toArray());
+    }
 
-        if(! array_key_exists($path, $this->meta) || $this->meta[$path]['scanned'] == FALSE)
+    public function __destruct()
+    {
+        if ($this->options->get('cache_meta', false)) {
+            $this->cache->set('meta', $this->meta);
+        }
+    }
+
+    public static function label(): string
+    {
+        return 'WebDAV';
+    }
+
+    public function refresh(bool $reset = true): bool
+    {
+        return true;
+    }
+
+    // Metadata Operations
+    public function scandir(
+        string $path,
+        ?string $regex_filter = null,
+        int $sort = SCANDIR_SORT_ASCENDING,
+        bool $show_hidden = false,
+        ?string $relative_path = null
+    ): array|bool {
+        $path = '/'.trim($path, '/');
+        if (!array_key_exists($path, $this->meta) || false == $this->meta[$path]['scanned']) {
             $this->updateMeta($path);
-
-        if(! ($pathMeta = ake($this->meta, $path)))
-            return FALSE;
-
-        if(!(is_array($pathMeta['resourcetype']) && array_key_exists('collection', $pathMeta['resourcetype'])))
-            return FALSE;
-
+        }
+        if (!($pathMeta = ake($this->meta, $path))) {
+            return false;
+        }
+        if (!(is_array($pathMeta['resourcetype']) && array_key_exists('collection', $pathMeta['resourcetype']))) {
+            return false;
+        }
         $list = [];
-
-        foreach($this->meta as $name => $item) {
-
-            if($name == '/' || pathinfo($name, PATHINFO_DIRNAME) !== $path)
+        foreach ($this->meta as $name => $item) {
+            if ('/' == $name || pathinfo($name, PATHINFO_DIRNAME) !== $path) {
                 continue;
-
+            }
             $list[] = basename($name);
-
         }
 
         return $list;
-
     }
 
-    public function info($path) {
+    // Check if file/path exists
+    public function exists(string $path): bool
+    {
+        if (($info = $this->info($path)) !== false) {
+            return true;
+        }
 
-        $path = '/' . trim($path, '/');
-
-        if($meta = ake($this->meta, $path))
-            return $meta;
-
-        if(!$this->updateMeta($path))
-            return null;
-
-        return ake($this->meta, $path);
-
+        return false;
     }
 
-    public function search($query, $include_deleted = FALSE) {
-
-        dir('not done yet!');
-
-        $request = new \Hazaar\Http\Request('https://api.dropbox.com/1/search/auto/', 'POST');
-
-        $request->query = $query;
-
-        if($this->options->has('file_limit'))
-            $request->file_limit = $this->options['file_limit'];
-
-        $request->include_deleted = $include_deleted;
-
-        if(! ($response = $this->sendRequest($request)))
-            return FALSE;
-
-        return $response;
-
-    }
-
-    //Check if file/path exists
-    public function exists($path) {
-
-        if(($info = $this->info($path)) !== FALSE)
-            return TRUE;
-
-        return FALSE;
-
-    }
-
-    public function realpath($path) {
-
+    public function realpath(string $path): ?string
+    {
         return $path;
-
     }
 
-    public function is_readable($path) {
-
-        if(! ($info = $this->info($path)))
-            return NULL;
+    public function isReadable(string $path): bool
+    {
+        if (!($info = $this->info($path))) {
+            return false;
+        }
 
         return in_array('R', str_split(ake($info, 'permissions')));
-
     }
 
-    public function is_writable($path) {
-
-        if(! ($info = $this->info($path)))
-            return NULL;
+    public function isWritable(string $path): bool
+    {
+        if (!($info = $this->info($path))) {
+            return false;
+        }
 
         return in_array('W', str_split(ake($info, 'permissions')));
-
     }
 
-    //TRUE if path is a directory
-    public function is_dir($path) {
-
-        if(! ($info = $this->info($path)))
-            return NULL;
-
-        if(array_key_exists('resourcetype', $info) && is_array($info['resourcetype']) && array_key_exists('collection', $info['resourcetype']))
-            return TRUE;
-
-        return FALSE;
-
-    }
-
-    //TRUE if path is a symlink
-    public function is_link($path) {
-
-        var_dump(__METHOD__);
-
-        exit;
-
-        return FALSE;
-
-    }
-
-    //TRUE if path is a normal file
-    public function is_file($path) {
-
-        return ! $this->is_dir($path);
-
-    }
-
-    //Returns the file type
-    public function filetype($path) {
-
-        if(! ($info = $this->info($path)))
-            return NULL;
-
-        return (is_array($info['resourcetype']) && array_key_exists('collection', $info['resourcetype']) ? 'dir' : 'file');
-
-    }
-
-    //Returns the file modification time
-    public function filectime($path) {
-
-        if(! ($info = $this->info($path)))
+    // TRUE if path is a directory
+    public function isDir(string $path): bool
+    {
+        if (!($info = $this->info($path))) {
             return false;
+        }
+        if (array_key_exists('resourcetype', $info) && is_array($info['resourcetype']) && array_key_exists('collection', $info['resourcetype'])) {
+            return true;
+        }
+
+        return false;
+    }
+
+    // TRUE if path is a symlink
+    public function isLink(string $path): bool
+    {
+        return false;
+    }
+
+    // TRUE if path is a normal file
+    public function isFile(string $path): bool
+    {
+        return !$this->isDir($path);
+    }
+
+    // Returns the file type
+    public function filetype(string $path): false|string
+    {
+        if (!($info = $this->info($path))) {
+            return false;
+        }
+
+        return is_array($info['resourcetype']) && array_key_exists('collection', $info['resourcetype']) ? 'dir' : 'file';
+    }
+
+    // Returns the file modification time
+    public function filectime(string $path): false|int
+    {
+        if (!($info = $this->info($path))) {
+            return false;
+        }
 
         return strtotime(ake($info, 'getcreated'));
-
     }
 
-    //Returns the file modification time
-    public function filemtime($path) {
-
-        if(! ($info = $this->info($path)))
+    // Returns the file modification time
+    public function filemtime(string $path): false|int
+    {
+        if (!($info = $this->info($path))) {
             return false;
+        }
 
         return strtotime(ake($info, 'getlastmodified'));
-
     }
 
-    public function touch($path){
-
+    public function touch(string $path): bool
+    {
         return false;
-
     }
 
-    //Returns the file modification time
-    public function fileatime($path) {
-
+    // Returns the file modification time
+    public function fileatime(string $path): false|int
+    {
         return false;
-
     }
 
-    public function filesize($path) {
-
-        if(!($info = $this->info($path)))
-            return NULL;
-
-        if($this->is_dir($path))
-            return intval(ake($info, 'size'));
-
-        return intval(ake($info, 'getcontentlength'));
-
-    }
-
-    public function fileperms($path) {
-
-        var_dump(__METHOD__);
-
-        exit;
-
-        return 0666;
-
-    }
-
-    public function chmod($path, $mode) {
-
-        var_dump(__METHOD__);
-
-        exit;
-
-        return TRUE;
-
-    }
-
-    public function chown($path, $user) {
-
-        var_dump(__METHOD__);
-
-        exit;
-
-        return TRUE;
-
-    }
-
-    public function chgrp($path, $group) {
-
-        var_dump(__METHOD__);
-
-        exit;
-
-        return TRUE;
-
-    }
-
-    public function unlink($path) {
-
-        var_dump(__METHOD__);
-
-        exit;
-
-        $request = new \Hazaar\Http\Request('https://api.dropbox.com/1/fileops/delete', 'POST');
-
-        $request->root = 'auto';
-
-        $request->path = $path;
-
-        if(! ($response = $this->sendRequest($request)))
-            return FALSE;
-
-        if($response->is_deleted) {
-
-            $key = strtolower($response->path);
-
-            if(array_key_exists($key, $this->meta))
-                unset($this->meta[$key]);
-
-            $this->clear_meta($response->path);
-
-            return TRUE;
-
+    public function filesize(string $path): false|int
+    {
+        if (!($info = $this->info($path))) {
+            return false;
+        }
+        if ($this->isDir($path)) {
+            return (int) ake($info, 'size');
         }
 
-        return FALSE;
-
+        return (int) ake($info, 'getcontentlength');
     }
 
-    public function mime_content_type($path) {
+    public function fileperms(string $path): false|int
+    {
+        return false;
+    }
 
-        if(! ($info = $this->info($path)))
-            return NULL;
+    public function chmod(string $path, int $mode): bool
+    {
+        return true;
+    }
+
+    public function chown(string $path, string $user): bool
+    {
+        return true;
+    }
+
+    public function chgrp(string $path, string $group): bool
+    {
+        return true;
+    }
+
+    public function cwd(): string
+    {
+        return '/';
+    }
+
+    public function unlink(string $path): bool
+    {
+        return false;
+    }
+
+    public function mimeContentType(string $path): ?string
+    {
+        if (!($info = $this->info($path))) {
+            return null;
+        }
 
         return ake($info, 'getcontenttype');
-
     }
 
-    public function md5Checksum($path) {
+    public function md5Checksum(string $path): ?string
+    {
+        if (!($bytes = $this->read($path))) {
+            return null;
+        }
 
-        return md5($this->read($path));
-
+        return md5($bytes);
     }
 
-    public function thumbnail($path, $params = []) {
-
-        if(! ($info = $this->info($path)))
-            return NULL;
-
-        if($info['thumb_exists']) {
-
+    /**
+     * Get the URL to a thumbnail of the file.
+     *
+     * @param array<string, int|string> $params
+     */
+    public function thumbnailURL(string $path, int $width = 100, int $height = 100, string $format = 'jpeg', array $params = []): false|string
+    {
+        if (!($info = $this->info($path))) {
+            return false;
+        }
+        if ($info['thumb_exists']) {
             $size = 'l';
-
-            if($width < 32 && $height < 32)
+            if ($width < 32 && $height < 32) {
                 $size = 'xs';
-            elseif($width < 64 && $height < 64)
+            } elseif ($width < 64 && $height < 64) {
                 $size = 's';
-            elseif($width < 128 && $height < 128)
+            } elseif ($width < 128 && $height < 128) {
                 $size = 'm';
-            elseif($width < 640 && $height < 480)
+            } elseif ($width < 640 && $height < 480) {
                 $size = 'l';
-            elseif($width < 1024 && $height < 768)
+            } elseif ($width < 1024 && $height < 768) {
                 $size = 'xl';
+            }
+            $request = new Request('https://api-content.dropbox.com/1/thumbnails/auto'.$path, 'GET');
+            $request['format'] = $format;
+            $request['size'] = $size;
+            $response = $this->send($request, 0);
+            $image = new Image($path, null, $this->manager);
+            $image->setContents($response->body);
+            $image->resize($width, $height, true, 'center', true, true, null, 0, 0);
 
-            $request = new \Hazaar\Http\Request('https://api-content.dropbox.com/1/thumbnails/auto' . $path, 'GET');
-
-            $request->format = $format;
-
-            $request->size = $size;
-
-            $response = $this->sendRequest($request, FALSE);
-
-            $image = new \Hazaar\File\Image($path, NULL, $this);
-
-            $image->set_contents($response);
-
-            $image->resize($width, $height, TRUE, TRUE, FALSE, TRUE);
-
-            return $image->get_contents();
-
+            return $image->getContents();
         }
 
-        return FALSE;
-
+        return false;
     }
 
-    /*
-     * File Operations
-     */
-    public function mkdir($path) {
+    // File Operations
+    public function mkdir(string $path): bool
+    {
+        $request = new Request('https://api.dropbox.com/1/fileops/create_folder', 'POST');
+        $request['root'] = 'auto';
+        $request['path'] = $path;
+        $response = $this->send($request);
+        if ($response instanceof Response && boolify($response['is_dir'])) {
+            $this->meta[strtolower($response['path'])] = $response->body;
 
-        $request = new \Hazaar\Http\Request('https://api.dropbox.com/1/fileops/create_folder', 'POST');
-
-        $request->root = 'auto';
-
-        $request->path = $path;
-
-        if(! ($response = $this->sendRequest($request)))
-            return FALSE;
-
-        if(boolify($response->is_dir)) {
-
-            $this->meta[strtolower($response->path)] = $response->toArray();
-
-            return TRUE;
-
+            return true;
         }
 
-        return FALSE;
-
+        return false;
     }
 
-    public function rmdir($path, $recurse = false) {
-
+    public function rmdir(string $path, bool $recurse = false): bool
+    {
         return $this->unlink($path);
-
     }
 
-    public function copy($src, $dst, $recursive = FALSE) {
-
-        if($this->is_file($dst))
-            return FALSE;
-
-        $dst = rtrim($dst, '/') . '/' . basename($src);
-
-        if($this->exists($dst))
-            return FALSE;
-
-        $request = new \Hazaar\Http\Request('https://api.dropbox.com/1/fileops/copy', 'POST');
-
-        $request->root = 'auto';
-
-        $request->from_path = $src;
-
-        $request->to_path = $dst;
-
-        if(! ($response = $this->sendRequest($request)))
-            return FALSE;
-
-        $this->meta[strtolower($response->path)] = $response->toArray();
-
-        $key = $this->options['app_key'] . '::' . strtolower($src);
-
-        if($meta = $this->cache->load($key))
-            $this->cache->save($this->options['app_key'] . '::' . strtolower($response->path), $meta);
-
-        return TRUE;
-
-    }
-
-    public function link($src, $dst) {
-
-        return FALSE;
-
-    }
-
-    public function move($src, $dst) {
-
-        if($this->is_file($dst))
-            return FALSE;
-
-        $dst = rtrim($dst, '/') . '/' . basename($src);
-
-        if($this->exists($dst))
-            return FALSE;
-
-        $request = new \Hazaar\Http\Request('https://api.dropbox.com/1/fileops/move', 'POST');
-
-        $request->root = 'auto';
-
-        $request->from_path = $src;
-
-        $request->to_path = $dst;
-
-        if(! ($response = $this->sendRequest($request)))
-            return FALSE;
-
-        $this->meta[strtolower($response->path)] = $response->toArray();
-
-        $key = $this->options['app_key'] . '::' . strtolower($src);
-
-        if($meta = $this->cache->load($key)) {
-
-            $this->cache->save($this->options['app_key'] . '::' . strtolower($response->path), $meta);
-
-            $this->cache->remove($key);
-
+    public function copy(string $src, string $dst, bool $recursive = false): bool
+    {
+        if ($this->isFile($dst)) {
+            return false;
+        }
+        $dst = rtrim($dst, '/').'/'.basename($src);
+        if ($this->exists($dst)) {
+            return false;
+        }
+        $request = new Request('https://api.dropbox.com/1/fileops/copy', 'POST');
+        $request['root'] = 'auto';
+        $request['from_path'] = $src;
+        $request['to_path'] = $dst;
+        $response = $this->send($request);
+        $this->meta[strtolower($response['path'])] = $response->body;
+        $key = $this->options['app_key'].'::'.strtolower($src);
+        if ($meta = $this->cache->get($key)) {
+            $this->cache->set($this->options['app_key'].'::'.strtolower($response['path']), $meta);
         }
 
-        return TRUE;
-
+        return true;
     }
 
-    /*
-     * Access operations
-     */
-    public function read($path, $offset = -1, $maxlen = NULL) {
+    public function link(string $src, string $dst): bool
+    {
+        return false;
+    }
 
+    public function move(string $src, string $dst): bool
+    {
+        if ($this->isFile($dst)) {
+            return false;
+        }
+        $dst = rtrim($dst, '/').'/'.basename($src);
+        if ($this->exists($dst)) {
+            return false;
+        }
+        $request = new Request('https://api.dropbox.com/1/fileops/move', 'POST');
+        $request['root'] = 'auto';
+        $request['from_path'] = $src;
+        $request['to_path'] = $dst;
+        $response = $this->send($request);
+        $this->meta[strtolower($response['path'])] = $response->body;
+        $key = $this->options['app_key'].'::'.strtolower($src);
+        if ($meta = $this->cache->get($key)) {
+            $this->cache->set($this->options['app_key'].'::'.strtolower($response['path']), $meta);
+            $this->cache->remove($key);
+        }
+
+        return true;
+    }
+
+    // Access operations
+    public function read(string $path, int $offset = -1, ?int $maxlen = null): false|string
+    {
         $response = $this->get($this->getAbsoluteUrl($path), 10, $offset, $maxlen);
-
-        if($response->status !== 200)
-            return FALSE;
+        if (200 !== $response->status) {
+            return false;
+        }
 
         return $response->body;
-
     }
 
-    public function write($path, $data, $content_type, $overwrite = FALSE) {
-
-        $request = new \Hazaar\Http\Request('https://api-content.dropbox.com/1/files_put/auto' . $path, 'POST');
-
+    public function write(string $path, string $data, ?string $content_type = null, bool $overwrite = false): ?int
+    {
+        $request = new Request('https://api-content.dropbox.com/1/files_put/auto'.$path, 'POST');
         $request->setHeader('Content-Type', $content_type);
+        if ($overwrite) {
+            $request['overwrite'] = true;
+        }
+        $request['body'] = $data;
+        $response = $this->send($request);
+        $this->meta[strtolower($response['path'])] = $response->body;
 
-        if($overwrite)
-            $request->overwrite = TRUE;
-
-        $request->body = $data;
-
-        if(! ($response = $this->sendRequest($request)))
-            return FALSE;
-
-        $this->meta[strtolower($response->path)] = $response->toArray();
-
-        return TRUE;
-
+        return strlen($data);
     }
 
-    public function upload($path, $file, $overwrite = TRUE) {
+    /**
+     * Upload a file that was uploaded with a POST.
+     *
+     * @param array<string, int|string> $file
+     */
+    public function upload(string $path, array $file, bool $overwrite = true): bool
+    {
+        if (!(($srcFile = ake($file, 'tmp_name')) && $filetype = ake($file, 'type'))) {
+            return false;
+        }
+        $fullPath = rtrim($path, '/').'/'.$file['name'];
 
-        if(! (($srcFile = ake($file, 'tmp_name')) && $filetype = ake($file, 'type')))
-            return FALSE;
-
-        $fullPath = rtrim($path, '/') . '/' . $file['name'];
-
-        return $this->write($fullPath, file_get_contents($srcFile), $filetype, $overwrite = FALSE);
-
+        return $this->write($fullPath, file_get_contents($srcFile), $filetype, $overwrite = false) > 0;
     }
 
-    public function get_meta($path, $key = NULL) {
-
-        if(!($meta = $this->cache->load($this->options['app_key'] . '::' . strtolower($path))))
-            return null;
-
-        if($key !== null)
+    public function getMeta(string $path, ?string $key = null): array|false|string
+    {
+        if (!($meta = $this->cache->get($this->options['app_key'].'::'.strtolower($path)))) {
+            return false;
+        }
+        if (null !== $key) {
             return ake($meta, $key);
+        }
 
         return $meta;
-
     }
 
-    public function set_meta($path, $values) {
-
-        if(! ($meta = $this->cache->load($this->options['app_key'] . '::' . strtolower($path))))
+    /**
+     * @param array<string,int|string> $values
+     */
+    public function setMeta(string $path, array $values): bool
+    {
+        if (!($meta = $this->cache->get($this->options['app_key'].'::'.strtolower($path)))) {
             $meta = [];
-
-        foreach($values as $key => $value)
+        }
+        foreach ($values as $key => $value) {
             $meta[$key] = $value;
+        }
+        $this->cache->set($this->options['app_key'].'::'.strtolower($path), $meta);
 
-        $this->cache->save($this->options['app_key'] . '::' . strtolower($path), $meta);
-
-        return TRUE;
-
+        return true;
     }
 
-    private function clear_meta($path) {
-
-        $this->cache->remove($this->options['app_key'] . '::' . strtolower($path));
-
-        return TRUE;
-
+    /**
+     * @param array<string,int|string> $params
+     */
+    public function previewURL(string $path, array $params = []): false|string
+    {
+        return false;
     }
 
-    public function preview_uri($path) {
-
-        return FALSE;
-
+    public function directURL(string $path): false|string
+    {
+        return false;
     }
 
-    public function direct_uri($path) {
-
-        return FALSE;
-
+    public function authorised(): bool
+    {
+        return true;
     }
 
-    public function cwd(){
-
-        return '/';
-        
+    public function authorise(?string $redirect_uri = null): bool
+    {
+        return true;
     }
 
+    public function buildAuthURL(?string $callback_url = null): ?string
+    {
+        return null;
+    }
+
+    public function openStream(string $path, string $mode): mixed
+    {
+        return false;
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function writeStream($stream, string $bytes, ?int $length = null): int
+    {
+        return -1;
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function readStream($stream, int $length): false|string
+    {
+        return false;
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function seekStream(mixed $stream, int $offset, int $whence = SEEK_SET): int
+    {
+        return -1;
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function tellStream(mixed $stream): int
+    {
+        return -1;
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function eofStream(mixed $stream): bool
+    {
+        return true;
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function truncateStream(mixed $stream, int $size): bool
+    {
+        return false;
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function lockStream(mixed $stream, int $operation, ?int &$wouldblock = null): bool
+    {
+        return false;
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function flushStream(mixed $stream): bool
+    {
+        return false;
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function getsStream(mixed $stream, ?int $length = null): false|string
+    {
+        return false;
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function closeStream($stream): bool
+    {
+        return false;
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    private function info(string $path): array|false
+    {
+        $path = '/'.trim($path, '/');
+        if ($meta = ake($this->meta, $path)) {
+            return $meta;
+        }
+        if (!$this->updateMeta($path)) {
+            return false;
+        }
+
+        return ake($this->meta, $path, false);
+    }
+
+    private function updateMeta(string $path): bool
+    {
+        if (!($meta = $this->propfind($path))) {
+            return false;
+        }
+        $meta = array_merge($this->meta, $meta);
+        foreach ($meta as $name => $info) {
+            $name = '/'.trim($name, '/');
+            $info['scanned'] = ($name == $path);
+            $this->meta[$name] = $info;
+        }
+
+        return true;
+    }
 }

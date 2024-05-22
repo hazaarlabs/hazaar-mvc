@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Controller\Response\HTTP;
 
-class Unauthorized extends \Hazaar\Controller\Response {
+use Hazaar\Controller\Response;
 
-    function __construct($content_type = "text/html") {
-
+class Unauthorized extends Response
+{
+    public function __construct(string $content_type = 'text/html')
+    {
         parent::__construct($content_type, 401);
-
     }
-
 }

@@ -1,0 +1,13 @@
+path:
+  - src/
+  - tests/
+jobs: 10
+extensions:
+  - php
+exclude:
+  - vendor
+warning: false
+memory-limit: -1
+no-cache: true
+log-json: false
+log-junit: phplint-test-results.xml

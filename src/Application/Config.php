@@ -1,388 +1,95 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @file        Hazaar/Application/Config.php
  *
  * @author      Jamie Carl <jamie@hazaar.io>
- *
  * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
-
 /**
- * @brief       The main application entry point
+ * The main application entry point.
  */
+
 namespace Hazaar\Application;
 
+use Hazaar\Application;
+use Hazaar\Exception;
+use Hazaar\File;
+use Hazaar\Loader;
+use Hazaar\Map;
+
 /**
- * @brief       Application Configuration Class
+ * Application Configuration Class.
  *
  * @detail      The config class loads settings from a configuration file and configures the system ready
  *              for the application to run.  By default the config file used is application.ini and is stored
  *              in the config folder of the application path.
- *
- * @since       1.0.0
  */
-class Config extends \Hazaar\Map {
+class Config extends Map
+{
+    /**
+     * @var array<string>
+     */
+    public static array $overridePaths = [];
+    private string $env;
+    private string $source;
 
-    static public $override_paths = [];
+    /**
+     * @var array<mixed>
+     */
+    private array $global = [];
+    private bool $loaded = false;
 
-    private $env;
-
-    private $source;
-
-    private $global;
-
-    private $loaded = false;
-
-    private $secure_keys = [];
+    /**
+     * @var array<string>
+     */
+    private array $secureKeys = [];
 
     /**
      * @detail      The application configuration constructor loads the settings from the configuration file specified
      *              in the first parameter.  It will use the second parameter as the starting point and is intended to
      *              allow different operating environments to be configured from a single configuration file.
      *
-     * @since       1.0.0
-     *
-     * @param       string  $source_file    The absolute path to the config file
-     *
-     * @param       string  $env            The application environment to read settings for.  Usually `development`
-     *                                      or `production`.
-     *
-     * @param       mixed   $defaults       Initial defaut values.
-     *
-     * @param       mixed   $path_type      The search path type to look for configuration files.
-     *
-     * @param       mixed   $override_paths An array of subdirectory names to look for overrides.
+     * @param string       $sourceFile The absolute path to the config file
+     * @param string       $env        The application environment to read settings for.  Usually `development`
+     *                                 or `production`.
+     * @param array<mixed> $defaults   initial defaut values
+     * @param string       $pathType   the search path type to look for configuration files
      */
-    function __construct($source_file = null, $env = NULL, $defaults = [], $path_type = FILE_PATH_CONFIG, $override_namespaces = false) {
-
+    public function __construct(
+        ?string $sourceFile = null,
+        ?string $env = null,
+        array $defaults = [],
+        string $pathType = FILE_PATH_CONFIG,
+        bool $overrideNamespaces = false
+    ) {
         $config = null;
-
-        if(! $env)
+        if (!$env) {
             $env = APPLICATION_ENV;
-
-        $this->env = $env;
-
-        if($source_file !== null && ($this->source = trim($source_file ?? ''))){
-
-            if($config = $this->load($this->source, $defaults, $path_type, Config::$override_paths, $override_namespaces))
-                $this->loaded = ($config->count() > 0);
-
         }
-
+        $this->env = $env;
+        if (null !== $sourceFile && ($this->source = trim($sourceFile))) {
+            if ($config = $this->load($this->source, $defaults, $pathType, Config::$overridePaths, $overrideNamespaces)) {
+                $this->loaded = ($config->count() > 0);
+            } else {
+                throw new \Exception("Failed to load {$this->source} config with environment '{$this->env}'.");
+            }
+        }
         $filters = [
             'out' => [
                 [
                     'field' => null,
-                    'callback' => [$this, 'parseString']
-                ]
-            ]
+                    'callback' => [$this, 'parseString'],
+                ],
+            ],
         ];
-
         parent::__construct($config, null, $filters);
-
-    }
-
-    public function load($source, $defaults = [], $path_type = FILE_PATH_CONFIG, $override_paths = null, $override_namespaces = false) {
-
-        $options = [];
-
-        $sources = [['name' => $source, 'ns' => true]];
-
-        if($override_paths){
-
-            if(!is_array($override_paths))
-                $override_paths = [$override_paths];
-
-            foreach($override_paths as $override)
-                $sources[] = ['name' => $override . DIRECTORY_SEPARATOR . $source, 'ns' => $override_namespaces];
-
-
-        }
-
-        foreach($sources as &$source_info){
-
-            $source_file = null;
-
-            //If we have an extension, just use that file.
-            if(ake(pathinfo($source_info['name']), 'extension', false) !== false){
-
-                $source_file = \Hazaar\Loader::getFilePath($path_type, $source_info['name']);
-
-            }else{ //Otherwise, search for files with supported extensions
-
-                $extensions = ['json', 'ini']; //Ordered by preference
-
-                foreach($extensions as $ext){
-
-                    $filename = $source_info['name'] . '.' . $ext;
-
-                    if($source_file = \Hazaar\Loader::getFilePath($path_type, $filename))
-                        break;
-
-                }
-
-            }
-
-            //If the file doesn't exist, then skip it.
-            if(!$source_file) continue;
-
-            $source_data = $this->loadSourceFile($source_file);
-
-            $options[] = ($source_info['ns'] === true) ? $source_data : [$this->env => $this->loadSourceFile($source_file)];
-
-        }
-
-        if(!count($options) > 0) return false;
-
-        $combined = [];
-
-        foreach($options as $o){
-
-            if(ake($combined, 'final') === true)
-                break;
-
-            $combined = array_replace_recursive($combined, $o);
-
-        }
-
-        $config = new \Hazaar\Map($defaults);
-
-        if(!$this->loadConfigOptions($combined, $config))
-            return false;
-
-        return $config;
-
-    }
-
-    private function loadSourceFile($source){
-
-        $config = [];
-
-        $cache_key = null;
-
-        $secure_keys = [];
-
-        //Check if APCu is available for caching and load the config file from cache if it exists.
-        if(in_array('apcu', get_loaded_extensions())){
-
-            $cache_key = md5(gethostname() . ':' . $source);
-
-            if(apcu_exists($cache_key)) {
-
-                $cache_info = apcu_cache_info();
-
-                $mtime = 0;
-
-                foreach($cache_info['cache_list'] as $cache) {
-
-                    if(array_key_exists('info', $cache) && $cache['info'] == $cache_key) {
-
-                        $mtime = ake($cache, 'mtime');
-
-                        break;
-
-                    }
-
-                }
-
-                if($mtime > filemtime($source)){
-
-                    $cache_data = apcu_fetch($cache_key);
-
-                    if(is_array($cache_data) && count($cache_data) === 2 && isset($cache_data[0]) && isset($cache_data[1]))
-                        list($secure_keys, $source) = apcu_fetch($cache_key);
-
-                }
-
-            }
-
-        }
-
-        //If we have loaded this config file, continue on to the next
-        if($source && !is_string($source)){
-
-            $this->secure_keys = array_merge($this->secure_keys, $secure_keys);
-
-            return $source;
-
-        }
-
-        $file = new \Hazaar\File($source);
-
-        $extention = $file->extension();
-
-        if($extention == 'json'){
-
-            if(!$config = $file->parseJSON(true))
-                throw new \Hazaar\Exception('Failed to parse JSON config file: ' . $source);
-
-        }elseif($extention == 'ini'){
-
-            if(!$config = parse_ini_string($file->get_contents(), true, INI_SCANNER_TYPED))
-                throw new \Hazaar\Exception('Failed to parse INI config file: ' . $source);
-
-            foreach($config as &$array)
-                $array = array_from_dot_notation($array);
-
-        }else{
-
-            throw new \Hazaar\Exception('Unknown file format: ' . $source);
-
-        }
-
-        if($file->isEncrypted())
-            $this->secure_keys = array_merge($this->secure_keys, $this->secure_keys += $secure_keys = array_keys($config));
-
-        //Store the config file in cache
-        if($cache_key !== null) apcu_store($cache_key, [$secure_keys, $config]);
-
-        return $config;
-
-    }
-
-    private function loadConfigOptions($options, \Hazaar\Map $config, $env = null){
-
-        if(!$env)
-            $env = $this->env;
-
-        if(!(\Hazaar\Map::is_array($options) && array_key_exists($env, $options)))
-            return false;
-
-        if(!is_array($this->global))
-            $this->global = [];
-
-        $this->global = array_merge($this->global, $options);
-
-        foreach($options[$env] as $key => $values) {
-
-            if($key === 'include') {
-
-                if(!\Hazaar\Map::is_array($values))
-                    $values = [$values];
-
-                foreach($values as $include_environment)
-                    $this->loadConfigOptions($options, $config, $include_environment);
-
-            } elseif($key === 'import') {
-
-                if(!\Hazaar\Map::is_array($values))
-                    $values = [$values];
-
-                if($import_file = current($values)){
-
-                    do {
-
-                        if(!($file = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $import_file)))
-                            continue;
-
-                        if(is_dir($file)){
-
-                            $dir_iterator = new \RecursiveDirectoryIterator($file);
-
-                            $iterator = new \RecursiveIteratorIterator($dir_iterator, \RecursiveIteratorIterator::SELF_FIRST);
-
-                            foreach($iterator as $import_file){
-
-                                if(substr($import_file->getFileName(), 0, 1) === '.')
-                                    continue;
-
-                                array_push($values, $import_file->getRealPath());
-
-                            }
-
-                            continue;
-
-                        }
-
-                        if($options = $this->loadSourceFile($file))
-                            $config->extend($options);
-
-                        
-                    }while($import_file = next($values));
-
-                }
-
-            } else {
-
-                $config->set($key, $values, true);
-
-            }
-
-        }
-
-        return $config;
-
-    }
-
-
-    /**
-     * Check whether the config was loaded from the source file.
-     */
-    public function loaded() {
-
-        return $this->loaded;
-
     }
 
     /**
-     * @brief       Get the config environment that was loaded
-     *
-     * @since       2.0.0
-     */
-    public function getEnv() {
-
-        return $this->env;
-
-    }
-
-    public function getEnvConfig($env = null){
-
-        if($env === null)
-            $env = $this->env;
-
-        return ake($this->global, $env);
-
-    }
-
-    public function getEnvironments(){
-
-        return array_keys($this->global);
-
-    }
-
-    /**
-     * @brief       Get the source file content from which the settings originated
-     *
-     * @since       1.0.0
-     */
-    public function getSource() {
-
-        if(file_exists($this->source))
-            return file_get_contents($this->source);
-
-        return 'config file not found';
-
-    }
-
-    public function getSourceFilename() {
-
-        return $this->source;
-
-    }
-
-    /**
-     * Test if the current loaded source file is writable on the filesystem
-     *
-     * @return boolean
-     */
-    public function isWritable(){
-
-        return is_writable($this->source);
-
-    }
-
-    /**
-     * @brief       Output the configuration in a human readable format.
+     * Output the configuration in a human readable format.
      *
      * @detail      This method is useful for logging, debugging or for using in application administration interfaces
      *              to check the current running configuration.
@@ -395,7 +102,6 @@ class Config extends \Hazaar\Map {
      *              app.layout = application
      *              app.theme.name = test
      *              app.defaultController = Index
-     *              app.compress = false
      *              app.debug = 1
      *              paths.model = models
      *              paths.view = views
@@ -406,99 +112,152 @@ class Config extends \Hazaar\Map {
      *              module.require[] = pgsql
      *              </pre>
      *
-     * @since       1.0.0
-     *
-     * @return      string Config as a multi-line string
+     * @return string Config as a multi-line string
      */
-    public function __tostring() {
-
+    public function __toString(): string
+    {
         return $this->tostring();
-
     }
 
-    public function tostring() {
+    /**
+     * Loads a configuration file and returns the configuration options.
+     *
+     * @param string        $source             the name of the configuration file to load
+     * @param array<mixed>  $defaults           (optional) The default configuration options
+     * @param string        $pathType           (optional) The type of path to use for loading the file
+     * @param array<string> $overridePaths      (optional) An array of override paths to search for the file
+     * @param bool          $overrideNamespaces (optional) Whether to override namespaces when searching for the file
+     *
+     * @return bool|Map returns a Map object containing the configuration options, or false if the file could not be loaded
+     */
+    public function load(
+        string $source,
+        array $defaults = [],
+        string $pathType = FILE_PATH_CONFIG,
+        array $overridePaths = [],
+        bool $overrideNamespaces = false
+    ): bool|Map {
+        $options = [];
+        $sources = [['name' => $source, 'ns' => true]];
+        if ($overridePaths) {
+            if (!is_array($overridePaths)) {
+                $overridePaths = [$overridePaths];
+            }
+            foreach ($overridePaths as $override) {
+                $sources[] = ['name' => $override.DIRECTORY_SEPARATOR.$source, 'ns' => $overrideNamespaces];
+            }
+        }
+        foreach ($sources as &$sourceInfo) {
+            $sourceFile = null;
+            // If we have an extension, just use that file.
+            if (false !== ake(pathinfo($sourceInfo['name']), 'extension', false)) {
+                $sourceFile = Loader::getFilePath($pathType, $sourceInfo['name']);
+            } else { // Otherwise, search for files with supported extensions
+                $extensions = ['json', 'ini']; // Ordered by preference
+                foreach ($extensions as $ext) {
+                    $filename = $sourceInfo['name'].'.'.$ext;
+                    if ($sourceFile = Loader::getFilePath($pathType, $filename)) {
+                        break;
+                    }
+                }
+            }
+            // If the file doesn't exist, then skip it.
+            if (!$sourceFile) {
+                continue;
+            }
+            $sourceData = $this->loadSourceFile($sourceFile);
+            $options[] = (true === $sourceInfo['ns']) ? $sourceData : [$this->env => $sourceData];
+        }
+        if (!count($options) > 0) {
+            return false;
+        }
+        $combined = [];
+        foreach ($options as $o) {
+            if (true === ake($combined, 'final')) {
+                break;
+            }
+            $combined = array_replace_recursive($combined, $o);
+        }
+        $config = new Map($defaults);
+        if (!$this->loadConfigOptions($combined, $config)) {
+            return false;
+        }
 
+        return $config;
+    }
+
+    /**
+     * Check whether the config was loaded from the source file.
+     */
+    public function loaded(): bool
+    {
+        return $this->loaded;
+    }
+
+    /**
+     * Get the config environment that was loaded.
+     */
+    public function getEnv(): string
+    {
+        return $this->env;
+    }
+
+    /**
+     * Retrieves the environment configuration array.
+     *
+     * This method returns the configuration array for the specified environment.
+     * If no environment is specified, it uses the default environment set in the application.
+     *
+     * @param string $env The environment for which to retrieve the configuration. Defaults to null.
+     *
+     * @return array<mixed> the configuration array for the specified environment
+     */
+    public function getEnvConfig(?string $env = null): array
+    {
+        if (null === $env) {
+            $env = $this->env;
+        }
+
+        return ake($this->global, $env);
+    }
+
+    /**
+     * Get the list of environments defined in the configuration.
+     *
+     * @return array<string> the list of environments
+     */
+    public function getEnvironments(): array
+    {
+        return array_keys($this->global);
+    }
+
+    /**
+     * Converts the configuration object to a string representation.
+     *
+     * @return string the string representation of the configuration object
+     */
+    public function tostring(): string
+    {
         $config = $this->todotnotation();
-
         $output = "[{$this->env}]\n";
-
-        foreach($config as $key => $value) {
-
+        foreach ($config as $key => $value) {
             $output .= "{$key}={$value}\n";
-
         }
 
         return $output;
-
     }
 
-    public function write($target = null) {
-
-        if(!$target)
-            $target = $this->source;
-
-        if(!$target)
-            return FALSE;
-
-        $info = pathinfo($target);
-
-        $type = ake($info, 'extension', 'json');
-
-        $options = new \Hazaar\Map();
-
-        //The file is a named config file ie: not an absolute file name
-        if(ake($info, 'dirname') === '.' && !array_key_exists('extension', $info))
-            $this->source = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $target . '.' . $type);
-
-        $source = new \Hazaar\File($this->source);
-
-        //Grab the original file so we can merge into it
-        if($source->exists()){
-
-            $source_type = $source->extension();
-
-            if($source_type == 'json')
-                $options->fromJSON($source->get_contents());
-
-            elseif($source_type == 'ini')
-                $options->fromDotNotation(parse_ini_string($source->get_contents(), TRUE, INI_SCANNER_RAW));
-
-        }
-
-        $options->set($this->env, $this->toArray());
-
-        $output = '';
-
-        if($type == 'ini'){
-
-            foreach($options as $env => $option) {
-
-                $output .= "[$env]" . LINE_BREAK;
-
-                $output .= $option->todotnotation()->flatten(' = ', LINE_BREAK) . LINE_BREAK;
-
-            }
-
-        }else{
-
-            $output = $options->toJSON(false, JSON_PRETTY_PRINT);
-
-        }
-
-        $source->set_contents($output);
-
-        $result = $source->save();
-
-        if($result === FALSE)
-            return FALSE;
-
-        return TRUE;
-
-    }
-
-    public function parseString($elem, $key){
-
-        $allowed_values = [
+    /**
+     * Parses a string by replacing placeholders with their corresponding values.
+     *
+     * @param mixed  $elem the string to be parsed
+     * @param string $key  the key used for parsing the string
+     *
+     * @return mixed the parsed string
+     */
+    public function parseString(mixed $elem, string $key): mixed
+    {
+        $allowedValues = [
             'GLOBALS' => $GLOBALS,
             '_SERVER' => &$_SERVER,
             '_GET' => &$_GET,
@@ -507,58 +266,173 @@ class Config extends \Hazaar\Map {
             '_COOKIE' => &$_COOKIE,
             '_SESSION' => &$_SESSION,
             '_REQUEST' => &$_REQUEST,
-            '_ENV' => &$_ENV
+            '_ENV' => &$_ENV,
         ];
-
-        if($app = \Hazaar\Application::getInstance())
-            $allowed_values['_APP'] = &$app->GLOBALS;
-
-        if(is_string($elem) && preg_match_all('/%([\w\[\]]*)%/', $elem, $matches)){
-
-            foreach($matches[0] as $index => $match){
-
-                if(strpos($matches[1][$index], '[') !== false){
-
+        if ($app = Application::getInstance()) {
+            $allowedValues['_APP'] = &$app->GLOBALS;
+        }
+        if (is_string($elem) && preg_match_all('/%([\w\[\]]*)%/', $elem, $matches)) {
+            foreach ($matches[0] as $index => $match) {
+                if (false !== strpos($matches[1][$index], '[')) {
                     parse_str($matches[1][$index], $result);
-
                     $parts = explode('.', key(array_to_dot_notation($result)));
-
-                    if(!array_key_exists($parts[0], $allowed_values))
+                    if (!array_key_exists($parts[0], $allowedValues)) {
                         return '';
-
-                    $value =& $allowed_values;
-
-                    foreach($parts as $part){
-
-                        if(!($value && array_key_exists($part, $value)))
-                            return '';
-
-                        $value =& $value[$part];
-
                     }
-
-                }else{
-
+                    $value = &$allowedValues;
+                    foreach ($parts as $part) {
+                        if (!($value && array_key_exists($part, $value))) {
+                            return '';
+                        }
+                        $value = &$value[$part];
+                    }
+                } else {
                     $value = defined($matches[1][$index]) ? constant($matches[1][$index]) : '';
-
                 }
-
-                $elem = preg_replace('/' . preg_quote($match) . '/', $value, $elem, 1);
-
+                $elem = preg_replace('/'.preg_quote($match).'/', $value, $elem, 1);
             }
-
         }
 
         return $elem;
-
     }
 
-    public function toSecureArray(){
-
+    /**
+     * Converts the configuration object to a secure array by removing the secure keys.
+     *
+     * @return array<mixed> the configuration array without the secure keys
+     */
+    public function toSecureArray(): array
+    {
         $config = parent::toArray(false);
 
-        return array_diff_key($config, array_flip($this->secure_keys));
-
+        return array_diff_key($config, array_flip($this->secureKeys));
     }
 
+    /**
+     * Loads the configuration file from the given source.
+     *
+     * @param string $source the path to the configuration file
+     *
+     * @return array<mixed> the loaded configuration
+     *
+     * @throws Exception if there is an error parsing the configuration file or if the file format is unknown
+     */
+    private function loadSourceFile(string $source): array
+    {
+        $config = [];
+        $cacheKey = null;
+        $secureKeys = [];
+        // Check if APCu is available for caching and load the config file from cache if it exists.
+        if (in_array('apcu', get_loaded_extensions())) {
+            $cacheKey = md5(gethostname().':'.$source);
+            if (\apcu_exists($cacheKey)) {
+                $cacheInfo = \apcu_cache_info();
+                $mtime = 0;
+                foreach ($cacheInfo['cache_list'] as $cache) {
+                    if (array_key_exists('info', $cache) && $cache['info'] == $cacheKey) {
+                        $mtime = ake($cache, 'mtime');
+
+                        break;
+                    }
+                }
+                if ($mtime > filemtime($source)) {
+                    $cacheData = \apcu_fetch($cacheKey);
+                    if (is_array($cacheData) && 2 === count($cacheData) && isset($cacheData[0], $cacheData[1])) {
+                        list($secureKeys, $source) = \apcu_fetch($cacheKey);
+                    }
+                }
+            }
+        }
+        // If we have loaded this config file, continue on to the next
+        if ($source && !is_string($source)) {
+            $this->secureKeys = array_merge($this->secureKeys, $secureKeys);
+
+            return $source;
+        }
+        $file = new File($source);
+        $extention = $file->extension();
+        if ('json' == $extention) {
+            if (false === ($config = $file->parseJSON(true))) {
+                throw new Exception('Failed to parse JSON config file: '.$source);
+            }
+        } elseif ('ini' == $extention) {
+            if (!$config = parse_ini_string($file->getContents(), true, INI_SCANNER_TYPED)) {
+                throw new Exception('Failed to parse INI config file: '.$source);
+            }
+            foreach ($config as &$array) {
+                $array = array_from_dot_notation($array);
+            }
+        } else {
+            throw new Exception('Unknown file format: '.$source);
+        }
+        if ($file->isEncrypted()) {
+            $this->secureKeys = array_merge($this->secureKeys, $this->secureKeys += $secureKeys = array_keys($config));
+        }
+        // Store the config file in cache
+        if (null !== $cacheKey) {
+            \apcu_store($cacheKey, [$secureKeys, $config]);
+        }
+
+        return $config;
+    }
+
+    /**
+     * Loads the configuration options into the provided Map object based on the given options array and environment.
+     *
+     * @param array<mixed> $options the array of configuration options
+     * @param Map          $config  the Map object to store the configuration options
+     * @param null|string  $env     The environment to load the configuration for. If null, the default environment will be used.
+     *
+     * @return bool returns true if the configuration options were loaded successfully, false otherwise
+     */
+    private function loadConfigOptions(array $options, Map $config, ?string $env = null): bool|Map
+    {
+        if (!$env) {
+            $env = $this->env;
+        }
+        if (!array_key_exists($env, $options)) {
+            return false;
+        }
+        $this->global = array_merge($this->global, $options);
+        foreach ($options[$env] as $key => $values) {
+            if ('include' === $key) {
+                if (!is_array($values)) {
+                    $values = [$values];
+                }
+                foreach ($values as $includeEnvironment) {
+                    $this->loadConfigOptions($options, $config, $includeEnvironment);
+                }
+            } elseif ('import' === $key) {
+                if (!is_array($values)) {
+                    $values = [$values];
+                }
+                if ($importFile = current($values)) {
+                    do {
+                        if (!($file = Loader::getFilePath(FILE_PATH_CONFIG, $importFile))) {
+                            continue;
+                        }
+                        if (is_dir($file)) {
+                            $dirIterator = new \RecursiveDirectoryIterator($file);
+                            $iterator = new \RecursiveIteratorIterator($dirIterator, \RecursiveIteratorIterator::SELF_FIRST);
+                            foreach ($iterator as $importFile) {
+                                if ('.' === substr($importFile->getFileName(), 0, 1)) {
+                                    continue;
+                                }
+                                array_push($values, $importFile->getRealPath());
+                            }
+
+                            continue;
+                        }
+                        if ($options = $this->loadSourceFile($file)) {
+                            $config->extend($options);
+                        }
+                    } while ($importFile = next($values));
+                }
+            } else {
+                $config->set($key, $values, true);
+            }
+        }
+
+        return $config;
+    }
 }

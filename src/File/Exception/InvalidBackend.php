@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\File\Exception;
 
-class InvalidBackend extends \Hazaar\Exception {
+use Hazaar\Exception;
 
-    function __construct($backend) {
-
-        parent::__construct("Invalid filesystem backend : '$backend'");
-
+class InvalidBackend extends Exception
+{
+    public function __construct(string $backend)
+    {
+        parent::__construct("Invalid filesystem backend : '{$backend}'");
     }
-
 }

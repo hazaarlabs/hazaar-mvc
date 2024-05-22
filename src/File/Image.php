@@ -1,110 +1,119 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\File;
 
-class Image extends \Hazaar\File {
+use Hazaar\File;
+use Hazaar\File\Renderer\BaseRenderer;
 
-    private $renderer;
+class Image extends File
+{
+    private BaseRenderer $renderer;
 
-    function __construct($filename = NULL, $quality = NULL, $manager = NULL, $renderer = 'default') {
-
+    public function __construct(?string $filename = null, ?int $quality = null, ?Manager $manager = null, string $renderer = 'default')
+    {
         parent::__construct($filename, $manager);
-
-        $this->renderer = $this->get_renderer($renderer, $quality);
-
+        $this->renderer = $this->getRenderer($renderer, $quality);
     }
 
-    private function get_renderer($renderer, $quality) {
+    public function setContents(?string $bytes): int
+    {
+        return $this->renderer->load($bytes, $this->type());
+    }
 
-        switch(strtolower($renderer)) {
-
-            case 'imagick':
-            case 'default':
-
-                if(in_array('imagick', get_loaded_extensions()))
-                    return new Renderer\Imagick($quality);
-
-            case 'gd':
-            default:
-
-                return new Renderer\GD($quality);
-
+    public function getContents(int $offset = -1, ?int $maxlen = null): string
+    {
+        if (!$this->renderer->loaded()) {
+            $this->renderer->load(parent::getContents($offset, $maxlen), $this->type());
         }
 
-    }
-
-    public function set_contents($bytes) {
-
-        $this->renderer->load($bytes);
-
-    }
-
-    public function get_contents($offset = -1, $maxlen = NULL, $allow_compress = TRUE) {
-
-        if(!$this->renderer->loaded())
-            $this->renderer->load(parent::get_contents($offset, $maxlen, $allow_compress));
-
         return $this->renderer->read();
-
     }
 
-    private function checkLoaded() {
+    public function thumbnail(): bool
+    {
+        $this->checkLoaded();
 
-        if(!$this->renderer->loaded())
-            $this->renderer->load(parent::get_contents());
-
+        return $this->renderer->resize(100, 100);
     }
 
-    public function quality($quality = NULL) {
-
-        if($quality === null)
-            return false;
-
+    public function quality(?int $quality = null): int
+    {
         $this->checkLoaded();
 
         return $this->renderer->quality($quality);
-
     }
 
-    public function width() {
-
+    public function width(): int
+    {
         $this->checkLoaded();
 
         return $this->renderer->width();
-
     }
 
-    public function height() {
-
+    public function height(): int
+    {
         $this->checkLoaded();
 
         return $this->renderer->height();
-
     }
 
-    public function has_contents(){
-
+    public function hasContents(): bool
+    {
         $this->checkLoaded();
 
         return $this->renderer->width() > 0;
-
     }
 
-    public function __call($func, $params) {
+    public function resize(
+        ?int $width = null,
+        ?int $height = null,
+        bool $crop = false,
+        ?string $align = null,
+        bool $keep_aspect = true,
+        bool $reduce_only = true,
+        ?float $ratio = null,
+        int $offsetTop = 0,
+        int $offsetLeft = 0
+    ): bool {
+        $this->checkLoaded();
 
-        if(! $this->has_contents())
-            return FALSE;
+        return $this->renderer->resize($width, $height, $crop, $align, $keep_aspect, $reduce_only, $ratio, $offsetTop, $offsetLeft);
+    }
 
-        if(method_exists($this->renderer, $func)) {
+    public function expand(
+        ?int $xwidth = null,
+        ?int $xheight = null,
+        string $align = 'topleft',
+        int $offsetTop = 0,
+        int $offsetLeft = 0
+    ): bool {
+        $this->checkLoaded();
 
-            $this->checkLoaded();
+        return $this->renderer->expand($xwidth, $xheight, $align, $offsetTop, $offsetLeft);
+    }
 
-            return call_user_func_array([$this->renderer, $func], $params);
+    private function getRenderer(string $renderer, ?int $quality = null): BaseRenderer
+    {
+        switch (strtolower($renderer)) {
+            case 'imagick':
+            case 'default':
+                if (in_array('imagick', get_loaded_extensions())) {
+                    return new Renderer\Imagick($quality);
+                }
 
+                // no break
+            case 'gd':
+            default:
+                return new Renderer\GD($quality);
         }
-
-        return FALSE;
-
     }
 
+    private function checkLoaded(): void
+    {
+        if (!$this->renderer->loaded()) {
+            $this->renderer->load(parent::getContents(), $this->type());
+        }
+    }
 }
