@@ -1,100 +1,81 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Cache;
 
-/**
- * Benchmark short summary.
- *
- * Benchmark description.
- *
- * @version 1.0
- * @author jamiec
- */
-class Benchmark {
+use Hazaar\Cache;
+use Hazaar\Map;
 
-    private $backends;
+class Benchmark
+{
+    /**
+     * @var array<string>
+     */
+    private array $backends;
+    private Map $configs;
 
-    private $configs;
-
-    function __construct($backends = [], $configs = []){
-
-        if($backends && !is_array($backends))
+    /**
+     * @param array<string>|string $backends
+     * @param array<mixed>|Map     $configs
+     */
+    public function __construct(array|string $backends = [], array|Map $configs = [])
+    {
+        if ($backends && !is_array($backends)) {
             $backends = [$backends];
-
-        if(count($backends) == 0)
+        }
+        if (0 == count($backends)) {
             $backends = $this->getAvailableBackends();
-
+        }
         $this->backends = $backends;
-
-        $this->configs = $configs;
-
+        $this->configs = Map::_($configs);
     }
 
-    static public function getAvailableBackends(){
-
+    /**
+     * @return array<string>
+     */
+    public static function getAvailableBackends(): array
+    {
         $all = ['apc', 'database', 'file', 'memcached', 'redis', 'session', 'shm', 'sqlite3'];
-
         $available = [];
-
-        foreach($all as $backend){
-
-            $class = 'Hazaar\Cache\Backend\\' . ucfirst($backend);
-
-            if($class::available())
+        foreach ($all as $backend) {
+            $class = 'Hazaar\Cache\Backend\\'.ucfirst($backend);
+            if ($class::available()) {
                 $available[] = $backend;
-
+            }
         }
 
         return $available;
-
     }
 
-    public function run($start = 2, $end = 2048){
-
+    /**
+     * @return array<string, mixed>
+     */
+    public function run(int $start = 2, int $end = 2048): array
+    {
         $results = [];
-
-        foreach($this->backends as $backend){
-
-            try{
-
+        foreach ($this->backends as $backend) {
+            try {
                 $tests = [];
-
-                $cache = new \Hazaar\Cache($backend, ake($this->configs, $backend));
-
-                for($i = $start; $i <= $end; $i=$i*2){
-
+                $cache = new Cache($backend, ake($this->configs, $backend));
+                for ($i = $start; $i <= $end; $i = $i * 2) {
                     $w_bytes = str_repeat('.', $i);
-
-                    //Test write speed
+                    // Test write speed
                     $s = microtime(true);
-
                     $cache->set('test_value', $w_bytes);
-
                     $tests[$i]['w'] = round((microtime(true) - $s) * 1000, 4);
-
-                    //Test read speed
+                    // Test read speed
                     $s = microtime(true);
-
                     $r_bytes = $cache->get('test_value');
-
                     $tests[$i]['r'] = round((microtime(true) - $s) * 1000, 4);
-
                     $tests[$i]['valid'] = ($r_bytes === $w_bytes);
-
                 }
-
                 $results[$backend] = $tests;
-
-            }
-            catch(\Exception $e){
-
+            } catch (\Exception $e) {
                 continue;
             }
-
         }
 
         return $results;
-
     }
-
 }

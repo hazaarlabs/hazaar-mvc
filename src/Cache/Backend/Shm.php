@@ -1,202 +1,171 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @file        Hazaar/Cache/Backend/Shm.php
  *
  * @author      Jamie Carl <jamie@hazaar.io>
- *
  * @copyright   Copyright (c) 2016 Jamie Carl (http://www.hazaar.io)
  */
+
 namespace Hazaar\Cache\Backend;
+
+use Hazaar\Cache\Backend;
 
 /**
  * @brief The PHP-SHM (shared memory) cache backend.
  *
  * @detail This is the absolute fastest caching backend.
- * 
+ *
  * There are no configuration options required for the backend.
- *
- * @since 2.2.0
- *
  */
-class Shm extends \Hazaar\Cache\Backend {
+class Shm extends Backend
+{
+    protected int $weight = 0;
+    private ?\SysvSharedMemory $shm_index;
+    private ?\SysvSharedMemory $shm;
 
-    protected $weight = 0;
+    /**
+     * @var array<mixed>
+     */
+    private array $index = [];
 
-    private $namespace;
-
-    private $shm_index;
-
-    private $shm;
-
-    private $index = [];
-
-    static public function available(){
-
+    public static function available(): bool
+    {
         return function_exists('shm_attach');
-
     }
 
-    function init($namespace) {
-
-        $this->namespace = $namespace;
-
+    public function init(string $namespace): void
+    {
         $this->addCapabilities('store_objects', 'keepalive', 'array');
-
-        $shm_index = shm_attach(1);
-
-        if(shm_has_var($shm_index, 0)){
-
-            $namespaces = shm_get_var($shm_index, 0);
-
-        }else{
-
+        $this->shm_index = shm_attach(1);
+        if (shm_has_var($this->shm_index, 0)) {
+            $namespaces = shm_get_var($this->shm_index, 0);
+        } else {
             $namespaces = [0 => 'index'];
-
-            shm_put_var($shm_index, 0, $namespaces);
-
+            shm_put_var($this->shm_index, 0, $namespaces);
         }
-
-        if(!($key = array_search($namespace, $namespaces))){
-
+        if (!($key = array_search($namespace, $namespaces))) {
             $key = count($namespaces) + 1;
-
             $namespaces[$key] = $namespace;
+            shm_put_var($this->shm_index, 0, $namespaces);
+        }
+        $this->shm = shm_attach($key);
+        if (!is_resource($this->shm)) {
+            throw new \Exception('shm_attach() failed.  did not return resource.');
+        }
+        if (shm_has_var($this->shm, 0)) {
+            $this->index = shm_get_var($this->shm, 0);
+        }
+    }
 
-            shm_put_var($shm_index, 0, $namespaces);
-
+    public function close(): bool
+    {
+        if (null === $this->shm) {
+            return false;
         }
 
-        $this->shm = shm_attach($key);
-
-        if(!is_resource($this->shm))
-            throw new \Exception('shm_attach() failed.  did not return resource.');
-
-        if(shm_has_var($this->shm, 0))
-            $this->index = shm_get_var($this->shm, 0);
-
+        return shm_detach($this->shm);
     }
 
-    function close(){
-
-        if(is_resource($this->shm))
-            shm_detach($this->shm);
-
-    }
-
-    public function has($key) {
-
-        if(!($index = array_search($key, $this->index)))
+    public function has(string $key, bool $check_empty = false): bool
+    {
+        $key = $this->namespace.'::'.$key;
+        if (!($index = array_search($key, $this->index))) {
             return false;
-
-        if(!shm_has_var($this->shm, $index))
+        }
+        if (!shm_has_var($this->shm, $index)) {
             return false;
-
+        }
         $info = shm_get_var($this->shm, $index);
-
-        if(array_key_exists('expire', $info) && $info['expire'] < time())
+        if (array_key_exists('expire', $info) && $info['expire'] < time()) {
             return false;
+        }
 
         return $info['data'];
-
     }
 
-    private function info($index){
-
-        $info = shm_get_var($this->shm, $index);
-
-        if(array_key_exists('expire', $info)){
-
-            if($info['expire'] < time())
-                return false;
-
-            $info['expire'] = time() + $info['timeout'];
-
-            shm_put_var($this->shm, $index, $info);
-
+    public function get(string $key): mixed
+    {
+        $key = $this->namespace.'::'.$key;
+        if (!($index = array_search($key, $this->index))) {
+            return false;
         }
-
-        return $info;
-
-    }
-
-    public function get($key) {
-
-            if(!($index = array_search($key, $this->index)))
-                return false;
-
         $info = $this->info($index);
 
         return $info['data'];
-
     }
 
-    public function set($key, $value, $timeout = NULL) {
-
-        if(!($index = array_search($key, $this->index))){
-
-            $index = count($this->index) + 1; //Plus one because we can't use zero as it's our index.
-
+    public function set(string $key, mixed $value, int $timeout = 0): bool
+    {
+        $key = $this->namespace.'::'.$key;
+        if (!($index = array_search($key, $this->index))) {
+            $index = count($this->index) + 1; // Plus one because we can't use zero as it's our index.
             $this->index[$index] = $key;
-
             shm_put_var($this->shm, 0, $this->index);
-
         }
-
         $info = ['data' => $value];
-
-        if($timeout !== null){
-
+        if (null !== $timeout) {
             $info['timeout'] = $timeout;
-
             $info['expire'] = time() + $timeout;
-
         }
 
         return shm_put_var($this->shm, $index, $info);
-
     }
 
-    public function remove($key) {
-
-        if(!($index = array_search($key, $this->index)))
+    public function remove(string $key): bool
+    {
+        $key = $this->namespace.'::'.$key;
+        if (!($index = array_search($key, $this->index))) {
             return false;
-
+        }
         unset($this->index[$index]);
-
         shm_put_var($this->shm, 0, $this->index);
 
         return shm_remove_var($this->shm, $index);
-
     }
 
-    public function clear() {
-
-        if(shm_remove($this->shm)){
-
+    public function clear(): bool
+    {
+        if (shm_remove($this->shm)) {
             $this->index = [];
 
             return true;
-
         }
 
         return false;
-
     }
 
-    public function toArray(){
-
+    /**
+     * @return array<mixed>
+     */
+    public function toArray(): array
+    {
         $array = [];
-
-        foreach($this->index as $index =>  $key){
-
-            if($info = $this->info($index))
+        foreach ($this->index as $index => $key) {
+            if ($info = $this->info($index)) {
                 $array[$key] = $info['data'];
-
+            }
         }
 
         return $array;
-        
     }
 
+    /**
+     * @return array<mixed>|bool
+     */
+    private function info(int $index): array|bool
+    {
+        $info = shm_get_var($this->shm, $index);
+        if (array_key_exists('expire', $info)) {
+            if ($info['expire'] < time()) {
+                return false;
+            }
+            $info['expire'] = time() + $info['timeout'];
+            shm_put_var($this->shm, $index, $info);
+        }
+
+        return $info;
+    }
 }

@@ -1,13 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @file        Hazaar/Cache/Backend/Session.php
  *
  * @author      Jamie Carl <jamie@hazaar.io>
- *
  * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
+
 namespace Hazaar\Cache\Backend;
+
+use Hazaar\Application;
+use Hazaar\Cache\Backend;
 
 /**
  * @brief Session cache backend class
@@ -20,25 +25,21 @@ namespace Hazaar\Cache\Backend;
  *
  * * lifetime - The lifetime to use for cached data. Default: 3600.
  * * session - Any settings to set on the session instance.
- *
- * @since 1.0.0
  */
-class Session extends \Hazaar\Cache\Backend {
+class Session extends Backend
+{
+    protected int $weight = 3;
+    private int $timeout = 3600;
 
-    private $namespace = NULL;
+    /**
+     * @var array<mixed>
+     */
+    private array $values = [];
+    private static bool $started = false;
 
-    private $timeout = 3600;
-
-    private $values = [];
-
-    protected $weight = 3;
-
-    static private $started = false;
-
-    static public function available(){
-
+    public static function available(): bool
+    {
         return true;
-
     }
 
     /**
@@ -48,138 +49,81 @@ class Session extends \Hazaar\Cache\Backend {
      * a namespace for the session. The constructor will also maintain any timeouts for values
      * as per the application configuration.
      *
-     * @since 1.0.0
-     *
      * @param string $namespace
-     *            The namespace to use for this session
+     *                          The namespace to use for this session
      */
-    function init($namespace) {
-
-        if (!$namespace)
-            throw new \Exception("Bad session cache namespace!");
-
-        $this->namespace = $namespace;
-
+    public function init(string $namespace): void
+    {
+        if (!$namespace) {
+            throw new \Exception('Bad session cache namespace!');
+        }
         $this->addCapabilities('store_objects', 'array', 'keepalive');
-
-        /*
-         * Grab the application instance so we can configure the session.
-         */
-        if (($app = \Hazaar\Application::getInstance()) instanceof \Hazaar\Application) {
-
+        // Grab the application instance so we can configure the session.
+        if (($app = Application::getInstance()) instanceof Application) {
             /*
              * If we have a session name configured in the application config we can set
              * it now for this application. Otherwise just use the default name
              * specified in the PHP configuration. ie: PHPSESSID
              */
-            if ($app->config->has('session') 
-                && $app->config->session->has('name') 
-                && $name = $app->config->session['name'])
+            if ($app->config->has('session')
+                && $app->config['session']->has('name')
+                && $name = $app->config['session']['name']) {
                 session_name($name);
-
-            /*
-             * Check if we need to configure a session cache expire time.
-             */
-            if ($this->options->has('lifetime'))
-                $this->timeout = $this->options->lifetime;
-
-            elseif ($app->config->has('session') && $app->config->session->has('timeout'))
-                $this->timeout = (int) $app->config->session->timeout;
+            }
+            // Check if we need to configure a session cache expire time.
+            if ($this->options->has('lifetime')) {
+                $this->timeout = $this->options['lifetime'];
+            } elseif ($app->config->has('session') && $app->config['session']->has('timeout')) {
+                $this->timeout = (int) $app->config['session']['timeout'];
+            }
         }
-
-        /*
-         * Start the session if we don't already have one
-         */
+        // Start the session if we don't already have one
         if (!session_id()) {
-
-            if(Session::$started == true)
+            if (true == Session::$started) {
                 throw new \Exception('Session already started!');
-
+            }
             /*
              * This is a hack to make sure the session doesn't get cleaned up
              * while we are still using it
              */
-
             ini_set('session.gc_maxlifetime', $this->timeout * 2);
-
             ini_set('session.cookie_maxlifetime', $this->timeout * 2);
-
             session_start();
-
             Session::$started = true;
         }
-
-        /*
-         * Check if we have a session timeout
-         */
+        // Check if we have a session timeout
         if (!isset($_SESSION['session']['created'])) {
-
             $_SESSION['session']['created'] = time();
-
         } elseif (isset($_SESSION['session']['last_access'])) {
-
             if ((time() - $_SESSION['session']['last_access']) > $this->timeout) {
-
-                /*
-                 * Reset the session
-                 */
+                // Reset the session
                 $this->clear();
-
             }
-
         }
-
         $_SESSION['session']['last_access'] = time();
-
         /*
          * If this is the first load the application base won't be an array
          * so we need to set that in the session first.
          */
-        if (!array_key_exists(APPLICATION_BASE, $_SESSION))
+        if (!array_key_exists(APPLICATION_BASE, $_SESSION)) {
             $_SESSION[APPLICATION_BASE] = [];
-
-        if (!(array_key_exists($this->namespace, $_SESSION[APPLICATION_BASE]) && is_array($_SESSION[APPLICATION_BASE][$this->namespace])))
-            $_SESSION[APPLICATION_BASE][$this->namespace] = [];
-
-        $this->values = & $_SESSION[APPLICATION_BASE][$this->namespace];
-
-    }
-
-    public function close() {
-
-        session_write_close();
-
-    }
-
-    private function load($key) {
-
-        $value = "\0";
-
-        if (array_key_exists($key, $this->values)) {
-
-            $expire = ake($this->values[$key], 'expire');
-
-            if ($expire !== null && $expire < time())
-                unset($this->values[$key]);
-
-            else
-                $value = ake($this->values[$key], 'data');
         }
-
-        return $value;
-
+        if (!(array_key_exists($this->namespace, $_SESSION[APPLICATION_BASE]) && is_array($_SESSION[APPLICATION_BASE][$this->namespace]))) {
+            $_SESSION[APPLICATION_BASE][$this->namespace] = [];
+        }
+        $this->values = &$_SESSION[APPLICATION_BASE][$this->namespace];
     }
 
-    /**
-     *
-     * @param mixed $key
-     *
-     * @return bool
-     */
-    public function has($key) {
+    public function close(): bool
+    {
+        return session_write_close();
+    }
 
-        return ($this->load($key) !== "\0");
+    public function has(string $key, bool $check_empty = false): bool
+    {
+        $value = $this->load($key);
 
+        return "\0" !== $value && '' != $value;
     }
 
     /**
@@ -187,42 +131,35 @@ class Session extends \Hazaar\Cache\Backend {
      *
      * If $default is supplied and no value for $key is currently set in the session then
      * the default value will be set in the session and then returned.
-     *
-     * @param mixed $key
-     *            The key name of the data field to return.
-     * @param mixed $default
-     *            An optional default value to set and return if the field currently has no value.
-     *
-     * @return mixed
      */
-    public function &get($key) {
-
+    public function &get(string $key): mixed
+    {
         $value = $this->load($key);
-
-        if ($value === "\0")
-            $value = FALSE;
+        if ("\0" === $value) {
+            $value = false;
+        }
 
         return $value;
-
     }
 
-    public function set($key, $value, $timeout = NULL) {
-
+    public function set(string $key, mixed $value, int $timeout = 0): bool
+    {
         $cache = [
-            'data' => $value
+            'data' => $value,
         ];
-
-        if ($timeout > 0)
+        if ($timeout > 0) {
             $cache['expire'] = time() + $timeout;
-
+        }
         $this->values[$key] = $cache;
 
+        return true;
     }
 
-    public function remove($key) {
-
+    public function remove(string $key): bool
+    {
         unset($this->values[$key]);
 
+        return true;
     }
 
     /**
@@ -231,61 +168,59 @@ class Session extends \Hazaar\Cache\Backend {
      * This equates to a full session reset.
      *
      * @warning Use this wisely as it will affect other applications using the same session.
-     *
-     *
-     * @since 1.0.0
      */
-    public function clear() {
-
-        if (ini_get("session.use_cookies")) {
-
+    public function clear(): bool
+    {
+        if (ini_get('session.use_cookies')) {
             $params = session_get_cookie_params();
-
-            setcookie(session_name(), null, time() - 3600, $params["path"], $params["domain"], $params["secure"], $params["httponly"]);
-
+            setcookie(session_name(), '', time() - 3600, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
         }
-
         session_destroy();
-
         session_start();
-
         $_SESSION['session']['created'] = time();
-
         $_SESSION[APPLICATION_BASE][$this->namespace] = [];
 
         return true;
-
     }
 
-    public function extend() {
-
+    public function extend(): void
+    {
         $args = func_get_args();
-
-        foreach($args as $arg)
+        foreach ($args as $arg) {
             $_SESSION[APPLICATION_BASE][$this->namespace] = array_merge($_SESSION[APPLICATION_BASE][$this->namespace], $arg);
-
+        }
     }
 
-    public function toArray() {
-
+    /**
+     * @return array<mixed>
+     */
+    public function toArray(): array
+    {
         $values = [];
-
-        foreach($_SESSION[APPLICATION_BASE][$this->namespace] as $key => $item){
-
-            if(array_key_exists('expire', $item) && $item['expire'] <= time()){
-
+        foreach ($_SESSION[APPLICATION_BASE][$this->namespace] as $key => $item) {
+            if (array_key_exists('expire', $item) && $item['expire'] <= time()) {
                 unset($_SESSION[APPLICATION_BASE][$this->namespace][$key]);
 
                 continue;
-
             }
-
             $values[$key] = $item['data'];
-
         }
 
         return $values;
-
     }
 
+    private function load(string $key): mixed
+    {
+        $value = "\0";
+        if (array_key_exists($key, $this->values)) {
+            $expire = ake($this->values[$key], 'expire');
+            if (null !== $expire && $expire < time()) {
+                unset($this->values[$key]);
+            } else {
+                $value = ake($this->values[$key], 'data');
+            }
+        }
+
+        return $value;
+    }
 }

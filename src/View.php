@@ -1,851 +1,586 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @file        Hazaar/View/View.php
  *
  * @author      Jamie Carl <jamie@hazaar.io>
- *
  * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
+
 namespace Hazaar;
 
-class View implements \ArrayAccess {
+use Hazaar\Application\URL;
+use Hazaar\View\Helper;
 
-    private $name;
-
-    private $_viewfile;
-
-    protected $_data = [];
-
-    protected $_scripts = [];
-
-    /**
-     * View Helpers
-     */
-    protected $_helpers = [];
+/**
+ * The View class is used to render views in the Hazaar MVC framework.
+ *
+ * @implements \ArrayAccess<string, mixed>
+ */
+class View implements \ArrayAccess
+{
+    public ?string $name = null;
 
     /**
-     * Array for storing names of initialised helpers so we only initialise them once
+     * @var array<mixed>
      */
-    private $_helpers_init = [];
+    protected array $_data = [];
 
-    private $_rendering = FALSE;
+    /**
+     * View Helpers.
+     *
+     * @var array<Helper>
+     */
+    protected array $_helpers = [];
 
-    protected $_methodHandler;
+    protected Application $application;
 
-    private $_prepared = [];
+    private ?string $_viewfile = null;
 
+    /**
+     * Array for storing names of initialised helpers so we only initialise them once.
+     *
+     * @var array<string>
+     */
+    private array $_helpers_init = [];
+
+    /**
+     * @var array<string>
+     */
+    private array $_prepared = [];
+
+    /**
+     * @var array<mixed>
+     */
     private $_requires_param = [];
 
-    public function __construct($view, $init_helpers = []) {
-
+    /**
+     * @param array<string> $init_helpers
+     */
+    public function __construct(string|View $view, array $init_helpers = [])
+    {
         $this->load($view);
-
-        $this->_helpers['application'] = $app = Application::getInstance();
-
-        if (is_array($init_helpers) && count($init_helpers) > 0){
-
-            foreach($init_helpers as $helper)
+        $this->application = Application::getInstance();
+        if (count($init_helpers) > 0) {
+            foreach ($init_helpers as $helper) {
                 $this->addHelper($helper);
-
-        }
-
-        if (substr($view, 0, 1) !== '@' 
-            && ($config = $app->config->get('view'))
-            && $config->has('helper')) {
-
-            $load = $this->application->config->view->helper->load;
-
-            if (!Map::is_array($load))
-                $load = new Map([$load]);
-
-            $helpers = new Map();
-
-            foreach($load as $key => $helper) {
-
-                //Check if the helper is in the old INI file format and parse it if it is.
-                if (Map::is_array($helper)){
-
-                    $this->addHelper($key, $helper->toArray());
-
-                    continue;
-
-                }
-
-                $args = [];
-
-                if(preg_match('/(\w*)\[(.*)\]/', trim($helper ?? ''), $matches)) {
-
-                    $key = $matches[1];
-
-                    $helper = array_unflatten($matches[2], '=', ',');
-
-                    //Fix the values so they are the correct types
-                    foreach($helper as &$arg) {
-
-                        if($arg = trim($arg ?? '')) {
-
-                            if (in_array(strtolower($arg), ['yes','no','true','false','on','off'])) {
-
-                                $arg = boolify($arg);
-
-                            } elseif (is_numeric($arg)) {
-
-                                if (strpos($arg, '.') === FALSE)
-                                    settype($arg, 'int');
-                                else
-                                    settype($arg, 'float');
-
-                            }
-
-                        }
-
-                    }
-
-                    $args = array_from_dot_notation($helper);
-
-                }
-
-                $this->addHelper($key, $args);
-
             }
-
         }
-
     }
 
-    static function getViewPath($view, &$name){
+    public function __get(string $helper): mixed
+    {
+        return $this->get($helper);
+    }
 
+    public function __set(string $key, mixed $value): void
+    {
+        $this->set($key, $value);
+    }
+
+    public function __isset(string $key): bool
+    {
+        return $this->has($key);
+    }
+
+    public function __unset(string $key): void
+    {
+        $this->remove($key);
+    }
+
+    public static function getViewPath(string $view, ?string &$name): ?string
+    {
         $viewfile = null;
-
         $parts = pathinfo($view);
-
-        $name = (($parts['dirname'] !== '.') ? $parts['dirname'] . '/' : '') . $parts['filename'];
-
+        $name = (('.' !== $parts['dirname']) ? $parts['dirname'].'/' : '').$parts['filename'];
         $type = FILE_PATH_VIEW;
-
         /*
          * If the name begins with an @ symbol then we are trying to load the view from a
          * support file path, not the application path
          */
-        if (substr($view, 0, 1) == '@') {
-
+        if ('@' == substr($view, 0, 1)) {
             $view = substr($view, 1);
-
             $type = FILE_PATH_SUPPORT;
-
-        }else{
-
+        } else {
             $view = $name;
-
         }
-
-        if(array_key_exists('extension', $parts)){
-
-            $viewfile = Loader::getFilePath($type, $view . '.' . $parts['extension']);
-
-        }else{
-
+        if (array_key_exists('extension', $parts)) {
+            $viewfile = Loader::getFilePath($type, $view.'.'.$parts['extension']);
+        } else {
             $extensions = ['phtml', 'tpl'];
-
-            foreach($extensions as $extension){
-
-                if($viewfile = Loader::getFilePath($type, $view . '.' . $extension))
+            foreach ($extensions as $extension) {
+                if ($viewfile = Loader::getFilePath($type, $view.'.'.$extension)) {
                     break;
-
+                }
             }
-
         }
 
         return $viewfile;
-
     }
 
-    public function load($view) {
-
-        if(Loader::isAbsolutePath($view)){
-
+    public function load(string $view): void
+    {
+        if (Loader::isAbsolutePath($view)) {
             $this->_viewfile = $view;
-
-        }else{
-
+        } else {
             $this->_viewfile = View::getViewPath($view, $this->name);
-
-            if (!$this->_viewfile)
-                throw new \Hazaar\Exception("File not found or permission denied accessing view '{$this->name}'.");
-
+            if (!$this->_viewfile) {
+                throw new Exception("File not found or permission denied accessing view '{$this->name}'.");
+            }
         }
-
     }
 
     /**
-     * Returns the name of the view
-     *
-     * @return string
+     * Returns the name of the view.
      */
-    public function getName() {
-
+    public function getName(): string
+    {
         return $this->name;
-
     }
 
     /**
      * Returns the filename that the view was loaded from.
-     *
-     * @return string
      */
-    public function getViewFile() {
-
+    public function getViewFile(): string
+    {
         return $this->_viewfile;
-
-    }
-
-    public function __get($helper) {
-
-        return $this->get($helper);
-
     }
 
     /**
-     * Helper/data accessor method
+     * Helper/data accessor method.
      *
      * This will return a helper, if one exists with the name provided.  Otherwise it will return any view data stored with the name.
      *
-     * @param mixed $helper The name of the helper or view data key.
-     * @param mixed $default If neither a helper or view data is found this default value will be returned.
+     * @param mixed $helper  the name of the helper or view data key
+     * @param mixed $default if neither a helper or view data is found this default value will be returned
+     *
      * @return mixed
      */
-    public function get($helper, $default = NULL) {
-
-        if (array_key_exists($helper, $this->_helpers))
+    public function get($helper, $default = null)
+    {
+        if (array_key_exists($helper, $this->_helpers)) {
             return $this->_helpers[$helper];
-        elseif (array_key_exists($helper, $this->_data))
+        }
+        if (array_key_exists($helper, $this->_data)) {
             return $this->_data[$helper];
+        }
 
         return $default;
-
-    }
-
-    public function __set($key, $value) {
-
-        $this->set($key, $value);
-
     }
 
     /**
-     * Set view data value by key
+     * Set view data value by key.
      *
-     * @param string $key The name of the view data
-     *
-     * @param mixed $value The value to set on the view data.  Can be anything including strings, integers, arrays or objects.
+     * @param string $key   The name of the view data
+     * @param mixed  $value The value to set on the view data.  Can be anything including strings, integers, arrays or objects.
      */
-    public function set($key, $value) {
-
+    public function set(string $key, mixed $value): void
+    {
         $this->_data[$key] = $value;
-
-    }
-
-    public function __isset($key) {
-
-        return $this->has($key);
-
     }
 
     /**
-     * Tests if view data is set with the provided key
+     * Tests if view data is set with the provided key.
      *
-     * @param mixed $key The name of the view data to look for
+     * @param string $key The name of the view data to look for
      *
-     * @return boolean True if the view data is set (even if it is set but null/empty), false otherwise.
+     * @return bool true if the view data is set (even if it is set but null/empty), false otherwise
      */
-    public function has($key) {
-
+    public function has(string $key): bool
+    {
         return array_key_exists($key, $this->_data);
-
-    }
-
-    public function __unset($key) {
-
-        $this->remove($key);
-
     }
 
     /**
-     * Remove view data
+     * Remove view data.
      *
-     * @param mixed $key The name of the view data to remove.
+     * @param string $key the name of the view data to remove
      */
-    public function remove($key) {
-
+    public function remove(string $key): void
+    {
         unset($this->_data[$key]);
-
     }
 
     /**
-     * Populate view data from an array
+     * Populate view data from an array.
      *
-     * @param array $array
-     * @return boolean
+     * @param array<mixed> $array
      */
-    public function populate($array) {
-
-        if(!is_array($array))
+    public function populate(array $array): bool
+    {
+        if (!is_array($array)) {
             return false;
-
+        }
         $this->_data = $array;
 
         return false;
-
     }
 
     /**
-     * Extend/merge existing view data with an array
+     * Extend/merge existing view data with an array.
      *
-     * @param array $array
-     * @return boolean
+     * @param array<mixed> $array
      */
-    public function extend($array) {
-
-        if(!is_array($array))
+    public function extend($array): bool
+    {
+        if (!is_array($array)) {
             return false;
-
+        }
         $this->_data = array_merge($this->_data, $array);
 
         return true;
-
     }
 
     /**
-     * Returns the entire current view data array
+     * Returns the entire current view data array.
      *
-     * @return array
+     * @return array<mixed>
      */
-    public function getData() {
-
+    public function getData(): array
+    {
         return $this->_data;
-
     }
 
     /**
-     * Registers a controller on the view for method callbacks.
+     * Adds a helper to the view.
      *
-     * @param
-     *            $controller
+     * @param array<mixed>|Helper|string $helper the name of the helper to add
+     * @param array<mixed>               $args   the arguments to pass to the helper (optional)
+     * @param string                     $alias  the alias for the helper (optional)
      *
-     * @deprecated Replaced by Hazaar\View::registerMethodHandler().
+     * @return bool true if the helper was added, false if the helper could not be found
      */
-    public function registerController($controller) {
-
-        $this->registerMethodHandler($controller);
-
-    }
-
-    /**
-     * Registers an object on the view for method callbacks.
-     *
-     * @throws \Exception
-     *
-     * @param
-     *            $handler
-     */
-    public function registerMethodHandler($handler) {
-
-        if (! is_object($handler))
-            throw new \Hazaar\Exception('Error trying to register handler that is not an object.');
-
-        $this->_methodHandler = $handler;
-
-    }
-
-    /*
-     * Method router. Calls any unknown methods back on the controller
-     */
-    public function __call($method, $args) {
-
-        if (! $this->_methodHandler)
-            throw new \Hazaar\Exception('No method handler defined!');
-
-        if (method_exists($this->_methodHandler, $method)) {
-
-            return call_user_func_array([
-                $this->_methodHandler,
-                $method
-            ], $args);
-
-        } elseif (array_key_exists($method, $this->_helpers) && method_exists($this->_helpers[$method], '__default')) {
-
-            return call_user_func_array([
-                $this->_helpers[$method],
-                '__default'
-            ], $args);
-        }
-
-        throw new \Hazaar\Exception("Method not found calling " . get_class($this->_methodHandler) . ":$method()");
-
-    }
-
-    /*
-     * Dealing with Helpers
-     */
-    public function addHelper($helper, $args = [], $alias = null) {
-
-        if(is_array($helper)) {
-
-            foreach ($helper as $alias => $h)
+    public function addHelper(array|Helper|string $helper, array $args = [], ?string $alias = null): bool
+    {
+        if (is_array($helper)) {
+            foreach ($helper as $alias => $h) {
                 self::addHelper($h, [], $alias);
-
-        } elseif(is_object($helper)) {
-
-            if (! $helper instanceof View\Helper)
-                return NULL;
-
-            if($alias === null)
-                $alias = strtolower($helper->getName());
-
-            $this->_helpers[$alias] = $helper;
-
-        } elseif($helper !== null) {
-
-            if($alias === null)
-                $alias = strtolower($helper);
-
-            if(! array_key_exists($alias, $this->_helpers)) {
-
-                if(!($class = $this->findHelper($helper)))
-                    throw new \Exception("View helper '$helper' does not exist");
-
-                $obj = new $class($this, $args);
-
-                $this->_helpers[$alias] = $obj;
-
-            } else {
-
-                if (($obj = $this->_helpers[$alias]) instanceof View\Helper)
-                    $obj->extendArgs($args);
-
             }
-
+        } elseif (is_object($helper)) {
+            if (!$helper instanceof Helper) {
+                return false;
+            }
+            if (null === $alias) {
+                $alias = strtolower($helper->getName());
+            }
+            $this->_helpers[$alias] = $helper;
+        } elseif (null !== $helper) {
+            if (null === $alias) {
+                $alias = strtolower($helper);
+            }
+            if (!array_key_exists($alias, $this->_helpers)) {
+                if (!($class = $this->findHelper($helper))) {
+                    return false;
+                }
+                $helper = new $class($this, $args);
+                $this->_helpers[$alias] = $helper;
+            } else {
+                if (($helper = $this->_helpers[$alias]) instanceof Helper) {
+                    $helper->extendArgs($args);
+                }
+            }
         }
 
-    }
-
-    private function findHelper($name){
-
-        /**
-         * Search paths for view helpers.  The order here matters because apps should be able to override built-in helpers.
-         */
-        $search_prefixes = ['\\Application\\Helper\\View', '\\Hazaar\\View\\Helper'];
-
-        $name = \ucfirst($name);
-
-        foreach($search_prefixes as $prefix){
-
-            $class = $prefix . '\\' . $name;
-
-            if(\class_exists($class))
-                return $class;
-
-        }
-
-        return null;
-
+        return true;
     }
 
     /**
-     * Tests if a view helper has been loaded in this view
+     * Tests if a view helper has been loaded in this view.
      *
-     * @param mixed $helper The name of the view helper
-     * @return boolean
+     * @param string $helper The name of the view helper
      */
-    public function hasHelper($helper) {
-
+    public function hasHelper(string $helper): bool
+    {
         return array_key_exists($helper, $this->_helpers);
-
     }
 
     /**
-     * Returns a list of all currently loaded view helpers
+     * Returns a list of all currently loaded view helpers.
      *
-     * @return array
+     * @return array<mixed>
      */
-    public function getHelpers() {
-
+    public function getHelpers(): array
+    {
         return array_keys($this->_helpers);
-
     }
 
     /**
-     * Remove a loaded view helper
+     * Remove a loaded view helper.
      *
-     * @param mixed $helper Returns true if the helper was unloaded.  False if the view helper is not loaded to begin with.
+     * @param string $helper Returns true if the helper was unloaded.  False if the view helper is not loaded to begin with.
      */
-    public function removeHelper($helper){
-
-        if(!array_key_exists($helper, $this->_helpers))
+    public function removeHelper(string $helper): bool
+    {
+        if (!array_key_exists($helper, $this->_helpers)) {
             return false;
-
+        }
         unset($this->_helpers[$helper]);
 
         return true;
-
     }
 
     /**
-     * Retrieve a loaded view helper object
+     * Retrieve a loaded view helper object.
      *
-     * @param mixed $key The name of the view helper
-     *
-     * @return mixed
+     * @param string $key The name of the view helper
      */
-    public function &getHelper($key) {
+    public function &getHelper(string $key): ?Helper
+    {
+        if (!array_key_exists($key, $this->_helpers)) {
+            return null;
+        }
 
-        if (array_key_exists($key, $this->_helpers))
-            return $this->_helpers[$key];
-
-        return NULL;
-
+        return $this->_helpers[$key];
     }
 
     /**
-     * Initialises the loaded view helpers
+     * Initialises the loaded view helpers.
      *
      * View helpers usually want to be initialised.  This gives them a chance to require any scripts or set up any
      * internal settings ready before execution of it's methods.
      *
      * @internal
      */
-    public function initHelpers() {
-
+    public function initHelpers(): void
+    {
         foreach ($this->_helpers as $helper) {
-
-            if ($helper instanceof \Hazaar\View\Helper) {
-
-                $this->_priority = 0;
-
-                $name = get_class($helper);
-
-                if (! in_array($name, $this->_helpers_init)) {
-
-                    $helper->initialise();
-
-                    $this->_helpers_init[] = $name;
-
-                }
-
+            if (!$helper instanceof Helper) {
+                continue;
             }
-
+            $name = get_class($helper);
+            if (in_array($name, $this->_helpers_init)) {
+                continue;
+            }
+            $helper->initialise();
+            $this->_helpers_init[] = $name;
         }
-
-        $this->_priority = 0;
-
-        return true;
-
     }
 
     /**
-     * Runs loaded view helpers
+     * Runs loaded view helpers.
      *
      * @internal
-     *
-     * @return boolean
      */
-    public function runHelpers() {
-
+    public function runHelpers(): void
+    {
         foreach ($this->_helpers as $helper) {
-
-            if ($helper instanceof \Hazaar\View\Helper) {
-
-                $this->_priority = 0;
-
-                $helper->run($this);
-
+            if (!$helper instanceof Helper) {
+                continue;
             }
-
+            $helper->run($this);
         }
-
-        $this->_priority = 0;
-
-        return TRUE;
-
     }
 
     /**
-     * Render the view
+     * Render the view.
      *
      * This method is responsible for loading the view files from disk, rendering it and returning it's output.
      *
      * @internal
      */
-    public function render() {
-
-        if ($this->_rendering)
-            return $this->__call('render', func_get_args());
-
-        $this->_rendering = TRUE;
-
+    public function render(): string
+    {
         $output = '';
-
         $parts = pathinfo($this->_viewfile);
-
-        if(ake($parts, 'extension') == 'tpl'){
-
+        if ('tpl' == ake($parts, 'extension')) {
             $template = new File\Template\Smarty($this->_viewfile);
-
             $template->registerFunctionHandler($this);
-
-            $template->registerFunctionHandler($this->_methodHandler);
-
             $output = $template->render($this->_data);
-
-        }else{
-
+        } else {
             ob_start();
+            if (!($file = $this->getViewFile()) || !file_exists($file)) {
+                throw new Exception("View does not exist ({$this->name})", 404);
+            }
 
-            if (! ($file = $this->getViewFile()) || ! file_exists($file))
-                throw new \Hazaar\Exception("View does not exist ($this->name)", 404);
-
-            include ($file);
-
+            include $file;
             $output = ob_get_contents();
-
             ob_end_clean();
-
         }
 
-        $this->_rendering = FALSE;
-
         return $output;
-
     }
 
     /**
-     * Render a partial view in the current view
+     * Render a partial view in the current view.
      *
      * This method can be called from inside a view source file to include another view source file.
      *
-     * @param string $view The name of the view to include, relative to the current view.  This means that if the view is in the same
-     *                      directory, it is possible to just name the view.  If it is in a sub directly, include the path relative
-     *                      to the current view.  Using parent references (..) will also work.
+     * @param string            $view The name of the view to include, relative to the current view.  This means that if the view is in the same
+     *                                directory, it is possible to just name the view.  If it is in a sub directly, include the path relative
+     *                                to the current view.  Using parent references (..) will also work.
+     * @param array<mixed>|bool $data The data parameter can be either TRUE to indicate that all view data should be passed to the
+     *                                partial view, or an array of data to pass instead.  By default, no view data is passed to the partial view.
      *
-     * @param mixed $data The data parameter can be either TRUE to indicate that all view data should be passed to the
-     *                      partial view, or an array of data to pass instead.  By default, no view data is passed to the partial view.
-     *
-     * @return mixed The rendered view output will be returned.  This can then be echo'd directly to the client.
+     * @return string The rendered view output will be returned.  This can then be echo'd directly to the client.
      */
-    public function partial($view, $data = null, $merge_data = false) {
-
-        if($this->_rendering !== true)
-            return false;
-
-        if(array_key_exists($view, $this->_prepared))
+    public function partial(string $view, null|array|bool $data = null, bool $merge_data = false): string
+    {
+        if (array_key_exists($view, $this->_prepared)) {
             return $this->_prepared[$view];
-        
+        }
         /*
          * This converts "absolute paths" to paths that are relative to FILE_PATH_VIEW.
          *
          * Relative paths are then made relative to the current view (using it's absolute path).
          */
-        if (substr($view, 0, 1) === '/')
+        if ('/' === substr($view, 0, 1)) {
             $view = substr($view, 1);
-        else
-            $view = dirname($this->_viewfile) . '/' . $view . '.phtml';
-
+        } else {
+            $view = dirname($this->_viewfile).'/'.$view.'.phtml';
+        }
         $output = '';
-
-        if ($partial = new View($view)) {
-
-            $partial->registerMethodHandler($this->_methodHandler);
-
-            $partial->addHelper($this->_helpers);
-
-            if(is_array($data))
-                $partial->extend($data);
-            elseif($data === true)
-                $partial->extend($this->_data);
-
-            $output = $partial->render();
-
-            if($merge_data === true)
-                $this->extend($partial->getData());
-
+        $partial = new View($view);
+        $partial->addHelper($this->_helpers);
+        if (is_array($data)) {
+            $partial->extend($data);
+        } elseif (true === $data) {
+            $partial->extend($this->_data);
+        }
+        $output = $partial->render();
+        if (true === $merge_data) {
+            $this->extend($partial->getData());
         }
 
         return $output;
-
-    }
-
-    public function preparePartial($view, $data = null){
-
-        $content = $this->partial($view, $data, true);
-
-        $this->_prepared[$view] = $content;
-
-    }
-
-    public function setRequiresParam($array) {
-
-        $this->_requires_param = array_merge($this->_requires_param, $array);
-
     }
 
     /**
-     * Includes a script block at the end of the view
+     * Prepare a partial view for later rendering.
      *
-     * Because display performance is a priority for Hazaar MVC, script blocks should NEVER be included inside views.  In the rare case
-     * that this is required and the block needs to come AFER any JavaScript file includes, then this method will output those blocks
-     * after the JS imports have been executed.
+     * This method is similar to the `partial` method, but instead of rendering the view immediately, it will prepare the view for rendering later.
      *
-     * @param mixed $code The JavaScipt code to render
+     * @param string            $view The name of the view to include, relative to the current view.  This means that if the view is in the same
+     *                                directory, it is possible to just name the view.  If it is in a sub directly, include the path relative
+     *                                to the current view.  Using parent references (..) will also work.
+     * @param array<mixed>|bool $data The data parameter can be either TRUE to indicate that all view data should be passed to the
      */
-    public function script($code) {
-
-        $this->_scripts[] = new Html\Script($code);
-
+    public function preparePartial(string $view, null|array|bool $data = null): void
+    {
+        $content = $this->partial($view, $data, true);
+        $this->_prepared[$view] = $content;
     }
 
     /**
-     * Render a partial view multiple times on an array
+     * Add a required parameter to the view.
+     *
+     * This is used to add a required parameter to the view.  If the parameter is not set when the view is rendered, an exception will be thrown.
+     *
+     * @param array<mixed> $array an array of required parameter names
+     */
+    public function setRequiresParam(array $array): void
+    {
+        $this->_requires_param = array_merge($this->_requires_param, $array);
+    }
+
+    /**
+     * Render a partial view multiple times on an array.
      *
      * This basically calls `$this->partial` for each element in an array
      *
-     * @param mixed $view The partial view to render.
-     * @param array $data A data array, usually multi-dimensional, that each element will be passed to the partial view.
+     * @param string       $view the partial view to render
+     * @param array<mixed> $data a data array, usually multi-dimensional, that each element will be passed to the partial view
      *
-     * @return string The rendered view output.
+     * @return string the rendered view output
      */
-    public function partialLoop($view, $data) {
-
-        if(!is_array($data))
-            return null;
-
+    public function partialLoop($view, array $data): string
+    {
         $output = '';
-
-        foreach ($data as $d)
+        foreach ($data as $d) {
             $output .= $this->partial($view, $d);
+        }
 
         return $output;
-
     }
 
     /**
-     * Returns a date string formatted to the current set date format
+     * Generates a URL based on the provided controller, action, parameters, and absolute flag.
      *
-     * @param mixed $date
+     * @param string       $controller the name of the controller
+     * @param string       $action     the name of the action
+     * @param array<mixed> $params     an array of parameters to be included in the URL
+     * @param bool         $absolute   determines whether the generated URL should be absolute or relative
      *
-     * @return string
+     * @return URL the generated URL
      */
-    public function date($date) {
+    public function url(?string $controller = null, ?string $action = null, array $params = [], bool $absolute = false): URL
+    {
+        return $this->application->url($controller, $action, $params, $absolute);
+    }
 
-        if (! ($date instanceof \Hazaar\Date))
+    /**
+     * Returns a date string formatted to the current set date format.
+     */
+    public function date(Date|string $date): string
+    {
+        if (!$date instanceof Date) {
             $date = new Date($date);
+        }
 
         return $date->date();
-
     }
 
     /**
      * Return a date/time type as a timestamp string.
      *
      * This is for making it quick and easy to output consistent timestamp strings.
-     *
-     * @param mixed $value
-     *
-     * @return string
      */
-    static public function timestamp($value) {
-
-        if (! ($value instanceof \Hazaar\Date))
+    public static function timestamp(Date|string $value): string
+    {
+        if (!$value instanceof Date) {
             $value = new Date($value);
+        }
 
         return $value->timestamp();
-
     }
 
     /**
      * Return a formatted date as a string.
      *
-     * @param mixed $value This can be practically any date type.  Either a \Hazaar\Date object, epoch int, or even a string.
+     * @param mixed $value  This can be practically any date type.  Either a \Hazaar\Date object, epoch int, or even a string.
      * @param mixed $format Optionally specify the format to display the date.  Otherwise the current default is used.
      *
-     * @return string The nicely formatted datetime string.
+     * @return string the nicely formatted datetime string
      */
-    static public function datetime($value, $format = NULL) {
-
-        if (! ($value instanceof \Hazaar\Date))
+    public static function datetime($value, $format = null)
+    {
+        if (!$value instanceof Date) {
             $value = new Date($value);
-
-        if ($format)
+        }
+        if ($format) {
             return $value->format($format);
+        }
 
         return $value->datetime();
-
     }
 
-    /**
-     * Returns 'Yes' or 'No' text based on a boolean value
-     *
-     * @param mixed $value The boolean value
-     * @param mixed $labels Optionally specify your own yes/no text to display
-     *
-     * @return string
-     */
-    public function yn($value, $labels = ['Yes','No']) {
-
-        return (boolify($value) ? $labels[0] : $labels[1]);
-
-    }
-
-    /**
-     * Display a Gravatar icon for a users email address.
-     *
-     * @param string $address The email address to show the gravatar image for.
-     * @param string $default The default image to use if none is available.  This can be either a URL to a supported image, or one of
-     *                          gravatars built-in default images. See the "Default Image" section of
-     *                          https://en.gravatar.com/site/implement/images/ for available options.
-     *
-     * @return \Hazaar\Html\Img An IMG object so that extra options can be applied.
-     */
-    public function gravatar($address, $default = null) {
-
-        $url = 'http://www.gravatar.com/avatar/' . md5($address);
-
-        if($default)
-            $url .= '?d=' . urlencode($default);
-
-        return new Html\Img($url, $address);
-
-    }
-
-    public function offsetExists($offset) : bool {
-
+    public function offsetExists(mixed $offset): bool
+    {
         return isset($this->_data[$offset]);
-
     }
 
-    #[\ReturnTypeWillChange]
-    public function offsetGet($offset) {
-
+    public function offsetGet(mixed $offset): mixed
+    {
         return $this->_data[$offset];
-
     }
 
-    public function offsetSet($offset, $value) : void {
-
-        if($offset === null)
+    public function offsetSet($offset, $value): void
+    {
+        if (null === $offset) {
             $this->_data[] = $value;
-        else
+        } else {
             $this->_data[$offset] = $value;
-
+        }
     }
 
-    public function offsetUnset($offset) : void {
-
+    public function offsetUnset($offset): void
+    {
         unset($this->_data[$offset]);
-
     }
 
     /**
-     * Use the match/replace algorithm on a string to replace mustache tags with view data
+     * Use the match/replace algorithm on a string to replace mustache tags with view data.
      *
      * This is similar code used in the Smarty view template renderer.
      *
@@ -854,14 +589,39 @@ class View implements \ArrayAccess {
      * * "Hello, {{entity}}" will replace {{entity}} with the value of `$this->entity`.
      * * "The quick brown {{animal.one}}, jumped over the lazy {{animal.two}}" will replace the tags with values in a multi-dimensional array.
      *
-     * @param mixed $string The string to perform the match/replace on.
+     * @param string $string the string to perform the match/replace on
      *
-     * @return mixed The modified string with mustache tags replaced with view data, or removed if the view data does not exist.
+     * @return string the modified string with mustache tags replaced with view data, or removed if the view data does not exist
      */
-    public function matchReplace($string){
-
+    public function matchReplace(string $string): string
+    {
         return match_replace($string, $this->_data);
-
     }
 
+    /**
+     * Find a helper class for the given name.
+     *
+     * This method searches for view helper classes in the specified search paths.
+     * The order of the search paths is important because it allows apps to override built-in helpers.
+     *
+     * @param string $name the name of the helper class to find
+     *
+     * @return null|string the fully qualified class name of the helper, or null if not found
+     */
+    private function findHelper(string $name): ?string
+    {
+        /**
+         * Search paths for view helpers. The order here matters because apps should be able to override built-in helpers.
+         */
+        $search_prefixes = ['\\Application\\Helper\\View', '\\Hazaar\\View\\Helper'];
+        $name = \ucfirst($name);
+        foreach ($search_prefixes as $prefix) {
+            $class = $prefix.'\\'.$name;
+            if (\class_exists($class)) {
+                return $class;
+            }
+        }
+
+        return null;
+    }
 }

@@ -1,9 +1,11 @@
 <?php
+
+declare(strict_types=1);
+
 /**
  * @file        Hazaar/Money.php
  *
  * @author      Jamie Carl <jamie@hazaar.io>
- *
  * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
@@ -24,7 +26,7 @@ namespace Hazaar;
  *              ```
  *
  *              The default money format is '%.2n' which will format the value to whole dollar with 2 decimal places. ie:
- *              $123.45. You can specify the format when retrieving the amount (see Money::format()) or you can set the
+ *              $123.45. You can specify the format when retrieving the amount (see self::format()) or you can set the
  *              default format at any time.
  *
  *              You can also set the default currency code to use when none is specified.
@@ -35,38 +37,33 @@ namespace Hazaar;
  *              ### Example bootstrap.php
  *
  *              ```php
- *              Hazaar\Money::$money_format = '%.0n';
- *              Hazaar\Money::$default_currency = 'AUD';
+ *              Hazaar\self::$money_format = '%.0n';
+ *              Hazaar\self::$default_currency = 'AUD';
  *              ```
  */
-class Money {
-
+class Money
+{
     /**
-     * Default currency code
+     * Default currency code.
      */
-    static public   $default_currency = NULL;
+    public static ?string $default_currency = null;
 
     /**
      * @private
      */
-    private         $value;
-
-    private         $local_currency = NULL;
-
-    static private  $db;
-
-    static private  $exchange_rates = [];
-
-    static private  $cache;
+    private float $value;
 
     /**
-     * The current Money database format version.
-     *
-     * Changing this triggers a re-initialisation of the internal database.
-     *
-     * @var int
+     * @var array<string, mixed>
      */
-    static private $version = 1;
+    private array $local_currency;
+    private static ?BTree $db = null;
+
+    /**
+     * @var array<string, mixed>
+     */
+    private static array $exchange_rates = [];
+    private static ?Cache $cache = null;
 
     /**
      * @detail      The money class constructors takes two parameters.  The value of the currency and the type of
@@ -79,102 +76,93 @@ class Money {
      *              A cache object is also set up for use by the exchange conversion methods.  It will attempt to use
      *              the APC cache backend but if that is not available it will fall back to the file backend.
      *
-     * @param       float $value The currency value amount
-     *
-     * @param       string $currency The name of the currency or country of origin.  Ie: 'USD' and 'US' will both resolve
-     *              to US dollars.
+     * @param float  $value    The currency value amount
+     * @param string $currency The name of the currency or country of origin.  Ie: 'USD' and 'US' will both resolve
+     *                         to US dollars.
      */
-    function __construct($value = 0, $currency = NULL) {
-
-        if(!self::$default_currency)
+    public function __construct(float $value = 0, ?string $currency = null)
+    {
+        if (null === self::$default_currency) {
             self::$default_currency = trim(ake(localeconv(), 'int_curr_symbol'));
-
-        if($currency === null)
+        }
+        if (null === $currency) {
             $currency = self::$default_currency;
-
+        }
         $this->set($value, $currency);
-
         $this->local_currency = $this->getCurrencyInfo($currency);
-
     }
 
-    public function getCurrencyInfo($currency = null){
+    /**
+     * @detail      This magic function is called when PHP tries to automatically convert the currency to a string.
+     *              Simply calls the self::toString() method.
+     *
+     * @return string eg: $100USD
+     */
+    public function __toString(): string
+    {
+        return $this->toString();
+    }
 
-        if(!Money::$db instanceof Btree){
-
-            $file = new \Hazaar\File(\Hazaar\Loader::getFilePath(FILE_PATH_SUPPORT, 'currency.db'));
-
-            Money::$db = new Btree($file, true);
-
+    /**
+     * Retrieves information about a currency.
+     *
+     * @param null|string $currency The currency code. If null, returns information about all currencies.
+     *
+     * @return mixed returns an array of currency information if $currency is null, otherwise returns the information for the specified currency
+     */
+    public function getCurrencyInfo(?string $currency = null): mixed
+    {
+        if (null == self::$db) {
+            $file = new File(Loader::getFilePath(FILE_PATH_SUPPORT, 'currency.db'));
+            self::$db = new BTree($file, true);
         }
-
-        if($currency === null){
-
-            $currencies = Money::$db->toArray();
-
+        if (null === $currency) {
+            $currencies = self::$db->toArray();
             unset($currencies['__version__']);
 
             return $currencies;
-
+        }
+        if (3 !== strlen($currency)) {
+            $currency = $this->getCurrencyCode($currency);
         }
 
-        if(strlen($currency) !== 3)
-            $currency = $this->getCurrencyCode($currency);
-
-        return Money::$db->get($currency);
-
+        return self::$db->get($currency);
     }
 
     /**
      * @detail      Get either the default currency code, or get a currency code for a country.  Use this instead of
-     *              accessing Money::default_currency directly because if Money::$default_currency is not set, this will
+     *              accessing self::default_currency directly because if self::$default_currency is not set, this will
      *              try and determine the default currency and set it automatically which will occur when a new Money
      *              object is created.
      *
-     * @since       1.2
-     *
-     * @param       string $currency Either the country code or null to get the default currency.  Can also be a valid
-     *              currency which will simply be passed through.
-     *
-     * @return      string A valid currency code such as AUD, USD, JPY, etc.
+     * @return string a valid currency code such as AUD, USD, JPY, etc
      */
-    public function getCurrencyCode($code = NULL) {
-
-        /**
-         * If there is no currency set, get the default currency
-         */
-        if(! $code)
-            $code = Money::$default_currency;
-
-        /**
-         * If there is no default currency, look it up and set it now
-         */
-        if(! $code) {
-
-            //Get the current locale country code and use that to look up the currency code
-            if(preg_match('/^\w\w[_-](\w\w)/', setlocale(LC_MONETARY, '0'), $matches)) {
-
+    public function getCurrencyCode(?string $code = null): string
+    {
+        // If there is no currency set, get the default currency
+        if (!$code) {
+            $code = self::$default_currency;
+        }
+        // If there is no default currency, look it up and set it now
+        if (!$code) {
+            // Get the current locale country code and use that to look up the currency code
+            if (preg_match('/^\w\w[_-](\w\w)/', setlocale(LC_MONETARY, '0'), $matches)) {
                 $code = $matches[1];
-
             } else {
-
                 /**
-                 * The absolute fallback default is AUD
+                 * The absolute fallback default is AUD.
                  */
                 $code = 'AUD';
-
             }
-
+        }
+        if (2 === strlen($code)) {
+            $code = $this->getCode($code);
+        }
+        if (!self::$default_currency) {
+            self::$default_currency = $code;
         }
 
-        if(strlen($code) === 2)
-            $code = $this->getCode($code);
-
-        if(!Money::$default_currency)
-            Money::$default_currency = $code;
-
         return strtoupper($code);
-
     }
 
     /**
@@ -191,39 +179,30 @@ class Money {
      *              echo $currency->getCode('au');  //This will echo the string 'AUD'.
      *              ```
      *
-     * @param       string $country Optional country code to look up a currency code for.
+     * @param string $country optional country code to look up a currency code for
      *
-     * @return      string The currency code requested.
+     * @return string the currency code requested
      */
-    public function getCode($country = NULL) {
-
-        if($country) {
-
-            if(strlen($country) < 3){
-
-                $countries = Money::$db->range("\x00", "\xff");
-
-                foreach($countries as $c){
-
-                    if(strcasecmp($c['iso'], $country) !== 0)
+    public function getCode(?string $country = null): string
+    {
+        if ($country) {
+            if (strlen($country) < 3) {
+                $countries = self::$db->range("\x00", "\xff");
+                foreach ($countries as $c) {
+                    if (0 !== strcasecmp($c['iso'], $country)) {
                         continue;
-
+                    }
                     $country = $c['currencycode'];
 
                     break;
-
                 }
-
             }
-
-            $info = Money::$db->get($country);
+            $info = self::$db->get($country);
 
             return ake($info, 'currencycode');
-
         }
 
         return ake($this->local_currency, 'currencycode');
-
     }
 
     /**
@@ -231,12 +210,11 @@ class Money {
      *              amount.  This method doesn't actually return the currency symbol as such, but will return the HTML
      *              entity name of the currency symbol, for example 'dollar', 'pound', 'yen', etc.
      *
-     * @return      string The HTML entity name of the currency symbol.
+     * @return string the HTML entity name of the currency symbol
      */
-    public function getCurrencySymbol() {
-
+    public function getCurrencySymbol(): string
+    {
         return ake($this->local_currency, 'symbol', '$');
-
     }
 
     /**
@@ -247,61 +225,46 @@ class Money {
      *              Because this method contacts another web service the response can be a little slow.  Because of this
      *              results are cached so that subsequent requests for the same conversion will be faster.
      *
-     * @param       string $foreign_currency The foreign currency to get an exchange rate for.
+     * @param string $foreign_currency the foreign currency to get an exchange rate for
      *
-     * @return      float The current currency exchange rate.
+     * @return float the current currency exchange rate
      */
-    public function getExchangeRate($foreign_currency) {
-
-        if(strlen($foreign_currency) == 2)
+    public function getExchangeRate(string $foreign_currency): float
+    {
+        if (2 == strlen($foreign_currency)) {
             $foreign_currency = $this->getCode($foreign_currency);
-
-        if(strcasecmp($this->local_currency['currencycode'], $foreign_currency) == 0)
+        }
+        if (0 == strcasecmp($this->local_currency['currencycode'], $foreign_currency)) {
             return 1;
-
+        }
         $base = strtoupper(trim($this->local_currency['currencycode'] ?? ''));
-
-        $foreign_currency = strtoupper(trim($foreign_currency ?? ''));
-
-        if(!ake(Money::$exchange_rates, $base)){
-
-            if(!Money::$cache)
-                Money::$cache = new \Hazaar\Cache(['apc', 'file']);
-
-            $key = 'exchange_rate_' . $base;
-
-            if(!Money::$cache || (Money::$exchange_rates[$base] = Money::$cache->get($key)) == FALSE){
-
-                $url = 'https://api.hazaar.io/api/money/latest?base=' . $base;
-
-                $result = json_decode(file_get_contents($url), true);
-
-                Money::$exchange_rates[$base] = $result;
-
-                if(Money::$cache)
-                    Money::$cache->set($key, Money::$exchange_rates[$base]);
-
+        $foreign_currency = strtoupper(trim($foreign_currency));
+        if (!ake(self::$exchange_rates, $base)) {
+            if (null === self::$cache) {
+                self::$cache = new Cache(['apc', 'file']);
             }
-
+            $key = 'exchange_rate_'.$base;
+            if (false === (self::$exchange_rates[$base] = self::$cache->get($key))) {
+                $url = 'https://api.hazaar.io/api/money/latest?base='.$base;
+                $result = json_decode(file_get_contents($url), true);
+                self::$exchange_rates[$base] = $result;
+                self::$cache->set($key, self::$exchange_rates[$base]);
+            }
         }
 
-        return ake(Money::$exchange_rates[$base]['rates'], $foreign_currency);
-
+        return ake(self::$exchange_rates[$base]['rates'], $foreign_currency);
     }
 
     /**
      * @detail      Convert the currency object to another currency and return a new Money object.
      *
-     * @param       string $foreign_currency The currency to convert to.  Can be country or currency code.
+     * @param string $foreign_currency The currency to convert to.  Can be country or currency code.
      *
-     * @return      Money A new currency object with the value of the foreign currency amount.
+     * @return Money a new currency object with the value of the foreign currency amount
      */
-    public function convertTo($foreign_currency) {
-
-        $foreign = new Money($this->value * $this->getExchangeRate($foreign_currency), $foreign_currency);
-
-        return $foreign;
-
+    public function convertTo(string $foreign_currency): Money
+    {
+        return new Money($this->value * $this->getExchangeRate($foreign_currency), $foreign_currency);
     }
 
     /**
@@ -309,66 +272,50 @@ class Money {
      *              {symbol}{amount}{code}.  For example, US dollars will be expressed as $100USD.  Australian
      *              dollar as $105AUD and so on.
      *
-     * @param       string $format An optional format passed to the money_format function.  If not specified the global
-     *              default format will be used.
+     * @param string $format An optional format passed to the money_format function.  If not specified the global
+     *                       default format will be used.
      *
-     * @return      string The currency value as a formatted string
+     * @return string The currency value as a formatted string
      */
-    public function format($format = NULL) {
-
-        $nm = new \NumberFormatter(setlocale(LC_MONETARY, 0), \NumberFormatter::CURRENCY);
+    public function format(?string $format = null): string
+    {
+        $nm = new \NumberFormatter(setlocale(LC_MONETARY, ''), \NumberFormatter::CURRENCY);
 
         return $nm->formatCurrency($this->value, 'AUD');
-
     }
 
     /**
-     * @detail      This magic function is called when PHP tries to automatically convert the currency to a string.
-     *              Simply calls the Money::toString() method.
-     *
-     * @return      string eg: $100USD
-     */
-    public function __tostring() {
-
-        return $this->toString();
-
-    }
-
-    /**
-     * @detail      Convert currency to a string.  Outputs the same as the Money::format() method using the default
+     * @detail      Convert currency to a string.  Outputs the same as the self::format() method using the default
      *              format.
      *
-     * @return      string eg: $100USD
+     * @return string eg: $100USD
      */
-    public function toString() {
-
+    public function toString(): string
+    {
         return $this->format();
-
     }
 
     /**
      * @detail      Get the currency as a float value formatted using the money_format PHP function with optional
      *              precision to specify the number of decimal places.
      *
-     * @param       int $precision The number of decimal places to round to.  Defaults to 2.
+     * @param int $precision The number of decimal places to round to.  Defaults to 2.
      *
-     * @return      float The currency value as a float
+     * @return float The currency value as a float
      */
-    public function toFloat($precision = 2) {
-
+    public function toFloat(int $precision = 2): float
+    {
         return round($this->value, $precision);
-
     }
 
     /**
      * @detail      Get the currency value represented as an integer in cents.  1 dollar = 100 cents.
      *
-     * @return      int The currency value in whole cents.
+     * @return int the currency value in whole cents
      */
-    public function toCents() {
-
-        return (int)round($this->value * 100);
-
+    public function toCents(): int
+    {
+        return (int) round($this->value * 100);
     }
 
     /**
@@ -380,28 +327,20 @@ class Money {
      *
      *              Any number of numeric or Money objects parameters.
      *
-     * @return      Money The sum of all values as a new Money object.
+     * @return Money the sum of all values as a new Money object
      */
-    public function add() {
-
+    public function add(): Money
+    {
         $total = $this->value;
-
-        foreach(func_get_args() as $arg) {
-
-            if(is_numeric($arg)) {
-
+        foreach (func_get_args() as $arg) {
+            if (is_numeric($arg)) {
                 $total += $arg;
-
-            } elseif($arg instanceof Money) {
-
+            } elseif ($arg instanceof Money) {
                 $total += $arg->convertTo($this->local_currency['currencycode'])->toFloat();
-
             }
-
         }
 
         return new Money($total, $this->local_currency['currencycode']);
-
     }
 
     /**
@@ -409,56 +348,54 @@ class Money {
      *              a numeric value or another Money object.  If the parameter is a Money object then the value
      *              will be automatically converted using the current exchange rate before it is subtracted.
      *
-     * @return      Money The result of subtraction as a new Money object.
+     * @return Money the result of subtraction as a new Money object
      */
-    public function subtract() {
-
+    public function subtract(): Money
+    {
         $total = $this->value;
-
-        foreach(func_get_args() as $arg) {
-
-            if(is_numeric($arg)) {
-
+        foreach (func_get_args() as $arg) {
+            if (is_numeric($arg)) {
                 $total -= $arg;
-
-            } elseif($arg instanceof Money) {
-
+            } elseif ($arg instanceof Money) {
                 $total -= $arg->convertTo($this->local_currency['currencycode'])->toFloat();
-
             }
-
         }
 
         return new Money($total, $this->local_currency['currencycode']);
-
     }
 
-    public function set($value, &$currency = null){
-
-        if(is_string($value)){
-
+    /**
+     * Sets the value of the Money object.
+     *
+     * @param float|string $value     the value to set
+     * @param null|string  &$currency The currency to set. Pass by reference.
+     *
+     * @return float the updated value of the Money object
+     */
+    public function set(float|string $value, ?string &$currency = null): float
+    {
+        if (is_string($value)) {
             $value = trim($value);
-
-            if(preg_match('/^(\D*)([\d\.,]+)(\D*)/', $value, $matches)){
-
+            if (preg_match('/^(\D*)([\d\.,]+)(\D*)/', $value, $matches)) {
                 $this->value = floatval(str_replace(',', '', $matches[2]));
-
                 $currency = ake($matches, 3, null, true);
-
-            }else
+            } else {
                 $this->value = floatval(substr($value, 1));
-
-        }else
+            }
+        } else {
             $this->value = floatval($value);
+        }
 
         return $this->value;
-
     }
 
-    public function getCurrencyName(){
-
+    /**
+     * Get the name of the currency.
+     *
+     * @return string the name of the currency
+     */
+    public function getCurrencyName(): string
+    {
         return ake($this->local_currency, 'name');
-
     }
-
 }
