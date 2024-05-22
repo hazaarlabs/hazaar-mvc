@@ -1,18 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @file        Auth/Adapter.php
  *
  * @author      Jamie Carl <jamie@hazaar.io>
- *
  * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
-
 /**
- * User authentication namespace
+ * User authentication namespace.
  */
 
 namespace Hazaar\Auth\Adapter;
+
+use Hazaar\Application;
+use Hazaar\Auth\Adapter;
+use Hazaar\Cache;
+use Hazaar\Map;
+use Hazaar\Session as SessionCache;
 
 /**
  * @brief       Session based authentication adapter
@@ -39,96 +45,95 @@ namespace Hazaar\Auth\Adapter;
  * a session will ever be active.  If autologin is being used, then it is quite common to set this to a low
  * value to allow the user to be re-authenticated with the autologin token periodically.
  *
+ * @implements  \ArrayAccess<string, mixed>
  */
-abstract class Session extends \Hazaar\Auth\Adapter implements \ArrayAccess
+abstract class Session extends Adapter implements \ArrayAccess
 {
-    protected $session;
-    protected $options;
-    protected $identity;
-    protected $credential;
-    // Extra data fields to store from the user record
-    protected $extra = [];
+    protected Cache $session;
 
-    public function __construct($cache_config = [], $cache_backend = null)
+    /**
+     * @param array<mixed>|Map $cacheConfig
+     */
+    public function __construct(null|array|Map $cacheConfig = null, ?Cache $cacheBackend = null)
     {
         parent::__construct([
             'cache' => [
                 'backend' => 'session',
-                'cookie' => 'hazaar-auth'
-            ]
+                'cookie' => 'hazaar-auth',
+            ],
         ]);
-        $cache_config = new \Hazaar\Map([
+        $cacheConfig = new Map([
             'use_pragma' => false,
-            'lifetime' => $this->options->timeout,
-            'session_name' => $this->options->cache['cookie']
-        ], $cache_config);
-        if($cache_backend instanceof \Hazaar\Cache) {
-            $cache_backend->configure($cache_config);
-            $this->session = $cache_backend;
-        } elseif($this->options->cache['backend'] === 'session') {
-            $this->session = new \Hazaar\Session($cache_config);
+            'lifetime' => $this->options['timeout'],
+            'session_name' => $this->options['cache']['cookie'],
+        ], $cacheConfig);
+        if ($cacheBackend instanceof Cache) {
+            $cacheBackend->configure($cacheConfig);
+            $this->session = $cacheBackend;
+        } elseif ('session' === $this->options['cache']['backend']) {
+            $this->session = new SessionCache($cacheConfig);
         } else {
-            $this->session = new \Hazaar\Cache($this->options->cache['backend'], $cache_config);
+            $this->session = new Cache($this->options['cache']['backend'], $cacheConfig);
         }
-        if($this->session->has('hazaar_auth_identity', true)
+        if ($this->session->has('hazaar_auth_identity', true)
             && $this->session->has('hazaar_auth_token', true)
-            && hash($this->options->token['hash'], $this->session->hazaar_auth_identity) === $this->session->hazaar_auth_token) {
-            $this->identity = $this->session->hazaar_auth_identity;
+            && hash($this->options['token']['hash'], $this->session['hazaar_auth_identity']) === $this->session['hazaar_auth_token']) {
+            $this->identity = $this->session['hazaar_auth_identity'];
         }
-        if($this->session->has('hazaar_auth_identity') && $this->session->has('hazaar_auth_token')) {
-            $id = $this->getIdentifier($this->session->hazaar_auth_identity);
-            $hash = $this->options->token['hash'];
-            if(hash($hash, $id) !== $this->session->hazaar_auth_token) {
+        if ($this->session->has('hazaar_auth_identity') && $this->session->has('hazaar_auth_token')) {
+            $id = $this->getIdentifier($this->session['hazaar_auth_identity']);
+            $hash = $this->options['token']['hash'];
+            if (hash($hash, $id) !== $this->session['hazaar_auth_token']) {
                 $this->deauth();
             }
         }
-        if($this->options->has('data_fields')) {
-            $this->setDataFields($this->options->data_fields->toArray());
+        if ($this->options->has('data_fields')) {
+            $this->setDataFields($this->options['data_fields']->toArray());
         }
     }
 
-    public function &get($key)
+    public function __set(string $key, mixed $value): void
     {
-        return $this->session->get($key);
+        $this->set($key, $value);
     }
 
-    public function &__get($key)
-    {
-        return $this->get($key);
-    }
-
-    public function __set($key, $value)
-    {
-        return $this->set($key, $value);
-    }
-
-    public function __isset($key)
+    public function __isset(string $key): bool
     {
         return $this->has($key);
     }
 
-    public function set($key, $value)
+    public function &get(string $key): mixed
+    {
+        return $this->session->get($key);
+    }
+
+    public function &__get(string $key): mixed
+    {
+        return $this->get($key);
+    }
+
+    public function set(string $key, mixed $value): void
     {
         $this->session->set($key, $value);
     }
 
-    public function has($key)
+    public function has(string $key): bool
     {
         return $this->session->has($key);
     }
 
-    public function authenticate($identity = null, $credential = null, $autologin = false)
+    public function authenticate(?string $identity = null, ?string $credential = null, bool $autologin = false): bool
     {
         $auth = parent::authenticate($identity, $credential, $autologin);
-        if(is_array($auth)) {
-            if(array_key_exists('data', $auth)) {
+        if (is_array($auth)) {
+            if (array_key_exists('data', $auth)) {
                 $this->session->setValues($auth['data']);
             }
-            $this->session->hazaar_auth_identity = $identity;
-            $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($identity));
-            if(\php_sapi_name() !== 'cli' &&
-                boolify($autologin)
-                && $this->options->autologin['period'] > 0) {
+            $this->session['hazaar_auth_identity'] = $identity;
+            $this->session['hazaar_auth_token'] = hash($this->options['token']['hash'], $this->getIdentifier($identity));
+            if ('cli' !== \php_sapi_name()
+                && boolify($autologin)
+                && $this->options['autologin']['period'] > 0) {
                 /*
                  * $credential should be encrypted, as stored in the datasource (ie: database), so we
                  * md5 that to totally obscure it. If it is not encrypted then it is not being
@@ -137,80 +142,126 @@ abstract class Session extends \Hazaar\Auth\Adapter implements \ArrayAccess
                  */
                 $data = base64_encode(http_build_query([
                     'identity' => $identity,
-                    'hash' => hash($this->options->autologin['hash'], $this->getIdentifier($auth['credential'] . $identity))
+                    'hash' => hash($this->options['autologin']['hash'], $this->getIdentifier($auth['credential'].$identity)),
                 ]));
                 $cookie = $this->getAutologinCookieName();
-                $timeout = (86400 * $this->options->autologin['period']);
-                setcookie($cookie, $data, time() + $timeout, \Hazaar\Application::path(), null, true, true);
+                $timeout = (86400 * $this->options['autologin']['period']);
+                setcookie($cookie, $data, time() + $timeout, Application::path(), '', true, true);
             }
             $this->authenticationSuccess($identity, $this->extra);
+
             return true;
         }
+
         return false;
     }
 
-    public function getUserData()
+    /**
+     * @return array<mixed>
+     */
+    public function getUserData(): array
     {
         return $this->session->toArray();
     }
 
-    public function authenticated()
+    public function authenticated(): bool
     {
-        if($this->session->has('hazaar_auth_identity')
+        if ($this->session->has('hazaar_auth_identity')
             && $this->session->has('hazaar_auth_token')
-            && hash($this->options->get('token.hash'), $this->getIdentifier($this->session->hazaar_auth_identity)) === $this->session->hazaar_auth_token) {
-            $this->identity = $this->session->hazaar_auth_identity;
+            && hash($this->options->get('token.hash'), $this->getIdentifier($this->session['hazaar_auth_identity'])) === $this->session['hazaar_auth_token']) {
+            $this->identity = $this->session['hazaar_auth_identity'];
+
             return true;
         }
         $headers = hazaar_request_headers();
-        if($authorization = ake($headers, 'Authorization')) {
+        if ($authorization = ake($headers, 'Authorization')) {
             list($method, $code) = explode(' ', $authorization);
-            if(strtolower($method) === 'basic') {
+            if ('basic' === strtolower($method)) {
                 list($identity, $credential) = explode(':', base64_decode($code));
+
                 return $this->authenticate($identity, $credential);
             }
-        } elseif($this->canAutoLogin()) {
-            /*
-             * If we've got a cookie set, use the identity to look up credentials
-             */
+        } elseif ($this->canAutoLogin()) {
+            // If we've got a cookie set, use the identity to look up credentials
             $cookie_name = $this->getAutologinCookieName();
             parse_str(base64_decode(ake($_COOKIE, $cookie_name, '')), $cookie);
-            if($cookie) {
-                if($identity = urldecode(ake($cookie, 'identity'))) {
+            if ($cookie) {
+                if ($identity = urldecode(ake($cookie, 'identity'))) {
                     $this->setIdentity($identity);
                 }
-                if($auth = $this->queryAuth($identity, $this->extra)) {
-                    $hash = hash($this->options->autologin['hash'], $this->getIdentifier($auth['credential'] . $identity));
-                    /*
-                    * Check the cookie credentials against the ones we just got from the adapter
-                    */
-                    if($identity === $auth['identity']
+                if ($auth = $this->queryAuth($identity, $this->extra)) {
+                    $hash = hash($this->options['autologin']['hash'], $this->getIdentifier($auth['credential'].$identity));
+                    // Check the cookie credentials against the ones we just got from the adapter
+                    if ($identity === $auth['identity']
                         && $hash === ake($cookie, 'hash')) {
-                        if(array_key_exists('data', $auth)) {
+                        if (array_key_exists('data', $auth)) {
                             $this->session->setValues($auth['data']);
                         }
-                        $this->session->hazaar_auth_identity = $identity;
-                        $this->session->hazaar_auth_token = hash($this->options->token['hash'], $this->getIdentifier($identity));
+                        $this->session['hazaar_auth_identity'] = $identity;
+                        $this->session['hazaar_auth_token'] = hash($this->options['token']['hash'], $this->getIdentifier($identity));
                         $this->authenticationSuccess($identity, $this->extra);
+
                         return true;
-                    } else {
-                        $this->deauth();
                     }
+                    $this->deauth();
                 }
             }
         }
+
         return false;
     }
 
-    public function deauth()
+    public function deauth(): bool
     {
-        $this->session->clear(true);
+        $this->session->clear();
         $cookie = $this->getAutologinCookieName();
-        if(isset($_COOKIE[$cookie])) {
+        if (isset($_COOKIE[$cookie])) {
             unset($_COOKIE[$cookie]);
-            setcookie($cookie, '', time() - 3600, \Hazaar\Application::path(), null, true, true);
+            setcookie($cookie, '', time() - 3600, Application::path(), '', true, true);
         }
+
         return true;
+    }
+
+    public function getToken(): string
+    {
+        return $this->session['hazaar_auth_token'];
+    }
+
+    public function getTokenType(): false|string
+    {
+        return 'Basic';
+    }
+
+    /**
+     * Array Access Methods.
+     *
+     * These methods allows accessing user data as array attributes of the auth object. These methods do not allow this
+     * data to be modified in any way.
+     */
+    public function offsetExists(mixed $key): bool
+    {
+        return $this->session->has($key);
+    }
+
+    public function &offsetGet(mixed $key): mixed
+    {
+        if ($this->session->has($key)) {
+            return $this->session->get($key);
+        }
+        $result = null; // Required to return variables by reference
+
+        return $result;
+    }
+
+    public function offsetSet(mixed $key, mixed $value): void
+    {
+        $this->session->set($key, $value);
+    }
+
+    public function offsetUnset(mixed $key): void
+    {
+        $this->session->remove($key);
     }
 
     /**
@@ -218,40 +269,8 @@ abstract class Session extends \Hazaar\Auth\Adapter implements \ArrayAccess
      *
      * This can occur when calling authenticate() or authenticated() where a session has been saved.  This default method does nothing but can
      * be overridden.
-     */
-    protected function authenticationSuccess($identity, $data)
-    {
-
-    }
-
-    /**
-     * Array Access Methods
      *
-     * These methods allows accessing user data as array attributes of the auth object. These methods do not allow this
-     * data to be modified in any way.
+     * @param array<mixed> $data
      */
-    public function offsetExists($key): bool
-    {
-        return $this->session->has($key);
-    }
-
-    #[\ReturnTypeWillChange]
-    public function &offsetGet($key)
-    {
-        if($this->session->has($key)) {
-            return $this->session->get($key);
-        }
-        $result = null; // Required to return variables by reference
-        return $result;
-    }
-
-    public function offsetSet($key, $value): void
-    {
-        $this->session->set($key, $value);
-    }
-
-    public function offsetUnset($key): void
-    {
-        $this->session->remove($key);
-    }
+    protected function authenticationSuccess(string $identity, array $data): void {}
 }

@@ -1,670 +1,597 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\File\Backend;
 
-class Local implements _Interface {
+use Hazaar\BTree;
+use Hazaar\File\Manager;
+use Hazaar\Loader;
+use Hazaar\Map;
 
-    public  $separator  = DIRECTORY_SEPARATOR;
+class Local implements Interfaces\Backend, Interfaces\Driver
+{
+    public string $separator = DIRECTORY_SEPARATOR;
+    protected Manager $manager;
+    private Map $options;
 
-    private $options;
+    /**
+     * @var array<mixed>
+     */
+    private array $meta = [];
 
-    static  $mime_types = null;
-
-    private $meta = [];
-
-    static public function label(){
-
-        return 'Local Filesystem Storage';
-
+    /**
+     * @param array<mixed>|Map $options
+     */
+    public function __construct(array|Map $options, Manager $manager)
+    {
+        $this->manager = $manager;
+        $this->options = Map::_(['display_hidden' => false, 'root' => DIRECTORY_SEPARATOR], $options);
     }
 
-    static public function lookup_content_type($extension){
+    public static function label(): string
+    {
+        return 'Local Filesystem Storage';
+    }
 
-        if(! is_array(self::$mime_types)) {
+    public function refresh(bool $reset = false): bool
+    {
+        return true;
+    }
 
-            self::$mime_types = [];
-
-            $mt_file = \Hazaar\Loader::getFilePath(FILE_PATH_SUPPORT, 'mime.types');
-
-            $h = fopen($mt_file, 'r');
-
-            while($line = fgets($h)) {
-
-                $line = trim($line);
-
-                if(substr($line, 0, 1) == '#' || strlen($line) == 0)
-                    continue;
-
-                if(preg_match('/^(\S*)\s*(.*)$/', $line, $matches)) {
-
-                    $extens = explode(' ', $matches[2]);
-
-                    foreach($extens as $value) {
-                        if($value)
-                            self::$mime_types[strtolower($value)] = $matches[1];
-                    }
-
-                }
-
-            }
-
-            fclose($h);
-
+    public function resolvePath(string $path, ?string $file = null): string
+    {
+        $path = Loader::fixDirectorySeparator($path);
+        $base = $this->options->get('root', DIRECTORY_SEPARATOR);
+        if (DIRECTORY_SEPARATOR == $path) {
+            $path = $base;
+        } elseif (':' !== substr($path, 1, 1)) { // Not an absolute Windows path
+            $path = $base.((DIRECTORY_SEPARATOR != substr($base, -1, 1)) ? DIRECTORY_SEPARATOR : null).trim($path, DIRECTORY_SEPARATOR);
+        }
+        if ($file) {
+            $path .= ((strlen($path) > 1) ? DIRECTORY_SEPARATOR : null).trim($file, DIRECTORY_SEPARATOR);
         }
 
-        return ake(self::$mime_types, strtolower($extension));
-
-    }
-
-    public function __construct($options = []) {
-
-        $root = ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : DIRECTORY_SEPARATOR);
-
-        $this->options = new \Hazaar\Map(['display_hidden' => false, 'root' => $root], $options);
-
-    }
-
-    public function refresh($reset = false) {
-
-        return true;
-
-    }
-
-    public function resolvePath($path, $file = null) {
-
-        $path = \Hazaar\Loader::fixDirectorySeparator($path);
-
-        $base = $this->options->get('root', DIRECTORY_SEPARATOR);
-
-        if($path == DIRECTORY_SEPARATOR)
-            $path = $base;
-        elseif(substr($path, 1, 1) !== ':') //Not an absolute Windows path
-            $path = $base . ((substr($base, -1, 1) != DIRECTORY_SEPARATOR) ? DIRECTORY_SEPARATOR : null) . trim($path, DIRECTORY_SEPARATOR);
-
-        if($file)
-            $path .= ((strlen($path) > 1) ? DIRECTORY_SEPARATOR : null) . trim($file, DIRECTORY_SEPARATOR);
-
         return $path;
-
     }
 
-    public function scandir($path, $regex_filter = null, $show_hidden = false) {
-
+    /**
+     * Get a directory listing.
+     *
+     * @return array<string>|bool
+     */
+    public function scandir(
+        string $path,
+        ?string $regex_filter = null,
+        int $sort = SCANDIR_SORT_ASCENDING,
+        bool $show_hidden = false,
+        ?string $relative_path = null
+    ): array|bool {
         $list = [];
-
         $path = $this->resolvePath($path);
-
-        if(! is_dir($path))
+        if (!is_dir($path)) {
             return false;
-
+        }
         $dir = dir($path);
-
-        while(($file = $dir->read()) != false) {
-
-            if($file == '.metadata')
+        while (($file = $dir->read()) != false) {
+            if ('.metadata' == $file) {
                 continue;
-
-            if(($show_hidden == false && substr($file, 0, 1) == '.') || $file == '.' || $file == '..')
+            }
+            if ((false == $show_hidden && '.' == substr($file, 0, 1)) || '.' == $file || '..' == $file) {
                 continue;
-
-            if($regex_filter && ! preg_match($regex_filter, $file))
+            }
+            if ($regex_filter && !preg_match($regex_filter, $file)) {
                 continue;
-
+            }
             $list[] = $file;
+        }
 
+        if (SCANDIR_SORT_ASCENDING === $sort) {
+            sort($list);
+        } elseif (SCANDIR_SORT_DESCENDING === $sort) {
+            rsort($list);
         }
 
         return $list;
-
     }
 
-    public function read($file, $offset = -1, $maxlen = null) {
-
+    public function read(string $file, int $offset = -1, ?int $maxlen = null): false|string
+    {
         $file = $this->resolvePath($file);
-
         $ret = false;
-
-        if(file_exists($file)) {
-
-            if($offset >= 0) {
-
-                if($maxlen) {
-
+        if (file_exists($file)) {
+            if ($offset >= 0) {
+                if ($maxlen) {
                     $ret = file_get_contents($file, false, null, $offset, $maxlen);
-
                 } else {
-
                     $ret = file_get_contents($file, false, null, $offset);
-
                 }
-
             } else {
-
                 $ret = file_get_contents($file);
-
             }
-
         }
 
         return $ret;
-
     }
 
-    public function write($file, $data, $content_type = null, $overwrite = true) {
-
+    public function write(string $file, string $data, ?string $content_type = null, bool $overwrite = true): ?int
+    {
         $file = $this->resolvePath($file);
-
-        if(file_exists($file) && $overwrite == false)
-            return false;
-
-        if(($ret = @file_put_contents($file, $data)) !== false)
-            return true;
-
-        return false;
-
-    }
-
-    public function upload($path, $file, $overwrite = true) {
-
-        $path = \Hazaar\Loader::fixDirectorySeparator($path);
-
-        $fullPath = $this->resolvePath(rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $file['name']);
-
-        if(file_exists($fullPath) && $overwrite == false)
-            return false;
-
-        return move_uploaded_file($file['tmp_name'], $fullPath);
-
-    }
-
-    public function copy($src, $dst, $recursive = false) {
-
-        $src = rtrim(\Hazaar\Loader::fixDirectorySeparator($src), DIRECTORY_SEPARATOR);
-
-        $dst = rtrim(\Hazaar\Loader::fixDirectorySeparator($dst), DIRECTORY_SEPARATOR);
-
-        if($this->is_file($src)) {
-
-            $rSrc = $this->resolvePath($src);
-
-            $rDst = $this->resolvePath($dst);
-
-            if($this->is_dir($dst))
-                $rDst = $this->resolvePath($dst, basename($src));
-
-            $ret = copy($rSrc, $rDst);
-
-            if($ret) {
-
-                if($srcMeta = $this->meta($rSrc))
-                    $this->meta[$rDst] = [$srcMeta, true];
-
-                return true;
-
-            }
-
-        } elseif($this->is_dir($src) && $recursive) {
-
-            $dst .= DIRECTORY_SEPARATOR . basename($src);
-
-            if(! $this->exists($dst))
-                $this->mkdir($dst);
-
-            $dir = $this->scandir($src);
-
-            foreach($dir as $file) {
-
-                $fullpath = $src . DIRECTORY_SEPARATOR . $file;
-
-                if($this->is_dir($fullpath))
-                    $this->copy($fullpath, $dst, true);
-
-                else
-                    $this->copy($fullpath, $dst);
-
-            }
-
-            return true;
-
-        }
-
-        return false;
-
-    }
-
-    public function link($src, $dst) {
-
-        $rSrc = $this->resolvePath($src);
-
-        $rDst = $this->resolvePath($dst);
-
-        if(file_exists($rDst))
-            return false;
-
-        return link($rSrc, $rDst);
-
-    }
-
-    public function move($src, $dst) {
-
-        $rSrc = $this->resolvePath($src);
-
-        $rDst = $this->resolvePath($dst);
-
-        if(is_dir($rDst))
-            $rDst = $this->resolvePath($dst, basename($src));
-
-        if(substr($dst, 0, strlen($src)) == $src)
-            return false;
-
-        $ret = rename($rSrc, $rDst);
-
-        if($ret) {
-
-            if($srcMeta = $this->meta($rSrc)) {
-
-                $this->meta[$rDst] = [$srcMeta, true];
-
-                unset($this->meta[$rSrc]);
-
-            }
-
-            return true;
-
-        }
-
-        return false;
-
-    }
-
-    public function unlink($path) {
-
-        $realPath = $this->resolvePath($path);
-
-        if((file_exists($realPath) || is_link($realPath)) && ! is_dir($realPath)) {
-
-            $ret = @unlink($realPath);
-
-            if($ret) {
-
-                $metafile = dirname($realPath) . DIRECTORY_SEPARATOR . '.metadata' . DIRECTORY_SEPARATOR . basename($realPath);
-
-                if(file_exists($metafile))
-                    unlink($metafile);
-
-                return true;
-
-            }
-
-        }
-
-        return false;
-
-    }
-
-    public function mime_content_type($path) {
-
-        $path = $this->resolvePath($path);
-
-        if(! file_exists($path))
+        if (file_exists($file) && false == $overwrite) {
             return null;
-
-        $info = pathinfo($path);
-
-        if($extension = strtolower(ake($info, 'extension')))
-            return self::lookup_content_type($extension);
-
-        if(function_exists('finfo_open')){
-
-            $const = defined('FILEINFO_MIME_TYPE') ? FILEINFO_MIME_TYPE : FILEINFO_MIME;
-
-            $mime = finfo_open($const);
-
-            if(! empty($mime)) {
-
-                if($type = finfo_file($mime, $path))
-                    return $type;
-
-            }
-
         }
-
-        return 'text/text';
-
-    }
-
-    public function md5Checksum($path) {
-
-        if($path = $this->resolvePath($path))
-            return md5_file($path);
+        if (($ret = @file_put_contents($file, $data)) !== false) {
+            return $ret;
+        }
 
         return null;
-
-    }
-
-    public function thumbnail($path, $params = []) {
-
-        return false;
-
     }
 
     /**
-     * Makes directory
-     * @param mixed $path
-     * @return bool
+     * @param array<string> $file
      */
-    public function mkdir($path) {
-
-        $path = $this->resolvePath($path);
-
-        if(file_exists($path))
+    public function upload(string $path, array $file, bool $overwrite = true): bool
+    {
+        $path = Loader::fixDirectorySeparator($path);
+        $fullPath = $this->resolvePath(rtrim($path, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$file['name']);
+        if (file_exists($fullPath) && false == $overwrite) {
             return false;
-
-        if(!($result = @mkdir($path)))
-            throw new \Exception('Permission denied creating directory: ' . $path);
-
-        return true;
-
-    }
-
-    /**
-     * Removes directory
-     * @param mixed $path
-     * @param mixed $recurse
-     * @return bool
-     */
-    public function rmdir($path, $recurse = false) {
-
-        $realPath = $this->resolvePath($path);
-
-        if(! is_dir($realPath))
-            return false;
-
-        if($recurse) {
-
-            $dir = $this->scandir($path, null, true);
-
-            foreach($dir as $file) {
-
-                if($file == '.' || $file == '..')
-                    continue;
-
-                $fullpath = $path . DIRECTORY_SEPARATOR . $file;
-
-                if($this->is_dir($fullpath)) {
-
-                    $this->rmdir($fullpath, true);
-
-                } else {
-
-                    $this->unlink($fullpath);
-
-                }
-
-            }
-
         }
 
-        if($path == DIRECTORY_SEPARATOR)
+        return move_uploaded_file($file['tmp_name'], $fullPath);
+    }
+
+    public function copy(string $src, string $dst, bool $recursive = false): bool
+    {
+        $src = rtrim(Loader::fixDirectorySeparator($src), DIRECTORY_SEPARATOR);
+        $dst = rtrim(Loader::fixDirectorySeparator($dst), DIRECTORY_SEPARATOR);
+        if ($this->isFile($src)) {
+            $rSrc = $this->resolvePath($src);
+            $rDst = $this->resolvePath($dst);
+            if ($this->isDir($dst)) {
+                $rDst = $this->resolvePath($dst, basename($src));
+            }
+            $ret = copy($rSrc, $rDst);
+            if ($ret) {
+                $this->meta[$rDst] = [$this->meta($rSrc), true];
+
+                return true;
+            }
+        } elseif ($this->isDir($src) && $recursive) {
+            $dst .= DIRECTORY_SEPARATOR.basename($src);
+            if (!$this->exists($dst)) {
+                $this->mkdir($dst);
+            }
+            $dir = $this->scandir($src);
+            foreach ($dir as $file) {
+                $fullpath = $src.DIRECTORY_SEPARATOR.$file;
+                if ($this->isDir($fullpath)) {
+                    $this->copy($fullpath, $dst, true);
+                } else {
+                    $this->copy($fullpath, $dst);
+                }
+            }
+
             return true;
+        }
 
-        //Hack to get PHP on windows to let go of the now empty directory so that we can remove it
+        return false;
+    }
+
+    public function link(string $src, string $dst): bool
+    {
+        $rSrc = $this->resolvePath($src);
+        $rDst = $this->resolvePath($dst);
+        if (file_exists($rDst)) {
+            return false;
+        }
+
+        return link($rSrc, $rDst);
+    }
+
+    public function move(string $src, string $dst): bool
+    {
+        $rSrc = $this->resolvePath($src);
+        $rDst = $this->resolvePath($dst);
+        if (is_dir($rDst)) {
+            $rDst = $this->resolvePath($dst, basename($src));
+        }
+        if (substr($dst, 0, strlen($src)) == $src) {
+            return false;
+        }
+        $ret = rename($rSrc, $rDst);
+        if ($ret) {
+            $this->meta[$rDst] = [$this->meta($rSrc), true];
+            unset($this->meta[$rSrc]);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public function unlink(string $path): bool
+    {
+        $realPath = $this->resolvePath($path);
+        if ((file_exists($realPath) || is_link($realPath)) && !is_dir($realPath)) {
+            $ret = @unlink($realPath);
+            if ($ret) {
+                $metafile = dirname($realPath).DIRECTORY_SEPARATOR.'.metadata'.DIRECTORY_SEPARATOR.basename($realPath);
+                if (file_exists($metafile)) {
+                    unlink($metafile);
+                }
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function mimeContentType(string $path): ?string
+    {
+        return null;
+    }
+
+    public function md5Checksum(string $path): ?string
+    {
+        if ($path = $this->resolvePath($path)) {
+            return md5_file($path);
+        }
+
+        return null;
+    }
+
+    /**
+     * Makes directory.
+     */
+    public function mkdir(string $path): bool
+    {
+        $path = $this->resolvePath($path);
+        if (file_exists($path)) {
+            return false;
+        }
+        if (!($result = @mkdir($path))) {
+            throw new \Exception('Permission denied creating directory: '.$path);
+        }
+
+        return true;
+    }
+
+    /**
+     * Removes directory.
+     */
+    public function rmdir(string $path, bool $recurse = false): bool
+    {
+        $realPath = $this->resolvePath($path);
+        if (!is_dir($realPath)) {
+            return false;
+        }
+        if ($recurse) {
+            $dir = $this->scandir($path, null, SCANDIR_SORT_ASCENDING, true);
+            foreach ($dir as $file) {
+                if ('.' == $file || '..' == $file) {
+                    continue;
+                }
+                $fullpath = $path.DIRECTORY_SEPARATOR.$file;
+                if ($this->isDir($fullpath)) {
+                    $this->rmdir($fullpath, true);
+                } else {
+                    $this->unlink($fullpath);
+                }
+            }
+        }
+        if (DIRECTORY_SEPARATOR == $path) {
+            return true;
+        }
+        // Hack to get PHP on windows to let go of the now empty directory so that we can remove it
         $handle = opendir($realPath);
-
         closedir($handle);
 
         return rmdir($realPath);
-
     }
 
     /**
-     * Checks whether a file or directory exists
-     * @param mixed $path
-     * @return bool
+     * Checks whether a file or directory exists.
      */
-    public function exists($path) {
-
+    public function exists(string $path): bool
+    {
         return file_exists($this->resolvePath($path));
-
     }
 
     /**
-     * Returns canonicalized absolute pathname
-     * @param mixed $path
-     * @return string
+     * Returns canonicalized absolute pathname.
      */
-    public function realpath($path) {
-
+    public function realpath(string $path): string
+    {
         return realpath($this->resolvePath($path));
-
     }
 
     /**
-     * true if path is a readable
-     * @param mixed $path
-     * @return bool
+     * true if path is a readable.
      */
-    public function is_readable($path) {
-
+    public function isReadable(string $path): bool
+    {
         return is_readable($this->resolvePath($path));
-
     }
 
     /**
-     * true if path is writable
-     * @param mixed $path
-     * @return bool
+     * true if path is writable.
      */
-    public function is_writable($path) {
-
+    public function isWritable(string $path): bool
+    {
         return is_writable($this->resolvePath($path));
-
     }
 
     /**
-     * true if path is a directory
-     * @param mixed $path
-     * @return bool
+     * true if path is a directory.
      */
-    public function is_dir($path) {
-
+    public function isDir(string $path): bool
+    {
         return is_dir($this->resolvePath($path));
-
     }
 
     /**
-     * true if path is a symlink
-     * @param mixed $path
-     * @return bool
+     * true if path is a symlink.
      */
-    public function is_link($path) {
-
+    public function isLink(string $path): bool
+    {
         return is_link($this->resolvePath($path));
-
     }
 
     /**
-     * true if path is a normal file
-     * @param mixed $path
-     * @return bool
+     * true if path is a normal file.
      */
-    public function is_file($path) {
-
+    public function isFile(string $path): bool
+    {
         return is_file($this->resolvePath($path));
-
     }
 
     /**
-     * Returns the file type
-     * @param mixed $path
-     * @return string
+     * Returns the file type.
      */
-    public function filetype($path) {
-
+    public function filetype(string $path): string
+    {
         return filetype($this->resolvePath($path));
-
     }
 
     /**
-     * Returns the file create time
-     * @param mixed $path
-     * @return int
+     * Returns the file create time.
      */
-    public function filectime($path) {
-
+    public function filectime(string $path): int
+    {
         return filectime($this->resolvePath($path));
-
     }
 
     /**
-     * Returns the file modification time
-     * @param mixed $path
-     * @return int
+     * Returns the file modification time.
      */
-    public function filemtime($path) {
-
+    public function filemtime(string $path): int
+    {
         return filemtime($this->resolvePath($path));
-
     }
 
     /**
-     * Sets access and modification time of file
-     *
-     * @param mixed $path
-     *
-     * @return bool
+     * Sets access and modification time of file.
      */
-    public function touch($path){
-
+    public function touch(string $path): bool
+    {
         $path = $this->resolvePath($path);
 
         return touch($path);
     }
 
-    //Returns the file access time
-    public function fileatime($path) {
-
+    // Returns the file access time
+    public function fileatime(string $path): int
+    {
         return fileatime($this->resolvePath($path));
-
     }
 
-    public function filesize($path) {
-
+    public function filesize(string $path): int
+    {
         return filesize($this->resolvePath($path));
-
     }
 
-    public function fileperms($path) {
-
+    public function fileperms(string $path): int
+    {
         return fileperms($this->resolvePath($path));
-
     }
 
-    public function chmod($path, $mode) {
-
+    public function chmod(string $path, int $mode): bool
+    {
         return chmod($this->resolvePath($path), $mode);
-
     }
 
-    public function chown($path, $user) {
-
+    public function chown(string $path, string $user): bool
+    {
         return chown($this->resolvePath($path), $user);
-
     }
 
-    public function chgrp($path, $group) {
-
+    public function chgrp(string $path, string $group): bool
+    {
         return chgrp($this->resolvePath($path), $group);
-
     }
 
-    private function meta($fullpath) {
-
-        $metafile = dirname($fullpath) . DIRECTORY_SEPARATOR . '.metadata';
-
-        if(array_key_exists($metafile, $this->meta))
-            return $this->meta[$metafile];
-
-        $this->meta[$metafile] = $db = new \Hazaar\Btree($metafile);
-
-        if(!($meta = $db->get($fullpath))){
-
-            $meta = [];
-
-            /**
-             * Generate Image Meta
-             */
-            if(substr($this->mime_content_type($fullpath), 0, 5) == 'image') {
-
-                $size = getimagesize($fullpath);
-
-                $meta['width'] = $size[0];
-
-                $meta['height'] = $size[1];
-
-                $meta['bits'] = ake($size, 'bits');
-
-                $meta['channels'] = ake($size, 'channels');
-
-            }
-
-            $db->set($fullpath, $meta);
-
-        }
-
-        return $db;
-
+    public function cwd(): string
+    {
+        return getcwd();
     }
 
-    public function set_meta($path, $values) {
-
+    /**
+     * @param array<mixed> $values
+     */
+    public function setMeta(string $path, array $values): bool
+    {
         $fullpath = $this->resolvePath($path);
-
         $db = $this->meta($fullpath);
-
         $meta = $db->get($fullpath);
-
-        if(is_array($meta) && is_array($values))
+        if (is_array($meta) && is_array($values)) {
             $values = array_merge($meta, $values);
-
+        }
         $db->set($fullpath, $values);
 
         return true;
-
     }
 
-    public function get_meta($path, $key = null) {
-
+    /**
+     * @return array<mixed>|string
+     */
+    public function getMeta(string $path, ?string $key = null): array|string
+    {
         $fullpath = $this->resolvePath($path);
-
-        if(!($db = $this->meta($fullpath)))
-            return false;
-
+        $db = $this->meta($fullpath);
         $meta = $db->get($fullpath);
-
-        if($key)
+        if ($key) {
             return ake($meta, $key);
+        }
 
         return $meta;
-
     }
 
-    public function preview_uri($path) {
-
+    /**
+     * @param array<string,int|string> $params
+     */
+    public function previewURL(string $path, array $params = []): false|string
+    {
         return false;
-
     }
 
-    public function direct_uri($path) {
-
+    public function directURL(string $path): false|string
+    {
         return false;
-
     }
 
-    public function cwd() {
-
-        return getcwd();
-
+    public function authorise(?string $redirect_uri = null): bool
+    {
+        return true;
     }
 
+    public function authorised(): bool
+    {
+        return true;
+    }
+
+    public function buildAuthURL(?string $callback_url = null): ?string
+    {
+        return null;
+    }
+
+    public function thumbnailURL(string $path, int $width = 100, int $height = 100, string $format = 'jpeg', array $params = []): false|string
+    {
+        return false;
+    }
+
+    public function openStream(string $path, string $mode): mixed
+    {
+        $path = $this->resolvePath($path);
+        if (false == $path) {
+            return false;
+        }
+
+        return fopen($path, $mode);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function writeStream($stream, string $bytes, ?int $length = null): int
+    {
+        return fwrite($stream, $bytes, $length);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function readStream($stream, int $length): false|string
+    {
+        return fread($stream, $length);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function seekStream(mixed $stream, int $offset, int $whence = SEEK_SET): int
+    {
+        return fseek($stream, $offset, $whence);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function tellStream(mixed $stream): false|int
+    {
+        return ftell($stream);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function eofStream(mixed $stream): bool
+    {
+        return feof($stream);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function truncateStream(mixed $stream, int $size): bool
+    {
+        return ftruncate($stream, $size);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function lockStream(mixed $stream, int $operation, ?int &$wouldblock = null): bool
+    {
+        return flock($stream, $operation, $wouldblock);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function flushStream(mixed $stream): bool
+    {
+        return fflush($stream);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function getsStream(mixed $stream, ?int $length = null): false|string
+    {
+        return fgets($stream, $length);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function closeStream($stream): bool
+    {
+        return fclose($stream);
+    }
+
+    private function meta(string $fullpath): BTree
+    {
+        $metafile = dirname($fullpath).DIRECTORY_SEPARATOR.'.metadata';
+        if (array_key_exists($metafile, $this->meta)) {
+            return $this->meta[$metafile];
+        }
+        $this->meta[$metafile] = $db = new BTree($metafile);
+        if (!($meta = $db->get($fullpath))) {
+            $meta = [];
+            // Generate Image Meta
+            $content_type = $this->mimeContentType($fullpath);
+            if (null !== $content_type && 'image' == substr($content_type, 0, 5)) {
+                $size = getimagesize($fullpath);
+                $meta['width'] = $size[0];
+                $meta['height'] = $size[1];
+                $meta['bits'] = ake($size, 'bits');
+                $meta['channels'] = ake($size, 'channels');
+            }
+            $db->set($fullpath, $meta);
+        }
+
+        return $db;
+    }
 }

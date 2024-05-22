@@ -1,12 +1,15 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Hazaar\Controller\Response\Exception;
 
-class ActionNotFound extends \Hazaar\Exception {
+use Hazaar\Exception;
 
-    function __construct() {
-
-        parent::__construct("Controller '$controller' does not have the action '$action'.", 404);
-
+class ActionNotFound extends Exception
+{
+    public function __construct(string $controller, string $action)
+    {
+        parent::__construct("Controller '{$controller}' does not have the action '{$action}'.", 404);
     }
-
 }

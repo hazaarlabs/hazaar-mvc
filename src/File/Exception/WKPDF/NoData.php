@@ -1,12 +1,15 @@
 <?php
+
+declare(strict_types=1);
+
 namespace Hazaar\File\Exception\WKPDF;
 
-class NoData extends \Hazaar\Exception {
+use Hazaar\Exception;
 
-    function __construct($error) {
-
-        parent::__construct('WKPDF didn\'t return any data. <pre>' . $error . '</pre>');
-
+class NoData extends Exception
+{
+    public function __construct(string $error)
+    {
+        parent::__construct('WKPDF didn\'t return any data. <pre>'.$error.'</pre>');
     }
-
 }

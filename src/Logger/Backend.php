@@ -1,109 +1,106 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Logger;
 
-abstract class Backend implements Backend\_Interface {
+use Hazaar\Map;
 
-    private $options      = [];
+abstract class Backend implements Interfaces\Backend
+{
+    protected const string LOG_LEVEL_PREFIX = 'LOG_';
 
-    private $capabilities = [];
+    /**
+     * @var array<int>
+     */
+    protected array $levels;
 
-    protected $levels;
+    private Map $options;
 
-    protected const LOG_LEVEL_PREFIX = 'LOG_';
+    /**
+     * @var array<string>
+     */
+    private array $capabilities = [];
 
-    function __construct($options) {
-
-        $this->levels = array_filter(get_defined_constants(), function($value){ 
-            return substr($value, 0, strlen(self::LOG_LEVEL_PREFIX)) === self::LOG_LEVEL_PREFIX; 
+    /**
+     * @param array<mixed>|Map $options
+     */
+    public function __construct(array|Map $options)
+    {
+        $this->levels = array_filter(get_defined_constants(), function ($value) {
+            return self::LOG_LEVEL_PREFIX === substr($value, 0, strlen(self::LOG_LEVEL_PREFIX));
         }, ARRAY_FILTER_USE_KEY);
-
-        /*
-         * Set the options we were given which will overwrite any defaults
-         */
-        if(! is_array($options))
+        // Set the options we were given which will overwrite any defaults
+        if (!is_array($options)) {
             $options = [];
-
-        $this->options = $options;
-
+        }
+        $this->options = Map::_($options);
         $this->init();
-
     }
 
-    public function init(){
+    public function init(): void {}
 
+    public function postRun(): void
+    {
+        // do nothing
     }
 
-    public function postRun() {
-
-        //do nothing
-
-    }
-
-    public function setDefaultOption($key, $value) {
-
-        if(! array_key_exists($key, $this->options)) {
-
+    public function setDefaultOption(string $key, mixed $value): void
+    {
+        if (!$this->options->has($key)) {
             $this->setOption($key, $value);
+        }
+    }
 
+    public function setOption(string $key, mixed $value): void
+    {
+        $this->options[$key] = $value;
+    }
+
+    public function getOption(string $key): mixed
+    {
+        if (!$this->options->has($key)) {
+            return null;
         }
 
-    }
-
-    public function setOption($key, $value) {
-
-        $this->options[$key] = $value;
-
-    }
-
-    public function getOption($key) {
-
-        if(! array_key_exists($key, $this->options))
-            return NULL;
-
         return $this->options[$key];
-
     }
 
-    public function hasOption($key) {
-
-        return array_key_exists($key, $this->options);
-
+    public function hasOption(string $key): bool
+    {
+        return $this->options->has($key);
     }
 
-    public function getLogLevelId($level) {
-
+    public function getLogLevelId(string $level): int
+    {
         $level = strtoupper($level);
-
-        if(substr($level, 0, strlen(self::LOG_LEVEL_PREFIX)) !== self::LOG_LEVEL_PREFIX)
-            $level = self::LOG_LEVEL_PREFIX . $level;
+        if (self::LOG_LEVEL_PREFIX !== substr($level, 0, strlen(self::LOG_LEVEL_PREFIX))) {
+            $level = self::LOG_LEVEL_PREFIX.$level;
+        }
 
         return defined($level) ? constant($level) : 0;
-
     }
 
-    public function getLogLevelName($level) {
-
+    public function getLogLevelName(int $level): string
+    {
         return substr(array_search($level, $this->levels), strlen(self::LOG_LEVEL_PREFIX));
-
     }
 
-    protected function addCapability($capability) {
-
-        $this->capabilities[] = $capability;
-
-    }
-
-    public function getCapabilities() {
-
+    /**
+     * @return array<string>
+     */
+    public function getCapabilities(): array
+    {
         return $this->capabilities;
-
     }
 
-    public function can($capability) {
-
+    public function can(string $capability): bool
+    {
         return in_array($capability, $this->capabilities);
-
     }
 
+    protected function addCapability(string $capability): void
+    {
+        $this->capabilities[] = $capability;
+    }
 }

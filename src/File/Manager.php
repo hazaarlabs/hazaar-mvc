@@ -1,374 +1,328 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\File;
 
-use \Hazaar\Application;
+use Hazaar\Application;
+use Hazaar\File;
+use Hazaar\File\Backend\Exception\Offline;
+use Hazaar\File\Backend\Interfaces\Backend;
+use Hazaar\HTTP\URL;
+use Hazaar\Loader;
+use Hazaar\Map;
 
-use \Hazaar\File;
-use \Hazaar\File\Dir;
-
-class Manager implements Backend\_Interface {
-
-    static private $backend_aliases = [
-        'googledrive' => 'GoogleDrive',
-        'mongodb'     => 'MongoDB',
-        'sharepoint'  => 'SharePoint',
-        'webdav'      => 'WebDAV'
-    ];
-
-    static public  $default_config = [
+class Manager implements Backend
+{
+    /**
+     * @var array<mixed> Default configuration for a media source
+     */
+    public static array $default_config = [
         'enabled' => true,
         'auth' => false,
         'allow' => [
-            'read' => false,        //Default disallow reads when auth enabled
-            'cmd'  => false,        //Default disallow file manager commands
-            'dir' => true,          //Allow directory listings
-            'filebrowser' => false  //Allow access to the JS file browser
+            'read' => false,        // Default disallow reads when auth enabled
+            'cmd' => false,        // Default disallow file manager commands
+            'dir' => true,          // Allow directory listings
+            'filebrowser' => false,  // Allow access to the JS file browser
         ],
         'userdef' => [],
         'failover' => false,
-        'log' => false
+        'log' => false,
     ];
+    public string $name;
 
-    static private $default_backend;
+    /**
+     * @var array<string>
+     */
+    public static ?array $mime_types = null;
 
-    static private $default_backend_options;
+    /**
+     * @var array<string, string>
+     */
+    private static array $backend_aliases = [
+        'googledrive' => 'GoogleDrive',
+        'mongodb' => 'MongoDB',
+        'sharepoint' => 'SharePoint',
+        'webdav' => 'WebDAV',
+    ];
+    private static string $default_backend = 'local';
+    private static ?Map $default_backend_options = null;
+    private Backend $backend;
+    private string $backend_name;
 
-    private        $backend;
+    /**
+     * @var array<mixed>
+     */
+    private array $options = [];
+    private ?Manager $failover = null;
+    private bool $in_failover = false;
 
-    private        $backend_name;
-
-    private        $options = [];
-
-    public         $name;
-
-    private        $failover = false;
-
-    private        $in_failover = false;
-
-    function __construct($backend = NULL, $backend_options = [], $name = NULL) {
-
-        if(!$backend) {
-
-            if(Manager::$default_backend) {
-
+    /**
+     * Manager constructor.
+     *
+     * @param array<mixed>|Map $backend_options
+     */
+    public function __construct(?string $backend = null, array|Map $backend_options = [], ?string $name = null)
+    {
+        if (!$backend) {
+            if (Manager::$default_backend) {
                 $backend = Manager::$default_backend;
-
-                $backend_options = Manager::$default_backend_options;
-
+                $backend_options = Manager::$default_backend_options ? Manager::$default_backend_options : new Map();
             } else {
-
                 $backend = 'local';
-
-                $backend_options = ['root' => ((substr(PHP_OS, 0, 3) == 'WIN') ? substr(APPLICATION_PATH, 0, 3) : '/')];
-
+                $backend_options = ['root' => '/'];
             }
-
         }
-
-        $class = 'Hazaar\File\Backend\\' . ake(self::$backend_aliases, $backend, ucfirst($backend));
-
-        if(!class_exists($class))
+        $class = 'Hazaar\File\Backend\\'.ake(self::$backend_aliases, $backend, ucfirst($backend));
+        if (!class_exists($class)) {
             throw new Exception\BackendNotFound($backend);
-
+        }
         $this->backend_name = $backend;
-
-        $this->backend = new $class($backend_options);
-
-        if(!$this->backend instanceof \Hazaar\File\Backend\_Interface)
+        $this->backend = new $class($backend_options, $this);
+        if (!$this->backend instanceof Backend) {
             throw new Exception\InvalidBackend($backend);
-
-        if(! $name)
+        }
+        if (!$name) {
             $name = strtolower($backend);
-
+        }
         $this->name = $name;
-
     }
 
-    function __destruct(){
-
-        try{
-
-            if($this->failover && $this->in_failover === false)
+    public function __destruct()
+    {
+        try {
+            if ($this->failover && false === $this->in_failover) {
                 $this->failoverSync();
-
-        }catch(\Exception $e){
-
-            //Silently make no difference to the world around you
-
-        }
-
-    }
-
-    static public function getAvailableBackends(){
-
-        $composer = Application::getInstance()->composer();
-
-        if(!property_exists($composer, 'require'))
-            return false;
-
-        foreach($composer->require as $lib => $ver){
-
-            $lib_path = realpath(APPLICATION_PATH
-                . DIRECTORY_SEPARATOR . '..'
-                . DIRECTORY_SEPARATOR . 'vendor'
-                . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $lib));
-
-            if(substr(dirname($lib_path), -10) !== 'hazaarlabs')
-                continue;
-
-            $backend_path = $lib_path
-                . DIRECTORY_SEPARATOR . 'src'
-                . DIRECTORY_SEPARATOR . 'File'
-                . DIRECTORY_SEPARATOR . 'Backend';
-
-            if(!file_exists($backend_path))
-                continue;
-
-            $dir = dir($backend_path);
-
-            while(($file = $dir->read()) !== false){
-
-                if(substr($file, -4) !== '.php' || substr($file, 0, 1) === '.' || substr($file, 0, 1) === '_')
-                    continue;
-
-
-                $source = ake(pathinfo($file), 'filename');
-
-                $class = 'Hazaar\\File\\Backend\\' . $source;
-
-                if(!class_exists($class))
-                    continue;
-
-                $backend = [
-                    'name'  => strtolower($source),
-                    'label' => $class::label(),
-                    'class' => $class
-                ];
-
-                $backends[] = $backend;
-
             }
-
+        } catch (\Exception $e) {
+            // Silently make no difference to the world around you
         }
-
-        return $backends;
-
     }
 
     /**
-     * Loads a Manager class by name as configured in media.json config
-     *
-     * @param mixed $name The name of the media source to load
-     *
-     * @param array $options Extra options to override configured options
+     * @return array<mixed>
      */
-    static public function select($name, $options = null){
-
-        $config = new Application\Config('media');
-
-        if(!$config->has($name))
+    public static function getAvailableBackends(): array|false
+    {
+        $composer = Application::getInstance()->composer();
+        if (!property_exists($composer, 'require')) {
             return false;
-
-        $source = new \Hazaar\Map(\Hazaar\File\Manager::$default_config, $config->get($name));
-
-        if($options !== null)
-            $source->options->extend($options);
-
-        $manager = new \Hazaar\File\Manager($source->type, $source->get('options'), $name);
-
-        if($source->failover === true || $config->global->failover === true)
-            $manager->activateFailover();
-
-        return $manager;
-
-    }
-
-    public function refresh($reset = FALSE) {
-
-        return $this->backend->refresh($reset);
-
-    }
-
-    static public function configure($backend, $options) {
-
-        if(! $options instanceof \Hazaar\Map)
-            $options = new \Hazaar\Map($options);
-
-        Manager::$default_backend = $backend;
-
-        Manager::$default_backend_options = $options;
-
-    }
-
-    public function activateFailover(){
-
-        $this->failover = new Manager('local', [
-            'root' => Application::getInstance()->runtimePath('media' . DIRECTORY_SEPARATOR . $this->name, true)
-        ]);
-
-    }
-
-    public function failoverSync(){
-
-        if(!($this->failover && $this->backend->is_dir('/')))
-            return false;
-
-        $clean = ['dir' => [], 'file' => []];
-
-        $names = $this->failover->find();
-
-        foreach($names as $name){
-
-            $item = $this->failover->get($name);
-
-            if($item->is_dir()){
-
-                if($this->backend->exists($name) || $this->backend->mkdir($name))
-                    $clean['dir'][] = $name;
-
-            }elseif($item instanceof \Hazaar\File){
-
-                $this->backend->write($name, $item->get_contents(), $item->mime_content_type(), true);
-
-                $clean['file'][] = $name;
-
+        }
+        $backends = [];
+        foreach ($composer->require as $lib => $ver) {
+            $lib_path = realpath(APPLICATION_PATH
+                .DIRECTORY_SEPARATOR.'..'
+                .DIRECTORY_SEPARATOR.'vendor'
+                .DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $lib));
+            if ('hazaarlabs' !== substr(dirname($lib_path), -10)) {
+                continue;
             }
-
+            $backend_path = $lib_path
+                .DIRECTORY_SEPARATOR.'src'
+                .DIRECTORY_SEPARATOR.'File'
+                .DIRECTORY_SEPARATOR.'Backend';
+            if (!file_exists($backend_path)) {
+                continue;
+            }
+            $dir = dir($backend_path);
+            while (($file = $dir->read()) !== false) {
+                if ('.php' !== substr($file, -4) || '.' === substr($file, 0, 1) || '_' === substr($file, 0, 1)) {
+                    continue;
+                }
+                $source = ake(pathinfo($file), 'filename');
+                $class = 'Hazaar\\File\\Backend\\'.$source;
+                if (!class_exists($class)) {
+                    continue;
+                }
+                $backend = [
+                    'name' => strtolower($source),
+                    'label' => $class::label(),
+                    'class' => $class,
+                ];
+                $backends[] = $backend;
+            }
         }
 
-        foreach($clean['file'] as $file)
+        return $backends;
+    }
+
+    /**
+     * Loads a Manager class by name as configured in media.json config.
+     *
+     * @param string        $name    The name of the media source to load
+     * @param array <mixed> $options Extra options to override configured options
+     */
+    public static function select(string $name, ?array $options = null): false|Manager
+    {
+        $config = new Application\Config('media');
+        if (!$config->has($name)) {
+            return false;
+        }
+        $source = new Map(Manager::$default_config, $config->get($name));
+        if (null !== $options) {
+            $source['options']->extend($options);
+        }
+        $manager = new Manager($source['type'], $source->get('options'), $name);
+        if (true === $source['failover'] || true === $config['global']['failover']) {
+            $manager->activateFailover();
+        }
+
+        return $manager;
+    }
+
+    public function refresh(bool $reset = false): bool
+    {
+        return $this->backend->refresh($reset);
+    }
+
+    /**
+     * @param array<mixed> $options
+     */
+    public static function configure(string $backend, array|Map $options): void
+    {
+        if (!$options instanceof Map) {
+            $options = new Map($options);
+        }
+        Manager::$default_backend = $backend;
+        Manager::$default_backend_options = $options;
+    }
+
+    public function activateFailover(): void
+    {
+        $this->failover = new Manager('local', [
+            'root' => Application::getInstance()->runtimePath('media'.DIRECTORY_SEPARATOR.$this->name, true),
+        ]);
+    }
+
+    public function failoverSync(): bool
+    {
+        if (!($this->failover && $this->backend->isDir('/'))) {
+            return false;
+        }
+        $clean = ['dir' => [], 'file' => []];
+        $names = $this->failover->find();
+        foreach ($names as $name) {
+            $item = $this->failover->get($name);
+            if ($item->isDir()) {
+                if ($this->backend->exists($name) || $this->backend->mkdir($name)) {
+                    $clean['dir'][] = $name;
+                }
+            } elseif ($item instanceof File) {
+                $this->backend->write($name, $item->getContents(), $item->mimeContentType(), true);
+                $clean['file'][] = $name;
+            }
+        }
+        foreach ($clean['file'] as $file) {
             $this->failover->unlink($file);
-
-        foreach($clean['dir'] as $dir)
+        }
+        foreach ($clean['dir'] as $dir) {
             $this->failover->rmdir($dir);
-        
+        }
+
         return true;
-
     }
 
-    public function getBackend() {
-
+    public function getBackend(): Backend
+    {
         return $this->backend;
-
     }
 
-    public function getBackendName() {
-
+    public function getBackendName(): string
+    {
         return $this->backend_name;
-
     }
 
-    public function setOption($name, $value) {
-
+    public function setOption(string $name, mixed $value): void
+    {
         $this->options[$name] = $value;
-
     }
 
-    public function getOption($name) {
-
+    public function getOption(string $name): mixed
+    {
         return ake($this->options, $name);
-
     }
-    
-    public function fixPath($path, $file = NULL) {
 
-        if(!$path)
+    public function fixPath(string $path, ?string $file = null): string
+    {
+        if (!$path) {
             return '';
-
-        if(substr($path, 0, 1) !== '/')
-            $path = rtrim($this->getBackend()->cwd(), '/') . '/' . $path;
-
-        $path = '/' . trim(str_replace('\\', '/', $path), '/');
-
-        if($file)
-            $path .= ((substr($path, -1, 1) !== '/') ? '/' : NULL) . $file;
+        }
+        if ('/' !== substr($path, 0, 1)) {
+            $path = rtrim($this->getBackend()->cwd(), '/').'/'.$path;
+        }
+        $path = '/'.trim(str_replace('\\', '/', $path), '/');
+        if ($file) {
+            $path .= (('/' !== substr($path, -1, 1)) ? '/' : null).$file;
+        }
 
         return $path;
-
     }
-    
+
     /*
      * Authorisation Methods
      *
      * These are used by certain backends that require OAuth-like user authorisation
      */
-    public function authorise($redirect_uri = NULL) {
-
-        if(! method_exists($this->backend, 'authorise')
-            || $this->backend->authorised())
-            return TRUE;
-
+    public function authorise(?string $redirect_uri = null): bool
+    {
         $result = $this->backend->authorise($redirect_uri);
-
-        if($result === FALSE) {
-
-            header('Location: ' . $this->backend->buildAuthUrl($redirect_uri));
+        if (false === $result) {
+            header('Location: '.$this->backend->buildAuthUrl($redirect_uri));
 
             exit;
-
         }
 
         return $result;
-
     }
 
     /**
      * Alias to authorise() which is the CORRECT spelling.
-     *
-     * @param array $options
-     * @return bool
      */
-    public function authorize($options = []) {
-
-        return $this->authorise($options);
-
+    public function authorize(?string $redirect_uri = null): mixed
+    {
+        return $this->authorise($redirect_uri);
     }
 
-    public function authorised() {
-
-        if(! method_exists($this->backend, 'authorised'))
-            return TRUE;
-
+    public function authorised(): bool
+    {
         return $this->backend->authorised();
-
     }
 
-    public function authorized() {
-
+    public function authorized(): bool
+    {
         return $this->authorised();
-
     }
 
-    public function reset() {
-
-        if(! method_exists($this->backend, 'reset'))
-            return TRUE;
+    public function reset(): bool
+    {
+        if (!method_exists($this->backend, 'reset')) {
+            return true;
+        }
 
         return $this->backend->reset();
-
     }
 
-    public function buildAuthURL($callback_url) {
-
-        if(! method_exists($this->backend, 'buildAuthURL'))
-            return FALSE;
-
+    public function buildAuthURL(?string $callback_url = null): ?string
+    {
         return $this->backend->buildAuthURL($callback_url);
-
     }
 
     /**
      * Return a file object for a given path.
-     * 
+     *
      * @param mixed $path The path to a file object
-     * 
-     * @return File The File object.
+     *
+     * @return Dir|File the File object
      */
-    public function get($path) {
+    public function get($path)
+    {
+        $path = $this->fixPath($path);
+        if ($this->backend->isDir($path)) {
+            return new Dir($path, $this);
+        }
 
-        return new \Hazaar\File($this->fixPath($path), $this);
-
+        return new File($this->fixPath($path), $this);
     }
 
     /**
@@ -376,491 +330,522 @@ class Manager implements Backend\_Interface {
      *
      * @param mixed $path The path to a directory object
      *
-     * @return Dir The directory object.
+     * @return Dir the directory object
      */
-    public function dir($path = '/') {
-
+    public function dir($path = '/')
+    {
         return new Dir($this->fixPath($path), $this);
-
     }
 
-    public function toArray($path, $sort = SCANDIR_SORT_ASCENDING, $allow_hidden = false){
-
-        return $this->backend->scandir($this->fixPath($path), $sort, $allow_hidden);
-
+    /**
+     * Return a directory object for a given path.
+     *
+     * @return array<string> the directory object
+     */
+    public function toArray(string $path, int $sort = SCANDIR_SORT_ASCENDING, bool $allow_hidden = false): array
+    {
+        return $this->backend->scandir($this->fixPath($path), null, $sort, $allow_hidden);
     }
 
-    public function find($search = NULL, $path = '/', $case_insensitive = false) {
-
-        if(method_exists($this->backend, 'find'))
+    /**
+     * Return a directory object for a given path.
+     *
+     * @return array<string> the directory object
+     */
+    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array
+    {
+        if (method_exists($this->backend, 'find')) {
             return $this->backend->find($search, $path, $case_insensitive);
-
+        }
         $dir = $this->dir($path);
-
         $list = [];
-
-        while(($file = $dir->read()) != FALSE) {
-
-            if($file->is_dir()) {
-
+        while (($file = $dir->read()) != false) {
+            if ($file->isDir()) {
                 $list[] = $file->fullpath();
-
                 $list = array_merge($list, $this->find($search, $file->fullpath()));
-
             } else {
-
-                if($search) {
-
+                if ($search) {
                     $first = substr($search, 0, 1);
-
-                    if((ctype_alnum($first) || $first == '\\') == false
+                    if ((ctype_alnum($first) || '\\' == $first) == false
                         && $first == substr($search, -1, 1)) {
-
-                        if(! preg_match($search . ($case_insensitive ? 'i' : ''), $file->basename()))
+                        if (!preg_match($search.($case_insensitive ? 'i' : ''), $file->basename())) {
                             continue;
-
-                    } elseif(! fnmatch($search, $file->basename(), ($case_insensitive ? FNM_CASEFOLD : 0))) {
-
+                        }
+                    } elseif (!fnmatch($search, $file->basename(), $case_insensitive ? FNM_CASEFOLD : 0)) {
                         continue;
-
                     }
-
                 }
-
                 $list[] = $file->fullpath();
-
             }
-
         }
 
         return $list;
-
     }
 
-    public function exists($path) {
-
+    public function exists(string $path): bool
+    {
         return $this->backend->exists($this->fixPath($path));
-
     }
 
-    public function read($file, $offset = -1, $maxlen = NULL) {
-
+    public function read(string $file, int $offset = -1, ?int $maxlen = null): false|string
+    {
         $bytes = null;
-
-        if($this->failover && $this->failover->exists($file)){
-
-            $f = $this->failover->get($file); //Make the file as a directory to store logs
-
-            $bytes = $f->get_contents();
-
-        }else{
-
+        if ($this->failover && $this->failover->exists($file)) {
+            $f = $this->failover->get($file); // Make the file as a directory to store logs
+            $bytes = $f->getContents();
+        } else {
             $bytes = $this->backend->read($this->fixPath($file), $offset, $maxlen);
-
         }
 
         return $bytes;
-
     }
 
-    public function write($file, $data, $content_type = null, $overwrite = FALSE) {
-
+    public function write(string $file, string $data, ?string $content_type = null, bool $overwrite = false): ?int
+    {
         $result = false;
 
-        try{
-
+        try {
             $result = $this->backend->write($this->fixPath($file), $data, $content_type, $overwrite);
-
-        }catch(Backend\Exception\Offline $e){
-
-            if(!$this->failover)
+        } catch (Offline $e) {
+            if (!$this->failover) {
                 throw $e;
-
+            }
             $this->in_failover = true;
-
-            $f = $this->failover->get($file); //Make the file as a directory to store logs
-
-            if($f->is_dir())
+            $f = $this->failover->get($file); // Make the file as a directory to store logs
+            if ($f->isDir()) {
                 throw new \Exception('File exists and is not a file!');
-
-            if(!$f->parent()->exists())
+            }
+            if (!$f->parent()->exists()) {
                 $f->parent()->create(true);
-
-            $result = $f->put_contents($data) > 0;
-
+            }
+            $result = $f->putContents($data) > 0;
         }
 
         return $result;
-
     }
 
-    public function upload($path, $file, $overwrite = FALSE) {
-
+    /**
+     * @param array<string,string> $file
+     */
+    public function upload(string $path, array $file, bool $overwrite = false): bool
+    {
         return $this->backend->upload($this->fixPath($path), $file, $overwrite);
-
     }
 
-    public function store($source, $target) {
-
-        $file = new \Hazaar\File($source);
-
-        if(substr(trim($target), -1, 1) != '/')
+    public function store(string $source, string $target): bool
+    {
+        $file = new File($source);
+        if ('/' != substr(trim($target), -1, 1)) {
             $target .= '/';
-
-        return $this->backend->write($target . $file->name(), $file->get_contents(), $file->mime_content_type());
-
-    }
-
-    public function search($query) {
-
-        return $this->backend->search($query);
-
-    }
-
-    private function deepCopy($src, $dst, $srcManager, $progressCallback = NULL) {
-
-        $dstPath = rtrim($dst, '/') . '/' . basename($src);
-
-        if(! $this->exists($dstPath))
-            $this->mkdir($dstPath);
-
-        $dir = new Dir($src, $srcManager, $this);
-
-        while(($f = $dir->read()) != FALSE) {
-
-            if($progressCallback)
-                call_user_func_array($progressCallback, ['copy', $f]);
-
-            if($f->type() == 'dir')
-                $this->deepCopy($f->fullpath(), $dstPath, $srcManager, $progressCallback);
-
-            else
-                $this->backend->write($this->fixPath($dstPath, $f->basename()), $f->get_contents(), $f->mime_content_type());
-
         }
 
-        return TRUE;
-
+        return $this->backend->write($target.$file->name(), $file->getContents(), $file->mimeContentType()) > 0;
     }
 
-    /*
-     * File Operations
-     */
-    public function copy($src, $dst, $srcManager = NULL, $recursive = FALSE, $progressCallback = NULL) {
+    // File Operations
+    public function copy(
+        string $src,
+        string $dst,
+        bool $recursive = false,
+        ?Manager $srcManager = null,
+        ?\Closure $callback = null
+    ): bool {
+        if ($srcManager !== $this) {
+            $file = new File($src, $srcManager);
 
-        if($srcManager !== $this) {
-
-            $file = new \Hazaar\File($src, $srcManager);
-
-            switch($file->type()) {
+            switch ($file->type()) {
                 case 'file':
-
-                    return $this->backend->write($this->fixPath($dst, $file->basename()), $file->get_contents(), $file->mime_content_type());
-
-                    break;
+                    return $this->backend->write(
+                        $this->fixPath($dst, $file->basename()),
+                        $file->getContents(),
+                        $file->mimeContentType()
+                    ) > 0;
 
                 case 'dir':
+                    if (!$recursive) {
+                        return false;
+                    }
 
-                    if(! $recursive)
-                        return FALSE;
-
-                    return $this->deepCopy($file->fullpath(), $dst, $srcManager, $progressCallback);
-
-                    break;
-
+                    return $this->deepCopy($file->fullpath(), $dst, $srcManager, $callback);
             }
 
-            throw new \Hazaar\Exception("Copy of source type '" . $file->type() . "' between different sources is currently not supported");
-
+            throw new \Hazaar\Exception("Copy of source type '".$file->type()."' between different sources is currently not supported");
         }
 
         return $this->backend->copy($src, $dst, $recursive);
-
     }
 
-    public function move($src, $dst, $srcManager = NULL) {
-
-        if($srcManager instanceof Manager && $srcManager->getBackend() !== $this->backend) {
-
+    public function move(string $src, string $dst, ?Manager $srcManager = null): bool
+    {
+        if ($srcManager instanceof Manager && $srcManager->getBackend() !== $this->backend) {
             $file = $srcManager->get($src);
 
-            switch($file->type()) {
+            switch ($file->type()) {
                 case 'file':
-
-                    $result = $this->backend->write($this->fixPath($dst, $file->basename()), $file->get_contents(), $file->mime_content_type());
-
-                    if($result)
+                    $result = $this->backend->write($this->fixPath($dst, $file->basename()), $file->getContents(), $file->mimeContentType());
+                    if ($result) {
                         return $srcManager->unlink($src);
+                    }
 
-                    return FALSE;
-
-                    break;
+                    return false;
 
                 case 'dir':
+                    $result = $this->deepCopy($file->fullpath(), $dst, $srcManager);
+                    if ($result) {
+                        return $srcManager->rmdir($src, true);
+                    }
 
-                    $result = $this->deepCopy($file->fullpath(), $dst, $srcManager->getBackend());
-
-                    if($result)
-                        return $srcManager->rmdir($src, TRUE);
-
-                    return FALSE;
-
-                    break;
-
+                    return false;
             }
 
-            throw new \Hazaar\Exception("Move of source type '" . $file->type() . "' between different sources is currently not supported.");
-
+            throw new \Hazaar\Exception("Move of source type '".$file->type()."' between different sources is currently not supported.");
         }
 
         return $this->backend->move($src, $dst);
-
     }
 
-    public function mkdir($path) {
-
+    public function mkdir(string $path): bool
+    {
         return $this->backend->mkdir($this->fixPath($path));
-
     }
 
-    public function rmdir($path, $recurse = FALSE) {
-
+    public function rmdir(string $path, bool $recurse = false): bool
+    {
         return $this->backend->rmdir($this->fixPath($path), $recurse);
-
     }
 
-    public function unlink($path) {
-
+    public function unlink(string $path): bool
+    {
         return $this->backend->unlink($this->fixPath($path));
-
     }
 
-    public function isEmpty($path){
-
+    public function isEmpty(string $path): bool
+    {
         $files = $this->backend->scandir($this->fixPath($path));
 
-        return (count($files) === 0);
-
+        return 0 === count($files);
     }
 
-    public function filesize($path) {
-
+    public function filesize(string $path): int
+    {
         return $this->backend->filesize($this->fixPath($path));
-
     }
 
-    /*
-     * Advanced backend dependant features
-     */
-    public function fsck() {
-
-        if(method_exists($this->backend, 'fsck')) {
-
+    // Advanced backend dependant features
+    public function fsck(): bool
+    {
+        if (method_exists($this->backend, 'fsck')) {
             return $this->backend->fsck();
-
         }
 
-        return TRUE;
-
+        return true;
     }
 
-    public function thumbnail($path, $width = 100, $height = 100, $format = 'jpeg') {
-
-        if(method_exists($this->backend, 'thumbnail')) {
-
-            return $this->backend->thumbnail($path, $width, $height, $format);
-
-        }
-
-        return FALSE;
-
+    /**
+     * @param array<string,int|string> $params
+     */
+    public function thumbnailURL(string $path, int $width = 100, int $height = 100, string $format = 'jpeg', array $params = []): false|string
+    {
+        return $this->backend->thumbnailURL($path, $width, $height, $format, $params);
     }
 
-    public function link($src, $dst) {
-
-        if(method_exists($this->backend, 'link'))
-            return $this->backend->link($src, $dst);
-
-        return FALSE;
-
+    public function link(string $src, string $dst): bool
+    {
+        return $this->backend->link($src, $dst);
     }
 
-    public function share($path) {
-
-        if(method_exists($this->backend, 'share'))
-            return $this->backend->share($path);
-
-        return FALSE;
-
+    public function getMeta(string $path, ?string $key = null): array|false|string
+    {
+        return $this->backend->getMeta($path, $key);
     }
 
-    public function get_meta($path, $key = NULL) {
-
-        return $this->backend->get_meta($path, $key);
-
+    /**
+     * @param array<mixed> $values
+     */
+    public function setMeta(string $path, array $values): bool
+    {
+        return $this->backend->setMeta($path, $values);
     }
 
-    public function set_meta($path, $values) {
+    public function url(?string $path = null): URL
+    {
+        $appURL = new Application\URL('media', $this->name.($path ? '/'.ltrim($path, '/') : ''));
 
-        return $this->backend->set_meta($path, $values);
-
+        return new URL($appURL->toString());
     }
 
-    public function uri($path = null){
-
-        return new Application\Url('media', $this->name . ($path ? '/' . ltrim($path, '/') : ''));
-
-    }
-
-    //Get a directory listing
-    public function scandir($path, $regex_filter = NULL, $show_hidden = FALSE, $relative_path = null){
-
-        if(($items = $this->backend->scandir($this->fixPath($path))) === false)
+    /**
+     * @return array<Dir|File>|false
+     */
+    public function scandir(
+        string $path,
+        ?string $regex_filter = null,
+        int $sort = SCANDIR_SORT_ASCENDING,
+        bool $show_hidden = false,
+        ?string $relative_path = null
+    ): array|false {
+        if (($items = $this->backend->scandir($this->fixPath($path))) === false) {
             return false;
-
-        if(!$relative_path) 
-            $relative_path = rtrim($path, '/') . '/';
-
-        foreach($items as &$item){
-
+        }
+        if (!$relative_path) {
+            $relative_path = rtrim($path, '/').'/';
+        }
+        foreach ($items as &$item) {
             $fullpath = $this->fixPath($path, $item);
-
-            $item = ($this->is_dir($fullpath) ? new \Hazaar\File\Dir($fullpath, $this, $relative_path) : new \Hazaar\File($fullpath, $this, $relative_path));
-
+            $item = ($this->isDir($fullpath) ? new Dir($fullpath, $this, $relative_path) : new File($fullpath, $this, $relative_path));
+        }
+        if ($this->failover && $this->failover->exists($path)) {
+            $items = array_merge($items, $this->failover->scandir($path, $regex_filter, $sort, $show_hidden));
         }
 
-        if($this->failover && $this->failover->exists($path))
-            $items = array_merge($items, $this->failover->scandir($path, $regex_filter, $show_hidden));
-        
         return $items;
-        
     }
 
-    public function touch($path){
-
+    public function touch(string $path): bool
+    {
         return $this->backend->touch($this->fixPath($path));
-        
     }
 
-    public function realpath($path){
-
+    public function realpath(string $path): ?string
+    {
         return $this->backend->realpath($this->fixPath($path));
-        
     }
 
-    public function is_readable($path){
-
-        return $this->backend->is_readable($this->fixPath($path));
-        
+    public function isReadable(string $path): bool
+    {
+        return $this->backend->isReadable($this->fixPath($path));
     }
 
-    public function is_writable($path){
-
-        return $this->backend->is_writable($this->fixPath($path));
-        
+    public function isWritable(string $path): bool
+    {
+        return $this->backend->isWritable($this->fixPath($path));
     }
 
-    //TRUE if path is a directory
-    public function is_dir($path){
-
-        return $this->backend->is_dir($this->fixPath($path));
-        
+    // TRUE if path is a directory
+    public function isDir(string $path): bool
+    {
+        return $this->backend->isDir($this->fixPath($path));
     }
 
-    //TRUE if path is a symlink
-    public function is_link($path){
-
-        return $this->backend->is_link($this->fixPath($path));
-        
+    // TRUE if path is a symlink
+    public function isLink(string $path): bool
+    {
+        return $this->backend->isLink($this->fixPath($path));
     }
 
-    //TRUE if path is a normal file
-    public function is_file($path){
-
-        return $this->backend->is_file($this->fixPath($path));
-        
+    // TRUE if path is a normal file
+    public function isFile(string $path): bool
+    {
+        return $this->backend->isFile($this->fixPath($path));
     }
 
-    //Returns the file type
-    public function filetype($path){
-
+    // Returns the file type
+    public function filetype(string $path): string
+    {
         return $this->backend->filetype($this->fixPath($path));
-        
     }
 
-    //Returns the file create time
-    public function filectime($path){
-
+    // Returns the file create time
+    public function filectime(string $path): int
+    {
         return $this->backend->filectime($this->fixPath($path));
-        
     }
 
-    //Returns the file modification time
-    public function filemtime($path){
-
+    // Returns the file modification time
+    public function filemtime(string $path): int
+    {
         return $this->backend->filemtime($this->fixPath($path));
-        
     }
 
-    //Returns the file access time
-    public function fileatime($path){
-
+    // Returns the file access time
+    public function fileatime(string $path): int
+    {
         return $this->backend->fileatime($this->fixPath($path));
-        
     }
 
-    public function fileperms($path){
-
+    public function fileperms(string $path): int
+    {
         return $this->backend->fileperms($this->fixPath($path));
-        
     }
 
-    public function chmod($path, $mode){
-
+    public function chmod(string $path, int $mode): bool
+    {
         return $this->backend->chmod($this->fixPath($path), $mode);
-        
     }
 
-    public function chown($path, $user){
-
+    public function chown(string $path, string $user): bool
+    {
         return $this->backend->chown($this->fixPath($path), $user);
-        
     }
 
-    public function chgrp($path, $group){
-
+    public function chgrp(string $path, string $group): bool
+    {
         return $this->backend->chgrp($this->fixPath($path), $group);
-        
     }
 
-    public function mime_content_type($path){
-
-        return $this->backend->mime_content_type($this->fixPath($path));
-
-    }
-
-    public function md5Checksum($path){
-
-        return $this->backend->md5Checksum($this->fixPath($path));
-
-    }
-
-    public function preview_uri($path){
-
-        return $this->backend->preview_uri($this->fixPath($path));
-        
-    }
-
-    public function direct_uri($path){
-
-        return $this->backend->direct_uri($this->fixPath($path));
-        
-    }
-
-    public function cwd(){
-
+    public function cwd(): string
+    {
         return $this->backend->cwd();
-        
     }
 
+    public function mimeContentType(string $path): ?string
+    {
+        $type = $this->backend->mimeContentType($this->fixPath($path));
+        if (null !== $type) {
+            return $type;
+        }
+        $info = pathinfo($path);
+        if ($extension = strtolower(ake($info, 'extension'))) {
+            return self::lookupContentType($extension);
+        }
+
+        return 'text/plain';
+    }
+
+    public function md5Checksum(string $path): ?string
+    {
+        return $this->backend->md5Checksum($this->fixPath($path));
+    }
+
+    /**
+     * @param array<string,string> $params
+     */
+    public function previewURL(string $path, array $params = []): string
+    {
+        return $this->backend->previewURL($this->fixPath($path));
+    }
+
+    public function directURL(string $path): string
+    {
+        return $this->backend->directURL($this->fixPath($path));
+    }
+
+    public function openStream(string $path, string $mode): mixed
+    {
+        return $this->backend->openStream($path, $mode);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function writeStream($stream, string $bytes, ?int $length = null): int
+    {
+        return $this->backend->writeStream($stream, $bytes);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function readStream($stream, int $length): false|string
+    {
+        return $this->backend->readStream($stream, $length);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function seekStream(mixed $stream, int $offset, int $whence = SEEK_SET): int
+    {
+        return $this->backend->seekStream($stream, $offset, $whence);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function tellStream(mixed $stream): int|false
+    {
+        return $this->backend->tellStream($stream);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function eofStream(mixed $stream): bool
+    {
+        return $this->backend->eofStream($stream);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function truncateStream(mixed $stream, int $size): bool
+    {
+        return $this->backend->truncateStream($stream, $size);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function lockStream(mixed $stream, int $operation, ?int &$wouldblock = null): bool
+    {
+        return $this->backend->lockStream($stream, $operation, $wouldblock);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function flushStream(mixed $stream): bool
+    {
+        return $this->backend->flushStream($stream);
+    }
+
+    public function getsStream(mixed $stream, ?int $length = null): false|string
+    {
+        return $this->backend->getsStream($stream, $length);
+    }
+
+    /**
+     * @param resource $stream
+     */
+    public function closeStream($stream): bool
+    {
+        return $this->backend->closeStream($stream);
+    }
+
+    public static function lookupContentType(string $extension): ?string
+    {
+        if (null === self::$mime_types) {
+            self::$mime_types = [];
+            $mt_file = Loader::getFilePath(FILE_PATH_SUPPORT, 'mime.types');
+            $h = fopen($mt_file, 'r');
+            while ($line = fgets($h)) {
+                $line = trim($line);
+                if ('#' == substr($line, 0, 1) || 0 == strlen($line)) {
+                    continue;
+                }
+                if (preg_match('/^(\S*)\s*(.*)$/', $line, $matches)) {
+                    $extens = explode(' ', $matches[2]);
+                    foreach ($extens as $value) {
+                        if ($value) {
+                            self::$mime_types[strtolower($value)] = $matches[1];
+                        }
+                    }
+                }
+            }
+            fclose($h);
+        }
+
+        return ake(self::$mime_types, strtolower($extension));
+    }
+
+    private function deepCopy(string $src, string $dst, Manager $srcManager, ?\Closure $progressCallback = null): bool
+    {
+        $dstPath = rtrim($dst, '/').'/'.basename($src);
+        if (!$this->exists($dstPath)) {
+            $this->mkdir($dstPath);
+        }
+        $dir = new Dir($src, $srcManager);
+        while (($f = $dir->read()) != false) {
+            if ($progressCallback) {
+                call_user_func_array($progressCallback, ['copy', $f]);
+            }
+            if ('dir' == $f->type()) {
+                $this->deepCopy($f->fullpath(), $dstPath, $srcManager, $progressCallback);
+            } else {
+                $this->backend->write($this->fixPath($dstPath, $f->basename()), $f->getContents(), $f->mimeContentType());
+            }
+        }
+
+        return true;
+    }
 }

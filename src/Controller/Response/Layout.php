@@ -1,95 +1,82 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Controller\Response;
 
-class Layout extends \Hazaar\Controller\Response\Html implements \ArrayAccess {
+use Hazaar\Controller;
+use Hazaar\View;
+use Hazaar\View\Layout as ViewLayout;
 
-    private $_layout;
+/**
+ * @implements \ArrayAccess<string, mixed>
+ */
+class Layout extends HTML implements \ArrayAccess
+{
+    private ViewLayout $_layout;
 
-    private $_data = [];
-
-    function __construct($layout = NULL, $init_default_helpers = TRUE) {
-
+    public function __construct(null|string|ViewLayout $layout = null)
+    {
         parent::__construct();
-
-        if($layout instanceof \Hazaar\View\Layout) {
-
+        if ($layout instanceof ViewLayout) {
             $this->_layout = $layout;
-
         } else {
-
-            $this->_layout = new \Hazaar\View\Layout($layout, $init_default_helpers);
-
+            $this->_layout = new ViewLayout($layout);
         }
-
     }
 
-    public function __get($key) {
-
+    public function __get(string $key): mixed
+    {
         return $this->_layout->get($key);
-
     }
 
-    public function __set($key, $value) {
-
-        return $this->_layout->set($key, $value);
-
+    public function __set(string $key, mixed $value): void
+    {
+        $this->_layout->set($key, $value);
     }
 
-    protected function __prepare($controller) {
-
-        $this->_layout->setContent($this->content);
-
-        $this->_layout->registerMethodHandler($controller);
-
+    protected function __prepare(Controller $controller): void
+    {
+        $this->_layout->setContent($this->getContent());
         $this->_layout->initHelpers();
-
         $this->_layout->runHelpers();
-
         $content = $this->_layout->render();
-
         $this->setContent($content);
-
     }
 
-    public function __call($method, $param_arr) {
-
+    /**
+     * @param array<mixed> $param_arr
+     */
+    public function __call(string $method, array $param_arr): mixed
+    {
         return call_user_func_array([
             $this->_layout,
-            $method
+            $method,
         ], $param_arr);
-
     }
 
-    #[\ReturnTypeWillChange]
-    public function offsetGet($offset) {
-
+    public function offsetGet($offset): mixed
+    {
         return $this->_layout->get($offset);
-
     }
 
-    public function offsetSet($key, $value) : void{
-
+    public function offsetSet(mixed $key, mixed $value): void
+    {
         $this->_layout->set($key, $value);
-
     }
 
-    public function offsetUnset($key) : void {
-
+    public function offsetUnset(mixed $key): void
+    {
         $this->_layout->remove($key);
-
     }
 
-    public function offsetExists($key) : bool {
-
+    public function offsetExists(mixed $key): bool
+    {
         return $this->_layout->has($key);
-
     }
 
-    public function view($view, $key = null){
-
+    public function view(mixed $view, mixed $key = null): View
+    {
         return $this->_layout->add($view, $key);
-
     }
-
 }

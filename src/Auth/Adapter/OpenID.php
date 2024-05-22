@@ -1,6 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Auth\Adapter;
+
+use Hazaar\Cache;
+use Hazaar\HTTP\URL;
 
 /**
  * OAuth short summary.
@@ -8,60 +13,61 @@ namespace Hazaar\Auth\Adapter;
  * OAuth description.
  *
  * @version 1.0
+ *
  * @author jamiec
  */
-class OpenID extends \Hazaar\Auth\Adapter\OAuth2 {
-
-    function __construct($client_id, $client_secret, $grant_type = 'code', $cache_config = [], $cache_backend = 'session') {
-
-        parent::__construct($client_id, $client_secret, $grant_type, $cache_config, $cache_backend);
-
+class OpenID extends OAuth2
+{
+    /**
+     * @param array<mixed> $cacheConfig
+     */
+    public function __construct(
+        string $client_id,
+        string $client_secret,
+        string $grant_type = 'code',
+        array $cacheConfig = [],
+        Cache $cacheBackend = null
+    ) {
+        parent::__construct($client_id, $client_secret, $grant_type, $cacheConfig, $cacheBackend);
         $this->addScope('openid');
-
     }
 
-    public function setLogoutURI($uri){
-
+    public function setLogoutURI(string $uri): void
+    {
         $this->metadata['end_session_endpoint'] = $uri;
-
     }
 
-    public function getProfile(){
-
-        if(!$this->session->has('oauth2_data'))
+    public function getProfile(): ?\stdClass
+    {
+        if (!$this->session->has('oauth2_data')) {
             return null;
-
-        if(!($this->session->oauth2_data instanceof \stdClass && property_exists($this->session->oauth2_data, 'id_token')))
+        }
+        if (!($this->session['oauth2_data'] instanceof \stdClass && property_exists($this->session['oauth2_data'], 'id_token'))) {
             return null;
-
-        $parts = explode('.', $this->session->oauth2_data->id_token);
-
-        foreach($parts as &$part)
+        }
+        $parts = explode('.', $this->session['oauth2_data']['id_token']);
+        foreach ($parts as &$part) {
             $part = \base64url_decode($part);
+        }
 
         return json_decode($parts[1]);
-
     }
 
-    public function logout($redirect_url = null){
-
-        if(!($uri = ake($this->metadata, 'end_session_endpoint')))
+    public function logout(string $redirect_url = null): bool|URL
+    {
+        if (!($url = ake($this->metadata, 'end_session_endpoint'))) {
             return false;
-
-        $endpoint = new \Hazaar\Http\Uri($uri);
-
-        $endpoint->client_id = $this->client_id;
-
-        $endpoint->id_token_hint = ake($this->session->oauth2_data, 'id_token');
-
-        if($redirect_url)
-            $endpoint->post_logout_redirect_uri = (string)$redirect_url;
-
-        if(!$this->deauth())
+        }
+        $endpoint = new URL($url);
+        $endpoint['client_id'] = $this->client_id;
+        $endpoint['id_token_hint'] = ake($this->session['oauth2_data'], 'id_token');
+        if ($redirect_url) {
+            $endpoint['post_logout_redirect_uri'] = (string) $redirect_url;
+        }
+        if (!$this->deauth()) {
             return false;
+        }
 
         return $endpoint;
-
     }
-
 }

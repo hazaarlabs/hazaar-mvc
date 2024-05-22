@@ -1,15 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Socket\Exception;
 
-class CreateFailed extends \Exception {
-
-    function __construct($socket) {
-
-        $reason = socket_strerror(socket_last_error($socket));
-        
-        parent::__construct('socket_create() failed.  Reason: ' . $reason, 500);
-    
+class CreateFailed extends \Exception
+{
+    public function __construct()
+    {
+        parent::__construct('socket_create() failed', 500);
     }
-
 }
