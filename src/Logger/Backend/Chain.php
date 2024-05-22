@@ -1,73 +1,54 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Logger\Backend;
 
-class Chain extends \Hazaar\Logger\Backend {
+use Hazaar\Logger\Backend;
 
-    private $backends = [];
+class Chain extends Backend
+{
+    /**
+     * @var array<Backend>
+     */
+    private array $backends = [];
 
-    public function init() {
-
+    public function init(): void
+    {
         $this->setDefaultOption('chain', ['backend' => ['file']]);
-
         $chain = $this->getOption('chain');
-
-        if(is_array($chain['backend'])) {
-
-            foreach($chain['backend'] as $backend_name) {
-
-                $backend_class = 'Hazaar_Logger_Backend_' . ucfirst($backend_name);
-
-                $backend = new $backend_class( []);
-
+        if (is_array($chain['backend'])) {
+            foreach ($chain['backend'] as $backend_name) {
+                $backend_class = 'Hazaar_Logger_Backend_'.ucfirst($backend_name);
+                $backend = new $backend_class([]);
                 $this->backends[] = $backend;
-
-                foreach($backend->getCapabilities() as $capability)
+                foreach ($backend->getCapabilities() as $capability) {
                     $this->addCapability($capability);
-
+                }
             }
-
         }
-
     }
 
-    public function postRun() {
-
-        foreach($this->backends as $backend) {
-
+    public function postRun(): void
+    {
+        foreach ($this->backends as $backend) {
             $backend->postRun();
-
         }
-
     }
 
-    public function write($message, $level = LOG_NOTICE) {
-
-        foreach($this->backends as $backend) {
-
-            if(!$backend->can('write_objects') && (is_array($message) || is_object($message))) {
-
-                $backend->write(preg_replace('/\s+/', ' ', print_r($message, true)), $level);
-
-            } else {
-
-                $backend->write($message, $level);
-
-            }
-
+    public function write(string $tag, string $message, int $level = LOG_NOTICE): void
+    {
+        foreach ($this->backends as $backend) {
+            $backend->write($tag, $message, $level);
         }
-
     }
 
-    public function trace() {
-
-        foreach($this->backends as $backend) {
-
-            if($backend->can('write_trace'))
+    public function trace(): void
+    {
+        foreach ($this->backends as $backend) {
+            if ($backend->can('write_trace')) {
                 $backend->trace();
-
+            }
         }
-
     }
-
 }

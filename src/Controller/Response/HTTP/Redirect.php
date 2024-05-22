@@ -1,15 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Controller\Response\HTTP;
 
-class Redirect extends \Hazaar\Controller\Response {
+use Hazaar\Controller\Response;
 
-    function __construct($url) {
-
-        parent::__construct("text/text", 302);
+class Redirect extends Response
+{
+    public function __construct(string $url)
+    {
+        parent::__construct('text/text', 302);
 
         $this->setHeader('Location', $url);
-
     }
-
 }

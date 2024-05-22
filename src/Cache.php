@@ -1,437 +1,366 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @file        Cache.php
  *
  * @author      Jamie Carl <jamie@hazaar.io>
- *
  * @copyright   Copyright (c) 2012 Jamie Carl (http://hazaar.io)
  *
  * @version     $Id: Application.php 24593 2012-08-29 20:35:02Z jamie $
  */
+
 namespace Hazaar;
 
+use Hazaar\Cache\Backend;
+
 /**
- * @brief The cache frontend
+ * The cache frontend.
+ *
+ * @implements \ArrayAccess<string, mixed>
  */
-class Cache implements \ArrayAccess {
-
-    protected $options;
-
-    protected $use_cache = TRUE;
-
-    protected $backend;
+class Cache implements \ArrayAccess
+{
+    protected Map $options;
+    protected bool $use_cache = true;
+    protected Backend $backend;
 
     /**
-     * Cache object constructor
+     * Cache object constructor.
      *
-     * @param string $backend
-     *            The name of the backend to use. Currently 'apc', 'file', 'memcached', 'session' and
-     *            'sqlite' are supported.
-     *
-     * @param array $options
-     *            Options to pass on to the backend. These will also be specific to the backend
-     *            you are using.
-     *
-     * @param string $namespace
-     *            The namespace to use for grouping stored data.
-     *
-     * @throws Cache\Exception\InvalidBackend
-     *
-     * @throws Cache\Exception\InvalidFrontend
+     * @param array<string>|string $backend        The name of the backend to use. Currently 'apc', 'file', 'memcached', 'session' and
+     *                                             'sqlite' are supported.
+     * @param string               $namespace      The namespace to use for grouping stored data
+     * @param array<mixed>|Map     $config_options
      */
-    function __construct($backend = NULL, $config_options = [], $namespace = 'default') {
-
-        $options = new \Hazaar\Map();
-
-        if($config_options)
-            $options->extend($config_options);
-
-        if (!$backend){
-
-            //Set up a default backend chain
+    public function __construct(null|array|string $backend = null, array|Map $config_options = [], string $namespace = 'default')
+    {
+        $this->options = Map::_($config_options);
+        if (!$backend) {
+            // Set up a default backend chain
             $backend = ['apc', 'session'];
-
-            //Grab the application context so we can load any cache settings
-            if(($app = \Hazaar\Application::getInstance())
-                && $app->config->cache->has('backend')){
-
-                $backend = $app->config->cache['backend'];
-
-                $options->extend($app->config->cache['options']);
-
+            // Grab the application context so we can load any cache settings
+            if (($app = Application::getInstance())
+                && $app->config->has('cache.backend')) {
+                $backend = $app->config->get('cache.backend');
+                $this->options->extend($app->config->get('cache.options'));
             }
-
         }
-
-        $this->options = $options;
-
         $this->configure([
             'lifetime' => 3600,
-            'use_pragma' => TRUE
+            'use_pragma' => true,
         ]);
-
-        if(!is_array($backend))
+        if (!is_array($backend)) {
             $backend = [$backend];
-
-        //We set this now as it is an absolute safe fallback
-        if(!in_array('file', $backend))
-            $backend[] = 'file';
-
-        foreach($backend as $name){
-
-            $backendClass = '\\Hazaar\\Cache\\Backend\\' . ucfirst($name);
-
-            if(class_exists($backendClass) && $backendClass::available())
-                break;
-
-            unset($backendClass);
-
         }
-
-        if (!isset($backendClass))
+        // We set this now as it is an absolute safe fallback
+        if (!in_array('file', $backend)) {
+            $backend[] = 'file';
+        }
+        foreach ($backend as $name) {
+            $backendClass = '\\Hazaar\\Cache\\Backend\\'.ucfirst($name);
+            if (class_exists($backendClass) && $backendClass::available()) {
+                break;
+            }
+            unset($backendClass);
+        }
+        if (!isset($backendClass)) {
             throw new Cache\Exception\NoBackendAvailable();
-
-        $this->backend = new $backendClass($options, $namespace);
-
-        if (!$this->backend instanceof Cache\Backend)
+        }
+        $this->backend = new $backendClass($this->options, $namespace);
+        if (!$this->backend instanceof Backend) {
             throw new Cache\Exception\InvalidBackend($backendClass);
-
-        /**
+        }
+        /*
          * Cache skip
          *
          * Check for a Pragma header to see if we should skip loading from cache.
          */
-        if ($this->options->use_pragma && function_exists('apache_request_headers')) {
-
+        if ($this->options['use_pragma'] && function_exists('apache_request_headers')) {
             $headers = apache_request_headers();
-
-            if (array_key_exists('Pragma', $headers) && $headers['Pragma'] == 'no-cache')
-                $this->use_cache = FALSE;
-
+            if (array_key_exists('Pragma', $headers) && 'no-cache' == $headers['Pragma']) {
+                $this->use_cache = false;
+            }
         }
-
     }
 
-    public function configure($options) {
+    // MAGIC METHOD FOR DIRECT ACCESS
+    public function __isset(string $key): bool
+    {
+        return $this->has($key);
+    }
 
+    public function __set(string $key, mixed $value): void
+    {
+        $this->set($key, $value);
+    }
+
+    public function __unset(string $key): void
+    {
+        $this->remove($key);
+    }
+
+    /**
+     * @param array<mixed>|Map $options
+     */
+    public function configure(array|Map $options): void
+    {
         $this->options->enhance($options);
-
     }
 
-    public function getBackend(){
-
+    public function getBackend(): Backend
+    {
         return $this->backend;
-
     }
 
-    public function setBackendOption($key, $value){
-
+    public function setBackendOption(string $key, mixed $value): void
+    {
         $this->backend->options->extend([$key => $value]);
-
     }
 
     /**
      * Retrieve a value from cache storage.
      *
      * @param mixed $key
-     *            The reference key used to store the value.
+     *                            The reference key used to store the value
+     * @param bool  $default
+     *                            If the value doesn't exist, this default will be returned instead
+     * @param bool  $save_default
+     *                            If the value doesn't exist and a default is specified, save that default to cache
      *
-     * @param bool $default
-     *            If the value doesn't exist, this default will be returned instead.
-     *
-     * @param bool $save_default
-     *            If the value doesn't exist and a default is specified, save that default to cache.
-     *
-     * @return mixed The value that was stored in cache.
+     * @return mixed the value that was stored in cache
      */
-    public function &get($key, $default = FALSE, $save_default = FALSE) {
-
-        if (!$this->use_cache)
+    public function &get($key, $default = false, $save_default = false)
+    {
+        if (!$this->use_cache) {
             return $default;
-
+        }
         $result = $this->backend->get($key);
-
-        if ($result && !$this->backend->can('store_objects'))
+        if ($result && !$this->backend->can('store_objects')) {
             $result = unserialize($result);
-
-        if ($result === FALSE) {
-
-            if ($save_default === TRUE)
+        }
+        if (false === $result) {
+            if (true === $save_default) {
                 $this->set($key, $default);
+            }
 
             return $default;
-
         }
 
         return $result;
-
     }
 
     /**
      * Store a value in the cache using the current cache backend.
      *
-     * @param mixed $key
-     *            The reference key under which to store the value.
-     *
-     * @param mixed $value
-     *            The value that should be stored. Values can be pretty much anything including integers, booleans,
-     *            strings and any object that can be serialised.
-     *
-     * @param mixed $timeout
-     *            The number of seconds after which the value becomes invalid. If not set the global
-     *            'lifetime' option is used. Set a value of '-1' to indicate that the value should never timeout.
-     *
-     * @return boolean Boolean indicating whether or not the operation succeeded.
+     * @param string $key     The reference key under which to store the value
+     * @param mixed  $value   The value that should be stored. Values can be pretty much anything including integers, booleans,
+     *                        strings and any object that can be serialised.
+     * @param int    $timeout The number of seconds after which the value becomes invalid. If not set the global
+     *                        'lifetime' option is used. Set a value of '-1' to indicate that the value should never timeout.
      */
-    public function set($key, $value, $timeout = NULL) {
-
-        /*
-         * If the backend can't store objects, serialize the value.
-         */
-        if (!$this->backend->can('store_objects'))
+    public function set(string $key, mixed $value, int $timeout = 0): bool
+    {
+        // If the backend can't store objects, serialize the value.
+        if (!$this->backend->can('store_objects')) {
             $value = serialize($value);
+        }
 
         return $this->backend->set($key, $value, $timeout);
-
     }
 
     /**
      * Check if a stored value exists.
      *
-     * @param mixed $key
-     *            The value key to check for.
-     *
-     * @param boolean $check_empty Normally this method will return try if the value exists with `$key`.  Setting `$check_empty` looks at the value
-     *              and will return false if it is an 'empty' value (ie: 0, null, [])
-     * @return boolean Returns TRUE or FALSE indicating if the value is stored.
+     * @param string $key
+     *                            The value key to check for
+     * @param bool   $check_empty Normally this method will return try if the value exists with `$key`.  Setting `$check_empty` looks at the value
+     *                            and will return false if it is an 'empty' value (ie: 0, null, [])
      */
-    public function has($key, $check_empty = false) {
-
+    public function has(string $key, bool $check_empty = false): bool
+    {
         return $this->backend->has($key, $check_empty);
-
     }
 
     /**
-     * Removes a stored value
+     * Removes a stored value.
      *
-     * @param mixed $key
-     *            The key of the value to remove
-     *
-     * @return boolean tRUE indicates the value existed and was removed. FALSE otherwise.
+     * @param string $key The key of the value to remove
      */
-    public function remove($key) {
-
-        return $this->backend->remove($key);
-
+    public function remove(string $key): void
+    {
+        $this->backend->remove($key);
     }
 
-    public function extend($array, $recursive = FALSE) {
-
-        if (!is_array($array))
-            return FALSE;
-
-        foreach($array as $key => $value) {
-
+    /**
+     * Extend the cache with an array of key/value pairs.
+     *
+     * @param array<mixed> $array The array of key/value pairs to store in the cache
+     */
+    public function extend(array $array, bool $recursive = false): bool
+    {
+        if (!is_array($array)) {
+            return false;
+        }
+        foreach ($array as $key => $value) {
             if (is_array($value) && $recursive) {
-
                 $c = $this->get($key);
-
-                if ($c && is_array($c))
+                if ($c && is_array($c)) {
                     $value = array_merge_recursive($c, $value);
-
+                }
                 $this->set($key, $value);
-
             } else {
-
                 $this->set($key, $value);
-
             }
-
         }
 
         return true;
-        
     }
 
-    public function clear() {
-
-        return $this->backend->clear();
-
-    }
-
-    public function setValues($values) {
-
-        if (!is_array($values))
-            return FALSE;
-
-        foreach($values as $key => $value)
-            $this->set($key, $value);
-
-        return TRUE;
-
-    }
-
-    public function pull($key) {
-
-        $value = $this->get($key);
-
-        $this->remove($key);
-
-        return $value;
-
-    }
-
-    public function toArray() {
-
-        if (!$this->backend->can('array'))
-            return FALSE;
-
-        $values = $this->backend->toArray();
-
-        if ($values && !$this->backend->can('store_objects')){
-
-            foreach($values as &$value)
-                $value = unserialize($value);
-
-        }
-
-        return $values;
-
+    public function clear(): void
+    {
+        $this->backend->clear();
     }
 
     /**
-     * Disable the use of cache
+     * Set multiple values in the cache.
+     *
+     * @param array<mixed> $values
+     */
+    public function setValues(array $values): bool
+    {
+        foreach ($values as $key => $value) {
+            $this->set($key, $value);
+        }
+
+        return true;
+    }
+
+    public function pull(string $key): mixed
+    {
+        $value = $this->get($key);
+        $this->remove($key);
+
+        return $value;
+    }
+
+    /**
+     * Retrieve all values from the cache.
+     *
+     * @return array<mixed>
+     */
+    public function toArray(): ?array
+    {
+        if (!$this->backend->can('array')) {
+            return null;
+        }
+        $values = $this->backend->toArray();
+        if (!$this->backend->can('store_objects')) {
+            foreach ($values as &$value) {
+                $value = unserialize($value);
+            }
+        }
+
+        return $values;
+    }
+
+    /**
+     * Disable the use of cache.
      *
      * This allows a cache object to be disabled but still be used without having to modify existing application
      * code.  The application can still call the get() method but it will always return false, simulating a negative
      * cache response.  Calling set() will still have an affect however.
      */
-    public function on(){
-
+    public function on(): void
+    {
         $this->use_cache = true;
-
     }
 
     /**
-     * Enable the use of cache
+     * Enable the use of cache.
      *
      * Cache is enabled by default.  This is to allow cache to be re-enabled after calling off().
      *
      * This method can also be used to force cache back on after being disabled by a "Pragma: no-cache" header
      * in the case where the use_pragma setting is enabled (which is the default).
      */
-    public function off(){
-
+    public function off(): void
+    {
         $this->use_cache = false;
-
     }
 
-    /*
-     * MAGIC METHOD FOR DIRECT ACCESS
-     */
-    public function __isset($key) {
-
-        return $this->has($key);
-
-    }
-
-    public function &__get($key) {
-
+    public function &__get(string $key): mixed
+    {
         return $this->get($key);
-
     }
 
-    public function __set($key, $value) {
-
-        return $this->set($key, $value);
-
-    }
-
-    public function __unset($key) {
-
-        return $this->remove($key);
-
-    }
-
-    /*
-     * ARRAYACCESS METHODS
-     */
-    public function offsetExists($offset) : bool{
-
+    // ARRAYACCESS METHODS
+    public function offsetExists($offset): bool
+    {
         return $this->has($offset);
-
     }
 
-    #[\ReturnTypeWillChange]
-    public function offsetGet($offset) {
-
+    public function offsetGet($offset): mixed
+    {
         return $this->get($offset);
-
     }
 
-    public function offsetSet($offset, $value) : void {
-
+    public function offsetSet($offset, $value): void
+    {
         $this->set($offset, $value);
-
     }
 
-    public function offsetUnset($offset) : void {
-
+    public function offsetUnset($offset): void
+    {
         $this->remove($offset);
-
     }
 
     /**
-     * Increment key value
-     * 
+     * Increment key value.
+     *
      * This method will increment a cached integer value by a defined amount (default is 1).  Once
      * the value is incremented it will be stored back in the cache and the new value returned.
-     * 
-     * @param string $key The cache key
-     * 
-     * @param int $amount The amount to increment the value by.
-     * 
+     *
+     * @param string $key    The cache key
+     * @param int    $amount the amount to increment the value by
+     *
      * @return int The new incremented value
      */
-    public function increment($key, $amount = 1){
-
-        if(($value = $this->get($key)) === null || !is_int($value))
+    public function increment(string $key, int $amount = 1): int
+    {
+        if (($value = $this->get($key)) === null || !is_int($value)) {
             $value = 0;
-
-        if(!is_int($amount))
+        }
+        if (!is_int($amount)) {
             $amount = 1;
-
+        }
         $this->set($key, $value += $amount);
 
         return $value;
-        
     }
 
     /**
-     * Decrement key value
-     * 
+     * Decrement key value.
+     *
      * This method will decrement a cached integer value by a defined amount (default is 1).  Once
      * the value is decremented it will be stored back in the cache and the new value returned.
-     * 
-     * @param string $key The cache key
-     * 
-     * @param int $amount The amount to decrement the value by.
-     * 
+     *
+     * @param string $key    The cache key
+     * @param int    $amount the amount to decrement the value by
+     *
      * @return int The new decremented value
      */
-    public function decrement($key, $amount = 1){
-
-        if(($value = $this->get($key)) === null || !is_int($value))
+    public function decrement(string $key, int $amount = 1): int
+    {
+        if (($value = $this->get($key)) === null || !is_int($value)) {
             $value = 0;
-
-        if(!is_int($amount))
+        }
+        if (!is_int($amount)) {
             $amount = 1;
-
+        }
         $this->set($key, $value -= $amount);
 
         return $value;
-
     }
-
 }

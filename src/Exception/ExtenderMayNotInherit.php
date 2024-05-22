@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Exception;
 
-class ExtenderMayNotInherit extends \Hazaar\Exception {
-    
-    function __construct($type, $child, $class){
-        
-        parent::__construct("Class '$child' may not inherit from $type class '$class'.");
-        
+use Hazaar\Exception;
+
+class ExtenderMayNotInherit extends Exception
+{
+    public function __construct(string $type, string $child, string $class)
+    {
+        parent::__construct("Class '{$child}' may not inherit from {$type} class '{$class}'.");
     }
-    
 }

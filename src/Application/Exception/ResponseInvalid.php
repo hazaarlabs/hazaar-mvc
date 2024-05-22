@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Application\Exception;
 
-class ResponseInvalid extends \Hazaar\Exception {
+use Hazaar\Exception;
 
-    function __construct() {
-
+class ResponseInvalid extends Exception
+{
+    public function __construct()
+    {
         parent::__construct('Invalid controller response received.  Controllers should return an object type Hazaar\\Controller\\Response.');
-
     }
-
 }

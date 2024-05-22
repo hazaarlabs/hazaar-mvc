@@ -1,21 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @file        Auth/Adapter.php
  *
  * @author      Jamie Carl <jamie@hazaar.io>
- *
  * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
-
 /**
- * User authentication namespace
+ * User authentication namespace.
  */
 
 namespace Hazaar\Auth;
 
+use Hazaar\Application;
+use Hazaar\Map;
+
 /**
- * Abstract authentication adapter
+ * Abstract authentication adapter.
  *
  * This class is the base class for all of the supplied authentication adapters.  This class takes care
  * of the password hash generation and session management, including the autologin function.
@@ -69,58 +72,68 @@ namespace Hazaar\Auth;
  * }
  * ```
  */
-abstract class Adapter implements Adapter\_Interface
+abstract class Adapter implements Interfaces\Adapter
 {
-    protected $options;
-    protected $identity;
-    protected $credential;
+    protected Map $options;
+    protected string $identity;
+    protected string $credential;
 
-    // Extra data fields to store from the user record
-    protected $extra = [];
-    private $no_credential_hashing = false;
+    /**
+     * Extra data fields to store from the user record.
+     *
+     * @var array<string>
+     */
+    protected array $extra = [];
 
-    public function __construct($config = [])
+    private bool $no_credential_hashing = false;
+
+    /**
+     * Construct the adapter.
+     *
+     * @param array<mixed>|Map $config The configuration options
+     */
+    public function __construct(array|Map $config = [])
     {
-        $this->options = new \Hazaar\Map([
+        $defaults = [
             'encryption' => [
                 'hash' => 'sha1',
                 'count' => 1,
                 'salt' => '',
-                'use_identity' => false
+                'use_identity' => false,
             ],
             'autologin' => [
                 'cookie' => 'hazaar-auth-autologin',
                 'period' => 1,
-                'hash'  => 'sha1'
+                'hash' => 'sha1',
             ],
             'token' => [
-                'hash' => 'sha1'
+                'hash' => 'sha1',
             ],
-            'timeout' => 3600
-        ], \Hazaar\Application::getInstance()->config['auth']);
-        $this->options->extend($config);
-        if($this->options->has('data_fields')) {
-            $this->setDataFields($this->options->data_fields->toArray());
+            'timeout' => 3600,
+        ];
+        $this->options = Map::_($defaults, Application::getInstance()->config['auth'], $config);
+        if ($this->options->has('data_fields')) {
+            $this->setDataFields($this->options['data_fields']->toArray());
         }
     }
 
-    public function setIdentity($identity)
+    public function setIdentity(string $identity): void
     {
         $this->identity = $identity;
     }
 
-    public function setCredential($credential)
+    public function setCredential(string $credential): void
     {
         $this->credential = $credential;
     }
 
-    public function getIdentity()
+    public function getIdentity(): string
     {
-        return $this->identity;
+        return $this->identity ?? '';
     }
 
     /**
-     * Get the encrypted hash of a credential/password
+     * Get the encrypted hash of a credential/password.
      *
      * This method uses the "encryption" options from the application configuration to generate
      * a password hash based on the supplied password.  If no password is supplied then the
@@ -128,82 +141,67 @@ abstract class Adapter implements Adapter\_Interface
      *
      * NOTE: Keep in mind that if no credential is set, or it's null, or an empty string, this
      * will still return a valid hash of that empty value using the defined encryption hash chain.
-     *
-     * @param mixed $credential
-     * @return \null|string
      */
-    public function getCredential($credential = null)
+    public function getCredential(?string $credential = null): ?string
     {
-        if($credential === null) {
+        if (null === $credential) {
             $credential = $this->credential;
         }
-        if(!$credential || $this->no_credential_hashing === true) {
+        if (!$credential || true === $this->no_credential_hashing) {
             return $credential;
         }
         $hash = false;
-        if($this->options->encryption['use_identity'] === true) {
-            $credential =  $this->identity . ':' . $credential;
+        if (true === $this->options['encryption']['use_identity']) {
+            $credential = $this->identity.':'.$credential;
         }
-        $count = $this->options->encryption['count'];
-        $algos = $this->options->encryption['hash'];
-        if(!\Hazaar\Map::is_array($algos)) {
-            $algos = [$algos];
+        $count = $this->options['encryption']['count'];
+        $algos = $this->options['encryption']['hash'];
+        if (!$algos instanceof Map) {
+            $algos = new Map($algos);
         }
-        $salt = $this->options->encryption['salt'];
+        $salt = $this->options['encryption']['salt'];
         $hash_algos = hash_algos();
-        if(!is_string($salt)) {
+        if (!is_string($salt)) {
             $salt = '';
         }
-        for($i = 1; $i <= $count; $i++) {
-            foreach($algos as $algo) {
-                if(!in_array($algo, $hash_algos)) {
+        for ($i = 1; $i <= $count; ++$i) {
+            foreach ($algos as $algo) {
+                if (!in_array($algo, $hash_algos)) {
                     continue;
                 }
-                $hash = hash($algo, $hash . $credential . $salt);
+                $hash = hash($algo, $hash.$credential.$salt);
             }
         }
+
         return $hash;
     }
 
-    protected function getIdentifier($identity)
+    public function authenticate(?string $identity = null, ?string $credential = null, bool $autologin = false): mixed
     {
-        if(!$identity) {
-            return false;
-        }
-        return hash('sha1', $identity);
-    }
-
-    protected function setDataFields(array $fields)
-    {
-        $this->extra = $fields;
-    }
-
-    public function authenticate($identity = null, $credential = null, $autologin = false)
-    {
-        /*
-         * Save the authentication data
-         */
-        if($identity) {
+        // Save the authentication data
+        if ($identity) {
             $this->setIdentity($identity);
         }
-        if($credential) {
+        if ($credential) {
             $this->setCredential($credential);
         }
         $auth = $this->queryAuth($this->getIdentity(), $this->extra);
-        if($auth === false || !(is_array($auth)
+        if (false === $auth || !(is_array($auth)
             && array_key_exists('identity', $auth)
             && array_key_exists('credential', $auth))) {
             $this->deauth();
+
             return false;
         }
-        if($auth['identity'] === $this->getIdentity()
+        if ($auth['identity'] === $this->getIdentity()
             && $auth['credential'] === $this->getCredential()) {
             return $auth;
         }
+
         return false;
     }
 
-    public function authenticated()
+    public function authenticated(): bool
     {
         return false;
     }
@@ -213,55 +211,46 @@ abstract class Adapter implements Adapter\_Interface
      *
      * This is useful for checking an account password before allowing something important to be updated.
      * This does the same steps as authenticate() but doesn't actually do the authentication.
-     *
-     * @param mixed $credential
-     * @return boolean
      */
-    public function check($credential)
+    public function check(string $credential): bool
     {
         $auth = $this->queryAuth($this->getIdentity(), $this->extra);
-        if($auth === false || !(is_array($auth)
+        if (false === $auth || !(is_array($auth)
             && array_key_exists('identity', $auth)
             && array_key_exists('credential', $auth))) {
             return false;
         }
-        if($auth['identity'] === $this->getIdentity()
+        if ($auth['identity'] === $this->getIdentity()
             && $auth['credential'] === $this->getCredential($credential)) {
             return true;
         }
+
         return false;
     }
 
-    public function deauth()
+    public function deauth(): bool
     {
         return true;
     }
 
     /**
-     * Helper method that sets the basic auth header and throws an unauthorised exception
-     *
-     * @throws \Exception
+     * Helper method that sets the basic auth header and throws an unauthorised exception.
      */
-    public function unauthorised()
+    public function unauthorised(): void
     {
         header('WWW-Authenticate: Basic');
+
         throw new \Exception('Unauthorised!', 401);
     }
 
-    protected function canAutoLogin()
+    public function getToken(): ?string
     {
-        $cookie = $this->getAutologinCookieName();
-        return ($this->options['autologin']['period'] > 0 && isset($_COOKIE[$cookie]));
+        return null;
     }
 
-    protected function getAutologinCookieName()
+    public function getTokenType(): false|string
     {
-        return $this->options['autologin']['cookie'];
-    }
-
-    public function getTokenType()
-    {
-        return 'Basic';
+        return false;
     }
 
     /**
@@ -273,8 +262,39 @@ abstract class Adapter implements Adapter\_Interface
      * supplied internally by the application itself, and not provided by a user/client/etc.  Disabling password hash
      * essentially turns this all into clear text credentials.
      */
-    public function disableCredentialHashing($value = true)
+    public function disableCredentialHashing(bool $value = true): void
     {
         $this->no_credential_hashing = boolify($value);
+    }
+
+    protected function getIdentifier(string $identity): ?string
+    {
+        if (!$identity) {
+            return null;
+        }
+
+        return hash('sha1', $identity);
+    }
+
+    /**
+     * Set the extra data fields.
+     *
+     * @param array<string> $fields The extra data fields
+     */
+    protected function setDataFields(array $fields): void
+    {
+        $this->extra = $fields;
+    }
+
+    protected function canAutoLogin(): bool
+    {
+        $cookie = $this->getAutologinCookieName();
+
+        return $this->options['autologin']['period'] > 0 && isset($_COOKIE[$cookie]);
+    }
+
+    protected function getAutologinCookieName(): string
+    {
+        return $this->options['autologin']['cookie'];
     }
 }

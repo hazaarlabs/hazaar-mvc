@@ -1,7 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\File\Backend\Exception;
 
-class DropboxError extends \Hazaar\Exception {
+use Hazaar\Exception;
 
-}
+class DropboxError extends Exception {}

@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Controller\Exception;
 
-class ActionNotPublic extends \Hazaar\Exception {
+use Hazaar\Exception;
 
-    function __construct($controller, $action) {
-
-        parent::__construct("Target action $controller::$action() is not public!", 403);
-
+class ActionNotPublic extends Exception
+{
+    public function __construct(string $controller, string $action)
+    {
+        parent::__construct("Target action {$controller}::{$action}() is not public!", 403);
     }
-
 }

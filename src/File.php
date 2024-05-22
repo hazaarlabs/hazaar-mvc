@@ -1,204 +1,180 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar;
 
+use Hazaar\File\Dir;
+use Hazaar\File\Manager;
+use Hazaar\HTTP\Client;
+use Hazaar\HTTP\Request;
+use Hazaar\HTTP\URL;
+use stdClass;
+
 define('FILE_FILTER_IN', 0);
-
 define('FILE_FILTER_OUT', 1);
-
 define('FILE_FILTER_SET', 2);
 
-class File implements File\_Interface, \JsonSerializable {
+class File implements \JsonSerializable
+{
+    public string $source_file;
+    // Encryption bits
+    public static string $default_cipher = 'aes-256-ctr';
+    public static string $default_key = 'hazaar_secret_badass_key';
+    protected Manager $manager;
 
-    protected $manager;
-
-    public    $source_file;
-
-    protected $info;
-
-    protected $mime_content_type;
-
+    /** @var array<mixed> */
+    protected array $info;
+    protected ?string $mimeContentType = null;
     /*
      * Any overridden file contents.
      *
      * This is normally used when performing operations on the file in memory, such as resizing an image.
      */
-    protected $contents;
+    protected string $contents = '';
 
-    protected $resource;
-
-    protected $handle;
-
-    protected $relative_path;
-
-    /*
-     * Encryption bits
+    /**
+     * @var ?array<string>
      */
-    static public $default_cipher = 'aes-256-ctr';
+    protected ?array $csv_contents = null;
 
-    static public $default_key = 'hazaar_secret_badass_key';
-
-    private $encrypted = false;
-
-    private $__media_uri;
-
-    /*
-     * Content filters
+    /**
+     * @var resource
      */
-    private $filters = [];
+    protected mixed $resource = null;
 
-    function __construct($file = null, File\Manager $manager = null, $relative_path = null) {
+    protected string $relative_path;
+    private mixed $stream = null;
+    private bool $encrypted = false;
+    private ?URL $__media_url = null;
 
-        if ($file instanceof \Hazaar\File) {
+    /**
+     * Content filters.
+     *
+     * @var array<mixed>
+     */
+    private array $filters = [];
 
+    public function __construct(mixed $file = null, ?Manager $manager = null, ?string $relative_path = null)
+    {
+        if ($file instanceof File) {
             $manager = $file->manager;
-
             $this->info = $file->info;
-
-            $this->mime_content_type = $file->mime_content_type;
-
+            $this->mimeContentType = $file->mimeContentType;
             $file = $file->source_file;
-
         } elseif (is_resource($file)) {
-
             $meta = stream_get_meta_data($file);
-
             $this->resource = $file;
-
             $file = $meta['uri'];
-
         } else {
-
-            if (empty($file))
-                $file = Application::getInstance()->runtimePath('tmp', true) . DIRECTORY_SEPARATOR . uniqid();
+            if (empty($file)) {
+                $file = Application::getInstance()->runtimePath('tmp', true).DIRECTORY_SEPARATOR.uniqid();
+            }
         }
-
-        if (!$manager instanceof File\Manager)
-            $manager = new File\Manager();
-
+        if (!$manager instanceof Manager) {
+            $manager = new Manager();
+        }
         $this->manager = $manager;
-
         $this->source_file = $this->manager->fixPath($file);
-
-        $this->relative_path = rtrim($this->manager->fixPath($relative_path), '/');
+        if ($relative_path) {
+            $this->relative_path = rtrim($this->manager->fixPath($relative_path), '/');
+        }
     }
 
-    public function __destruct() {
-
-        $this->close();
+    public function __toString(): string
+    {
+        return $this->toString();
     }
 
-    public function backend() {
-
+    public function backend(): string
+    {
         return $this->manager->getBackendName();
     }
 
-    public function getBackend() {
-
+    public function getManager(): Manager
+    {
         return $this->manager;
     }
 
-    public function getManager() {
-
-        return $this->manager;
-    }
-
-    static public function get($url, \Hazaar\Http\Client $client = null) {
-
-        if (!preg_match('/^\w+\:\/\//', $url))
+    public static function get(string $url, ?Client $client = null): bool|File
+    {
+        if (!preg_match('/^\w+\:\/\//', $url)) {
             return false;
-
+        }
         $filename = basename($url);
-
-        if(($pos = strpos($filename, '?')) !== false)
+        if (($pos = strpos($filename, '?')) !== false) {
             $filename = substr($filename, 0, $pos);
-
-        if (!$client)
-            $client = new \Hazaar\Http\Client();
-
-        $request = new \Hazaar\Http\Request($url, 'GET');
-
+        }
+        if (!$client) {
+            $client = new Client();
+        }
+        $request = new Request($url, 'GET');
         $response = $client->send($request);
-
-        if ($response->status !== 200)
+        if (200 !== $response->status) {
             return false;
-
+        }
         if ($disposition = $response->getHeader('content-disposition')) {
-
             list($type, $raw_params) = explode(';', $disposition);
-
             $params = array_map(function ($value) {
                 return trim($value ?? '', '"');
-            }, array_unflatten(trim($raw_params ?? '')));
-
-            if(isset($params['filename']))
+            }, array_unflatten(trim($raw_params)));
+            if (isset($params['filename'])) {
                 $filename = $params['filename'];
-
+            }
         }
-
-        $file = new \Hazaar\File($filename);
-
-        $file->set_mime_content_type($response->getContentType());
-
-        $file->set_contents($response->body);
+        $file = new File($filename);
+        $file->setMimeContentType($response->getContentType());
+        $file->setContents($response->body);
 
         return $file;
-
     }
 
     /**
-     * Content filters
+     * Content filters.
      */
-
-    public function registerFilter($type, $callable) {
-
-        if (!array_key_exists($type, $this->filters))
+    public function registerFilter(int $type, \Closure|string $callable): bool
+    {
+        if (!array_key_exists($type, $this->filters)) {
             $this->filters[$type] = [];
-
-        if (is_string($callable))
+        }
+        if (is_string($callable)) {
             $callable = [$this, $callable];
-
-        if (!is_callable($callable))
+        }
+        if (!is_callable($callable)) {
             return false;
-
+        }
         $this->filters[$type][] = $callable;
 
         return true;
     }
 
-    public function set_meta($values) {
-
-        return $this->manager->set_meta($this->source_file, $values);
-    }
-
-    public function get_meta($key = NULL) {
-
-        return $this->manager->get_meta($this->source_file, $key);
-    }
-
-    /*
-     * Basic output functions
+    /**
+     * @param array<string, mixed> $values
      */
-    public function toString() {
+    public function setMeta(array $values): bool
+    {
+        return $this->manager->setMeta($this->source_file, $values);
+    }
 
+    public function getMeta(?string $key = null): mixed
+    {
+        return $this->manager->getMeta($this->source_file, $key);
+    }
+
+    // Basic output functions
+    public function toString(): string
+    {
         return $this->fullpath();
     }
 
-    public function __tostring() {
-
-        return $this->toString();
-    }
-
-    /*
-     * Standard filesystem functions
-     */
-    public function basename($suffix = '') {
-
+    // Standard filesystem functions
+    public function basename(string $suffix = ''): string
+    {
         return basename($this->source_file, $suffix);
     }
 
-    public function dirname() {
-
+    public function dirname(): string
+    {
         /*
          * Hack: The str_replace() call makes all directory separaters consistent as /.
          * The use of DIRECTORY_SEPARATOR should only be used in the local backend.
@@ -206,16 +182,16 @@ class File implements File\_Interface, \JsonSerializable {
         return str_replace('\\', '/', dirname($this->source_file));
     }
 
-    public function name() {
-
+    public function name(): string
+    {
         return pathinfo($this->source_file, PATHINFO_FILENAME);
     }
 
-    public function fullpath() {
-
+    public function fullpath(): string
+    {
         $dir = $this->dirname();
 
-        return rtrim($dir ?? '', '/') . '/' . $this->basename();
+        return rtrim($dir, '/').'/'.$this->basename();
     }
 
     /**
@@ -226,246 +202,231 @@ class File implements File\_Interface, \JsonSerializable {
      * object, [[Hazaar\File\Dir]] object, or string path, and the relative path to the file will
      * be returned.
      *
-     * @param mixed $path Optional path to use as the relative path.
+     * @param mixed $path optional path to use as the relative path
      *
-     * @return boolean|string The relative path.  False when $path is not valid
+     * @return bool|string The relative path.  False when $path is not valid
      */
-    public function relativepath($path = null) {
-
-        if ($path !== null) {
-
-            if ($path instanceof File)
+    public function relativepath($path = null)
+    {
+        if (null !== $path) {
+            if ($path instanceof File) {
                 $path = $path->dirname();
-            if ($path instanceof File\Dir)
+            }
+            if ($path instanceof Dir) {
                 $path = $path->fullpath();
-            elseif (!is_string($path))
+            } elseif (!is_string($path)) {
                 return false;
-
+            }
             $source_path = explode('/', trim(str_replace('\\', '/', dirname($this->source_file)), '/'));
-
             $path = explode('/', trim(str_replace('\\', '/', $path), '/'));
-
             $index = 0;
-
             while (
-                isset($source_path[$index])
-                && isset($path[$index])
+                isset($source_path[$index], $path[$index])
                 && $source_path[$index] === $path[$index]
-            )
-                $index++;
-
+            ) {
+                ++$index;
+            }
             $diff = count($source_path) - $index;
 
             return implode('/', array_merge(array_fill(0, $diff, '..'), array_slice($path, $index)));
         }
-
-
-        if (!$this->relative_path)
+        if (!$this->relative_path) {
             return $this->fullpath();
-
+        }
         $dir_parts = explode('/', $this->dirname());
-
         $rel_parts = explode('/', $this->relative_path);
-
         $path = null;
-
         foreach ($dir_parts as $index => $part) {
-
-            if (array_key_exists($index, $rel_parts) && $rel_parts[$index] === $part)
+            if (array_key_exists($index, $rel_parts) && $rel_parts[$index] === $part) {
                 continue;
-
-            $dir_parts =  array_slice($dir_parts, $index);
-
-            if (($count = count($rel_parts) - $index) > 0)
+            }
+            $dir_parts = array_slice($dir_parts, $index);
+            if (($count = count($rel_parts) - $index) > 0) {
                 $dir_parts = array_merge(array_fill(0, $count, '..'), $dir_parts);
-
+            }
             $path = implode('/', $dir_parts);
 
             break;
         }
 
-        return ($path ? $path . '/' : '') . $this->basename();
+        return ($path ? $path.'/' : '').$this->basename();
     }
 
-    public function setRelativePath($path) {
-
+    public function setRelativePath(string $path): void
+    {
         $this->relative_path = $path;
     }
 
-    public function extension() {
-
+    public function extension(): string
+    {
         return pathinfo($this->source_file, PATHINFO_EXTENSION);
     }
 
-    public function size() {
-
-        if ($this->contents)
-            return (is_array($this->contents)) ? array_sum(array_map('strlen', $this->contents)) : strlen($this->contents);
-
-        if (!$this->exists())
-            return false;
+    public function size(): ?int
+    {
+        if ($this->contents) {
+            return strlen($this->contents);
+        }
+        if (!$this->exists()) {
+            return null;
+        }
 
         return $this->manager->filesize($this->source_file);
     }
 
-    /*
-     * Standard file modification functions
-     */
-    public function exists() {
-
+    // Standard file modification functions
+    public function exists(): bool
+    {
         return $this->manager->exists($this->source_file);
     }
 
-    public function realpath() {
-
+    public function realpath(): string
+    {
         return $this->manager->realpath($this->source_file);
     }
 
-    public function is_readable() {
-
-        if (!$this->exists())
+    public function isReadable(): bool
+    {
+        if (!$this->exists()) {
             return false;
+        }
 
-        return $this->manager->is_readable($this->source_file);
+        return $this->manager->isReadable($this->source_file);
     }
 
-    public function is_writable() {
-
-        return $this->manager->is_writable($this->source_file);
+    public function isWritable(): bool
+    {
+        return $this->manager->isWritable($this->source_file);
     }
 
-    public function is_file() {
-
-        if (!$this->exists())
+    public function isFile(): bool
+    {
+        if (!$this->exists()) {
             return false;
+        }
 
-        return $this->manager->is_file($this->source_file);
+        return $this->manager->isFile($this->source_file);
     }
 
-    public function is_dir() {
-
-        if (!$this->exists())
+    public function isDir(): bool
+    {
+        if (!$this->exists()) {
             return false;
+        }
 
-        return $this->manager->is_dir($this->source_file);
+        return $this->manager->isDir($this->source_file);
     }
 
-    public function is_link() {
-
-        if (!$this->exists())
+    public function isLink(): bool
+    {
+        if (!$this->exists()) {
             return false;
+        }
 
-        return $this->manager->is_link($this->source_file);
+        return $this->manager->isLink($this->source_file);
     }
 
-    public function dir($child = null) {
+    public function dir(): ?Dir
+    {
+        if ($this->isDir()) {
+            return new Dir($this->source_file, $this->manager, $this->relative_path);
+        }
 
-        if ($this->is_dir())
-            return new File\Dir($this->source_file, $this->manager, $this->relative_path);
-
-        return FALSE;
+        return null;
     }
 
-    public function parent() {
-
-        return new File\Dir($this->dirname(), $this->manager, $this->relative_path);
+    public function parent(): Dir
+    {
+        return new Dir($this->dirname(), $this->manager, $this->relative_path);
     }
 
-    public function type() {
-
-        if (!$this->exists())
-            return false;
+    public function type(): ?string
+    {
+        if (!$this->exists()) {
+            return null;
+        }
 
         return $this->manager->filetype($this->source_file);
     }
 
-    public function ctime() {
-
-        if (!$this->exists())
-            return false;
+    public function ctime(): ?int
+    {
+        if (!$this->exists()) {
+            return null;
+        }
 
         return $this->manager->filectime($this->source_file);
     }
 
-    public function mtime() {
-
-        if (!$this->exists())
-            return false;
+    public function mtime(): ?int
+    {
+        if (!$this->exists()) {
+            return null;
+        }
 
         return $this->manager->filemtime($this->source_file);
     }
 
-    public function touch() {
-
-        if (!$this->exists())
+    public function touch(): bool
+    {
+        if (!$this->exists()) {
             return false;
+        }
 
         return $this->manager->touch($this->source_file);
     }
 
-    public function atime() {
-
-        if (!$this->exists())
-            return false;
+    public function atime(): ?int
+    {
+        if (!$this->exists()) {
+            return null;
+        }
 
         return $this->manager->fileatime($this->source_file);
     }
 
-    public function has_contents() {
-
-        if ($this->contents)
+    public function hasContents(): bool
+    {
+        if ($this->contents) {
             return true;
-
-        if (!$this->exists())
+        }
+        if (!$this->exists()) {
             return false;
+        }
 
-        return ($this->manager->filesize($this->source_file) > 0);
+        return $this->manager->filesize($this->source_file) > 0;
     }
 
     /**
      * Returns the current contents of the file.
-     *
-     * @param mixed $offset
-     *
-     * @param mixed $maxlen
-     *
-     * @return mixed
      */
-    public function get_contents($offset = -1, $maxlen = NULL) {
-
-        if ($this->contents)
-            return is_array($this->contents) ? implode("\n", $this->contents) : $this->contents;
-
+    public function getContents(int $offset = -1, ?int $maxlen = null): string
+    {
+        if ($this->contents) {
+            return $this->contents;
+        }
         $this->contents = $this->manager->read($this->source_file, $offset, $maxlen);
-
-        $this->filter_in($this->contents);
+        $this->filterIn($this->contents);
 
         return $this->contents;
     }
 
     /**
-     * Put contents directly writes data to the storage backend without storing it in the file object itself
+     * Put contents directly writes data to the storage backend without storing it in the file object itself.
      *
      * NOTE: This function is called internally to save data that has been updated in the file object.
      *
-     * @param mixed $data The data to write
-     *
-     * @param mixed $overwrite Overwrite data if it exists
+     * @param string $data      The data to write
+     * @param bool   $overwrite Overwrite data if it exists
      */
-    public function put_contents($data, $overwrite = true) {
-
-        if ($data instanceof File)
-            $data = $data->get_contents();
-
-        $content_type = null;
-
-        if (!is_resource($this->handle))
-            $content_type = $this->mime_content_type();
-
-        if (!$content_type)
+    public function putContents(string $data, bool $overwrite = true): ?int
+    {
+        $content_type = $this->mimeContentType();
+        if (!$content_type) {
             $content_type = 'text/text';
-
-        $this->filter_out($data);
+        }
+        $this->filterOut($data);
+        $this->contents = $data;
 
         return $this->manager->write($this->source_file, $data, $content_type, $overwrite);
     }
@@ -476,20 +437,15 @@ class File implements File\_Interface, \JsonSerializable {
      * Calling this function does not directly update the content of the file "on disk".  To do that
      * you must call the File::save() method which will commit the data to storage.
      *
-     * @param mixed $bytes The data to set as the content
+     * @param string $bytes The data to set as the content
      */
-    public function set_contents($bytes) {
-
-        if ($bytes instanceof File)
-            $bytes = $bytes->get_contents();
-
+    public function setContents(?string $bytes): ?int
+    {
         if (array_key_exists(FILE_FILTER_SET, $this->filters)) {
-
-            foreach ($this->filters[FILE_FILTER_SET] as $filter)
+            foreach ($this->filters[FILE_FILTER_SET] as $filter) {
                 call_user_func_array($filter, [&$bytes]);
-
+            }
         }
-
         $this->contents = $bytes;
 
         return strlen($bytes);
@@ -500,47 +456,38 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * Currently this supports only data URI encoded strings.  I have made this generic in case I come
      * across other types of encodings that will work with this method.
-     *
-     * @param mixed $bytes The encoded data
      */
-    public function set_decoded_contents($bytes) {
-
-        if (substr($bytes, 0, 5) == 'data:') {
-
-            //Check we have a correctly encoded data URI
-            if (($pos = strpos($bytes, ',', 5)) === false)
+    public function setDecodedContents(string $bytes): bool
+    {
+        if ('data:' == substr($bytes, 0, 5)) {
+            $content_type = null;
+            $encoding = null;
+            // Check we have a correctly encoded data URI
+            if (($pos = strpos($bytes, ',', 5)) === false) {
                 return false;
-
+            }
             $info = explode(';', $bytes);
-
-            if (!count($info) >= 2)
+            if (!(count($info) >= 2)) {
                 return false;
-
+            }
             list($header, $content_type) = explode(':', array_shift($info));
-
-            if (!($header === 'data' && $content_type))
+            if (!('data' === $header && $content_type)) {
                 return false;
-
+            }
             $content = array_pop($info);
-
             if (($pos = strpos($content, ',')) !== false) {
-
                 $encoding = substr($content, 0, $pos);
-
                 $content = substr($content, $pos + 1);
             }
-
-            $this->contents = ($encoding == 'base64') ? base64_decode($content) : $content;
-
-            if ($content_type)
-                $this->set_mime_content_type($content_type);
-
+            $this->contents = ('base64' == $encoding) ? base64_decode($content) : $content;
+            if (null !== $content_type) {
+                $this->setMimeContentType($content_type);
+            }
             if (count($info) > 0) {
-
                 $attributes = array_unflatten($info);
-
-                if (array_key_exists('name', $attributes))
+                if (array_key_exists('name', $attributes)) {
                     $this->source_file = $attributes['name'];
+                }
             }
 
             return true;
@@ -550,21 +497,20 @@ class File implements File\_Interface, \JsonSerializable {
     }
 
     /**
-     * Return the contents of the file as a data URI encoded string
-     * 
+     * Return the contents of the file as a data URI encoded string.
+     *
      * This function is basically the opposite of Hazaar\File::set_decoded_contents() and will generate
      * a data URI based on the current MIME content type and the contents of the file.
-     * 
+     *
      * @return string
      */
-    public function get_encoded_contents() {
-
-        $data = 'data:' . $this->mime_content_type() . ';';
-
-        if ($this->source_file)
-            $data .= 'name=' . basename($this->source_file) . ';';
-
-        $data .= 'base64,' . \base64_encode($this->get_contents());
+    public function getEncodedContents()
+    {
+        $data = 'data:'.$this->mimeContentType().';';
+        if ($this->source_file) {
+            $data .= 'name='.basename($this->source_file).';';
+        }
+        $data .= 'base64,'.\base64_encode($this->getContents());
 
         return $data;
     }
@@ -572,71 +518,59 @@ class File implements File\_Interface, \JsonSerializable {
     /**
      * Saves the current in-memory content to the storage backend.
      *
-     * Internally this calls File::put_contents() to write the data to the backend.
-     *
-     * @return mixed
+     * Internally this calls File::putContents() to write the data to the backend.
      */
-    public function save() {
-
-        return $this->put_contents($this->get_contents(), TRUE);
+    public function save(): ?int
+    {
+        return $this->putContents($this->getContents(), true);
     }
 
     /**
      * Saves this file objects content to another file name.
      *
-     * @param mixed $filename The filename to save as
-     *
-     * @param mixed $overwrite Boolean flag to indicate that the destination should be overwritten if it exists
-     *
-     * @return mixed
+     * @param string $filename  The filename to save as
+     * @param bool   $overwrite Boolean flag to indicate that the destination should be overwritten if it exists
      */
-    public function saveAs($filename, $overwrite = FALSE) {
-
-        return $this->manager->write($filename, $this->get_contents(), $this->mime_content_type(), $overwrite);
+    public function saveAs(string $filename, bool $overwrite = false): ?int
+    {
+        return $this->manager->write($filename, $this->getContents(), $this->mimeContentType(), $overwrite);
     }
 
     /**
-     * Deletes the file from storage
-     *
-     * @return mixed
+     * Deletes the file from storage.
      */
-    public function unlink() {
-
-        if (!$this->exists())
-            return FALSE;
-
-        if ($this->is_dir()) {
-
-            return $this->manager->rmdir($this->source_file, TRUE);
-        } else {
-
-            return $this->manager->unlink($this->source_file);
+    public function unlink(): bool
+    {
+        if (!$this->exists()) {
+            return false;
         }
+        if ($this->isDir()) {
+            return $this->manager->rmdir($this->source_file, true);
+        }
+
+        return $this->manager->unlink($this->source_file);
     }
 
     /**
-     * Generate an MD5 checksum of the current file content
-     *
-     * @return string
+     * Generate an MD5 checksum of the current file content.
      */
-    public function md5() {
-
-        //Otherwise use the md5 provided by the backend.  This is because some backend providers (such as dropbox) provide
-        //a cheap method of calculating the checksum
-        if (($md5 = $this->manager->md5Checksum($this->source_file)) === false)
-            $md5 = md5($this->get_contents());
+    public function md5(): string
+    {
+        // Otherwise use the md5 provided by the backend.  This is because some backend providers (such as dropbox) provide
+        // a cheap method of calculating the checksum
+        if (($md5 = $this->manager->md5Checksum($this->source_file)) === null) {
+            $md5 = md5($this->getContents());
+        }
 
         return $md5;
     }
 
     /**
-     * Return the base64 encoded content
-     *
-     * @return string
+     * Return the base64 encoded content.
      */
-    public function base64() {
-
-        return base64_encode($this->get_contents());
+    public function base64(): string
+    {
+        return base64_encode($this->getContents());
     }
 
     /**
@@ -647,436 +581,264 @@ class File implements File\_Interface, \JsonSerializable {
      *
      * If the content can not be decoded because it is not a valid JSON string, this method will return FALSE.
      *
-     * @param mixed $assoc Return as an associative array.  Default is to use stdClass.
+     * @param bool $assoc Return as an associative array.  Default is to use stdClass.
      *
-     * @return mixed
+     * @return array<mixed>|\stdClass
      */
-    public function parseJSON($assoc = FALSE) {
-
-        $json = $this->get_contents();
-
+    public function parseJSON(bool $assoc = false): array|false|\stdClass
+    {
+        $json = $this->getContents();
         $bom = pack('H*', 'EFBBBF');
-
-        $json = preg_replace("/^$bom/", '', $json);
+        $json = preg_replace("/^{$bom}/", '', $json);
 
         return json_decode($json, $assoc);
     }
 
-    public function moveTo($destination, $overwrite = false, $create_dest = FALSE, $dstManager = NULL) {
-
+    public function moveTo(string $destination, bool $overwrite = false, bool $create_dest = false, ?Manager $dstManager = null): bool|File
+    {
         $move = $this->exists();
-
         $file = $this->copyTo($destination, $overwrite, $create_dest, $dstManager);
-
-        if (!$file instanceof File)
+        if (!$file instanceof File) {
             return false;
-
+        }
         if ($move) {
-
             $this->manager->unlink($this->source_file);
-
-            $this->source_file = $destination . '/' . $this->basename();
-
-            if ($dstManager)
+            $this->source_file = $destination.'/'.$this->basename();
+            if ($dstManager) {
                 $this->manager = $dstManager;
+            }
         }
 
         return $file;
     }
 
     /**
-     * Copy the file to another folder
-     * 
+     * Copy the file to another folder.
+     *
      * This differs to copy() which expects the target to be the full new file pathname.
      *
      * @param string  $destination The destination folder to copy the file into
-     * @param boolean $overwrite   Overwrite the destination file if it exists.
-     * @param boolean $create_dest Flag that indicates if the destination folder should be created.  If the
+     * @param bool    $overwrite   overwrite the destination file if it exists
+     * @param bool    $create_dest Flag that indicates if the destination folder should be created.  If the
      *                             destination does not exist an error will be thrown.
-     * @param mixed   $dstManager  The destination file manager.  Defaults to the same manager as the source.
+     * @param Manager $dstManager  The destination file manager.  Defaults to the same manager as the source.
      *
      * @throws \Exception
-     *
      * @throws File\Exception\SourceNotFound
      * @throws File\Exception\TargetNotFound
-     *
-     * @return mixed
      */
-    public function copyTo($destination, $overwrite = false, $create_dest = FALSE, $dstManager = NULL) {
-
-        if (!$dstManager)
+    public function copyTo(string $destination, bool $overwrite = false, bool $create_dest = false, ?Manager $dstManager = null): bool|File
+    {
+        if (!$dstManager) {
             $dstManager = $this->manager;
-
+        }
         if ($this->contents) {
-
             $this->manager = $dstManager;
-
-            $dir = new File\Dir($destination, $dstManager);
-
+            $dir = new Dir($destination, $dstManager);
             if (!$dir->exists()) {
-
-                if (!$create_dest)
-                    throw new \Hazaar\Exception('Destination does not exist!');
-
+                if (!$create_dest) {
+                    throw new Exception('Destination does not exist!');
+                }
                 $dir->create(true);
             }
+            $this->source_file = $destination.'/'.$this->basename();
+            $this->save();
 
-            $this->source_file = $destination . '/' . $this->basename();
-
-            return $this->save();
+            return $this;
         }
-
-        if (!$this->exists())
+        if (!$this->exists()) {
             throw new File\Exception\SourceNotFound($this->source_file, $destination);
-
-        if (!$dstManager->exists($destination)) {
-
-            if ($create_dest)
-                $dstManager->mkdir($destination);
-
-            else
-                throw new File\Exception\TargetNotFound($destination, $this->source_file);
         }
-
-        $actual_destination = rtrim($destination ?? '', '/') . '/' . $this->basename();
-
-        if ($dstManager === $this->manager)
-            $result = $dstManager->copy($this->source_file, $actual_destination, $this->manager, $overwrite);
-        else
-            $result = $dstManager->write($actual_destination, $this->get_contents(), $this->mime_content_type(), $overwrite);
-
-        if ($result)
+        if (!$dstManager->exists($destination)) {
+            if ($create_dest) {
+                $dstManager->mkdir($destination);
+            } else {
+                throw new File\Exception\TargetNotFound($destination, $this->source_file);
+            }
+        }
+        $actual_destination = rtrim($destination, '/').'/'.$this->basename();
+        if ($dstManager === $this->manager) {
+            $result = $dstManager->copy($this->source_file, $actual_destination, true, $this->manager);
+        } else {
+            $result = $dstManager->write($actual_destination, $this->getContents(), $this->mimeContentType(), $overwrite);
+        }
+        if ($result) {
             return new File($actual_destination, $dstManager, $this->relative_path);
+        }
 
         return false;
     }
 
     /**
-     * Copy the file to another folder and filename
-     * 
+     * Copy the file to another folder and filename.
+     *
      * This differs from copyTo which expects the target to be a folder
      *
-     * @param string  $destination The destination folder and file name to copy the file into
-     * @param boolean $overwrite   Overwrite the destination file if it exists.
-     * @param boolean $create_dest Flag that indicates if the destination folder should be created.  If the
-     *                             destination does not exist an error will be thrown.
-     * @param mixed   $dstManager  The destination file manager.  Defaults to the same manager as the source.
+     * @param string $destination The destination folder and file name to copy the file into
+     * @param bool   $overwrite   overwrite the destination file if it exists
+     * @param bool   $create_dest Flag that indicates if the destination folder should be created.  If the
+     *                            destination does not exist an error will be thrown.
+     * @param mixed  $dstManager  The destination file manager.  Defaults to the same manager as the source.
      *
      * @throws \Exception
-     *
      * @throws File\Exception\SourceNotFound
      * @throws File\Exception\TargetNotFound
-     *
-     * @return mixed
      */
-    public function copy($destination, $overwrite = false, $create_dest = FALSE, $dstManager = NULL) {
-
-        if (!$dstManager)
+    public function copy($destination, $overwrite = false, $create_dest = false, $dstManager = null): bool|File
+    {
+        if (!$dstManager) {
             $dstManager = $this->manager;
-
+        }
         if ($this->contents) {
-
             $this->manager = $dstManager;
-
-            $dir = new File\Dir($destination, $dstManager);
-
+            $dir = new Dir($destination, $dstManager);
             if (!$dir->exists()) {
-
-                if (!$create_dest)
-                    throw new \Hazaar\Exception('Destination does not exist!');
-
+                if (!$create_dest) {
+                    throw new Exception('Destination does not exist!');
+                }
                 $dir->create(true);
             }
+            $this->source_file = $destination.'/'.$this->basename();
 
-            $this->source_file = $destination . '/' . $this->basename();
+            if (!$this->save()) {
+                return false;
+            }
 
-            return $this->save();
+            return $this;
         }
-
-        if (!$this->exists())
+        if (!$this->exists()) {
             throw new File\Exception\SourceNotFound($this->source_file, $destination);
-
+        }
         if (!$dstManager->exists(dirname($destination))) {
-
-            if (!$create_dest)
-                throw new \Hazaar\Exception('Destination does not exist!');
-
+            if (!$create_dest) {
+                throw new Exception('Destination does not exist!');
+            }
             $parts = explode('/', dirname($destination));
-
             $dir = '';
-
             foreach ($parts as $part) {
-
-                if ($part === '')
+                if ('' === $part) {
                     continue;
-
-                $dir .= '/' . $part;
-
-                if (!$dstManager->exists($dir))
+                }
+                $dir .= '/'.$part;
+                if (!$dstManager->exists($dir)) {
                     $dstManager->mkdir($dir);
+                }
             }
         }
-
-        if ($dstManager === $this->manager)
-            $result = $dstManager->copy($this->source_file, $destination, $this->manager, $overwrite);
-        else
-            $result = $dstManager->write($destination, $this->get_contents(), $this->mime_content_type(), $overwrite);
+        if ($dstManager === $this->manager) {
+            $result = $dstManager->copy($this->source_file, $destination, true, $this->manager);
+        } else {
+            $result = $dstManager->write($destination, $this->getContents(), true, $this->mimeContentType());
+        }
 
         return new File($destination, $dstManager, $this->relative_path);
     }
 
-    public function mime_content_type() {
-
-        if ($this->mime_content_type)
-            return $this->mime_content_type;
-
-        return $this->manager->mime_content_type($this->fullpath());
-    }
-
-    public function set_mime_content_type($type) {
-
-        $this->mime_content_type = $type;
-    }
-
-    public function thumbnail($params = []) {
-
-        return $this->manager->thumbnail($this->fullpath(), $params);
-    }
-
-    public function preview_uri($params = []) {
-
-        return $this->manager->preview_uri($this->fullpath(), $params);
-    }
-
-    public function direct_uri() {
-
-        return $this->manager->direct_uri($this->fullpath());
-    }
-
-    public function media_uri($set_path = null) {
-
-        if ($set_path !== null) {
-
-            if (!($set_path instanceof \Hazaar\Http\Uri || $set_path instanceof \Hazaar\Application\Url))
-                $set_path = new \Hazaar\Http\Uri($set_path);
-
-            $this->__media_uri = $set_path;
+    public function mimeContentType(): ?string
+    {
+        if (!$this->mimeContentType) {
+            $this->mimeContentType = $this->manager->mimeContentType($this->fullpath());
         }
 
-        if ($this->__media_uri)
-            return $this->__media_uri;
-
-        if (!$this->manager)
-            return null;
-
-        return $this->manager->uri($this->fullpath());
+        return $this->mimeContentType;
     }
 
-    public function toArray($delimiter = "\n") {
-
-        return explode($delimiter, $this->get_contents());
+    public function setMimeContentType(string $type): void
+    {
+        $this->mimeContentType = $type;
     }
 
     /**
-     * Return the CSV content as a parsed array
-     *
-     * @param mixed $use_header_row Indicates if a header row should be parsed and used to build an associative array.  In this case the
-     *                              keys in the returned array will be the values from the first row, which is normally a header row.
-     *
-     * @return array
+     * @param array<string,int|string> $params
      */
-    public function readCSV($use_header_row = false){
+    public function thumbnailURL(int $width = 100, int $height = 100, string $format = 'jpeg', array $params = []): ?string
+    {
+        return $this->manager->thumbnailURL($this->fullpath(), $width, $height, $format, $params);
+    }
 
-        $data = array_map('str_getcsv', $this->toArray("\n"));
+    /**
+     * @param array<string,string> $params
+     */
+    public function previewURL(array $params = []): ?string
+    {
+        return $this->manager->previewURL($this->fullpath(), $params);
+    }
 
-        if($use_header_row === true){
+    public function directURL(): ?string
+    {
+        return $this->manager->directURL($this->fullpath());
+    }
 
-            $headers = array_shift($data);
-
-            foreach($data as &$row){
-
-                if(count($headers) !== count($row))
-                    continue;
-
-                $row = array_combine($headers, $row);
-
+    public function mediaURL(null|string|URL $set_path = null): URL
+    {
+        if (null !== $set_path) {
+            if (!$set_path instanceof URL) {
+                $set_path = new URL($set_path);
             }
+            $this->__media_url = $set_path;
+        }
+        if (null !== $this->__media_url) {
+            return $this->__media_url;
+        }
 
+        return $this->manager->url($this->fullpath());
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function toArray(string $delimiter = "\n"): array
+    {
+        return explode($delimiter, $this->getContents());
+    }
+
+    /**
+     * Return the CSV content as a parsed array.
+     *
+     * @param bool $use_header_row Indicates if a header row should be parsed and used to build an associative array.  In this case the
+     *                             keys in the returned array will be the values from the first row, which is normally a header row.
+     *
+     * @return array<array<string>>
+     */
+    public function readCSV(bool $use_header_row = false): array
+    {
+        $data = array_map('str_getcsv', $this->toArray("\n"));
+        if (true === $use_header_row) {
+            $headers = array_shift($data);
+            foreach ($data as &$row) {
+                if (count($headers) !== count($row)) {
+                    continue;
+                }
+                $row = array_combine($headers, $row);
+            }
         }
 
         return $data;
-
-    }
-
-    public function unzip($filenames = null, $target = null) {
-
-        if ($filenames && !is_array($filenames))
-            $filenames = [$filenames];
-
-        if ($target === null)
-            $target = new File\TempDir();
-        elseif (!$target instanceof \Hazaar\File\Dir)
-            $target = new \Hazaar\File\Dir($target, $this->manager, $this->manager);
-
-        $files = [];
-
-        $zip = new \ZipArchive();
-
-        if($zip->open($this->source_file, \ZipArchive::RDONLY) !== true)
-            return false;
-
-        if(!$zip->extractTo((string)$target, $filenames))
-            return false;
-
-        return $target;
-    }
-
-    public function ziplist() {
-
-        $list = [];
-
-        $file_path = $this->manager->getBackend()->resolvePath($this->source_file);
-
-        if(!\is_readable($file_path))
-            throw new \Exception('Permission denied accessing ' . $file_path);
-
-        $zip = zip_open($file_path);
-
-        if (!is_resource($zip))
-            return false;
-
-        while ($zip_entry = zip_read($zip))
-            $list[] = zip_entry_name($zip_entry);
-
-        return $list;
     }
 
     /**
-     * Open a file and return it's file handle
+     * Returns a line from the file pointer and parse for CSV fields.
      *
-     * This is useful for using the file with standard (yet unsupported) file functions.
-     *
-     * @param string $mode
-     *
-     * @return resource
-     */
-    public function open($mode = 'r') {
-
-        if ($this->handle)
-            return $this->handle;
-
-        $file_path = $this->manager->getBackend()->resolvePath($this->source_file);
-
-        if(strpos($mode, 'r') !== false && !\is_readable($file_path))
-            throw new \Exception('Read permission denied accessing ' . $file_path);
-
-        if(((strpos($mode, 'w') !== false || strpos($mode, 'a') !== false) && file_exists($file_path) && !\is_writable($file_path))
-            || (!\file_exists($file_path) && !\is_writable(dirname($file_path))))
-            throw new \Exception('Write permission denied accessing ' . $file_path);
-
-        return $this->handle = fopen($file_path, $mode);
-    }
-
-    public function get_resource() {
-
-        return $this->handle;
-    }
-
-    /**
-     * Close the file handle if it is currently open
-     *
-     * @return boolean
-     */
-    public function close() {
-
-        if (!$this->handle)
-            return false;
-
-        fclose($this->handle);
-
-        $this->handle = null;
-
-        return true;
-    }
-
-    /**
-     * Check if the file is currently opened for access by this class
-     *
-     * NOTE: This does not include checking if the file is opened by another process or even another Hazaar\File instance.
-     *
-     * @return boolean
-     */
-    public function isOpen() {
-
-        return is_resource($this->handle);
-    }
-
-    /**
-     * Returns a character from the file pointer
-     *
-     * @return string
-     */
-    public function getc() {
-
-        if (!$this->handle)
-            return null;
-
-        return fgetc($this->handle);
-    }
-
-    /**
-     * Returns a line from the file pointer
-     *
-     * @return string
-     */
-    public function gets() {
-
-        if (!$this->handle)
-            return null;
-
-        return fgets($this->handle);
-    }
-
-    /**
-     * Returns a line from the file pointer and strips HTML tags
-     *
-     * @return string
-     */
-    public function getss($allowable_tags = null) {
-
-        if (!$this->handle)
-            return null;
-
-        return strip_tags(fgets($this->handle), $allowable_tags);
-    }
-
-    /**
-     * Returns a line from the file pointer and parse for CSV fields
-     *
-     * @param mixed $length     Must be greater than the longest line (in characters) to be found in the CSV file
-     *                          (allowing for trailing line-end characters). Otherwise the line is split in chunks
-     *                          of length characters, unless the split would occur inside an enclosure.
+     * @param int $length Must be greater than the longest line (in characters) to be found in the CSV file
+     *                    (allowing for trailing line-end characters). Otherwise the line is split in chunks
+     *                    of length characters, unless the split would occur inside an enclosure.
      *
      *                          Omitting this parameter (or setting it to 0 in PHP 5.1.0 and later) the maximum
      *                          line length is not limited, which is slightly slower.
-     * @param mixed $delimiter  The optional delimiter parameter sets the field delimiter (one character only).
-     * @param mixed $enclosure  The optional enclosure parameter sets the field enclosure character (one character only).
-     * @param mixed $escape     The optional escape parameter sets the escape character (one character only).
+     * @param string $delimiter the optional delimiter parameter sets the field delimiter (one character only)
+     * @param string $enclosure the optional enclosure parameter sets the field enclosure character (one character only)
+     * @param string $escape    the optional escape parameter sets the escape character (one character only)
      *
-     * @return \array|null
+     * @return array<string>
      */
-    public function getcsv($length = 0, $delimiter = ',', $enclosure = '"', $escape = '\\') {
-
-        if ($this->handle)
-            return fgetcsv($this->handle, $length, $delimiter, $enclosure, $escape);
-
-        if (!is_array($this->contents)) {
-
-            $this->contents = explode("\n", $this->contents);
-
-            $line = reset($this->contents);
-        } elseif (!($line = next($this->contents)))
-            return false;
+    public function getcsv(int $length = 0, string $delimiter = ',', string $enclosure = '"', string $escape = '\\'): ?array
+    {
+        if (null === $this->csv_contents) {
+            $this->csv_contents = explode("\n", $this->getContents());
+            $line = reset($this->csv_contents);
+        } elseif (!($line = next($this->csv_contents))) {
+            return null;
+        }
 
         return str_getcsv($line, $delimiter, $enclosure, $escape);
     }
@@ -1084,351 +846,272 @@ class File implements File\_Interface, \JsonSerializable {
     /**
      * Writes an array to the file in CSV format.
      *
-     * @param mixed $fields     Must be greater than the longest line (in characters) to be found in the CSV file
-     *                          (allowing for trailing line-end characters). Otherwise the line is split in chunks
-     *                          of length characters, unless the split would occur inside an enclosure.
+     * @param array<int|string> $fields Must be greater than the longest line (in characters) to be found in the CSV file
+     *                                  (allowing for trailing line-end characters). Otherwise the line is split in chunks
+     *                                  of length characters, unless the split would occur inside an enclosure.
      *
      *                          Omitting this parameter (or setting it to 0 in PHP 5.1.0 and later) the maximum
      *                          line length is not limited, which is slightly slower.
-     * @param mixed $delimiter  The optional delimiter parameter sets the field delimiter (one character only).
-     * @param mixed $enclosure  The optional enclosure parameter sets the field enclosure character (one character only).
-     * @param mixed $escape     The optional escape parameter sets the escape character (one character only).
+     * @param string $delimiter the optional delimiter parameter sets the field delimiter (one character only)
+     * @param string $enclosure the optional enclosure parameter sets the field enclosure character (one character only)
+     * @param string $escape    the optional escape parameter sets the escape character (one character only)
      *
-     * @return integer|null
+     * @return null|int
      */
-    public function putcsv($fields, $delimiter = ',', $enclosure = '"', $escape = '\\') {
-
-        if ($this->handle && is_array($fields))
-            return fputcsv($this->handle, $fields, $delimiter, $enclosure, $escape);
-
-        if (!is_array($this->contents))
-            $this->contents = [];
-
-        $this->contents[] = $line = str_putcsv($fields, $delimiter, $enclosure, $escape);
+    public function putcsv(array $fields, string $delimiter = ',', string $enclosure = '"', string $escape = '\\')
+    {
+        if (null === $this->csv_contents) {
+            $this->csv_contents = [];
+        }
+        $this->csv_contents[] = $line = str_putcsv($fields, $delimiter, $enclosure, $escape);
 
         return strlen($line);
     }
 
     /**
-     * Seeks to a position in the file
-     *
-     * @param mixed $offset The offset. To move to a position before the end-of-file, you need to pass a negative value in offset and set whence to SEEK_END.
-     * @param mixed $whence whence values are:
-     *                      SEEK_SET - Set position equal to offset bytes.
-     *                      SEEK_CUR - Set position to current location plus offset.
-     *                      SEEK_END - Set position to end-of-file plus offset.
-     * @return \boolean|integer
-     */
-    public function seek($offset, $whence = SEEK_SET) {
-
-        if (!$this->handle)
-            return false;
-
-        return fseek($this->handle, $offset, $whence);
-    }
-
-    /**
-     * Returns the current position of the file read/write pointer
-     *
-     * @return \boolean|integer
-     */
-    public function tell() {
-
-        if (!$this->handle)
-            return false;
-
-        return ftell($this->handle);
-    }
-
-    /**
-     * Rewind the position of a file pointer
-     *
-     * Sets the file position indicator for handle to the beginning of the file stream.
-     *
-     * @return boolean
-     */
-    public function rewind() : void {
-
-        if (!$this->handle)
-            return;
-
-        rewind($this->handle);
-    }
-
-    /**
-     * Tests for end-of-file on a file pointer
-     *
-     * @return boolean TRUE if the file pointer is at EOF or an error occurs; otherwise returns FALSE.
-     */
-    public function eof() {
-
-        if (!$this->handle)
-            return false;
-
-        return feof($this->handle);
-    }
-
-    /**
-     * Portable advisory file locking
-     *
-     * @param mixed $operation operation is one of the following:
-     *                          LOCK_SH to acquire a shared lock (reader).
-     *                          LOCK_EX to acquire an exclusive lock (writer).
-     *                          LOCK_UN to release a lock (shared or exclusive).
-     *                          It is also possible to add LOCK_NB as a bitmask to one of the above operations if you don't want flock() to block while locking.
-     * @param mixed $wouldblock The optional third argument is set to 1 if the lock would block (EWOULDBLOCK errno condition).
-     *
-     * @return boolean
-     */
-    public function lock($operation, &$wouldblock = NULL) {
-
-        if (!$this->handle)
-            return false;
-
-        return flock($this->handle, $operation, $wouldblock);
-    }
-
-    /**
-     * Truncates a file to a given length
-     *
-     * @param mixed $size The size to truncate to.
-     *
-     * @return boolean
-     */
-    public function truncate($size) {
-
-        if (!$this->handle)
-            return false;
-
-        return ftruncate($this->handle, $size);
-    }
-
-    /**
-     * Binary-safe file read
-     *
-     * File::read() reads up to length bytes from the file pointer referenced by handle. Reading stops as soon as one of the following conditions is met:
-     *
-     * * length bytes have been read
-     * * EOF (end of file) is reached
-     * * a packet becomes available or the socket timeout occurs (for network streams)
-     * * if the stream is read buffered and it does not represent a plain file, at most one read of up to a number
-     *   of bytes equal to the chunk size (usually 8192) is made; depending on the previously buffered data, the
-     *   size of the returned data may be larger than the chunk size.
-     *
-     * @param mixed $length Up to length number of bytes read.
-     *
-     * @return \boolean|string
-     */
-    public function read($length) {
-
-        if (!$this->handle)
-            return false;
-
-        return fread($this->handle, $length);
-    }
-
-    /**
-     * Binary-safe file write
-     *
-     * File::write() writes the contents of string to the file stream pointed to by handle.
-     *
-     * @param mixed $string The string that is to be written.
-     * @param mixed $length If the length argument is given, writing will stop after length bytes have been written or the end
-     *                      of string is reached, whichever comes first.
-     *
-     *                      Note that if the length argument is given, then the magic_quotes_runtime configuration option
-     *                      will be ignored and no slashes will be stripped from string.
-     * @return \boolean|integer
-     */
-    public function write($string, $length = NULL) {
-
-        if (!$this->handle)
-            return false;
-
-        if ($length === null)
-            return fwrite($this->handle, $string);
-
-        return fwrite($this->handle, $string, $length);
-    }
-
-    /**
-     * Flushes the output to a file
-     *
-     * @return boolean
-     */
-    public function flush() {
-
-        if (!$this->handle)
-            return false;
-
-        return fflush($this->handle);
-    }
-
-    /**
-     * Renames a file or directory
+     * Renames a file or directory.
      *
      * NOTE: This will not work if the file is currently opened by another process.
      *
-     * @param mixed $newname The new name.  Must not be an absolute/relative path.  If you want to move the file use File::moveTo().
-     *
-     * @return boolean
+     * @param string $newname The new name.  Must not be an absolute/relative path.  If you want to move the file use File::moveTo().
      */
-    public function rename($newname, $overwrite = false) {
-
-        return $this->manager->move($this->source_file, $this->dirname() . '/' . $newname, $overwrite);
-    }
-
-    /**
-     * Check if a file is encrypted using the built-in Hazaar encryption method
-     *
-     * @return boolean
-     */
-    public function isEncrypted() {
-
-        if(!$this->exists())
-            return false;
-
-        $r = $this->open();
-
-        $bom = pack('H*', 'BADA55');  //Haha, Bad Ass!
-
-        $encrypted = (fread($r, 3) == $bom);
-
-        $this->close();
-
-        return $encrypted;
-    }
-
-    private function getEncryptionKey() {
-
-        if ($key_file = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, '.key'))
-            $key = trim(file_get_contents($key_file));
-        else
-            $key = File::$default_key;
-
-        return md5($key);
-    }
-
-    /**
-     * Internal content filter
-     *
-     * Checks if the content is modified in some way using a BOM mask.  Currently this is used to determine if a file
-     * is encrypted and automatically decrypts it if an encryption key is available.
-     *
-     * @param mixed $content
-     */
-    protected function filter_in(&$content) {
-
-        if (is_array($content))
-            $content = implode("\n", $content);
-
-        if (array_key_exists(FILE_FILTER_IN, $this->filters)) {
-
-            foreach ($this->filters[FILE_FILTER_IN] as $filter)
-                call_user_func($filter, $content);
+    public function rename(string $newname): bool
+    {
+        if ('/' !== substr(trim($newname), 0, 1)) {
+            $newname = $this->dirname().'/'.$newname;
         }
 
-        $bom = substr($content, 0, 3);
-
-        //Check if we are encrypted
-        if ($bom === pack('H*', 'BADA55')) {  //Hazaar Encryption
-
-            $this->encrypted = true;
-
-            $cipher_len = openssl_cipher_iv_length(File::$default_cipher);
-
-            $iv = substr($content, 3, $cipher_len);
-
-            $data = openssl_decrypt(substr($content, 3 + $cipher_len), File::$default_cipher, $this->getEncryptionKey(), OPENSSL_RAW_DATA, $iv);
-
-            $hash = substr($data, 0, 8);
-
-            $content = substr($data, 8);
-
-            if ($hash !== hash('crc32', $content))
-                throw new \Hazaar\Exception('Failed to decrypt file: ' . $this->source_file . '. Bad key?');
-        } elseif ($bom === pack('H*', 'EFBBBF')) {  //UTF-8
-
-            $content = substr($content, 3);  //Just strip the BOM
-
-        }
-
-        return true;
+        return $this->manager->move($this->source_file, $newname);
     }
 
-    /**
-     * Internal content filter
-     *
-     * Checks if the content is modified in some way using a BOM mask.  Currently this is used to determine if a file
-     * is encrypted and automatically decrypts it if an encryption key is available.
-     *
-     * @param mixed $content
-     */
-    protected function filter_out(&$content) {
-
-        if (array_key_exists(FILE_FILTER_OUT, $this->filters)) {
-
-            foreach ($this->filters[FILE_FILTER_OUT] as $filter)
-                call_user_func_array($filter, [&$content]);
-        }
-
-        if ($this->encrypted === true) {
-
-            $bom = pack('H*', 'BADA55');
-
-            if (substr($content, 0, 3) === $bom)
-                return false;
-
-            $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(File::$default_cipher));
-
-            $data = openssl_encrypt(hash('crc32', $content) . $content, File::$default_cipher, $this->getEncryptionKey(), OPENSSL_RAW_DATA, $iv);
-
-            $content = $bom . $iv . $data;
-        }
-
-        return true;
-    }
-
-    public function encrypt($write = true) {
-
-        $this->encrypted = true;
-
-        if ($write)
-            $this->save();
-    }
-
-    /**
-     * Writes the decrypted file to storage
-     */
-    public function decrypt() {
-
-        $this->contents = $this->get_contents();
-
-        $this->encrypted = false;
-
-        return $this->save();
-    }
-
-    static public function delete($path) {
-
+    public static function delete(string $path): bool
+    {
         $file = new File($path);
 
         return $file->unlink();
     }
 
-    #[\ReturnTypeWillChange]
-    public function jsonSerialize() {
-
-        return $this->get_encoded_contents();
+    public function jsonSerialize(): mixed
+    {
+        return $this->getEncodedContents();
     }
 
-    public function perms() {
-
+    public function perms(): ?int
+    {
         return $this->manager->fileperms($this->source_file);
     }
 
-    public function chmod($mode) {
-
+    public function chmod(int $mode): bool
+    {
         return $this->manager->chmod($this->source_file, $mode);
+    }
+
+    /**
+     * Check if a file is encrypted using the built-in Hazaar encryption method.
+     */
+    public function isEncrypted(): bool
+    {
+        if (!$this->exists()) {
+            return false;
+        }
+        $stream = $this->manager->openStream($this->fullpath(), 'r');
+        if (!is_resource($stream)) {
+            throw new \Exception('File backend does not support direct read/write operations');
+        }
+        $bom = pack('H*', 'BADA55');  // Haha, Bad Ass!
+        $encrypted = ($this->manager->readStream($stream, 3) == $bom);
+        $this->manager->closeStream($stream);
+
+        return $encrypted;
+    }
+
+    public function encrypt(): bool
+    {
+        $this->encrypted = true;
+
+        return $this->save() > 0;
+    }
+
+    public function decrypt(): bool
+    {
+        $this->encrypted = false;
+
+        return $this->save() > 0;
+    }
+
+    public function isOpen(): bool
+    {
+        return is_resource($this->stream);
+    }
+
+    public function open(string $mode): mixed
+    {
+        $this->stream = $this->manager->openStream($this->fullpath(), $mode);
+
+        return $this->stream;
+    }
+
+    public function read(int $length): false|string
+    {
+        if (null === $this->stream) {
+            return false;
+        }
+
+        return $this->manager->readStream($this->stream, $length);
+    }
+
+    public function write(string $bytes, int $length): false|int
+    {
+        if (null === $this->stream) {
+            return false;
+        }
+
+        return $this->manager->writeStream($this->stream, $bytes, $length);
+    }
+
+    public function seek(int $offset, int $whence = SEEK_SET): int
+    {
+        if (null === $this->stream) {
+            return -1;
+        }
+
+        return $this->manager->seekStream($this->stream, $offset, $whence);
+    }
+
+    public function tell(): int|false
+    {
+        if (null === $this->stream) {
+            return false;
+        }
+
+        return $this->manager->tellStream($this->stream);
+    }
+
+    public function eof(): bool
+    {
+        if (null === $this->stream) {
+            return true;
+        }
+
+        return $this->manager->eofStream($this->stream);
+    }
+
+    public function truncate(int $size): bool
+    {
+        if (null === $this->stream) {
+            return false;
+        }
+
+        return $this->manager->truncateStream($this->stream, $size);
+    }
+
+    public function lock(int $operation, ?int &$wouldblock = null): bool
+    {
+        if (null === $this->stream) {
+            return false;
+        }
+
+        return $this->manager->lockStream($this->stream, $operation, $wouldblock);
+    }
+
+    public function flush(): bool
+    {
+        if (null === $this->stream) {
+            return false;
+        }
+
+        return $this->manager->flushStream($this->stream);
+    }
+
+    public function gets(?int $length = null): false|string
+    {
+        if (null === $this->stream) {
+            return false;
+        }
+
+        return $this->manager->getsStream($this->stream, $length);
+    }
+
+    public function close(): bool
+    {
+        if (null === $this->stream) {
+            return false;
+        }
+        if ($this->manager->closeStream($this->stream)) {
+            $this->stream = null;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Internal content filter.
+     *
+     * Checks if the content is modified in some way using a BOM mask.  Currently this is used to determine if a file
+     * is encrypted and automatically decrypts it if an encryption key is available.
+     */
+    protected function filterIn(string &$content): bool
+    {
+        if (array_key_exists(FILE_FILTER_IN, $this->filters)) {
+            foreach ($this->filters[FILE_FILTER_IN] as $filter) {
+                call_user_func($filter, $content);
+            }
+        }
+        $bom = substr($content, 0, 3);
+        // Check if we are encrypted
+        if ($bom === pack('H*', 'BADA55')) {  // Hazaar Encryption
+            $this->encrypted = true;
+            $cipher_len = openssl_cipher_iv_length(File::$default_cipher);
+            $iv = substr($content, 3, $cipher_len);
+            $data = openssl_decrypt(substr($content, 3 + $cipher_len), File::$default_cipher, $this->getEncryptionKey(), OPENSSL_RAW_DATA, $iv);
+            $hash = substr($data, 0, 8);
+            $content = substr($data, 8);
+            if ($hash !== hash('crc32', $content)) {
+                throw new Exception('Failed to decrypt file: '.$this->source_file.'. Bad key?');
+            }
+        } elseif ($bom === pack('H*', 'EFBBBF')) {  // UTF-8
+            $content = substr($content, 3);  // Just strip the BOM
+        }
+
+        return true;
+    }
+
+    /**
+     * Internal content filter.
+     *
+     * Checks if the content is modified in some way using a BOM mask.  Currently this is used to determine if a file
+     * is encrypted and automatically decrypts it if an encryption key is available.
+     */
+    protected function filterOut(string &$content): bool
+    {
+        if (array_key_exists(FILE_FILTER_OUT, $this->filters)) {
+            foreach ($this->filters[FILE_FILTER_OUT] as $filter) {
+                call_user_func_array($filter, [&$content]);
+            }
+        }
+        if (true === $this->encrypted) {
+            $bom = pack('H*', 'BADA55');
+            if (substr($content, 0, 3) === $bom) {
+                return false;
+            }
+            $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length(File::$default_cipher));
+            $data = openssl_encrypt(hash('crc32', $content).$content, File::$default_cipher, $this->getEncryptionKey(), OPENSSL_RAW_DATA, $iv);
+            $content = $bom.$iv.$data;
+        }
+
+        return true;
+    }
+
+    private function getEncryptionKey(): string
+    {
+        if ($key_file = Loader::getFilePath(FILE_PATH_CONFIG, '.key')) {
+            $key = trim(file_get_contents($key_file));
+        } else {
+            $key = File::$default_key;
+        }
+
+        return md5($key);
     }
 }

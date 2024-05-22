@@ -1,7 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Mail;
 
-class Template extends \Hazaar\Template\Smarty {
+use Hazaar\Template\Smarty;
 
-}
+class Template extends Smarty {}

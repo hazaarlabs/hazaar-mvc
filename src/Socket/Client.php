@@ -1,12 +1,14 @@
 <?php
 
-/**
- * @package     Socket
- */
+declare(strict_types=1);
+
 namespace Hazaar\Socket;
 
+use Hazaar\Application\Protocol;
+use Hazaar\Socket\Exception\CreateFailed;
+
 /**
- * The socket client class
+ * The socket client class.
  *
  * The socket client class is used to establish connections via TCP or send data via UDP sockets to another host. It can be implemented as
  * a stand-alone class object and used to send or receive data by polling. It can also be extended and use event handler methods that are
@@ -118,7 +120,7 @@ namespace Hazaar\Socket;
  *      private $start;
  *      private $timeout = 5;
  *
- *      public function __construct() {
+ *      function __construct() {
  *          parent::__construct();
  *          $this->connect('www.google.com.au', 80) or die('Connection failed!');
  *          $this->run();
@@ -145,88 +147,78 @@ namespace Hazaar\Socket;
  *
  * exit;
  * </code></pre>
- *
- * @since 2.0.0
  */
-class Client {
-
+class Client
+{
     /**
-     * @var int The socket protocol
+     * @var int The socket protocol.  SOL_TCP or SOL_UDP
      */
-    private $protocol;
+    private int $protocol;
 
     /**
      * @var \Socket The socket resource
      */
-    private $socket;
+    private \Socket $socket;
 
     /**
-     *
      * @var int The length of the read buffer in bytes
      */
-    private $maxBufferSize = 1024;
+    private int $maxBufferSize = 1024;
 
     /**
-     * @var The timeout used when the client calls socket_select internally when in non-blocking mode
+     * @var int The timeout used when the client calls socket_select internally when in non-blocking mode
      */
-    private $select_timeout = 1000;
+    private int $selectTimeout = 1000;
 
     /**
-     * @var boolean Use socket blocking mode
+     * @var bool Use socket blocking mode
      */
-    private $blocking = FALSE;
+    private bool $blocking = false;
 
     /**
-     * @var boolean The current connection state
+     * @var bool The current connection state
      */
-    private $connected = FALSE;
+    private bool $connected = false;
 
     /**
-     * @var array An array of registered event handlers
+     * @var array<string, array<\Closure>> An array of registered event handlers
      */
-    private $events = [];
+    private array $events = [];
 
     /**
-     * @var array An array of user accessible variables for use in callbacks.
+     * @var array<string,int|string> an array of user accessible variables for use in callbacks
      */
-    private $data = [];
+    private array $data = [];
 
     /**
-     * The \Hazaar\Socket\Client constructor
+     * The \Hazaar\Socket\Client constructor.
      *
      * The class can be instantiated without any arguments and defaults to a TCP socket with 1 second polling interval.
      *
-     * @param integer $pollInterval The polling interval when used when waiting for data to be received.  This affects the frequency
-     *      by which the onPoll callback is executed.
-     *
-     * @param integer $protocol One of SOL_TCP, SOL_UDP or SOL_SOCKET.
-     *
-     * @throws Exception\CreateFailed
+     * @param int $protocol one of SOL_TCP, SOL_UDP or SOL_SOCKET
      */
-    function __construct($pollInterval = 1000, $protocol = SOL_TCP) {
-
+    public function __construct(int $selectTimeout = 1000, int $protocol = SOL_TCP)
+    {
+        $this->selectTimeout = $selectTimeout;
         $this->protocol = $protocol;
-
         $this->socket = socket_create(AF_INET, SOCK_STREAM, $protocol);
-
-        if($this->socket === FALSE)
-            throw new Exception\CreateFailed($this->socket);
-
-
+        if (false === $this->socket) {
+            throw new CreateFailed();
+        }
     }
 
     /**
      * Set the socket blocking state.
      *
-     * @param boolean $state TRUE will set the socket to blocking mode.  FALSE will use non-blocking mode.
+     * @param bool $state TRUE will set the socket to blocking mode.  FALSE will use non-blocking mode.
      */
-    public function setBlocking($state) {
-
-        if($this->blocking = $state)
+    public function setBlocking(bool $state): void
+    {
+        if ($this->blocking = $state) {
             socket_set_block($this->socket);
-        else
+        } else {
             socket_set_nonblock($this->socket);
-
+        }
     }
 
     /**
@@ -235,148 +227,120 @@ class Client {
      * This is the size of the buffer used to retrieve data from the socket.  If the buffer is smaller than the amount of data
      * waiting to be retrieved then multiple calls to recv() will be required.
      *
-     * @param integer $bytes The size of the buffer in bytes.
+     * @param int $bytes the size of the buffer in bytes
      */
-    public function setMaxReceiveBuffer($bytes) {
-
+    public function setMaxReceiveBuffer(int $bytes): void
+    {
         $this->maxBufferSize = $bytes;
-
     }
 
     /**
-     *
-     * @param ineteger $milliseconds Set the timeout used when waiting for data to arrive.
+     * @param int $milliseconds set the timeout used when waiting for data to arrive
      */
-    public function setSelectTimeout($milliseconds) {
-
-        $this->select_timeout = $milliseconds;
-
+    public function setSelectTimeout(int $milliseconds): void
+    {
+        $this->selectTimeout = $milliseconds;
     }
 
     /**
      * Returns the remote host address as resolved by the socket connections IP.  This can be different to the host name used
      * to start the connection.
-     *
-     * @return string
      */
-    public function getRemoteHost() {
-
+    public function getRemoteHost(): string
+    {
         return gethostbyaddr($this->getRemoteIP());
-
     }
 
     /**
      * Returns the IP address of the remote host.
-     *
-     * @return string
      */
-    public function getRemoteIP() {
-
+    public function getRemoteIP(): string
+    {
         socket_getpeername($this->socket, $address);
 
         return $address;
-
     }
 
     /**
      * Return the port number at the remote end of the current connection.
-     *
-     * @return integer
      */
-    public function getRemotePort() {
-
-        $address = NULL;
-
+    public function getRemotePort(): int
+    {
+        $address = null;
         $port = 0;
-
         socket_getpeername($this->socket, $address, $port);
 
         return $port;
-
     }
 
     /**
-     * Get the local IP address of the socket connection
-     *
-     * @return string
+     * Get the local IP address of the socket connection.
      */
-    public function getLocalIP() {
-
-        $address = NULL;
-
+    public function getLocalIP(): string
+    {
+        $address = null;
         socket_getsockname($this->socket, $address);
 
         return $address;
-
     }
 
     /**
      * Get the local port number for the current socket connection.
-     *
-     * @return integer
      */
-    public function getLocalPort() {
-
-        $address = NULL;
-
+    public function getLocalPort(): int
+    {
+        $address = null;
         $port = 0;
-
         socket_getsockname($this->socket, $address, $port);
 
         return $port;
-
     }
 
     /**
      * Initiates a connection to a remote host.
      *
-     * @param string $host The remote host to connect to specified as either a resolvable host name or an IP address.
+     * @param string $host the remote host to connect to specified as either a resolvable host name or an IP address
+     * @param int    $port the port to connect to on the remote host
      *
-     * @param integer $port The port to connect to on the remote host.
-     *
-     * @return boolean TRUE if the connnection is successful.  FALSE otherwise.
+     * @return bool TRUE if the connnection is successful.  FALSE otherwise.
      */
-    public function connect($host, $port) {
-
-        if(! is_numeric($port))
-            $port = getservbyname($port, ($this->protocol == SOL_TCP) ? 'tcp' : 'udp');
-
+    public function connect(string $host, int $port): bool
+    {
+        if (!is_numeric($port)) {
+            $port = getservbyname($port, (SOL_TCP == $this->protocol) ? 'tcp' : 'udp');
+        }
         $this->connected = @socket_connect($this->socket, $host, $port);
-
-        if($this->connected === TRUE)
+        if (true === $this->connected) {
             $this->onConnect();
+        }
 
         return $this->connected;
-
     }
 
     /**
      * Closes the current socket connection.
      *
-     * @return boolean TRUE if the socket was connected and is now closed.  FALSE if the socket was not already connected.
+     * @return bool TRUE if the socket was connected and is now closed.  FALSE if the socket was not already connected.
      */
-    public function close() {
-
-        if(! $this->connected)
-            return FALSE;
-
+    public function close(): bool
+    {
+        if (!$this->connected) {
+            return false;
+        }
         socket_close($this->socket);
+        $this->connected = false;
 
-        $this->connected = FALSE;
-
-        return TRUE;
-
+        return true;
     }
 
     /**
      * Get the current connection status of the socket.
      *
-     * @return boolean TRUE if the connection is established.  FALSE otherwise.
+     * @return bool TRUE if the connection is established.  FALSE otherwise.
      */
-    public function isConnected() {
-
+    public function isConnected(): bool
+    {
         return $this->connected;
-
     }
 
     /**
@@ -386,34 +350,30 @@ class Client {
      * meaning you won't have access to variables defined outside of the Closure.  This allows data to be stored in the current client
      * object that can then be accessed later from any other callback method, or from anywhere that has access to the client object.
      *
-     * @param string $key The named key to store the value under.
-     *
-     * @param mixed $value The value to store.  Can be pretty much anything you want.
+     * @param string $key   the named key to store the value under
+     * @param mixed  $value The value to store.  Can be pretty much anything you want.
      */
-    public function set($key, $value) {
-
+    public function set(string $key, mixed $value): void
+    {
         $this->data[$key] = $value;
-
     }
 
     /**
-     * Return a value previously stored using Client::set()
+     * Return a value previously stored using Client::set().
      *
-     * @param string $key The key used to store the value.
-     *
-     * @return mixed
+     * @param string $key the key used to store the value
      */
-    public function get($key) {
-
-        if(array_key_exists($key, $this->data))
+    public function get(string $key): null|int|string
+    {
+        if (array_key_exists($key, $this->data)) {
             return $this->data[$key];
+        }
 
-        return NULL;
-
+        return null;
     }
 
     /**
-     * Register an event handler
+     * Register an event handler.
      *
      * This method is used to register an event that will be called when an event is triggered.
      *
@@ -423,103 +383,35 @@ class Client {
      * * *close* - Called when the socket connection is closed.
      * * *poll* - Called when using the Client::run() method to wait for data.
      *
-     * @param string $event The name of the event to register the callback on
-     *
-     * @param callable $callback A standard PHP callable.  See: http://au2.php.net/manual/en/language.types.callable.php
-     *
-     * @return boolean
+     * @param string   $event    The name of the event to register the callback on
+     * @param \Closure $callback A standard PHP callable.  See: http://au2.php.net/manual/en/language.types.callable.php
      */
-    public function on($event, $callback) {
-
-        if(! is_callable($callback))
-            return FALSE;
-
+    public function on(string $event, \Closure $callback): bool
+    {
+        if (!is_callable($callback)) {
+            return false;
+        }
         $event = strtolower($event);
-
-        if(! array_key_exists($event, $this->events) || ! is_array($this->events[$event]))
+        if (!array_key_exists($event, $this->events)) {
             $this->events[$event] = [];
-
+        }
         $this->events[$event][] = $callback;
 
-        return TRUE;
-
+        return true;
     }
 
     /**
-     * Built-in callback method used to handle registered event callbacks
-     */
-    protected function onConnect() {
-
-        if(array_key_exists('connect', $this->events))
-            return $this->triggerEventQueue($this->events['connect'], $this);
-
-    }
-
-    /**
-     * Built-in callback method used to handle registered event callbacks
-     */
-    protected function onRecv($data) {
-
-        if(array_key_exists('revc', $this->events))
-            return $this->triggerEventQueue($this->events['revc'], $this, $data);
-
-    }
-
-    /**
-     * Built-in callback method used to handle registered event callbacks
-     */
-    protected function onClose() {
-
-        if(array_key_exists('close', $this->events))
-            return $this->triggerEventQueue($this->events['close'], $this);
-
-    }
-
-    /**
-     * Built-in callback method used to handle registered event callbacks
-     */
-    protected function onPoll() {
-
-        if(array_key_exists('poll', $this->events))
-            return $this->triggerEventQueue($this->events['poll'], $this);
-
-    }
-
-    /**
-     * Triggers any registered callbacks for the specified event.
+     * Send data to the remote host.
      *
-     * @param array $queue The event queue of callbacks.
+     * @return false|int The number of bytes written to the socket.  FALSE if an error has occurred.
      */
-    private function triggerEventQueue($queue) {
-
-        if(! is_array($queue))
-            return FALSE;
-
-        foreach($queue as $event) {
-
-            $args = func_get_args();
-
-            array_shift($args);
-
-            return call_user_func_array($event, $args);
+    public function send(string $data): false|int
+    {
+        if (!$this->connected) {
+            return false;
         }
 
-    }
-
-    /**
-     * Send data to the remote host
-     *
-     * @param string $data
-     *
-     * @return mixed The number of bytes written to the socket.  FALSE if an error has occurred.
-     */
-    public function send($data) {
-
-        if(! $this->connected)
-            return FALSE;
-
         return socket_send($this->socket, $data, strlen($data), 0);
-
     }
 
     /**
@@ -528,70 +420,55 @@ class Client {
      * This method will return up to Client::$maxBufferSize bytes of data received on the socket from the remote host.
      *
      * This call will block if blocking mode is enabled.  See: Client::setBlocking()
-     *
-     * @return string
      */
-    public function recv($bytes = null) {
-
-        if(!$bytes)
+    public function recv(?int $bytes = null): string
+    {
+        if (!$bytes) {
             $bytes = $this->maxBufferSize;
-
+        }
         $data = '';
-
         socket_recv($this->socket, $data, $bytes, 0);
 
         return $data;
-
     }
 
     /**
      * Wait for data to become available for reading on the socket.
      *
-     * This method wraps the standard socket_select() system call using the Client::$select_timeout value.  It will block for
-     * Client::$select_timeout milliseconds or until data is available for reading on the socket.  If blocking mode is enabled
+     * This method wraps the standard socket_select() system call using the Client::$selectTimeout value.  It will block for
+     * Client::$selectTimeout milliseconds or until data is available for reading on the socket.  If blocking mode is enabled
      * however, it will wait indefinitely for data to be available.
      *
-     * @param int $timeout If set, specifies the time in milliseconds to wait for data.  If not set uses internal select_timeout value.
+     * @param int $timeout If set, specifies the time in milliseconds to wait for data.  If not set uses internal selectTimeout value.
      *
-     * @return boolean TRUE if data is available.  FALSE otherwise.
+     * @return bool TRUE if data is available.  FALSE otherwise.
      */
-    public function wait($timeout = NULL) {
-
-        if(! $this->connected)
-            return FALSE;
-
+    public function wait(?int $timeout = null): bool
+    {
+        if (!$this->connected) {
+            return false;
+        }
         $read = [
-            $this->socket
+            $this->socket,
         ];
-
-        $write = NULL;
-
-        $except = NULL;
-
-        if($timeout === NULL)
-            $timeout = $this->select_timeout;
-
-        if($this->blocking) {
-
-            $tv_sec = NULL;
-
-            $tv_usec = NULL;
-
+        $write = null;
+        $except = null;
+        if (null === $timeout) {
+            $timeout = $this->selectTimeout;
+        }
+        if ($this->blocking) {
+            $tvSec = null;
+            $tvUsec = null;
         } else {
-
-            $tv_sec = floor((($timeout >= 1000) ? $timeout / 1000 : 0));
-
-            $tv_usec = (($timeout >= 1000) ? $timeout - ($tv_sec * 1000) : $timeout);
-
+            $tvSec = (int) floor(($timeout >= 1000) ? $timeout / 1000 : 0);
+            $tvUsec = (($timeout >= 1000) ? $timeout - ($tvSec * 1000) : $timeout);
+        }
+        socket_select($read, $write, $except, $tvSec, $tvUsec);
+        if (count($read) > 0) {
+            return true;
         }
 
-        socket_select($read, $write, $except, $tv_sec, $tv_usec);
-
-        if(count($read) > 0)
-            return TRUE;
-
-        return FALSE;
-
+        return false;
     }
 
     /**
@@ -604,36 +481,82 @@ class Client {
      * An optional timeout can be specified here as will.  This will cause the client 'application' to run, but only for $timeout seconds,
      * allowing a short run process to send and receive a single response easily without hanging the system.
      *
-     * @param integer $timeout How long to run the main loop for.  This may not end up being exact as it is influenced by execution time
-     *      of any callbacks as well as the Client::$select_timeout value.
+     * @param int $timeout How long to run the main loop for.  This may not end up being exact as it is influenced by execution time
+     *                     of any callbacks as well as the Client::$selectTimeout value.
      *
-     * @return boolean TRUE if the main loop exited cleanly.  FALSE if the socket is not currently connected.
+     * @return bool TRUE if the main loop exited cleanly.  FALSE if the socket is not currently connected.
      */
-    public function run($timeout = NULL) {
-
-        if(! $this->connected)
-            return FALSE;
-
+    public function run(?int $timeout = null): bool
+    {
+        if (!$this->connected) {
+            return false;
+        }
         $start = time();
-
-        while($this->connected) {
-
-            if($this->wait($timeout)) {
-
+        while ($this->connected) {
+            if ($this->wait($timeout)) {
                 $data = $this->recv();
-
                 $this->onRecv($data);
             }
-
-            if($this->onPoll() === FALSE)
+            $this->onPoll();
+            if ($timeout && (time() - $start) >= $timeout) {
                 break;
-
-            if($timeout && (time() - $start) >= $timeout)
-                break;
+            }
         }
 
-        return TRUE;
-
+        return true;
     }
 
+    /**
+     * Built-in callback method used to handle registered event callbacks.
+     */
+    protected function onConnect(): void
+    {
+        if (array_key_exists('connect', $this->events)) {
+            $this->triggerEventQueue($this->events['connect'], $this);
+        }
+    }
+
+    /**
+     * Built-in callback method used to handle registered event callbacks.
+     */
+    protected function onRecv(string $data): void
+    {
+        if (array_key_exists('revc', $this->events)) {
+            $this->triggerEventQueue($this->events['revc'], $this, $data);
+        }
+    }
+
+    /**
+     * Built-in callback method used to handle registered event callbacks.
+     */
+    protected function onClose(): void
+    {
+        if (array_key_exists('close', $this->events)) {
+            $this->triggerEventQueue($this->events['close'], $this);
+        }
+    }
+
+    /**
+     * Built-in callback method used to handle registered event callbacks.
+     */
+    protected function onPoll(): void
+    {
+        if (array_key_exists('poll', $this->events)) {
+            $this->triggerEventQueue($this->events['poll'], $this);
+        }
+    }
+
+    /**
+     * Triggers any registered callbacks for the specified event.
+     *
+     * @param array<\Closure> $queue the event queue of callbacks
+     */
+    private function triggerEventQueue(array $queue): void
+    {
+        foreach ($queue as $event) {
+            $args = func_get_args();
+            array_shift($args);
+            call_user_func_array($event, $args);
+        }
+    }
 }

@@ -1,15 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Controller\Response;
 
-class Text extends \Hazaar\Controller\Response {
+use Hazaar\Controller\Response;
 
-    function __construct($content = null, $status = 200) {
+class Text extends Response
+{
+    private string $content = '';
 
-        parent::__construct("text/plain", $status);
-
+    public function __construct(?string $content = null, int $status = 200)
+    {
+        parent::__construct('text/plain', $status);
         $this->setContent($content);
-
     }
 
+    public function setContent(mixed $content): void
+    {
+        $this->content = (string) $content;
+    }
+
+    public function getContent(): string
+    {
+        return $this->content;
+    }
 }

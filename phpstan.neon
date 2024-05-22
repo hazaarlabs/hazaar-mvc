@@ -1,0 +1,8 @@
+parameters:
+    level: 6
+    paths:
+        - src
+        - tests
+    universalObjectCratesClasses:
+        - Hazaar\Map
+        - Hazaar\Model

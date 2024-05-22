@@ -1,108 +1,103 @@
 <?php
-/**
- * @file        Hazaar/View/Helper.php
- *
- * @author      Jamie Carl <jamie@hazaar.io>
- *
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
- */
+
+declare(strict_types=1);
 
 namespace Hazaar\View;
 
-abstract class Helper implements Helper\_Interface {
+use Hazaar\Application;
+use Hazaar\View;
 
-    protected $view;
+abstract class Helper implements Interfaces\Helper
+{
+    protected View $view;
+    protected Application $application;
 
-    protected $args;
+    /**
+     * @var array<mixed>
+     */
+    protected array $args;
 
-    final function __construct($view = NULL, $args = []) {
-
+    /**
+     * Helper constructor.
+     *
+     * @param array<mixed> $args
+     */
+    final public function __construct(?View $view, array $args = [])
+    {
+        $this->application = Application::getInstance();
         $this->view = $view;
-
         $this->args = $args;
-
-        $this->import($args);
-
+        $this->import();
     }
 
-    public function initialise($args = NULL) {
+    public function __get(string $method): mixed
+    {
+        return $this->view->__get($method);
+    }
 
-        if(! $args)
+    /**
+     * @param array<mixed> $args
+     */
+    public function initialise(?array $args = null): void
+    {
+        if (null !== $args) {
             $args = $this->args;
-
-        if(method_exists($this, 'init'))
-            $this->init($this->view, $args);
-
+        }
+        $this->init($args);
     }
 
-    public function extendArgs($args) {
-
-        if(!\Hazaar\Map::is_array($args))
-            return;
-
+    /**
+     * @param array<mixed> $args
+     */
+    public function extendArgs(array $args): void
+    {
         $this->args = array_merge($this->args, $args);
-
     }
 
-    public function set($arg, $value) {
-
+    public function set(string $arg, mixed $value): void
+    {
         $this->args[$arg] = $value;
-
     }
 
-    public function get($arg) {
-
-        if(array_key_exists($arg, $this->args))
+    public function get(string $arg): mixed
+    {
+        if (array_key_exists($arg, $this->args)) {
             return $this->args[$arg];
+        }
 
-        return NULL;
-
+        return null;
     }
 
-    public function getName() {
-
+    public function getName(): string
+    {
         $class = get_class($this);
 
         return substr($class, strrpos($class, '\\') + 1);
-
     }
 
-    public function requires($helper, $args = []) {
-
-        if($this->view && ! $this->view->hasHelper($helper)) {
-
+    /**
+     * @param array<mixed> $args
+     */
+    public function requires(string $helper, array $args = []): void
+    {
+        if (!$this->view->hasHelper($helper)) {
             $this->view->addHelper($helper, $args);
-
         }
-
     }
 
-    public function __get($method) {
-
-        if($this->view)
-            return $this->view->__get($method);
-
-        return NULL;
-
+    // Placeholder functions
+    public function import(): void
+    {
+        // Do nothing by default.
     }
 
-    //Placeholder functions
-    public function import() {
-
-        //Do nothing by default.
-
+    public function init(array $args = []): bool
+    {
+        return true;
     }
 
-    public function init(\Hazaar\View\Layout $view, $args = []) {
-
-        //Do nothing by default.
-
+    public function run(View $view): bool
+    {
+        return false; // Helper should at least do something at runtime.
     }
-
-    public function run($view) {
-
-        //Do nothing by default.
-
-    }
-
 }
