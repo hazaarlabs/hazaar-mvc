@@ -136,9 +136,9 @@ class Table implements \Iterator
      * @param mixed                    $fields   a field definition array
      * @param array<string,int>|string $order    A valid order definition
      *
-     * @return array<mixed>|false
+     * @return null|array<mixed>|false
      */
-    public function findOne(mixed $criteria = [], mixed $fields = [], null|array|string $order = null): array|false
+    public function findOne(mixed $criteria = [], mixed $fields = [], null|array|string $order = null): null|array|false
     {
         $table = $this->find($criteria, $fields);
         if ($order) {
@@ -555,7 +555,7 @@ class Table implements \Iterator
         int $cursorOrientation = \PDO::FETCH_ORI_NEXT,
         int $offset = 0,
         bool $clobberDupNamedCols = false
-    ): array {
+    ): ?array {
         $result = $this->execute();
 
         return $result->fetch(true !== $clobberDupNamedCols && $result->hasSelectGroups() ? \PDO::FETCH_NAMED : \PDO::FETCH_ASSOC, $cursorOrientation, $offset);
