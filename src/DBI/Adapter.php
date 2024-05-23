@@ -629,7 +629,7 @@ class Adapter
                 $this->driver->setSchemaName($this->config->get('schema'));
             }
         }
-        if (defined('HAZAAR_VERSION') && !$this->config->has('encrypt.key')) {
+        if (defined('HAZAAR_VERSION') && ($this->config->has('encrypt.table') && !$this->config->has('encrypt.key'))) {
             $keyfile = Loader::getFilePath(FILE_PATH_CONFIG, $this->config->get('encrypt.keyfile', '.db_key'));
             if (null === $keyfile) {
                 throw new \Hazaar\Exception('DBI keyfile is missing.  Database encryption will not work!');
