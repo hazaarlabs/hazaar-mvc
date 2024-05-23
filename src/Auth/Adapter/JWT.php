@@ -19,8 +19,8 @@ use Hazaar\Map;
  */
 abstract class JWT extends Adapter implements \ArrayAccess
 {
-    protected string $passphrase;
-    protected string $private_key;
+    protected ?string $passphrase = null;
+    protected string $privateKey;
 
     /**
      * @var array<mixed>
@@ -47,12 +47,15 @@ abstract class JWT extends Adapter implements \ArrayAccess
         if ($this->options->has('jwt.passphrase')) {
             $this->passphrase = $this->options->get('jwt.passphrase');
         }
-        if ($this->options->has('privateKey')) {
-            $this->private_key = $this->options->get('jwt.privateKey');
+        if ($this->options->has('jwt.privateKey')) {
+            $this->privateKey = $this->options->get('jwt.privateKey');
         } elseif ($this->options->has('jwt.privateKeyFile')) {
-            if ($private_key_file = Loader::getFilePath(FILE_PATH_CONFIG, $this->options->get('jwt.privateKeyFile'))) {
-                $this->private_key = file_get_contents($private_key_file);
+            if ($privateKeyFile = Loader::getFilePath(FILE_PATH_CONFIG, $this->options->get('jwt.privateKeyFile'))) {
+                $this->privateKey = file_get_contents($privateKeyFile);
             }
+        }
+        if (!isset($this->privateKey)) {
+            throw new \Exception('No private key set for JWT signing');
         }
     }
 
@@ -79,7 +82,7 @@ abstract class JWT extends Adapter implements \ArrayAccess
         unset($this->data[$name]);
     }
 
-    public function authenticate(string $identity = null, string $credential = null, bool $autologin = false): mixed
+    public function authenticate(?string $identity = null, ?string $credential = null, bool $autologin = false): mixed
     {
         $auth = parent::authenticate($identity, $credential, $autologin);
         if (!is_array($auth)) {
@@ -167,7 +170,7 @@ abstract class JWT extends Adapter implements \ArrayAccess
      *
      * @return array<string, mixed>|bool the JWT body or false
      */
-    public function refresh(string $refresh_token, array &$jwt_body = null): array|bool
+    public function refresh(string $refresh_token, ?array &$jwt_body = null): array|bool
     {
         if (!$this->options->get('jwt.refresh')) {
             return false;
@@ -193,7 +196,7 @@ abstract class JWT extends Adapter implements \ArrayAccess
      * @param array<string, mixed> $jwt_body   the JWT body
      * @param string               $passphrase the passphrase
      */
-    protected function validateToken(string $token, array &$jwt_body = null, string $passphrase = null): bool
+    protected function validateToken(string $token, ?array &$jwt_body = null, ?string $passphrase = null): bool
     {
         if (!$token || false === strpos($token, '.')) {
             return false;
@@ -227,7 +230,7 @@ abstract class JWT extends Adapter implements \ArrayAccess
      *
      * @return array<string, mixed> the JWT token
      */
-    private function authorise(array $auth, array &$jwt_body = null): array
+    private function authorise(array $auth, ?array &$jwt_body = null): array
     {
         $out = [];
         $jwt_body = array_merge([
@@ -259,7 +262,7 @@ abstract class JWT extends Adapter implements \ArrayAccess
      *
      * @return string the JWT token
      */
-    private function buildToken(array $jwt_body, string $passphrase = null): string
+    private function buildToken(array $jwt_body, ?string $passphrase = null): string
     {
         $jwt_header = [
             'alg' => $this->options->get('jwt.alg'),
@@ -292,7 +295,7 @@ abstract class JWT extends Adapter implements \ArrayAccess
      *
      * @return string the signature
      */
-    private function sign(array $jwt_header, array $jwt_body, string $passphrase = null): string
+    private function sign(array $jwt_header, array $jwt_body, ?string $passphrase = null): string
     {
         if (!array_key_exists('alg', $jwt_header)) {
             throw new \Exception('No algorithm set for JWT signing');
@@ -324,7 +327,7 @@ abstract class JWT extends Adapter implements \ArrayAccess
             case 'RS':
             case 'ES':
             case 'PS':
-                if (!$this->private_key) {
+                if (!$this->privateKey) {
                     throw new \Exception('No private key set for JWT signing');
                 }
                 $algos = openssl_get_md_methods();
@@ -352,7 +355,7 @@ abstract class JWT extends Adapter implements \ArrayAccess
                 if (!$algo_const) {
                     throw new \Exception('Unsupported JWT signing algorithm');
                 }
-                $signing_result = openssl_sign($token_content, $signature, trim($this->private_key), $algo_const);
+                $signing_result = openssl_sign($token_content, $signature, trim($this->privateKey), $algo_const);
                 if (true !== $signing_result) {
                     throw new \Exception(openssl_error_string());
                 }

@@ -85,7 +85,7 @@ abstract class Adapter implements Interfaces\Adapter
      */
     protected array $extra = [];
 
-    private bool $no_credential_hashing = false;
+    private bool $noCredentialHashing = false;
 
     /**
      * Construct the adapter.
@@ -147,17 +147,19 @@ abstract class Adapter implements Interfaces\Adapter
         if (null === $credential) {
             $credential = $this->credential;
         }
-        if (!$credential || true === $this->no_credential_hashing) {
+        if (!$credential || true === $this->noCredentialHashing) {
             return $credential;
         }
         $hash = false;
-        if (true === $this->options['encryption']['use_identity']) {
+        if (true === $this->options['encryption']['useIdentity']) {
             $credential = $this->identity.':'.$credential;
         }
         $count = $this->options['encryption']['count'];
         $algos = $this->options['encryption']['hash'];
-        if (!$algos instanceof Map) {
-            $algos = new Map($algos);
+        if ($algos instanceof Map) {
+            $algos = $algos->toArray();
+        }elseif(!is_array($algos)){
+            $algos = [$algos];
         }
         $salt = $this->options['encryption']['salt'];
         $hash_algos = hash_algos();
@@ -264,7 +266,7 @@ abstract class Adapter implements Interfaces\Adapter
      */
     public function disableCredentialHashing(bool $value = true): void
     {
-        $this->no_credential_hashing = boolify($value);
+        $this->noCredentialHashing = boolify($value);
     }
 
     protected function getIdentifier(string $identity): ?string
