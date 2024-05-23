@@ -61,7 +61,7 @@ class HTTP extends Request
      *
      * @param array<mixed> $request Optional reference to $_REQUEST
      */
-    public function init(array $request = null, bool $process_request_body = false, ?string $method = null): string
+    public function init(?array $request = null, bool $process_request_body = false, ?string $method = null): string
     {
         if (null === $request) {
             $request = $_REQUEST;
@@ -295,10 +295,8 @@ class HTTP extends Request
      *
      * @param null|mixed $assoc
      * @param mixed      $depth
-     *
-     * @return string the request body
      */
-    public function getJSONBody($assoc = null, $depth = 512)
+    public function getJSONBody($assoc = null, $depth = 512): mixed
     {
         return ('application/json' === substr($this->getContentType(), 0, 16)) ? json_decode($this->body, $assoc, $depth) : null;
     }

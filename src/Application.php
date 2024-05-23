@@ -495,7 +495,8 @@ class Application
                 $this->GLOBALS['runtime'] = RUNTIME_PATH;
             }
             // Check for an application bootstrap file and execute it
-            $bootstrap = APPLICATION_PATH.DIRECTORY_SEPARATOR.ake($this->config->app->files, 'bootstrap', 'bootstrap.php');
+            $bootstrap = APPLICATION_PATH.DIRECTORY_SEPARATOR
+                .ake($this->config['app']['files'], 'bootstrap', 'bootstrap.php');
             if (file_exists($bootstrap)) {
                 $this->bootstrap = include $bootstrap;
                 if (false === $this->bootstrap) {
