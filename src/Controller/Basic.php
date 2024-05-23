@@ -55,7 +55,8 @@ abstract class Basic extends Controller
         if (!($this->__action = $request->shiftPath())) {
             $this->__action = $this->urlDefaultActionName;
         }
-        $response = $this->init($request);
+        $this->init($request);
+        $response = $this->initResponse($request);
         if ($request->getPath()) {
             $this->__actionArgs = explode('/', $request->getPath());
         }
@@ -230,7 +231,9 @@ abstract class Basic extends Controller
         return call_user_func_array([$target, $action], $actionArgs);
     }
 
-    protected function init(Request $request): ?Response
+    protected function init(Request $request): void {}
+
+    protected function initResponse(Request $request): ?Response
     {
         return null;
     }
