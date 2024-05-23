@@ -38,18 +38,18 @@ class Control extends Process
     ) {
         $this->serverConfig = new Config($serverConfig);
         if (!$instance_key) {
-            $instance_key = hash('crc32b', $this->serverConfig->client['server'].$this->serverConfig->client['port']);
+            $instance_key = hash('crc32b', $this->serverConfig['client']['server'].$this->serverConfig['client']['port']);
         }
         if (array_key_exists($instance_key, Control::$instance)) {
             throw new \Exception('There is already a control instance for this server:host.  Please use '.__CLASS__.'::getInstance()');
         }
         Control::$instance[$instance_key] = $this;
         $application = Application::getInstance();
-        if (null === $this->serverConfig->client['encoded']) {
-            $this->serverConfig->client['encoded'] = $this->serverConfig->server['encoded'];
+        if (null === $this->serverConfig['client']['encoded']) {
+            $this->serverConfig['client']['encoded'] = $this->serverConfig['server']['encoded'];
         }
-        $protocol = new Protocol((string) $this->serverConfig->sys->id, $this->serverConfig->client['encoded']);
-        $runtime_path = rtrim($this->serverConfig->sys['runtimePath'], '/').DIRECTORY_SEPARATOR;
+        $protocol = new Protocol((string) $this->serverConfig['sys']->id, $this->serverConfig['client']['encoded']);
+        $runtime_path = rtrim($this->serverConfig['sys']['runtimePath'], '/').DIRECTORY_SEPARATOR;
         if (!Control::$guid) {
             $guid_file = $runtime_path.'server.guid';
             if (file_exists($guid_file)) {
@@ -57,13 +57,13 @@ class Control extends Process
             }
             // First we check to see if we need to start the Warlock server process
             if (null === $autostart) {
-                $autostart = (bool) $this->serverConfig->sys->autostart;
+                $autostart = (bool) $this->serverConfig['sys']->autostart;
             }
             if (true === $autostart) {
-                if (!$this->serverConfig->sys['phpBinary']) {
-                    $this->serverConfig->sys['phpBinary'] = php_binary();
+                if (!$this->serverConfig['sys']['phpBinary']) {
+                    $this->serverConfig['sys']['phpBinary'] = php_binary();
                 }
-                $this->pidfile = $runtime_path.$this->serverConfig->sys['pid'];
+                $this->pidfile = $runtime_path.$this->serverConfig['sys']['pid'];
                 if (!$this->start()) {
                     throw new \Exception('Autostart of Warlock server has failed!');
                 }
@@ -144,7 +144,7 @@ class Control extends Process
         if (!file_exists($server)) {
             throw new \Exception('Warlock server script could not be found!');
         }
-        $this->cmd = $this->serverConfig->sys['phpBinary'].' '.implode(' ', $php_options).'&';
+        $this->cmd = $this->serverConfig['sys']['phpBinary'].' '.implode(' ', $php_options).'&';
         $env['WARLOCK_OUTPUT'] = 'file';
         foreach ($env as $name => $value) {
             putenv($name.'='.$value);
@@ -153,7 +153,7 @@ class Control extends Process
         // Start the server.  This should work on Linux and Windows
         shell_exec($this->cmd);
         if (!$timeout) {
-            $timeout = $this->serverConfig->timeouts->connect;
+            $timeout = $this->serverConfig['timeouts']->connect;
         }
         while (!$this->isRunning()) {
             if (time() > ($start_check + $timeout)) {
@@ -185,25 +185,25 @@ class Control extends Process
         if (null !== $this->serverConfig['admin']['key']) {
             $headers['X-WARLOCK-ACCESS-KEY'] = base64_encode($this->serverConfig['admin']['key']);
         }
-        if (null === $this->serverConfig->client['port']) {
-            $this->serverConfig->client['port'] = $this->serverConfig->server['port'];
+        if (null === $this->serverConfig['client']['port']) {
+            $this->serverConfig['client']['port'] = $this->serverConfig['server']['port'];
         }
         /*
          * If no server is specified, look up the listen address of a local server config. This will override the
          * address AND the port.  This ensures configs that have a different browser client-side address can be configured
          * and work and the client side will connect to the correct localhost address/port
          */
-        if (null === $this->serverConfig->client['server']) {
-            if ('0.0.0.0' == trim($this->serverConfig->server['listen'])) {
-                $this->serverConfig->client['server'] = '127.0.0.1';
+        if (null === $this->serverConfig['client']['server']) {
+            if ('0.0.0.0' == trim($this->serverConfig['server']['listen'])) {
+                $this->serverConfig['client']['server'] = '127.0.0.1';
             } else {
-                $this->serverConfig->client['server'] = $this->serverConfig->server['listen'];
+                $this->serverConfig['client']['server'] = $this->serverConfig['server']['listen'];
             }
-            $this->serverConfig->client['port'] = $this->serverConfig->server['port'];
-            $this->serverConfig->client['ssl'] = false; // Disable SSL because we know the server doesn't support it (yet?).
+            $this->serverConfig['client']['port'] = $this->serverConfig['server']['port'];
+            $this->serverConfig['client']['ssl'] = false; // Disable SSL because we know the server doesn't support it (yet?).
         }
         $conn = new Connection\Socket($protocol, Control::$guid);
-        if (!$conn->connect($this->serverConfig->sys['applicationName'], $this->serverConfig->client['server'], $this->serverConfig->client['port'], $headers)) {
+        if (!$conn->connect($this->serverConfig['sys']['applicationName'], $this->serverConfig['client']['server'], $this->serverConfig['client']['port'], $headers)) {
             $conn->disconnect();
         }
 

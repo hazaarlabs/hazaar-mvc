@@ -474,8 +474,8 @@ abstract class Process
         $exitcode = 1;
         $_SERVER['WARLOCK_EXEC'] = 1;
         $warlock = new Config();
-        define('RESPONSE_ENCODED', $warlock->server->encoded);
-        $protocol = new Protocol($warlock->sys->id, $warlock->server->encoded);
+        define('RESPONSE_ENCODED', $warlock['server']['encoded']);
+        $protocol = new Protocol($warlock['sys']['id'], $warlock['server']['encoded']);
 
         try {
             if (array_key_exists('daemon', $options)) {
