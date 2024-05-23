@@ -161,7 +161,7 @@ abstract class REST extends Controller
                     $cache = trim($cache_matches[1]);
                     if (is_numeric($cache)) {
                         $endpoint['cache'] = true;
-                        $endpoint['cache_timeout'] = (int)$cache;
+                        $endpoint['cache_timeout'] = (int) $cache;
                     } else {
                         $endpoint['cache'] = boolify($cache);
                     }
@@ -260,7 +260,8 @@ abstract class REST extends Controller
 
             throw new \Hazaar\Exception('REST API Endpoint not found: '.$full_path, 404);
         }
-        $response = $this->init($this->request);
+        $this->init($this->request);
+        $response = $this->initResponse($this->request);
         if (null !== $response) {
             return $response;
         }
@@ -462,7 +463,12 @@ abstract class REST extends Controller
     /**
      * Initializes the REST controller.
      */
-    protected function init(HTTP $request): ?Response
+    protected function init(HTTP $request): void
+    {
+        // do nothing
+    }
+
+    protected function initResponse(HTTP $request): ?Response
     {
         return null;
     }
