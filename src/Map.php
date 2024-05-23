@@ -166,9 +166,9 @@ class Map implements \ArrayAccess, \Iterator, \Countable
     {
         // If we get a string, try and convert it from JSON
         if (is_string($defaults)) {
-            if ($json = json_decode($defaults, true)) {
+            if ($json = @json_decode($defaults, true)) {
                 $defaults = $json;
-            } elseif ($unser = unserialize($defaults)) {
+            } elseif ($unser = @unserialize($defaults)) {
                 $defaults = $unser;
             } else {
                 throw new Exception\UnknownStringArray($defaults);
