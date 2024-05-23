@@ -83,12 +83,12 @@ abstract class Service extends Process
                 'connect_retry_delay' => 100,  // When making multiple attempts to establish the control channel, wait this long between each
                 'server' => [
                     'host' => '127.0.0.1',
-                    'port' => $warlock->server['port'],
-                    'access_key' => $warlock->admin->get('key'),
+                    'port' => $warlock['server']['port'],
+                    'access_key' => $warlock->get('admin.key'),
                 ],
                 'silent' => false,
-                'applicationName' => $warlock->sys['applicationName'],
-                'log' => $warlock->log,
+                'applicationName' => $warlock['sys']['applicationName'],
+                'log' => $warlock['log'],
             ],
         ];
         $config = new Application\Config('service', APPLICATION_ENV, $defaults);
@@ -112,7 +112,7 @@ abstract class Service extends Process
         if (true === $remote && !$this->config->has('server')) {
             throw new \Exception("Warlock server required to run in remote service mode.\n");
         }
-        $this->__logFile = $warlock->sys['runtimePath'].DIRECTORY_SEPARATOR.$this->name.'.log';
+        $this->__logFile = $warlock['sys']['runtimePath'].DIRECTORY_SEPARATOR.$this->name.'.log';
         if ((file_exists($this->__logFile) && is_writable($this->__logFile)) || is_writable(dirname($this->__logFile))) {
             $this->__log = fopen($this->__logFile, 'a');
         }
@@ -327,7 +327,7 @@ abstract class Service extends Process
                 foreach ($message as $m) {
                     $msg = date('Y-m-d H:i:s')." - {$this->name} - ".str_pad($label, $this->__strPad, ' ', STR_PAD_LEFT).' - '.$m."\n";
                     fwrite($this->__log, $msg);
-                    if (true === $this->__remote && true !== $this->config->silent) {
+                    if (true === $this->__remote && true !== $this->config['silent']) {
                         echo $msg;
                     }
                 }
@@ -636,11 +636,11 @@ abstract class Service extends Process
                 exit("Warlock server required to run in remote service mode.\n");
             }
             $headers = [];
-            $headers['X-WARLOCK-ACCESS-KEY'] = base64_encode($this->config->server['access_key']);
+            $headers['X-WARLOCK-ACCESS-KEY'] = base64_encode($this->config['server']['access_key']);
             $headers['X-WARLOCK-CLIENT-TYPE'] = 'service';
             $conn = new Socket($protocol);
             $this->log(W_LOCAL, 'Connecting to Warlock server at '.$this->config['server']['host'].':'.$this->config['server']['port']);
-            if (!$conn->connect($this->config['applicationName'], $this->config->server['host'], $this->config->server['port'], $headers)) {
+            if (!$conn->connect($this->config['applicationName'], $this->config['server']['host'], $this->config['server']['port'], $headers)) {
                 return false;
             }
             if (($type = $conn->recv($payload)) === false || 'OK' !== $type) {
