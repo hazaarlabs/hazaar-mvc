@@ -99,7 +99,7 @@ class Application
     public string $environment = 'development';
     public ?Timer $timer = null;
     public mixed $bootstrap;
-    protected string $responseType = '';
+    protected string $responseType = 'html';
     protected string $urlDefaultPart;
     private static ?Application $instance = null;
     private static string $root;
