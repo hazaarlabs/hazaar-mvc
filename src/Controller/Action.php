@@ -43,6 +43,7 @@ abstract class Action extends Basic
         if ($request instanceof HTTP
             && false === $request->isXmlHttpRequest()
             && null !== $this->application
+            && $this->application->getResponseType() === 'html'
             && $this->application->config['app']->has('layout')) {
             $this->view->layout($this->application->config['app']['layout']);
         }
