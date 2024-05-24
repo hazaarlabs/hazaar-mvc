@@ -151,7 +151,7 @@ abstract class REST extends Controller
             }
             $endpoint = [
                 'cache' => false,
-                'cache_timeout' => null,
+                'cache_timeout' => 0,
                 'cache_ignore_params' => false,
                 'comment' => $comment,
                 'routes' => [],
@@ -443,7 +443,7 @@ abstract class REST extends Controller
             }
             // Save the result if caching is enabled.
             if (null !== $cache_key) {
-                $this->__rest_cache->set($cache_key, $result, $endpoint['cache_timeout']);
+                $this->__rest_cache->set($cache_key, $result, (int)$endpoint['cache_timeout']);
             }
         }
 
