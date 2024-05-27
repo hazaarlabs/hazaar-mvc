@@ -32,9 +32,7 @@ class Diagnostic extends Action
         } elseif (PHP_SAPI == 'cli') {
             $this->responseType = 'text';
         } elseif ($request instanceof HTTP) {
-            if ($responseType = $this->application->getResponseType()) {
-                $this->responseType = $responseType;
-            } elseif ($x_requested_with = $request->getHeader('X-Requested-With')) {
+            if ($x_requested_with = $request->getHeader('X-Requested-With')) {
                 switch ($x_requested_with) {
                     case 'XMLHttpRequest':
                         $this->responseType = 'json';
@@ -46,6 +44,8 @@ class Diagnostic extends Action
 
                         break;
                 }
+            } elseif ($responseType = $this->router->application->getResponseType()) {
+                $this->responseType = $responseType;
             }
         } else {
             $this->responseType = 'text';
@@ -72,12 +72,9 @@ class Diagnostic extends Action
                 // $this->_helpers->execAllHelpers($this, $response);
             }
         }
-        $response->setController($this);
 
         return $response;
     }
-
-    public function __shutdown(?Response $response = null): void {}
 
     public function json(): Response\JSON
     {

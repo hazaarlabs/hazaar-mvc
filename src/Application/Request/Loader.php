@@ -36,7 +36,7 @@ class Loader
                 break;
 
             default:
-                $request = new HTTP($_REQUEST, true);
+                $request = new HTTP($_SERVER, $_REQUEST, true);
 
                 break;
         }

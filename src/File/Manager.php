@@ -105,43 +105,30 @@ class Manager implements Backend
      */
     public static function getAvailableBackends(): array|false
     {
-        $composer = Application::getInstance()->composer();
-        if (!property_exists($composer, 'require')) {
-            return false;
-        }
         $backends = [];
-        foreach ($composer->require as $lib => $ver) {
-            $lib_path = realpath(APPLICATION_PATH
-                .DIRECTORY_SEPARATOR.'..'
-                .DIRECTORY_SEPARATOR.'vendor'
-                .DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $lib));
-            if ('hazaarlabs' !== substr(dirname($lib_path), -10)) {
+        $backendPath = LIBRARY_PATH
+            .DIRECTORY_SEPARATOR.'src'
+            .DIRECTORY_SEPARATOR.'File'
+            .DIRECTORY_SEPARATOR.'Backend';
+        if (!file_exists($backendPath)) {
+            throw new \Exception('Backend path does not exist!');
+        }
+        $dir = dir($backendPath);
+        while (($file = $dir->read()) !== false) {
+            if ('.php' !== substr($file, -4) || '.' === substr($file, 0, 1) || '_' === substr($file, 0, 1)) {
                 continue;
             }
-            $backend_path = $lib_path
-                .DIRECTORY_SEPARATOR.'src'
-                .DIRECTORY_SEPARATOR.'File'
-                .DIRECTORY_SEPARATOR.'Backend';
-            if (!file_exists($backend_path)) {
+            $source = ake(pathinfo($file), 'filename');
+            $class = 'Hazaar\\File\\Backend\\'.$source;
+            if (!class_exists($class)) {
                 continue;
             }
-            $dir = dir($backend_path);
-            while (($file = $dir->read()) !== false) {
-                if ('.php' !== substr($file, -4) || '.' === substr($file, 0, 1) || '_' === substr($file, 0, 1)) {
-                    continue;
-                }
-                $source = ake(pathinfo($file), 'filename');
-                $class = 'Hazaar\\File\\Backend\\'.$source;
-                if (!class_exists($class)) {
-                    continue;
-                }
-                $backend = [
-                    'name' => strtolower($source),
-                    'label' => $class::label(),
-                    'class' => $class,
-                ];
-                $backends[] = $backend;
-            }
+            $backend = [
+                'name' => strtolower($source),
+                'label' => $class::label(),
+                'class' => $class,
+            ];
+            $backends[] = $backend;
         }
 
         return $backends;
@@ -752,7 +739,7 @@ class Manager implements Backend
     /**
      * @param resource $stream
      */
-    public function tellStream(mixed $stream): int|false
+    public function tellStream(mixed $stream): false|int
     {
         return $this->backend->tellStream($stream);
     }

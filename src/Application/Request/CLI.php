@@ -33,9 +33,11 @@ class CLI extends Request
     /**
      * @param array<string> $args
      */
-    public function init(array $args): void
+    public function init(array $args): string
     {
         $this->params = $args;
+
+        return '/';
     }
 
     /**
@@ -99,7 +101,7 @@ class CLI extends Request
      *
      * @return string the name of the command
      */
-    public function getCommand(array &$args = null): ?string
+    public function getCommand(?array &$args = null): ?string
     {
         $this->getOptions($pos_args);
         $command = array_shift($pos_args);

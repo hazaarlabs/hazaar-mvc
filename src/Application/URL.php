@@ -43,7 +43,6 @@ class URL implements \JsonSerializable
      * @var array<string>
      */
     public static array $__aliases;
-    public static string $__default_controller = 'Index';
     private bool $encoded = false;
 
     public function __construct()
@@ -72,9 +71,6 @@ class URL implements \JsonSerializable
                 $parts[] = $part_part;
             }
         }
-        if (1 === count($parts) && $parts[0] === self::$__default_controller) {
-            $parts = [];
-        }
         if (count($parts) > 0) {
             $this->path = implode('/', $parts);
         }
@@ -100,7 +96,6 @@ class URL implements \JsonSerializable
     {
         self::$__base_url = $config->get('base');
         self::$__rewrite_url = $config->get('rewrite');
-        self::$__default_controller = trim($config->get('defaultController'));
     }
 
     /**
