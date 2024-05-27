@@ -11,8 +11,6 @@ declare(strict_types=1);
 
 namespace Hazaar\Application;
 
-use Exception;
-
 abstract class Request implements Interfaces\Request
 {
     protected bool $dispatched = false;
@@ -24,22 +22,13 @@ abstract class Request implements Interfaces\Request
     protected \Exception $exception;
 
     /**
-     * The original path excluding the application base path.
-     */
-    protected string $basePath;
-
-    /**
      * The requested path.
      */
     private string $path = '';
 
-    public function __construct()
+    public function __construct(mixed ...$args)
     {
-        $args = func_get_args();
-        if (method_exists($this, 'init')) {
-            $this->basePath = (string) call_user_func_array([$this, 'init'], $args);
-        }
-        $this->path = (string) $this->basePath;
+        $this->path = $this->init(...$args);
     }
 
     /**
@@ -67,26 +56,16 @@ abstract class Request implements Interfaces\Request
     }
 
     /**
-     * Get the base path of the request.
-     *
-     * @return string the base path
-     */
-    public function getBasePath(): string
-    {
-        return $this->basePath;
-    }
-
-    /**
      * Return the request path.
      *
-     * @param bool $strip_filename If true, this will cause the function to return anything before the last '/'
-     *                             (including the '/') which is the full directory path name. (Similar to dirname()).
+     * @param bool $stripFilename If true, this will cause the function to return anything before the last '/'
+     *                            (including the '/') which is the full directory path name. (Similar to dirname()).
      *
      * @return string The path suffix of the request URI
      */
-    public function getPath(bool $strip_filename = false): string
+    public function getPath(bool $stripFilename = false): string
     {
-        if (true !== $strip_filename) {
+        if (true !== $stripFilename) {
             return $this->path;
         }
         $path = ltrim($this->path ?? '', '/');
@@ -98,20 +77,6 @@ abstract class Request implements Interfaces\Request
     }
 
     /**
-     * Returns the first path segment of the request path.
-     *
-     * @return string the first path segment
-     */
-    public function getFirstPath(): string
-    {
-        if (($pos = strpos($this->path, '/')) === false) {
-            return $this->path;
-        }
-
-        return substr($this->path, 0, $pos);
-    }
-
-    /**
      * Sets the path of the request.
      *
      * @param string $path the path of the request
@@ -119,69 +84,6 @@ abstract class Request implements Interfaces\Request
     public function setPath(string $path): void
     {
         $this->path = $path;
-    }
-
-    /**
-     * Shift a part off the front of the path.
-     *
-     * A "part" is simple anything delimited by '/' in the path section of the URL.
-     */
-    public function shiftPath(): ?string
-    {
-        if (!$this->path) {
-            return null;
-        }
-        $pos = strpos($this->path, '/');
-        if (false === $pos) {
-            $part = $this->path;
-            $this->path = '';
-        } else {
-            $part = substr($this->path, 0, $pos);
-            $this->path = substr($this->path, $pos + 1);
-        }
-
-        return $part;
-    }
-
-    /**
-     * Prepends a path part to the existing path.
-     *
-     * @param string $part the path part to prepend
-     */
-    public function unshiftPath(string $part): void
-    {
-        $this->path = $part.((strlen($this->path ?? '') > 0) ? '/'.$this->path : '');
-    }
-
-    /**
-     * Removes and returns the last part of the path.
-     *
-     * @return string the last part of the path, or null if the path is empty
-     */
-    public function popPath(): string
-    {
-        if (!$this->path) {
-            return '';
-        }
-        if (($pos = strrpos($this->path, '/')) === false) {
-            $part = $this->path;
-            $this->path = '';
-        } else {
-            $part = substr($this->path, $pos + 1);
-            $this->path = substr($this->path, 0, $pos);
-        }
-
-        return $part;
-    }
-
-    /**
-     * Appends a path part to the existing request path.
-     *
-     * @param string $part the path part to append
-     */
-    public function pushPath(string $part): void
-    {
-        $this->path .= ((strlen($this->path) > 0) ? '/' : '').$part;
     }
 
     /**
@@ -376,52 +278,12 @@ abstract class Request implements Interfaces\Request
     }
 
     /**
-     * Sets the dispatched flag for the request.
+     * Returns the request as a string.
      *
-     * @param bool $flag the value to set for the dispatched flag
+     * @param array<mixed> $args
      */
-    public function setDispatched(bool $flag = true): void
+    protected function init(array $args): string
     {
-        $this->dispatched = $flag;
-    }
-
-    /**
-     * Checks if the request has been dispatched.
-     *
-     * @return bool true if the request has been dispatched, false otherwise
-     */
-    public function isDispatched(): bool
-    {
-        return $this->dispatched;
-    }
-
-    /**
-     * Sets the exception for the request.
-     *
-     * @param \Exception $e the exception to set
-     */
-    public function setException(\Exception $e): void
-    {
-        $this->exception = $e;
-    }
-
-    /**
-     * Checks if the request has an exception.
-     *
-     * @return bool true if the request has an exception, false otherwise
-     */
-    public function hasException(): bool
-    {
-        return $this->exception instanceof \Exception;
-    }
-
-    /**
-     * Gets the exception associated with the request.
-     *
-     * @return null|\Exception the exception associated with the request, or null if there is no exception
-     */
-    public function getException(): ?\Exception
-    {
-        return $this->exception;
+        return '/';
     }
 }
