@@ -44,20 +44,16 @@ abstract class WebDAV extends Basic
         'LOCK',
     ];
 
-    public function __initialize(Request $request): Response
+    public function __runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): Response
     {
-        $response = parent::__initialize($request);
-        if ('index' !== $this->__action) {
-            if (($this->manager = Manager::select($this->__action)) === false) {
+        if (true === $namedActionArgs) {
+            throw new \Exception('Named action arguments are not supported for WebDAV actions.');
+        }
+        if ('index' !== $actionName) {
+            if (($this->manager = Manager::select($actionName)) === false) {
                 throw new \Exception('Unknown media source!', 404);
             }
         }
-
-        return $response;
-    }
-
-    public function __runAction(?string &$action = null): ?Response
-    {
         $method = strtolower($this->request->method());
         // If the method is not supported, check for a __default handler to pass it off to, or else 405.
         if (!(in_array(strtoupper($method), $this->__allowed_methods) && method_exists($this, $method))) {
@@ -65,7 +61,7 @@ abstract class WebDAV extends Basic
                 throw new \Exception('Method not supported', 405);
             }
 
-            return $this->__default($this->name, $this->__action);
+            return $this->__default($this->name, $actionName);
         }
         $response = call_user_func([$this, $method]);
         if ($this->__stream) {
@@ -98,7 +94,7 @@ abstract class WebDAV extends Basic
         if ('infinity' === strtolower($depth)) {
             throw new \Exception('PROPFIND requests with a Depth of "infinity" are not allowed for '.$path.'.');
         }
-        $depth = (int)$depth;
+        $depth = (int) $depth;
         if (0 !== $depth && 1 !== $depth) {
             throw new \Exception('Bad request', 400);
         }

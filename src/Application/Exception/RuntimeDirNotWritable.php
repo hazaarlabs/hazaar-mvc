@@ -20,6 +20,6 @@ class RuntimeDirNotWritable extends Exception
             $group = coalesce(getenv('APACHE_RUN_GROUP'), '{your http server group}');
             $msg .= "chgrp {$group} {$dir}\n\n";
         }
-        parent::__construct($msg);
+        parent::__construct($msg, 500);
     }
 }
