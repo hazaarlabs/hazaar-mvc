@@ -3,6 +3,8 @@ parameters:
     paths:
         - src
         - tests
+    excludePaths:
+        - tests/application/route.php
     universalObjectCratesClasses:
         - Hazaar\Map
         - Hazaar\Model

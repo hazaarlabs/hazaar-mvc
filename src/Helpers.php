@@ -1034,7 +1034,7 @@ function dump(mixed $data = null, bool $backtrace = false): void
 {
     $exec_time = round((microtime(true) - HAZAAR_EXEC_START) * 1000, 2);
     if (defined('HAZAAR_VERSION') && ($app = Application::getInstance())) {
-        $controller = new Dump($data, $exec_time, $app);
+        $controller = new Dump($data, $exec_time, $app->router);
         $controller->toggleBacktrace($backtrace);
         $controller->__initialize($app->request);
         $response = $controller->__run();

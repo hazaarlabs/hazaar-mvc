@@ -14,7 +14,6 @@ namespace Hazaar\Controller;
 use Hazaar\Application\Request;
 use Hazaar\Cache;
 use Hazaar\Controller;
-use Hazaar\Loader;
 
 /**
  * @brief       Basic controller class
@@ -32,36 +31,14 @@ use Hazaar\Loader;
  */
 abstract class Basic extends Controller
 {
-    public string $urlDefaultActionName = 'index';
-    protected ?string $__action = null;
-
-    /**
-     * @var array<mixed>
-     */
-    protected array $__actionArgs = [];
-
-    /**
-     * @var array<mixed>
-     */
-    protected array $__cachedActions = [];
-    protected static ?Cache $__cache = null;
-    protected ?string $__cache_key = null;
     protected bool $__stream = false;
 
     public function __initialize(Request $request): ?Response
     {
         parent::__initialize($request);
-        $response = null;
-        if (!($this->__action = $request->shiftPath())) {
-            $this->__action = $this->urlDefaultActionName;
-        }
         $this->init($request);
-        $response = $this->initResponse($request);
-        if ($request->getPath()) {
-            $this->__actionArgs = explode('/', $request->getPath());
-        }
 
-        return $response;
+        return $this->initResponse($request);
     }
 
     /**
@@ -70,89 +47,66 @@ abstract class Basic extends Controller
      * This is the main controller action decision code and is where the controller will decide what to
      * actually execute and whether to cache the response on not.
      *
-     * @param string $action The name of the action to run
+     * @param array<mixed> $actionArgs The arguments to pass to the action
      *
      * @throws Exception\ActionNotFound
      * @throws Exception\ActionNotPublic
+     * @throws Exception\ResponseInvalid
      */
-    protected function __runAction(?string &$action = null): ?Response
+    public function __runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): Response
     {
-        if (!$action) {
-            $action = $this->__action;
-        }
         /*
          * Check if we have routed to the default controller, or the action method does not
          * exist and if not check for the __default() method.  Otherwise we have nothing
          * to execute so throw a nasty exception.
          */
-        if (true === $this->application->router->isDefaultController
-            || !method_exists($this, $action)) {
+        if (!method_exists($this, $actionName)) {
             if (method_exists($this, '__default')) {
-                array_unshift($this->__actionArgs, $action);
-                array_unshift($this->__actionArgs, $this->name);
-                $action = '__default';
+                if (true === $namedActionArgs) {
+                    throw new \Exception('Named action arguments are not supported for default actions.');
+                }
+                array_unshift($actionArgs, $actionName);
+                array_unshift($actionArgs, $this->name);
+                $actionName = '__default';
             } else {
-                throw new Exception\ActionNotFound(get_class($this), $action);
+                throw new Exception\ActionNotFound(get_class($this), $actionName);
             }
         }
-        $cache_name = $this->name.'::'.$action;
-        // Check the cached actions to see if this requested should use a cached version
-        if (Basic::$__cache instanceof Cache && array_key_exists($cache_name, $this->__cachedActions)) {
-            $this->__cache_key = $cache_name.'('.serialize($this->__actionArgs).')';
-            if (true !== $this->__cachedActions[$cache_name]['public'] && $sid = session_id()) {
-                $this->__cache_key .= '::'.$sid;
-            }
-            if ($response = Basic::$__cache->get($this->__cache_key)) {
-                return $response;
-            }
-        }
-        $method = new \ReflectionMethod($this, $action);
+        $method = new \ReflectionMethod($this, $actionName);
         if (!$method->isPublic()) {
-            throw new Exception\ActionNotPublic(get_class($this), $action);
+            throw new Exception\ActionNotPublic(get_class($this), $actionName);
         }
-        $response = $method->invokeArgs($this, $this->__actionArgs);
+        if (true === $namedActionArgs) {
+            $params = [];
+            foreach ($method->getParameters() as $p) {
+                $key = $p->getName();
+                $value = null;
+                if (array_key_exists($key, $actionArgs)) {
+                    $value = $actionArgs[$key];
+                } elseif ($p->isDefaultValueAvailable()) {
+                    $value = $p->getDefaultValue();
+                } else {
+                    throw new \Hazaar\Exception("Missing value for parameter '{$key}'.", 400);
+                }
+                $params[$p->getPosition()] = $value;
+            }
+        } else {
+            $params = $actionArgs;
+        }
+        $response = $method->invokeArgs($this, $params);
+        if (null === $response) {
+            throw new Exception\ResponseInvalid(get_class($this), $actionName);
+        }
         if ($this->__stream) {
             return new Response\Stream($response);
         }
         if (is_array($response)) {
             $response = new Response\JSON($response);
+        } elseif (is_string($response) || is_numeric($response)) {
+            $response = new Response\Text($response);
         }
 
         return $response;
-    }
-
-    public function __run(): bool|Response
-    {
-        $response = $this->__runAction();
-        $this->cacheResponse($response);
-        $response->setController($this);
-
-        return $response;
-    }
-
-    public function cacheAction(string $action, int $timeout = 60, bool $public = false): bool
-    {
-        if (!Basic::$__cache instanceof Cache) {
-            Basic::$__cache = new Cache();
-        }
-        $this->__cachedActions[$this->name.'::'.$action] = ['timeout' => $timeout, 'public' => $public];
-
-        return true;
-    }
-
-    public function getAction(): string
-    {
-        return $this->__action;
-    }
-
-    /**
-     * Returns the action arguments for the controller.
-     *
-     * @return array<mixed> the action arguments
-     */
-    public function getActionArgs(): array
-    {
-        return $this->__actionArgs;
     }
 
     /**
@@ -193,61 +147,10 @@ abstract class Basic extends Controller
         return true;
     }
 
-    /**
-     * Forwards an action from the requested controller to another controller.
-     *
-     * This is some added magic to assist with poorly designed MVC applications where too much "common" code
-     * has been implemented in a controller action.  This allows the action request to be forwarded and the
-     * response returned.  The target action is executed as though it was called on the requested controller.
-     * This means that view data can be modified after the action has executed to modify the response.
-     *
-     * Note: If you don't need to modify any response data, then it would be more efficient to use an alias.
-     *
-     * @param string       $controller the name of the controller to forward to
-     * @param string       $action     Optional. The name of the action to call on the target controller.  If ommitted, the
-     *                                 name of the requested action will be used.
-     * @param array<mixed> $actionArgs Optional. An array of arguments to forward to the action.  If ommitted, the arguments
-     *                                 sent to the calling action will be forwarded.
-     * @param Controller   $target     The target controller.  Allows direct access to the forward controller after it has
-     *                                 been loaded.
-     *
-     * @return Response returns the same return value returned by the forward controller action
-     */
-    public function forwardAction(string $controller, ?string $action = null, ?array $actionArgs = null, ?Controller &$target = null): Response
-    {
-        $target = Loader::getInstance()->loadController($controller, $this->name);
-        if (!$target instanceof Basic) {
-            throw new \Exception("Unable to forward action to controller '{$controller}'.  Target controller must be an instance of \\Hazaar\\Controller\\Basic.");
-        }
-        if (null === $action) {
-            $action = $this->getAction();
-        }
-        if (null === $actionArgs) {
-            $actionArgs = $this->getActionArgs();
-        }
-        $this->request->pushPath($action);
-        $target->__initialize($this->request);
-
-        return call_user_func_array([$target, $action], $actionArgs);
-    }
-
     protected function init(Request $request): void {}
 
     protected function initResponse(Request $request): ?Response
     {
         return null;
-    }
-
-    /**
-     * Cache a response to the current action invocation.
-     *
-     * @param Response $response The response to cache
-     */
-    protected function cacheResponse(Response $response): void
-    {
-        $cache_name = $this->name.'::'.$this->__action;
-        if (null !== $this->__cache_key && array_key_exists($cache_name, $this->__cachedActions)) {
-            Basic::$__cache->set($this->__cache_key, $response, $this->__cachedActions[$cache_name]['timeout']);
-        }
     }
 }

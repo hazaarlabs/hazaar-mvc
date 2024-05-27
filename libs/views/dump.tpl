@@ -107,10 +107,7 @@
                     padding: 25px;
                     border: 1px solid #333;
                     border-radius: 15px;
-
                 }
-
-
             }
         }
 
@@ -138,7 +135,7 @@
             <p class="time">Loaded in {$time|string_format:"%.2f"}ms</p>
         </div>
         <div class="dumpdata">
-            <div class="data">{$data|dump}</div>
+            <div class="data">{$data|dump|escape:html}</div>
         </div>
     </div>
 </body>

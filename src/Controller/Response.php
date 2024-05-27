@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller;
 
-use Hazaar\Controller;
 use Hazaar\HTTP\Client;
 
 class Response implements Interfaces\Response
@@ -19,7 +18,6 @@ class Response implements Interfaces\Response
     protected bool $headersSet = false;
     protected string $contentType = 'text/plain';
     protected int $statusCode = 0;
-    protected ?Controller $controller = null;
 
     public function __construct(string $type = 'text/html', int $status = 501)
     {
@@ -33,9 +31,6 @@ class Response implements Interfaces\Response
     public function __writeOutput(): void
     {
         $content = '';
-        if (method_exists($this, '__prepare')) {
-            $this->__prepare($this->controller);
-        }
         if ($this->modified()) {
             $content = $this->getContent();
         }
@@ -58,16 +53,6 @@ class Response implements Interfaces\Response
     public function __sleep()
     {
         return ['content', 'contentType', 'headers', 'statusCode'];
-    }
-
-    public function setController(Controller $controller): void
-    {
-        $this->controller = $controller;
-    }
-
-    public function hasController(): bool
-    {
-        return $this->controller instanceof Controller;
     }
 
     /**

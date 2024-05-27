@@ -11,8 +11,8 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller;
 
-use Hazaar\Application;
 use Hazaar\Application\Request\HTTP;
+use Hazaar\Application\Router;
 use Hazaar\Exception;
 use Hazaar\Loader;
 use Hazaar\View\Layout;
@@ -52,12 +52,12 @@ class Error extends Diagnostic
      */
     private static ?array $status_codes = null;
 
-    public function __construct($name, Application $application)
+    public function __construct(Router $router, $name = 'Error')
     {
         if (!is_array(self::$status_codes)) {
             self::$status_codes = $this->loadStatusCodes();
         }
-        parent::__construct($name, $application);
+        parent::__construct($router, $name);
     }
 
     public function getStatusMessage(?int $code = null): ?string
@@ -133,7 +133,7 @@ class Error extends Diagnostic
         return $this->callstack;
     }
 
-    public function clean_output_buffer(): void
+    public function cleanOutputBuffer(): void
     {
         while (count(ob_get_status()) > 0) {
             ob_end_clean();
@@ -251,7 +251,7 @@ class Error extends Diagnostic
             $h = fopen($file, 'r');
             while ($line = fgets($h)) {
                 if (preg_match('/^(\d*)\s(.*)$/', $line, $matches)) {
-                    $status_codes[(int)$matches[1]] = $matches[2];
+                    $status_codes[(int) $matches[1]] = $matches[2];
                 }
             }
         }

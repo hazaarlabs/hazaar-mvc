@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Hazaar\Application;
 use Hazaar\Controller\Response\Stream;
-use Hazaar\Loader;
 use Hazaar\Logger\Frontend;
 
 /*
@@ -30,16 +29,9 @@ function errorAndDie(): void
         $stream = new Stream($args[0]);
         $stream->__writeOutput();
     } elseif ($app instanceof Application) {
-        $controller = null;
-        if ($error_controller = $app->config['app']->get('errorController')) {
-            $loader = Loader::getInstance($app);
-            $controller = $loader->loadController($error_controller);
-        }
-        if (!$controller instanceof Hazaar\Controller\Error) {
-            $controller = new Hazaar\Controller\Error('Error', $app);
-        }
+        $controller = $app->router->getErrorController();
         call_user_func_array([$controller, 'setError'], $args);
-        $controller->clean_output_buffer();
+        $controller->cleanOutputBuffer();
         $code = $app->run($controller);
     } else {
         $error = [10500, 'An unknown error occurred!', __FILE__, __LINE__, null, []];
