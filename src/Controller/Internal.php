@@ -16,10 +16,10 @@ class Internal extends Controller
         return parent::__initialize($request);
     }
 
-    public function __run(): bool|Response
+    public function __run(): false|Response
     {
         $filename = $this->request->getPath();
-        $file = $this->application->loader->getFilePath(FILE_PATH_SUPPORT, $filename);
+        $file = $this->router->application->loader->getFilePath(FILE_PATH_SUPPORT, $filename);
         if (null === $file) {
             throw new Exception("Hazaar support file '{$filename}' not found!", 404);
         }

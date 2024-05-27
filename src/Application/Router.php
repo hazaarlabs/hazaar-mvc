@@ -11,27 +11,28 @@ declare(strict_types=1);
 
 namespace Hazaar\Application;
 
+use Hazaar\Application;
+use Hazaar\Application\Router\Exception\ControllerNotFound;
+use Hazaar\Application\Router\Exception\NoAction;
+use Hazaar\Application\Router\Exception\RouteNotFound;
+use Hazaar\Cache;
 use Hazaar\Controller;
-use Hazaar\Loader;
+use Hazaar\Controller\Error;
+use Hazaar\Controller\Response;
+use Hazaar\Map;
 
-class Router
+abstract class Router implements Interfaces\Router
 {
-    public bool $isDefaultController = false;
-
     /**
-     * @var array<string, string>
+     * Default configuration.
+     *
+     * @var array<string, mixed>
      */
-    private array $aliases = [];
-    private string $file;
-    private string $route;
-    private ?string $controller = null;
-    private ?string $controller_name = null;
-    private bool $useDefaultController = false;
-
-    /**
-     * @var null|array<string>|string
-     */
-    private null|array|string $defaultController = null;
+    public static array $defaultConfig = [
+        'controller' => 'index',
+        'action' => 'index',
+        'args' => [],
+    ];
 
     /**
      * Internal controllers.
@@ -42,120 +43,187 @@ class Router
         'hazaar' => 'Hazaar\Controller\Internal',
     ];
 
-    public function __construct(Config $config)
+    public Application $application;
+    protected Map $config;
+
+    protected ?string $controller = null;
+    protected ?string $action = null;
+
+    /**
+     * @var array<string>
+     */
+    protected array $actionArgs = [];
+    protected bool $namedActionArgs = false;
+
+    private ?Controller $__controller = null;
+
+    /**
+     * @var array<array<bool|int>>
+     */
+    private array $__cachedActions = [];
+
+    /**
+     * @var array<Response>
+     */
+    private array $__cachedResponses = [];
+
+    private ?Cache $__responseCache = null;
+
+    final public function __construct(Application $application, Config $config)
     {
-        if ($aliases = $config['app']->get('alias')) {
-            $this->aliases = $aliases->toArray();
+        $this->application = $application;
+        $this->config = $config->get('router', self::$defaultConfig);
+        if ($controller = $this->config->get('controller')) {
+            $this->controller = ucfirst($controller);
         }
-        $this->file = APPLICATION_PATH.DIRECTORY_SEPARATOR.ake($config['app']['files'], 'route', 'route.php');
-        $this->useDefaultController = boolify($config['app']['useDefaultController']);
-        $this->defaultController = $config['app']['defaultController'];
+        $this->action = $this->config->get('action');
     }
 
-    public function evaluate(Request $request): bool
+    /**
+     * Initializes the Router object and evaluates the request.
+     *
+     * @param Request $request the request object
+     *
+     * @throws RouteNotFound
+     * @throws NoAction
+     */
+    final public function __initialise(Request $request): void
     {
-        $this->route = $request->getPath();
-        if ($this->file && file_exists($this->file)) {
-            include $this->file;
+        if (!$this->evaluateRequest($request)) {
+            throw new RouteNotFound($request->getPath());
         }
-        if ($this->route = trim($this->route, '/')) {
-            $parts = explode('/', $this->route);
-            if ($this->aliases) {
-                $match_parts = array_map('strtolower', $parts);
-                foreach ($this->aliases as $match => $alias) {
-                    $alias_parts = explode('/', strtolower($match));
-                    if ($alias_parts !== array_slice($match_parts, 0, count($alias_parts))) {
-                        continue;
-                    }
-                    $leftovers = array_slice($parts, count($alias_parts));
-                    $parts = explode('/', $alias);
-                    foreach ($parts as &$part) {
-                        if ('$' !== $part[0]) {
-                            continue;
-                        }
-                        if ('path' === substr($part, 1)) {
-                            $part = implode('/', $leftovers);
-                        }
-                    }
-
-                    break;
-                }
-            }
-            if (array_key_exists($parts[0], self::$internal)) {
-                $this->controller = array_shift($parts);
-            } else {
-                $this->controller = $this->findController($parts);
-            }
-            $request->setPath((count($parts) > 0) ? implode('/', $parts) : '');
-        } else {
-            $this->controller = $this->findController($this->defaultController);
+        if (null === $this->controller) {
+            throw new RouteNotFound($request->getPath());
         }
-        // If there is no controller and the default controller is active, search for that too.
-        if (!$this->controller && true === $this->useDefaultController) {
-            $this->controller = $this->findController($this->defaultController);
-            $this->controller_name = $request->getFirstPath();
-            $this->isDefaultController = true;
+        if (null === $this->action) {
+            throw new NoAction($this->controller);
         }
-
-        return null !== $this->controller;
     }
 
-    public function getController(): ?string
+    public function __run(Request $request): Response
     {
-        return $this->controller;
+        if ($response = $this->__getCachedResponse()) {
+            return $response;
+        }
+        $controllerClass = '\\' === substr($this->controller, 0, 1)
+            ? $this->controller : '\\Application\\Controllers\\'.ucfirst($this->controller);
+        if (!class_exists($controllerClass)) {
+            throw new ControllerNotFound($controllerClass, $request->getPath());
+        }
+        $this->__controller = new $controllerClass($this, $this->controller);
+        // Initialise the controller with the current request
+        if ($response = $this->__controller->__initialize($request)) {
+            return $response;
+        }
+        // Execute the controller action
+        $response = $this->__controller->__runAction($this->action, $this->actionArgs, $this->namedActionArgs);
+        $this->__cacheResponse($response);
+
+        return $response;
+    }
+
+    final public function __shutdown(Response $response): void
+    {
+        if (null !== $this->__controller) {
+            $this->__controller->__shutdown($response);
+        }
+        if ($this->__responseCache && count($this->__cachedResponses) > 0) {
+            foreach ($this->__cachedResponses as $cacheItem) {
+                $this->__responseCache->set($cacheItem[0], $cacheItem[1], $cacheItem[2]);
+            }
+        }
+    }
+
+    private function __getCacheKey(string $controller, string $action, ?string &$cacheName = null): false|string
+    {
+        $cacheName = $this->controller.'::'.$this->action;
+        if (!array_key_exists($cacheName, $this->__cachedActions)) {
+            return false;
+        }
+        $cacheKey = $cacheName.'('.serialize($this->actionArgs).')';
+        if (true === $this->__cachedActions[$cacheName]['private'] && ($sid = session_id())) {
+            $cacheKey .= '::'.$sid;
+        }
+
+        return $cacheKey;
+    }
+
+    /**
+     * Cache a response to the current action invocation.
+     *
+     * @param Response $response The response to cache
+     */
+    private function __cacheResponse(Response $response): bool
+    {
+        if (null === $this->__responseCache) {
+            return false;
+        }
+        $cacheKey = $this->__getCacheKey($this->controller, $this->action, $cacheName);
+        $this->__cachedResponses[] = [$cacheKey, $response, $this->__cachedActions[$cacheName]['timeout']];
+
+        return true;
+    }
+
+    private function __getCachedResponse(): false|Response
+    {
+        if (null === $this->__responseCache) {
+            return false;
+        }
+        $cacheKey = $this->__getCacheKey($this->controller, $this->action);
+        if ($response = $this->__responseCache->get($cacheKey)) {
+            return $response;
+        }
+
+        return false;
+    }
+
+    public function evaluateRequest(Request $request): bool
+    {
+        return false;
     }
 
     public function getControllerName(): ?string
     {
-        if ($this->controller_name) {
-            return $this->controller_name;
-        }
-
         return $this->controller;
     }
 
-    /**
-     * Finds the controller based on the given parts.
-     *
-     * @param array<string>|string $controller_name the name of the controller
-     *
-     * @return string the name of the controller
-     */
-    private function findController(array|string &$controller_name): ?string
+    public function getActionName(): ?string
     {
-        if (!is_array($controller_name)) {
-            $controller_name = explode('/', $controller_name);
-        }
-        $index = 0;
+        return $this->action;
+    }
+
+    public function getActionArgs(): array
+    {
+        return $this->actionArgs;
+    }
+
+    public function getErrorController(): Error
+    {
         $controller = null;
-        $controller_root = Loader::getFilePath(FILE_PATH_CONTROLLER);
-        $controller_path = DIRECTORY_SEPARATOR;
-        $controller_index = null;
-        foreach ($controller_name as $index => $part) {
-            $part = ucfirst($part);
-            $found = false;
-            $path = $controller_root.$controller_path;
-            $controller_path .= $part.DIRECTORY_SEPARATOR;
-            if (is_dir($path.$part)) {
-                $found = true;
-                if (file_exists($controller_root.$controller_path.'Index.php')) {
-                    $controller = implode('/', array_slice($controller_name, 0, $index + 1)).'/index';
-                    $controller_index = $index;
-                }
-            }
-            if (file_exists($path.$part.'.php')) {
-                $found = true;
-                $controller = (($index > 0) ? implode('/', array_slice($controller_name, 0, $index)).'/' : null).strtolower($part);
-                $controller_index = $index;
-            }
-            if (false === $found) {
-                break;
+        if ($errorController = $this->config->get('errorController')) {
+            $controllerClass = '\\Application\\Controllers\\'.ucfirst($errorController);
+            if (class_exists($controllerClass) && is_subclass_of($controllerClass, Error::class)) {
+                $controller = new $controllerClass($this, $errorController);
             }
         }
-        if ($controller) {
-            $controller_name = array_slice($controller_name, $controller_index + 1);
+        if (null === $controller) {
+            $controller = new Error($this);
         }
 
         return $controller;
+    }
+
+    public function cacheAction(string $controllerName, string $actionName, int $timeout = 60, bool $private = false): bool
+    {
+        if (null === $this->__responseCache) {
+            $this->__responseCache = new Cache('apc');
+        }
+        $this->__getCacheKey($controllerName, $actionName, $cacheName);
+        $this->__cachedActions[$cacheName] = [
+            'timeout' => $timeout,
+            'private' => $private,
+        ];
+
+        return true;
     }
 }
