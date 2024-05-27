@@ -34,7 +34,7 @@ class File extends Backend
 {
     protected int $weight = 4;
     private bool $zlib = false;
-    private string $cache_dir;
+    private string $cacheDir;
     private int $timeout = 0;
 
     /**
@@ -46,7 +46,7 @@ class File extends Backend
     /**
      * @var array<BTree>
      */
-    private static array $__open_store = [];
+    private static array $__openStore = [];
 
     /**
      * Store the namespace timeout in the cache dir timeout file.
@@ -76,18 +76,18 @@ class File extends Backend
             'encode_fs' => false,
             'keepalive' => false,
         ]);
-        $this->cache_dir = $this->options['cache_dir']
+        $this->cacheDir = $this->options['cache_dir']
             .(($this->options['file_prefix']) ? DIRECTORY_SEPARATOR.$this->options['file_prefix'] : null)
             .DIRECTORY_SEPARATOR;
-        if (!file_exists($this->cache_dir)) {
-            mkdir($this->cache_dir);
+        if (!file_exists($this->cacheDir)) {
+            mkdir($this->cacheDir);
         }
         // Open the B-Tree database file
-        $cache_file = $this->cache_dir.($this->options['encode_fs'] ? md5($this->namespace) : $this->namespace).'.db';
-        if (!array_key_exists($cache_file, File::$__open_store)) {
-            File::$__open_store[$cache_file] = new BTree($cache_file);
+        $cacheFile = $this->cacheDir.($this->options['encode_fs'] ? md5($this->namespace) : $this->namespace).'.db';
+        if (!array_key_exists($cacheFile, File::$__openStore)) {
+            File::$__openStore[$cacheFile] = new BTree($cacheFile);
         }
-        $this->store = File::$__open_store[$cache_file];
+        $this->store = File::$__openStore[$cacheFile];
         $this->addCapabilities('store_objects', 'expire_val', 'array');
         if (in_array('zlib', get_loaded_extensions())) {
             $this->zlib = true;

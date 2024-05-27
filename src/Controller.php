@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Hazaar;
 
 use Hazaar\Application\Request;
+use Hazaar\Application\Router;
 use Hazaar\Application\URL;
 use Hazaar\Controller\Helper;
 use Hazaar\Controller\Response;
@@ -23,11 +24,11 @@ use Hazaar\Controller\Response;
  * provided by Hazaar MVC, as how a controller actually behaves and the functionality it provides is actually defined
  * by the controller itself.  This controller does nothing, but will still initialise and run, but will output nothing.
  */
-abstract class Controller
+abstract class Controller implements Controller\Interfaces\Controller
 {
     public string $url_default_action_name = 'index';
     public bool $use_metrics = true;
-    protected ?Application $application = null;
+    protected Router $router;
     protected string $name;
     protected Request $request;
     protected int $statusCode = 0;
@@ -43,10 +44,10 @@ abstract class Controller
      *
      * @param string $name The name of the controller.  This is the name used when generating URLs.
      */
-    public function __construct($name, Application $application)
+    public function __construct(Router $router, ?string $name = null)
     {
-        $this->name = strtolower($name);
-        $this->application = $application;
+        $this->router = $router;
+        $this->name = strtolower(null !== $name ? $name : get_class($this));
         $this->addHelper('response');
     }
 
@@ -88,7 +89,12 @@ abstract class Controller
      *
      * The run method is where the controller does all it's work.  This default one does nothing.
      */
-    public function __run(): bool|Response
+    public function __run(): false|Response
+    {
+        return false;
+    }
+
+    public function __runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): false|Response
     {
         return false;
     }
@@ -178,7 +184,7 @@ abstract class Controller
      */
     public function redirect(string|URL $location, bool $save_uri = false): Response
     {
-        return $this->application->redirect($location, $save_uri);
+        return $this->router->application->redirect($location, $save_uri);
     }
 
     /**
@@ -191,7 +197,7 @@ abstract class Controller
      */
     public function redirectBack(null|string|URL $alt_url = null): Response
     {
-        return $this->application->redirectBack($alt_url);
+        return $this->router->application->redirectBack($alt_url);
     }
 
     /**
@@ -243,7 +249,7 @@ abstract class Controller
     {
         $parts = func_get_args();
 
-        return call_user_func_array([$this->application, 'active'], array_merge([$this->name], $parts));
+        return call_user_func_array([$this->router->application, 'active'], array_merge([$this->name], $parts));
     }
 
     /**
@@ -299,6 +305,11 @@ abstract class Controller
     public function hasHelper($helper): bool
     {
         return array_key_exists($helper, $this->_helpers);
+    }
+
+    public function cacheAction(string $action, int $timeout = 0): void
+    {
+        $this->router->cacheAction($this->name, $action, $timeout);
     }
 
     /**

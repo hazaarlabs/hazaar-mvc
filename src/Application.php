@@ -26,6 +26,7 @@ use Hazaar\File\Metric;
 use Hazaar\Logger\Frontend;
 
 define('HAZAAR_VERSION', '3.0');
+define('HAZAAR_START', microtime(true));
 // Constant containing the application environment current being used.
 defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV') ? getenv('APPLICATION_ENV') : 'development');
 /*
@@ -103,7 +104,6 @@ class Application
     protected string $urlDefaultPart;
     private static ?Application $instance = null;
     private static string $root;
-    private bool $use_metrics = false; // Internal metrics settings.  This is disabled when using the console.
 
     /**
      * The main application constructor.
@@ -133,7 +133,7 @@ class Application
                 define('HAZAAR_INIT_START', microtime(true));
             }
             // Create a loader object and register it as the default autoloader
-            $this->loader = Loader::getInstance($this);
+            $this->loader = Loader::getInstance();
             $this->loader->register();
             // Store the search paths in the GLOBALS container so they can be used in config includes.
             $this->GLOBALS['paths'] = $this->loader->getSearchPaths();
@@ -157,12 +157,13 @@ class Application
             $this->configure($config);
             // Create the request object
             $this->request = Request\Loader::load();
-            if ($this->request instanceof Request\HTTP
-                && ($base_url = $this->request->getHeader('X-Base-Url'))) {
-                URL::$__base_url = $base_url;
-            }
             // Create a new router object for evaluating routes
-            $this->router = new Router($this->config);
+            $routerType = $this->config->get('router.type', 'basic');
+            $routerClass = 'Hazaar\\Application\\Router\\'.ucfirst($routerType);
+            if (false === class_exists($routerClass)) {
+                throw new Application\Exception\RouterUnknown($routerType);
+            }
+            $this->router = new $routerClass($this, $this->config);
         } catch (\Throwable $e) {
             dieDieDie($e);
         }
@@ -181,7 +182,7 @@ class Application
             if (file_exists($shutdown)) {
                 include $shutdown;
             }
-            if (true === $this->use_metrics) {
+            if (true === $this->config->get('app.metrics')) {
                 $metric_file = $this->runtimePath('metrics.dat');
                 $metric = new Metric($metric_file);
                 if (!$metric->exists()) {
@@ -205,7 +206,7 @@ class Application
         }
         Frontend::i(
             'CORE',
-            '"'.ake($_SERVER, 'REQUEST_METHOD').' /'.$this->request->getBasePath().'" '
+            '"'.ake($_SERVER, 'REQUEST_METHOD').' /'.$this->request->getPath().'" '
             .http_response_code()
             .' "'.ake($_SERVER, 'HTTP_USER_AGENT').'"'
         );
@@ -237,9 +238,7 @@ class Application
         return [
             'app' => [
                 'root' => ('cli-server' === php_sapi_name()) ? null : dirname($_SERVER['SCRIPT_NAME']),
-                'defaultController' => 'Index',
                 'errorController' => null,
-                'useDefaultController' => false,
                 'favicon' => 'favicon.png',
                 'timezone' => 'UTC',
                 'polyfill' => true,
@@ -252,6 +251,12 @@ class Application
                 ],
                 'responseImageCache' => false,
                 'runtimePath' => APPLICATION_PATH.DIRECTORY_SEPARATOR.'.runtime',
+                'metrics' => false,
+            ],
+            'router' => [
+                'type' => 'basic',
+                'controller' => 'index',
+                'action' => 'index',
             ],
             'paths' => [
                 'model' => 'models',
@@ -427,7 +432,7 @@ class Application
      */
     public function getRequestedController(): string
     {
-        return $this->router->getController();
+        return ''; // $this->router->getController();
     }
 
     /**
@@ -486,22 +491,17 @@ class Application
         if (!date_default_timezone_set($tz)) {
             throw new Application\Exception\BadTimezone($tz);
         }
-        if (!$this->router->evaluate($this->request)) {
-            throw new Application\Exception\RouteNotFound($this->request->getPath());
+        if (!defined('RUNTIME_PATH')) {
+            define('RUNTIME_PATH', $this->runtimePath(null, true));
+            $this->GLOBALS['runtime'] = RUNTIME_PATH;
         }
-        if ('hazaar' !== $this->router->getController()) {
-            if (!defined('RUNTIME_PATH')) {
-                define('RUNTIME_PATH', $this->runtimePath(null, true));
-                $this->GLOBALS['runtime'] = RUNTIME_PATH;
-            }
-            // Check for an application bootstrap file and execute it
-            $bootstrap = APPLICATION_PATH.DIRECTORY_SEPARATOR
-                .ake($this->config['app']['files'], 'bootstrap', 'bootstrap.php');
-            if (file_exists($bootstrap)) {
-                $this->bootstrap = include $bootstrap;
-                if (false === $this->bootstrap) {
-                    throw new Exception('The application failed to start!');
-                }
+        // Check for an application bootstrap file and execute it
+        $bootstrap = APPLICATION_PATH.DIRECTORY_SEPARATOR
+            .ake($this->config['app']['files'], 'bootstrap', 'bootstrap.php');
+        if (file_exists($bootstrap)) {
+            $this->bootstrap = include $bootstrap;
+            if (false === $this->bootstrap) {
+                throw new Exception('The application failed to start!');
             }
         }
         if ($this->timer) {
@@ -538,55 +538,31 @@ class Application
                 $this->timer->stop('_exec');
                 $this->timer->start('exec');
             }
-            if (!$controller instanceof Controller) {
-                // Load the controller and check it was successful
-                $controller = $this->loader->loadController($this->router->getController(), $this->router->getControllerName());
-                if (!$controller instanceof Controller) {
-                    throw new Application\Exception\RouteNotFound($this->request->getBasePath());
+            if (null !== $controller) {
+                $response = $controller->__initialize($this->request);
+                if (null === $response) {
+                    $response = $controller->__run();
                 }
+            } else {
+                $this->router->__initialise($this->request);
+                $response = $this->router->__run($this->request);
             }
-            if (true === $this->config['app']['metrics']) {
-                $this->use_metrics = $controller->use_metrics;
-            }
-            $this->urlDefaultPart = $controller->url_default_action_name;
-            // Initialise the controller with the current request
-            $response = $controller->__initialize($this->request);
-            // If we get a response now, the controller wants out, so display it and quit.
-            if ($response instanceof Response) {
-                $response->__writeOutput();
-                $controller->__shutdown($response);
-
-                return $response->getStatus();
-            }
-            // Execute the controllers run method.
-            $this->response = $controller->__run();
-            if (!$this->response instanceof Response) {
-                $this->response = new NoContent();
-            } elseif ($this->response instanceof File) {
-                if (!$this->response->fileExists()) {
+            if (!$response instanceof Response) {
+                $response = new NoContent();
+            } elseif ($response instanceof File) {
+                if (!$response->fileExists()) {
                     throw new \Exception('File not found', 404);
                 }
             }
-            if (!$this->response->hasController()) {
-                $this->response->setController($controller);
-            }
-            // The run method should have returned a response object that we can output to the client
-            if (!$this->response instanceof Response) {
-                throw new Application\Exception\ResponseInvalid();
-            }
-            // If the controller has specifically requested a return status code, set it now.
-            if ($status = $controller->getStatus()) {
-                $this->response->setStatus($status);
-            }
             // Finally, write the response to the output buffer.
-            $this->response->__writeOutput();
+            $response->__writeOutput();
             // Shutdown the controller
-            $controller->__shutdown($this->response);
+            $this->router->__shutdown($response);
             if ($this->timer) {
                 $this->timer->start('shutdown');
                 $this->timer->stop('exec');
             }
-            $code = $this->response->getStatus();
+            $code = $response->getStatus();
         } catch (Controller\Exception\HeadersSent $e) {
             dieDieDie('HEADERS SENT');
         } catch (\Exception $e) {
@@ -659,9 +635,7 @@ class Application
                 $parts[] = strtolower(trim($part_part ?? ''));
             }
         }
-        if (!($base_path = $this->request->getBasePath())) {
-            $base_path = strtolower(URL::$__default_controller);
-        }
+        $base_path = $this->request->getPath();
         $request_parts = $base_path ? array_map('strtolower', array_map('trim', explode('/', $base_path))) : [];
         for ($i = 0; $i < count($parts); ++$i) {
             if (!array_key_exists($i, $request_parts) && null !== $this->urlDefaultPart) {
@@ -773,19 +747,5 @@ class Application
     public function setResponseType(string $type): void
     {
         $this->responseType = $type;
-    }
-
-    /**
-     * Get the contents for the applications composer.json file.
-     *
-     * This is shorthand method to quickly get the application composer file.
-     */
-    public function composer(): bool|\stdClass
-    {
-        if (!($path = realpath(APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'composer.json'))) {
-            return false;
-        }
-
-        return json_decode(file_get_contents($path));
     }
 }

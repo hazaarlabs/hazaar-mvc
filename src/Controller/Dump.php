@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller;
 
-use Hazaar\Application;
+use Hazaar\Application\Router;
 use Hazaar\Exception;
 use Hazaar\View\Layout;
 use Hazaar\XML\Element;
@@ -27,9 +27,9 @@ class Dump extends Diagnostic
     private float $exec_time = -1;
     private bool $backtrack = false;
 
-    public function __construct(mixed $data, float $exec_time, Application $application)
+    public function __construct(mixed $data, float $exec_time, Router $router)
     {
-        parent::__construct('debug', $application);
+        parent::__construct($router, 'debug');
         $this->exec_time = $exec_time;
         $this->data = $data;
     }

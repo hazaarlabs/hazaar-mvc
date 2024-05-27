@@ -11,9 +11,6 @@ declare(strict_types=1);
 
 namespace Hazaar;
 
-use Hazaar\Application\Router;
-use Hazaar\Exception\ClassNotFound;
-
 // Constant to indicate a path contains config files
 define('FILE_PATH_ROOT', 'root');
 // Constant to indicate a path contains config files
@@ -66,7 +63,6 @@ define('SUPPORT_PATH', realpath(LIBRARY_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_
  *
  * ```php
  * $loader = Hazaar\Loader::getInstance();
- * $loader->loadController('index');
  * ```
  *
  * !!! notice
@@ -82,7 +78,6 @@ class Loader
      * @var array<string, array<string>> an array of search paths for this loader instance
      */
     public array $paths = [];
-    private ?Application $application = null;
     private static ?Loader $instance = null;
 
     /**
@@ -91,9 +86,8 @@ class Loader
      * !!! warning
      * Do NOT instantiate this class directly. See Loader::getInstance() on how to get a new Loader instance.
      */
-    public function __construct(?Application $application = null)
+    public function __construct()
     {
-        $this->application = $application;
         if (!Loader::$instance instanceof Loader) {
             Loader::$instance = $this;
         }
@@ -121,10 +115,10 @@ class Loader
     /**
      * Return the current instance of the Loader object.
      */
-    public static function getInstance(?Application $application = null): Loader
+    public static function getInstance(): Loader
     {
         if (null === Loader::$instance) {
-            Loader::$instance = new Loader($application);
+            Loader::$instance = new Loader();
         }
 
         return Loader::$instance;
@@ -307,68 +301,6 @@ class Loader
     }
 
     /**
-     * This method is used to load a new instance of a controller class.
-     * There are some
-     * built-in 'magic controllers' that this method will automatically load upon request.
-     *
-     * These controllers are:
-     *
-     * * style - Returns a[[Hazaar\Controller\Style]] object to handle output for CSS stylesheets.
-     * * script - Returns a[[Hazaar\Controller\Script]] object to handle output of JavaScript files.
-     *
-     * If no controller can be found the default site controller will be loaded.
-     *
-     * @param string $controller The name of the controller to load. This can be _style_ or _script_ to
-     *                           load Style and Script controllers.
-     */
-    public function loadController(string $controller, ?string $controller_name = null): ?Controller
-    {
-        if (!$controller_name) {
-            $controller_name = $controller;
-        }
-        $newController = null;
-
-        try {
-            /*
-             * Check for magic controllers
-             *
-             * Magic controllers are are controllers that are handled internally. These can be
-             * either 'style', or 'script' to serve up compressed CSS or JS files, the hazaar
-             * controller, etc.
-             */
-            if (array_key_exists($controller, Router::$internal)) {
-                $newController = new Router::$internal[$controller]($controller, $this->application);
-            } else {
-                // Build a list of controllers to search for
-                $controller_class_search = [];
-                $parts = explode('/', $controller);
-                $controller_class_search[] = 'Application\\Controllers\\'.implode('\\', array_map('ucfirst', $parts));
-                // Legacy controller name search
-                if (1 === count($parts)) {
-                    $controller_class_search[] = ucfirst($controller).'Controller';
-                }
-                /*
-                 * This call to class_exists() will actually load the class with the __autoload magic method. Then
-                 * we test if the class exists and if it doesn't we try a legacy load which includes the default controller . If that
-                 * failes we return FALSE so a nice error can be sent instead of a nasty fatal error
-                 */
-                foreach ($controller_class_search as $controller_class) {
-                    if (!class_exists($controller_class)) {
-                        continue;
-                    }
-                    $newController = new $controller_class($controller_name, $this->application);
-
-                    break;
-                }
-            }
-        } catch (ClassNotFound $e) {
-            return null;
-        }
-
-        return $newController;
-    }
-
-    /**
      * Loads a class from a source file.
      * This is the main class loader used by the __autoload()PHP
      * trigger. It is responsible for loading the files that hold class source definitions by determining
@@ -392,19 +324,19 @@ class Loader
      *
      * If they both fail, the class is not found and we throw a pretty exception.
      *
-     * @param string $class_name
+     * @param string $className
      *                           The name of the class to load
      */
-    public static function loadClassFromFile($class_name): void
+    public static function loadClassFromFile($className): void
     {
-        if (preg_match('/^(\w*)Controllers$/', $class_name, $matches)) {
+        if (preg_match('/^(\w*)Controllers$/', $className, $matches)) {
             $controllerClassFile = ucfirst($matches[1]).'.php';
             if ($filename = Loader::getFilePath(FILE_PATH_CONTROLLER, $controllerClassFile)) {
                 require_once $filename;
 
                 return;
             }
-        } elseif (preg_match('/^(\w*)Services$/', $class_name, $matches)) {
+        } elseif (preg_match('/^(\w*)Services$/', $className, $matches)) {
             $serviceClassFile = $matches[1].'.php';
             if ($filename = Loader::getFilePath(FILE_PATH_SERVICE, $serviceClassFile)) {
                 require_once $filename;
@@ -412,7 +344,7 @@ class Loader
                 return;
             }
         } else {
-            $namepath = preg_split('/(\W|_)/', $class_name, -1, PREG_SPLIT_NO_EMPTY);
+            $namepath = preg_split('/(\W|_)/', $className, -1, PREG_SPLIT_NO_EMPTY);
             /*
              * Check that the prefix is 'Application'. This is sort of a namespace 'key' if you will
              * to restrict the loadable path to that of the application itself.

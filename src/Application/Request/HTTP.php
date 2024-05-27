@@ -30,14 +30,13 @@ use Hazaar\Session;
  */
 class HTTP extends Request
 {
-    public static string $pathParam = 'hz_path';
+    public static string $pathParam = 'hzpath';
     public static string $queryParam = 'hzqs';
 
     /**
      * Request body.  This is only used in certain circumstances such as with XML-RPC or REST.
      */
-    public string $body;
-    public string $response_type;
+    public string $body = '';
 
     /**
      * Request method.
@@ -61,14 +60,13 @@ class HTTP extends Request
      *
      * @param array<mixed> $request Optional reference to $_REQUEST
      */
-    public function init(?array $request = null, bool $process_request_body = false, ?string $method = null): string
+    public function init(?array $server, ?array $request = null, bool $processRequestBody = false): string
     {
-        if (null === $request) {
-            $request = $_REQUEST;
+        $this->method = ake($server, 'REQUEST_METHOD', 'GET');
+        if (function_exists('getallheaders')) {
+            $this->headers = getallheaders();
         }
-        $this->method = $method ?? ake($_SERVER, 'REQUEST_METHOD', 'GET');
-        $this->headers = getallheaders();
-        if (true === $process_request_body) {
+        if (true === $processRequestBody) {
             $this->body = @file_get_contents('php://input');
         }
         $encryptionHeader = ucwords(strtolower(Client::$encryptionHeader), '-');
@@ -89,9 +87,9 @@ class HTTP extends Request
                 throw new Exception('Received an encrypted request but was unable to decrypt the body!', 500);
             }
         }
-        $content_type = explode(';', $this->getHeader('Content-Type'));
-        if ($this->body && !empty($content_type[0])) {
-            switch ($content_type[0]) {
+        $contentType = explode(';', $this->getHeader('Content-Type'));
+        if ($this->body && !empty($contentType[0])) {
+            switch ($contentType[0]) {
                 case 'text/json':
                 case 'application/json':
                 case 'application/javascript':
@@ -121,21 +119,20 @@ class HTTP extends Request
         if (array_key_exists(HTTP::$pathParam, $this->params)) {
             return trim($this->params[HTTP::$pathParam], '/');
         }
-        $request_uri = urldecode(ake($_SERVER, 'REQUEST_URI', '/'));
+        $requestURI = urldecode(ake($server, 'REQUEST_URI', '/'));
         // Figure out the PHP environment variables to use to find the controller that's being called
-        if ($pos = strpos($request_uri, '?')) {
-            $request_uri = substr($request_uri, 0, $pos);
+        if ($pos = strpos($requestURI, '?')) {
+            $requestURI = substr($requestURI, 0, $pos);
         }
-        $path = pathinfo($_SERVER['SCRIPT_NAME']);
-        if ('index.php' == $path['basename']) {
+        $path = pathinfo(ake($server, 'SCRIPT_NAME', ''));
+        if ('index.php' === $path['basename']) {
             // If we are hosted in a sub-directory we need to rip off the base dir to find our relative target
             if (($len = strlen($path['dirname'])) > 1) {
-                $request_uri = substr($request_uri, $len);
+                $requestURI = substr($requestURI, $len);
             }
         }
-        $this->response_type = ake($request, 'response_type', 'http');
 
-        return substr($request_uri, 1);
+        return substr($requestURI, 1);
     }
 
     /**

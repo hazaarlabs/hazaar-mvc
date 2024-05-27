@@ -1,9 +1,12 @@
 <?php
 
 declare(strict_types=1);
+
+namespace Application\Controllers;
+
 use Hazaar\Controller\Action;
 
-class IndexController extends Action
+class Index extends Action
 {
     public function index(): void
     {
