@@ -48,6 +48,11 @@ class Config extends Map
     private array $secureKeys = [];
 
     /**
+     * @var array<string,string>
+     */
+    private array $imports = [];
+
+    /**
      * @detail      The application configuration constructor loads the settings from the configuration file specified
      *              in the first parameter.  It will use the second parameter as the starting point and is intended to
      *              allow different operating environments to be configured from a single configuration file.
@@ -308,6 +313,11 @@ class Config extends Map
         return array_diff_key($config, array_flip($this->secureKeys));
     }
 
+    public function save(): bool
+    {
+        return false;
+    }
+
     /**
      * Loads the configuration file from the given source.
      *
@@ -424,6 +434,10 @@ class Config extends Map
                             continue;
                         }
                         if ($options = $this->loadSourceFile($file)) {
+                            $this->imports[] = [
+                                'file' => $file,
+                                'keys' => array_keys($options),
+                            ];
                             $config->extend($options);
                         }
                     } while ($importFile = next($values));

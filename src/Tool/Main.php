@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Tool;
 
 use Hazaar\Application;
+use Hazaar\Application\Config;
 use Hazaar\Application\Request\CLI;
 use Hazaar\File;
 
@@ -17,6 +18,7 @@ class Main
         }
         $application->request->setOptions([
             'help' => ['h', 'help', null, 'Display this help message.'],
+            'env' => ['e', 'env', 'string', 'Set the application environment.', 'config'],
         ]);
         $application->request->setCommands([
             'create' => ['Create a new application object (view, controller or model).'],
@@ -40,7 +42,51 @@ class Main
                     break;
 
                 case 'config':
-                    echo 'Configuring application: '.$commandArgs[0]."\n";
+                    $configCommand = ake($commandArgs, 0, 'list');
+                    $env = ake($options, 'env', APPLICATION_ENV);
+                    $config = new Config('application', $env);
+                    $config->addOutputFilter(function ($value, $key) {
+                        if (is_bool($value)) {
+                            return strbool($value);
+                        }
+
+                        return $value;
+                    }, true);
+
+                    switch ($configCommand) {
+                        case 'get':
+                            if (!($configArg = ake($commandArgs, 1))) {
+                                throw new \Exception('No configuration argument specified', 1);
+                            }
+                            $value = $config->get($configArg);
+                            echo $configArg.'='.$value."\n";
+
+                            break;
+
+                        case 'set':
+                            if (!($configArg = ake($commandArgs, 1))) {
+                                throw new \Exception('No configuration argument specified', 1);
+                            }
+                            $configUpdates = array_unflatten($configArg);
+                            if (0 === count($configUpdates)) {
+                                throw new \Exception('No configuration value specified', 1);
+                            }
+                            $config->set($configArg, ake($commandArgs, 2));
+                            if (false === $config->save()) {
+                                throw new \Exception('Failed to save configuration', 1);
+                            }
+
+                            break;
+
+                        case 'list':
+                            echo 'app.env = '.APPLICATION_ENV."\n";
+                            $list = $config->toDotNotation();
+                            foreach ($list as $key => $value) {
+                                echo $key.' = '.$value."\n";
+                            }
+
+                            break;
+                    }
 
                     break;
 
