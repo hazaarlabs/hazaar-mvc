@@ -23,7 +23,7 @@ use Hazaar\Cache\Backend;
 class Cache implements \ArrayAccess
 {
     protected Map $options;
-    protected bool $use_cache = true;
+    protected bool $useCache = true;
     protected Backend $backend;
 
     /**
@@ -32,11 +32,11 @@ class Cache implements \ArrayAccess
      * @param array<string>|string $backend        The name of the backend to use. Currently 'apc', 'file', 'memcached', 'session' and
      *                                             'sqlite' are supported.
      * @param string               $namespace      The namespace to use for grouping stored data
-     * @param array<mixed>|Map     $config_options
+     * @param array<mixed>|Map     $configOptions
      */
-    public function __construct(null|array|string $backend = null, array|Map $config_options = [], string $namespace = 'default')
+    public function __construct(null|array|string $backend = null, array|Map $configOptions = [], string $namespace = 'default')
     {
-        $this->options = Map::_($config_options);
+        $this->options = Map::_($configOptions);
         if (!$backend) {
             // Set up a default backend chain
             $backend = ['apc', 'session'];
@@ -80,7 +80,7 @@ class Cache implements \ArrayAccess
         if ($this->options['use_pragma'] && function_exists('apache_request_headers')) {
             $headers = apache_request_headers();
             if (array_key_exists('Pragma', $headers) && 'no-cache' == $headers['Pragma']) {
-                $this->use_cache = false;
+                $this->useCache = false;
             }
         }
     }
@@ -126,14 +126,14 @@ class Cache implements \ArrayAccess
      *                            The reference key used to store the value
      * @param bool  $default
      *                            If the value doesn't exist, this default will be returned instead
-     * @param bool  $save_default
+     * @param bool  $saveDefault
      *                            If the value doesn't exist and a default is specified, save that default to cache
      *
      * @return mixed the value that was stored in cache
      */
-    public function &get($key, $default = false, $save_default = false)
+    public function &get($key, $default = false, $saveDefault = false)
     {
-        if (!$this->use_cache) {
+        if (!$this->useCache) {
             return $default;
         }
         $result = $this->backend->get($key);
@@ -141,7 +141,7 @@ class Cache implements \ArrayAccess
             $result = unserialize($result);
         }
         if (false === $result) {
-            if (true === $save_default) {
+            if (true === $saveDefault) {
                 $this->set($key, $default);
             }
 
@@ -175,12 +175,12 @@ class Cache implements \ArrayAccess
      *
      * @param string $key
      *                            The value key to check for
-     * @param bool   $check_empty Normally this method will return try if the value exists with `$key`.  Setting `$check_empty` looks at the value
+     * @param bool   $checkEmpty Normally this method will return try if the value exists with `$key`.  Setting `$checkEmpty` looks at the value
      *                            and will return false if it is an 'empty' value (ie: 0, null, [])
      */
-    public function has(string $key, bool $check_empty = false): bool
+    public function has(string $key, bool $checkEmpty = false): bool
     {
-        return $this->backend->has($key, $check_empty);
+        return $this->backend->has($key, $checkEmpty);
     }
 
     /**
@@ -274,7 +274,7 @@ class Cache implements \ArrayAccess
      */
     public function on(): void
     {
-        $this->use_cache = true;
+        $this->useCache = true;
     }
 
     /**
@@ -287,7 +287,7 @@ class Cache implements \ArrayAccess
      */
     public function off(): void
     {
-        $this->use_cache = false;
+        $this->useCache = false;
     }
 
     public function &__get(string $key): mixed
