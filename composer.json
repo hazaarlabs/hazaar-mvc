@@ -52,6 +52,7 @@
     }
   },
   "bin": [
+    "bin/hztool",
     "bin/dbitool",
     "bin/warlock",
     "bin/service"
