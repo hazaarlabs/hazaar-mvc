@@ -675,26 +675,26 @@ class Map implements \ArrayAccess, \Iterator, \Countable
     /**
      * Set an output filter callback to modify objects as they are being returned.
      *
-     * @param callable             $callback       the function to execute on get
-     * @param array<string>|string $filter_type    a class name or array of class names to run the callback on
-     * @param bool                 $filter_recurse All children will have the same filter applied
+     * @param callable             $callback      the function to execute on get
+     * @param array<string>|string $filterType    a class name or array of class names to run the callback on
+     * @param bool                 $filterRecurse All children will have the same filter applied
      */
     public function addOutputFilter(
         callable $callback,
-        ?string $filter_field = null,
-        null|array|string $filter_type = null,
-        bool $filter_recurse = false
+        bool $filterRecurse = false,
+        ?string $filterField = null,
+        null|array|string $filterType = null
     ): void {
         $filter = [
             'callback' => $callback,
-            'field' => $filter_field,
-            'type' => $filter_type,
-            'recurse' => $filter_recurse,
+            'field' => $filterField,
+            'type' => $filterType,
+            'recurse' => $filterRecurse,
         ];
-        if ($filter_recurse) {
+        if ($filterRecurse) {
             foreach ($this->elements as $key => $elem) {
                 if ($elem instanceof Map) {
-                    $elem->addOutputFilter($callback, $filter_field, $filter_type, $filter_recurse);
+                    $elem->addOutputFilter($callback, $filterRecurse, $filterField, $filterType);
                 }
             }
         }
@@ -704,26 +704,26 @@ class Map implements \ArrayAccess, \Iterator, \Countable
     /**
      * Set an input filter callback to modify objects as they are being set.
      *
-     * @param callable             $callback       the function to execute on set
-     * @param array<string>|string $filter_type    a class name or array of class names to run the callback on
-     * @param bool                 $filter_recurse All children will have the same filter applied
+     * @param callable             $callback      the function to execute on set
+     * @param array<string>|string $filterType    a class name or array of class names to run the callback on
+     * @param bool                 $filterRecurse All children will have the same filter applied
      */
     public function addInputFilter(
         callable $callback,
-        ?string $filter_field = null,
-        null|array|string $filter_type = null,
-        bool $filter_recurse = false
+        bool $filterRecurse = false,
+        ?string $filterField = null,
+        null|array|string $filterType = null
     ): void {
         $filter = [
             'callback' => $callback,
-            'field' => $filter_field,
-            'type' => $filter_type,
-            'recurse' => $filter_recurse,
+            'field' => $filterField,
+            'type' => $filterType,
+            'recurse' => $filterRecurse,
         ];
-        if ($filter_recurse) {
+        if ($filterRecurse) {
             foreach ($this->elements as $key => $elem) {
                 if ($elem instanceof Map) {
-                    $elem->addInputFilter($callback, $filter_field, $filter_type, $filter_recurse);
+                    $elem->addInputFilter($callback, $filterRecurse, $filterField, $filterType);
                 }
             }
         }
