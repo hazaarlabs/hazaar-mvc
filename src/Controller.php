@@ -26,13 +26,12 @@ use Hazaar\Controller\Response;
  */
 abstract class Controller implements Controller\Interfaces\Controller
 {
-    public string $url_default_action_name = 'index';
-    public bool $use_metrics = true;
+    public string $urlDefaultActionName = 'index';
     protected Router $router;
     protected string $name;
     protected Request $request;
     protected int $statusCode = 0;
-    protected string $base_path;    // Optional base_path for controller relative url() calls.
+    protected string $basePath;    // Optional basePath for controller relative url() calls.
 
     /**
      * @var array<mixed>
@@ -49,6 +48,7 @@ abstract class Controller implements Controller\Interfaces\Controller
         $this->router = $router;
         $this->name = strtolower(null !== $name ? $name : get_class($this));
         $this->addHelper('response');
+        $this->urlDefaultActionName = $router->getDefaultActionName();
     }
 
     /**
@@ -166,7 +166,7 @@ abstract class Controller implements Controller\Interfaces\Controller
      */
     public function getBasePath(): string
     {
-        return $this->base_path;
+        return $this->basePath;
     }
 
     /**
@@ -176,28 +176,28 @@ abstract class Controller implements Controller\Interfaces\Controller
      */
     public function setBasePath(string $path): void
     {
-        $this->base_path = $path;
+        $this->basePath = $path;
     }
 
     /**
      * Initiate a redirect response to the client.
      */
-    public function redirect(string|URL $location, bool $save_uri = false): Response
+    public function redirect(string|URL $location, bool $saveURI = false): Response
     {
-        return $this->router->application->redirect($location, $save_uri);
+        return $this->router->application->redirect($location, $saveURI);
     }
 
     /**
      * Redirect back to a URL saved during redirection.
      *
-     * This mechanism is used with the $save_url parameter of `Hazaar\Application::redirect()` so save the current URL into the session
+     * This mechanism is used with the $saveURI parameter of `Hazaar\Application::redirect()` so save the current URL into the session
      * so that once we're done processing the request somewhere else we can come back to where we were. This is useful for when
      * a user requests a page but isn't authenticated, we can redirect them to a login page and then that page can call this
      * `Hazaar\Controller::redirectBack()` method to redirect the user back to the page they were originally looking for.
      */
-    public function redirectBack(null|string|URL $alt_url = null): Response
+    public function redirectBack(null|string|URL $altURL = null): Response
     {
-        return $this->router->application->redirectBack($alt_url);
+        return $this->router->application->redirectBack($altURL);
     }
 
     /**
@@ -215,14 +215,14 @@ abstract class Controller implements Controller\Interfaces\Controller
     {
         $url = new URL();
         $parts = func_get_args();
-        if (1 === count($parts) && strtolower(trim($parts[0] ?? '')) === $this->url_default_action_name) {
+        if (1 === count($parts) && strtolower(trim($parts[0] ?? '')) === $this->urlDefaultActionName) {
             $parts = [];
         }
-        $this_parts = explode('/', $this->name);
-        if (0 === count($parts) && $this_parts[count($this_parts) - 1] === $this->url_default_action_name) {
-            array_pop($this_parts);
+        $thisParts = explode('/', $this->name);
+        if (0 === count($parts) && $thisParts[count($thisParts) - 1] === $this->urlDefaultActionName) {
+            array_pop($thisParts);
         }
-        call_user_func_array([$url, '__construct'], array_merge($this_parts, $parts));
+        call_user_func_array([$url, '__construct'], array_merge($thisParts, $parts));
 
         return $url;
     }
@@ -326,9 +326,9 @@ abstract class Controller implements Controller\Interfaces\Controller
         /**
          * Search paths for view helpers. The order here matters because apps should be able to override built-in helpers.
          */
-        $search_prefixes = ['\\Application\\Helper\\Controller', '\\Hazaar\\Controller\\Helper'];
+        $searchPrefixes = ['\\Application\\Helper\\Controller', '\\Hazaar\\Controller\\Helper'];
         $name = \ucfirst($name);
-        foreach ($search_prefixes as $prefix) {
+        foreach ($searchPrefixes as $prefix) {
             $class = $prefix.'\\'.$name;
             if (\class_exists($class)) {
                 return $class;
