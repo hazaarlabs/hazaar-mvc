@@ -28,7 +28,7 @@ class CLI extends Request
     /**
      * @var array<mixed>
      */
-    private static array $opt;
+    private static array $opt = [];
 
     /**
      * @param array<string> $args
@@ -103,12 +103,12 @@ class CLI extends Request
      */
     public function getCommand(?array &$args = null): ?string
     {
-        $this->getOptions($pos_args);
-        $command = array_shift($pos_args);
+        $this->getOptions($posArgs);
+        $command = array_shift($posArgs);
         if (!array_key_exists($command, $this->commands)) {
             return null;
         }
-        $args = $pos_args;
+        $args = $posArgs;
 
         return $command;
     }
@@ -116,11 +116,11 @@ class CLI extends Request
     /**
      * Returns the currently applied options from the ARGV command line options.
      *
-     * @param null|mixed $pos_args
+     * @param null|mixed $posArgs
      *
      * @return array<mixed>
      */
-    public function getOptions(&$pos_args = null): array
+    public function getOptions(&$posArgs = null): array
     {
         if (!self::$opt) {
             self::$opt = [0 => '', 1 => []];
@@ -133,8 +133,8 @@ class CLI extends Request
                 }
             }
         }
-        $ops = getopt(self::$opt[0], self::$opt[1], $rest_index);
-        $pos_args = array_slice($_SERVER['argv'], $rest_index);
+        $ops = getopt(self::$opt[0], self::$opt[1], $restIndex);
+        $posArgs = array_slice($_SERVER['argv'], $restIndex);
         $options = [];
         foreach ($this->options as $name => $o) {
             $s = $l = false;
@@ -177,7 +177,7 @@ class CLI extends Request
                 $msg .= '  '.str_pad(implode(', ', $avail), $pad, ' ', STR_PAD_RIGHT).' '.ake($o, 3)."\n";
             }
         }
-        $options_msg = [];
+        $optionsMsg = [];
         if (count($this->commands) > 0) {
             $msg .= "\nCommands:\n\n";
             foreach ($this->commands as $cmd => $c) {
@@ -200,13 +200,13 @@ class CLI extends Request
                     if ($o[1]) {
                         $avail[] = '--'.$o[1].(is_string($o[2]) ? '='.$o[2] : '');
                     }
-                    $options_msg[$cmd][] = '    '.str_pad(implode(', ', $avail), $pad - 2, ' ', STR_PAD_RIGHT).' '.ake($o, 3)."\n";
+                    $optionsMsg[$cmd][] = '    '.str_pad(implode(', ', $avail), $pad - 2, ' ', STR_PAD_RIGHT).' '.ake($o, 3)."\n";
                 }
             }
         }
-        if (count($options_msg) > 0) {
+        if (count($optionsMsg) > 0) {
             $msg .= "\nCommand Options:\n\n";
-            foreach ($options_msg as $cmd => $options) {
+            foreach ($optionsMsg as $cmd => $options) {
                 $msg .= "  {$cmd}:\n\n".implode("\n", $options)."\n";
             }
         }

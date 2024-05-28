@@ -75,17 +75,17 @@ class Dump extends Diagnostic
     public function text(): Response\Text
     {
         $out = "HAZAAR DUMP\n\n";
+        $out .= print_r($this->data, true)."\n\n";
         $out .= "Exec time: {$this->exec_time}\n";
         $out .= 'Status: '.self::getSpeedClass($this->exec_time)."\n";
-        $out .= 'Endtime: '.date('c')."\n\n";
-        $out .= print_r($this->data, true);
+        $out .= 'Endtime: '.date('c')."\n";
         if (true === $this->backtrack) {
             $out .= "\n\nBACKTRACE\n\n";
             $e = new Exception('Backtrace');
             $out .= print_r(str_replace('/path/to/code/', '', $e->getTraceAsString()), true);
         }
 
-        return new Response\Text($out, 200);
+        return new Response\Text($out."\n", 200);
     }
 
     public function html(): Response\HTML
