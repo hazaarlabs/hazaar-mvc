@@ -187,6 +187,9 @@ function strbool(mixed $value): string
     if (false === $value || is_array($value) || null === $value) {
         return 'false';
     }
+    if (true === $value) {
+        return 'true';
+    }
     $value = strtolower(trim($value));
     if ('t' == $value || 'true' == $value || 'on' == $value || 'yes' == $value || 'y' == $value || 'ok' == $value) {
         return 'true';
