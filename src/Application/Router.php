@@ -197,6 +197,16 @@ abstract class Router implements Interfaces\Router
         return $this->actionArgs;
     }
 
+    public function getDefaultControllerName(): string
+    {
+        return $this->config->get('controller');
+    }
+
+    public function getDefaultActionName(): string
+    {
+        return $this->config->get('action');
+    }
+
     public function getErrorController(): Error
     {
         $controller = null;

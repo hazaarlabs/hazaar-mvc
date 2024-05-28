@@ -190,7 +190,7 @@ class Cron
             return (true === $next) ? (($this->pcron >= $timestamp) ? $this->pcron : null) : (($this->pcron < $timestamp) ? $this->pcron : null);
         }
         // Initialize vars
-        $calc_date = true;
+        $calcDate = true;
         $cron = ($next ? $this->pcron : $this->arrayReverse($this->pcron));
         if (!$cron) {
             return null;
@@ -245,7 +245,7 @@ class Cron
                         // OK, there was another hour. Set the right minutes-value
                         $rtime[IDX_HOUR] = $nhour;
                         $rtime[IDX_MINUTE] = (($next) ? reset($cron[IDX_MINUTE]) : end($cron[IDX_MINUTE]));
-                        $calc_date = false;
+                        $calcDate = false;
                     }
                 } else {
                     // OK, there is a matching minute... reset minutes if hour has changed
@@ -255,12 +255,12 @@ class Cron
                     // Set time
                     $rtime[IDX_HOUR] = $nhour;
                     $rtime[IDX_MINUTE] = $nminute;
-                    $calc_date = false;
+                    $calcDate = false;
                 }
             }
         }
         // If we have to calculate the date... we'll do so
-        if ($calc_date) {
+        if ($calcDate) {
             if (in_array($rtime[IDX_DAY], $cron[IDX_DAY]) && in_array($rtime[IDX_MONTH], $cron[IDX_MONTH]) && in_array($rtime[IDX_WEEKDAY], $cron[IDX_WEEKDAY])) {
                 return mktime($rtime[1], $rtime[0], 0, $rtime[3], $rtime[2], $rtime[5]);
             }
