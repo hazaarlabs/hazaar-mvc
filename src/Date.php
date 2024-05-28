@@ -185,13 +185,13 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
             $timezone = $tz;
         }
         if (!$timezone instanceof \DateTimeZone) {
-            if (is_numeric($timezone) && ($tz = timezoneName_from_abbr('', $timezone, -1))) {
+            if (is_numeric($timezone) && ($tz = timezone_name_from_abbr('', $timezone, -1))) {
                 $timezone = $tz;
             } elseif (preg_match('/([+-])?(\d+):(\d+)/', $timezone, $matches)) {
                 if (!$matches[1]) {
                     $matches[1] = '+';
                 }
-                if ($timezoneName = timezoneName_from_abbr('', (int) ($matches[1].((((int) $matches[2]) * 3600) + (int) $matches[3])), -1)) {
+                if ($timezoneName = timezone_name_from_abbr('', (int) ($matches[1].((((int) $matches[2]) * 3600) + (int) $matches[3])), -1)) {
                     $timezone = $timezoneName;
                 }
             }
