@@ -8,6 +8,8 @@ use Hazaar\Application;
 use Hazaar\Application\Config;
 use Hazaar\Application\Request\CLI;
 use Hazaar\File;
+use Hazaar\File\Template\Smarty;
+use Hazaar\Loader;
 
 class Main
 {
@@ -38,6 +40,9 @@ class Main
             switch ($command) {
                 case 'create':
                     echo 'Creating new '.$commandArgs[0].' object: '.$commandArgs[1]."\n";
+                    if (!self::create($commandArgs[0], $commandArgs[1], $application->loader)) {
+                        throw new \Exception('Failed to create object', 1);
+                    }
 
                     break;
 
@@ -122,5 +127,75 @@ class Main
         }
 
         return $code;
+    }
+
+    private static function create(string $type, string $name, Loader $loader): bool
+    {
+        $fileType = null;
+        $params = [];
+        $targetFilename = $name;
+        $templateFile = strtolower($type).'.tpl';
+
+        switch ($type) {
+            case 'layout':
+                $fileType = FILE_PATH_VIEW;
+                $targetFilename = strtolower($name).'.tpl';
+
+                break;
+
+            case 'view':
+                $fileType = FILE_PATH_VIEW;
+                $targetFilename = strtolower($name).'.tpl';
+
+                break;
+
+            case 'controller':
+            case 'controller_basic':
+                $fileType = FILE_PATH_CONTROLLER;
+                $templateFile = 'controller_basic.tpl';
+                $targetFilename = ucfirst($name).'.php';
+                $params = [
+                    'controllerName' => ucfirst($name),
+                    'viewName' => strtolower($name),
+                ];
+
+                break;
+
+            case 'controller_action':
+                $fileType = FILE_PATH_CONTROLLER;
+                $targetFilename = ucfirst($name).'.php';
+                $params = [
+                    'controllerName' => ucfirst($name),
+                    'viewName' => strtolower($name),
+                ];
+
+                break;
+
+            case 'model':
+                $fileType = FILE_PATH_MODEL;
+                $targetFilename = $name.'.tpl';
+                $params['modelName'] = ucfirst($name);
+
+                break;
+        }
+        if (!$fileType) {
+            throw new \Exception('Invalid object type: '.$type, 1);
+        }
+        $targetDir = $loader->getFilePath($fileType);
+        $targetFile = $targetDir.DIRECTORY_SEPARATOR.$targetFilename;
+        if (!($sourceFile = $loader->getFilePath(FILE_PATH_SUPPORT, 'templates/'.$templateFile))) {
+            throw new \Exception('Template file not found: '.$templateFile, 1);
+        }
+        if (file_exists($targetFile)) {
+            throw new \Exception('File already exists: '.$targetFile, 1);
+        }
+        if ('.tpl' === substr($targetFilename, -4)) {
+            $result = file_put_contents($targetFile, file_get_contents($sourceFile));
+        } else {
+            $sourceTemplate = new Smarty($sourceFile);
+            $result = file_put_contents($targetFile, "<?php\n\n".$sourceTemplate->render($params));
+        }
+
+        return $result > 0;
     }
 }
