@@ -181,8 +181,8 @@ class Application
                 include $shutdown;
             }
             if (true === $this->config->get('app.metrics')) {
-                $metric_file = $this->runtimePath('metrics.dat');
-                $metric = new Metric($metric_file);
+                $metricFile = $this->runtimePath('metrics.dat');
+                $metric = new Metric($metricFile);
                 if (!$metric->exists()) {
                     $metric->addDataSource('hits', 'COUNTER', null, null, 'Hit Counter');
                     $metric->addDataSource('exec', 'GAUGEZ', null, null, 'Execution Timer');
@@ -285,9 +285,9 @@ class Application
         Application::setRoot($this->config['app']['root']);
         // PHP root elements can be set directly with the PHP ini_set function
         if ($this->config->has('php')) {
-            $php_values = $this->config['php']->toDotNotation()->toArray();
-            foreach ($php_values as $directive => $php_value) {
-                ini_set($directive, $php_value);
+            $phpValues = $this->config['php']->toDotNotation()->toArray();
+            foreach ($phpValues as $directive => $phpValue) {
+                ini_set($directive, $phpValue);
             }
         }
         // Check the load average and protect ifneeded
@@ -311,11 +311,11 @@ class Application
         ];
         foreach ($initialisers as $property => $class) {
             if ($this->config->has($property) && class_exists($class)) {
-                $module_config = $this->config->get($property);
-                if (!$module_config instanceof Map) {
+                $moduleConfig = $this->config->get($property);
+                if (!$moduleConfig instanceof Map) {
                     throw new \Exception('Invalid configuration module: '.$property);
                 }
-                $class::initialise($module_config);
+                $class::initialise($moduleConfig);
             }
         }
         // Create a timer for performance measuring
@@ -364,11 +364,11 @@ class Application
      * and backend applications.
      *
      * @param string $suffix     An optional suffix to tack on the end of the path
-     * @param bool   $create_dir automatically create the runtime directory if it does not exist
+     * @param bool   $createDir automatically create the runtime directory if it does not exist
      *
      * @return string The path to the runtime directory
      */
-    public function runtimePath($suffix = null, $create_dir = false): string
+    public function runtimePath($suffix = null, $createDir = false): string
     {
         $path = $this->config['app']->get('runtimePath');
         if (!file_exists($path)) {
@@ -394,12 +394,12 @@ class Application
         if (DIRECTORY_SEPARATOR != substr($suffix, 0, 1)) {
             $suffix = DIRECTORY_SEPARATOR.$suffix;
         }
-        $full_path = $path.$suffix;
-        if (!file_exists($full_path) && $create_dir) {
-            mkdir($full_path, 0775, true);
+        $fullPath = $path.$suffix;
+        if (!file_exists($fullPath) && $createDir) {
+            mkdir($fullPath, 0775, true);
         }
 
-        return $full_path;
+        return $fullPath;
     }
 
     /**
@@ -408,15 +408,15 @@ class Application
      * This method allows access to the raw URL path part, relative to the current application request.
      *
      * @param string $path           path suffix to append to the application path
-     * @param bool   $force_realpath Return the real path to a file.  If the file does not exist, this will return false.
+     * @param bool   $forceRealpath Return the real path to a file.  If the file does not exist, this will return false.
      */
-    public static function filePath(?string $path = null, bool $force_realpath = true): false|string
+    public static function filePath(?string $path = null, bool $forceRealpath = true): false|string
     {
         if (strlen($path) > 0) {
             $path = DIRECTORY_SEPARATOR.trim($path ?? '', DIRECTORY_SEPARATOR);
         }
         $path = APPLICATION_PATH.($path ? $path : null);
-        if (true === $force_realpath) {
+        if (true === $forceRealpath) {
             return realpath($path);
         }
 
@@ -628,18 +628,18 @@ class Application
     {
         $parts = [];
         foreach (func_get_args() as $part) {
-            $part_parts = strpos($part, '/') ? array_map('strtolower', array_map('trim', explode('/', $part))) : [$part];
-            foreach ($part_parts as $part_part) {
-                $parts[] = strtolower(trim($part_part ?? ''));
+            $partParts = strpos($part, '/') ? array_map('strtolower', array_map('trim', explode('/', $part))) : [$part];
+            foreach ($partParts as $partPart) {
+                $parts[] = strtolower(trim($partPart ?? ''));
             }
         }
-        $base_path = $this->request->getPath();
-        $request_parts = $base_path ? array_map('strtolower', array_map('trim', explode('/', $base_path))) : [];
+        $basePath = $this->request->getPath();
+        $requestParts = $basePath ? array_map('strtolower', array_map('trim', explode('/', $basePath))) : [];
         for ($i = 0; $i < count($parts); ++$i) {
-            if (!array_key_exists($i, $request_parts) && null !== $this->urlDefaultPart) {
-                $request_parts[$i] = $this->urlDefaultPart;
+            if (!array_key_exists($i, $requestParts) && null !== $this->urlDefaultPart) {
+                $requestParts[$i] = $this->urlDefaultPart;
             }
-            if ($parts[$i] !== $request_parts[$i]) {
+            if ($parts[$i] !== $requestParts[$i]) {
                 return false;
             }
         }
@@ -655,9 +655,9 @@ class Application
      * parameters from the URL to neaten the URL up.
      *
      * @param string $location The URI you want to redirect to
-     * @param bool   $save_uri Optionally save the URI so we can redirect back. See: `Hazaar\Application::redirectBack()`
+     * @param bool   $saveURI Optionally save the URI so we can redirect back. See: `Hazaar\Application::redirectBack()`
      */
-    public function redirect(string $location, bool $save_uri = false): false|Redirect
+    public function redirect(string $location, bool $saveURI = false): false|Redirect
     {
         $headers = apache_request_headers();
         if (array_key_exists('X-Requested-With', $headers) && 'XMLHttpRequest' === $headers['X-Requested-With']) {
@@ -667,7 +667,7 @@ class Application
             if ($sess->has('REDIRECT') && $sess['REDIRECT'] === $location) {
                 unset($sess['REDIRECT']);
             }
-            if ($save_uri) {
+            if ($saveURI) {
                 $data = [
                     'URI' => $_SERVER['REQUEST_URI'],
                     'METHOD' => $_SERVER['REQUEST_METHOD'],
@@ -685,13 +685,13 @@ class Application
     /**
      * Redirect back to a URI saved during redirection.
      *
-     * This mechanism is used with the $save_uri parameter of `Hazaar\Application::redirect()` so save the current
+     * This mechanism is used with the $saveURI parameter of `Hazaar\Application::redirect()` so save the current
      * URI into the session so that once we're done processing the request somewhere else we can come back
      * to where we were. This is useful for when a user requests a page but isn't authenticated, we can
      * redirect them to a login page and then that page can call this `Hazaar\Application::redirectBack()` method to redirect the
      * user back to the page they were originally looking for.
      */
-    public function redirectBack(?string $alt_url = null): false|Redirect
+    public function redirectBack(?string $altURL = null): false|Redirect
     {
         $sess = new Session();
         if ($sess->has('REDIRECT') && ($uri = trim(ake($sess['REDIRECT'], 'URI') ?? ''))) {
@@ -705,7 +705,7 @@ class Application
             }
             unset($sess['REDIRECT']);
         } else {
-            $uri = $alt_url;
+            $uri = $altURL;
         }
         if ($uri) {
             return new Redirect($uri);

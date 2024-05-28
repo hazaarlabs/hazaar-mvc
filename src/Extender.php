@@ -59,8 +59,8 @@ abstract class Extender
              */
             if (!($call = $rm->isPublic())) {
                 $trace = debug_backtrace();
-                $calling_class = $trace[1]['class'];
-                $call = (!$rm->isPrivate() && $this->instanceof($calling_class));
+                $callingClass = $trace[1]['class'];
+                $call = (!$rm->isPrivate() && $this->instanceof($callingClass));
             }
 
             /**
@@ -210,9 +210,9 @@ abstract class Extender
             throw new Exception\ExtenderMayNotInherit('final', get_class($this), $class);
         }
         if ($r->isAbstract()) {
-            $wrapper_class = 'wrapper_'.str_replace('\\', '_', $class);
-            eval("class {$wrapper_class} extends {$class} {}");
-            $r = new \ReflectionClass($wrapper_class);
+            $wrapperClass = 'wrapper_'.str_replace('\\', '_', $class);
+            eval("class {$wrapperClass} extends {$class} {}");
+            $r = new \ReflectionClass($wrapperClass);
         }
         $obj = $r->newInstanceArgs($args);
         $this->children[$class] = $obj;

@@ -16,19 +16,19 @@ namespace Hazaar;
 class Exception extends \Exception
 {
     protected string $name = 'Exception';
-    protected ?string $short_message;
+    protected ?string $shortMessage;
 
     /**
      * \Hazaar\Exception constructor.
      *
      * @param string $message       The exception message
      * @param int    $code          The error code, also used as the HTTP response code
-     * @param string $short_message an optional short message to display when full error display is disabled
+     * @param string $shortMessage an optional short message to display when full error display is disabled
      */
-    public function __construct(string $message, int $code = 500, string $short_message = null)
+    public function __construct(string $message, int $code = 500, string $shortMessage = null)
     {
         parent::__construct($message, $code);
-        $this->short_message = $short_message;
+        $this->shortMessage = $shortMessage;
     }
 
     /**
@@ -48,8 +48,8 @@ class Exception extends \Exception
      */
     public function getShortMessage(): string
     {
-        if ($this->short_message) {
-            return $this->short_message;
+        if ($this->shortMessage) {
+            return $this->shortMessage;
         }
         $message = null;
         if (404 == $this->code) {
