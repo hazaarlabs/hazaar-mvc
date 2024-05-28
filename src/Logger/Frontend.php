@@ -66,10 +66,10 @@ class Frontend
         }
     }
 
-    public static function write(string $tag, string $message, int $level = E_NOTICE): void
+    public static function write(string $message, int $level = E_NOTICE, ?string $tag = null): void
     {
         if (Frontend::$logger instanceof Frontend) {
-            Frontend::$logger->writeLog($tag, $message, $level);
+            Frontend::$logger->writeLog($message, $level, $tag);
         } else {
             Frontend::$message_buffer[] = [
                 $tag,
@@ -82,41 +82,41 @@ class Frontend
     /**
      * Log an ERROR message.
      */
-    public static function e(string $tag, string $message): void
+    public static function e(string $message, ?string $tag = null): void
     {
-        Frontend::write($tag, $message, LOG_ERR);
+        Frontend::write($message, LOG_ERR, $tag);
     }
 
     /**
      * Log a WARNING message.
      */
-    public static function w(string $tag, string $message): void
+    public static function w(string $message, ?string $tag = null): void
     {
-        Frontend::write($tag, $message, LOG_WARNING);
+        Frontend::write($message, LOG_WARNING, $tag);
     }
 
     /**
      * Log a NOTICE message.
      */
-    public static function n(string $tag, string $message): void
+    public static function n(string $message, ?string $tag = null): void
     {
-        Frontend::write($tag, $message, LOG_NOTICE);
+        Frontend::write($message, LOG_NOTICE, $tag);
     }
 
     /**
      * Log a INFO message.
      */
-    public static function i(string $tag, string $message): void
+    public static function i(string $message, ?string $tag = null): void
     {
-        Frontend::write($tag, $message, LOG_INFO);
+        Frontend::write($message, LOG_INFO, $tag);
     }
 
     /**
      * Log a DEBUG message.
      */
-    public static function d(string $tag, string $message): void
+    public static function d(string $message, ?string $tag = null): void
     {
-        Frontend::write($tag, $message, LOG_DEBUG);
+        Frontend::write($message, LOG_DEBUG, $tag);
     }
 
     public static function trace(): void
@@ -129,7 +129,7 @@ class Frontend
     /**
      * @param array<mixed>|object|string $message
      */
-    public function writeLog(string $tag, array|object|string $message, int $level = E_NOTICE): void
+    public function writeLog(array|object|string $message, int $level = E_NOTICE, ?string $tag = null): void
     {
         if (!($level <= $this->level)) {
             return;
@@ -139,7 +139,7 @@ class Frontend
                 $message = 'OBJECT DUMP:'.LINE_BREAK.preg_replace('/\n/', LINE_BREAK, print_r($message, true));
             }
         }
-        $this->backend->write($tag, $message, $level);
+        $this->backend->write($tag ?? 'APP', $message, $level);
     }
 
     public function backtrace(): void
