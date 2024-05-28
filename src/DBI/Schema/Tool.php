@@ -34,7 +34,7 @@ class Tool
             'schema' => ['Display the current database schema.'],
             'checkpoint' => ['Checkpoint database migrations.  Creates a new migration file with consolidated changed.'],
         ]);
-        if (!($command = $application->request->getCommand($command_args))) {
+        if (!($command = $application->request->getCommand($commandArgs))) {
             $application->request->showHelp();
 
             return 1;
@@ -63,7 +63,7 @@ class Tool
                     break;
 
                 case 'migrate':
-                    if ($version = ake($command_args, 0)) {
+                    if ($version = ake($commandArgs, 0)) {
                         settype($version, 'int');
                     }
                     if ($manager->migrate(
@@ -79,7 +79,7 @@ class Tool
                     break;
 
                 case 'replay':
-                    if ($version = ake($command_args, 0)) {
+                    if ($version = ake($commandArgs, 0)) {
                         settype($version, 'int');
                     }
                     if ($manager->migrateReplay(
@@ -92,7 +92,7 @@ class Tool
                     break;
 
                 case 'rollback':
-                    if ($version = ake($command_args, 0)) {
+                    if ($version = ake($commandArgs, 0)) {
                         settype($version, 'int');
                     }
                     if ($manager->rollback(
@@ -105,7 +105,7 @@ class Tool
                     break;
 
                 case 'snapshot':
-                    $comment = trim(implode(' ', $command_args)) ?: 'New Snapshot';
+                    $comment = trim(implode(' ', $commandArgs)) ?: 'New Snapshot';
                     if ($manager->snapshot($comment, ake($options, 'test'))) {
                         $code = 0;
                     }
@@ -114,7 +114,7 @@ class Tool
 
                 case 'sync':
                     $data = null;
-                    if ($sync_file = ake($command_args, 0)) {
+                    if ($sync_file = ake($commandArgs, 0)) {
                         $sync_file = realpath(APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.$sync_file);
                         if (!($sync_file && file_exists($sync_file))) {
                             throw new \Exception('Unable to sync.  File not found: '.realpath($sync_file));

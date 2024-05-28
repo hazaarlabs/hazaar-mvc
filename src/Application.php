@@ -144,11 +144,9 @@ class Application
              * it silently.
              */
             $config = new Config('application', $env, $this->getDefaultConfig(), FILE_PATH_CONFIG);
-            if (!$config->loaded()) {
-                dieDieDie('Application is not configured!');
-            }
             // Check if we require SSL and don't have and if so, redirect here.
-            if ($config['app']->has('require_ssl') && boolify($_SERVER['HTTPS']) !== boolify($config['app']['require_ssl'])) {
+            if ($config['app']->has('require_ssl')
+                && boolify($_SERVER['HTTPS']) !== boolify($config['app']['require_ssl'])) {
                 header('Location: https://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI']);
 
                 exit;
@@ -283,7 +281,7 @@ class Application
         // Allow the root to be configured but the default absolutely has to be set so here we double
         $this->config['app']->addInputFilter(function (mixed $value) {
             Application::setRoot($value);
-        }, 'root');
+        }, false, 'root');
         Application::setRoot($this->config['app']['root']);
         // PHP root elements can be set directly with the PHP ini_set function
         if ($this->config->has('php')) {
