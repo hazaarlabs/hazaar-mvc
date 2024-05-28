@@ -934,9 +934,10 @@ class File implements \JsonSerializable
 
     public function decrypt(): bool
     {
+        $data = $this->getContents();
         $this->encrypted = false;
 
-        return $this->save() > 0;
+        return $this->putContents($data) > 0;
     }
 
     public function isOpen(): bool

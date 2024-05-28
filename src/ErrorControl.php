@@ -99,20 +99,20 @@ function dieDieDie(string|Throwable $err): void
         ob_end_clean();
     }
     $code = 500;
-    $err_string = 'An unknown error has occurred';
+    $errString = 'An unknown error has occurred';
     if ($err instanceof Throwable) {
-        $err_string = $err->getMessage();
+        $errString = $err->getMessage();
         if (boolify(ini_get('display_errors'))) {
-            $err_string .= "\n\non line ".$err->getLine().' of file '.$err->getFile()."\n\n".$err->getTraceAsString();
+            $errString .= "\n\non line ".$err->getLine().' of file '.$err->getFile()."\n\n".$err->getTraceAsString();
         }
     } elseif (is_string($err)) {
-        $err_string = $err;
+        $errString = $err;
     }
     if ('cli' === php_sapi_name()) {
-        $msg = "HazaarMVC ERROR: {$err_string}\n";
+        $msg = "HazaarMVC ERROR: {$errString}\n";
     } else {
         http_response_code($code);
-        $msg = '<h1>'.http_response_text(http_response_code())."</h1><pre>{$err_string}</pre>"
+        $msg = '<h1>'.http_response_text(http_response_code())."</h1><pre>{$errString}</pre>"
             .'<hr/><i>Hazaar MVC/'.HAZAAR_VERSION
             .' ('.php_uname('s').')';
         if (array_key_exists('SERVER_NAME', $_SERVER)) {
@@ -167,7 +167,7 @@ function exception_handler(Throwable $e): void
 /**
  * Shutdown handler function.
  *
- * This function is responsible for executing the shutdown tasks registered in the global variable $__shutdown_tasks.
+ * This function is responsible for executing the shutdown tasks registered in the global variable $__shutdownTasks.
  * It checks if the script is running in CLI mode or if headers have already been sent before executing the tasks.
  */
 function shutdown_handler(): void
@@ -175,9 +175,9 @@ function shutdown_handler(): void
     if ('cli' !== php_sapi_name() && headers_sent()) {
         return;
     }
-    global $__shutdown_tasks;
-    if (is_array($__shutdown_tasks) && count($__shutdown_tasks) > 0) {
-        foreach ($__shutdown_tasks as $task) {
+    global $__shutdownTasks;
+    if (is_array($__shutdownTasks) && count($__shutdownTasks) > 0) {
+        foreach ($__shutdownTasks as $task) {
             $task();
         }
     }
@@ -219,9 +219,9 @@ function traceAndDie(): void
  * Registers a shutdown task to be executed when the script ends.
  *
  * @param callable    $callback the callback function to be executed
- * @param null|string $uniq_id  (optional) A unique identifier for the task. If not provided, a unique ID will be generated.
+ * @param null|string $uniqID  (optional) A unique identifier for the task. If not provided, a unique ID will be generated.
  */
-function register_shutdown_task(callable $callback, ?string $uniq_id = null): void
+function register_shutdown_task(callable $callback, ?string $uniqID = null): void
 {
     // Function implementation...
 }

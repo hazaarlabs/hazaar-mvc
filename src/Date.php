@@ -191,8 +191,8 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
                 if (!$matches[1]) {
                     $matches[1] = '+';
                 }
-                if ($timezone_name = timezone_name_from_abbr('', (int) ($matches[1].((((int) $matches[2]) * 3600) + (int) $matches[3])), -1)) {
-                    $timezone = $timezone_name;
+                if ($timezoneName = timezone_name_from_abbr('', (int) ($matches[1].((((int) $matches[2]) * 3600) + (int) $matches[3])), -1)) {
+                    $timezone = $timezoneName;
                 }
             }
             $timezone = new \DateTimeZone($timezone);
@@ -320,7 +320,7 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
      * Returns the difference between the current date/time value and the value supplied as the first argument.
      *
      * Normally this method will return a \DateInterval object which is the default for the \DateTime class. However
-     * this functionality has been extended with the $return_seconds parameter which will instead return an integer
+     * this functionality has been extended with the $returnSeconds parameter which will instead return an integer
      * value indicating the difference in whole seconds.
      *
      * @param Date $timestamp The timestamp to compare the current date/time to
@@ -404,15 +404,15 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
      *
      * @param \DateInterval|string $interval   Can be either a \DateInterval object or a string representing an
      *                                         interval, such as P1H to specify 1 hour
-     * @param bool                 $return_new Doesn't update the current \Hazaar\Date object and instead returns
+     * @param bool                 $returnNew Doesn't update the current \Hazaar\Date object and instead returns
      *                                         a new object with the interval applied
      */
-    public function add(\DateInterval|string $interval, $return_new = false): static
+    public function add(\DateInterval|string $interval, $returnNew = false): static
     {
         if (!$interval instanceof \DateInterval) {
             $interval = new \DateInterval($interval);
         }
-        if ($return_new) {
+        if ($returnNew) {
             $new = new Date($this, $this->getTimezone());
 
             // @phpstan-ignore-next-line
@@ -429,14 +429,14 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
      * See the PHP documentation on how to use the [DateInterval](http://au2.php.net/manual/en/class.dateinterval.php) object.
      *
      * @param \DateInterval|string $interval   can be either a \DateInterval object or a string representing an interval, such as P1H to specify 1 hour
-     * @param bool                 $return_new doesn't update the current \Hazaar\Date object and instead returns a new object with the interval applied
+     * @param bool                 $returnNew doesn't update the current \Hazaar\Date object and instead returns a new object with the interval applied
      */
-    public function sub(\DateInterval|string $interval, bool $return_new = false): static
+    public function sub(\DateInterval|string $interval, bool $returnNew = false): static
     {
         if (!$interval instanceof \DateInterval) {
             $interval = new \DateInterval($interval);
         }
-        if ($return_new) {
+        if ($returnNew) {
             $new = new Date($this, $this->getTimezone());
 
             // @phpstan-ignore-next-line
@@ -450,9 +450,9 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
     /**
      * Compare the current date with the argument.
      */
-    public function compare(mixed $date, bool $include_time = false): bool
+    public function compare(mixed $date, bool $includeTime = false): bool
     {
-        $format = 'Y-m-d'.($include_time ? ' H:i:s' : null);
+        $format = 'Y-m-d'.($includeTime ? ' H:i:s' : null);
         if (!$date instanceof Date) {
             $date = new Date($date, $this->getTimezone());
         }
@@ -521,15 +521,15 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
      *
      * @param bool $precise             Boolean indicating if precise mode should be used.  This generally adds the time
      *                                  to day-based results.
-     * @param int  $date_threshold_days A threshold in days after which the full date will be returned.  Avoids
+     * @param int  $dateThresholdDays A threshold in days after which the full date will be returned.  Avoids
      *                                  situations like "3213 days ago" which is silly.
      *
      * @return string returns a nice fuzzy interval like "yesterday at xx:xx" or "4 days ago"
      */
-    public function fuzzy(bool $precise = false, int $date_threshold_days = 30): string
+    public function fuzzy(bool $precise = false, int $dateThresholdDays = 30): string
     {
         $diff = $this->diff(new Date(null, $this->getTimezone()));
-        if ($diff->days > $date_threshold_days) {
+        if ($diff->days > $dateThresholdDays) {
             return $this->format('F jS'.($precise ? ' \a\t g:ia' : ''));
         }
         if (0 === $diff->days) {
@@ -566,12 +566,12 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
      */
     public static function getLocaleData(null|array|string $locale): array|bool
     {
-        $local_locale = setlocale(LC_ALL, null);
+        $localLocale = setlocale(LC_ALL, null);
         if (!setlocale(LC_ALL, $locale)) {
             return false;
         }
         $data = localeconv();
-        setlocale(LC_ALL, $local_locale);
+        setlocale(LC_ALL, $localLocale);
 
         return $data;
     }
@@ -588,7 +588,7 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
      */
     public static function getLocaleDateFormat(null|array|string $locale): bool|string
     {
-        $local_locale = setlocale(LC_ALL, null);
+        $localLocale = setlocale(LC_ALL, null);
         if (!setlocale(LC_ALL, $locale)) {
             return false;
         }
@@ -597,7 +597,7 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
             $matrix = [1 => 'D', 12 => 'M', 2000 => 'Y'];
             $format = $matrix[(int) $matches[1]].$matrix[(int) $matches[3]].$matrix[(int) $matches[5]];
         }
-        setlocale(LC_ALL, $local_locale);
+        setlocale(LC_ALL, $localLocale);
 
         return $format;
     }
