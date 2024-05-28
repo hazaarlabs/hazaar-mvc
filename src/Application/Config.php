@@ -74,7 +74,7 @@ class Config extends Map
             if ($config = $this->load($this->source, $defaults, $pathType, Config::$overridePaths, $overrideNamespaces)) {
                 $this->loaded = ($config->count() > 0);
             } else {
-                throw new \Exception("Failed to load {$this->source} config with environment '{$this->env}'.");
+                $config = $defaults;
             }
         }
         $filters = [
