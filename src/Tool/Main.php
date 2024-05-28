@@ -32,7 +32,7 @@ class Main
             return 1;
         }
         $options = $application->request->getOptions();
-        $code = 1;
+        $code = 0;
 
         try {
             switch ($command) {
@@ -67,11 +67,13 @@ class Main
                             if (!($configArg = ake($commandArgs, 1))) {
                                 throw new \Exception('No configuration argument specified', 1);
                             }
-                            $configUpdates = array_unflatten($configArg);
+                            $configUpdates = array_unflatten($configArg, '=', ';');
                             if (0 === count($configUpdates)) {
                                 throw new \Exception('No configuration value specified', 1);
                             }
-                            $config->set($configArg, ake($commandArgs, 2));
+                            foreach ($configUpdates as $key => $value) {
+                                $config->set($key, $value);
+                            }
                             if (false === $config->save()) {
                                 throw new \Exception('Failed to save configuration', 1);
                             }

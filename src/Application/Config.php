@@ -35,6 +35,7 @@ class Config extends Map
     public static array $overridePaths = [];
     private string $env;
     private string $source;
+    private ?string $sourceFile = null;
 
     /**
      * @var array<mixed>
@@ -48,9 +49,9 @@ class Config extends Map
     private array $secureKeys = [];
 
     /**
-     * @var array<string,string>
+     * @var array<string>
      */
-    private array $imports = [];
+    private array $includes = [];
 
     /**
      * @detail      The application configuration constructor loads the settings from the configuration file specified
@@ -85,8 +86,21 @@ class Config extends Map
         $filters = [
             'out' => [
                 [
-                    'field' => null,
                     'callback' => [$this, 'parseString'],
+                ],
+            ],
+            'in' => [
+                [
+                    'callback' => function ($value) {
+                        if ('true' === $value) {
+                            return true;
+                        }
+                        if ('false' === $value) {
+                            return false;
+                        }
+
+                        return $value;
+                    },
                 ],
             ],
         ];
@@ -171,6 +185,9 @@ class Config extends Map
                 continue;
             }
             $sourceData = $this->loadSourceFile($sourceFile);
+            if (null === $this->sourceFile) {
+                $this->sourceFile = $sourceFile;
+            }
             $options[] = (true === $sourceInfo['ns']) ? $sourceData : [$this->env => $sourceData];
         }
         if (!count($options) > 0) {
@@ -315,7 +332,27 @@ class Config extends Map
 
     public function save(): bool
     {
-        return false;
+        if (null === $this->sourceFile) {
+            return false;
+        }
+        $currentData = json_decode(file_get_contents($this->sourceFile), true);
+        if (!array_key_exists($this->env, $currentData)) {
+            return false;
+        }
+        $configData = $this->toArray(false, false);
+        $data = array_intersect_key(array_merge(array_combine(array_fill(0, count($this->includes), 'include'), $this->includes), $configData), $currentData[$this->env]);
+        if (array_key_exists('include', $data)) {
+            $includes = is_array($data['include']) ? $data['include'] : [$data['include']];
+
+            /**
+             * This magic line will return anything that does not already exist in the current data or any
+             * of the included config environments.
+             */
+            $data = array_merge($data, call_user_func_array('array_diff_key', array_values(array_merge([$configData], $currentData))));
+        }
+        $currentData[$this->env] = array_merge($currentData[$this->env], $data);
+
+        return file_put_contents($this->sourceFile, json_encode($currentData, JSON_PRETTY_PRINT)) > 0;
     }
 
     /**
@@ -406,10 +443,8 @@ class Config extends Map
         $this->global = array_merge($this->global, $options);
         foreach ($options[$env] as $key => $values) {
             if ('include' === $key) {
-                if (!is_array($values)) {
-                    $values = [$values];
-                }
-                foreach ($values as $includeEnvironment) {
+                $this->includes = is_array($values) ? $values : [$values];
+                foreach ($this->includes as $includeEnvironment) {
                     $this->loadConfigOptions($options, $config, $includeEnvironment);
                 }
             } elseif ('import' === $key) {
@@ -434,10 +469,6 @@ class Config extends Map
                             continue;
                         }
                         if ($options = $this->loadSourceFile($file)) {
-                            $this->imports[] = [
-                                'file' => $file,
-                                'keys' => array_keys($options),
-                            ];
                             $config->extend($options);
                         }
                     } while ($importFile = next($values));

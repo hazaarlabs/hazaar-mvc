@@ -978,11 +978,13 @@ class Map implements \ArrayAccess, \Iterator, \Countable
      *
      * @return array<mixed> The Map object as an array
      */
-    public function toArray(bool $ignorenulls = false): array
+    public function toArray(bool $ignorenulls = false, bool $filter = true): array
     {
         $array = $this->elements;
         foreach ($array as $key => &$elem) {
-            $elem = $this->execFilter($key, $elem, 'out');
+            if (true === $filter) {
+                $elem = $this->execFilter($key, $elem, 'out');
+            }
             if ($elem instanceof Map || $elem instanceof Model) {
                 if ($elem->count() > 0) {
                     $elem = $elem->toArray();
@@ -1435,7 +1437,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable
     {
         if (is_array($this->filter) && array_key_exists($direction, $this->filter) && count($this->filter[$direction]) > 0) {
             foreach ($this->filter[$direction] as $field => $filter) {
-                if (null !== $filter['field'] && $key != $filter['field']) {
+                if (array_key_exists('field', $filter) && (null !== $filter['field'] && $key != $filter['field'])) {
                     continue;
                 }
                 if (array_key_exists('type', $filter)) {
