@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\DBI\Schema;
+namespace Hazaar\Tool;
 
 use Hazaar\Application;
 use Hazaar\Application\Request\CLI;
-use Hazaar\DBI\Adapter;
+use Hazaar\File;
 
-class Tool
+class Main
 {
     public static function run(Application $application): int
     {
@@ -17,24 +17,14 @@ class Tool
         }
         $application->request->setOptions([
             'help' => ['h', 'help', null, 'Display this help message.'],
-            'test' => ['t', 'test', null, 'Enable test mode.  Any write actions will be simulated but not applied to the database.'],
-            'force_sync' => ['f', 'force-sync', null, 'Force the data sync after migration completes, even if no changes are made.', 'migrate'],
-            'keep_tables' => ['k', 'keep-tables', null, 'Keep unmanaged tables when initialising the database.', 'migrate'],
-            'force_init' => [null, 'force-reinitialise', null, 'Force reinitialise the database.', 'migrate'],
-            'applied' => ['a', 'applied', null, 'Only list versions applied to the current schema.', 'list'],
         ]);
         $application->request->setCommands([
-            'list' => ['List the available schema versions.'],
-            'current' => ['Display the current schema version.'],
-            'migrate' => ['Migrate the database to a specific version (default: latest).', 'version'],
-            'replay' => ['Replay a single migration.', 'version'],
-            'rollback' => ['[EXPERIMENTAL] Rollback a migration including it\'s dependencies.', 'version'],
-            'snapshot' => ['Snapshot the database schema. (default: New Snapshot)', 'comment'],
-            'sync' => ['Synchronise database data files.'],
-            'schema' => ['Display the current database schema.'],
-            'checkpoint' => ['Checkpoint database migrations.  Creates a new migration file with consolidated changed.'],
+            'create' => ['Create a new application object (view, controller or model).'],
+            'config' => ['Manage application configuration.'],
+            'encrypt' => ['Encrypt a configuration file using the application secret key.'],
+            'decrypt' => ['Decrypt a configuration file using the application secret key.'],
         ]);
-        if (!($command = $application->request->getCommand($command_args))) {
+        if (!($command = $application->request->getCommand($commandArgs))) {
             $application->request->showHelp();
 
             return 1;
@@ -43,103 +33,37 @@ class Tool
         $code = 1;
 
         try {
-            $manager = Adapter::getSchemaManagerInstance(null, function ($time, $msg) {
-                echo date('Y-m-d H:i:s', (int) $time).' - '.$msg."\n";
-            });
-
             switch ($command) {
-                case 'list':
-                    $versions = $manager->getVersions(false, ake($options, 'applied', false));
-                    foreach ($versions as $version => $comment) {
-                        echo str_pad((string) $version, 10, ' ', STR_PAD_RIGHT)." {$comment}\n";
-                    }
+                case 'create':
+                    echo 'Creating new '.$commandArgs[0].' object: '.$commandArgs[1]."\n";
 
                     break;
 
-                case 'current':
-                    $comment = ake($manager->getVersions(), $version = $manager->getVersion());
-                    echo str_pad((string) $version, 10, ' ', STR_PAD_RIGHT)." {$comment}\n";
+                case 'config':
+                    echo 'Configuring application: '.$commandArgs[0]."\n";
 
                     break;
 
-                case 'migrate':
-                    if ($version = ake($command_args, 0)) {
-                        settype($version, 'int');
-                    }
-                    if ($manager->migrate(
-                        $version,
-                        ake($options, 'force_sync', false),
-                        ake($options, 'test', false),
-                        ake($options, 'keep_tables', false),
-                        ake($options, 'force_init', false)
-                    )) {
-                        $code = 0;
-                    }
-
-                    break;
-
-                case 'replay':
-                    if ($version = ake($command_args, 0)) {
-                        settype($version, 'int');
-                    }
-                    if ($manager->migrateReplay(
-                        $version,
-                        ake($options, 'test', false)
-                    )) {
-                        $code = 0;
-                    }
-
-                    break;
-
-                case 'rollback':
-                    if ($version = ake($command_args, 0)) {
-                        settype($version, 'int');
-                    }
-                    if ($manager->rollback(
-                        $version,
-                        ake($options, 'test', false)
-                    )) {
-                        $code = 0;
-                    }
-
-                    break;
-
-                case 'snapshot':
-                    $comment = trim(implode(' ', $command_args)) ?: 'New Snapshot';
-                    if ($manager->snapshot($comment, ake($options, 'test'))) {
-                        $code = 0;
-                    }
-
-                    break;
-
-                case 'sync':
-                    $data = null;
-                    if ($sync_file = ake($command_args, 0)) {
-                        $sync_file = realpath(APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.$sync_file);
-                        if (!($sync_file && file_exists($sync_file))) {
-                            throw new \Exception('Unable to sync.  File not found: '.realpath($sync_file));
+                case 'encrypt':
+                    $file = new File($application->loader->getFilePath(FILE_PATH_CONFIG, $commandArgs[0]));
+                    if ($file->exists()) {
+                        if ($file->isEncrypted()) {
+                            throw new \Exception('File is already encrypted', 1);
                         }
-                        if (!($data = json_decode(file_get_contents($sync_file)))) {
-                            throw new \Exception('Unable to sync.  File is not a valid JSON file.');
+                        $file->encrypt();
+                        echo 'Encrypted '.$commandArgs[0]."\n";
+                    }
+
+                    break;
+
+                case 'decrypt':
+                    $file = new File($application->loader->getFilePath(FILE_PATH_CONFIG, $commandArgs[0]));
+                    if ($file->exists()) {
+                        if (!$file->isEncrypted()) {
+                            throw new \Exception('File is not encrypted', 1);
                         }
-                    }
-                    if ($manager->syncData($data, ake($options, 'test'), true)) {
-                        $code = 0;
-                    }
-
-                    break;
-
-                case 'schema':
-                    if ($schema = $manager->getSchema()) {
-                        echo json_encode($schema, JSON_PRETTY_PRINT);
-                        $code = 0;
-                    }
-
-                    break;
-
-                case 'checkpoint':
-                    if ($manager->checkpoint()) {
-                        $code = 0;
+                        $file->decrypt();
+                        echo 'Decrypted '.$commandArgs[0]."\n";
                     }
 
                     break;
