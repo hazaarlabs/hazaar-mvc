@@ -47,5 +47,8 @@
     "psr-0": {
       "HazaarTest\\": "tests/"
     }
-  }
+  },
+  "bin": [
+    "bin/hztool"
+  ]
 }

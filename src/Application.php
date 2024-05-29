@@ -13,7 +13,7 @@
  */
 namespace Hazaar;
 
-define('HAZAAR_VERSION', '3.0');
+define('HAZAAR_VERSION', '2.6');
 
 /**
  * Constant containing the application environment current being used.
