@@ -135,7 +135,7 @@ class PDF extends File
     }
 
     /**
-     * Set PDF title. If empty, HTML <title> of first document is used.
+     * Set PDF title. If empty, HTML &lt;title&gt; of first document is used.
      *
      * By default it is empty.
      */
