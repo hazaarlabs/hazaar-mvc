@@ -1260,7 +1260,7 @@ class Manager
         }
         // Get the current version (if any) from the database
         if ($this->dbi->tableExists(self::$schemaInfoTable)) {
-            $result = $this->dbi->table(self::$schemaInfoTable)->find([], ['version'])->sort('version', true);
+            $result = $this->dbi->table(self::$schemaInfoTable)->find([], ['version'])->sort('version', SORT_DESC);
             if ($row = $result->fetch()) {
                 $currentVersion = $row['version'];
                 $this->log('Current database version: '.($currentVersion ? $currentVersion : 'None'));

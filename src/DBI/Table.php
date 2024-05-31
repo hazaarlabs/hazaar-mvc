@@ -387,7 +387,7 @@ class Table implements \Iterator
      * @param string              $alias      an alias to use for the joined table
      * @param string              $type       the join type such as INNER, OUTER, LEFT, RIGHT, etc
      */
-    public function join(string $references, array|string $on, ?string $alias = null, string $type = 'INNER'): Table
+    public function join(string $references, null|array|string $on = null, ?string $alias = null, string $type = 'INNER'): Table
     {
         if (!$type) {
             $type = 'INNER';
@@ -406,7 +406,7 @@ class Table implements \Iterator
     /**
      * @param array<mixed> $on
      */
-    public function innerJoin(string $references, array $on = [], ?string $alias = null): Table
+    public function innerJoin(string $references, null|array|string $on = null, ?string $alias = null): Table
     {
         return $this->join($references, $on, $alias, 'INNER');
     }
@@ -414,7 +414,7 @@ class Table implements \Iterator
     /**
      * @param array<mixed> $on
      */
-    public function leftJoin(string $references, array $on = [], ?string $alias = null): Table
+    public function leftJoin(string $references, null|array|string $on = null, ?string $alias = null): Table
     {
         return $this->join($references, $on, $alias, 'LEFT');
     }
@@ -422,27 +422,27 @@ class Table implements \Iterator
     /**
      * @param array<mixed> $on
      */
-    public function rightJoin(string $references, array $on = [], ?string $alias = null): Table
+    public function rightJoin(string $references, null|array|string $on = null, ?string $alias = null): Table
     {
         return $this->join($references, $on, $alias, 'RIGHT');
     }
 
     /**
-     * @param array<mixed> $on
+     * @param array<mixed>|string $on
      */
-    public function fullJoin(string $references, array $on = [], ?string $alias = null): Table
+    public function fullJoin(string $references, null|array|string $on = null, ?string $alias = null): Table
     {
         return $this->join($references, $on, $alias, 'FULL');
     }
 
     /**
-     * @param array<string, int>|string $fieldDef
+     * @param array<string,int>|string $fieldDef
      */
-    public function sort(array|string $fieldDef, bool $desc = false): Table
+    public function sort(array|string $fieldDef, int $sortFlags = SORT_ASC): Table
     {
         if (!is_array($fieldDef)) {
             $fieldDef = [
-                $fieldDef => ($desc ? -1 : 1),
+                $fieldDef => $sortFlags,
             ];
         }
         $this->order = $fieldDef;
@@ -476,17 +476,17 @@ class Table implements \Iterator
      * Using $updateColumns it's possible to perform an "upsert".  An upsert is an INSERT, that
      * when it fails, columns can be updated in the existing row.
      *
-     * @param mixed        $fields        the fields to be inserted
-     * @param mixed        $returning     a column to return when the row is inserted (usually the primary key)
-     * @param string       $updateColumns the names of the columns to be updated if the row exists
-     * @param array<mixed> $updateWhere   Not used yet
+     * @param mixed               $fields        the fields to be inserted
+     * @param mixed               $returning     a column to return when the row is inserted (usually the primary key)
+     * @param array<mixed>|string $updateColumns the names of the columns to be updated if the row exists
+     * @param array<mixed>        $updateWhere   Not used yet
      *
      * @return array<mixed>|false|int
      */
     public function insert(
         mixed $fields,
         mixed $returning = null,
-        ?string $updateColumns = null,
+        null|array|string $updateColumns = null,
         ?array $updateWhere = null
     ): array|false|int {
         return $this->adapter->insert($this->tableName, $fields, $returning, $updateColumns, $updateWhere, count($this->tables) > 0 ? $this : null);
@@ -849,7 +849,9 @@ class Table implements \Iterator
                 } else {
                     $nulls = 0;
                 }
-                $order[] = $field.' '.((1 == $mode) ? 'ASC' : 'DESC').' NULLS '.(($nulls > 0) ? 'FIRST' : 'LAST');
+                $order[] = $field.' '.(match ($mode) {
+                    SORT_DESC => 'DESC', default => 'ASC',
+                }).' NULLS '.(($nulls > 0) ? 'FIRST' : 'LAST');
             }
         }
 

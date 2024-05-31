@@ -28,6 +28,7 @@ abstract class Controller implements Controller\Interfaces\Controller
 {
     public string $urlDefaultActionName = 'index';
     protected Router $router;
+    protected Application $application;
     protected string $name;
     protected Request $request;
     protected int $statusCode = 0;
@@ -46,6 +47,7 @@ abstract class Controller implements Controller\Interfaces\Controller
     public function __construct(Router $router, ?string $name = null)
     {
         $this->router = $router;
+        $this->application = $router->application;
         $this->name = strtolower(null !== $name ? $name : get_class($this));
         $this->addHelper('response');
         $this->urlDefaultActionName = $router->getDefaultActionName();

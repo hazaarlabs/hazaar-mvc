@@ -20,6 +20,13 @@ use Hazaar\Controller\Response\JSON;
 abstract class REST extends Controller
 {
     /**
+     * The request object.
+     *
+     * @var HTTP
+     */
+    protected Request $request;
+
+    /**
      * Initializes the REST controller.
      *
      * @throws \Exception if there is an invalid JSON parameter

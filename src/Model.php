@@ -529,14 +529,39 @@ abstract class Model implements \jsonSerializable, \Iterator
     }
 
     /**
+     * (re)Populates the model with data from an array or object.
+     *
+     * This method is used to populate the model with data from an array or object. If the
+     * object already has data, it will be overwritten by the new data.  This includes any
+     * setting properties to null if they are not present in the new data.
+     *
+     * @param array<mixed>|object $data the data to populate the model with
+     */
+    public function populate(array|object $data): void
+    {
+        foreach ($this->propertyNames as $propertyName) {
+            $newValue = null;
+            if (is_object($data) && property_exists($data, $propertyName)) {
+                $newValue = $data->{$propertyName};
+            } elseif (is_array($data) && array_key_exists($propertyName, $data)) {
+                $newValue = $data[$propertyName];
+            }
+            $this->__set($propertyName, $newValue);
+        }
+    }
+
+    /**
      * Extends the model with additional data.
      *
-     * @param array<mixed> $data the data to extend the model with
+     * @param array<mixed>|object $data the data to extend the model with
      */
-    public function extend(array $data): void
+    public function extend(array|object $data): void
     {
         if (isset($this->eventHooks['extend'])) {
             $this->eventHooks['extend']($data);
+        }
+        if (is_object($data)) {
+            $data = get_object_vars($data);
         }
         foreach ($data as $propertyName => $propertyValue) {
             if (false === property_exists($this, $propertyName)) {

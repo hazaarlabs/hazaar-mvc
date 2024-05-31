@@ -51,8 +51,11 @@ class TestPDOStatement extends \PDOStatement
         ];
     }
 
-    public function fetch(int $fetchStyle = \PDO::FETCH_BOTH, int $cursorOrientation = \PDO::FETCH_ORI_NEXT, int $cursorOffset = 0): mixed
-    {
+    public function fetch(
+        int $fetchStyle = \PDO::FETCH_BOTH,
+        int $cursorOrientation = \PDO::FETCH_ORI_NEXT,
+        int $cursorOffset = 0
+    ): mixed {
         return $this->testData;
     }
 }
@@ -69,8 +72,12 @@ class Dummy extends BaseDriver
     private array $rows = [];
     private ?string $tableName = null;
 
-    public function connect(string $dsn, ?string $username = null, ?string $password = null, ?array $driverOptions = null): bool
-    {
+    public function connect(
+        string $dsn,
+        ?string $username = null,
+        ?string $password = null,
+        ?array $driverOptions = null
+    ): bool {
         return true;
     }
 
@@ -164,7 +171,7 @@ class Dummy extends BaseDriver
         string $tableName,
         mixed $fields,
         mixed $returning = null,
-        ?string $conflictTarget = null,
+        null|array|string $conflictTarget = null,
         mixed $conflictUpdate = null,
         ?Table $table = null
     ): false|int|\PDOStatement {
