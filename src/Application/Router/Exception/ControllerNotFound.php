@@ -8,6 +8,6 @@ class ControllerNotFound extends \Exception
 {
     public function __construct(string $controllerClass, string $route)
     {
-        parent::__construct("Controller {$controllerClass} as not found hanlding route {$route}");
+        parent::__construct("Controller {$controllerClass} not found hanlding route {$route}");
     }
 }
