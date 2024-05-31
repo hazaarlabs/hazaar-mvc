@@ -100,7 +100,6 @@ class Application
     public string $environment = 'development';
     public ?Timer $timer = null;
     public mixed $bootstrap;
-    protected string $responseType = 'html';
     protected string $urlDefaultPart;
     private static ?Application $instance = null;
     private static string $root;
@@ -250,6 +249,7 @@ class Application
                 'responseImageCache' => false,
                 'runtimePath' => APPLICATION_PATH.DIRECTORY_SEPARATOR.'.runtime',
                 'metrics' => false,
+                'responseType' => 'html',
             ],
             'router' => [
                 'type' => 'basic',
@@ -363,7 +363,7 @@ class Application
      * normal operation. For example, socket files for background scheduler communication, cached views,
      * and backend applications.
      *
-     * @param string $suffix     An optional suffix to tack on the end of the path
+     * @param string $suffix    An optional suffix to tack on the end of the path
      * @param bool   $createDir automatically create the runtime directory if it does not exist
      *
      * @return string The path to the runtime directory
@@ -407,7 +407,7 @@ class Application
      *
      * This method allows access to the raw URL path part, relative to the current application request.
      *
-     * @param string $path           path suffix to append to the application path
+     * @param string $path          path suffix to append to the application path
      * @param bool   $forceRealpath Return the real path to a file.  If the file does not exist, this will return false.
      */
     public static function filePath(?string $path = null, bool $forceRealpath = true): false|string
@@ -655,7 +655,7 @@ class Application
      * parameters from the URL to neaten the URL up.
      *
      * @param string $location The URI you want to redirect to
-     * @param bool   $saveURI Optionally save the URI so we can redirect back. See: `Hazaar\Application::redirectBack()`
+     * @param bool   $saveURI  Optionally save the URI so we can redirect back. See: `Hazaar\Application::redirectBack()`
      */
     public function redirect(string $location, bool $saveURI = false): false|Redirect
     {
@@ -733,7 +733,7 @@ class Application
      */
     public function getResponseType(): ?string
     {
-        return $this->responseType;
+        return $this->config['app']['responseType'];
     }
 
     /**
@@ -744,6 +744,6 @@ class Application
      */
     public function setResponseType(string $type): void
     {
-        $this->responseType = $type;
+        $this->config['app']['responseType'] = $type;
     }
 }
