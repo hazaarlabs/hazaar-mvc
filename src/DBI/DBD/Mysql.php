@@ -312,7 +312,7 @@ class Mysql extends BaseDriver
         string $tableName,
         mixed $fields,
         mixed $returning = null,
-        ?string $conflictTarget = null,
+        null|array|string $conflictTarget = null,
         mixed $conflictUpdate = null,
         ?Table $table = null
     ): false|int {

@@ -462,10 +462,12 @@ class Adapter
      *
      * An upsert is an INSERT, that when it fails, columns can be updated in the existing row.
      *
-     * @param string       $tableName      the table to insert a record into
-     * @param mixed        $fields         the fields to be inserted
-     * @param mixed        $returning      a column to return when the row is inserted (usually the primary key)
-     * @param array<mixed> $conflictUpdate
+     * @param string                   $tableName      the table to insert a record into
+     * @param mixed                    $fields         the fields to be inserted
+     * @param mixed                    $returning      a column to return when the row is inserted (usually the primary key)
+     * @param null|array<mixed>|string $conflictTarget the column(s) to check for a conflict.  If the conflict is found,
+     *                                                 the row will be updated.
+     * @param array<mixed>             $conflictUpdate
      *
      * @return array<mixed>|false|int
      */
@@ -473,7 +475,7 @@ class Adapter
         string $tableName,
         mixed $fields,
         mixed $returning = null,
-        ?string $conflictTarget = null,
+        null|array|string $conflictTarget = null,
         ?array $conflictUpdate = null,
         ?Table $table = null
     ): array|false|int {
