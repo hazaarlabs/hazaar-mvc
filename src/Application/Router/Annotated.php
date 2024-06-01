@@ -260,8 +260,8 @@ class Annotated extends Advanced
             }
             $args[$key] = $value;
         }
-        $http_methods = ake(ake($endpoint, 'args'), 'methods', ['GET']);
-        if (!in_array($request_method, $http_methods)) {
+        $httpMethods = ake(ake($endpoint, 'args'), 'methods', ['GET']);
+        if (!in_array($request_method, $httpMethods)) {
             return false;
         }
 
@@ -378,7 +378,6 @@ class Annotated extends Advanced
         if (!$this->controller) {
             throw new RouteNotFound($request->getPath());
         }
-
         if ('\\' === substr($this->controller, 0, 1)) {
             $controllerClass = $this->controller;
         } else {
@@ -388,7 +387,7 @@ class Annotated extends Advanced
         if (0 === count($this->__controllerEndpoints)) {
             throw new ControllerHasNoRoutes($controllerClass);
         }
-        if ($this->action === $this->config->action) {
+        if ($this->action === $this->config['action']) {
             $controllerPath = '/';
         } else {
             $controllerPath = implode('/', array_merge([$this->action], $this->actionArgs));

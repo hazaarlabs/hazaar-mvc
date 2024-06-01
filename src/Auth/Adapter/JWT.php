@@ -25,7 +25,7 @@ abstract class JWT extends Adapter implements \ArrayAccess
     /**
      * @var array<mixed>
      */
-    protected array $token;
+    protected ?array $token = null;
 
     /**
      * @var array<mixed>
@@ -98,7 +98,7 @@ abstract class JWT extends Adapter implements \ArrayAccess
 
     public function authenticated(): bool
     {
-        if (is_array($this->token) && array_key_exists('token', $this->token)) {
+        if (null !== $this->token && array_key_exists('token', $this->token)) {
             $token = $this->token['token'];
         } elseif (array_key_exists('HTTP_AUTHORIZATION', $_SERVER)
             && 'bearer ' === strtolower(substr($_SERVER['HTTP_AUTHORIZATION'], 0, 7))) {
