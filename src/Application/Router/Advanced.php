@@ -70,7 +70,7 @@ class Advanced extends Router
         $controllerRoot = Loader::getFilePath(FILE_PATH_CONTROLLER);
         $controllerPath = DIRECTORY_SEPARATOR;
         $controllerIndex = null;
-        foreach ($controllerParts as $index => $part) {
+        foreach ($controllerParts as $index => &$part) {
             $part = ucfirst($part);
             $found = false;
             $path = $controllerRoot.$controllerPath;
@@ -78,13 +78,13 @@ class Advanced extends Router
             if (is_dir($path.$part)) {
                 $found = true;
                 if (file_exists($controllerRoot.$controllerPath.'Index.php')) {
-                    $controller = implode('/', array_slice($controllerParts, 0, $index + 1)).'/index';
+                    $controller = implode('\\', array_slice($controllerParts, 0, $index + 1)).'/Index';
                     $controllerIndex = $index;
                 }
             }
             if (file_exists($path.$part.'.php')) {
                 $found = true;
-                $controller = (($index > 0) ? implode('/', array_slice($controllerParts, 0, $index)).'/' : null).strtolower($part);
+                $controller = (($index > 0) ? implode('\\', array_slice($controllerParts, 0, $index + 1)) : null);
                 $controllerIndex = $index;
             }
             if (false === $found) {
