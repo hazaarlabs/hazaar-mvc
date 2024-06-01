@@ -23,6 +23,9 @@ class Advanced extends Router
         $parts = [];
         $controller = $this->findController($path, $parts);
         if (null === $controller) {
+            $slashPos = strpos($path, '/');
+            $this->action = false === $slashPos ? $path : substr($this->action, 0, $slashPos);
+
             return false;
         }
         $this->controller = ucfirst($controller);
@@ -70,21 +73,22 @@ class Advanced extends Router
         $controllerRoot = Loader::getFilePath(FILE_PATH_CONTROLLER);
         $controllerPath = DIRECTORY_SEPARATOR;
         $controllerIndex = null;
-        foreach ($controllerParts as $index => &$part) {
+        $defaultController = ucfirst($this->config['controller']);
+        foreach ($controllerParts as $index => $part) {
             $part = ucfirst($part);
             $found = false;
-            $path = $controllerRoot.$controllerPath;
+            $searchPath = $controllerRoot.$controllerPath;
             $controllerPath .= $part.DIRECTORY_SEPARATOR;
-            if (is_dir($path.$part)) {
+            if (is_dir($searchPath.$part)) {
                 $found = true;
-                if (file_exists($controllerRoot.$controllerPath.'Index.php')) {
-                    $controller = implode('\\', array_slice($controllerParts, 0, $index + 1)).'/Index';
+                if (file_exists($controllerRoot.$controllerPath.$defaultController.'.php')) {
+                    $controller = implode('\\', array_map('ucfirst', array_slice($controllerParts, 0, $index + 1))).'\\'.$defaultController;
                     $controllerIndex = $index;
                 }
             }
-            if (file_exists($path.$part.'.php')) {
+            if (file_exists($searchPath.$part.'.php')) {
                 $found = true;
-                $controller = (($index > 0) ? implode('\\', array_slice($controllerParts, 0, $index + 1)) : null);
+                $controller = (($index > 0) ? implode('\\', array_map('ucfirst', array_slice($controllerParts, 0, $index + 1))) : null);
                 $controllerIndex = $index;
             }
             if (false === $found) {
