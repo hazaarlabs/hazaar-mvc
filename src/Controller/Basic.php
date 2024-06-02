@@ -104,6 +104,8 @@ abstract class Basic extends Controller
             $response = new Response\JSON($response);
         } elseif (is_string($response) || is_numeric($response)) {
             $response = new Response\Text($response);
+        } else {
+            $response = new Response\HTTP\NoContent();
         }
 
         return $response;

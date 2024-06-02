@@ -103,7 +103,7 @@ abstract class REST extends Controller
             return $result;
         }
 
-        return new JSON($result);
+        return null === $result ? new Response\HTTP\NoContent() : new JSON($result);
     }
 
     /**
