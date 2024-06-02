@@ -13,20 +13,14 @@ use Hazaar\Exception;
  */
 class JSON extends Response implements \ArrayAccess
 {
-    /**
-     * @var array<mixed>
-     */
-    protected array $content = [];
+    protected mixed $content = [];
     /*
      * If the callback is set, such as in a JSONP request, we use the callback to return
      * the encoded data.
      */
     private ?string $callback = null;
 
-    /**
-     * @param array<mixed> $data
-     */
-    public function __construct(array $data = [], int $status = 200)
+    public function __construct(mixed $data = [], int $status = 200)
     {
         if (!function_exists('json_encode')) {
             throw new JSONNotSupported();
