@@ -75,7 +75,9 @@ abstract class Model implements \jsonSerializable, \Iterator
             } catch (\Exception $e) {
                 throw new \Exception("Error initialising property '{$propertyName}' in class '".static::class."': ".$e->getMessage());
             }
-            $reflectionProperty->setValue($this, $propertyValue);
+            if (null !== $propertyValue) {
+                $reflectionProperty->setValue($this, $propertyValue);
+            }
             $this->propertyNames[] = $propertyName;
         }
         $this->constructed($data, ...$args);
@@ -149,6 +151,10 @@ abstract class Model implements \jsonSerializable, \Iterator
                 if (null !== $propertyValue && !$propertyValue instanceof $propertyTypeName) {
                     $propertyValue = new $propertyTypeName($propertyValue);
                 }
+            } elseif ('Hazaar\Date' === $propertyTypeName) {
+                if (null !== $propertyValue && !$propertyValue instanceof Date) {
+                    $propertyValue = new Date($propertyValue);
+                }
             } elseif (!(is_object($propertyValue)
                 && ($propertyTypeName === get_class($propertyValue) || is_subclass_of($propertyTypeName, get_class($propertyValue))))) {
                 throw new \Exception("Implicit conversion of unsupported type '{$propertyTypeName}'.  Type must be a subclass of 'Hazaar\\Model'");
@@ -157,6 +163,9 @@ abstract class Model implements \jsonSerializable, \Iterator
             if ('bool' === $propertyTypeName) {
                 $propertyValue = boolify($propertyValue);
             }
+        }
+        if (null === $propertyValue && $reflectionProperty->hasDefaultValue()) {
+            $propertyValue = $reflectionProperty->getDefaultValue();
         }
     }
 
