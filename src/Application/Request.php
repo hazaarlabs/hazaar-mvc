@@ -129,7 +129,7 @@ abstract class Request implements Interfaces\Request
      */
     public function getInt(string $key, ?int $default = null): ?int
     {
-        return $this->get($key, $default);
+        return intval($this->get($key, $default));
     }
 
     /**
@@ -144,7 +144,7 @@ abstract class Request implements Interfaces\Request
      */
     public function getFloat(string $key, ?float $default = null): float
     {
-        return $this->get($key, $default);
+        return floatval($this->get($key, $default));
     }
 
     /**
