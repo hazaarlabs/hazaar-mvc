@@ -411,6 +411,22 @@ abstract class Model implements \jsonSerializable, \Iterator
         return true;
     }
 
+    /**
+     * Trims the specified character from the given property value.
+     *
+     * @param string $propertyName  the name of the property
+     * @param mixed  $propertyValue the value of the property
+     * @param string $char          the character to be trimmed (default is ' ')
+     *
+     * @return string the trimmed property value
+     * 
+     * @phpstan-ignore-next-line
+     */
+    private function __propertyRule__trim(string $propertyName, mixed $propertyValue, string $char = ' '): string
+    {
+        return trim($propertyValue, $char);
+    }
+
     public function __serialize(): array
     {
         return $this->toArray();
