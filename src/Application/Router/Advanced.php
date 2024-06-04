@@ -88,7 +88,7 @@ class Advanced extends Router
             }
             if (file_exists($searchPath.$part.'.php')) {
                 $found = true;
-                $controller = (($index > 0) ? implode('\\', array_map('ucfirst', array_slice($controllerParts, 0, $index + 1))) : null);
+                $controller = implode('\\', array_map('ucfirst', array_slice($controllerParts, 0, $index + 1)));
                 $controllerIndex = $index;
             }
             if (false === $found) {
