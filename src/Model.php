@@ -75,10 +75,17 @@ abstract class Model implements \jsonSerializable, \Iterator
             } catch (\Exception $e) {
                 throw new \Exception("Error initialising property '{$propertyName}' in class '".static::class."': ".$e->getMessage());
             }
-            if (null !== $propertyValue) {
+            if (null !== $propertyValue || false === $reflectionProperty->isInitialized($this)) {
                 $reflectionProperty->setValue($this, $propertyValue);
             }
             $this->propertyNames[] = $propertyName;
+        }
+        // Check for missing required properties
+        $protectedProperties = (new \ReflectionClass(static::class))->getProperties(\ReflectionProperty::IS_PROTECTED);
+        foreach ($protectedProperties as $reflectionProperty) {
+            if (false === $reflectionProperty->isInitialized($this)) {
+                throw new PropertyValidationException($reflectionProperty->getName(), 'required');
+            }
         }
         $this->constructed($data, ...$args);
     }
@@ -419,7 +426,7 @@ abstract class Model implements \jsonSerializable, \Iterator
      * @param string $char          the character to be trimmed (default is ' ')
      *
      * @return string the trimmed property value
-     * 
+     *
      * @phpstan-ignore-next-line
      */
     private function __propertyRule__trim(string $propertyName, mixed $propertyValue, string $char = ' '): string
