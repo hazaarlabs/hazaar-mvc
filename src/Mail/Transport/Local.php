@@ -3,6 +3,7 @@
 namespace Hazaar\Mail\Transport;
 
 use Hazaar\Mail\Transport;
+use Hazaar\Mail\Mime\Message;
 
 class Local extends Transport
 {
@@ -57,7 +58,7 @@ class Local extends Transport
 
         // The @ sign causes errors not to be thrown and allows things to continue.  the mail() command
         // will just return false when not successful.
-        $ret = @mail($this->formatTo($to), $subject, $message, $mailHeaders, count($params) > 0 ? array_flatten($params, ' ', ' ') : null);
+        $ret = @mail($this->formatTo($to), $subject, (string)$message, $mailHeaders, count($params) > 0 ? array_flatten($params, ' ', ' ') : null);
 
         if (!$ret) {
             $error = error_get_last();
