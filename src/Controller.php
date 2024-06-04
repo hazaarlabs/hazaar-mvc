@@ -211,7 +211,7 @@ abstract class Controller implements Controller\Interfaces\Controller
      *
      * Parameters are dynamic and depend on what you are trying to generate.
      *
-     * For examples see: [Generating URLs](/basics/urls.md)
+     * For examples see: [Generating URLs](/guide/basics/urls.md)
      */
     public function url(): URL
     {
