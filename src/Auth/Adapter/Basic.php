@@ -2,23 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Auth;
+namespace Hazaar\Auth\Adapter;
 
-use Hazaar\Cache;
+use Hazaar\Auth\Adapter;
 use Hazaar\Map;
 
-class Helper extends Adapter\Session
+class Basic extends Adapter
 {
     /**
      * Construct the helper.
-     *
-     * @param Map   $cacheConfig  The cache configuration
-     * @param Cache $cacheBackend The cache backend to use
      */
-    public function __construct(Map $cacheConfig = null, ?Cache $cacheBackend = null)
+    public function __construct(?Map $config = null)
     {
-        parent::__construct($cacheConfig, $cacheBackend);
-        $this->identity = $this->session['hazaar_auth_identity'];
+        parent::__construct($config);
     }
 
     /**

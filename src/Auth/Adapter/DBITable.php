@@ -93,7 +93,7 @@ class DBITable extends Adapter implements \Hazaar\Auth\Interfaces\Adapter
     {
         return $this->db->table($this->table)->insert([
             $this->field_identity => $identity,
-            $this->field_credential => $this->getCredential($credential),
+            $this->field_credential => $this->getCredentialHash($credential),
         ]);
     }
 

@@ -16,6 +16,7 @@ namespace Hazaar\Auth\Adapter;
 
 use Hazaar\Application;
 use Hazaar\Auth\Adapter;
+use Hazaar\Auth\Interfaces\Storage;
 use Hazaar\Cache;
 use Hazaar\Map;
 use Hazaar\Session as SessionCache;
@@ -47,7 +48,7 @@ use Hazaar\Session as SessionCache;
  *
  * @implements  \ArrayAccess<string, mixed>
  */
-abstract class Session extends Adapter implements \ArrayAccess
+abstract class Session extends Adapter implements Storage, \ArrayAccess
 {
     protected Cache $session;
 

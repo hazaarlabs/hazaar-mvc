@@ -7,6 +7,7 @@ namespace Hazaar\Auth\Adapter;
 use Hazaar\Application;
 use Hazaar\Application\Request\HTTP;
 use Hazaar\Auth\Adapter;
+use Hazaar\Auth\Interfaces\Storage;
 use Hazaar\Loader;
 use Hazaar\Map;
 
@@ -17,7 +18,7 @@ use Hazaar\Map;
  *
  * @implements \ArrayAccess<string, mixed>
  */
-abstract class JWT extends Adapter implements \ArrayAccess
+abstract class JWT extends Adapter implements Storage, \ArrayAccess
 {
     protected ?string $passphrase = null;
     protected string $privateKey;

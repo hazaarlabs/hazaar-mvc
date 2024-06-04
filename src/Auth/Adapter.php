@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Hazaar\Auth;
 
 use Hazaar\Application;
+use Hazaar\Application\Request\HTTP;
 use Hazaar\Map;
 
 /**
@@ -75,8 +76,8 @@ use Hazaar\Map;
 abstract class Adapter implements Interfaces\Adapter
 {
     protected Map $options;
-    protected string $identity;
-    protected string $credential;
+    protected ?string $identity = null;
+    protected ?string $credential = null;
 
     /**
      * Extra data fields to store from the user record.
@@ -92,9 +93,10 @@ abstract class Adapter implements Interfaces\Adapter
      *
      * @param array<mixed>|Map $config The configuration options
      */
-    public function __construct(array|Map $config = [])
+    public function __construct(null|array|Map $config = [])
     {
         $defaults = [
+            'storage' => 'session',
             'encryption' => [
                 'hash' => 'sha1',
                 'count' => 1,
@@ -127,9 +129,9 @@ abstract class Adapter implements Interfaces\Adapter
         $this->credential = $credential;
     }
 
-    public function getIdentity(): string
+    public function getIdentity(): ?string
     {
-        return $this->identity ?? '';
+        return $this->identity;
     }
 
     /**
@@ -142,7 +144,7 @@ abstract class Adapter implements Interfaces\Adapter
      * NOTE: Keep in mind that if no credential is set, or it's null, or an empty string, this
      * will still return a valid hash of that empty value using the defined encryption hash chain.
      */
-    public function getCredential(?string $credential = null): ?string
+    public function getCredentialHash(?string $credential = null): ?string
     {
         if (null === $credential) {
             $credential = $this->credential;
@@ -158,7 +160,7 @@ abstract class Adapter implements Interfaces\Adapter
         $algos = $this->options['encryption']['hash'];
         if ($algos instanceof Map) {
             $algos = $algos->toArray();
-        }elseif(!is_array($algos)){
+        } elseif (!is_array($algos)) {
             $algos = [$algos];
         }
         $salt = $this->options['encryption']['salt'];
@@ -196,11 +198,33 @@ abstract class Adapter implements Interfaces\Adapter
             return false;
         }
         if ($auth['identity'] === $this->getIdentity()
-            && $auth['credential'] === $this->getCredential()) {
+            && $auth['credential'] === $this->getCredentialHash()) {
             return $auth;
         }
 
         return false;
+    }
+
+    public function authenticateRequest(HTTP $request): bool
+    {
+        $auth = $request->getHeader('Authorization');
+        if (!$auth) {
+            return false;
+        }
+        $auth = explode(' ', $auth);
+        if (2 !== count($auth) || 'basic' !== strtolower($auth[0])) {
+            return false;
+        }
+        $auth = base64_decode($auth[1]);
+        if (!$auth) {
+            return false;
+        }
+        $auth = explode(':', $auth);
+        if (2 !== count($auth)) {
+            return false;
+        }
+
+        return $this->authenticate($auth[0], $auth[1]);
     }
 
     public function authenticated(): bool
@@ -223,7 +247,7 @@ abstract class Adapter implements Interfaces\Adapter
             return false;
         }
         if ($auth['identity'] === $this->getIdentity()
-            && $auth['credential'] === $this->getCredential($credential)) {
+            && $auth['credential'] === $this->getCredentialHash($credential)) {
             return true;
         }
 
