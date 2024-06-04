@@ -23,7 +23,7 @@ use Hazaar\Map;
  *
  *              Parameters are dynamic and depend on what you are trying to generate.
  *
- *              For examples see [Generating URLs](/basics/urls.md) in the
+ *              For examples see [Generating URLs](/guide/basics/urls.md) in the
  *              Hazaar MVC support documentation.
  */
 class URL implements \JsonSerializable
