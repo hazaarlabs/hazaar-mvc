@@ -159,6 +159,7 @@ class Error extends Diagnostic
             ],
         ];
         if (ini_get('display_errors')) {
+            $error['error']['class'] = $this->errclass;
             $error['error']['line'] = $this->errline;
             $error['error']['file'] = $this->errfile;
             $error['trace'] = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
@@ -171,6 +172,9 @@ class Error extends Diagnostic
     {
         $xml = new Element('xml');
         $struct = $xml->add('fault')->add('value')->add('struct');
+        $class = $struct->add('member');
+        $class->add('name', 'faultClass');
+        $class->add('value')->add('string', $this->errclass);
         $code = $struct->add('member');
         $code->add('name', 'faultCode');
         $code->add('value')->add('int', (string) $this->errno);
@@ -195,6 +199,7 @@ class Error extends Diagnostic
         $out = "*****************************\n\tEXCEPTION\n*****************************\n\n";
         $out .= "Environment:\t".APPLICATION_ENV."\n";
         $out .= "Timestamp:\t".date('c')."\n";
+        $out .= "Class:\t\t".$this->errclass."\n";
         if ($this->errno > 0) {
             $out .= "Error:\t\t#".$this->errno."\n";
         }
