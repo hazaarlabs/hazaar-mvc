@@ -33,28 +33,6 @@ final class Row extends Model
     private array $propertyMeta;
 
     /**
-     * Row constructor.
-     *
-     * @param array<string,\stdClass> $meta
-     */
-    public function construct(
-        array &$data,
-        ?Adapter $adapter = null,
-        array $meta = [],
-        ?\PDOStatement $statement = null
-    ): void {
-        $this->adapter = $adapter;
-        $this->propertyMeta = $meta;
-        $this->statement = $statement;
-        foreach ($meta as $propertyName => $propertyMeta) {
-            $this->defineProperty($propertyMeta->type, $propertyName);
-            $this->defineEventHook('write', true, function ($propertyValue, $propertyName) {
-                $this->changedProperties[] = $propertyName;
-            });
-        }
-    }
-
-    /**
      * Prepare the row values by checking for fields that are an array that should not be.
      *
      * This will happen when a join selects multiple fields from different tables with the same name.  For example, when
@@ -197,5 +175,31 @@ final class Row extends Model
         $this->adapter->rollback();
 
         return false;
+    }
+
+    /**
+     * Row constructor.
+     *
+     * @param array<string,\stdClass> $meta
+     */
+    protected function construct(
+        array &$data,
+        ?Adapter $adapter = null,
+        array $meta = [],
+        ?\PDOStatement $statement = null
+    ): void {
+        $this->adapter = $adapter;
+        $this->propertyMeta = $meta;
+        $this->statement = $statement;
+        foreach ($meta as $propertyName => $propertyMeta) {
+            $this->defineProperty($propertyMeta->type, $propertyName);
+        }
+    }
+
+    protected function constructed(array &$data): void
+    {
+        $this->defineEventHook('written', function ($propertyValue, $propertyName) {
+            $this->changedProperties[] = $propertyName;
+        });
     }
 }
