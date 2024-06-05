@@ -120,6 +120,10 @@
                     font-size: 0.9rem;
                 }
 
+                .big {
+                    font-size: 1.2rem;
+                }
+
                 .small {
                     color: #ff005a;
                     font-size: 0.8rem;
@@ -150,6 +154,7 @@
             </div>
             {if $application->config['php']['display_errors'] == true}
                 <div class="errormessage">
+                    <p class="muted big">{$err.class}</p>
                     <p class="content">{$err.message}</p>
                     <p class="muted">{$err.file} (#{$err.line})</p>
                     <p class="small">Loaded in {$time|string_format:"%.2f"}ms</p>
