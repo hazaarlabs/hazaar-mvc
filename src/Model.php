@@ -144,7 +144,7 @@ abstract class Model implements \jsonSerializable, \Iterator
             throw new UnsetPropertyException(static::class, $propertyName);
         }
         if (array_key_exists($propertyName, $this->userProperties)) {
-            unset($this->userProperties[$propertyName]);
+            unset($this->userProperties[$propertyName], $this->propertyNames[array_search($propertyName, $this->propertyNames)]);
         }
     }
 
