@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hazaar;
 
+use Hazaar\Model\Exception\DefineEventHookException;
+use Hazaar\Model\Exception\PropertyException;
 use Hazaar\Model\Exception\PropertyValidationException;
 use Hazaar\Model\Exception\UnsetPropertyException;
 
@@ -29,8 +31,13 @@ abstract class Model implements \jsonSerializable, \Iterator
      * @var array<string>
      */
     private static array $objectHooks = [
-        'beforeSerialize',
-        'afterSerialize',
+        'populate',
+        'populated',
+        'extend',
+        'extended',
+        'serialize',
+        'serialized',
+        'json',
     ];
 
     /**
@@ -44,6 +51,19 @@ abstract class Model implements \jsonSerializable, \Iterator
     private array $userProperties = [];
 
     /**
+     * @var array<string>
+     */
+    private static array $allowTypes = [
+        'bool',
+        'int',
+        'float',
+        'string',
+        'array',
+        'object',
+        'null',
+    ];
+
+    /**
      * Model constructor.
      *
      * @param array<mixed> $data the data to initialize the model with
@@ -54,33 +74,31 @@ abstract class Model implements \jsonSerializable, \Iterator
             $data = get_object_vars($data);
         }
         $this->construct($data, ...$args);
-        foreach ($data as $propertyName => $propertyValue) {
-            if (false === property_exists($this, $propertyName)) {
-                if (array_key_exists($propertyName, $this->userProperties)) {
-                    $this->__setUserProperty($propertyName, $propertyValue);
-                }
-
-                continue;
-            }
-            if (isset($this->propertyRules[$propertyName])) {
-                $this->__execPropertyRules($propertyName, $propertyValue, $this->propertyRules[$propertyName]);
-            }
-            $reflectionProperty = new \ReflectionProperty(static::class, $propertyName);
-            if ($reflectionProperty->isPrivate()) {
-                continue;
-            }
-
-            try {
-                $this->__convertPropertyValueDataType($reflectionProperty, $propertyValue);
-            } catch (\Exception $e) {
-                throw new \Exception("Error initialising property '{$propertyName}' in class '".static::class."': ".$e->getMessage());
-            }
+        $protectedProperties = (new \ReflectionClass(static::class))->getProperties(\ReflectionProperty::IS_PROTECTED);
+        foreach ($protectedProperties as $reflectionProperty) {
+            $propertyName = $reflectionProperty->getName();
+            $propertyValue = $data[$propertyName] ?? null;
             if (null !== $propertyValue) {
+                try {
+                    $this->__convertPropertyValueDataType($reflectionProperty, $propertyValue);
+                } catch (\Exception $e) {
+                    throw new \Exception("Error initialising property '{$propertyName}' in class '".static::class."': ".$e->getMessage());
+                }
                 $reflectionProperty->setValue($this, $propertyValue);
+            }
+            if ($reflectionProperty->isInitialized($this) && isset($this->propertyRules[$propertyName])) {
+                $this->__execPropertyRules($propertyName, $propertyValue, $this->propertyRules[$propertyName]);
             }
             $this->propertyNames[] = $propertyName;
         }
+        foreach ($this->userProperties as $propertyName => $propertyData) {
+            if (!array_key_exists($propertyName, $data)) {
+                continue;
+            }
+            $this->__setUserProperty($propertyName, $data[$propertyName]);
+        }
         $this->constructed($data, ...$args);
+        sort($this->propertyNames);
     }
 
     final public function __destruct()
@@ -126,7 +144,7 @@ abstract class Model implements \jsonSerializable, \Iterator
             throw new UnsetPropertyException(static::class, $propertyName);
         }
         if (array_key_exists($propertyName, $this->userProperties)) {
-            unset($this->userProperties[$propertyName]);
+            unset($this->userProperties[$propertyName], $this->propertyNames[array_search($propertyName, $this->propertyNames)]);
         }
     }
 
@@ -169,9 +187,35 @@ abstract class Model implements \jsonSerializable, \Iterator
         }
     }
 
+    private function __convertValueDataType(string $propertyType, mixed &$propertyValue): void
+    {
+        if (in_array($propertyType, self::$allowTypes, true)) {
+            if ('bool' === $propertyType) {
+                $propertyValue = boolify($propertyValue);
+            } else {
+                settype($propertyValue, $propertyType);
+            }
+        } elseif (is_subclass_of($propertyType, 'Hazaar\Model')) {
+            if (null !== $propertyValue && !$propertyValue instanceof $propertyType) {
+                $propertyValue = new $propertyType($propertyValue);
+            }
+        } elseif ('Hazaar\Date' === $propertyType) {
+            if (null !== $propertyValue && !$propertyValue instanceof Date) {
+                $propertyValue = new Date($propertyValue);
+            }
+        } elseif (!(is_object($propertyValue)
+            && ($propertyType === get_class($propertyValue) || is_subclass_of($propertyType, get_class($propertyValue))))) {
+            throw new \Exception("Implicit conversion of unsupported type '{$propertyType}'.  Type must be a subclass of 'Hazaar\\Model'");
+        }
+    }
+
     private function __setUserProperty(string $propertyName, mixed $propertyValue): void
     {
-        $this->userProperties[$propertyName] = $propertyValue;
+        if (!array_key_exists($propertyName, $this->userProperties)) {
+            throw new PropertyException(static::class, $propertyName, 'is not a user defined property');
+        }
+        $this->__convertValueDataType($this->userProperties[$propertyName]['type'], $propertyValue);
+        $this->userProperties[$propertyName]['value'] = $propertyValue;
     }
 
     /**
@@ -419,7 +463,7 @@ abstract class Model implements \jsonSerializable, \Iterator
      * @param string $char          the character to be trimmed (default is ' ')
      *
      * @return string the trimmed property value
-     * 
+     *
      * @phpstan-ignore-next-line
      */
     private function __propertyRule__trim(string $propertyName, mixed $propertyValue, string $char = ' '): string
@@ -454,7 +498,7 @@ abstract class Model implements \jsonSerializable, \Iterator
         // Check if the property exists
         if (!property_exists($this, $propertyName)) {
             if (array_key_exists($propertyName, $this->userProperties)) {
-                $propertyValue = $this->userProperties[$propertyName];
+                $propertyValue = $this->userProperties[$propertyName]['value'];
             } else {
                 trigger_error('Undefined property: '.static::class.'::$'.$propertyName, E_USER_NOTICE);
 
@@ -464,9 +508,10 @@ abstract class Model implements \jsonSerializable, \Iterator
             // Get the property value using reflection
             $reflectionProperty = new \ReflectionProperty(static::class, $propertyName);
             if ($reflectionProperty->isPrivate()) {
-                trigger_error('Cannot read private property: '.static::class.'::$'.$propertyName, E_USER_NOTICE);
-
-                return;
+                throw new PropertyException(static::class, $propertyName, 'is private and cannot be accessed');
+            }
+            if (false === $reflectionProperty->isInitialized($this)) {
+                throw new PropertyException(static::class, $propertyName, 'must not be accessed before initialization');
             }
             $propertyValue = $reflectionProperty->getValue($this);
         }
@@ -508,7 +553,8 @@ abstract class Model implements \jsonSerializable, \Iterator
         // Check if the property exists
         if (!property_exists($this, $propertyName)) {
             if (array_key_exists($propertyName, $this->userProperties)) {
-                $this->userProperties[$propertyName] = $propertyValue;
+                settype($propertyValue, $this->userProperties[$propertyName]['type']);
+                $this->userProperties[$propertyName]['value'] = $propertyValue;
             } else {
                 trigger_error('Undefined property: '.static::class.'::$'.$propertyName, E_USER_NOTICE);
 
@@ -564,6 +610,9 @@ abstract class Model implements \jsonSerializable, \Iterator
      */
     public function populate(array|object $data): void
     {
+        if (isset($this->eventHooks['populate'])) {
+            $this->eventHooks['populate']($data);
+        }
         foreach ($this->propertyNames as $propertyName) {
             $newValue = null;
             if (is_object($data) && property_exists($data, $propertyName)) {
@@ -572,6 +621,9 @@ abstract class Model implements \jsonSerializable, \Iterator
                 $newValue = $data[$propertyName];
             }
             $this->__set($propertyName, $newValue);
+        }
+        if (isset($this->eventHooks['populated'])) {
+            $this->eventHooks['populated']($data);
         }
     }
 
@@ -612,19 +664,29 @@ abstract class Model implements \jsonSerializable, \Iterator
     public function toArray(bool $ignoreNullPropertyValues = false): array
     {
         $array = [];
+        if (isset($this->eventHooks['serialize'])) {
+            $this->eventHooks['serialize']($array);
+        }
         foreach ($this->propertyNames as $propertyName) {
-            $reflectionProperty = new \ReflectionProperty(static::class, $propertyName);
-            if ($reflectionProperty->isPrivate()) {
-                continue;
+            if (array_key_exists($propertyName, $this->userProperties)) {
+                $propertyValue = $this->userProperties[$propertyName]['value'];
+            } else {
+                $reflectionProperty = new \ReflectionProperty(static::class, $propertyName);
+                if ($reflectionProperty->isPrivate() || false === $reflectionProperty->isInitialized($this)) {
+                    continue;
+                }
+                $propertyValue = $reflectionProperty->getValue($this);
             }
-            $propertyValue = $reflectionProperty->getValue($this);
             if (true === $ignoreNullPropertyValues && null === $propertyValue) {
                 continue;
             }
+            if (isset($this->eventHooks['read'][$propertyName])) {
+                $propertyValue = $this->eventHooks['read'][$propertyName]($propertyValue);
+            }
             $array[$propertyName] = $propertyValue;
         }
-        if (isset($this->eventHooks['serialize'])) {
-            $this->eventHooks['serialize']($array);
+        if (isset($this->eventHooks['serialized'])) {
+            $this->eventHooks['serialized']($array);
         }
 
         return $array;
@@ -708,7 +770,8 @@ abstract class Model implements \jsonSerializable, \Iterator
         if (property_exists($this, $propertyName) || array_key_exists($propertyName, $this->userProperties)) {
             return false;
         }
-        $this->userProperties[$propertyName] = $propertyValue;
+        $this->userProperties[$propertyName] = ['type' => $propertyType, 'value' => $propertyValue];
+        $this->propertyNames[] = $propertyName;
 
         return true;
     }
@@ -724,7 +787,20 @@ abstract class Model implements \jsonSerializable, \Iterator
         if (in_array($hookName, self::$objectHooks, true)) {
             $this->eventHooks[$hookName] = $args[0];
         } else {
-            $this->eventHooks[$hookName][$args[0]] = $args[1];
+            if (isset($args[0]) && is_string($args[0])) {
+                $propertyName = $args[0];
+                $callback = $args[1];
+                if (!property_exists($this, $propertyName)) {
+                    $this->defineProperty('mixed', $propertyName);
+                }
+            } else {
+                $propertyName = true;
+                $callback = $args[0];
+            }
+            if (!is_callable($callback)) {
+                throw new DefineEventHookException(static::class, $hookName, 'Invalid callback');
+            }
+            $this->eventHooks[$hookName][$propertyName] = $callback;
         }
     }
 
