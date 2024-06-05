@@ -787,16 +787,20 @@ abstract class Model implements \jsonSerializable, \Iterator
         if (in_array($hookName, self::$objectHooks, true)) {
             $this->eventHooks[$hookName] = $args[0];
         } else {
-            if (!(isset($args[0]) && is_string($args[0]))) {
-                throw new DefineEventHookException(static::class, $hookName, 'Invalid field selector');
+            if (isset($args[0]) && is_string($args[0])) {
+                $propertyName = $args[0];
+                $callback = $args[1];
+                if (!property_exists($this, $propertyName)) {
+                    $this->defineProperty('mixed', $propertyName);
+                }
+            } else {
+                $propertyName = true;
+                $callback = $args[0];
             }
-            if (!(isset($args[1]) && is_callable($args[1]))) {
+            if (!is_callable($callback)) {
                 throw new DefineEventHookException(static::class, $hookName, 'Invalid callback');
             }
-            if (!property_exists($this, $args[0])) {
-                $this->defineProperty('mixed', $args[0]);
-            }
-            $this->eventHooks[$hookName][$args[0]] = $args[1];
+            $this->eventHooks[$hookName][$propertyName] = $callback;
         }
     }
 
