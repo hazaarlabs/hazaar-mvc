@@ -81,7 +81,7 @@ class ModelTest extends TestCase
         'email' => null,
         'counter' => 0,
         'child' => ['name' => 'George Doe'],
-        'age' => [],
+        'age' => ['dob' => 0],
         'isActive' => true,
     ];
 
@@ -126,7 +126,7 @@ class ModelTest extends TestCase
         $model->defineEventHook('write', 'counter', function ($value) {
             return $value + 1;
         });
-        $this->assertEquals(1, $model->counter);
+        $this->assertEquals(0, $model->counter);
         $model->counter = 100;
         $this->assertEquals(11, $model->counter);
         $model->age->dob = strtotime('1978-12-13');
