@@ -12,28 +12,43 @@ use PHPUnit\Framework\TestCase;
  */
 class AuthTest extends TestCase
 {
-    public function testBasicAuth(): void
+    private mixed $authMock;
+    private mixed $mockData;
+
+    public function setUp(): void
     {
-        $authMock = $this->getMockBuilder(Basic::class)
+        $this->authMock = $this->getMockBuilder(Basic::class)
             ->onlyMethods(['queryAuth'])
             ->getMock()
         ;
-        $mockData = [
+        $this->mockData = [
             'identity' => 'test',
-            'credential' => $authMock->getCredentialHash('test'),
+            'credential' => $this->authMock->getCredentialHash('test'),
         ];
-        $authMock->expects($this->once())
+        $this->authMock->expects($this->once())
             ->method('queryAuth')
-            ->willReturn($mockData)
+            ->willReturn($this->mockData)
         ;
-        $this->assertTrue($authMock->authenticate('test', 'test'));
-        $authData = $authMock->getAuthData();
+    }
+
+    public function testBasicAuth(): void
+    {
+        $this->assertTrue($this->authMock->authenticate('test', 'test'));
+        $authData = $this->authMock->getAuthData();
         $this->assertIsArray($authData);
         $this->assertArrayHasKey('identity', $authData);
         $this->assertArrayHasKey('credential', $authData);
-        $this->assertEquals($mockData['identity'], $authData['identity']);
-        $this->assertEquals($mockData['credential'], $authData['credential']);
-        $this->assertEquals($mockData['identity'], $authMock->get('identity'));
-        $this->assertTrue($authMock->authenticated());
+        $this->assertEquals($this->mockData['identity'], $authData['identity']);
+        $this->assertEquals($this->mockData['credential'], $authData['credential']);
+        $this->assertEquals($this->mockData['identity'], $this->authMock->get('identity'));
+        $this->assertTrue($this->authMock->authenticated());
+        $this->assertTrue($this->authMock->deauth());
+    }
+
+    public function testBasicAuthFail(): void
+    {
+        $this->assertFalse($this->authMock->authenticate('test', 'fail'));
+        $this->assertFalse($this->authMock->authenticated());
+        $this->assertFalse($this->authMock->deauth());
     }
 }

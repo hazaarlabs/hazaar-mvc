@@ -263,6 +263,11 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
 
     public function deauth(): bool
     {
+        if ($this->storage->isEmpty()) {
+            return false;
+        }
+        $this->storage->clear();
+
         return true;
     }
 
@@ -374,6 +379,6 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
             throw new UnknownStorageAdapter($storage);
         }
 
-        return new $class($this->options);
+        return new $class($this->options->get($storage));
     }
 }
