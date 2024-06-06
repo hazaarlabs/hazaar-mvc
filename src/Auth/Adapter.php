@@ -16,6 +16,7 @@ namespace Hazaar\Auth;
 
 use Hazaar\Application;
 use Hazaar\Application\Request\HTTP;
+use Hazaar\Auth\Adapter\Exception\UnknownStorageAdapter;
 use Hazaar\Map;
 
 /**
@@ -72,10 +73,13 @@ use Hazaar\Map;
  *     }
  * }
  * ```
+ *
+ * @implements \ArrayAccess<string,mixed>
  */
-abstract class Adapter implements Interfaces\Adapter
+abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
 {
     protected Map $options;
+    protected Interfaces\Storage $storage;
     protected ?string $identity = null;
     protected ?string $credential = null;
 
@@ -114,6 +118,7 @@ abstract class Adapter implements Interfaces\Adapter
             'timeout' => 3600,
         ];
         $this->options = Map::_($defaults, Application::getInstance()->config['auth'], $config);
+        $this->storage = $this->getStorageAdapter($this->options['storage']);
         if ($this->options->has('data_fields')) {
             $this->setDataFields($this->options['data_fields']->toArray());
         }
@@ -199,7 +204,9 @@ abstract class Adapter implements Interfaces\Adapter
         }
         if ($auth['identity'] === $this->getIdentity()
             && $auth['credential'] === $this->getCredentialHash()) {
-            return $auth;
+            $this->storage->write($auth);
+
+            return true;
         }
 
         return false;
@@ -229,7 +236,7 @@ abstract class Adapter implements Interfaces\Adapter
 
     public function authenticated(): bool
     {
-        return false;
+        return false === $this->storage->isEmpty();
     }
 
     /**
@@ -293,6 +300,54 @@ abstract class Adapter implements Interfaces\Adapter
         $this->noCredentialHashing = boolify($value);
     }
 
+    public function get(string $key): mixed
+    {
+        return $this->storage->get($key);
+    }
+
+    public function set(string $key, mixed $value): void
+    {
+        $this->storage->set($key, $value);
+    }
+
+    public function has(string $key): bool
+    {
+        return $this->storage->has($key);
+    }
+
+    public function unset(string $key): void
+    {
+        $this->storage->unset($key);
+    }
+
+    public function offsetExists(mixed $offset): bool
+    {
+        return $this->storage->has($offset);
+    }
+
+    public function offsetGet(mixed $offset): mixed
+    {
+        return $this->storage->get($offset);
+    }
+
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        $this->storage->set($offset, $value);
+    }
+
+    public function offsetUnset(mixed $offset): void
+    {
+        $this->storage->unset($offset);
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function getAuthData(): array
+    {
+        return $this->storage->read();
+    }
+
     protected function getIdentifier(string $identity): ?string
     {
         if (!$identity) {
@@ -312,15 +367,13 @@ abstract class Adapter implements Interfaces\Adapter
         $this->extra = $fields;
     }
 
-    protected function canAutoLogin(): bool
+    private function getStorageAdapter(string $storage): Interfaces\Storage
     {
-        $cookie = $this->getAutologinCookieName();
+        $class = '\\Hazaar\\Auth\\Storage\\'.ucfirst($storage);
+        if (!class_exists($class)) {
+            throw new UnknownStorageAdapter($storage);
+        }
 
-        return $this->options['autologin']['period'] > 0 && isset($_COOKIE[$cookie]);
-    }
-
-    protected function getAutologinCookieName(): string
-    {
-        return $this->options['autologin']['cookie'];
+        return new $class($this->options);
     }
 }

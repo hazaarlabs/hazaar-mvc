@@ -26,12 +26,14 @@ class AuthTest extends TestCase
             ->method('queryAuth')
             ->willReturn($mockData)
         ;
-        $authResult = $authMock->authenticate('test', 'test');
-        $this->assertIsArray($authResult);
-        $this->assertArrayHasKey('identity', $authResult);
-        $this->assertArrayHasKey('credential', $authResult);
-        $this->assertEquals($mockData['identity'], $authResult['identity']);
-        $this->assertEquals($mockData['credential'], $authResult['credential']);
+        $this->assertTrue($authMock->authenticate('test', 'test'));
+        $authData = $authMock->getAuthData();
+        $this->assertIsArray($authData);
+        $this->assertArrayHasKey('identity', $authData);
+        $this->assertArrayHasKey('credential', $authData);
+        $this->assertEquals($mockData['identity'], $authData['identity']);
+        $this->assertEquals($mockData['credential'], $authData['credential']);
+        $this->assertEquals($mockData['identity'], $authMock->get('identity'));
         $this->assertTrue($authMock->authenticated());
     }
 }
