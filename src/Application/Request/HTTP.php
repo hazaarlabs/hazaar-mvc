@@ -302,7 +302,7 @@ class HTTP extends Request
      * value, but if the connection is via a reverse proxy (such as Haproxy) then it will possibly have the standard
      * X-Forwarded-For header, so if that header exists then that value will be returned.
      */
-    public static function getRemoteAddr(): string
+    public static function getRemoteAddr(): ?string
     {
         $forwarded_ip = getenv('HTTP_X_FORWARDED_FOR') ?:
             getenv('HTTP_X_FORWARDED') ?:
@@ -310,7 +310,7 @@ class HTTP extends Request
             getenv('HTTP_FORWARDED');
         if (!$forwarded_ip) {
             return getenv('HTTP_CLIENT_IP') ?:
-                getenv('REMOTE_ADDR');
+                getenv('REMOTE_ADDR') ?: null;
         }
         $forwarded = explode(',', $forwarded_ip);
 
