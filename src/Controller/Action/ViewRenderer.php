@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace Hazaar\Controller\Action;
 
 use Hazaar\Controller\Action\Exception\NoContent;
-use Hazaar\Controller\Response;
 use Hazaar\Controller\Response\HTML;
 use Hazaar\View;
 use Hazaar\View\Helper;
 use Hazaar\View\Layout;
 
-class ViewRenderer
+/**
+ * Class ViewRenderer.
+ *
+ * @implements \ArrayAccess<string, mixed>
+ */
+class ViewRenderer implements \ArrayAccess
 {
     private ?View $view = null;
 
@@ -19,11 +23,6 @@ class ViewRenderer
      * @var array<string, mixed>
      */
     private array $_data = [];
-
-    public function __set(string $key, mixed $value)
-    {
-        $this->_data[$key] = $value;
-    }
 
     // Helper execution call.  This renders the layout file.
     public function __exec(HTML $response): void
@@ -35,6 +34,21 @@ class ViewRenderer
         $response->setContent($content);
     }
 
+    public function __set(string $key, mixed $value)
+    {
+        $this->_data[$key] = $value;
+    }
+
+    public function __isset(string $name): bool
+    {
+        return isset($this->_data[$name]);
+    }
+
+    public function __unset(string $name): void
+    {
+        unset($this->_data[$name]);
+    }
+
     /**
      * Adds a helper to the view renderer.
      *
@@ -44,7 +58,7 @@ class ViewRenderer
      *
      * @return bool the added ViewHelper instance, or null if the view is not set
      */
-    public function addHelper(string $helper, array $args = [], string $alias = null): bool
+    public function addHelper(string $helper, array $args = [], ?string $alias = null): bool
     {
         if (!$this->view instanceof View) {
             return false;
@@ -182,9 +196,29 @@ class ViewRenderer
      * - Supports layout views and renders all views inside the layout.
      * - Renders to the output buffer, then grabs the buffer and returns it.
      */
-    public function render(View $view = null): string
+    public function render(?View $view = null): string
     {
         return $this->renderView($view);
+    }
+
+    public function offsetExists(mixed $offset): bool
+    {
+        return isset($this->_data[$offset]);
+    }
+
+    public function offsetGet(mixed $offset): mixed
+    {
+        return $this->_data[$offset];
+    }
+
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        $this->_data[$offset] = $value;
+    }
+
+    public function offsetUnset(mixed $offset): void
+    {
+        unset($this->_data[$offset]);
     }
 
     /**
