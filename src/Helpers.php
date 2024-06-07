@@ -190,15 +190,18 @@ function strbool(mixed $value): string
     if (true === $value) {
         return 'true';
     }
-    $value = strtolower(trim($value));
-    if ('t' == $value || 'true' == $value || 'on' == $value || 'yes' == $value || 'y' == $value || 'ok' == $value) {
-        return 'true';
-    }
-    if (preg_match('/(\!|not)\s*null/', $value)) {
-        return 'true';
-    }
-    if (0 != (int) $value) {
-        return 'true';
+    if (is_string($value)) {
+        $value = strtolower(trim($value));
+        if ('t' == $value || 'true' == $value || 'on' == $value || 'yes' == $value || 'y' == $value || 'ok' == $value) {
+            return 'true';
+        }
+        if (preg_match('/(\!|not)\s*null/', $value)) {
+            return 'true';
+        }
+    } elseif (is_int($value)) {
+        if (0 != (int) $value) {
+            return 'true';
+        }
     }
 
     return 'false';
