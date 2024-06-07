@@ -36,13 +36,11 @@ abstract class JWT extends Adapter implements Storage, \ArrayAccess
     public function __construct(array|Map $config)
     {
         $options = [
-            'jwt' => [
-                'alg' => 'HS256',
-                'issuer' => 'hazaar-auth',
-                'timeout' => 3600,
-                'refresh' => 86400,
-                'fingerprintIP' => true,
-            ],
+            'alg' => 'HS256',
+            'issuer' => 'hazaar-auth',
+            'timeout' => 3600,
+            'refresh' => 86400,
+            'fingerprintIP' => true,
         ];
         parent::__construct(Map::_($options, $config));
         if ($this->options->has('jwt.passphrase')) {

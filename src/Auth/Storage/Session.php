@@ -46,16 +46,29 @@ use Hazaar\Map;
  */
 class Session implements Storage
 {
-    private string $id;
+    private string $session_key = 'hazaar_auth_storage';
 
     /**
      * @var array<string,mixed>
      */
     private array $session;
 
-    public function __construct(?Map $config = null)
+    public function __construct(?Map $config)
     {
-        $this->id = session_id();
+        if ($config->has('name')) {
+            session_name($config['name']);
+        }
+        if (!session_id()) {
+            ini_set('session.cookie_secure', '1');
+            ini_set('session.cookie_httponly', '1');
+            ini_set('session.cookie_samesite', 'Strict');
+            if ($config->has('timeout')) {
+                $timeout = $config['timeout'];
+                ini_set('session.gc_maxlifetime', $timeout * 2);
+                ini_set('session.cookie_maxlifetime', $timeout * 2);
+            }
+            session_start();
+        }
         if (!isset($_SESSION) || !is_array($_SESSION)) {
             $_SESSION = [];
         }
@@ -64,41 +77,43 @@ class Session implements Storage
 
     public function isEmpty(): bool
     {
-        return false === isset($this->session[$this->id]) || 0 === count($this->session[$this->id]);
+        return false === isset($this->session[$this->session_key]) || 0 === count($this->session[$this->session_key]);
     }
 
     public function read(): array
     {
-        return $this->session[$this->id];
+        return $this->session[$this->session_key];
     }
 
     public function write(array $data): void
     {
-        $this->session[$this->id] = $data;
+        $this->session[$this->session_key] = $data;
     }
 
     public function has(string $key): bool
     {
-        return isset($this->session[$this->id][$key]);
+        return isset($this->session[$this->session_key][$key]);
     }
 
     public function get(string $key): mixed
     {
-        return $this->session[$this->id][$key];
+        return $this->session[$this->session_key][$key];
     }
 
     public function set(string $key, mixed $value): void
     {
-        $this->session[$this->id][$key] = $value;
+        $this->session[$this->session_key][$key] = $value;
     }
 
     public function unset(string $key): void
     {
-        unset($this->session[$this->id][$key]);
+        unset($this->session[$this->session_key][$key]);
     }
 
     public function clear(): void
     {
-        unset($this->session[$this->id]);
+        unset($this->session[$this->session_key]);
+        session_unset();
+        session_destroy();
     }
 }

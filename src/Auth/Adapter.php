@@ -203,7 +203,12 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
             return false;
         }
         if ($auth['identity'] === $this->getIdentity()
-            && $auth['credential'] === $this->getCredentialHash()) {
+            && hash_equals($this->getCredentialHash(), $auth['credential'])) {
+            if (isset($_SERVER['HTTP_USER_AGENT'])) {
+                $auth['user-agent'] = $_SERVER['HTTP_USER_AGENT'];
+                $auth['ip-address'] = HTTP::getRemoteAddr();
+            }
+            unset($auth['credential']); // Don't store the credential in the session
             $this->storage->write($auth);
 
             return true;
@@ -236,7 +241,18 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
 
     public function authenticated(): bool
     {
-        return false === $this->storage->isEmpty();
+        if (true === $this->storage->isEmpty()) {
+            return false;
+        }
+        if (false === $this->storage->has('identity')
+            || ($_SERVER['HTTP_USER_AGENT'] ?? '') !== $this->storage->get('user-agent')
+            || HTTP::getRemoteAddr() !== $this->storage->get('ip-address')) {
+            $this->storage->clear();
+
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -254,7 +270,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
             return false;
         }
         if ($auth['identity'] === $this->getIdentity()
-            && $auth['credential'] === $this->getCredentialHash($credential)) {
+            && hash_equals($this->getCredentialHash($credential), $auth['credential'])) {
             return true;
         }
 
@@ -379,6 +395,6 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
             throw new UnknownStorageAdapter($storage);
         }
 
-        return new $class($this->options->get($storage));
+        return new $class($this->options->get($storage, [], true));
     }
 }
