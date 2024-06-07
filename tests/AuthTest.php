@@ -31,7 +31,7 @@ class AuthTest extends TestCase
         ;
     }
 
-    public function testBasicAuth(): void
+    public function testBasicSession(): void
     {
         $this->assertTrue($this->authMock->authenticate('test', 'test'));
         $authData = $this->authMock->getAuthData();
@@ -43,10 +43,22 @@ class AuthTest extends TestCase
         $this->assertTrue($this->authMock->clear());
     }
 
-    public function testBasicAuthFail(): void
+    public function testBasicSessionFail(): void
     {
         $this->assertFalse($this->authMock->authenticate('test', 'fail'));
         $this->assertFalse($this->authMock->authenticated());
         $this->assertFalse($this->authMock->clear());
+    }
+
+    public function testBasicCache(): void
+    {
+        $this->authMock->setStorageAdapter('cache', ['ttl' => 60]);
+        $this->assertTrue($this->authMock->authenticate('test', 'test'));
+        $authData = $this->authMock->getAuthData();
+        $this->assertIsArray($authData);
+        $this->assertArrayHasKey('identity', $authData);
+        $this->assertEquals($this->mockData['identity'], $authData['identity']);
+        $this->assertEquals($this->mockData['identity'], $this->authMock->get('identity'));
+        $this->assertTrue($this->authMock->authenticated());
     }
 }
