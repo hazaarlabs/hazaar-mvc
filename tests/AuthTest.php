@@ -37,18 +37,16 @@ class AuthTest extends TestCase
         $authData = $this->authMock->getAuthData();
         $this->assertIsArray($authData);
         $this->assertArrayHasKey('identity', $authData);
-        $this->assertArrayHasKey('credential', $authData);
         $this->assertEquals($this->mockData['identity'], $authData['identity']);
-        $this->assertEquals($this->mockData['credential'], $authData['credential']);
         $this->assertEquals($this->mockData['identity'], $this->authMock->get('identity'));
         $this->assertTrue($this->authMock->authenticated());
-        $this->assertTrue($this->authMock->deauth());
+        $this->assertTrue($this->authMock->clear());
     }
 
     public function testBasicAuthFail(): void
     {
         $this->assertFalse($this->authMock->authenticate('test', 'fail'));
         $this->assertFalse($this->authMock->authenticated());
-        $this->assertFalse($this->authMock->deauth());
+        $this->assertFalse($this->authMock->clear());
     }
 }

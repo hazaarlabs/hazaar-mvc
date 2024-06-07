@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Auth\Storage;
 
+use Hazaar\Application\Request\HTTP;
 use Hazaar\Auth\Adapter;
 use Hazaar\Auth\Interfaces\Storage;
 use Hazaar\Cache;
@@ -77,7 +78,14 @@ class Session implements Storage
 
     public function isEmpty(): bool
     {
-        return false === isset($this->session[$this->session_key]) || 0 === count($this->session[$this->session_key]);
+        if (false === isset($this->session[$this->session_key])
+            || 0 === count($this->session[$this->session_key])
+            || ($_SERVER['HTTP_USER_AGENT'] ?? null) !== $this->get('user-agent')
+            || HTTP::getRemoteAddr() !== $this->get('ip-address')) {
+            return true;
+        }
+
+        return false;
     }
 
     public function read(): array
@@ -87,6 +95,10 @@ class Session implements Storage
 
     public function write(array $data): void
     {
+        if (isset($_SERVER['HTTP_USER_AGENT'])) {
+            $data['user-agent'] = $_SERVER['HTTP_USER_AGENT'];
+            $data['ip-address'] = HTTP::getRemoteAddr();
+        }
         $this->session[$this->session_key] = $data;
     }
 
@@ -97,7 +109,7 @@ class Session implements Storage
 
     public function get(string $key): mixed
     {
-        return $this->session[$this->session_key][$key];
+        return $this->session[$this->session_key][$key] ?? null;
     }
 
     public function set(string $key, mixed $value): void

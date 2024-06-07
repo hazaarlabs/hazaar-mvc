@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Hazaar\Auth;
 
 use Hazaar\Application;
+use Hazaar\Application\Request;
 use Hazaar\Application\Request\HTTP;
 use Hazaar\Auth\Adapter\Exception\UnknownStorageAdapter;
 use Hazaar\Map;
@@ -194,20 +195,19 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         if ($credential) {
             $this->setCredential($credential);
         }
-        $auth = $this->queryAuth($this->getIdentity(), $this->extra);
+        if (!($identity = $this->getIdentity())) {
+            return false;
+        }
+        $auth = $this->queryAuth($identity, $this->extra);
         if (false === $auth || !(is_array($auth)
             && array_key_exists('identity', $auth)
             && array_key_exists('credential', $auth))) {
-            $this->deauth();
+            $this->clear();
 
             return false;
         }
         if ($auth['identity'] === $this->getIdentity()
             && hash_equals($this->getCredentialHash(), $auth['credential'])) {
-            if (isset($_SERVER['HTTP_USER_AGENT'])) {
-                $auth['user-agent'] = $_SERVER['HTTP_USER_AGENT'];
-                $auth['ip-address'] = HTTP::getRemoteAddr();
-            }
             unset($auth['credential']); // Don't store the credential in the session
             $this->storage->write($auth);
 
@@ -217,8 +217,11 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         return false;
     }
 
-    public function authenticateRequest(HTTP $request): bool
+    public function authenticateRequest(Request $request): bool
     {
+        if (!$request instanceof HTTP) {
+            return false;
+        }
         $auth = $request->getHeader('Authorization');
         if (!$auth) {
             return false;
@@ -235,8 +238,11 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         if (2 !== count($auth)) {
             return false;
         }
+        if (false === $this->authenticate($auth[0], $auth[1])) {
+            throw new \Exception('Unauthorised!', 401);
+        }
 
-        return $this->authenticate($auth[0], $auth[1]);
+        return true;
     }
 
     public function authenticated(): bool
@@ -244,9 +250,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         if (true === $this->storage->isEmpty()) {
             return false;
         }
-        if (false === $this->storage->has('identity')
-            || ($_SERVER['HTTP_USER_AGENT'] ?? '') !== $this->storage->get('user-agent')
-            || HTTP::getRemoteAddr() !== $this->storage->get('ip-address')) {
+        if (false === $this->storage->has('identity')) {
             $this->storage->clear();
 
             return false;
@@ -277,7 +281,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         return false;
     }
 
-    public function deauth(): bool
+    public function clear(): bool
     {
         if ($this->storage->isEmpty()) {
             return false;
