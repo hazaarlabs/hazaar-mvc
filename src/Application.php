@@ -103,6 +103,7 @@ class Application
     protected string $urlDefaultPart;
     private static ?Application $instance = null;
     private static string $root;
+    private static string $redirectCookieName = 'hazaar-redirect-token';
 
     /**
      * The main application constructor.
@@ -663,10 +664,6 @@ class Application
         if (array_key_exists('X-Requested-With', $headers) && 'XMLHttpRequest' === $headers['X-Requested-With']) {
             echo "<script>document.location = '{$location}';</script>";
         } else {
-            $sess = new Session();
-            if ($sess->has('REDIRECT') && $sess['REDIRECT'] === $location) {
-                unset($sess['REDIRECT']);
-            }
             if ($saveURI) {
                 $data = [
                     'URI' => $_SERVER['REQUEST_URI'],
@@ -675,7 +672,7 @@ class Application
                 if ('POST' === $_SERVER['REQUEST_METHOD']) {
                     $data['POST'] = $_POST;
                 }
-                $sess['REDIRECT'] = $data;
+                setcookie(self::$redirectCookieName, base64_encode(serialize($data)), time() + 3600, '/');
             }
         }
 
@@ -693,17 +690,19 @@ class Application
      */
     public function redirectBack(?string $altURL = null): false|Redirect
     {
-        $sess = new Session();
-        if ($sess->has('REDIRECT') && ($uri = trim(ake($sess['REDIRECT'], 'URI') ?? ''))) {
-            if ('POST' === ake($sess['REDIRECT'], 'METHOD')) {
-                if ('?' !== substr($uri, -1, 1)) {
-                    $uri .= '?';
-                } else {
-                    $uri .= '&';
+        if (array_key_exists(self::$redirectCookieName, $_COOKIE)) {
+            $data = unserialize(base64_decode($_COOKIE[self::$redirectCookieName]));
+            if ($uri = ake($data, 'URI')) {
+                if ('POST' === ake($data, 'METHOD')) {
+                    if ('?' !== substr($uri, -1, 1)) {
+                        $uri .= '?';
+                    } else {
+                        $uri .= '&';
+                    }
+                    $uri .= http_build_query(ake($data, 'POST'));
                 }
-                $uri .= http_build_query(ake($sess['REDIRECT'], 'POST'));
             }
-            unset($sess['REDIRECT']);
+            setcookie(self::$redirectCookieName, '', time() - 3600, '/');
         } else {
             $uri = $altURL;
         }
