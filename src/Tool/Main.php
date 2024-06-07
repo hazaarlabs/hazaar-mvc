@@ -7,6 +7,7 @@ namespace Hazaar\Tool;
 use Hazaar\Application;
 use Hazaar\Application\Config;
 use Hazaar\Application\Request\CLI;
+use Hazaar\Auth\Adapter\HTPasswd;
 use Hazaar\File;
 use Hazaar\File\Template\Smarty;
 use Hazaar\Loader;
@@ -27,6 +28,9 @@ class Main
             'config' => ['Manage application configuration.'],
             'encrypt' => ['Encrypt a configuration file using the application secret key.'],
             'decrypt' => ['Decrypt a configuration file using the application secret key.'],
+            'adduser' => ['Add a new user to the application.'],
+            'deluser' => ['Delete a user from the application.'],
+            'passwd' => ['Change a user password.'],
         ]);
         if (!($command = $application->request->getCommand($commandArgs))) {
             $application->request->showHelp();
@@ -120,6 +124,34 @@ class Main
                     }
 
                     break;
+
+                case 'adduser':
+                    $auth = new HTPasswd($application->config->get('auth'));
+                    if ($auth->create($commandArgs[0], $commandArgs[1])) {
+                        echo 'User added: '.$commandArgs[0]."\n";
+                    } else {
+                        throw new \Exception('Failed to add user', 1);
+                    }
+
+                    break;
+
+                case 'deluser':
+                    $auth = new HTPasswd($application->config->get('auth'));
+                    if ($auth->delete($commandArgs[0])) {
+                        echo 'User deleted: '.$commandArgs[0]."\n";
+                    } else {
+                        throw new \Exception('Failed to delete user', 1);
+                    }
+
+                    break;
+
+                case 'passwd':
+                    $auth = new HTPasswd($application->config->get('auth'));
+                    if ($auth->update($commandArgs[0], $commandArgs[1])) {
+                        echo 'Password updated for user: '.$commandArgs[0]."\n";
+                    } else {
+                        throw new \Exception('Failed to update password', 1);
+                    }
             }
         } catch (\Throwable $e) {
             echo $e->getMessage()."\n";

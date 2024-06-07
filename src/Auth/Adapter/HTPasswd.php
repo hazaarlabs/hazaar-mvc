@@ -111,4 +111,59 @@ class HTPasswd extends Adapter
 
         return $hash;
     }
+
+    public function create(string $identity, string $credential): bool
+    {
+        $hash = $this->getCredentialHash($credential);
+        $lines = explode("\n", trim(file_get_contents($this->passwd)));
+        foreach ($lines as $line) {
+            if (!$line) {
+                continue;
+            }
+            list($userIdentity, $userHash) = explode(':', $line);
+            if ($userIdentity === $identity) {
+                return false;
+            }
+        }
+        $lines[] = $identity.':'.$hash;
+
+        return (bool) file_put_contents($this->passwd, implode("\n", $lines));
+    }
+
+    public function update(string $identity, string $credential): bool
+    {
+        $hash = $this->getCredentialHash($credential);
+        $lines = explode("\n", trim(file_get_contents($this->passwd)));
+        foreach ($lines as $index => $line) {
+            if (!$line) {
+                continue;
+            }
+            list($userIdentity, $userHash) = explode(':', $line);
+            if ($userIdentity === $identity) {
+                $lines[$index] = $identity.':'.$hash;
+
+                break;
+            }
+        }
+
+        return (bool) file_put_contents($this->passwd, implode("\n", $lines));
+    }
+
+    public function delete(string $identity): bool
+    {
+        $lines = explode("\n", trim(file_get_contents($this->passwd)));
+        foreach ($lines as $index => $line) {
+            if (!$line) {
+                continue;
+            }
+            list($userIdentity, $userHash) = explode(':', $line);
+            if ($userIdentity === $identity) {
+                unset($lines[$index]);
+
+                break;
+            }
+        }
+
+        return (bool) file_put_contents($this->passwd, implode("\n", $lines));
+    }
 }
