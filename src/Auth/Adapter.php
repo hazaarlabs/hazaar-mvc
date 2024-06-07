@@ -119,7 +119,8 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
             'timeout' => 3600,
         ];
         $this->options = Map::_($defaults, Application::getInstance()->config['auth'], $config);
-        $this->storage = $this->getStorageAdapter($this->options['storage']);
+        $storage = $this->options->get('storage', 'session');
+        $this->setStorageAdapter($storage, $this->options->get($storage, []));
         if ($this->options->has('data_fields')) {
             $this->setDataFields($this->options['data_fields']->toArray());
         }
@@ -373,6 +374,23 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         return $this->storage->read();
     }
 
+    /**
+     * @param array<string,mixed>|Map $options
+     */
+    public function setStorageAdapter(string $storage, array|Map $options = []): bool
+    {
+        $class = '\\Hazaar\\Auth\\Storage\\'.ucfirst($storage);
+        if (!class_exists($class)) {
+            throw new UnknownStorageAdapter($storage);
+        }
+        if (!$options instanceof Map) {
+            $options = new Map($options);
+        }
+        $this->storage = new $class($options);
+
+        return true;
+    }
+
     protected function getIdentifier(string $identity): ?string
     {
         if (!$identity) {
@@ -392,13 +410,20 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         $this->extra = $fields;
     }
 
-    private function getStorageAdapter(string $storage): Interfaces\Storage
-    {
-        $class = '\\Hazaar\\Auth\\Storage\\'.ucfirst($storage);
-        if (!class_exists($class)) {
-            throw new UnknownStorageAdapter($storage);
-        }
+    /**
+     * Overload function called when a user is successfully authenticated.
+     *
+     * This can occur when calling authenticate() or authenticated() where a session has been saved.  This default method does nothing but can
+     * be overridden.
+     *
+     * @param array<mixed> $data
+     */
+    protected function authenticationSuccess(string $identity, array $data): void {}
 
-        return new $class($this->options->get($storage, [], true));
-    }
+    /**
+     * Handles authentication failure for the given identity.
+     *
+     * @param string $identity the identity that failed authentication
+     */
+    protected function authenticationFailure(string $identity): void {}
 }
