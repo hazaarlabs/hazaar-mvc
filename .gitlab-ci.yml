@@ -4,7 +4,7 @@ stages:
 
 variables:
   APPLICATION_PATH: .
-  UNIT_TEST_IMAGE: $CI_REGISTRY_IMAGE/ci_unit_test_image
+  UNIT_TEST_IMAGE: $CI_REGISTRY_IMAGE
 
 Build Test Image:
   stage: build
@@ -15,8 +15,13 @@ Build Test Image:
     - until docker info; do sleep 1; done
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
   script:
-    - docker build --network host --pull --rm -f "Dockerfile" -t $CI_REGISTRY_IMAGE .
+    - docker build --network host --pull --rm -f "Dockerfile" -t $UNIT_TEST_IMAGE .
     - docker push --all-tags $CI_REGISTRY_IMAGE
+  only:
+    refs:
+      - master
+    changes:
+      - Dockerfile
 
 # Coding Standard:
 #   stage: test
