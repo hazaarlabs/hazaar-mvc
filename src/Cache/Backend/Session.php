@@ -209,6 +209,11 @@ class Session extends Backend
         return $values;
     }
 
+    public function count(): int
+    {
+        return count($_SESSION[APPLICATION_BASE][$this->namespace]);
+    }
+
     private function load(string $key): mixed
     {
         $value = "\0";

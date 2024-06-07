@@ -138,4 +138,13 @@ class Chain extends Backend
 
         return $this->backends[array_key_first($this->backends)]->toArray();
     }
+
+    public function count(): int
+    {
+        if (0 === count($this->backends)) {
+            return 0;
+        }
+
+        return $this->backends[array_key_first($this->backends)]->count();
+    }
 }
