@@ -54,7 +54,7 @@ class Session implements Storage
      */
     private array $session;
 
-    public function __construct(?Map $config)
+    public function __construct(Map $config)
     {
         if ($config->has('name')) {
             session_name($config['name']);

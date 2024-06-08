@@ -13,7 +13,7 @@ interface Storage
      *
      * @param Map $config The configuration
      */
-    public function __construct(?Map $config);
+    public function __construct(Map $config);
 
     /**
      * Returns true if and only if storage is empty.

@@ -57,7 +57,7 @@ class Cache implements Storage
         'apc',
     ];
 
-    public function __construct(?Map $config)
+    public function __construct(Map $config)
     {
         $this->config = $config;
         $this->config->enhance([

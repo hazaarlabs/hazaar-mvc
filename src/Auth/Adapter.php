@@ -383,10 +383,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         if (!class_exists($class)) {
             throw new UnknownStorageAdapter($storage);
         }
-        if (!$options instanceof Map) {
-            $options = new Map($options);
-        }
-        $this->storage = new $class($options);
+        $this->storage = new $class(Map::_($options));
 
         return true;
     }
