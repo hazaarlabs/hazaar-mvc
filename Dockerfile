@@ -7,7 +7,7 @@ ENV MUSL_LOCPATH /usr/share/i18n/locales/musl
 ENV LANG en_AU.UTF-8  
 ENV LANGUAGE en_AU:en  
 ENV LC_ALL en_AU.UTF-8   
-RUN docker-php-ext-install intl gd sockets zip pdo_pgsql xml 
+RUN docker-php-ext-install intl gd sockets zip pdo_pgsql xml sysvshm
 RUN pecl install apcu; \
     docker-php-ext-enable apcu; \
     echo "apc.enable_cli=1" >> /usr/local/etc/php/conf.d/docker-php-ext-apcu.ini ;\

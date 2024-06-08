@@ -52,8 +52,8 @@ class Shm extends Backend
             shm_put_var($this->shm_index, 0, $namespaces);
         }
         $this->shm = shm_attach($key);
-        if (!is_resource($this->shm)) {
-            throw new \Exception('shm_attach() failed.  did not return resource.');
+        if (!$this->shm instanceof \SysvSharedMemory) {
+            throw new \Exception('shm_attach() failed.  did not return \SysvSharedMemory.');
         }
         if (shm_has_var($this->shm, 0)) {
             $this->index = shm_get_var($this->shm, 0);
@@ -83,7 +83,7 @@ class Shm extends Backend
             return false;
         }
 
-        return $info['data'];
+        return true === $check_empty ? empty($info['data']) : true;
     }
 
     public function get(string $key): mixed
@@ -106,7 +106,7 @@ class Shm extends Backend
             shm_put_var($this->shm, 0, $this->index);
         }
         $info = ['data' => $value];
-        if (null !== $timeout) {
+        if ($timeout > 0) {
             $info['timeout'] = $timeout;
             $info['expire'] = time() + $timeout;
         }
