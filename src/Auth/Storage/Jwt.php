@@ -18,7 +18,7 @@ use Hazaar\Map;
  *
  * @implements \ArrayAccess<string, mixed>
  */
-abstract class JWT extends Adapter implements Storage, \ArrayAccess
+abstract class JWT implements Storage, \ArrayAccess
 {
     protected ?string $passphrase = null;
     protected string $privateKey;
@@ -32,24 +32,25 @@ abstract class JWT extends Adapter implements Storage, \ArrayAccess
      * @var array<mixed>
      */
     protected array $data = [];
+    private Map $config;
 
-    public function __construct(array|Map $config)
+    public function __construct(?Map $config = null)
     {
-        $options = [
+        $this->config = $config;
+        $this->config->enhance([
             'alg' => 'HS256',
             'issuer' => 'hazaar-auth',
             'timeout' => 3600,
             'refresh' => 86400,
             'fingerprintIP' => true,
-        ];
-        parent::__construct(Map::_($options, $config));
-        if ($this->options->has('jwt.passphrase')) {
-            $this->passphrase = $this->options->get('jwt.passphrase');
+        ]);
+        if ($this->config->has('jwt.passphrase')) {
+            $this->passphrase = $this->config->get('jwt.passphrase');
         }
-        if ($this->options->has('jwt.privateKey')) {
-            $this->privateKey = $this->options->get('jwt.privateKey');
-        } elseif ($this->options->has('jwt.privateKeyFile')) {
-            if ($privateKeyFile = Loader::getFilePath(FILE_PATH_CONFIG, $this->options->get('jwt.privateKeyFile'))) {
+        if ($this->config->has('jwt.privateKey')) {
+            $this->privateKey = $this->config->get('jwt.privateKey');
+        } elseif ($this->config->has('jwt.privateKeyFile')) {
+            if ($privateKeyFile = Loader::getFilePath(FILE_PATH_CONFIG, $this->config->get('jwt.privateKeyFile'))) {
                 $this->privateKey = file_get_contents($privateKeyFile);
             }
         }
@@ -81,47 +82,47 @@ abstract class JWT extends Adapter implements Storage, \ArrayAccess
         unset($this->data[$name]);
     }
 
-    public function authenticate(?string $identity = null, ?string $credential = null, bool $autologin = false): mixed
-    {
-        $auth = parent::authenticate($identity, $credential, $autologin);
-        if (!is_array($auth)) {
-            return false;
-        }
-        if (!($token = $this->authorise($auth, $jwt_body))) {
-            return false;
-        }
-        $this->data = $jwt_body;
+    // public function authenticate(?string $identity = null, ?string $credential = null, bool $autologin = false): mixed
+    // {
+    //     $auth = parent::authenticate($identity, $credential, $autologin);
+    //     if (!is_array($auth)) {
+    //         return false;
+    //     }
+    //     if (!($token = $this->authorise($auth, $jwt_body))) {
+    //         return false;
+    //     }
+    //     $this->data = $jwt_body;
 
-        return $this->token = $token;
-    }
+    //     return $this->token = $token;
+    // }
 
-    public function authenticated(): bool
-    {
-        if (null !== $this->token && array_key_exists('token', $this->token)) {
-            $token = $this->token['token'];
-        } elseif (array_key_exists('HTTP_AUTHORIZATION', $_SERVER)
-            && 'bearer ' === strtolower(substr($_SERVER['HTTP_AUTHORIZATION'], 0, 7))) {
-            $token = substr($_SERVER['HTTP_AUTHORIZATION'], 7);
-        } elseif (array_key_exists('hazaar-auth-token', $_COOKIE)) {
-            $token = $_COOKIE['hazaar-auth-token'];
-        }
-        if (isset($token)
-            && $this->validateToken($token, $jwt_body)) {
-            $this->data = $jwt_body;
+    // public function authenticated(): bool
+    // {
+    //     if (null !== $this->token && array_key_exists('token', $this->token)) {
+    //         $token = $this->token['token'];
+    //     } elseif (array_key_exists('HTTP_AUTHORIZATION', $_SERVER)
+    //         && 'bearer ' === strtolower(substr($_SERVER['HTTP_AUTHORIZATION'], 0, 7))) {
+    //         $token = substr($_SERVER['HTTP_AUTHORIZATION'], 7);
+    //     } elseif (array_key_exists('hazaar-auth-token', $_COOKIE)) {
+    //         $token = $_COOKIE['hazaar-auth-token'];
+    //     }
+    //     if (isset($token)
+    //         && $this->validateToken($token, $jwt_body)) {
+    //         $this->data = $jwt_body;
 
-            return true;
-        }
-        if (array_key_exists('hazaar-auth-refresh', $_COOKIE)) {
-            $refresh_token = $_COOKIE['hazaar-auth-refresh'];
-            if ($this->refresh($refresh_token, $jwt_body)) {
-                $this->data = $jwt_body;
+    //         return true;
+    //     }
+    //     if (array_key_exists('hazaar-auth-refresh', $_COOKIE)) {
+    //         $refresh_token = $_COOKIE['hazaar-auth-refresh'];
+    //         if ($this->refresh($refresh_token, $jwt_body)) {
+    //             $this->data = $jwt_body;
 
-                return true;
-            }
-        }
+    //             return true;
+    //         }
+    //     }
 
-        return false;
-    }
+    //     return false;
+    // }
 
     public function deauth(): bool
     {
@@ -162,31 +163,52 @@ abstract class JWT extends Adapter implements Storage, \ArrayAccess
     }
 
     /**
+     * Authorises the JWT token.
+     *
+     * @param array<string,mixed> $data
+     */
+    public function write(array $data): void
+    {
+        $out = [];
+        $JWTBody = array_merge([
+            'iss' => $this->config->get('jwt.issuer'),
+            'iat' => time(),
+            'exp' => time() + $this->config->get('jwt.timeout'),
+            'sub' => $data['identity'],
+        ], $data['data']);
+        $token = $this->buildToken($JWTBody);
+        setcookie('hazaar-auth-token', $token, time() + $this->config->get('timeout'), '/', $_SERVER['HTTP_HOST'], true, true);
+        if ($this->config->get('refresh')) {
+            $refreshToken = $this->buildToken([
+                'iss' => $JWTBody['iss'],
+                'iat' => $JWTBody['iat'],
+                'exp' => $JWTBody['iat'] + $this->config->get('jwt.refresh'),
+                'sub' => $data['identity'],
+            ], $this->buildRefreshTokenKey($data['credential']));
+            setcookie('hazaar-auth-refresh', $refreshToken, time() + $this->config->get('refresh'), '/', $_SERVER['HTTP_HOST'], true, true);
+        }
+    }
+
+    /**
      * Refreshes the JWT token.
      *
-     * @param string               $refresh_token the refresh token
-     * @param array<string, mixed> $jwt_body      the JWT body
+     * @param array<string, mixed> $jwt_body the JWT body
      *
      * @return array<string, mixed>|bool the JWT body or false
      */
-    public function refresh(string $refresh_token, ?array &$jwt_body = null): array|bool
-    {
-        if (!$this->options->get('jwt.refresh')) {
-            return false;
-        }
-        $this->validateToken($refresh_token, $jwt_refresh_body);
-        $auth = $this->queryAuth($jwt_refresh_body['sub']);
-        if (!$this->validateToken($refresh_token, $jwt_refresh_body, $this->buildRefreshTokenKey($auth['credential']))) {
-            return false;
-        }
+    // public function refresh(string $refresh_token, ?array &$jwt_body = null): array|bool
+    // {
+    //     if (!$this->config->get('jwt.refresh')) {
+    //         return false;
+    //     }
+    //     $this->validateToken($refresh_token, $JWTRefreshBody);
+    //     $auth = $this->queryAuth($JWTRefreshBody['sub']);
+    //     if (!$this->validateToken($refresh_token, $JWTRefreshBody, $this->buildRefreshTokenKey($auth['credential']))) {
+    //         return false;
+    //     }
 
-        return $this->authorise($auth, $jwt_body);
-    }
-
-    protected function canAutoLogin(): bool
-    {
-        return false;
-    }
+    //     return $this->authorise($auth, $jwt_body);
+    // }
 
     /**
      * Validates the JWT token.
@@ -213,44 +235,12 @@ abstract class JWT extends Adapter implements Storage, \ArrayAccess
         if ($token_signature !== $this->sign($jwt_header, $jwt_body, $passphrase)) {
             return false;
         }
-        if (!($jwt_body['iss'] === $this->options->get('jwt.issuer')
+        if (!($jwt_body['iss'] === $this->config->get('jwt.issuer')
             && $jwt_body['exp'] > time())) {
             return false;
         }
 
         return true;
-    }
-
-    /**
-     * Authorises the JWT token.
-     *
-     * @param array<string, mixed> $auth     the auth
-     * @param array<string, mixed> $jwt_body the JWT body
-     *
-     * @return array<string, mixed> the JWT token
-     */
-    private function authorise(array $auth, ?array &$jwt_body = null): array
-    {
-        $out = [];
-        $jwt_body = array_merge([
-            'iss' => $this->options->get('jwt.issuer'),
-            'iat' => time(),
-            'exp' => time() + $this->options->get('jwt.timeout'),
-            'sub' => $auth['identity'],
-        ], $auth['data']);
-        $out['token'] = $this->buildToken($jwt_body);
-        // setcookie('hazaar-auth-token', $token, time() + $this->options->get('jwt.timeout'), '/', $_SERVER['HTTP_HOST'], true, true);
-        if ($this->options->get('jwt.refresh')) {
-            $out['refresh'] = $this->buildToken([
-                'iss' => $jwt_body['iss'],
-                'iat' => $jwt_body['iat'],
-                'exp' => $jwt_body['iat'] + $this->options->get('jwt.refresh'),
-                'sub' => $auth['identity'],
-            ], $this->buildRefreshTokenKey($auth['credential']));
-            // setcookie('hazaar-auth-refresh', $refresh_token, time() + $this->options->get('jwt.refresh'), '/', $_SERVER['HTTP_HOST'], true, true);
-        }
-
-        return $out;
     }
 
     /**
@@ -264,7 +254,7 @@ abstract class JWT extends Adapter implements Storage, \ArrayAccess
     private function buildToken(array $jwt_body, ?string $passphrase = null): string
     {
         $jwt_header = [
-            'alg' => $this->options->get('jwt.alg'),
+            'alg' => $this->config->get('jwt.alg'),
             'typ' => 'JWT',
         ];
 
@@ -276,7 +266,7 @@ abstract class JWT extends Adapter implements Storage, \ArrayAccess
     private function buildRefreshTokenKey(string $credential): string
     {
         $fingerprint = $_SERVER['HTTP_USER_AGENT'];
-        if ($this->options->get('jwt.fingerprintIP')
+        if ($this->config->get('jwt.fingerprintIP')
             && ($app = Application::getInstance())
             && ($request = $app->request) instanceof HTTP
             && ($clientIP = $request->getRemoteAddr())) {
