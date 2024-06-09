@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Auth\Storage;
 
+use Hazaar\Application;
 use Hazaar\Application\Request\HTTP;
 use Hazaar\Auth\Adapter;
 use Hazaar\Auth\Interfaces\Storage;
@@ -49,6 +50,7 @@ class Cache implements Storage
 {
     protected ?HazaarCache $session = null;
     private Map $config;
+    private ?string $sessionID = null;
 
     /**
      * @var array<string>
@@ -98,9 +100,12 @@ class Cache implements Storage
         if (!$this->session) {
             $this->initSession();
         }
+        if (!isset($data['data']) || !is_array($data['data'])) {
+            $data['data'] = [];
+        }
         if (isset($_SERVER['HTTP_USER_AGENT'])) {
-            $data['user-agent'] = $_SERVER['HTTP_USER_AGENT'];
-            $data['ip-address'] = HTTP::getRemoteAddr();
+            $data['data']['user-agent'] = $_SERVER['HTTP_USER_AGENT'];
+            $data['data']['ip-address'] = HTTP::getRemoteAddr();
         }
 
         $this->session->populate($data);
@@ -111,6 +116,9 @@ class Cache implements Storage
         if (!$this->session) {
             throw new \Exception('Session not initialized');
         }
+        if ('identity' === $key) {
+            return isset($this->session['identity']);
+        }
 
         return isset($this->session[$key]);
     }
@@ -120,21 +128,24 @@ class Cache implements Storage
         if (!$this->session) {
             return null;
         }
+        if ('identity' === $key) {
+            return $this->session['identity'] ?? null;
+        }
 
-        return $this->session[$key] ?? null;
+        return $this->session['data'][$key] ?? null;
     }
 
     public function set(string $key, mixed $value): void
     {
         if ($this->session) {
-            $this->session[$key] = $value;
+            $this->session['data'][$key] = $value;
         }
     }
 
     public function unset(string $key): void
     {
         if ($this->session) {
-            unset($this->session[$key]);
+            unset($this->session['data'][$key]);
         }
     }
 
@@ -157,15 +168,18 @@ class Cache implements Storage
             throw new \Exception('Session already initialized');
         }
         if (null === $sessionID) {
-            $sessionID = sha1(uniqid('hazaar-auth', true));
+            $sessionID = hash('sha256', uniqid('hazaar-auth', true));
         }
-        if (!($sessionID && 40 === strlen($sessionID))) {
+        if (!($sessionID && 64 === strlen($sessionID))) {
             throw new \Exception('Invalid session ID');
         }
         if (in_array($this->config['backend'], self::$blackListedBackends, true)) {
             throw new \Exception("Cache backend '{$this->config['backend']}' not supported for session storage");
         }
+        $this->sessionID = $sessionID;
         $this->session = new HazaarCache($this->config['backend'], $this->config, $sessionID);
-        setcookie($this->config['name'], $sessionID, 0, '/', '', true, true);
+        Application::getInstance()->registerOutputFunction(function () use ($sessionID): void {
+            setcookie($this->config['name'], $sessionID, 0, '/', '', true, true);
+        });
     }
 }

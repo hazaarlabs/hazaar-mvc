@@ -47,7 +47,7 @@ use Hazaar\Map;
  */
 class Session implements Storage
 {
-    private string $session_key = 'hazaar_auth_storage';
+    private string $sessionKey = 'hazaar_auth_storage';
 
     /**
      * @var array<string,mixed>
@@ -78,8 +78,8 @@ class Session implements Storage
 
     public function isEmpty(): bool
     {
-        if (false === isset($this->session[$this->session_key])
-            || 0 === count($this->session[$this->session_key])
+        if (false === isset($this->session[$this->sessionKey])
+            || 0 === count($this->session[$this->sessionKey])
             || ($_SERVER['HTTP_USER_AGENT'] ?? null) !== $this->get('user-agent')
             || HTTP::getRemoteAddr() !== $this->get('ip-address')) {
             return true;
@@ -90,43 +90,54 @@ class Session implements Storage
 
     public function read(): array
     {
-        return $this->session[$this->session_key];
+        return $this->session[$this->sessionKey];
     }
 
     public function write(array $data): void
     {
-        if (isset($_SERVER['HTTP_USER_AGENT'])) {
-            $data['user-agent'] = $_SERVER['HTTP_USER_AGENT'];
-            $data['ip-address'] = HTTP::getRemoteAddr();
+        $this->session[$this->sessionKey] = $data;
+        if (!isset($this->session[$this->sessionKey]['data']) || !is_array($this->session[$this->sessionKey]['data'])) {
+            $this->session[$this->sessionKey]['data'] = [];
         }
-        $this->session[$this->session_key] = $data;
+        if (isset($_SERVER['HTTP_USER_AGENT'])) {
+            $this->session[$this->sessionKey]['data']['user-agent'] = $_SERVER['HTTP_USER_AGENT'];
+            $this->session[$this->sessionKey]['data']['ip-address'] = HTTP::getRemoteAddr();
+        }
     }
 
     public function has(string $key): bool
     {
-        return isset($this->session[$this->session_key][$key]);
+        return isset($this->session[$this->sessionKey]['identity']);
     }
 
     public function get(string $key): mixed
     {
-        return $this->session[$this->session_key][$key] ?? null;
+        if ('identity' === $key) {
+            return $this->session[$this->sessionKey]['identity'];
+        }
+
+        return $this->session[$this->sessionKey]['data'][$key] ?? null;
     }
 
     public function set(string $key, mixed $value): void
     {
-        $this->session[$this->session_key][$key] = $value;
+        $this->session[$this->sessionKey]['data'][$key] = $value;
     }
 
     public function unset(string $key): void
     {
-        unset($this->session[$this->session_key][$key]);
+        unset($this->session[$this->sessionKey]['data'][$key]);
     }
 
     public function clear(): void
     {
-        unset($this->session[$this->session_key]);
+        unset($this->session[$this->sessionKey]);
         session_unset();
         session_destroy();
     }
 
+    public function getToken(): ?array
+    {
+        return ['token' => session_id()];
+    }
 }
