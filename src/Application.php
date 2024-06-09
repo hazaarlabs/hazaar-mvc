@@ -106,6 +106,11 @@ class Application
     private static string $redirectCookieName = 'hazaar-redirect-token';
 
     /**
+     * @var array<callable>
+     */
+    private array $outputFunctions = [];
+
+    /**
      * The main application constructor.
      *
      * The application is basically the center of the Hazaar MVC universe. Everything hangs off of it
@@ -553,6 +558,11 @@ class Application
                     throw new \Exception('File not found', 404);
                 }
             }
+            if (count($this->outputFunctions) > 0) {
+                foreach ($this->outputFunctions as $func) {
+                    $func($response);
+                }
+            }
             // Finally, write the response to the output buffer.
             $response->__writeOutput();
             // Shutdown the controller
@@ -744,5 +754,15 @@ class Application
     public function setResponseType(string $type): void
     {
         $this->config['app']['responseType'] = $type;
+    }
+
+    /**
+     * Register an output function.
+     *
+     * @param array<object|string>|callable $function
+     */
+    public function registerOutputFunction(array|callable $function): void
+    {
+        $this->outputFunctions[] = $function;
     }
 }
