@@ -437,7 +437,7 @@ class Request extends Map
         $result = stream_context_set_option($this->context, 'ssl', 'local_cert', $local_cert);
         if ($local_pk) {
             if (!file_exists((string) $local_pk)) {
-                throw new Exception('Local private key specified but the file does not exist!');
+                throw new \Exception('Local private key specified but the file does not exist!');
             }
             stream_context_set_option($this->context, 'ssl', 'local_pk', $local_pk);
         }

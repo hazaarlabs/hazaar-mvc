@@ -66,7 +66,7 @@ final class Row extends Model
     public function update(?array $data = null): bool
     {
         if (!$this->statement instanceof \PDOStatement) {
-            throw new Exception('Unable to perform updates without the original PDO statement!');
+            throw new \Exception('Unable to perform updates without the original PDO statement!');
         }
         $schemaName = $this->adapter->getSchemaName();
         $changes = [];
@@ -76,7 +76,7 @@ final class Row extends Model
             }
             $propertyMeta = $this->propertyMeta[$propertyName];
             if (!property_exists($propertyMeta, 'table')) {
-                throw new Exception('Unable to update '.$propertyName.' with unknown table');
+                throw new \Exception('Unable to update '.$propertyName.' with unknown table');
             }
             $changes[ake($propertyMeta, 'schema', $schemaName).'.'.$propertyMeta['table']] = $this->get($propertyName);
         }
@@ -106,7 +106,7 @@ final class Row extends Model
         ];
         $tables = [];
         if (!preg_match('/FROM\s+"?(\w+)"?(\."?(\w+)")?(\s+AS)?(\s+"?(\w+)"?)?/', $this->statement->queryString, $matches)) {
-            throw new Exception('Can\'t figure out which table we\'re updating!');
+            throw new \Exception('Can\'t figure out which table we\'re updating!');
         }
         $tableName = $matches[3] ? $matches[1].'.'.$matches[3] : $matches[1];
         // Find the primary key for the primary table so we know which row we are updating
@@ -123,7 +123,7 @@ final class Row extends Model
             break;
         }
         if (!count($tables) > 0) {
-            throw new Exception('Missing primary key in selection!');
+            throw new \Exception('Missing primary key in selection!');
         }
         // Check and process joins
         if (preg_match_all('/JOIN\s+"?(\w+)"?(\s"?(\w+)"?)?\s+ON\s+("?[\w\.]+"?)\s?([\!=<>])\s?("?[\w\.]+"?)/i', $this->statement->queryString, $matches)) {

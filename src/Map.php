@@ -774,6 +774,9 @@ class Map implements \ArrayAccess, \Iterator, \Countable
                     return Map::_($default);
                 }
                 $value = $value->get($part, ($key === $lastKey) ? $default : null, $create);
+                if (!$value) {
+                    break;
+                }
             }
 
             return $value;

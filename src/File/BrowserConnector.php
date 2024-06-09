@@ -431,7 +431,7 @@ class BrowserConnector
                 $newPath = $path.implode('/', array_slice($parts, 0, $i + 1));
                 if (!$source->exists($newPath)) {
                     if (!$source->mkdir($newPath)) {
-                        throw new Exception('Could not create parent directories');
+                        throw new \Exception('Could not create parent directories');
                     }
                     $newDir = $source->get($newPath);
                     $info['tree'][] = $this->info($source, $newDir);
@@ -518,7 +518,7 @@ class BrowserConnector
         $path = $this->path($target);
         $list = $source->find($query, $path, true);
         if (!is_array($list)) {
-            throw new Exception('Search failed!');
+            throw new \Exception('Search failed!');
         }
         foreach ($list as &$item) {
             $item = $this->info($source, $source->get($item));

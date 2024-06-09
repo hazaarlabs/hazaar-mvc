@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller\Exception;
 
-use Hazaar\Exception;
-
-class HeadersSent extends Exception
+class HeadersSent extends \Exception
 {
     public function __construct()
     {

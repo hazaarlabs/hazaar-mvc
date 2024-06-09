@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\XML\RPC\Exception;
 
-use Hazaar\Exception;
-
-class ClientException extends Exception
+class ClientException extends \Exception
 {
     /**
      * @param array<string, mixed> $xmlrpc_fault

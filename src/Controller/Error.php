@@ -13,7 +13,6 @@ namespace Hazaar\Controller;
 
 use Hazaar\Application\Request\HTTP;
 use Hazaar\Application\Router;
-use Hazaar\Exception;
 use Hazaar\Loader;
 use Hazaar\View\Layout;
 use Hazaar\XML\Element;
@@ -79,10 +78,7 @@ class Error extends Diagnostic
             $this->errstr = $e->getMessage();
             $this->errfile = $e->getFile();
             $this->errline = $e->getLine();
-            if ($e instanceof Exception) {
-                $this->short_message = $e->getShortMessage();
-            }
-            $this->errclass = ($e instanceof Exception) ? $e->getName() : get_class($e);
+            $this->errclass = get_class($e);
             $this->callstack = $e->getTrace();
             $code = $e->getCode();
             if (is_int($code)) {

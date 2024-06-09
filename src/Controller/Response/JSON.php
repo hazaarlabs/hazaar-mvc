@@ -6,7 +6,6 @@ namespace Hazaar\Controller\Response;
 
 use Hazaar\Controller\Response;
 use Hazaar\Controller\Response\Exception\JSONNotSupported;
-use Hazaar\Exception;
 
 /**
  * @implements \ArrayAccess<string, mixed>
@@ -83,7 +82,7 @@ class JSON extends Response implements \ArrayAccess
     {
         $data = json_encode($this->content, JSON_INVALID_UTF8_SUBSTITUTE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         if (false === $data) {
-            throw new Exception('JSON Encode error: '.json_last_error_msg());
+            throw new \Exception('JSON Encode error: '.json_last_error_msg());
         }
         if (null !== $this->callback) {
             $data = $this->callback."({$data})";

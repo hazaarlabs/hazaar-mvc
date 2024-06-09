@@ -6,7 +6,7 @@ namespace Hazaar\File\Exception;
 
 use Hazaar\Exception;
 
-class InvalidBackend extends Exception
+class InvalidBackend extends \Exception
 {
     public function __construct(string $backend)
     {

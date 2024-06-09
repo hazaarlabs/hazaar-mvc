@@ -489,7 +489,7 @@ class Application
             $locale = $this->config['app']['locale'];
         }
         if (false === setlocale(LC_ALL, $locale)) {
-            throw new Exception("Unable to set locale to {$locale}.  Make sure the {$locale} locale is enabled on your system.");
+            throw new \Exception("Unable to set locale to {$locale}.  Make sure the {$locale} locale is enabled on your system.");
         }
         $tz = $this->config['app']->has('timezone') ? $this->config['app']->timezone : 'UTC';
         if (!date_default_timezone_set($tz)) {
@@ -505,7 +505,7 @@ class Application
         if (file_exists($bootstrap)) {
             $this->bootstrap = include $bootstrap;
             if (false === $this->bootstrap) {
-                throw new Exception('The application failed to start!');
+                throw new \Exception('The application failed to start!');
             }
         }
         if ($this->timer) {

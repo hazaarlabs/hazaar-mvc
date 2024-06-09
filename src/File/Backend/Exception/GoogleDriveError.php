@@ -6,4 +6,4 @@ namespace Hazaar\File\Backend\Exception;
 
 use Hazaar\Exception;
 
-class GoogleDriveError extends Exception {}
+class GoogleDriveError extends \Exception {}

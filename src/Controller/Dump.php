@@ -12,7 +12,6 @@ declare(strict_types=1);
 namespace Hazaar\Controller;
 
 use Hazaar\Application\Router;
-use Hazaar\Exception;
 use Hazaar\View\Layout;
 use Hazaar\XML\Element;
 
@@ -49,7 +48,7 @@ class Dump extends Diagnostic
         ];
 
         if (true === $this->backtrack) {
-            $e = new Exception('Backtrace');
+            $e = new \Exception('Backtrace');
             $dump['trace'] = $e->getTrace();
         }
 
@@ -65,7 +64,7 @@ class Dump extends Diagnostic
         $app->add('end', date('c'));
         $xml->add('data', print_r($this->data, true));
         if (true === $this->backtrack) {
-            $e = new Exception('Backtrace');
+            $e = new \Exception('Backtrace');
             $xml->addFromArray('backtrace', $e->getTrace());
         }
 
@@ -81,7 +80,7 @@ class Dump extends Diagnostic
         $out .= 'Endtime: '.date('c')."\n";
         if (true === $this->backtrack) {
             $out .= "\n\nBACKTRACE\n\n";
-            $e = new Exception('Backtrace');
+            $e = new \Exception('Backtrace');
             $out .= print_r(str_replace('/path/to/code/', '', $e->getTraceAsString()), true);
         }
 
@@ -99,7 +98,7 @@ class Dump extends Diagnostic
         ]);
 
         if (true === $this->backtrack) {
-            $e = new Exception('Backtrace');
+            $e = new \Exception('Backtrace');
             $view->set('trace', $e->getTrace());
         }
 

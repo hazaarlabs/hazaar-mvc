@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller\Exception;
 
-use Hazaar\Exception;
-
-class ResponseInvalid extends Exception
+class ResponseInvalid extends \Exception
 {
     public function __construct(string $controller, string $action)
     {

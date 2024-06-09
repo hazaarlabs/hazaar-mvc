@@ -6,7 +6,6 @@ namespace Hazaar\Auth\Adapter;
 
 use Hazaar\Auth\Adapter;
 use Hazaar\Auth\Adapter\Exception\HTPasswdFileMissing;
-use Hazaar\Exception;
 use Hazaar\Map;
 
 class HTPasswd extends Adapter
@@ -107,7 +106,7 @@ class HTPasswd extends Adapter
         } elseif ('$2y$' == substr($this->userHash, 0, 4)) { // Blowfish
             $hash = crypt($credential, substr($this->userHash, 0, 29));
         } else {
-            throw new Exception('Unsupported password encryption algorithm.');
+            throw new \Exception('Unsupported password encryption algorithm.');
         }
 
         return $hash;

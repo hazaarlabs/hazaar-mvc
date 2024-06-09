@@ -2,7 +2,7 @@
 
 namespace Hazaar\Logger\Exception;
 
-class NoBackend extends \Hazaar\Exception {
+class NoBackend extends \Exception {
     
     function __construct(){
         
