@@ -6,14 +6,13 @@ namespace Hazaar\Auth\Adapter;
 
 use Hazaar\Application;
 use Hazaar\Application\URL;
-use Hazaar\Auth\Interfaces\Adapter;
-use Hazaar\Cache;
+use Hazaar\Auth\Adapter;
 use Hazaar\Controller\Response\HTML;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 use Hazaar\Map;
 
-class OAuth2 extends Session implements Adapter
+class OAuth2 extends Adapter
 {
     protected string $client_id;
     protected string $client_secret;
@@ -31,17 +30,13 @@ class OAuth2 extends Session implements Adapter
     protected array $scopes = [];
     private \Closure $authenticate_callback;
 
-    /**
-     * @param array<mixed>|Map $cacheConfig
-     */
     public function __construct(
         string $client_id,
         string $client_secret,
         string $grant_type = 'code',
-        array|Map $cacheConfig = [],
-        ?Cache $cacheBackend = null
+        array|Map $config = []
     ) {
-        parent::__construct($cacheConfig, $cacheBackend);
+        parent::__construct($config);
         $this->http_client = new Client();
         $this->http_client->authorisation($this);
         $this->grant_type = $grant_type;
@@ -93,16 +88,16 @@ class OAuth2 extends Session implements Adapter
     public function discover(string $uri): bool
     {
         $key = hash('sha1', $uri);
-        if (!$this->session->has('oauth2_metadata')) {
-            $this->session['oauth2_metadata'] = [];
+        if (!$this->storage->has('oauth2_metadata')) {
+            $this->storage->set('oauth2_metadata', []);
         }
-        $metadata = $this->session['oauth2_metadata'];
+        $metadata = $this->storage->get('oauth2_metadata');
         if (!(array_key_exists($key, $metadata) && $metadata[$key])) {
             if (!($meta_source = @file_get_contents($uri))) {
                 throw new \Exception('Authentication platform offline.  Service discovery failed!');
             }
             $metadata[$key] = json_decode($meta_source, true);
-            $this->session['oauth2_metadata'] = $metadata;
+            $this->storage->set('oauth2_metadata', $metadata);
         }
         $this->metadata = $metadata[$key];
 
@@ -143,11 +138,11 @@ class OAuth2 extends Session implements Adapter
      */
     public function authenticated(): bool
     {
-        if ($this->session->has('oauth2_data')
-            && ($this->session->has('oauth2_expiry') && $this->session['oauth2_expiry'] > time())) {
-            return '' !== ake($this->session['oauth2_data'], 'access_token', '');
+        if ($this->storage->has('oauth2_data')
+            && ($this->storage->has('oauth2_expiry') && $this->storage->get('oauth2_expiry') > time())) {
+            return '' !== ake($this->storage->get('oauth2_data'), 'access_token', '');
         }
-        if ($refresh_token = ake($this->session['oauth2_data'], 'refresh_token')) {
+        if ($refresh_token = ake($this->storage->get('oauth2_data'), 'refresh_token')) {
             return $this->refresh($refresh_token);
         }
 
@@ -167,9 +162,9 @@ class OAuth2 extends Session implements Adapter
     public function authenticate(?string $identity = null, ?string $credential = null, bool $autologin = false, bool $skip_auth_check = false): bool
     {
         if (true !== $skip_auth_check && $this->authenticated()) {
-            if ($uri = $this->session['redirect_uri']) {
+            if ($uri = $this->storage->get('redirect_uri')) {
                 header('Location: '.$uri);
-                unset($this->session['redirect_uri']);
+                $this->storage->unset('redirect_uri');
 
                 exit;
             }
@@ -197,14 +192,14 @@ class OAuth2 extends Session implements Adapter
         }
         if (false !== $this->authorize($data)) {
             // Set the standard hazaar auth session details for compatibility
-            $this->session['hazaar_auth_identity'] = $data->access_token;
-            $this->session['hazaar_auth_token'] = hash($this->options['token']['hash'], $this->getIdentifier($this->session['hazaar_auth_identity']));
+            $this->storage->set('hazaar_auth_identity', $data->access_token);
+            $this->storage->set('hazaar_auth_token', hash($this->config['token']['hash'], $this->getIdentifier($this->storage->get('hazaar_auth_identity'))));
             if (is_callable($this->authenticate_callback)) {
                 call_user_func($this->authenticate_callback, $data);
             }
-            if ($uri = $this->session['redirect_uri']) {
+            if ($uri = $this->storage->get('redirect_uri')) {
                 header('Location: '.$uri);
-                unset($this->session->redirect_uri);
+                $this->storage->unset('redirect_uri');
 
                 exit;
             }
