@@ -273,9 +273,9 @@ class OAuth2 extends Adapter
         return false;
     }
 
-    public function getToken(): string
+    public function getToken(): ?array
     {
-        return ake($this->storage['oauth2_data'], 'access_token');
+        return ['token' => ake($this->storage['oauth2_data'], 'access_token')];
     }
 
     public function getTokenType(): string
