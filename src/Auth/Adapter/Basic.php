@@ -20,8 +20,8 @@ class Basic extends Adapter
     /**
      * Set the identity.
      *
-     * @param string       $identity The identity
-     * @param array<mixed> $extra    The extra data
+     * @param string        $identity The identity
+     * @param array<string> $extra    Extra data to return with the authentication
      */
     public function queryAuth(string $identity, array $extra = []): array|bool
     {

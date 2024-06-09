@@ -106,7 +106,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
                 'hash' => 'sha1',
                 'count' => 1,
                 'salt' => '',
-                'use_identity' => false,
+                'useIdentity' => false,
             ],
             'autologin' => [
                 'cookie' => 'hazaar-auth-autologin',
@@ -159,7 +159,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         if (!$credential || true === $this->noCredentialHashing) {
             return $credential;
         }
-        $hash = false;
+        $hash = '';
         if (true === $this->options['encryption']['useIdentity']) {
             $credential = $this->identity.':'.$credential;
         }
@@ -199,7 +199,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         if (!($identity = $this->getIdentity())) {
             return false;
         }
-        $auth = $this->queryAuth($identity, $this->extra);
+        $auth = $this->queryAuth($identity, $this->options->get('extra', [], true)->values());
         if (false === $auth || !(is_array($auth)
             && array_key_exists('identity', $auth)
             && array_key_exists('credential', $auth))) {
@@ -267,7 +267,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
      */
     public function check(string $credential): bool
     {
-        $auth = $this->queryAuth($this->getIdentity(), $this->extra);
+        $auth = $this->queryAuth($this->getIdentity(), $this->options['extra'] ?? []);
         if (false === $auth || !(is_array($auth)
             && array_key_exists('identity', $auth)
             && array_key_exists('credential', $auth))) {
@@ -403,7 +403,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
      */
     protected function setDataFields(array $fields): void
     {
-        $this->extra = $fields;
+        $this->options['extra'] = $fields;
     }
 
     /**

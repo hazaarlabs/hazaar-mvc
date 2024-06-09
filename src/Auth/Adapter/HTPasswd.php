@@ -35,11 +35,12 @@ class HTPasswd extends Adapter
      *
      * We must provide a queryAuth method for the auth base class to use to look up details
      *
-     * @param array<mixed> $extras
+     * @param string        $identity The identity
+     * @param array<string> $extra    Extra data to return with the authentication
      *
      * @return array<mixed>|bool The result object
      */
-    public function queryAuth(string $identity, array $extras = []): array|bool
+    public function queryAuth(string $identity, array $extra = []): array|bool
     {
         $lines = explode("\n", trim(file_get_contents($this->passwd)));
         foreach ($lines as $line) {
