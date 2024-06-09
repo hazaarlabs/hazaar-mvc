@@ -7,7 +7,9 @@ namespace Hazaar\Tool;
 use Hazaar\Application;
 use Hazaar\Application\Config;
 use Hazaar\Application\Request\CLI;
+use Hazaar\Auth\Adapter\DBITable;
 use Hazaar\Auth\Adapter\HTPasswd;
+use Hazaar\DBI\Adapter;
 use Hazaar\File;
 use Hazaar\File\Template\Smarty;
 use Hazaar\Loader;
@@ -38,6 +40,10 @@ class Main
             return 1;
         }
         $options = $application->request->getOptions();
+        $appConfig = new Config('application', APPLICATION_ENV);
+        if ($appConfig->has('auth')) {
+            $appConfig['auth']['storage'] = 'session';
+        }
         $code = 0;
 
         try {
@@ -126,8 +132,11 @@ class Main
                     break;
 
                 case 'adduser':
-                    $auth = new HTPasswd($application->config->get('auth'));
-                    if ($auth->create($commandArgs[0], $commandArgs[1])) {
+                    $auth = $appConfig['auth']->has('table') ?
+                        new DBITable(Adapter::getInstance(), $appConfig['auth']) :
+                        new HTPasswd($appConfig['auth']);
+                    $credential = self::readCredential();
+                    if ($auth->create($commandArgs[0], $credential)) {
                         echo 'User added: '.$commandArgs[0]."\n";
                     } else {
                         throw new \Exception('Failed to add user', 1);
@@ -136,7 +145,9 @@ class Main
                     break;
 
                 case 'deluser':
-                    $auth = new HTPasswd($application->config->get('auth'));
+                    $auth = $appConfig['auth']->has('table') ?
+                        new DBITable(Adapter::getInstance(), $appConfig['auth']) :
+                        new HTPasswd($appConfig['auth']);
                     if ($auth->delete($commandArgs[0])) {
                         echo 'User deleted: '.$commandArgs[0]."\n";
                     } else {
@@ -146,8 +157,11 @@ class Main
                     break;
 
                 case 'passwd':
-                    $auth = new HTPasswd($application->config->get('auth'));
-                    if ($auth->update($commandArgs[0], $commandArgs[1])) {
+                    $auth = $appConfig['auth']->has('table') ?
+                        new DBITable(Adapter::getInstance(), $appConfig['auth']) :
+                        new HTPasswd($appConfig['auth']);
+                    $credential = self::readCredential();
+                    if ($auth->update($commandArgs[0], $credential)) {
                         echo 'Password updated for user: '.$commandArgs[0]."\n";
                     } else {
                         throw new \Exception('Failed to update password', 1);
@@ -155,7 +169,7 @@ class Main
             }
         } catch (\Throwable $e) {
             echo $e->getMessage()."\n";
-            $code = $e->getCode();
+            $code = intval($e->getCode());
         }
 
         return $code;
@@ -229,5 +243,24 @@ class Main
         }
 
         return $result > 0;
+    }
+
+    private static function readCredential(): string
+    {
+        system('stty -echo');
+        $credential = '';
+        while (strlen($credential) < 6) {
+            $credential = readline('Enter password: ');
+            if (strlen($credential) < 6) {
+                echo "Password must be at least 6 characters long\n";
+            }
+        }
+        $credential_confirm = readline('Confirm password: ');
+        system('stty echo');
+        if ($credential !== $credential_confirm) {
+            throw new \Exception('Passwords do not match', 1);
+        }
+
+        return $credential;
     }
 }
