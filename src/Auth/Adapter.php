@@ -209,7 +209,6 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         }
         if ($auth['identity'] === $this->getIdentity()
             && hash_equals($this->getCredentialHash(), $auth['credential'])) {
-            unset($auth['credential']); // Don't store the credential in the session
             $this->storage->write($auth);
 
             return true;
