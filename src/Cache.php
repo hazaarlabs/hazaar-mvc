@@ -29,9 +29,9 @@ class Cache implements \ArrayAccess
     /**
      * Cache object constructor.
      *
-     * @param array<string>|string $backend        The name of the backend to use. Currently 'apc', 'file', 'memcached', 'session' and
-     *                                             'sqlite' are supported.
-     * @param string               $namespace      The namespace to use for grouping stored data
+     * @param array<string>|string $backend       The name of the backend to use. Currently 'apc', 'file', 'memcached', 'session' and
+     *                                            'sqlite' are supported.
+     * @param string               $namespace     The namespace to use for grouping stored data
      * @param array<mixed>|Map     $configOptions
      */
     public function __construct(null|array|string $backend = null, array|Map $configOptions = [], string $namespace = 'default')
@@ -53,10 +53,6 @@ class Cache implements \ArrayAccess
         ]);
         if (!is_array($backend)) {
             $backend = [$backend];
-        }
-        // We set this now as it is an absolute safe fallback
-        if (!in_array('file', $backend)) {
-            $backend[] = 'file';
         }
         foreach ($backend as $name) {
             $backendClass = '\\Hazaar\\Cache\\Backend\\'.ucfirst($name);
@@ -123,11 +119,11 @@ class Cache implements \ArrayAccess
      * Retrieve a value from cache storage.
      *
      * @param mixed $key
-     *                            The reference key used to store the value
+     *                           The reference key used to store the value
      * @param bool  $default
-     *                            If the value doesn't exist, this default will be returned instead
+     *                           If the value doesn't exist, this default will be returned instead
      * @param bool  $saveDefault
-     *                            If the value doesn't exist and a default is specified, save that default to cache
+     *                           If the value doesn't exist and a default is specified, save that default to cache
      *
      * @return mixed the value that was stored in cache
      */
@@ -174,9 +170,9 @@ class Cache implements \ArrayAccess
      * Check if a stored value exists.
      *
      * @param string $key
-     *                            The value key to check for
+     *                           The value key to check for
      * @param bool   $checkEmpty Normally this method will return try if the value exists with `$key`.  Setting `$checkEmpty` looks at the value
-     *                            and will return false if it is an 'empty' value (ie: 0, null, [])
+     *                           and will return false if it is an 'empty' value (ie: 0, null, [])
      */
     public function has(string $key, bool $checkEmpty = false): bool
     {
@@ -228,7 +224,7 @@ class Cache implements \ArrayAccess
      *
      * @param array<mixed> $values
      */
-    public function setValues(array $values): bool
+    public function populate(array $values): bool
     {
         foreach ($values as $key => $value) {
             $this->set($key, $value);
@@ -263,6 +259,11 @@ class Cache implements \ArrayAccess
         }
 
         return $values;
+    }
+
+    public function count(): int
+    {
+        return $this->backend->count();
     }
 
     /**

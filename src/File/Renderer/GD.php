@@ -19,7 +19,7 @@ class GD extends BaseRenderer
     public function __construct(?int $quality = null)
     {
         if (!extension_loaded('gd')) {
-            throw new Exception('GD extension is not loaded');
+            throw new \Exception('GD extension is not loaded');
         }
         $this->quality = $quality;
     }
@@ -286,7 +286,7 @@ class GD extends BaseRenderer
                     break;
             }
             if (false == $ret) {
-                throw new Exception('There was an error applying filter: '.$filter);
+                throw new \Exception('There was an error applying filter: '.$filter);
             }
         }
 

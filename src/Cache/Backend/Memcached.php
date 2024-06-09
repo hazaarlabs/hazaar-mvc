@@ -85,7 +85,14 @@ class Memcached extends Backend
 
     public function toArray(): array
     {
-        return [];
+        return $this->memcached->getAllKeys();
+    }
+
+    public function count(): int
+    {
+        $stats = $this->memcached->getStats();
+
+        return $stats['curr_items'];
     }
 
     private function key(string $key): string

@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller\Response\Exception;
 
-use Hazaar\Exception;
-
-class JSONNotSupported extends Exception
+class JSONNotSupported extends \Exception
 {
     public function __construct()
     {

@@ -6,7 +6,7 @@ namespace Hazaar\File\Exception;
 
 use Hazaar\Exception;
 
-class BackendNotFound extends Exception
+class BackendNotFound extends \Exception
 {
     public function __construct(string $backend)
     {

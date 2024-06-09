@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller\Response\Exception;
 
-use Hazaar\Exception;
-
-class ActionNotFound extends Exception
+class ActionNotFound extends \Exception
 {
     public function __construct(string $controller, string $action)
     {

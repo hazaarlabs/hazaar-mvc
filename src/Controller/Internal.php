@@ -7,7 +7,6 @@ namespace Hazaar\Controller;
 use Hazaar\Application\Request;
 use Hazaar\Controller;
 use Hazaar\Controller\Response\File;
-use Hazaar\Exception;
 
 class Internal extends Controller
 {
@@ -21,7 +20,7 @@ class Internal extends Controller
         $filename = $this->request->getPath();
         $file = $this->router->application->loader->getFilePath(FILE_PATH_SUPPORT, $filename);
         if (null === $file) {
-            throw new Exception("Hazaar support file '{$filename}' not found!", 404);
+            throw new \Exception("Hazaar support file '{$filename}' not found!", 404);
         }
 
         return new File($file);

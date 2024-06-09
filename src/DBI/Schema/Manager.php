@@ -1585,7 +1585,7 @@ class Manager
                 $this->dbi->delete(self::$schemaInfoTable, ['version' => $version]);
             }
             if ($this->dbi->errorCode() > 0) {
-                throw new \Hazaar\Exception($this->dbi->errorInfo()[2]);
+                throw new \Exception($this->dbi->errorInfo()[2]);
             }
             $this->dbi->commit();
         } catch (\Throwable $e) {

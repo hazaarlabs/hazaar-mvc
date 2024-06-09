@@ -6,51 +6,30 @@ namespace Hazaar\Auth\Adapter;
 
 use Hazaar\Auth\Adapter;
 use Hazaar\DBI\Adapter as DBIAdapter;
+use Hazaar\DBI\Table;
 use Hazaar\Map;
 
 class DBITable extends Adapter implements \Hazaar\Auth\Interfaces\Adapter
 {
-    private DBIAdapter $db;
-    private string $table;
-    private string $field_identity;
-    private string $field_credential;
-    private string $field_id;
+    private Table $table;
 
     /**
      * Construct the new authentication object with the field names
      * in the model for id, user name, password and real name.
-     *
-     * @param array<mixed>|Map $cacheConfig The configuration options
      */
     public function __construct(
-        DBIAdapter $db_adapter,
-        ?string $table = null,
-        ?string $field_identity = null,
-        ?string $field_credential = null,
-        ?string $field_id = 'id',
-        array|Map $cacheConfig = []
+        DBIAdapter $dbi,
+        array|Map $config = []
     ) {
-        $this->table = $table;
-        $this->field_identity = $field_identity;
-        $this->field_credential = $field_credential;
-        $this->field_id = $field_id;
-        $this->db = $db_adapter;
-        parent::__construct($cacheConfig);
-    }
-
-    public function setTableName(string $table): void
-    {
-        $this->table = $table;
-    }
-
-    public function setIdentityField(string $identity): void
-    {
-        $this->field_identity = $identity;
-    }
-
-    public function setCredentialField(string $credential): void
-    {
-        $this->field_credential = $credential;
+        parent::__construct($config);
+        $this->options->enhance([
+            'table' => null,
+            'fields' => [
+                'identity' => 'identity',
+                'credential' => 'credential',
+            ],
+        ]);
+        $this->table = $dbi->table($this->options->get('table', 'users'));
     }
 
     /*
@@ -59,48 +38,77 @@ class DBITable extends Adapter implements \Hazaar\Auth\Interfaces\Adapter
      * and perform the authentication.
      *
      * @param string $identity The user identity to authenticate
-     * @param array<mixed> $extra Extra data to return with the authentication
+     * @param array<string> $extra Extra data to return with the authentication
      *
      * @return array<string, mixed>|bool The authentication data
      */
     public function queryAuth(string $identity, array $extra = []): array|bool
     {
-        if (!$this->field_identity) {
-            throw new \Exception('Identity field not set in '.get_class($this).'. This is required.');
-        }
-        if (!$this->field_credential) {
-            throw new \Exception('Credential field not set in '.get_class($this).'. This is required.');
-        }
-        $fields = [$this->field_id, $this->field_identity, $this->field_credential];
-        if (is_array($extra)) {
-            $fields = array_merge($fields, $extra);
-        }
-        $criteria = [$this->field_identity => $identity];
-        if (!($record = $this->db->table($this->table)->findOne($criteria, $fields))) {
+        $fields = array_merge($this->options->get('fields')->values(), $extra);
+        $criteria = [
+            $this->options['fields']['identity'] => $identity,
+        ];
+        if (!($record = $this->table->findOne($criteria, $fields))) {
             return false;
         }
         $auth = [
-            'identity' => $record[$this->field_identity],
-            'credential' => $record[$this->field_credential],
+            'identity' => $record[$this->options['fields']['identity']],
+            'credential' => $record[$this->options['fields']['credential']],
         ];
-        unset($record[$this->field_identity], $record[$this->field_credential]);
+        unset($record[$this->options['fields']['identity']], $record[$this->options['fields']['credential']]);
         $auth['data'] = $record;
 
         return $auth;
     }
 
-    public function addUser(string $identity, string $credential): bool|int
+    public function create(string $identity, string $credential): bool
     {
-        return $this->db->table($this->table)->insert([
-            $this->field_identity => $identity,
-            $this->field_credential => $this->getCredential($credential),
-        ]);
+        $this->setIdentity($identity);
+        $result = $this->table->insert(
+            [
+                $this->options['fields']['identity'] => $identity,
+                $this->options['fields']['credential'] => $this->getCredentialHash($credential),
+            ]
+        );
+
+        if (!(is_int($result) && $result > 0)) {
+            throw new \Exception(ake($this->table->errorInfo(), 2, 'Unknown error updating user password'), 1);
+        }
+
+        return true;
     }
 
-    public function delUser(string $identity): bool|int
+    public function update(string $identity, string $credential): bool
     {
-        return $this->db->table($this->table)->delete([
-            $this->field_identity => $identity,
-        ]);
+        $this->setIdentity($identity);
+        $result = $this->table->update(
+            [
+                $this->options['fields']['identity'] => $identity,
+            ],
+            [
+                $this->options['fields']['credential'] => $this->getCredentialHash($credential),
+            ]
+        );
+
+        if (!(is_int($result) && $result > 0)) {
+            throw new \Exception(ake($this->table->errorInfo(), 2, 'Unknown error updating user password'), 1);
+        }
+
+        return true;
+    }
+
+    public function delete(string $identity): bool
+    {
+        $result = $this->table->delete(
+            [
+                $this->options['fields']['identity'] => $identity,
+            ]
+        );
+
+        if (!(is_int($result) && $result > 0)) {
+            throw new \Exception(ake($this->table->errorInfo(), 2, 'Unknown error updating user password'), 1);
+        }
+
+        return true;
     }
 }

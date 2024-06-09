@@ -6,7 +6,7 @@ namespace Hazaar\File\Exception\WKPDF;
 
 use Hazaar\Exception;
 
-class NoData extends Exception
+class NoData extends \Exception
 {
     public function __construct(string $error)
     {

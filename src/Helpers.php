@@ -190,15 +190,18 @@ function strbool(mixed $value): string
     if (true === $value) {
         return 'true';
     }
-    $value = strtolower(trim($value));
-    if ('t' == $value || 'true' == $value || 'on' == $value || 'yes' == $value || 'y' == $value || 'ok' == $value) {
-        return 'true';
-    }
-    if (preg_match('/(\!|not)\s*null/', $value)) {
-        return 'true';
-    }
-    if (0 != (int) $value) {
-        return 'true';
+    if (is_string($value)) {
+        $value = strtolower(trim($value));
+        if ('t' == $value || 'true' == $value || 'on' == $value || 'yes' == $value || 'y' == $value || 'ok' == $value) {
+            return 'true';
+        }
+        if (preg_match('/(\!|not)\s*null/', $value)) {
+            return 'true';
+        }
+    } elseif (is_int($value)) {
+        if (0 != (int) $value) {
+            return 'true';
+        }
     }
 
     return 'false';
@@ -981,7 +984,7 @@ function http_response_text($code)
     .DIRECTORY_SEPARATOR.'libs'
     .DIRECTORY_SEPARATOR.'HTTP_Status.dat';
     if (!file_exists($data_file)) {
-        throw new Exception('HTTP status data file is missing!');
+        throw new \Exception('HTTP status data file is missing!');
     }
     $text = false;
     if (preg_match('/^'.$code.'\s(.*)$/m', file_get_contents($data_file), $matches)) {
@@ -1590,7 +1593,7 @@ function array_diff_key_recursive(array ...$arrays): array
     return $diff;
 }
 
-class MatchReplaceException extends Exception {}
+class MatchReplaceException extends \Exception {}
 
 /**
  * Use the match/replace algorithm on a string to replace mustache tags with view data.

@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Application\Exception;
 
-use Hazaar\Exception;
-
-class ConfigEnvNotFound extends Exception
+class ConfigEnvNotFound extends \Exception
 {
     public function __construct(string $env)
     {

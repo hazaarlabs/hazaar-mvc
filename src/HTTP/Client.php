@@ -210,7 +210,7 @@ class Client
                 $errstr = 'Possible error initialising socket';
             }
 
-            throw new \Hazaar\Exception('Error #'.$errno.': '.$errstr);
+            throw new \Exception('Error #'.$errno.': '.$errstr);
         }
         if ($cookie = $response->getHeader('set-cookie')) {
             $this->setCookie($cookie);
@@ -370,7 +370,7 @@ class Client
         if (null === $key) {
             if (null === Client::$encryptionDefaultKey) {
                 if (!($keyfile = Loader::getFilePath(FILE_PATH_CONFIG, '.key'))) {
-                    throw new \Hazaar\Exception('Unable to encrypt.  No key provided and no default keyfile!');
+                    throw new \Exception('Unable to encrypt.  No key provided and no default keyfile!');
                 }
                 Client::$encryptionDefaultKey = trim(file_get_contents($keyfile));
             }

@@ -13,7 +13,7 @@ use Hazaar\Exception;
  *
  * @author jamiec
  */
-class FailConnect extends Exception
+class FailConnect extends \Exception
 {
     public function __construct(string $message, int $type)
     {

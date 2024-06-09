@@ -3,7 +3,6 @@
 namespace Hazaar\Tests;
 
 use Hazaar\Cron;
-use Hazaar\Exception;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -27,7 +26,7 @@ class CronTest extends TestCase
 
     public function testCronBadTime(): void
     {
-        $this->expectException(Exception::class);
+        $this->expectException(\Exception::class);
         $cron = new Cron('0 0 1 1');
     }
 }

@@ -86,7 +86,7 @@ abstract class Basic extends Controller
                 } elseif ($p->isDefaultValueAvailable()) {
                     $value = $p->getDefaultValue();
                 } else {
-                    throw new \Hazaar\Exception("Missing value for parameter '{$key}'.", 400);
+                    throw new \Exception("Missing value for parameter '{$key}'.", 400);
                 }
                 $params[$p->getPosition()] = $value;
             }
@@ -104,7 +104,7 @@ abstract class Basic extends Controller
             $response = new Response\JSON($response);
         } elseif (is_string($response) || is_numeric($response)) {
             $response = new Response\Text($response);
-        } else {
+        } elseif (!$response instanceof Response) {
             $response = new Response\HTTP\NoContent();
         }
 

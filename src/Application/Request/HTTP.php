@@ -13,7 +13,6 @@ namespace Hazaar\Application\Request;
 
 use Hazaar\Application\Request;
 use Hazaar\Controller\Response;
-use Hazaar\Exception;
 use Hazaar\HTTP\Client;
 use Hazaar\Loader;
 use Hazaar\Session;
@@ -73,7 +72,7 @@ class HTTP extends Request
         if (array_key_exists($encryptionHeader, $this->headers)) {
             $iv = base64_decode($this->headers[$encryptionHeader]);
             if (!($keyfile = Loader::getFilePath(FILE_PATH_CONFIG, '.key'))) {
-                throw new Exception('Unable to encrypt.  No key provided and no default keyfile!');
+                throw new \Exception('Unable to encrypt.  No key provided and no default keyfile!');
             }
             Response::$encryptionKey = trim(file_get_contents($keyfile));
             $this->body = openssl_decrypt(
@@ -84,7 +83,7 @@ class HTTP extends Request
                 $iv
             );
             if (false === $this->body) {
-                throw new Exception('Received an encrypted request but was unable to decrypt the body!', 500);
+                throw new \Exception('Received an encrypted request but was unable to decrypt the body!', 500);
             }
         }
         $contentType = explode(';', $this->getHeader('Content-Type'));
@@ -302,7 +301,7 @@ class HTTP extends Request
      * value, but if the connection is via a reverse proxy (such as Haproxy) then it will possibly have the standard
      * X-Forwarded-For header, so if that header exists then that value will be returned.
      */
-    public function getRemoteAddr(): string
+    public static function getRemoteAddr(): ?string
     {
         $forwarded_ip = getenv('HTTP_X_FORWARDED_FOR') ?:
             getenv('HTTP_X_FORWARDED') ?:
@@ -310,7 +309,7 @@ class HTTP extends Request
             getenv('HTTP_FORWARDED');
         if (!$forwarded_ip) {
             return getenv('HTTP_CLIENT_IP') ?:
-                getenv('REMOTE_ADDR');
+                getenv('REMOTE_ADDR') ?: null;
         }
         $forwarded = explode(',', $forwarded_ip);
 

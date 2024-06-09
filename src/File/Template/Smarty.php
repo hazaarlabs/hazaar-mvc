@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Hazaar\File\Template;
 
 use Hazaar\Application;
-use Hazaar\Exception;
 use Hazaar\File;
 use Hazaar\File\Dir;
+use Hazaar\File\Template\Exception\SmartyRenderException;
 
 /**
  * The View\Template class.
@@ -50,7 +50,7 @@ class Smarty extends \Hazaar\Template\Smarty
             $file = new File($file);
         }
         if (!$file->exists()) {
-            throw new Exception('Template file not found!');
+            throw new \Exception('Template file not found!');
         }
         $this->__source_file = $file;
         $this->__cwd = $file->dirname();
@@ -60,7 +60,7 @@ class Smarty extends \Hazaar\Template\Smarty
     {
         $this->__cache_file = null;
         if (!$this->__source_file instanceof File) {
-            throw new Exception('Template compilation failed! No source file or template content has been loaded!');
+            throw new \Exception('Template compilation failed! No source file or template content has been loaded!');
         }
         if ($this->__cache_enabled) {
             if ($content = $this->getCompiledContentFromCache()) {
@@ -86,12 +86,8 @@ class Smarty extends \Hazaar\Template\Smarty
         } catch (\Throwable $e) {
             $this->__cache_file = null;
             $line = ($e->getLine() - 22);
-            $output = 'An error occurred parsing the Smarty template: '.$e->getMessage();
-            $e = new Exception($output, 500);
-            $e->setFile($this->__source_file->fullpath());
-            $e->setLine($line);
 
-            throw $e;
+            throw new SmartyRenderException($e->getMessage(), $this->__source_file, $line, $e);
         }
 
         return $out;
