@@ -17,6 +17,7 @@ namespace Hazaar\Auth;
 use Hazaar\Application;
 use Hazaar\Application\Request;
 use Hazaar\Application\Request\HTTP;
+use Hazaar\Auth\Adapter\Exception\Unauthorised;
 use Hazaar\Auth\Adapter\Exception\UnknownStorageAdapter;
 use Hazaar\Map;
 
@@ -105,15 +106,12 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
             'encryption' => [
                 'hash' => 'sha1',
                 'count' => 1,
-                'salt' => '',
+                'salt' => 'hazaar-default-salt',
                 'useIdentity' => false,
             ],
             'autologin' => [
-                'cookie' => 'hazaar-auth-autologin',
+                'cookie' => 'hazaar-auth-refresh',
                 'period' => 1,
-                'hash' => 'sha1',
-            ],
-            'token' => [
                 'hash' => 'sha1',
             ],
             'timeout' => 3600,
@@ -200,19 +198,19 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
             return false;
         }
         $auth = $this->queryAuth($identity, $this->options->get('extra', [], true)->values());
-        if (false === $auth || !(is_array($auth)
+        if (is_array($auth)
             && array_key_exists('identity', $auth)
-            && array_key_exists('credential', $auth))) {
-            $this->clear();
-
-            return false;
-        }
-        if ($auth['identity'] === $this->getIdentity()
+            && array_key_exists('credential', $auth)
+            && $auth['identity'] === $this->getIdentity()
             && hash_equals($this->getCredentialHash(), $auth['credential'])) {
+            unset($auth['credential']);
             $this->storage->write($auth);
+            $this->authenticationSuccess($identity, $auth);
 
             return true;
         }
+        $this->authenticationFailure($identity, $auth);
+        $this->clear();
 
         return false;
     }
@@ -239,7 +237,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
             return false;
         }
         if (false === $this->authenticate($auth[0], $auth[1])) {
-            throw new \Exception('Unauthorised!', 401);
+            throw new Unauthorised();
         }
 
         return true;
@@ -296,19 +294,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
      */
     public function unauthorised(): void
     {
-        header('WWW-Authenticate: Basic');
-
-        throw new \Exception('Unauthorised!', 401);
-    }
-
-    public function getToken(): ?string
-    {
-        return null;
-    }
-
-    public function getTokenType(): false|string
-    {
-        return false;
+        throw new Unauthorised(true);
     }
 
     /**
@@ -322,7 +308,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
      */
     public function disableCredentialHashing(bool $value = true): void
     {
-        $this->noCredentialHashing = boolify($value);
+        $this->noCredentialHashing = $value;
     }
 
     public function get(string $key): mixed
@@ -409,17 +395,24 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
     /**
      * Overload function called when a user is successfully authenticated.
      *
-     * This can occur when calling authenticate() or authenticated() where a session has been saved.  This default method does nothing but can
-     * be overridden.
+     * This can occur when calling authenticate() or authenticated() where a
+     * session has been saved.  This default method does nothing but can be
+     * overridden.
      *
-     * @param array<mixed> $data
+     * @param string       $identity The identity that was successfully authenticated
+     * @param array<mixed> $data     The data returned from the authentication query
      */
     protected function authenticationSuccess(string $identity, array $data): void {}
 
     /**
-     * Handles authentication failure for the given identity.
+     * Overload function called when a user fails authentication.
      *
-     * @param string $identity the identity that failed authentication
+     * This can occur when calling authenticate() or authenticated() where a
+     * session has been saved.  This default method does nothing but can be
+     * overridden.
+     *
+     * @param string       $identity the identity that failed authentication
+     * @param array<mixed> $data     the data returned from the authentication query
      */
-    protected function authenticationFailure(string $identity): void {}
+    protected function authenticationFailure(string $identity, array $data): void {}
 }
