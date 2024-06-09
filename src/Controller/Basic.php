@@ -86,7 +86,7 @@ abstract class Basic extends Controller
                 } elseif ($p->isDefaultValueAvailable()) {
                     $value = $p->getDefaultValue();
                 } else {
-                    throw new \Hazaar\Exception("Missing value for parameter '{$key}'.", 400);
+                    throw new \Exception("Missing value for parameter '{$key}'.", 400);
                 }
                 $params[$p->getPosition()] = $value;
             }

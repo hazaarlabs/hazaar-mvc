@@ -2,9 +2,7 @@
 
 namespace Hazaar\Controller\Exception;
 
-use Hazaar\Exception;
-
-class NoDefaultRenderer extends Exception
+class NoDefaultRenderer extends \Exception
 {
     public function __construct()
     {

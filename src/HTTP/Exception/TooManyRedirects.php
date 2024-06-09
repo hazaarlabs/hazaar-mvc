@@ -6,7 +6,7 @@ namespace Hazaar\HTTP\Exception;
 
 use Hazaar\Exception;
 
-class TooManyRedirects extends Exception
+class TooManyRedirects extends \Exception
 {
     public function __construct()
     {

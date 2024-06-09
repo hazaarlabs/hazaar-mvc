@@ -183,6 +183,11 @@ class File extends Backend
         return $array;
     }
 
+    public function count(): int
+    {
+        return count($this->toArray());
+    }
+
     private function keepalive(): void
     {
         if (true === $this->options['keepalive'] && $this->options['lifetime'] > 0) {

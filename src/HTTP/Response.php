@@ -94,7 +94,7 @@ class Response
                 $header = substr($this->buffer, $offset, $del - $offset);
                 if (null === $this->status) {
                     if (!preg_match('/(HTTP\/[\d\.]+)\s+(\d+)\s+(.*)/', $header, $matches)) {
-                        throw new Exception('Got bad HTTP response: '.$header);
+                        throw new \Exception('Got bad HTTP response: '.$header);
                     }
                     // Parse the response header so we can throw errors if needed
                     list($null, $this->version, $status, $this->name) = $matches;
@@ -127,7 +127,7 @@ class Response
                 } elseif (null !== $param) {
                     $this->headers[$param] .= ' '.trim($header);
                 } else {
-                    throw new Exception('Got bad HTTP response header: '.$header);
+                    throw new \Exception('Got bad HTTP response header: '.$header);
                 }
                 $offset = $del + 2;
                 // Set the offset to the end of the last delimiter
@@ -297,11 +297,11 @@ class Response
         }
         if ('multipart' === substr($contentType, 0, 9)) {
             if (!array_key_exists('boundary', $args)) {
-                throw new Exception('Received multipart content type with no boundary!');
+                throw new \Exception('Received multipart content type with no boundary!');
             }
             $parts = explode('--'.$args['boundary'], trim($this->body));
             if (!('' === $parts[0] && '--' === $parts[count($parts) - 1])) {
-                throw new Exception('Invalid multipart response received!');
+                throw new \Exception('Invalid multipart response received!');
             }
             $this->body = [];
             for ($i = 1; $i < (count($parts) - 1); ++$i) {

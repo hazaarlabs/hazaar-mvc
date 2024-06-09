@@ -6,7 +6,7 @@ namespace Hazaar\Exception;
 
 use Hazaar\Exception;
 
-class ExtenderAccessFailed extends Exception
+class ExtenderAccessFailed extends \Exception
 {
     public function __construct(string $access, string $class, string $property)
     {

@@ -401,7 +401,7 @@ class Adapter
     {
         $statement = $this->driver->prepare($sql);
         if (false === $statement) {
-            throw new \Hazaar\Exception('DBI failed to prepare the SQL statement.');
+            throw new \Exception('DBI failed to prepare the SQL statement.');
         }
         if ($name) {
             $this->statements[$name] = $statement;
@@ -540,7 +540,7 @@ class Adapter
                 continue;
             }
             if (!is_string($value)) {
-                throw new \Hazaar\Exception('Trying to encrypt non-string field: '.$column);
+                throw new \Exception('Trying to encrypt non-string field: '.$column);
             }
             $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($cipher));
             $value = base64_encode($iv.openssl_encrypt($checkstring.$value, $cipher, $key, OPENSSL_RAW_DATA, $iv));
@@ -634,7 +634,7 @@ class Adapter
         if (defined('HAZAAR_VERSION') && ($this->config->has('encrypt.table') && !$this->config->has('encrypt.key'))) {
             $keyfile = Loader::getFilePath(FILE_PATH_CONFIG, $this->config->get('encrypt.keyfile', '.db_key'));
             if (null === $keyfile) {
-                throw new \Hazaar\Exception('DBI keyfile is missing.  Database encryption will not work!');
+                throw new \Exception('DBI keyfile is missing.  Database encryption will not work!');
             }
             $this->config['encrypt']['key'] = trim(file_get_contents($keyfile));
         }

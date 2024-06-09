@@ -69,7 +69,7 @@ class BTree
         $this->readOnly = $readOnly;
 
         if (!$this->open($file, $readOnly)) {
-            throw new Exception('Unable to open file: '.$file);
+            throw new \Exception('Unable to open file: '.$file);
         }
     }
 
@@ -80,7 +80,7 @@ class BTree
     {
         if (null === $file) {
             if (!$this->file) {
-                throw new Exception('No file specified!');
+                throw new \Exception('No file specified!');
             }
             if ($this->file->isOpen()) {
                 return true;
@@ -95,11 +95,11 @@ class BTree
             $this->file = $file;
         }
         if ('local' !== $file->backend()) {
-            throw new Exception('The BTree file class currently only supports the local file manager backend!', 400);
+            throw new \Exception('The BTree file class currently only supports the local file manager backend!', 400);
         }
         // Check if the file is too big.  The file size will be negative if PHP doesn't support the file.
         if ($this->file->exists() && $this->file->size() < 0) {
-            throw new Exception('File is too large.  On 32-bit PHP only files up to 2GB in size are supported.');
+            throw new \Exception('File is too large.  On 32-bit PHP only files up to 2GB in size are supported.');
         }
         $this->file->open((true === $this->readOnly) ? 'rb' : 'a+b');
         // write default node if neccessary

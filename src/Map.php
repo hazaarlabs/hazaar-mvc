@@ -774,6 +774,9 @@ class Map implements \ArrayAccess, \Iterator, \Countable
                     return Map::_($default);
                 }
                 $value = $value->get($part, ($key === $lastKey) ? $default : null, $create);
+                if (!$value) {
+                    break;
+                }
             }
 
             return $value;
@@ -1218,10 +1221,22 @@ class Map implements \ArrayAccess, \Iterator, \Countable
 
     /**
      * Returns an array of key names currently in this Map object.
+     *
+     * @return array<string> An array of key names
      */
-    public function keys(): Map
+    public function keys(): array
     {
-        return new Map(array_keys($this->elements));
+        return array_keys($this->elements);
+    }
+
+    /**
+     * Returns an array of values currently in this Map object.
+     *
+     * @return array<mixed> An array of values
+     */
+    public function values(): array
+    {
+        return array_values($this->elements);
     }
 
     /**

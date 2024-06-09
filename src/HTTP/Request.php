@@ -414,14 +414,14 @@ class Request extends Map
      */
     public function authorisation(Adapter $user, ?string $type = null): bool
     {
-        if ($token = $user->getToken()) {
-            if (!$type) {
-                $type = $user->getTokenType();
-            }
-            $this->setHeader('Authorization', $type.' '.$token);
+        // if ($token = $user->getToken()) {
+        //     if (!$type) {
+        //         $type = $user->getTokenType();
+        //     }
+        //     $this->setHeader('Authorization', $type.' '.$token);
 
-            return true;
-        }
+        //     return true;
+        // }
 
         return false;
     }
@@ -437,7 +437,7 @@ class Request extends Map
         $result = stream_context_set_option($this->context, 'ssl', 'local_cert', $local_cert);
         if ($local_pk) {
             if (!file_exists((string) $local_pk)) {
-                throw new Exception('Local private key specified but the file does not exist!');
+                throw new \Exception('Local private key specified but the file does not exist!');
             }
             stream_context_set_option($this->context, 'ssl', 'local_pk', $local_pk);
         }

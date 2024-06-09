@@ -101,16 +101,14 @@ class Timer
      * @param mixed $name The name of the timer to stop.  If the timer does not exist an exception is thrown.
      *
      * @return float the difference, in milliseconds, between when the timer was started and when it was stopped
-     *
-     * @throws Exception
      */
     public function stop($name = 'default')
     {
         if (!array_key_exists($name, $this->timers)) {
-            throw new Exception("Error trying to stop non-existent timer '{$name}'.");
+            throw new \Exception("Error trying to stop non-existent timer '{$name}'.");
         }
         if ('global' == $name) {
-            throw new Exception('You can not stop the global timer!');
+            throw new \Exception('You can not stop the global timer!');
         }
         if (!array_key_exists('stop', $this->timers[$name])) {
             $this->timers[$name]['stop'] = microtime(true);
@@ -147,7 +145,7 @@ class Timer
     public function get(string $name = 'default', ?int $precision = null): float
     {
         if (!array_key_exists($name, $this->timers)) {
-            throw new Exception("Unable to return current value of non-existent timer '{$name}'.");
+            throw new \Exception("Unable to return current value of non-existent timer '{$name}'.");
         }
         $timer = $this->timers[$name];
         $start = $timer['start'];

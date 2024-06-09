@@ -122,7 +122,7 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
     {
         if (($code = ake($_REQUEST, 'code')) && ($state = ake($_REQUEST, 'state'))) {
             if ($state != $this->cache->pull('oauth2_state')) {
-                throw new Exception('Bad state!');
+                throw new \Exception('Bad state!');
             }
             $request = new Request('https://accounts.google.com/o/oauth2/token', 'POST');
             $request['code'] = $code;
@@ -727,7 +727,7 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
         $count = 0;
         while (++$count) {
             if ($count > $this->options['refresh_attempts']) {
-                throw new Exception('Too many refresh attempts!');
+                throw new \Exception('Too many refresh attempts!');
             }
             $request->setHeader('Authorization', $this->options['oauth2']['token_type'].' '.$this->options['oauth2']['access_token']);
             $response = $this->send($request);
@@ -736,7 +736,7 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
             }
             if (401 == $response->status) {
                 if (!$this->authorise()) {
-                    throw new Exception('Unable to refresh access token!');
+                    throw new \Exception('Unable to refresh access token!');
                 }
             } else {
                 if ('application/json' == $response->getHeader('content-type')) {
@@ -753,13 +753,13 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
                     $code = (int)$response->status;
                 }
 
-                throw new Exception($message, $code);
+                throw new \Exception($message, $code);
             }
         }
         if (true == $is_meta) {
             $meta = new Map($response->body);
             if ($meta->has('error')) {
-                throw new Exception($meta['error']);
+                throw new \Exception($meta['error']);
             }
         } else {
             $meta = $response->body;

@@ -6,7 +6,7 @@ namespace Hazaar\HTTP\Exception;
 
 use Hazaar\Exception;
 
-class NoConnection extends Exception
+class NoConnection extends \Exception
 {
     public function __construct(string $host, int $errno, string $errstr)
     {

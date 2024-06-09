@@ -6,7 +6,7 @@ namespace Hazaar\Model\Exception;
 
 use Hazaar\Exception;
 
-class UnsetPropertyException extends Exception
+class UnsetPropertyException extends \Exception
 {
     public function __construct(string $class, string $propertyName)
     {

@@ -37,7 +37,7 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements Interfaces\Backend, Interfac
             'cache_meta' => true,
         ], $options);
         if (!$this->options->has('baseuri')) {
-            throw new Exception('WebDAV file browser backend requires a URL!');
+            throw new \Exception('WebDAV file browser backend requires a URL!');
         }
         if ($this->options->has('cookies')) {
             $this->setCookie($this->options['cookies']);

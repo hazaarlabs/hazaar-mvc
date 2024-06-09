@@ -456,7 +456,7 @@ class Manager implements Backend
                     return $this->deepCopy($file->fullpath(), $dst, $srcManager, $callback);
             }
 
-            throw new \Hazaar\Exception("Copy of source type '".$file->type()."' between different sources is currently not supported");
+            throw new \Exception("Copy of source type '".$file->type()."' between different sources is currently not supported");
         }
 
         return $this->backend->copy($src, $dst, $recursive);
@@ -485,7 +485,7 @@ class Manager implements Backend
                     return false;
             }
 
-            throw new \Hazaar\Exception("Move of source type '".$file->type()."' between different sources is currently not supported.");
+            throw new \Exception("Move of source type '".$file->type()."' between different sources is currently not supported.");
         }
 
         return $this->backend->move($src, $dst);

@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Cache\Exception;
 
-use Hazaar\Exception;
-
-class InvalidFrontend extends Exception
+class InvalidFrontend extends \Exception
 {
     public function __construct(string $class)
     {
