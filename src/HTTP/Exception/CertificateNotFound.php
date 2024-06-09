@@ -6,7 +6,7 @@ namespace Hazaar\HTTP\Exception;
 
 use Hazaar\Exception;
 
-class CertificateNotFound extends Exception
+class CertificateNotFound extends \Exception
 {
     public function __construct()
     {

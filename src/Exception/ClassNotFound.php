@@ -6,4 +6,4 @@ namespace Hazaar\Exception;
 
 use Hazaar\Exception;
 
-class ClassNotFound extends Exception {}
+class ClassNotFound extends \Exception {}

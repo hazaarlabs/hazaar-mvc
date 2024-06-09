@@ -23,5 +23,7 @@ interface Backend
      */
     public function toArray(): array;
 
+    public function count(): int;
+
     public function setOption(string $key, mixed $value): void;
 }

@@ -6,7 +6,7 @@ namespace Hazaar\Exception;
 
 use Hazaar\Exception;
 
-class ExtenderMayNotInherit extends Exception
+class ExtenderMayNotInherit extends \Exception
 {
     public function __construct(string $type, string $child, string $class)
     {

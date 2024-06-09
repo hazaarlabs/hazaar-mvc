@@ -6,7 +6,7 @@ namespace Hazaar\Exception;
 
 use Hazaar\Exception;
 
-class NotImplemented extends Exception
+class NotImplemented extends \Exception
 {
     public function __construct(?string $module = null)
     {

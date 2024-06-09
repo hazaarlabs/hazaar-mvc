@@ -6,7 +6,7 @@ namespace Hazaar\Application\Router\Exception;
 
 use Hazaar\Exception;
 
-class ActionNotFound extends Exception
+class ActionNotFound extends \Exception
 {
     public function __construct(string $controller, string $action)
     {

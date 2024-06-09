@@ -6,7 +6,7 @@ namespace Hazaar\File\Exception\WKPDF;
 
 use Hazaar\Exception;
 
-class NotExecutable extends Exception
+class NotExecutable extends \Exception
 {
     public function __construct(string $cmd)
     {

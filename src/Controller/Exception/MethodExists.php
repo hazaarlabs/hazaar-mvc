@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller\Exception;
 
-use Hazaar\Exception;
-
-class MethodExists extends Exception
+class MethodExists extends \Exception
 {
     public function __construct(string $method_name)
     {

@@ -6,7 +6,7 @@ namespace Hazaar\Logger\Backend\Exception;
 
 use Hazaar\Exception;
 
-class OpenLogFileFailed extends Exception
+class OpenLogFileFailed extends \Exception
 {
     public function __construct(string $file)
     {

@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Cache\Backend\Exception;
 
-use Hazaar\Exception;
-
-class NoZlib extends Exception
+class NoZlib extends \Exception
 {
     public function __construct(string $key)
     {
