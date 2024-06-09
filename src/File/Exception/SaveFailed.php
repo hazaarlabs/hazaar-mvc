@@ -6,7 +6,7 @@ namespace Hazaar\File\Exception;
 
 use Hazaar\Exception;
 
-class SaveFailed extends Exception
+class SaveFailed extends \Exception
 {
     public function __construct(string $key)
     {

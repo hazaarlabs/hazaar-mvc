@@ -34,7 +34,7 @@ abstract class REST extends Controller
     public function __initialize(Request $request): ?Response
     {
         if (!$request instanceof HTTP) {
-            throw new \Hazaar\Exception('REST controllers require an HTTP request object!');
+            throw new \Exception('REST controllers require an HTTP request object!');
         }
         parent::__initialize($request);
         $this->init($request);
@@ -68,7 +68,7 @@ abstract class REST extends Controller
      *
      * @return Response the response of the endpoint or a JSON response with the allowed methods for the endpoint
      *
-     * @throws \Hazaar\Exception if the endpoint is not found or directory listing is not allowed
+     * @throws \Exception if the endpoint is not found or directory listing is not allowed
      */
     public function __runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): Response
     {
@@ -91,7 +91,7 @@ abstract class REST extends Controller
                 } elseif ($p->isDefaultValueAvailable()) {
                     $value = $p->getDefaultValue();
                 } else {
-                    throw new \Hazaar\Exception("Missing value for parameter '{$key}'.", 400);
+                    throw new \Exception("Missing value for parameter '{$key}'.", 400);
                 }
                 $params[$p->getPosition()] = $value;
             }

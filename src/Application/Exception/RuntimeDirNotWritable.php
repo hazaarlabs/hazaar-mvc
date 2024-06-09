@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Application\Exception;
 
-use Hazaar\Exception;
-
-class RuntimeDirNotWritable extends Exception
+class RuntimeDirNotWritable extends \Exception
 {
     public function __construct(string $path)
     {

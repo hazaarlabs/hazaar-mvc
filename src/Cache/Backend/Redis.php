@@ -27,13 +27,17 @@ use Hazaar\Socket\Client;
 class Redis extends Backend
 {
     protected int $weight = 2;
-    private string $role;
-    private ?Client $socket;        // The socket for the configured host.
-    private ?Client $master;        // The socket for the master host if we are on a slave.
+
+    /**
+     * @var array<int,mixed>
+     */
+    private array $role;
+    private ?Client $socket = null;        // The socket for the configured host.
+    private ?Client $master = null;        // The socket for the master host if we are on a slave.
     private string $buffer = '';
     private int $offset = 0;
     private string $delim = "\r\n";
-    private bool $update_expire = false;
+    private bool $updateExpire = false;
 
     /**
      * @var array<mixed>
@@ -76,22 +80,22 @@ class Redis extends Backend
         $this->role = $result[1];
         // Check that there is a TTL set when there is supposed to be.  Redis will return -1 for no TTL (-2 means keys doesn't exist).
         if ($this->options['lifetime'] > 0 && -1 == $result[2]) {
-            $this->update_expire = true;
+            $this->updateExpire = true;
         }
     }
 
     /**
      * @param array<mixed> $cmds
      */
-    public function cmd(array $cmds, bool $use_master = false): mixed
+    public function cmd(array $cmds, bool $useMaster = false): mixed
     {
-        if ($use_master) {
+        if ($useMaster) {
             if (!$this->master instanceof Client) {
                 // If we are on the master, just set the master to the current socket.
                 if ('master' == $this->role[0]) {
                     $this->master = $this->socket;
                 } elseif ('slave' == $this->role[0]) {
-                    $this->master = $this->connect($this->role[1], (int)$this->role[2]);
+                    $this->master = $this->connect($this->role[1], (int) $this->role[2]);
                     if ($this->options->has('serverpass')) {
                         $this->cmd(['AUTH', $this->options['serverpass']], true);
                     }
@@ -137,7 +141,7 @@ class Redis extends Backend
     public function close(): bool
     {
         if ($this->socket) {
-            if (true === $this->update_expire) {
+            if (true === $this->updateExpire) {
                 $this->cmd(['EXPIRE', $this->namespace, (string) $this->options['lifetime']]);
             }
 
@@ -147,7 +151,7 @@ class Redis extends Backend
         return false;
     }
 
-    public function has(string $key, bool $check_empty = false): bool
+    public function has(string $key, bool $checkEmpty = false): bool
     {
         return 1 === $this->cmd(['HEXISTS', $this->namespace, $key]);
     }
@@ -193,13 +197,13 @@ class Redis extends Backend
         if ($timeout > 0) {
             $data['expire'] = time() + $timeout;
         }
-        // Piplining!
+        // Pipelining!
         $cmds = [
             ['EXISTS', $this->namespace],
             ['HSET', $this->namespace, $key, serialize($data)],
         ];
         $result = $this->cmd($cmds, true);
-        $this->update_expire = ($this->options['lifetime'] > 0 && !boolify($result[0]));
+        $this->updateExpire = ($this->options['lifetime'] > 0 && !boolify($result[0]));
         if (!(0 === $result[1] || 1 === $result[1])) {
             return false;
         }
@@ -243,6 +247,11 @@ class Redis extends Backend
         $this->local = $array;
 
         return $array;
+    }
+
+    public function count(): int
+    {
+        return (int) $this->cmd(['HLEN', $this->namespace]);
     }
 
     private function connect(string $host, int $port = 6379): Client
@@ -295,10 +304,10 @@ class Redis extends Backend
                     return substr($chunk, 1);
 
                 case ':': // Integer response
-                    return (int)substr($chunk, 1);
+                    return (int) substr($chunk, 1);
 
                 case '$': // Bulk string response
-                    $size = (int)substr($chunk, 1);
+                    $size = (int) substr($chunk, 1);
                     if (-1 === $size) {
                         return null;
                     }
@@ -306,7 +315,7 @@ class Redis extends Backend
                     return $this->getChunk($socket, $size);
 
                 case '*': // Array response
-                    $count = (int)substr($chunk, 1);
+                    $count = (int) substr($chunk, 1);
                     if (-1 === $count) {
                         return null;
                     }
@@ -360,7 +369,7 @@ class Redis extends Backend
     private function keepalive(): void
     {
         if (true === $this->options['keepalive'] && $this->options['lifetime'] > 0) {
-            $this->update_expire = true;
+            $this->updateExpire = true;
         }
     }
 }

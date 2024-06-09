@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Cache;
 
 use Hazaar\Cache;
+use Hazaar\Cache\Exception\NoFunction;
 use Hazaar\Map;
 
 class Func extends Cache
@@ -26,7 +27,7 @@ class Func extends Cache
     {
         $param_arr = func_get_args();
         if (!$function = array_shift($param_arr)) {
-            throw new Exception\NoFunction();
+            throw new NoFunction();
         }
         $key = $this->generateKey($function, $param_arr);
         $use_cache = true;

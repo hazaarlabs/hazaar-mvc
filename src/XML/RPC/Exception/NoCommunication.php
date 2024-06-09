@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Hazaar\XML\RPC\Exception;
 
-use Hazaar\Exception;
 use Hazaar\HTTP\URL;
 
-class NoCommunication extends Exception
+class NoCommunication extends \Exception
 {
     public function __construct(URL $url)
     {

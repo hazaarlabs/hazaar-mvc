@@ -15,7 +15,6 @@ declare(strict_types=1);
 namespace Hazaar\Application;
 
 use Hazaar\Application;
-use Hazaar\Exception;
 use Hazaar\File;
 use Hazaar\Loader;
 use Hazaar\Map;
@@ -362,7 +361,7 @@ class Config extends Map
      *
      * @return array<mixed> the loaded configuration
      *
-     * @throws Exception if there is an error parsing the configuration file or if the file format is unknown
+     * @throws \Exception if there is an error parsing the configuration file or if the file format is unknown
      */
     private function loadSourceFile(string $source): array
     {
@@ -400,17 +399,17 @@ class Config extends Map
         $extention = $file->extension();
         if ('json' == $extention) {
             if (false === ($config = $file->parseJSON(true))) {
-                throw new Exception('Failed to parse JSON config file: '.$source);
+                throw new \Exception('Failed to parse JSON config file: '.$source);
             }
         } elseif ('ini' == $extention) {
             if (!$config = parse_ini_string($file->getContents(), true, INI_SCANNER_TYPED)) {
-                throw new Exception('Failed to parse INI config file: '.$source);
+                throw new \Exception('Failed to parse INI config file: '.$source);
             }
             foreach ($config as &$array) {
                 $array = array_from_dot_notation($array);
             }
         } else {
-            throw new Exception('Unknown file format: '.$source);
+            throw new \Exception('Unknown file format: '.$source);
         }
         if ($file->isEncrypted()) {
             $this->secureKeys = array_merge($this->secureKeys, $this->secureKeys += $secureKeys = array_keys($config));

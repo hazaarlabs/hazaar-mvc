@@ -60,7 +60,7 @@ class HTTP extends Transport
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         $response = curl_exec($ch);
         if (false === $response) {
-            throw new Exception('Failed to send email: '.curl_error($ch));
+            throw new \Exception('Failed to send email: '.curl_error($ch));
         }
         curl_close($ch);
 

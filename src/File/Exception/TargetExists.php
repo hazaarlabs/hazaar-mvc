@@ -6,7 +6,7 @@ namespace Hazaar\File\Exception;
 
 use Hazaar\Exception;
 
-class TargetExists extends Exception
+class TargetExists extends \Exception
 {
     public function __construct(string $target)
     {

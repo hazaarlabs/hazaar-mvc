@@ -127,7 +127,7 @@ class View implements \ArrayAccess
         } else {
             $this->_viewfile = View::getViewPath($view, $this->name);
             if (!$this->_viewfile) {
-                throw new Exception("File not found or permission denied accessing view '{$this->name}'.");
+                throw new \Exception("File not found or permission denied accessing view '{$this->name}'.");
             }
         }
     }
@@ -391,7 +391,7 @@ class View implements \ArrayAccess
         } else {
             ob_start();
             if (!($file = $this->getViewFile()) || !file_exists($file)) {
-                throw new Exception("View does not exist ({$this->name})", 404);
+                throw new \Exception("View does not exist ({$this->name})", 404);
             }
 
             include $file;

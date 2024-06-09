@@ -637,7 +637,7 @@ class File implements \JsonSerializable
             $dir = new Dir($destination, $dstManager);
             if (!$dir->exists()) {
                 if (!$create_dest) {
-                    throw new Exception('Destination does not exist!');
+                    throw new \Exception('Destination does not exist!');
                 }
                 $dir->create(true);
             }
@@ -694,7 +694,7 @@ class File implements \JsonSerializable
             $dir = new Dir($destination, $dstManager);
             if (!$dir->exists()) {
                 if (!$create_dest) {
-                    throw new Exception('Destination does not exist!');
+                    throw new \Exception('Destination does not exist!');
                 }
                 $dir->create(true);
             }
@@ -711,7 +711,7 @@ class File implements \JsonSerializable
         }
         if (!$dstManager->exists(dirname($destination))) {
             if (!$create_dest) {
-                throw new Exception('Destination does not exist!');
+                throw new \Exception('Destination does not exist!');
             }
             $parts = explode('/', dirname($destination));
             $dir = '';
@@ -1070,7 +1070,7 @@ class File implements \JsonSerializable
             $hash = substr($data, 0, 8);
             $content = substr($data, 8);
             if ($hash !== hash('crc32', $content)) {
-                throw new Exception('Failed to decrypt file: '.$this->source_file.'. Bad key?');
+                throw new \Exception('Failed to decrypt file: '.$this->source_file.'. Bad key?');
             }
         } elseif ($bom === pack('H*', 'EFBBBF')) {  // UTF-8
             $content = substr($content, 3);  // Just strip the BOM

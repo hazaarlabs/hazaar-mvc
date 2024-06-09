@@ -119,6 +119,13 @@ class Apc extends Backend
         return $array;
     }
 
+    public function count(): int
+    {
+        $iter = new \APCUIterator('/^'.$this->namespace.'::/');
+
+        return $iter->getTotalCount();
+    }
+
     private function key(string $key): string
     {
         return $this->namespace.'::'.$key;

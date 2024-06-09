@@ -298,7 +298,7 @@ class Upload
     {
         if (array_key_exists('tmp_name', $array)) {
             if ($array['error'] > 0) {
-                throw new Exception('Upload error processing '.$array['name']);
+                throw new \Exception('Upload error processing '.$array['name']);
             }
             $file = new File($array['name']);
             $file->setMimeContentType($array['type']);

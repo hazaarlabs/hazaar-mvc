@@ -16,6 +16,9 @@
       "view": "views",
       "controller": "controllers"
     },
+    "cache": {
+      "backend": "file"
+    },
     "php": {
       "date": {
         "timezone": "UTC"

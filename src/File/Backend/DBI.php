@@ -68,7 +68,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
                 'mime_type' => 'directory',
             ];
             if (!($this->rootObject['id'] = $this->db->table('hz_file')->insert($this->rootObject, 'id'))) {
-                throw new \Hazaar\Exception('Unable to create DBI filesystem root object: '.$this->db->errorInfo()[2]);
+                throw new \Exception('Unable to create DBI filesystem root object: '.$this->db->errorInfo()[2]);
             }
             /*
              * If we are recreating the ROOT document then everything is either
@@ -336,7 +336,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
             return false;
         }
         if (!($parent = &$this->info($this->dirname($path)))) {
-            throw new \Hazaar\Exception('Unable to determine parent of path: '.$path);
+            throw new \Exception('Unable to determine parent of path: '.$path);
         }
         $info = [
             'kind' => 'dir',
@@ -368,7 +368,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
             return false;
         }
         if (!($parent = &$this->info($this->dirname($path)))) {
-            throw new \Hazaar\Exception('Unable to determine parent of path: '.$path);
+            throw new \Exception('Unable to determine parent of path: '.$path);
         }
         if (!$this->db->table('hz_file')->delete(['id' => $info['id']])) {
             return false;
@@ -432,7 +432,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
     public function write(string $path, string $bytes, ?string $content_type = null, bool $overwrite = false): ?int
     {
         if (!($parent = &$this->info($this->dirname($path)))) {
-            throw new \Hazaar\Exception('Unable to determine parent of path: '.$path);
+            throw new \Exception('Unable to determine parent of path: '.$path);
         }
         $size = strlen($bytes);
         $md5 = md5($bytes);
@@ -520,7 +520,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
             return false;
         }
         if (!($dstParent = &$this->info($this->dirname($dst)))) {
-            throw new \Hazaar\Exception('Unable to determine parent of path: '.$dst);
+            throw new \Exception('Unable to determine parent of path: '.$dst);
         }
         if ('dir' !== $dstParent['kind']) {
             return false;
@@ -560,7 +560,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
             return false;
         }
         if (!($dstParent = &$this->info($this->dirname($dst)))) {
-            throw new \Hazaar\Exception('Unable to determine parent of path: '.$dst);
+            throw new \Exception('Unable to determine parent of path: '.$dst);
         }
         if ($dstParent) {
             if ('dir' !== $dstParent['kind']) {
@@ -569,7 +569,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
         } else {
             $dstParent = &$this->info($this->dirname($dst));
             if (false === $dstParent) {
-                throw new \Hazaar\Exception('Unable to determine parent of path: '.$dst);
+                throw new \Exception('Unable to determine parent of path: '.$dst);
             }
         }
         if (!$dstParent) {
@@ -599,13 +599,13 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
             return false;
         }
         if (!($srcParent = &$this->info($this->dirname($src)))) {
-            throw new \Hazaar\Exception('Unable to determine parent of path: '.$src);
+            throw new \Exception('Unable to determine parent of path: '.$src);
         }
         $data = [
             'modified_on' => new Date(),
         ];
         if (!($dstParent = &$this->info($this->dirname($dst)))) {
-            throw new \Hazaar\Exception('Unable to determine parent of path: '.$dst);
+            throw new \Exception('Unable to determine parent of path: '.$dst);
         }
         if ($srcParent['id'] === $dstParent['id']) { // We are renaming the file.
             $data['filename'] = basename($dst);
@@ -627,7 +627,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
             $data['parent'] = $dstParent['id'];
         }
         if (!($target = $this->db->table('hz_file')->update(['id' => $source['id']], $data, '*'))) {
-            throw new \Hazaar\Exception($this->db->errorInfo()[2]);
+            throw new \Exception($this->db->errorInfo()[2]);
         }
         $dstParent['items'][$data['filename']] = $target;
 
@@ -924,7 +924,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
         $sql .= ' UNION ALL SELECT fc.id, fc.parent FROM chunk_chain cc INNER JOIN hz_file_chunk AS fc ON fc.parent = cc.id)';
         $sql .= ' SELECT id FROM chunk_chain;';
         if (!($result = $this->db->query($sql))) {
-            throw new \Hazaar\Exception($this->db->errorInfo()[2]);
+            throw new \Exception($this->db->errorInfo()[2]);
         }
 
         return $this->db->table('hz_file_chunk')->delete(['id' => ['$in' => array_column($result->fetchAll(), 'id')]]);

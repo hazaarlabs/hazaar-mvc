@@ -72,7 +72,7 @@ class Version
             $delimiter = self::$default_delimiter;
         }
         if (!preg_match('/[0-9]+(\\'.$delimiter.'[0-9]+)*/', $version)) {
-            throw new Exception('Invalid version format');
+            throw new \Exception('Invalid version format');
         }
         if (!is_int($this->__precision)) {
             $this->__precision = substr_count($version, $delimiter) + 1;

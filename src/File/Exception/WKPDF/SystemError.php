@@ -6,7 +6,7 @@ namespace Hazaar\File\Exception\WKPDF;
 
 use Hazaar\Exception;
 
-class SystemError extends Exception
+class SystemError extends \Exception
 {
     public function __construct(string $error)
     {

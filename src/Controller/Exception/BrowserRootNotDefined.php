@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller\Exception;
 
-use Hazaar\Exception;
-
-class BrowserRootNotDefined extends Exception
+class BrowserRootNotDefined extends \Exception
 {
     public function __construct()
     {

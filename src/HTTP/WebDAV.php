@@ -34,7 +34,7 @@ class WebDAV extends Client
         }
         $this->settings = $settings;
         if (!$this->settings->has('baseuri')) {
-            throw new \Hazaar\Exception('WebDAV: No baseuri specified');
+            throw new \Exception('WebDAV: No baseuri specified');
         }
         $this->settings['baseuri'] = rtrim($this->settings['baseuri'], '/');
         if ($this->settings->has('username') && $this->settings->has('password')) {
@@ -43,14 +43,14 @@ class WebDAV extends Client
         $options = $this->options('/');
         if (401 != $options->status) {
             if (200 != $options->status) {
-                throw new \Hazaar\Exception('WebDAV server returned status '.$options->status.': '.$options->name);
+                throw new \Exception('WebDAV server returned status '.$options->status.': '.$options->name);
             }
             if (!array_key_exists('dav', $options->headers)) {
-                throw new \Hazaar\Exception('Base URI does not support WebDAV protocol.  URI='.$this->settings['baseuri']);
+                throw new \Exception('Base URI does not support WebDAV protocol.  URI='.$this->settings['baseuri']);
             }
             $this->classes = explode(',', $options->headers['dav'][0]);
             if (!in_array(1, $this->classes)) {
-                throw new \Hazaar\Exception('Server must at least support WebDAV class 1!');
+                throw new \Exception('Server must at least support WebDAV class 1!');
             }
             if (array_key_exists('allow', $options->headers)) {
                 $this->allow = array_map('trim', explode(',', $options->headers['allow']));
@@ -305,7 +305,7 @@ class WebDAV extends Client
         }
         foreach ($responseList as $response) {
             if (!($href = rawurldecode($response->child('href')->value()))) {
-                throw new \Hazaar\Exception('No HREF in multi-status response');
+                throw new \Exception('No HREF in multi-status response');
             }
             $propstat = $response->child('propstat');
             $status = $propstat->child('status')->value();

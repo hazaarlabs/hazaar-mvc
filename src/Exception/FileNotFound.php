@@ -6,7 +6,7 @@ namespace Hazaar\Exception;
 
 use Hazaar\Exception;
 
-class FileNotFound extends Exception
+class FileNotFound extends \Exception
 {
     public function __construct(string $filename)
     {

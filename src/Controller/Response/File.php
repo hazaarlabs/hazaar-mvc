@@ -7,7 +7,6 @@ namespace Hazaar\Controller\Response;
 use Hazaar\Application;
 use Hazaar\Controller\Response\HTTP\OK;
 use Hazaar\Date;
-use Hazaar\Exception\FileNotFound;
 use Hazaar\File as FileObject;
 use Hazaar\File\Manager;
 
@@ -56,8 +55,6 @@ class File extends OK
      * \Hazaar\File Constructor.
      *
      * @param null|FileObject|string $file either a string filename to use or a \Hazaar\File object
-     *
-     * @throws FileNotFound
      */
     public function __construct(null|FileObject|string $file = null, ?Manager $manager = null)
     {

@@ -6,7 +6,7 @@ namespace Hazaar\File\Exception\WKPDF;
 
 use Hazaar\Exception;
 
-class InstallFailed extends Exception
+class InstallFailed extends \Exception
 {
     public function __construct(string $cmd, string $error)
     {

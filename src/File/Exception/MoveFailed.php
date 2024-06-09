@@ -6,7 +6,7 @@ namespace Hazaar\File\Exception;
 
 use Hazaar\Exception;
 
-class MoveFailed extends Exception
+class MoveFailed extends \Exception
 {
     public function __construct(string $dest_file)
     {

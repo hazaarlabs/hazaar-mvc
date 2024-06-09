@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\XML\RPC\Exception;
 
-use Hazaar\Exception;
-
-class XMLRPCNotInstalled extends Exception
+class XMLRPCNotInstalled extends \Exception
 {
     public function __construct()
     {
