@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Application\Exception;
 
-use Hazaar\Exception;
-
-class RuntimeDirNotFound extends Exception
+class RuntimeDirNotFound extends \Exception
 {
     public function __construct(string $path)
     {

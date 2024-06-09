@@ -4,66 +4,42 @@ declare(strict_types=1);
 
 namespace Hazaar\Auth\Adapter;
 
-use Hazaar\Cache;
-use Hazaar\Map;
+use Hazaar\Auth\Adapter;
 
-abstract class Model extends Session
+abstract class Model extends Adapter
 {
-    private string $field_identity;
-    private string $field_credential;
-
-    /*
-     * Construct the new authentication object with the field names
-     * in the model for id, user name, password and real name.
+    /**
+     * Create a new user record.
      *
-     * @param array<mixed>|Map $cacheConfig The configuration options
+     * @param string              $identity   The user identity/username
+     * @param string              $credential The user credential/password
+     * @param array<string,mixed> $data       Additional data to store with the user record
      */
-    public function __construct(
-        array|Map $cacheConfig = [],
-        Cache $cacheBackend = null
-    ) {
-        parent::__construct($cacheConfig, $cacheBackend);
-        $this->init();
-    }
-
-    public function init(): void {}
-
-    /**
-     * @param array<mixed> $data
-     */
-    public function insert(array $data): bool
+    public function create(string $identity, string $credential, array $data = []): bool
     {
         return false;
     }
 
     /**
-     * @param array<mixed> $criteria
+     * Update a user record.
+     *
+     * Use this method to set the user's password and/or update any additional data stored with the user record.
+     *
+     * @param string              $identity The user identity/username
+     * @param array<string,mixed> $data     The data to update
      */
-    public function delete(array $criteria): bool
+    public function update(string $identity, ?string $credential = null, array $data = []): bool
     {
         return false;
     }
 
-    public function setIdentityField(string $identity): void
+    /**
+     * Delete a user record.
+     *
+     * @param string $identity The user identity/username
+     */
+    public function delete(string $identity): bool
     {
-        $this->field_identity = $identity;
-    }
-
-    public function setCredentialField(string $credential): void
-    {
-        $this->field_credential = $credential;
-    }
-
-    public function addUser(string $identity, string $credential): bool
-    {
-        return $this->insert([
-            $this->field_identity => $identity,
-            $this->field_credential => $credential,
-        ]);
-    }
-
-    public function delUser(string $identity): bool
-    {
-        return $this->delete([$this->field_identity => $identity]);
+        return false;
     }
 }

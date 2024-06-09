@@ -6,19 +6,18 @@ namespace Hazaar\Auth\Adapter;
 
 use Hazaar\Application;
 use Hazaar\Application\URL;
-use Hazaar\Auth\Interfaces\Adapter;
-use Hazaar\Cache;
+use Hazaar\Auth\Adapter;
 use Hazaar\Controller\Response\HTML;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 use Hazaar\Map;
 
-class OAuth2 extends Session implements Adapter
+class OAuth2 extends Adapter
 {
-    protected string $client_id;
-    protected string $client_secret;
-    protected string $grant_type = 'code';
-    protected Client $http_client;
+    protected string $clientID;
+    protected string $clientSecret;
+    protected string $grantType = 'code';
+    protected Client $httpClient;
 
     /**
      * @var array<string, mixed>
@@ -29,24 +28,20 @@ class OAuth2 extends Session implements Adapter
      * @var array<string>
      */
     protected array $scopes = [];
-    private \Closure $authenticate_callback;
+    private \Closure $authenticateCallback;
 
-    /**
-     * @param array<mixed>|Map $cacheConfig
-     */
     public function __construct(
-        string $client_id,
-        string $client_secret,
-        string $grant_type = 'code',
-        array|Map $cacheConfig = [],
-        ?Cache $cacheBackend = null
+        string $clientID,
+        string $clientSecret,
+        string $grantType = 'code',
+        array|Map $config = []
     ) {
-        parent::__construct($cacheConfig, $cacheBackend);
-        $this->http_client = new Client();
-        $this->http_client->authorisation($this);
-        $this->grant_type = $grant_type;
-        $this->client_id = $client_id;
-        $this->client_secret = $client_secret;
+        parent::__construct($config);
+        $this->httpClient = new Client();
+        $this->httpClient->authorisation($this);
+        $this->grantType = $grantType;
+        $this->clientID = $clientID;
+        $this->clientSecret = $clientSecret;
         if ($config = Application::getInstance()->config['auth']) {
             $this->metadata = $config;
             if (isset($this->metadata['discover_endpoint'])) {
@@ -87,22 +82,22 @@ class OAuth2 extends Session implements Adapter
 
     public function setAuthenticateCallback(\Closure $cb): void
     {
-        $this->authenticate_callback = $cb;
+        $this->authenticateCallback = $cb;
     }
 
     public function discover(string $uri): bool
     {
         $key = hash('sha1', $uri);
-        if (!$this->session->has('oauth2_metadata')) {
-            $this->session['oauth2_metadata'] = [];
+        if (!$this->storage->has('oauth2_metadata')) {
+            $this->storage->set('oauth2_metadata', []);
         }
-        $metadata = $this->session['oauth2_metadata'];
+        $metadata = $this->storage->get('oauth2_metadata');
         if (!(array_key_exists($key, $metadata) && $metadata[$key])) {
             if (!($meta_source = @file_get_contents($uri))) {
                 throw new \Exception('Authentication platform offline.  Service discovery failed!');
             }
             $metadata[$key] = json_decode($meta_source, true);
-            $this->session['oauth2_metadata'] = $metadata;
+            $this->storage->set('oauth2_metadata', $metadata);
         }
         $this->metadata = $metadata[$key];
 
@@ -143,11 +138,11 @@ class OAuth2 extends Session implements Adapter
      */
     public function authenticated(): bool
     {
-        if ($this->session->has('oauth2_data')
-            && ($this->session->has('oauth2_expiry') && $this->session['oauth2_expiry'] > time())) {
-            return '' !== ake($this->session['oauth2_data'], 'access_token', '');
+        if ($this->storage->has('oauth2_data')
+            && ($this->storage->has('oauth2_expiry') && $this->storage->get('oauth2_expiry') > time())) {
+            return '' !== ake($this->storage->get('oauth2_data'), 'access_token', '');
         }
-        if ($refresh_token = ake($this->session['oauth2_data'], 'refresh_token')) {
+        if ($refresh_token = ake($this->storage->get('oauth2_data'), 'refresh_token')) {
             return $this->refresh($refresh_token);
         }
 
@@ -167,9 +162,9 @@ class OAuth2 extends Session implements Adapter
     public function authenticate(?string $identity = null, ?string $credential = null, bool $autologin = false, bool $skip_auth_check = false): bool
     {
         if (true !== $skip_auth_check && $this->authenticated()) {
-            if ($uri = $this->session['redirect_uri']) {
+            if ($uri = $this->storage->get('redirect_uri')) {
                 header('Location: '.$uri);
-                unset($this->session['redirect_uri']);
+                $this->storage->unset('redirect_uri');
 
                 exit;
             }
@@ -178,14 +173,14 @@ class OAuth2 extends Session implements Adapter
         }
         $data = null;
 
-        switch ($this->grant_type) {
+        switch ($this->grantType) {
             case 'password':
-                $data = $this->authenticateCredentials($identity, $credential, $this->grant_type);
+                $data = $this->authenticateCredentials($identity, $credential, $this->grantType);
 
                 break;
 
             case 'client_credentials':
-                $data = $this->authenticateCredentials($identity, $credential, $this->grant_type);
+                $data = $this->authenticateCredentials($identity, $credential, $this->grantType);
 
                 break;
 
@@ -197,14 +192,14 @@ class OAuth2 extends Session implements Adapter
         }
         if (false !== $this->authorize($data)) {
             // Set the standard hazaar auth session details for compatibility
-            $this->session['hazaar_auth_identity'] = $data->access_token;
-            $this->session['hazaar_auth_token'] = hash($this->options['token']['hash'], $this->getIdentifier($this->session['hazaar_auth_identity']));
-            if (is_callable($this->authenticate_callback)) {
-                call_user_func($this->authenticate_callback, $data);
+            $this->storage->set('hazaar_auth_identity', $data->access_token);
+            $this->storage->set('hazaar_auth_token', hash($this->storage['token']['hash'], $this->getIdentifier($this->storage->get('hazaar_auth_identity'))));
+            if (is_callable($this->authenticateCallback)) {
+                call_user_func($this->authenticateCallback, $data);
             }
-            if ($uri = $this->session['redirect_uri']) {
+            if ($uri = $this->storage->get('redirect_uri')) {
                 header('Location: '.$uri);
-                unset($this->session->redirect_uri);
+                $this->storage->unset('redirect_uri');
 
                 exit;
             }
@@ -226,22 +221,22 @@ class OAuth2 extends Session implements Adapter
             throw new \Exception('There is no token endpoint set for this auth adapter!');
         }
         $request = new Request($uri, 'POST');
-        $request['grant_type'] = 'refresh_token';
-        $request['client_id'] = $this->client_id;
-        $request['client_secret'] = $this->client_secret;
+        $request['grantType'] = 'refresh_token';
+        $request['clientID'] = $this->clientID;
+        $request['clientSecret'] = $this->clientSecret;
         $request['refresh_token'] = $token;
         if ($identity) {
             $request['username'] = $identity;
             if ($credential) {
                 $request['password'] = $credential;
             }
-            $this->http_client->auth($identity, $credential);
+            $this->httpClient->auth($identity, $credential);
         }
-        $response = $this->http_client->send($request);
+        $response = $this->httpClient->send($request);
         if (200 == $response->status && $data = json_decode($response->body)) {
             if (false !== $this->authorize($data)) {
-                $this->session['hazaar_auth_identity'] = $data->access_token;
-                $this->session['hazaar_auth_token'] = hash($this->options['token']['hash'], $this->getIdentifier($this->session['hazaar_auth_identity']));
+                $this->storage['hazaar_auth_identity'] = $data->access_token;
+                $this->storage['hazaar_auth_token'] = hash($this->options['token']['hash'], $this->getIdentifier($this->storage['hazaar_auth_identity']));
 
                 return true;
             }
@@ -253,7 +248,7 @@ class OAuth2 extends Session implements Adapter
     public function getAccessToken(): bool|string
     {
         if ($this->has('oauth2_data')) {
-            return ake($this->session['oauth2_data'], 'access_token');
+            return ake($this->storage['oauth2_data'], 'access_token');
         }
 
         return false;
@@ -262,7 +257,7 @@ class OAuth2 extends Session implements Adapter
     public function getRefreshToken(): bool|string
     {
         if ($this->has('oauth2_data')) {
-            return ake($this->session['oauth2_data'], 'refresh_token', false);
+            return ake($this->storage['oauth2_data'], 'refresh_token', false);
         }
 
         return false;
@@ -278,14 +273,14 @@ class OAuth2 extends Session implements Adapter
         return false;
     }
 
-    public function getToken(): string
+    public function getToken(): ?array
     {
-        return ake($this->session['oauth2_data'], 'access_token');
+        return ['token' => ake($this->storage['oauth2_data'], 'access_token')];
     }
 
     public function getTokenType(): string
     {
-        return ake($this->session['oauth2_data'], 'token_type', 'Bearer');
+        return ake($this->storage['oauth2_data'], 'token_type', 'Bearer');
     }
 
     public function introspect(?string $token = null, string $token_type = 'access_token'): bool|string
@@ -294,11 +289,11 @@ class OAuth2 extends Session implements Adapter
             return false;
         }
         $request = new Request($uri, 'POST');
-        $request['client_id'] = $this->client_id;
-        $request['client_secret'] = $this->client_secret;
-        $request['token = $token'] ? $token : ake($this->session['oauth2_data'], 'access_token');
+        $request['clientID'] = $this->clientID;
+        $request['clientSecret'] = $this->clientSecret;
+        $request['token = $token'] ? $token : ake($this->storage['oauth2_data'], 'access_token');
         $request['token_type_hint'] = $token_type;
-        $response = $this->http_client->send($request);
+        $response = $this->httpClient->send($request);
 
         return $response->body();
     }
@@ -309,10 +304,10 @@ class OAuth2 extends Session implements Adapter
             return false;
         }
         $request = new Request($uri, 'POST');
-        $request['client_id'] = $this->client_id;
+        $request['clientID'] = $this->clientID;
         $request['token_type_hint'] = 'access_token';
-        $request['token'] = ake($this->session['oauth2_data'], 'access_token');
-        $response = $this->http_client->send($request);
+        $request['token'] = ake($this->storage['oauth2_data'], 'access_token');
+        $response = $this->httpClient->send($request);
 
         return ake($response->body(), 'result', false);
     }
@@ -323,7 +318,7 @@ class OAuth2 extends Session implements Adapter
             return false;
         }
         $request = new Request($uri, 'GET');
-        $response = $this->http_client->send($request);
+        $response = $this->httpClient->send($request);
         if (200 !== $response->status) {
             return false;
         }
@@ -341,8 +336,8 @@ class OAuth2 extends Session implements Adapter
             && \property_exists($data, 'expires_in'))) {
             return false;
         }
-        $this->session['oauth2_expiry'] = time() + ake($data, 'expires_in');
-        $this->session['oauth2_data'] = $data;
+        $this->storage['oauth2_expiry'] = time() + ake($data, 'expires_in');
+        $this->storage['oauth2_data'] = $data;
 
         return true;
     }
@@ -350,7 +345,7 @@ class OAuth2 extends Session implements Adapter
     private function authenticateCredentials(
         string $identity,
         string $credential,
-        string $grant_type = 'password',
+        string $grantType = 'password',
         ?string $scope = null
     ): bool|\stdClass {
         if (!($token_endpoint = ake($this->metadata, 'token_endpoint'))) {
@@ -358,18 +353,18 @@ class OAuth2 extends Session implements Adapter
         }
         $target_url = (is_array($token_endpoint) ? ake($token_endpoint, 1, ake($token_endpoint, 0)) : $token_endpoint);
         $request = new Request($target_url, 'POST');
-        $request['grant_type'] = $grant_type;
-        $request['client_id'] = $this->client_id;
-        $request['client_secret'] = $this->client_secret;
+        $request['grantType'] = $grantType;
+        $request['clientID'] = $this->clientID;
+        $request['clientSecret'] = $this->clientSecret;
         if (null !== $identity) {
             $request['username'] = $identity;
             $request['password'] = $credential;
-            $this->http_client->auth($identity, $credential);
+            $this->httpClient->auth($identity, $credential);
         }
         if (count($this->scopes)) {
             $request['scope'] = implode(' ', $this->scopes);
         }
-        $response = $this->http_client->send($request);
+        $response = $this->httpClient->send($request);
         if (200 == $response->status) {
             return json_decode($response->body);
         }
@@ -380,30 +375,30 @@ class OAuth2 extends Session implements Adapter
     private function authenticateCode(): bool|\stdClass
     {
         if ($code = ake($_REQUEST, 'code')) {
-            if (ake($_REQUEST, 'state') !== $this->session['state']) {
+            if (ake($_REQUEST, 'state') !== $this->storage['state']) {
                 throw new \Exception('Invalid state code', 400);
             }
             $request = new Request(ake($this->metadata, 'token_endpoint'), 'POST');
-            $request['client_id'] = $this->client_id;
-            $request['client_secret'] = $this->client_secret;
-            $request['grant_type'] = 'authorization_code';
+            $request['clientID'] = $this->clientID;
+            $request['clientSecret'] = $this->clientSecret;
+            $request['grantType'] = 'authorization_code';
             $request['code'] = $code;
             $request['response_type'] = 'token';
             if (count($this->scopes)) {
                 $request['scope'] = implode(' ', $this->scopes);
             }
-            $request['redirect_uri'] = $this->session['redirect_uri'];
-            $response = $this->http_client->send($request);
+            $request['redirect_uri'] = $this->storage['redirect_uri'];
+            $response = $this->httpClient->send($request);
             if (200 === $response->status) {
                 return $response->body();
             }
 
             return false;
         }
-        if (array_key_exists('access_token', $_REQUEST) && ake($_REQUEST, 'state') === $this->session['state']) {
+        if (array_key_exists('access_token', $_REQUEST) && ake($_REQUEST, 'state') === $this->storage['state']) {
             return array_to_object($_REQUEST);
         }
-        if ('implicit' == ake($_REQUEST, 'grant_type')) {
+        if ('implicit' == ake($_REQUEST, 'grantType')) {
             // Some JavaScript magic to turn a hash response into a normal query response.
             $code = 'var uri = document.location.hash.substr(1);
                 history.pushState("", document.title, window.location.pathname + window.location.search);
@@ -417,16 +412,16 @@ class OAuth2 extends Session implements Adapter
         if (!ake($this->metadata, 'authorization_endpoint')) {
             throw new \Exception('There is no authorization endpoint set for this auth adapter!');
         }
-        $this->session['state'] = hash('sha1', uniqid());
-        $this->session['redirect_uri'] = $this->getRedirectUri();
+        $this->storage['state'] = hash('sha1', uniqid());
+        $this->storage['redirect_uri'] = $this->getRedirectUri();
         $params = [
-            'client_id' => $this->client_id,
-            'redirect_uri' => rawurlencode($this->session['redirect_uri']),
-            'state' => $this->session['state'],
+            'clientID' => $this->clientID,
+            'redirect_uri' => rawurlencode($this->storage['redirect_uri']),
+            'state' => $this->storage['state'],
         ];
-        if ('implicit' == $this->grant_type) {
+        if ('implicit' == $this->grantType) {
             $params['response_type'] = 'token';
-            $params['redirect_uri'] .= '?grant_type=implicit';
+            $params['redirect_uri'] .= '?grantType=implicit';
         } else {
             $params['response_type'] = 'code';
         }

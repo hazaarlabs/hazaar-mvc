@@ -193,17 +193,17 @@ class PDF extends File
             $cmd = $this->getCommand();
             $target = Application::getInstance()->runtimePath('bin', true);
             if (!is_writable($target)) {
-                throw new \Hazaar\Exception('The runtime binary directory is not writable!');
+                throw new \Exception('The runtime binary directory is not writable!');
             }
             $tmp_path = new TempDir();
             $asset_suffix = '.bullseye_'.(('x86_64' == php_uname('m')) ? 'amd64' : 'i386').'.deb';
             $client = new Client();
             $request = new Request('https://api.github.com/repos/wkhtmltopdf/packaging/releases');
             if (!($response = $client->send($request))) {
-                throw new \Hazaar\Exception('No response returned from Github API call!');
+                throw new \Exception('No response returned from Github API call!');
             }
             if (200 != $response->status) {
-                throw new \Hazaar\Exception('Got '.$response->status.' from Github API call!');
+                throw new \Exception('Got '.$response->status.' from Github API call!');
             }
             $releases = $response->body();
             $sourceURL = null;
@@ -224,13 +224,13 @@ class PDF extends File
                 }
             }
             if (!$sourceURL) {
-                throw new \Hazaar\Exception('Unable to automatically install WKHTMLTOPDF.  I was unable to determine the latest release execute source!');
+                throw new \Exception('Unable to automatically install WKHTMLTOPDF.  I was unable to determine the latest release execute source!');
             }
             $tmp_file = $tmp_path.DIRECTORY_SEPARATOR.basename($sourceURL);
             if (!file_exists($tmp_file)) {
                 copy($sourceURL, $tmp_file);
                 if (!file_exists($tmp_file)) {
-                    throw new \Hazaar\Exception('Failed to download installation file!');
+                    throw new \Exception('Failed to download installation file!');
                 }
             }
             $cwd = getcwd();
@@ -242,13 +242,13 @@ class PDF extends File
                 .DIRECTORY_SEPARATOR.'bin'
                 .DIRECTORY_SEPARATOR.'wkhtmltopdf';
             if (!file_exists($bin_file)) {
-                throw new \Hazaar\Exception('Unable to find executable in release file!');
+                throw new \Exception('Unable to find executable in release file!');
             }
             copy($bin_file, $cmd);
             @chmod($cmd, 0755);
             chdir($cwd);
             if (!file_exists($cmd)) {
-                throw new \Hazaar\Exception('Executable not found after installation!');
+                throw new \Exception('Executable not found after installation!');
             }
 
             return true;
@@ -299,7 +299,7 @@ class PDF extends File
             $web = $this->tmp;
         }
         if (!file_exists($cmd = $this->getCommand())) {
-            throw new \Hazaar\Exception('PDF converter executable not found!');
+            throw new \Exception('PDF converter executable not found!');
         }
         // number of copies
         $cmd .= (($this->copies > 1) ? ' --copies '.$this->copies : '');

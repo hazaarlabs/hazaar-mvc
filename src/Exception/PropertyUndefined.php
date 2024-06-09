@@ -6,7 +6,7 @@ namespace Hazaar\Exception;
 
 use Hazaar\Exception;
 
-class PropertyUndefined extends Exception
+class PropertyUndefined extends \Exception
 {
     public function __construct(string $class, string $property)
     {

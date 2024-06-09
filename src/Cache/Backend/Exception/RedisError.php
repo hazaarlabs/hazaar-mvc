@@ -1,16 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Cache\Backend\Exception;
 
-class RedisError extends \Hazaar\Exception {
-
-    function __construct($message) {
-
-        if(substr($message, 0, 4) == '-ERR')
+class RedisError extends \Exception
+{
+    public function __construct(string $message)
+    {
+        if ('-ERR' == substr($message, 0, 4)) {
             $message = substr($message, 5);
+        }
 
         parent::__construct($message);
-
     }
-
 }

@@ -6,7 +6,7 @@ namespace Hazaar\File\Exception\WKPDF;
 
 use Hazaar\Exception;
 
-class ExecError extends Exception
+class ExecError extends \Exception
 {
     public function __construct(int|string $code)
     {

@@ -9,8 +9,8 @@ interface Adapter
     /**
      * Query the authentication adapter.
      *
-     * @param string       $identity The identity
-     * @param array<mixed> $extra    The extra data
+     * @param string        $identity The identity
+     * @param array<string> $extra    The extra data
      *
      * @return array<string, mixed>|bool The result
      */

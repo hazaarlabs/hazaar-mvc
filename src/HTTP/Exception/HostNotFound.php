@@ -6,7 +6,7 @@ namespace Hazaar\HTTP\Exception;
 
 use Hazaar\Exception;
 
-class HostNotFound extends Exception
+class HostNotFound extends \Exception
 {
     public function __construct(string $host)
     {

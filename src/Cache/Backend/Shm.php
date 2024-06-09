@@ -152,6 +152,11 @@ class Shm extends Backend
         return $array;
     }
 
+    public function count(): int
+    {
+        return count($this->index);
+    }
+
     /**
      * @return array<mixed>|bool
      */

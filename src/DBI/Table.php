@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI;
 
+use Hazaar\Map;
+
 /**
  * @brief Relational Database Interface - Table Class
  *
@@ -115,11 +117,15 @@ class Table implements \Iterator
      */
     public function find(mixed $criteria = [], mixed $fields = []): Table
     {
-        if (!is_array($criteria)) {
+        if ($criteria instanceof Map) {
+            $criteria = $criteria->toArray();
+        } elseif (!is_array($criteria)) {
             $criteria = [$criteria];
         }
         $this->criteria = $criteria;
-        if (!is_array($fields)) {
+        if ($fields instanceof Map) {
+            $fields = $fields->toArray();
+        } elseif (!is_array($fields)) {
             $fields = [$fields];
         }
         if (is_array($fields) && count($fields) > 0) {
@@ -790,6 +796,14 @@ class Table implements \Iterator
         $this->combine = ['EXCEPT', $query];
 
         return $this;
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    public function errorInfo(): array
+    {
+        return $this->adapter->errorInfo();
     }
 
     private function prepareFrom(): string

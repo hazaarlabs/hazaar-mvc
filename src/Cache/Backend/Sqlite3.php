@@ -102,7 +102,24 @@ class Sqlite3 extends Backend
 
     public function toArray(): array
     {
-        return [];
+        $data = [];
+        $sql = "SELECT key,value FROM {$this->options['cache_table']};";
+        $result = $this->db->query($sql);
+        if (!$result) {
+            return $data;
+        }
+        while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
+            $data[$row['key']] = $row['value'];
+        }
+
+        return $data;
+    }
+
+    public function count(): int
+    {
+        $result = $this->db->querySingle('SELECT COUNT(*) FROM '.$this->options['cache_table'].';');
+
+        return intval($result);
     }
 
     private function criteria(string $key, bool $check_empty = false): string

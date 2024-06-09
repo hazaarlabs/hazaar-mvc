@@ -67,7 +67,7 @@ class Closure implements \JsonSerializable
             $this->closure = $_function;
             $this->reflection = new \ReflectionFunction($_function);
         } else {
-            throw new Exception('Bad code: '.$this->code);
+            throw new \Exception('Bad code: '.$this->code);
         }
     }
 

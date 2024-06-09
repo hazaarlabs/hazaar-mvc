@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Cache\Exception;
 
-use Hazaar\Exception;
-
-class InvalidBackend extends Exception
+class InvalidBackend extends \Exception
 {
     public function __construct(string $class)
     {

@@ -407,7 +407,7 @@ abstract class BaseDriver implements Interfaces\Driver
 
             case 'bt':
                 if (($count = count($value)) !== 2) {
-                    throw new \Hazaar\Exception('DBD: $bt operator requires array argument with exactly 2 elements. '.$count.' given.');
+                    throw new \Exception('DBD: $bt operator requires array argument with exactly 2 elements. '.$count.' given.');
                 }
 
                 return 'BETWEEN '.$this->prepareValue(array_values($value)[0])
@@ -711,12 +711,12 @@ abstract class BaseDriver implements Interfaces\Driver
             if (is_array($info)) {
                 if (is_numeric($name)) {
                     if (!array_key_exists('name', $info)) {
-                        throw new \Hazaar\Exception('Error creating new table.  Name is a number which is not allowed!');
+                        throw new \Exception('Error creating new table.  Name is a number which is not allowed!');
                     }
                     $name = $info['name'];
                 }
                 if (!($type = $this->type($info))) {
-                    throw new \Hazaar\Exception("Column '{$name}' has no data type!");
+                    throw new \Exception("Column '{$name}' has no data type!");
                 }
                 $def = $this->field($name).' '.$type;
                 if (array_key_exists('default', $info) && null !== $info['default']) {
@@ -745,7 +745,7 @@ abstract class BaseDriver implements Interfaces\Driver
         $sql .= "\n);";
         $affected = $this->exec($sql);
         if (false === $affected) {
-            throw new \Hazaar\Exception("Could not create table '{$tableName}'. ".$this->errorInfo()[2]);
+            throw new \Exception("Could not create table '{$tableName}'. ".$this->errorInfo()[2]);
         }
 
         return true;
@@ -807,7 +807,7 @@ abstract class BaseDriver implements Interfaces\Driver
             list($fromSchemaName, $fromName) = explode('.', $fromName);
             list($toSchemaName, $toName) = explode('.', $toName);
             if ($toSchemaName != $fromSchemaName) {
-                throw new \Hazaar\Exception('You can not rename tables between schemas!');
+                throw new \Exception('You can not rename tables between schemas!');
             }
         }
         $sql = 'ALTER TABLE '.$this->schemaName($fromName).' RENAME TO '.$this->field($toName).';';
@@ -1168,7 +1168,7 @@ abstract class BaseDriver implements Interfaces\Driver
                 AND r.routine_name='.$this->prepareValue($name).'
                 ORDER BY r.routine_name, p.ordinal_position;';
         if (!($q = $this->query($sql))) {
-            throw new \Hazaar\Exception($this->errorInfo()[2]);
+            throw new \Exception($this->errorInfo()[2]);
         }
         $info = [];
         while ($row = $q->fetch(\PDO::FETCH_ASSOC)) {

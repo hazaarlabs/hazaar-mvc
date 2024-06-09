@@ -6,7 +6,7 @@ namespace Hazaar\File\Backend\Exception;
 
 use Hazaar\Exception;
 
-class Offline extends Exception
+class Offline extends \Exception
 {
     public function __construct()
     {

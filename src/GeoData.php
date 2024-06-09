@@ -71,7 +71,7 @@ class GeoData
     private function __initialise()
     {
         if (!class_exists('ZipArchive')) {
-            throw new Exception('The GeoData class requires the ZipArchive class to be available!');
+            throw new \Exception('The GeoData class requires the ZipArchive class to be available!');
         }
         $geodataFilename = 'geodata.db';
         if (self::$db instanceof BTree) {
@@ -82,11 +82,11 @@ class GeoData
         // Download the Hazaar GeoData file and check it's MD5 signature
         $geodataFile->putContents(file_get_contents(GeoData::$sources['url']));
         if (!$geodataFile->size() > 0) {
-            throw new Exception('Unable to download GeoData source file!');
+            throw new \Exception('Unable to download GeoData source file!');
         }
         $md5 = trim(file_get_contents(GeoData::$sources['md5']));
         if ($geodataFile->md5() !== $md5) {
-            throw new Exception('GeoData source file MD5 signature does not match!');
+            throw new \Exception('GeoData source file MD5 signature does not match!');
         }
         $dir = new File\Dir(Application::getInstance()->runtimePath());
         $zip->open($geodataFile->fullpath());

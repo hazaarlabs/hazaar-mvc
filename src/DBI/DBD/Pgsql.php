@@ -300,7 +300,7 @@ class Pgsql extends BaseDriver
      *                            - 'columns': An array of column names that make up the index.
      *                            - 'unique': A boolean indicating whether the index is unique or not.
      *
-     * @throws \Hazaar\Exception if the index list retrieval fails
+     * @throws \Exception if the index list retrieval fails
      */
     public function listIndexes(?string $table = null): array|false
     {
@@ -323,7 +323,7 @@ class Pgsql extends BaseDriver
         }
         $sql .= "\nGROUP BY s.nspname, t.relname, i.relname, ix.indisunique ORDER BY t.relname, i.relname;";
         if (!($result = $this->query($sql))) {
-            throw new \Hazaar\Exception('Index list failed. '.$this->errorInfo()[2]);
+            throw new \Exception('Index list failed. '.$this->errorInfo()[2]);
         }
         $indexes = [];
         while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {

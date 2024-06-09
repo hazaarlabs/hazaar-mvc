@@ -15,6 +15,10 @@ declare(strict_types=1);
 namespace Hazaar\Auth;
 
 use Hazaar\Application;
+use Hazaar\Application\Request;
+use Hazaar\Application\Request\HTTP;
+use Hazaar\Auth\Adapter\Exception\Unauthorised;
+use Hazaar\Auth\Adapter\Exception\UnknownStorageAdapter;
 use Hazaar\Map;
 
 /**
@@ -71,12 +75,15 @@ use Hazaar\Map;
  *     }
  * }
  * ```
+ *
+ * @implements \ArrayAccess<string,mixed>
  */
-abstract class Adapter implements Interfaces\Adapter
+abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
 {
     protected Map $options;
-    protected string $identity;
-    protected string $credential;
+    protected Interfaces\Storage $storage;
+    protected ?string $identity = null;
+    protected ?string $credential = null;
 
     /**
      * Extra data fields to store from the user record.
@@ -92,26 +99,26 @@ abstract class Adapter implements Interfaces\Adapter
      *
      * @param array<mixed>|Map $config The configuration options
      */
-    public function __construct(array|Map $config = [])
+    public function __construct(null|array|Map $config = [])
     {
         $defaults = [
+            'storage' => 'session',
             'encryption' => [
                 'hash' => 'sha1',
                 'count' => 1,
-                'salt' => '',
-                'use_identity' => false,
+                'salt' => 'hazaar-default-salt',
+                'useIdentity' => false,
             ],
             'autologin' => [
-                'cookie' => 'hazaar-auth-autologin',
+                'cookie' => 'hazaar-auth-refresh',
                 'period' => 1,
-                'hash' => 'sha1',
-            ],
-            'token' => [
                 'hash' => 'sha1',
             ],
             'timeout' => 3600,
         ];
         $this->options = Map::_($defaults, Application::getInstance()->config['auth'], $config);
+        $storage = $this->options->get('storage', 'session');
+        $this->setStorageAdapter($storage, $this->options->get($storage, []));
         if ($this->options->has('data_fields')) {
             $this->setDataFields($this->options['data_fields']->toArray());
         }
@@ -127,9 +134,9 @@ abstract class Adapter implements Interfaces\Adapter
         $this->credential = $credential;
     }
 
-    public function getIdentity(): string
+    public function getIdentity(): ?string
     {
-        return $this->identity ?? '';
+        return $this->identity;
     }
 
     /**
@@ -142,7 +149,7 @@ abstract class Adapter implements Interfaces\Adapter
      * NOTE: Keep in mind that if no credential is set, or it's null, or an empty string, this
      * will still return a valid hash of that empty value using the defined encryption hash chain.
      */
-    public function getCredential(?string $credential = null): ?string
+    public function getCredentialHash(?string $credential = null): ?string
     {
         if (null === $credential) {
             $credential = $this->credential;
@@ -150,7 +157,7 @@ abstract class Adapter implements Interfaces\Adapter
         if (!$credential || true === $this->noCredentialHashing) {
             return $credential;
         }
-        $hash = false;
+        $hash = '';
         if (true === $this->options['encryption']['useIdentity']) {
             $credential = $this->identity.':'.$credential;
         }
@@ -158,7 +165,7 @@ abstract class Adapter implements Interfaces\Adapter
         $algos = $this->options['encryption']['hash'];
         if ($algos instanceof Map) {
             $algos = $algos->toArray();
-        }elseif(!is_array($algos)){
+        } elseif (!is_array($algos)) {
             $algos = [$algos];
         }
         $salt = $this->options['encryption']['salt'];
@@ -187,25 +194,67 @@ abstract class Adapter implements Interfaces\Adapter
         if ($credential) {
             $this->setCredential($credential);
         }
-        $auth = $this->queryAuth($this->getIdentity(), $this->extra);
-        if (false === $auth || !(is_array($auth)
-            && array_key_exists('identity', $auth)
-            && array_key_exists('credential', $auth))) {
-            $this->deauth();
-
+        if (!($identity = $this->getIdentity())) {
             return false;
         }
-        if ($auth['identity'] === $this->getIdentity()
-            && $auth['credential'] === $this->getCredential()) {
-            return $auth;
+        $auth = $this->queryAuth($identity, $this->options->get('extra', [], true)->values());
+        if (is_array($auth)
+            && array_key_exists('identity', $auth)
+            && array_key_exists('credential', $auth)
+            && $auth['identity'] === $this->getIdentity()
+            && hash_equals($this->getCredentialHash(), $auth['credential'])) {
+            unset($auth['credential']);
+            $this->storage->write($auth);
+            $this->authenticationSuccess($identity, $auth);
+
+            return true;
         }
+        $this->authenticationFailure($identity, $auth);
+        $this->clear();
 
         return false;
     }
 
+    public function authenticateRequest(Request $request): bool
+    {
+        if (!$request instanceof HTTP) {
+            return false;
+        }
+        $auth = $request->getHeader('Authorization');
+        if (!$auth) {
+            return false;
+        }
+        $auth = explode(' ', $auth);
+        if (2 !== count($auth) || 'basic' !== strtolower($auth[0])) {
+            return false;
+        }
+        $auth = base64_decode($auth[1]);
+        if (!$auth) {
+            return false;
+        }
+        $auth = explode(':', $auth);
+        if (2 !== count($auth)) {
+            return false;
+        }
+        if (false === $this->authenticate($auth[0], $auth[1])) {
+            throw new Unauthorised();
+        }
+
+        return true;
+    }
+
     public function authenticated(): bool
     {
-        return false;
+        if (true === $this->storage->isEmpty()) {
+            return false;
+        }
+        if (false === $this->storage->has('identity')) {
+            $this->storage->clear();
+
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -216,22 +265,27 @@ abstract class Adapter implements Interfaces\Adapter
      */
     public function check(string $credential): bool
     {
-        $auth = $this->queryAuth($this->getIdentity(), $this->extra);
+        $auth = $this->queryAuth($this->getIdentity(), $this->options['extra'] ?? []);
         if (false === $auth || !(is_array($auth)
             && array_key_exists('identity', $auth)
             && array_key_exists('credential', $auth))) {
             return false;
         }
         if ($auth['identity'] === $this->getIdentity()
-            && $auth['credential'] === $this->getCredential($credential)) {
+            && hash_equals($this->getCredentialHash($credential), $auth['credential'])) {
             return true;
         }
 
         return false;
     }
 
-    public function deauth(): bool
+    public function clear(): bool
     {
+        if ($this->storage->isEmpty()) {
+            return false;
+        }
+        $this->storage->clear();
+
         return true;
     }
 
@@ -240,19 +294,7 @@ abstract class Adapter implements Interfaces\Adapter
      */
     public function unauthorised(): void
     {
-        header('WWW-Authenticate: Basic');
-
-        throw new \Exception('Unauthorised!', 401);
-    }
-
-    public function getToken(): ?string
-    {
-        return null;
-    }
-
-    public function getTokenType(): false|string
-    {
-        return false;
+        throw new Unauthorised(true);
     }
 
     /**
@@ -266,7 +308,80 @@ abstract class Adapter implements Interfaces\Adapter
      */
     public function disableCredentialHashing(bool $value = true): void
     {
-        $this->noCredentialHashing = boolify($value);
+        $this->noCredentialHashing = $value;
+    }
+
+    public function get(string $key): mixed
+    {
+        return $this->storage->get($key);
+    }
+
+    public function set(string $key, mixed $value): void
+    {
+        $this->storage->set($key, $value);
+    }
+
+    public function has(string $key): bool
+    {
+        return $this->storage->has($key);
+    }
+
+    public function unset(string $key): void
+    {
+        $this->storage->unset($key);
+    }
+
+    public function offsetExists(mixed $offset): bool
+    {
+        return $this->storage->has($offset);
+    }
+
+    public function offsetGet(mixed $offset): mixed
+    {
+        return $this->storage->get($offset);
+    }
+
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        $this->storage->set($offset, $value);
+    }
+
+    public function offsetUnset(mixed $offset): void
+    {
+        $this->storage->unset($offset);
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function getAuthData(): array
+    {
+        return $this->storage->read();
+    }
+
+    /**
+     * Returns the storage session token.
+     *
+     * @return array<string,string> Storage token will be an array with at least a 'token' key
+     *                              and optionally a 'refresh' key
+     */
+    public function getToken(): ?array
+    {
+        return $this->storage->getToken();
+    }
+
+    /**
+     * @param array<string,mixed>|Map $options
+     */
+    public function setStorageAdapter(string $storage, array|Map $options = []): bool
+    {
+        $class = '\\Hazaar\\Auth\\Storage\\'.ucfirst($storage);
+        if (!class_exists($class)) {
+            throw new UnknownStorageAdapter($storage);
+        }
+        $this->storage = new $class(Map::_($options));
+
+        return true;
     }
 
     protected function getIdentifier(string $identity): ?string
@@ -285,18 +400,30 @@ abstract class Adapter implements Interfaces\Adapter
      */
     protected function setDataFields(array $fields): void
     {
-        $this->extra = $fields;
+        $this->options['extra'] = $fields;
     }
 
-    protected function canAutoLogin(): bool
-    {
-        $cookie = $this->getAutologinCookieName();
+    /**
+     * Overload function called when a user is successfully authenticated.
+     *
+     * This can occur when calling authenticate() or authenticated() where a
+     * session has been saved.  This default method does nothing but can be
+     * overridden.
+     *
+     * @param string       $identity The identity that was successfully authenticated
+     * @param array<mixed> $data     The data returned from the authentication query
+     */
+    protected function authenticationSuccess(string $identity, array $data): void {}
 
-        return $this->options['autologin']['period'] > 0 && isset($_COOKIE[$cookie]);
-    }
-
-    protected function getAutologinCookieName(): string
-    {
-        return $this->options['autologin']['cookie'];
-    }
+    /**
+     * Overload function called when a user fails authentication.
+     *
+     * This can occur when calling authenticate() or authenticated() where a
+     * session has been saved.  This default method does nothing but can be
+     * overridden.
+     *
+     * @param string       $identity the identity that failed authentication
+     * @param array<mixed> $data     the data returned from the authentication query
+     */
+    protected function authenticationFailure(string $identity, array $data): void {}
 }

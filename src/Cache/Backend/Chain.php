@@ -9,7 +9,6 @@
 namespace Hazaar\Cache\Backend;
 
 use Hazaar\Cache\Backend;
-use Hazaar\Exception;
 
 /**
  * @brief The cache backend chaining backend.
@@ -43,7 +42,7 @@ class Chain extends Backend
     public function init(string $namespace): void
     {
         if (!$this->options->has('backends')) {
-            throw new Exception('Chain cache backend requires a "backends" option to be set!');
+            throw new \Exception('Chain cache backend requires a "backends" option to be set!');
         }
         foreach ($this->options['backends'] as $backend => $backendOptions) {
             $backend = strtolower($backend);
@@ -137,5 +136,14 @@ class Chain extends Backend
         }
 
         return $this->backends[array_key_first($this->backends)]->toArray();
+    }
+
+    public function count(): int
+    {
+        if (0 === count($this->backends)) {
+            return 0;
+        }
+
+        return $this->backends[array_key_first($this->backends)]->count();
     }
 }

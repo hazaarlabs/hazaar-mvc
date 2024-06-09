@@ -6,7 +6,7 @@ namespace Hazaar\HTTP\Exception;
 
 use Hazaar\Exception;
 
-class ProtocolPortUnknown extends Exception
+class ProtocolPortUnknown extends \Exception
 {
     public function __construct(string $proto)
     {

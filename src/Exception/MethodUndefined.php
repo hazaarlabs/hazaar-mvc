@@ -6,7 +6,7 @@ namespace Hazaar\Exception;
 
 use Hazaar\Exception;
 
-class MethodUndefined extends Exception
+class MethodUndefined extends \Exception
 {
     public function __construct(string $class, string $method)
     {

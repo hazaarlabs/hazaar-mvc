@@ -6,7 +6,7 @@ namespace Hazaar\HTTP\Exception;
 
 use Hazaar\Exception;
 
-class RedirectNotAllowed extends Exception
+class RedirectNotAllowed extends \Exception
 {
     public function __construct(int $status)
     {

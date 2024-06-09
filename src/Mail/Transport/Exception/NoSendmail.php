@@ -13,7 +13,7 @@ use Hazaar\Exception;
  *
  * @author jamiec
  */
-class NoSendmail extends Exception
+class NoSendmail extends \Exception
 {
     public function __construct()
     {

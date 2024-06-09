@@ -77,7 +77,7 @@ class Dropbox extends Client implements Interfaces\Backend, Interfaces\Driver
     {
         if (($code = ake($_REQUEST, 'code')) && ($state = ake($_REQUEST, 'state'))) {
             if ($state != $this->cache->pull('oauth2_state')) {
-                throw new Exception('Bad state!');
+                throw new \Exception('Bad state!');
             }
             $request = new Request('https://api.dropbox.com/1/oauth2/token', $this->options['oauth2_method']);
             $request->populate([

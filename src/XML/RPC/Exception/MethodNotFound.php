@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\XML\RPC\Exception;
 
-use Hazaar\Exception;
-
-class MethodNotFound extends Exception
+class MethodNotFound extends \Exception
 {
     public function __construct(string $method)
     {

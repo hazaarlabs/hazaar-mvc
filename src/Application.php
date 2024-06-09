@@ -103,6 +103,12 @@ class Application
     protected string $urlDefaultPart;
     private static ?Application $instance = null;
     private static string $root;
+    private static string $redirectCookieName = 'hazaar-redirect-token';
+
+    /**
+     * @var array<callable>
+     */
+    private array $outputFunctions = [];
 
     /**
      * The main application constructor.
@@ -483,7 +489,7 @@ class Application
             $locale = $this->config['app']['locale'];
         }
         if (false === setlocale(LC_ALL, $locale)) {
-            throw new Exception("Unable to set locale to {$locale}.  Make sure the {$locale} locale is enabled on your system.");
+            throw new \Exception("Unable to set locale to {$locale}.  Make sure the {$locale} locale is enabled on your system.");
         }
         $tz = $this->config['app']->has('timezone') ? $this->config['app']->timezone : 'UTC';
         if (!date_default_timezone_set($tz)) {
@@ -499,7 +505,7 @@ class Application
         if (file_exists($bootstrap)) {
             $this->bootstrap = include $bootstrap;
             if (false === $this->bootstrap) {
-                throw new Exception('The application failed to start!');
+                throw new \Exception('The application failed to start!');
             }
         }
         if ($this->timer) {
@@ -550,6 +556,11 @@ class Application
             } elseif ($response instanceof File) {
                 if (!$response->fileExists()) {
                     throw new \Exception('File not found', 404);
+                }
+            }
+            if (count($this->outputFunctions) > 0) {
+                foreach ($this->outputFunctions as $func) {
+                    $func($response);
                 }
             }
             // Finally, write the response to the output buffer.
@@ -663,10 +674,6 @@ class Application
         if (array_key_exists('X-Requested-With', $headers) && 'XMLHttpRequest' === $headers['X-Requested-With']) {
             echo "<script>document.location = '{$location}';</script>";
         } else {
-            $sess = new Session();
-            if ($sess->has('REDIRECT') && $sess['REDIRECT'] === $location) {
-                unset($sess['REDIRECT']);
-            }
             if ($saveURI) {
                 $data = [
                     'URI' => $_SERVER['REQUEST_URI'],
@@ -675,7 +682,7 @@ class Application
                 if ('POST' === $_SERVER['REQUEST_METHOD']) {
                     $data['POST'] = $_POST;
                 }
-                $sess['REDIRECT'] = $data;
+                setcookie(self::$redirectCookieName, base64_encode(serialize($data)), time() + 3600, '/');
             }
         }
 
@@ -693,17 +700,19 @@ class Application
      */
     public function redirectBack(?string $altURL = null): false|Redirect
     {
-        $sess = new Session();
-        if ($sess->has('REDIRECT') && ($uri = trim(ake($sess['REDIRECT'], 'URI') ?? ''))) {
-            if ('POST' === ake($sess['REDIRECT'], 'METHOD')) {
-                if ('?' !== substr($uri, -1, 1)) {
-                    $uri .= '?';
-                } else {
-                    $uri .= '&';
+        if (array_key_exists(self::$redirectCookieName, $_COOKIE)) {
+            $data = unserialize(base64_decode($_COOKIE[self::$redirectCookieName]));
+            if ($uri = ake($data, 'URI')) {
+                if ('POST' === ake($data, 'METHOD')) {
+                    if ('?' !== substr($uri, -1, 1)) {
+                        $uri .= '?';
+                    } else {
+                        $uri .= '&';
+                    }
+                    $uri .= http_build_query(ake($data, 'POST'));
                 }
-                $uri .= http_build_query(ake($sess['REDIRECT'], 'POST'));
             }
-            unset($sess['REDIRECT']);
+            setcookie(self::$redirectCookieName, '', time() - 3600, '/');
         } else {
             $uri = $altURL;
         }
@@ -745,5 +754,15 @@ class Application
     public function setResponseType(string $type): void
     {
         $this->config['app']['responseType'] = $type;
+    }
+
+    /**
+     * Register an output function.
+     *
+     * @param array<object|string>|callable $function
+     */
+    public function registerOutputFunction(array|callable $function): void
+    {
+        $this->outputFunctions[] = $function;
     }
 }

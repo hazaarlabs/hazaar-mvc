@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Application\Exception;
 
-use Hazaar\Exception;
-
-class ServerBusy extends Exception
+class ServerBusy extends \Exception
 {
     public function __construct()
     {

@@ -6,7 +6,7 @@ namespace Hazaar\Model\Exception;
 
 use Hazaar\Exception;
 
-class DefineEventHookException extends Exception
+class DefineEventHookException extends \Exception
 {
     public function __construct(string $class, string $hookName, ?string $reason = null)
     {
