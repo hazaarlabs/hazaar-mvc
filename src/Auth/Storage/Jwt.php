@@ -21,10 +21,8 @@ use Hazaar\Map;
  * JWT Authentication Adapter.
  *
  * This class provides a JWT authentication adapter for the Hazaar MVC framework.
- *
- * @implements \ArrayAccess<string, mixed>
  */
-class JWT implements Storage, \ArrayAccess
+class JWT implements Storage
 {
     protected ?string $passphrase = null;
     protected ?string $privateKey = null;
@@ -74,30 +72,6 @@ class JWT implements Storage, \ArrayAccess
         $this->checkToken();
     }
 
-    public function has(string $key): bool
-    {
-        if ('identity' === $key) {
-            return isset($this->sub);
-        }
-
-        return array_key_exists($key, $this->data);
-    }
-
-    public function get(string $key): mixed
-    {
-        return $this->data[$key] ?? null;
-    }
-
-    public function set(string $key, mixed $value): void
-    {
-        $this->data[$key] = $value;
-    }
-
-    public function unset(string $key): void
-    {
-        unset($this->data[$key]);
-    }
-
     public function isEmpty(): bool
     {
         return null === $this->data || !isset($this->sub);
@@ -106,15 +80,6 @@ class JWT implements Storage, \ArrayAccess
     public function read(): array
     {
         return $this->data ?? [];
-    }
-
-    public function clear(): void
-    {
-        if (false === $this->isEmpty()) {
-            $this->sub = null;
-            $this->data = null;
-            $this->clearCookie = true;
-        }
     }
 
     /**
@@ -129,34 +94,64 @@ class JWT implements Storage, \ArrayAccess
         $this->writeCookie = true;
     }
 
-    /**
-     * ArrayAccess Functions.
-     *
-     * @param mixed $offset
-     * @param mixed $value
-     */
-    public function offsetSet($offset, $value): void
+    public function has(string $key): bool
     {
-        if (is_null($offset)) {
-            $this->data[] = $value;
-        } else {
-            $this->data[$offset] = $value;
+        if ('identity' === $key) {
+            return isset($this->sub);
+        }
+
+        return array_key_exists($key, $this->data);
+    }
+
+    public function get(string $key): mixed
+    {
+        if ('identity' === $key) {
+            return $this->sub;
+        }
+
+        return $this->data[$key] ?? null;
+    }
+
+    public function set(string $key, mixed $value): void
+    {
+        $this->data[$key] = $value;
+    }
+
+    public function unset(string $key): void
+    {
+        unset($this->data[$key]);
+    }
+
+    public function clear(): void
+    {
+        if (false === $this->isEmpty()) {
+            $this->sub = null;
+            $this->data = null;
+            $this->clearCookie = true;
         }
     }
 
-    public function offsetExists($offset): bool
+    public function getToken(): ?array
     {
-        return isset($this->data[$offset]);
-    }
+        $out = [];
+        $JWTBody = array_merge(
+            $this->data,
+            [
+                'iss' => $this->config->get('issuer'),
+                'iat' => time(),
+                'exp' => time() + $this->config->get('timeout'),
+                'sub' => $this->sub,
+            ]
+        );
+        $out['token'] = $this->buildToken($JWTBody);
+        if ($this->config->get('refresh')) {
+            $out['refresh'] = $this->buildToken(array_merge($JWTBody, [
+                'exp' => $JWTBody['iat'] + $this->config->get('refresh'),
+            ]), $this->buildRefreshTokenKey($this->passphrase));
+        }
+        $this->writeCookie = false;
 
-    public function offsetUnset($offset): void
-    {
-        unset($this->data[$offset]);
-    }
-
-    public function offsetGet($offset): mixed
-    {
-        return isset($this->data[$offset]) ? $this->data[$offset] : null;
+        return $out;
     }
 
     public function writeToken(): void
@@ -165,22 +160,10 @@ class JWT implements Storage, \ArrayAccess
             setcookie('hazaar-auth-token', '', time() - 3600, '/', $_SERVER['HTTP_HOST'], true, true);
             setcookie('hazaar-auth-refresh', '', time() - 3600, '/', $_SERVER['HTTP_HOST'], true, true);
         } elseif (true === $this->writeCookie) {
-            $JWTBody = array_merge(
-                $this->data,
-                [
-                    'iss' => $this->config->get('issuer'),
-                    'iat' => time(),
-                    'exp' => time() + $this->config->get('timeout'),
-                    'sub' => $this->sub,
-                ]
-            );
-            $token = $this->buildToken($JWTBody);
-            setcookie('hazaar-auth-token', $token, time() + $this->config->get('timeout'), '/', $_SERVER['HTTP_HOST'], true, true);
-            if ($this->config->get('refresh')) {
-                $refreshToken = $this->buildToken(array_merge($JWTBody, [
-                    'exp' => $JWTBody['iat'] + $this->config->get('refresh'),
-                ]), $this->buildRefreshTokenKey($this->passphrase));
-                setcookie('hazaar-auth-refresh', $refreshToken, time() + $this->config->get('refresh'), '/', $_SERVER['HTTP_HOST'], true, true);
+            $tokens = $this->getToken();
+            setcookie('hazaar-auth-token', $tokens['token'], time() + $this->config->get('timeout'), '/', $_SERVER['HTTP_HOST'], true, true);
+            if (isset($tokens['refresh'])) {
+                setcookie('hazaar-auth-refresh', $tokens['refresh'], time() + $this->config->get('refresh'), '/', $_SERVER['HTTP_HOST'], true, true);
             }
         }
     }
@@ -190,7 +173,7 @@ class JWT implements Storage, \ArrayAccess
      *
      * @param array<string, mixed> $JWTRefreshBody the JWT body
      */
-    public function refresh(string $refreshToken, ?array &$JWTRefreshBody = null): bool
+    private function refresh(string $refreshToken, ?array &$JWTRefreshBody = null): bool
     {
         if (!$this->config->get('refresh')) {
             return false;
@@ -209,7 +192,7 @@ class JWT implements Storage, \ArrayAccess
      * @param array<string, mixed> $JWTBody    the JWT body
      * @param string               $passphrase the passphrase
      */
-    protected function validateToken(string $token, ?array &$JWTBody = null, ?string $passphrase = null): bool
+    private function validateToken(string $token, ?array &$JWTBody = null, ?string $passphrase = null): bool
     {
         if (!$token || false === strpos($token, '.')) {
             return false;

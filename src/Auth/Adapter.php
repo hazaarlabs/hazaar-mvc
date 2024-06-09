@@ -360,6 +360,17 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
     }
 
     /**
+     * Returns the storage session token.
+     *
+     * @return array<string,string> Storage token will be an array with at least a 'token' key
+     *                              and optionally a 'refresh' key
+     */
+    public function getToken(): ?array
+    {
+        return $this->storage->getToken();
+    }
+
+    /**
      * @param array<string,mixed>|Map $options
      */
     public function setStorageAdapter(string $storage, array|Map $options = []): bool

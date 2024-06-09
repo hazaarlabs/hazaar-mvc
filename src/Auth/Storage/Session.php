@@ -128,4 +128,5 @@ class Session implements Storage
         session_unset();
         session_destroy();
     }
+
 }

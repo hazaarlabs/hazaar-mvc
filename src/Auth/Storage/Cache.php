@@ -146,6 +146,11 @@ class Cache implements Storage
         setcookie($this->config['name'], '', time() - 3600, '/', '', true, true);
     }
 
+    public function getToken(): ?array
+    {
+        return ['token' => $this->sessionID];
+    }
+
     private function initSession(?string $sessionID = null): void
     {
         if (null !== $this->session) {

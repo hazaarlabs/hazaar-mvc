@@ -58,4 +58,12 @@ interface Storage
      * Clears data from storage.
      */
     public function clear(): void;
+
+    /**
+     * Returns the storage session token.
+     *
+     * @return array<string,string> Storage token should be an array with at least a 'token' key
+     *                              and optionally a 'refresh' key
+     */
+    public function getToken(): ?array;
 }
