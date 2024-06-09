@@ -8,6 +8,12 @@ use Hazaar\Application;
 use Hazaar\Application\Request\HTTP;
 use Hazaar\Auth\Adapter;
 use Hazaar\Auth\Interfaces\Storage;
+use Hazaar\Auth\Storage\Exception\JWTPrivateKeyFileNotFound;
+use Hazaar\Auth\Storage\Exception\NoApplication;
+use Hazaar\Auth\Storage\Exception\NoJWTAlgorithm;
+use Hazaar\Auth\Storage\Exception\NoJWTPassphrase;
+use Hazaar\Auth\Storage\Exception\NoJWTPrivateKey;
+use Hazaar\Auth\Storage\Exception\UnsupportedJWTAlgorithm;
 use Hazaar\Loader;
 use Hazaar\Map;
 
@@ -21,13 +27,14 @@ use Hazaar\Map;
 class JWT implements Storage, \ArrayAccess
 {
     protected ?string $passphrase = null;
-    protected string $privateKey;
+    protected ?string $privateKey = null;
 
     /**
      * @var array<mixed>
      */
     protected ?array $token = null;
 
+    private ?string $sub = null;
     private Map $config;
 
     /**
@@ -35,11 +42,12 @@ class JWT implements Storage, \ArrayAccess
      */
     private ?array $data = null;
     private bool $writeCookie = false;
+    private bool $clearCookie = false;
 
     public function __construct(?Map $config = null)
     {
         if (!($app = Application::getInstance())) {
-            throw new \Exception('JWT Auth Storage requires an Application instance');
+            throw new NoApplication('JWT');
         }
         $app->registerOutputFunction([$this, 'writeToken']);
         $this->config = $config;
@@ -56,18 +64,22 @@ class JWT implements Storage, \ArrayAccess
         if ($this->config->has('privateKey')) {
             $this->privateKey = $this->config->get('privateKey');
         } elseif ($this->config->has('privateKeyFile')) {
-            if ($privateKeyFile = Loader::getFilePath(FILE_PATH_CONFIG, $this->config->get('privateKeyFile'))) {
-                $this->privateKey = file_get_contents($privateKeyFile);
+            $privateKeyFile = Loader::getFilePath(FILE_PATH_CONFIG, $this->config->get('privateKeyFile', 'private_key.pem'));
+            if ($privateKeyFile && is_readable($privateKeyFile) && is_file($privateKeyFile)) {
+                $this->privateKey = @file_get_contents($privateKeyFile);
+            } else {
+                throw new JWTPrivateKeyFileNotFound($this->config->get('privateKeyFile'));
             }
-        }
-        if (!isset($this->privateKey)) {
-            throw new \Exception('No private key set for JWT signing');
         }
         $this->checkToken();
     }
 
     public function has(string $key): bool
     {
+        if ('identity' === $key) {
+            return isset($this->sub);
+        }
+
         return array_key_exists($key, $this->data);
     }
 
@@ -88,7 +100,7 @@ class JWT implements Storage, \ArrayAccess
 
     public function isEmpty(): bool
     {
-        return null === $this->data || !isset($this->data['identity']);
+        return null === $this->data || !isset($this->sub);
     }
 
     public function read(): array
@@ -99,8 +111,9 @@ class JWT implements Storage, \ArrayAccess
     public function clear(): void
     {
         if (false === $this->isEmpty()) {
-            setcookie('hazaar-auth-token', '', time() - 3600, '/', $_SERVER['HTTP_HOST'], true, true);
-            setcookie('hazaar-auth-refresh', '', time() - 3600, '/', $_SERVER['HTTP_HOST'], true, true);
+            $this->sub = null;
+            $this->data = null;
+            $this->clearCookie = true;
         }
     }
 
@@ -111,7 +124,8 @@ class JWT implements Storage, \ArrayAccess
      */
     public function write(array $data): void
     {
-        $this->data = $data;
+        $this->sub = ake($data, 'identity');
+        $this->data = ake($data, 'data', []);
         $this->writeCookie = true;
     }
 
@@ -147,49 +161,46 @@ class JWT implements Storage, \ArrayAccess
 
     public function writeToken(): void
     {
-        if (true !== $this->writeCookie) {
-            return;
-        }
-        $out = [];
-        $JWTBody = array_merge([
-            'iss' => $this->config->get('issuer'),
-            'iat' => time(),
-            'exp' => time() + $this->config->get('timeout'),
-            'sub' => $this->data['identity'],
-        ], ake($this->data, 'data', []));
-        $token = $this->buildToken($JWTBody);
-        setcookie('hazaar-auth-token', $token, time() + $this->config->get('timeout'), '/', $_SERVER['HTTP_HOST'], true, true);
-        if ($this->config->get('refresh')) {
-            $refreshToken = $this->buildToken([
-                'iss' => $JWTBody['iss'],
-                'iat' => $JWTBody['iat'],
-                'exp' => $JWTBody['iat'] + $this->config->get('refresh'),
-                'sub' => $this->data['identity'],
-            ], $this->buildRefreshTokenKey($this->data['credential']));
-            setcookie('hazaar-auth-refresh', $refreshToken, time() + $this->config->get('refresh'), '/', $_SERVER['HTTP_HOST'], true, true);
+        if (true === $this->clearCookie) {
+            setcookie('hazaar-auth-token', '', time() - 3600, '/', $_SERVER['HTTP_HOST'], true, true);
+            setcookie('hazaar-auth-refresh', '', time() - 3600, '/', $_SERVER['HTTP_HOST'], true, true);
+        } elseif (true === $this->writeCookie) {
+            $JWTBody = array_merge(
+                $this->data,
+                [
+                    'iss' => $this->config->get('issuer'),
+                    'iat' => time(),
+                    'exp' => time() + $this->config->get('timeout'),
+                    'sub' => $this->sub,
+                ]
+            );
+            $token = $this->buildToken($JWTBody);
+            setcookie('hazaar-auth-token', $token, time() + $this->config->get('timeout'), '/', $_SERVER['HTTP_HOST'], true, true);
+            if ($this->config->get('refresh')) {
+                $refreshToken = $this->buildToken(array_merge($JWTBody, [
+                    'exp' => $JWTBody['iat'] + $this->config->get('refresh'),
+                ]), $this->buildRefreshTokenKey($this->passphrase));
+                setcookie('hazaar-auth-refresh', $refreshToken, time() + $this->config->get('refresh'), '/', $_SERVER['HTTP_HOST'], true, true);
+            }
         }
     }
 
     /**
      * Refreshes the JWT token.
      *
-     * @param array<string, mixed> $JWTBody the JWT body
-     *
-     * @return array<string, mixed>|bool the JWT body or false
+     * @param array<string, mixed> $JWTRefreshBody the JWT body
      */
-    // public function refresh(string $refreshToken, ?array &$JWTBody = null): array|bool
-    // {
-    //     if (!$this->config->get('jwt.refresh')) {
-    //         return false;
-    //     }
-    //     $this->validateToken($refreshToken, $JWTRefreshBody);
-    //     // $auth = $this->queryAuth($JWTRefreshBody['sub']);
-    //     if (!$this->validateToken($refreshToken, $JWTRefreshBody, $this->buildRefreshTokenKey($auth['credential']))) {
-    //         return false;
-    //     }
+    public function refresh(string $refreshToken, ?array &$JWTRefreshBody = null): bool
+    {
+        if (!$this->config->get('refresh')) {
+            return false;
+        }
+        if (!$this->validateToken($refreshToken, $JWTRefreshBody, $this->buildRefreshTokenKey($this->passphrase))) {
+            return false;
+        }
 
-    //     return $this->authorise($auth, $JWTBody);
-    // }
+        return true;
+    }
 
     /**
      * Validates the JWT token.
@@ -203,7 +214,7 @@ class JWT implements Storage, \ArrayAccess
         if (!$token || false === strpos($token, '.')) {
             return false;
         }
-        list($JWTHeader, $JWTBody, $token_signature) = explode('.', $token, 3);
+        list($JWTHeader, $JWTBody, $tokenSignature) = explode('.', $token, 3);
         $JWTHeader = json_decode(base64url_decode($JWTHeader), true);
         $JWTBody = json_decode(base64url_decode($JWTBody), true);
         if (!(is_array($JWTHeader)
@@ -213,7 +224,7 @@ class JWT implements Storage, \ArrayAccess
             && 'JWT' === $JWTHeader['typ'])) {
             return false;
         }
-        if ($token_signature !== $this->sign($JWTHeader, $JWTBody, $passphrase)) {
+        if ($tokenSignature !== $this->sign($JWTHeader, $JWTBody, $passphrase)) {
             return false;
         }
         if (!($JWTBody['iss'] === $this->config->get('issuer')
@@ -237,18 +248,20 @@ class JWT implements Storage, \ArrayAccess
         if (isset($token)
             && $this->validateToken($token, $JWTBody)) {
             $this->data = $JWTBody;
-            $this->data['identity'] = $JWTBody['sub'];
+            $this->sub = $JWTBody['sub'];
 
             return true;
         }
-        // if (array_key_exists('hazaar-auth-refresh', $_COOKIE)) {
-        //     $refreshToken = $_COOKIE['hazaar-auth-refresh'];
-        //     if ($this->refresh($refreshToken, $JWTBody)) {
-        //         $this->data = $JWTBody;
+        if (array_key_exists('hazaar-auth-refresh', $_COOKIE)) {
+            $refreshToken = $_COOKIE['hazaar-auth-refresh'];
+            if ($this->refresh($refreshToken, $JWTBody)) {
+                $this->data = $JWTBody;
+                $this->sub = $JWTBody['sub'];
+                $this->writeCookie = true;
 
-        //         return true;
-        //     }
-        // }
+                return true;
+            }
+        }
 
         return false;
     }
@@ -273,7 +286,7 @@ class JWT implements Storage, \ArrayAccess
             .'.'.$this->sign($JWTHeader, $JWTBody, $passphrase);
     }
 
-    private function buildRefreshTokenKey(string $credential): string
+    private function buildRefreshTokenKey(string $passphrase): string
     {
         $fingerprint = $_SERVER['HTTP_USER_AGENT'];
         if ($this->config->get('fingerprintIP')
@@ -283,7 +296,7 @@ class JWT implements Storage, \ArrayAccess
             $fingerprint .= ':'.$clientIP;
         }
 
-        return hash_hmac('sha256', $fingerprint, $credential);
+        return hash_hmac('sha256', $fingerprint, $passphrase);
     }
 
     /**
@@ -297,10 +310,10 @@ class JWT implements Storage, \ArrayAccess
     private function sign(array $JWTHeader, array $JWTBody, ?string $passphrase = null): string
     {
         if (!array_key_exists('alg', $JWTHeader)) {
-            throw new \Exception('No algorithm set for JWT signing');
+            throw new NoJWTAlgorithm();
         }
         if (!preg_match('/^(HS|RS|ES|PS)(256|384|512)$/', $JWTHeader['alg'], $matches)) {
-            throw new \Exception('Unsupported JWT signing algorithm');
+            throw new UnsupportedJWTAlgorithm($JWTHeader['alg']);
         }
         $alg = $passphrase ? 'HS' : $matches[1];
         $bits = $matches[2];
@@ -308,18 +321,18 @@ class JWT implements Storage, \ArrayAccess
         if (!$passphrase) {
             $passphrase = $this->passphrase;
         }
-        $token_content = base64url_encode(json_encode($JWTHeader)).'.'.base64url_encode(json_encode($JWTBody));
+        $tokenContent = base64url_encode(json_encode($JWTHeader)).'.'.base64url_encode(json_encode($JWTBody));
 
         switch ($alg) {
             case 'HS':
                 if (!$passphrase) {
-                    throw new \Exception('No passphrase set for JWT signing');
+                    throw new NoJWTPassphrase();
                 }
-                $algo_const = 'sha'.$bits;
-                if (!in_array($algo_const, hash_hmac_algos())) {
-                    throw new \Exception('Unsupported JWT signing algorithm');
+                $algoConst = 'sha'.$bits;
+                if (!in_array($algoConst, hash_hmac_algos())) {
+                    throw new UnsupportedJWTAlgorithm($algoConst);
                 }
-                $signature = hash_hmac('sha'.$bits, $token_content, $passphrase);
+                $signature = hash_hmac($algoConst, $tokenContent, $passphrase);
 
                 break;
 
@@ -327,35 +340,35 @@ class JWT implements Storage, \ArrayAccess
             case 'ES':
             case 'PS':
                 if (!$this->privateKey) {
-                    throw new \Exception('No private key set for JWT signing');
+                    throw new NoJWTPrivateKey();
                 }
                 $algos = openssl_get_md_methods();
-                if (!in_array('sha'.$bits, $algos)) {
-                    throw new \Exception('Unsupported JWT signing algorithm');
+                $algoName = 'sha'.$bits;
+                if (!in_array($algoName, $algos)) {
+                    throw new UnsupportedJWTAlgorithm($algoName);
                 }
-                $algo_const = null;
 
                 switch ($bits) {
                     case '256':
-                        $algo_const = OPENSSL_ALGO_SHA256;
+                        $algoConst = OPENSSL_ALGO_SHA256;
 
                         break;
 
                     case '384':
-                        $algo_const = OPENSSL_ALGO_SHA384;
+                        $algoConst = OPENSSL_ALGO_SHA384;
 
                         break;
 
                     case '512':
-                        $algo_const = OPENSSL_ALGO_SHA512;
+                        $algoConst = OPENSSL_ALGO_SHA512;
 
                         break;
+
+                    default:
+                        throw new UnsupportedJWTAlgorithm($algoName);
                 }
-                if (!$algo_const) {
-                    throw new \Exception('Unsupported JWT signing algorithm');
-                }
-                $signing_result = openssl_sign($token_content, $signature, trim($this->privateKey), $algo_const);
-                if (true !== $signing_result) {
+                $signingResult = openssl_sign($tokenContent, $signature, trim($this->privateKey), $algoConst);
+                if (true !== $signingResult) {
                     throw new \Exception(openssl_error_string());
                 }
 
