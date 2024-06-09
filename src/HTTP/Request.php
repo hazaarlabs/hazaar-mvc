@@ -414,14 +414,14 @@ class Request extends Map
      */
     public function authorisation(Adapter $user, ?string $type = null): bool
     {
-        if ($token = $user->getToken()) {
-            if (!$type) {
-                $type = $user->getTokenType();
-            }
-            $this->setHeader('Authorization', $type.' '.$token);
+        // if ($token = $user->getToken()) {
+        //     if (!$type) {
+        //         $type = $user->getTokenType();
+        //     }
+        //     $this->setHeader('Authorization', $type.' '.$token);
 
-            return true;
-        }
+        //     return true;
+        // }
 
         return false;
     }
