@@ -590,6 +590,9 @@ class File implements \JsonSerializable
         $json = $this->getContents();
         $bom = pack('H*', 'EFBBBF');
         $json = preg_replace("/^{$bom}/", '', $json);
+        if (false === json_validate($json)) {
+            return false;
+        }
 
         return json_decode($json, $assoc);
     }
@@ -979,7 +982,7 @@ class File implements \JsonSerializable
         return $this->manager->seekStream($this->stream, $offset, $whence);
     }
 
-    public function tell(): int|false
+    public function tell(): false|int
     {
         if (null === $this->stream) {
             return false;
