@@ -17,6 +17,7 @@ namespace Hazaar\Auth\Storage;
 use Hazaar\Application\Request\HTTP;
 use Hazaar\Auth\Adapter;
 use Hazaar\Auth\Interfaces\Storage;
+use Hazaar\Auth\Storage\Exception\SessionStartFailed;
 use Hazaar\Cache;
 use Hazaar\Map;
 
@@ -68,7 +69,9 @@ class Session implements Storage
                 ini_set('session.gc_maxlifetime', $timeout * 2);
                 ini_set('session.cookie_maxlifetime', $timeout * 2);
             }
-            session_start();
+            if (false === session_start()) {
+                throw new SessionStartFailed();
+            }
         }
         if (!isset($_SESSION) || !is_array($_SESSION)) {
             $_SESSION = [];
@@ -90,7 +93,7 @@ class Session implements Storage
 
     public function read(): array
     {
-        return $this->session[$this->sessionKey];
+        return $this->session[$this->sessionKey] ?? [];
     }
 
     public function write(array $data): void
