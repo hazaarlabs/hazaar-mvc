@@ -41,9 +41,10 @@ class Main
         }
         $options = $application->request->getOptions();
         $appConfig = new Config('application', APPLICATION_ENV);
-        if ($appConfig->has('auth')) {
-            $appConfig['auth']['storage'] = 'session';
+        if (!$appConfig->has('auth')) {
+            $appConfig['auth'] = [];
         }
+        $appConfig['auth']['storage'] = 'session';
         $code = 0;
 
         try {
