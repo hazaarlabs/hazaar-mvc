@@ -60,7 +60,7 @@ class Session implements Storage
         if ($config->has('name')) {
             session_name($config['name']);
         }
-        if (!session_id()) {
+        if (!(session_id() || (headers_sent() && PHP_SAPI === 'cli'))) {
             ini_set('session.cookie_secure', '1');
             ini_set('session.cookie_httponly', '1');
             ini_set('session.cookie_samesite', 'Strict');
