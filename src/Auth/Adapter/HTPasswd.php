@@ -24,9 +24,6 @@ class HTPasswd extends Adapter
         } else {
             $this->passwd = CONFIG_PATH.DIRECTORY_SEPARATOR.'.passwd';
         }
-        if (!file_exists($this->passwd)) {
-            throw new HTPasswdFileMissing($this->passwd);
-        }
     }
 
     /**
@@ -41,6 +38,9 @@ class HTPasswd extends Adapter
      */
     public function queryAuth(string $identity, array $extra = []): array|bool
     {
+        if (!file_exists($this->passwd)) {
+            throw new HTPasswdFileMissing($this->passwd);
+        }
         $lines = explode("\n", trim(file_get_contents($this->passwd)));
         foreach ($lines as $line) {
             if (!$line) {
@@ -114,8 +114,12 @@ class HTPasswd extends Adapter
 
     public function create(string $identity, string $credential): bool
     {
+        if (file_exists($this->passwd)) {
+            $lines = explode("\n", trim(file_get_contents($this->passwd)));
+        } else {
+            $lines = [];
+        }
         $hash = $this->getCredentialHash($credential);
-        $lines = explode("\n", trim(file_get_contents($this->passwd)));
         foreach ($lines as $line) {
             if (!$line) {
                 continue;
@@ -132,6 +136,9 @@ class HTPasswd extends Adapter
 
     public function update(string $identity, string $credential): bool
     {
+        if (!file_exists($this->passwd)) {
+            throw new HTPasswdFileMissing($this->passwd);
+        }
         $hash = $this->getCredentialHash($credential);
         $lines = explode("\n", trim(file_get_contents($this->passwd)));
         foreach ($lines as $index => $line) {
@@ -151,6 +158,9 @@ class HTPasswd extends Adapter
 
     public function delete(string $identity): bool
     {
+        if (!file_exists($this->passwd)) {
+            throw new HTPasswdFileMissing($this->passwd);
+        }
         $lines = explode("\n", trim(file_get_contents($this->passwd)));
         foreach ($lines as $index => $line) {
             if (!$line) {
