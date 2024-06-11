@@ -187,24 +187,26 @@ class Application
             }
             if (true === $this->config->get('app.metrics')) {
                 $metricFile = $this->runtimePath('metrics.dat');
-                $metric = new Metric($metricFile);
-                if (!$metric->exists()) {
-                    $metric->addDataSource('hits', 'COUNTER', null, null, 'Hit Counter');
-                    $metric->addDataSource('exec', 'GAUGEZ', null, null, 'Execution Timer');
-                    $metric->addDataSource('mem', 'GAUGE', null, null, 'Memory Usage');
-                    $metric->addArchive('count_1hour', 'COUNT', 6, 60, 'Count per minute for last hour');
-                    $metric->addArchive('avg_1hour', 'AVERAGE', 6, 60, 'Average per minute for last hour');
-                    $metric->addArchive('count_1day', 'COUNT', 360, 24, 'Count per hour for last day');
-                    $metric->addArchive('avg_1day', 'AVERAGE', 360, 24, 'Average per hour for last day');
-                    $metric->addArchive('count_1week', 'COUNT', 360, 168, 'Count per hour for last week');
-                    $metric->addArchive('avg_1week', 'AVERAGE', 360, 168, 'Average per hour for last week');
-                    $metric->addArchive('count_1year', 'COUNT', 8640, 365, 'Count per day for last year');
-                    $metric->addArchive('avg_1year', 'AVERAGE', 8640, 365, 'Average per day for last year');
-                    $metric->create(10);
+                if ((!file_exists($metricFile) && is_writable(dirname($metricFile))) || is_writable($metricFile)) {
+                    $metric = new Metric($metricFile);
+                    if (!$metric->exists()) {
+                        $metric->addDataSource('hits', 'COUNTER', null, null, 'Hit Counter');
+                        $metric->addDataSource('exec', 'GAUGEZ', null, null, 'Execution Timer');
+                        $metric->addDataSource('mem', 'GAUGE', null, null, 'Memory Usage');
+                        $metric->addArchive('count_1hour', 'COUNT', 6, 60, 'Count per minute for last hour');
+                        $metric->addArchive('avg_1hour', 'AVERAGE', 6, 60, 'Average per minute for last hour');
+                        $metric->addArchive('count_1day', 'COUNT', 360, 24, 'Count per hour for last day');
+                        $metric->addArchive('avg_1day', 'AVERAGE', 360, 24, 'Average per hour for last day');
+                        $metric->addArchive('count_1week', 'COUNT', 360, 168, 'Count per hour for last week');
+                        $metric->addArchive('avg_1week', 'AVERAGE', 360, 168, 'Average per hour for last week');
+                        $metric->addArchive('count_1year', 'COUNT', 8640, 365, 'Count per day for last year');
+                        $metric->addArchive('avg_1year', 'AVERAGE', 8640, 365, 'Average per day for last year');
+                        $metric->create(10);
+                    }
+                    $metric->setValue('hits', 1);
+                    $metric->setValue('exec', (microtime(true) - HAZAAR_EXEC_START) * 1000);
+                    $metric->setValue('mem', memory_get_peak_usage());
                 }
-                $metric->setValue('hits', 1);
-                $metric->setValue('exec', (microtime(true) - HAZAAR_EXEC_START) * 1000);
-                $metric->setValue('mem', memory_get_peak_usage());
             }
         }
         Frontend::i(
