@@ -17,19 +17,55 @@ trait PDO
 {
     protected \PDO $pdo;
 
-    public function setTimezone(string $tz): bool
-    {
-        return false !== $this->exec('SET TIMEZONE TO \''.$tz.'\'');
-    }
-
-    public function exec(string $sql): false|int
+    protected function __exec(string $sql): false|int
     {
         return $this->pdo->exec($sql);
     }
 
-    public function query(string $sql): false|\PDOStatement
+    protected function __query(string $sql): false|\PDOStatement
     {
         return $this->pdo->query($sql);
+    }
+
+    public function setTimezone(string $tz): bool
+    {
+        return false !== $this->__exec('SET TIMEZONE TO \''.$tz.'\'');
+    }
+
+    protected function quote(mixed $string, int $type = \PDO::PARAM_STR): false|string
+    {
+        if (is_string($string)) {
+            $string = $this->pdo->quote($string, $type);
+        }
+
+        return $string;
+    }
+
+    protected function quoteSpecial(mixed $value): mixed
+    {
+        if (false === is_string($value)) {
+            return $value;
+        }
+        $parts = explode('.', $value);
+        array_walk($parts, function (&$item) {
+            $item = $this->quoteSpecial.$item.$this->quoteSpecial;
+        });
+
+        return implode('.', $parts);
+    }
+
+    /**
+     * @param array<int, bool> $driverOptions
+     */
+    protected function connect(
+        string $dsn,
+        ?string $username = null,
+        ?string $password = null,
+        ?array $driverOptions = null
+    ): bool {
+        $this->pdo = new \PDO($dsn, $username, $password, $driverOptions);
+
+        return true;
     }
 
     protected function mkdsn(Map $config): false|string
@@ -42,19 +78,5 @@ trait PDO
         $options = array_intersect_key($options, array_combine($DBD::$dsnElements, $DBD::$dsnElements));
 
         return $config['driver'].':'.array_flatten($options, '=', ';');
-    }
-
-    /**
-     * @param array<int, bool> $driverOptions
-     */
-    public function connect(
-        string $dsn,
-        ?string $username = null,
-        ?string $password = null,
-        ?array $driverOptions = null
-    ): bool {
-        $this->pdo = new \PDO($dsn, $username, $password, $driverOptions);
-
-        return true;
     }
 }

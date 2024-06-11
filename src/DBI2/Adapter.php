@@ -128,12 +128,7 @@ class Adapter
 
     public function query(string $queryString): false|Result
     {
-        $result = $this->driver->query($queryString);
-        if ($result instanceof \PDOStatement) {
-            return new Result($result);
-        }
-
-        return false;
+        return $this->driver->query($queryString);
     }
 
     public function exec(string $queryString): false|int
@@ -141,77 +136,9 @@ class Adapter
         return false;
     }
 
-    /**
-     * Perform and "upsert".
-     *
-     * An upsert is an INSERT, that when it fails, columns can be updated in the existing row.
-     *
-     * @param string                   $tableName      the table to insert a record into
-     * @param mixed                    $fields         the fields to be inserted
-     * @param mixed                    $returning      a column to return when the row is inserted (usually the primary key)
-     * @param null|array<mixed>|string $conflictTarget the column(s) to check for a conflict.  If the conflict is found,
-     *                                                 the row will be updated.
-     * @param array<mixed>             $conflictUpdate
-     *
-     * @return array<mixed>|false|int
-     */
-    public function insert(
-        string $tableName,
-        mixed $fields,
-        mixed $returning = null,
-        null|array|string $conflictTarget = null,
-        ?array $conflictUpdate = null,
-        ?Table $table = null
-    ): array|false|int {
-        return false;
-    }
-
-    /**
-     * @param array<string>|string $fields
-     * @param array<string>|string $criteria
-     *
-     * @return array<mixed>|false
-     */
-    public function select(
-        string $tableName,
-        array|string $fields = '*',
-        array|string $criteria = [],
-        ?string $order = null,
-        ?int $limit = null,
-        ?int $offset = null,
-        ?string $group = null,
-        ?string $having = null,
-        ?string $from = null,
-        ?string $tables = null
-    ): array|false {
-        return false;
-    }
-
-    /**
-     * @param array<string> $from
-     * @param array<string> $tables
-     *
-     * @return array<mixed>|false|int
-     */
-    public function update(
-        string $tableName,
-        mixed $fields,
-        mixed $criteria = [],
-        array $from = [],
-        mixed $returning = [],
-        array $tables = []
-    ): array|false|int {
-        return false;
-    }
-
-    /**
-     * @param array<string>|string $criteria
-     */
-    public function delete(
-        string $tableName,
-        array|string $criteria = []
-    ): false|int {
-        return false;
+    public function table(string $tableName): Table
+    {
+        return new Table($this->driver, $tableName);
     }
 
     private static function getDefaultConfig(?string &$configName = null): false|Map
@@ -239,7 +166,7 @@ class Adapter
 
     private function getDriverClass(string $driver): string
     {
-        return 'Hazaar\DBI\DBD\\'.ucfirst($driver);
+        return 'Hazaar\DBI2\DBD\\'.ucfirst($driver);
     }
 
     private function reconfigure(bool $reconnect = false): bool
