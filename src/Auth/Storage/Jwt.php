@@ -32,7 +32,6 @@ class JWT implements Storage
      */
     protected ?array $token = null;
 
-    private ?string $sub = null;
     private Map $config;
 
     /**
@@ -74,7 +73,7 @@ class JWT implements Storage
 
     public function isEmpty(): bool
     {
-        return null === $this->data || !isset($this->sub);
+        return null === $this->data || !isset($this->data['identity']);
     }
 
     public function read(): array
@@ -89,26 +88,20 @@ class JWT implements Storage
      */
     public function write(array $data): void
     {
-        $this->sub = ake($data, 'identity');
-        $this->data = ake($data, 'data', []);
+        if (!isset($data['data'])) {
+            $data['data'] = [];
+        }
+        $this->data = $data;
         $this->writeCookie = true;
     }
 
     public function has(string $key): bool
     {
-        if ('identity' === $key) {
-            return isset($this->sub);
-        }
-
         return array_key_exists($key, $this->data);
     }
 
     public function get(string $key): mixed
     {
-        if ('identity' === $key) {
-            return $this->sub;
-        }
-
         return $this->data[$key] ?? null;
     }
 
@@ -125,7 +118,6 @@ class JWT implements Storage
     public function clear(): void
     {
         if (false === $this->isEmpty()) {
-            $this->sub = null;
             $this->data = null;
             $this->clearCookie = true;
         }
@@ -134,13 +126,13 @@ class JWT implements Storage
     public function getToken(): ?array
     {
         $out = [];
-        $JWTBody = array_merge(
-            $this->data,
+        $JWTBody = $this->data['data'] = array_merge(
+            $this->data['data'],
             [
                 'iss' => $this->config->get('issuer'),
                 'iat' => time(),
                 'exp' => time() + $this->config->get('timeout'),
-                'sub' => $this->sub,
+                'sub' => $this->data['identity'],
             ]
         );
         $out['token'] = $this->buildToken($JWTBody);
@@ -230,16 +222,16 @@ class JWT implements Storage
         }
         if (isset($token)
             && $this->validateToken($token, $JWTBody)) {
-            $this->data = $JWTBody;
-            $this->sub = $JWTBody['sub'];
+            $this->data = ['data' => $JWTBody];
+            $this->data['identity'] = $JWTBody['sub'];
 
             return true;
         }
         if (array_key_exists('hazaar-auth-refresh', $_COOKIE)) {
             $refreshToken = $_COOKIE['hazaar-auth-refresh'];
             if ($this->refresh($refreshToken, $JWTBody)) {
-                $this->data = $JWTBody;
-                $this->sub = $JWTBody['sub'];
+                $this->data = ['data' => $JWTBody];
+                $this->data['identity'] = $JWTBody['sub'];
                 $this->writeCookie = true;
 
                 return true;
