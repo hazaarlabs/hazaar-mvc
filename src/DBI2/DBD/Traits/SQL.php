@@ -29,6 +29,8 @@ trait SQL
     private ?int $limit = null;
     private ?int $offset = null;
 
+    private ?string $returning = null;
+
     /**
      * @var array<string>
      */
@@ -42,7 +44,7 @@ trait SQL
         return $this;
     }
 
-    public function from(string $table): self
+    public function table(string $table): self
     {
         $this->table = $table;
 
@@ -70,23 +72,47 @@ trait SQL
         return $this;
     }
 
+    public function insert(array $values, ?string $returning = null): self
+    {
+        $this->method = 'INSERT';
+        $this->columns = $values;
+        $this->returning = $returning;
+
+        return $this;
+    }
+
     public function toString(): string
     {
         $sql = $this->method;
-        if (!empty($this->columns)) {
-            $sql .= ' '.$this->prepareFields($this->columns);
-        }
-        if (!empty($this->table)) {
-            $sql .= ' FROM '.$this->table;
-        }
-        if (!empty($this->where)) {
-            $sql .= ' WHERE '.$this->prepareCriteria($this->where);
-        }
-        if (!empty($this->limit)) {
-            $sql .= ' LIMIT '.$this->limit;
-        }
-        if (!empty($this->offset)) {
-            $sql .= ' OFFSET '.$this->offset;
+
+        switch ($this->method) {
+            case 'SELECT':
+                if (!empty($this->columns)) {
+                    $sql .= ' '.$this->prepareFields($this->columns);
+                }
+                if (!empty($this->table)) {
+                    $sql .= ' FROM '.$this->table;
+                }
+                if (!empty($this->where)) {
+                    $sql .= ' WHERE '.$this->prepareCriteria($this->where);
+                }
+                if (!empty($this->limit)) {
+                    $sql .= ' LIMIT '.$this->limit;
+                }
+                if (!empty($this->offset)) {
+                    $sql .= ' OFFSET '.$this->offset;
+                }
+
+                break;
+
+            case 'INSERT':
+                $sql .= ' INTO '.$this->table
+                    .' ('.$this->prepareFields(array_keys($this->columns)).')'
+                    .' VALUES ('.$this->prepareValues($this->columns).')';
+
+                if ($this->returning) {
+                    $sql .= ' RETURNING '.$this->returning;
+                }
         }
 
         return $sql;

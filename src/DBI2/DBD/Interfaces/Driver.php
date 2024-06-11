@@ -26,7 +26,7 @@ interface Driver
      */
     public function select(array|string $columns = '*'): self;
 
-    public function from(string $table): self;
+    public function table(string $table): self;
 
     /**
      * @param array<string>|string $where
@@ -41,7 +41,10 @@ interface Driver
 
     public function offset(int $offset): self;
 
-    // public function insert(string $table, array $values): self;
+    /**
+     * @param array<mixed> $values
+     */
+    public function insert(array $values, ?string $returning = null): self;
 
     // public function update(string $table, array $values): self;
 
