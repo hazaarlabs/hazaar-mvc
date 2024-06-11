@@ -98,7 +98,6 @@ abstract class Model implements \jsonSerializable, \Iterator
             $this->__setUserProperty($propertyName, $data[$propertyName]);
         }
         $this->constructed($data, ...$args);
-        sort($this->propertyNames);
     }
 
     final public function __destruct()
