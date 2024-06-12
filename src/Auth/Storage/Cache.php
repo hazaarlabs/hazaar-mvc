@@ -79,7 +79,7 @@ class Cache implements Storage
             || false === isset($this->session)
             || 0 === $this->session->count()
             || ($_SERVER['HTTP_USER_AGENT'] ?? null) !== $this->get('user-agent')
-            || HTTP::getRemoteAddr() !== $this->get('ip-address')) {
+            || HTTP::getClientIP() !== $this->get('ip-address')) {
             return true;
         }
 
@@ -105,7 +105,7 @@ class Cache implements Storage
         }
         if (isset($_SERVER['HTTP_USER_AGENT'])) {
             $data['data']['user-agent'] = $_SERVER['HTTP_USER_AGENT'];
-            $data['data']['ip-address'] = HTTP::getRemoteAddr();
+            $data['data']['ip-address'] = HTTP::getClientIP();
         }
 
         $this->session->populate($data);

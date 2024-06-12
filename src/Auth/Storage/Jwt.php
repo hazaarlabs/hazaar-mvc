@@ -267,7 +267,7 @@ class JWT implements Storage
         if ($this->config->get('fingerprintIP')
             && ($app = Application::getInstance())
             && ($request = $app->request) instanceof HTTP
-            && ($clientIP = $request->getRemoteAddr())) {
+            && ($clientIP = $request->getClientIP())) {
             $fingerprint .= ':'.$clientIP;
         }
 
