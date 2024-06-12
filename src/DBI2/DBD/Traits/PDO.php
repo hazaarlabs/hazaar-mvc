@@ -41,19 +41,6 @@ trait PDO
         return $string;
     }
 
-    protected function quoteSpecial(mixed $value): mixed
-    {
-        if (false === is_string($value)) {
-            return $value;
-        }
-        $parts = explode('.', $value);
-        array_walk($parts, function (&$item) {
-            $item = $this->quoteSpecial.$item.$this->quoteSpecial;
-        });
-
-        return implode('.', $parts);
-    }
-
     /**
      * @param array<int, bool> $driverOptions
      */

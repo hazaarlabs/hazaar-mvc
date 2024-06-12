@@ -6,6 +6,7 @@ namespace Hazaar\Tests;
 
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Row;
+use Hazaar\DBI2\QueryBuilder\SQL;
 use Hazaar\Model;
 use PHPUnit\Framework\TestCase;
 
@@ -128,5 +129,16 @@ class DBITest extends TestCase
         $this->assertInstanceOf(Row::class, $row);
         $this->assertEquals(1234, $row->id);
         $this->assertEquals('Test Name', $row->name);
+    }
+
+    public function testQueryBuilder(): void
+    {
+        $sql = new SQL();
+        $sql->select('id', 'identity')
+            ->from('test_table', 'tt')
+            ->join('users', 'u.id = tt.user_id', 'u')
+            ->where(['ip' => '127.0.0.1'])
+        ;
+        $this->assertEquals('SELECT id, identity FROM "test_table" AS tt INNER JOIN users u ON u.id = tt.user_id WHERE ip = \'127.0.0.1\'', $sql->toString());
     }
 }

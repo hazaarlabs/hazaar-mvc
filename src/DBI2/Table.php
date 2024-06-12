@@ -5,22 +5,22 @@ declare(strict_types=1);
 namespace Hazaar\DBI2;
 
 use Hazaar\DBI2\DBD\Interfaces\Driver;
+use Hazaar\DBI2\Interfaces\QueryBuilder;
 use Hazaar\DBI2\Interfaces\Result;
 
 class Table
 {
-    private Driver $adapter;
+    private Driver $driver;
+    private QueryBuilder $queryBuilder;
     private string $table;
     private ?Result $result = null;
 
-    public function __construct(Driver $adapter, string $table)
+    public function __construct(Driver $driver, string $table)
     {
-        if (!in_array('Hazaar\DBI2\DBD\Traits\SQL', class_uses($adapter))) {
-            throw new \Exception(get_class($adapter).' does not support SQL queries!');
-        }
         $this->table = $table;
-        $this->adapter = $adapter;
-        $this->adapter->select()->table($this->table);
+        $this->driver = $driver;
+        $this->queryBuilder = $driver->getQueryBuilder();
+        $this->queryBuilder->from($this->table);
     }
 
     public function __toString(): string
@@ -30,7 +30,7 @@ class Table
 
     public function toString(): string
     {
-        return $this->adapter->toString();
+        return $this->queryBuilder->toString();
     }
 
     /**
@@ -38,21 +38,21 @@ class Table
      */
     public function select(array|string $columns = '*'): self
     {
-        $this->adapter->select($columns);
+        $this->queryBuilder->select($columns);
 
         return $this;
     }
 
     public function limit(int $limit): self
     {
-        $this->adapter->limit($limit);
+        $this->queryBuilder->limit($limit);
 
         return $this;
     }
 
     public function offset(int $offset): self
     {
-        $this->adapter->offset($offset);
+        $this->queryBuilder->offset($offset);
 
         return $this;
     }
@@ -62,8 +62,7 @@ class Table
      */
     public function insert(array $values, ?string $returning = null): mixed
     {
-        // dump($this->adapter->insert($values, $returning)->toString());
-        $result = $this->adapter->insert($values, $returning)->go();
+        $result = $this->driver->query($this->queryBuilder->insert($this->table, $values, $returning));
         if (null !== $returning) {
             if ('*' === $returning) {
                 return $result->fetch();
@@ -76,19 +75,30 @@ class Table
     }
 
     /**
+     * @param array<mixed>|string $where
+     */
+    public function update(mixed $values, array|string $where, ?string $returning = null): int
+    {
+        $result = $this->driver->query($this->queryBuilder->update($this->table, $values, $where, [], $returning));
+        dump($result);
+
+        return 0;
+    }
+
+    /**
      * @param array<string>|string      $where
      * @param null|array<string>|string $columns
      */
     public function find(null|array|string $where = null, null|array|string $columns = null): mixed
     {
         if (null !== $where) {
-            $this->adapter->where($where);
+            $this->queryBuilder->where($where);
         }
         if (null !== $columns) {
             $this->select($columns);
         }
 
-        return $this->adapter->go();
+        return $this->driver->query($this->queryBuilder->toString());
     }
 
     /**
@@ -99,12 +109,16 @@ class Table
      */
     public function findOne(array|string $where, null|array|string $columns = null): array|false
     {
-        $this->adapter->where($where);
+        $this->queryBuilder->where($where);
         if (null !== $columns) {
             $this->select($columns);
         }
+        $result = $this->driver->query($this->queryBuilder->limit(1)->toString());
+        if ($result) {
+            return $result->fetch();
+        }
 
-        return $this->adapter->limit(1)->go()->fetch();
+        return false;
     }
 
     /**
@@ -113,7 +127,7 @@ class Table
     public function fetch(): array|false
     {
         if (null === $this->result) {
-            $this->result = $this->adapter->go();
+            $this->result = $this->driver->query($this->queryBuilder->select()->toString());
         }
         if ($this->result instanceof Result) {
             return $this->result->fetch();
@@ -127,11 +141,35 @@ class Table
      */
     public function fetchAll(): array|false
     {
-        $result = $this->adapter->go();
+        $result = $this->driver->query($this->queryBuilder->select()->toString());
         if ($result instanceof Result) {
             return $result->fetchAll();
         }
 
         return false;
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    public function toArray(): array
+    {
+        $rows = [];
+        $result = $this->find()->rows();
+        foreach ($result as &$row) {
+            $rows[] = $row->toArray();
+        }
+
+        return $rows;
+    }
+
+    public function count(): int
+    {
+        $result = $this->driver->query($this->queryBuilder->count());
+        if ($result) {
+            return $result->fetchColumn(0);
+        }
+
+        return 0;
     }
 }
