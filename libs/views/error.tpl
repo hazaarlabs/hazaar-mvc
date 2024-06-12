@@ -129,6 +129,23 @@
                     font-size: 0.8rem;
                 }
             }
+
+            .timetable {
+                margin: auto;
+                margin-top: 20px;
+                font-size: x-small;
+
+                th {
+                    text-align: right;
+                    padding-right: 5px;
+                    color: #ff005a;
+                    font-weight: normal;
+                }
+
+                th:not(:first-child) {
+                    padding-left: 20px;
+                }
+            }
         }
 
         @media only screen and (max-width: 767px) {
@@ -157,7 +174,14 @@
                     <p class="muted big">{$err.class}</p>
                     <p class="content">{$err.message}</p>
                     <p class="muted">{$err.file} (#{$err.line})</p>
-                    <p class="small">Loaded in {$time|string_format:"%.2f"}ms</p>
+                    <table class="timetable">
+                        <tr>
+                            {foreach from=$time item=item key=key}
+                                <th>{$key|capitalize}</th>
+                                <td>{$item|string_format:"%.2f"}ms</td>
+                            {/foreach}
+                        </tr>
+                    </table>
                 </div>
             {/if}
             <a href="{url '/'}">Homepage</a>

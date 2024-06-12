@@ -134,9 +134,9 @@ class Application
         try {
             Application::$instance = $this;
             $this->environment = $env;
-            if (!defined('HAZAAR_INIT_START')) {
-                define('HAZAAR_INIT_START', microtime(true));
-            }
+            // Create a timer for performance measuring
+            $this->timer = new Timer(5, isset($_SERVER['REQUEST_TIME_FLOAT']) ? $_SERVER['REQUEST_TIME_FLOAT'] : microtime());
+            $this->timer->start('init');
             // Create a loader object and register it as the default autoloader
             $this->loader = Loader::getInstance();
             $this->loader->register();
@@ -167,6 +167,7 @@ class Application
                 throw new Application\Exception\RouterUnknown($routerType);
             }
             $this->router = new $routerClass($this, $this->config);
+            $this->timer->stop('init');
         } catch (\Throwable $e) {
             dieDieDie($e);
         }
@@ -326,15 +327,6 @@ class Application
                 $class::initialise($moduleConfig);
             }
         }
-        // Create a timer for performance measuring
-        if ($this->config['app']->has('timer')
-            && true == $this->config['app']['timer']) {
-            $this->timer = new Timer();
-            if (defined('HAZAAR_INIT_START')) {
-                $this->timer->start('init', HAZAAR_INIT_START);
-                $this->timer->stop('init');
-            }
-        }
     }
 
     /**
@@ -481,11 +473,7 @@ class Application
      */
     public function bootstrap(): Application
     {
-        if ($this->timer) {
-            $this->timer->start('_bootstrap', HAZAAR_EXEC_START);
-            $this->timer->stop('_bootstrap');
-            $this->timer->start('bootstrap');
-        }
+        $this->timer->start('boot');
         $locale = null;
         if ($this->config['app']->has('locale')) {
             $locale = $this->config['app']['locale'];
@@ -510,9 +498,7 @@ class Application
                 throw new \Exception('The application failed to start!');
             }
         }
-        if ($this->timer) {
-            $this->timer->stop('bootstrap');
-        }
+        $this->timer->stop('boot');
 
         return $this;
     }
@@ -539,11 +525,7 @@ class Application
         $code = 0;
 
         try {
-            if ($this->timer) {
-                $this->timer->start('_exec', HAZAAR_EXEC_START);
-                $this->timer->stop('_exec');
-                $this->timer->start('exec');
-            }
+            $this->timer->start('exec');
             if (null !== $controller) {
                 $response = $controller->__initialize($this->request);
                 if (null === $response) {
@@ -569,10 +551,8 @@ class Application
             $response->__writeOutput();
             // Shutdown the controller
             $this->router->__shutdown($response);
-            if ($this->timer) {
-                $this->timer->start('shutdown');
-                $this->timer->stop('exec');
-            }
+            $this->timer->start('shutdown');
+            $this->timer->stop('exec');
             $code = $response->getStatus();
         } catch (Controller\Exception\HeadersSent $e) {
             dieDieDie('HEADERS SENT');

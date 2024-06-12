@@ -57,10 +57,10 @@ class Timer
      *
      * @param int $precision The precision to use when returning timer values. Defaults to 2.
      */
-    public function __construct(int $precision = 2)
+    public function __construct(int $precision = 2, ?float $start = null)
     {
         $this->precision = $precision;
-        $this->start('global', HAZAAR_EXEC_START);
+        $this->start('total', $start ?? microtime());
     }
 
     /**
@@ -88,6 +88,9 @@ class Timer
      */
     public function start(string $name = 'default', ?float $when = null): void
     {
+        if (isset($this->timers[$name])) {
+            return;
+        }
         if (!$when) {
             $when = microtime(true);
         }
@@ -167,6 +170,18 @@ class Timer
         foreach (array_keys($this->timers) as $name) {
             $results[$name] = $this->get($name, $precision);
         }
+
+        // Sort the results array
+        uksort($results, function ($a, $b) {
+            if ('total' === $a) {
+                return 1; // 'total' should be last
+            }
+            if ('total' === $b) {
+                return -1; // 'total' should be last
+            }
+
+            return 0; // maintain the original order
+        });
 
         return $results;
     }

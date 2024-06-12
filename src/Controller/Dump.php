@@ -93,8 +93,7 @@ class Dump extends Diagnostic
         $view->populate([
             'env' => APPLICATION_ENV,
             'data' => $this->data,
-            // @phpstan-ignore-next-line
-            'time' => (microtime(true) - HAZAAR_INIT_START) * 1000,
+            'time' => $this->application->timer->all(),
         ]);
 
         if (true === $this->backtrack) {

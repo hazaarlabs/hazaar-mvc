@@ -233,8 +233,7 @@ class Error extends Diagnostic
             'trace' => $this->callstack,
             'code' => $this->code,
             'status' => $this->status,
-            // @phpstan-ignore-next-line
-            'time' => (microtime(true) - HAZAAR_INIT_START) * 1000,
+            'time' => $this->application->timer->all(5),
         ]);
 
         return new Response\HTML($view->render(), $this->code);

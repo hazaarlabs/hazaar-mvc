@@ -85,10 +85,30 @@
                     }
                 }
 
-                .time {
-                    color: #ff005a;
-                    font-size: small;
-                    align-self: center;
+                .timetable {
+                    font-size: x-small;
+
+                    th {
+                        text-align: right;
+                        padding: 0 5px 0 0;
+                        color: #ff005a;
+                        font-weight: normal;
+                    }
+
+                    td {
+                        padding: 0;
+                        color: #fff;
+                        font-weight: bold;
+                    }
+
+                    th:not(:first-child) {
+                        padding-left: 20px;
+                    }
+
+                    tr:not(:last-child) td {
+                        color: #999;
+                        font-weight: normal;
+                    }
                 }
             }
 
@@ -109,6 +129,8 @@
                     border-radius: 15px;
                 }
             }
+
+
         }
 
         @media only screen and (max-width: 767px) {
@@ -132,7 +154,14 @@
             <div class="title">
                 <h1>Hazaar Dump</h1>
             </div>
-            <p class="time">Loaded in {$time|string_format:"%.2f"}ms</p>
+            <table class="timetable">
+                {foreach from=$time item=item key=key}
+                    <tr>
+                        <th>{$key|capitalize}</th>
+                        <td>{$item|string_format:"%.2f"}ms</td>
+                    </tr>
+                {/foreach}
+            </table>
         </div>
         <div class="dumpdata">
             <div class="data">{$data|dump|escape:html}</div>
