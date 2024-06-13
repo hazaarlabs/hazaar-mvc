@@ -260,8 +260,8 @@ class SQL implements QueryBuilder
 
     public function select(mixed ...$columns): self
     {
-        $this->columns = array_filter($columns, function ($col) {
-            return !(empty(trim($col ?? '')));
+        $this->columns = array_filter($columns, function ($value) {
+            return !(is_null($value) || (is_string($value) && '' === trim($value)));
         });
 
         return $this;

@@ -131,7 +131,7 @@ class DBITest extends TestCase
         $this->assertEquals('Test Name', $row->name);
     }
 
-    public function testQueryBuilder(): void
+    public function testQueryBuilderSELECT(): void
     {
         $sql = new SQL();
         $sql->select('id', 'identity')
@@ -140,5 +140,26 @@ class DBITest extends TestCase
             ->where(['ip' => '127.0.0.1'])
         ;
         $this->assertEquals('SELECT id, identity FROM "test_table" AS tt INNER JOIN users u ON u.id = tt.user_id WHERE ip = \'127.0.0.1\'', $sql->toString());
+    }
+
+    public function testQueryBuilderINSERT(): void
+    {
+        $sql = new SQL();
+        $string = $sql->insert('test_table', ['id' => 1234, 'name' => 'Test Name']);
+        $this->assertEquals('INSERT INTO "test_table" (id, name) VALUES (1234, \'Test Name\')', $string);
+    }
+
+    public function testQueryBuilderUPDATE(): void
+    {
+        $sql = new SQL();
+        $string = $sql->update('test_table', ['name' => 'Test Name'], ['id' => 1234]);
+        $this->assertEquals('UPDATE "test_table" SET name = \'Test Name\' WHERE id = 1234', $string);
+    }
+
+    public function testQueryBuilderDELETE(): void
+    {
+        $sql = new SQL();
+        $string = $sql->delete('test_table', ['id' => 1234]);
+        $this->assertEquals('DELETE FROM "test_table" WHERE id = 1234', $string);
     }
 }
