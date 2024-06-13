@@ -126,16 +126,67 @@ class Adapter
         return new self($configEnv);
     }
 
+    /**
+     * Begins a database transaction.
+     *
+     * @return bool returns true if the transaction was successfully started, false otherwise
+     */
+    public function begin(): bool
+    {
+        return $this->driver->begin();
+    }
+
+    /**
+     * Cancels the current database transaction and rolls back any changes made.
+     *
+     * @return bool returns true if the transaction was successfully canceled and rolled back, false otherwise
+     */
+    public function cancel(): bool
+    {
+        return $this->driver->cancel();
+    }
+
+    /**
+     * Commits the current database transaction.
+     *
+     * @return bool returns `true` if the transaction was successfully committed, `false` otherwise
+     */
+    public function commit(): bool
+    {
+        return $this->driver->commit();
+    }
+
+    /**
+     * Executes a database query.
+     *
+     * @param string $queryString the SQL query string to execute
+     *
+     * @return false|Result returns a Result object if the query is successful, otherwise returns false
+     */
     public function query(string $queryString): false|Result
     {
         return $this->driver->query($queryString);
     }
 
+    /**
+     * Executes a database query.
+     *
+     * @param string $queryString the SQL query string to execute
+     *
+     * @return false|int returns the number of affected rows on success, or false on failure
+     */
     public function exec(string $queryString): false|int
     {
-        return false;
+        return $this->driver->exec($queryString);
     }
 
+    /**
+     * Returns a Table object for the specified table name.
+     *
+     * @param string $tableName the name of the table
+     *
+     * @return Table the Table object for the specified table name
+     */
     public function table(string $tableName): Table
     {
         return new Table($this->driver, $tableName);

@@ -17,33 +17,48 @@ trait PDO
 {
     protected \PDO $pdo;
 
-    protected function __exec(string $sql): false|int
+    public function begin(): bool
+    {
+        return $this->pdo->beginTransaction();
+    }
+
+    public function cancel(): bool
+    {
+        return $this->pdo->rollBack();
+    }
+
+    public function commit(): bool
+    {
+        return $this->pdo->commit();
+    }
+
+    public function exec(string $sql): false|int
     {
         return $this->pdo->exec($sql);
     }
 
-    protected function __query(string $sql): false|\PDOStatement
+    public function query(string $sql): false|\PDOStatement
     {
         return $this->pdo->query($sql);
     }
 
-    public function setTimezone(string $tz): bool
-    {
-        return false !== $this->__exec('SET TIMEZONE TO \''.$tz.'\'');
-    }
-
-    public function lastInsertId(): string
-    {
-        return $this->pdo->lastInsertId();
-    }
-
-    protected function quote(mixed $string, int $type = \PDO::PARAM_STR): false|string
+    public function quote(mixed $string, int $type = \PDO::PARAM_STR): false|string
     {
         if (is_string($string)) {
             $string = $this->pdo->quote($string, $type);
         }
 
         return $string;
+    }
+
+    public function setTimezone(string $tz): bool
+    {
+        return false !== $this->exec('SET TIMEZONE TO \''.$tz.'\'');
+    }
+
+    public function lastInsertId(): string
+    {
+        return $this->pdo->lastInsertId();
     }
 
     /**

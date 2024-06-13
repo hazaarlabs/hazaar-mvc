@@ -10,7 +10,9 @@ use Hazaar\Map;
 
 class Pgsql implements Interfaces\Driver
 {
-    use Traits\PDO;
+    use Traits\PDO {
+        Traits\PDO::query as pdoQuery; // Alias the trait's query method to pdoQuery
+    }
     use Traits\SQL;
 
     /**
@@ -31,17 +33,11 @@ class Pgsql implements Interfaces\Driver
 
     public function query(string $sql): false|Result
     {
-        $result = $this->__query($sql);
+        $result = $this->pdoQuery($sql);
         if ($result instanceof \PDOStatement) {
             return new PDO($result);
         }
 
         return false;
     }
-
-    public function exec(string $sql): false|int
-    {
-        return $this->__exec($sql);
-    }
-    
 }
