@@ -58,7 +58,7 @@ class Table
     }
 
     /**
-     * @param array<string> $values
+     * @param array<mixed> $values
      */
     public function insert(array $values, ?string $returning = null): mixed
     {
@@ -86,7 +86,7 @@ class Table
     }
 
     /**
-     * @param array<string>|string      $where
+     * @param array<mixed>|string       $where
      * @param null|array<string>|string $columns
      */
     public function find(null|array|string $where = null, null|array|string $columns = null): mixed
@@ -102,7 +102,7 @@ class Table
     }
 
     /**
-     * @param array<string>|string      $where
+     * @param array<mixed>|string       $where
      * @param null|array<string>|string $columns
      *
      * @return array<mixed>|false
@@ -116,6 +116,24 @@ class Table
         $result = $this->driver->query($this->queryBuilder->limit(1)->toString());
         if ($result) {
             return $result->fetch();
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<mixed>|string       $where
+     * @param null|array<string>|string $columns
+     */
+    public function findOneRow(array|string $where, null|array|string $columns = null): false|Row
+    {
+        $this->queryBuilder->where($where);
+        if (null !== $columns) {
+            $this->select($columns);
+        }
+        $result = $this->driver->query($this->queryBuilder->limit(1)->toString());
+        if ($result) {
+            return $result->row();
         }
 
         return false;
