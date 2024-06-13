@@ -32,6 +32,11 @@ trait PDO
         return false !== $this->__exec('SET TIMEZONE TO \''.$tz.'\'');
     }
 
+    public function lastInsertId(): string
+    {
+        return $this->pdo->lastInsertId();
+    }
+
     protected function quote(mixed $string, int $type = \PDO::PARAM_STR): false|string
     {
         if (is_string($string)) {

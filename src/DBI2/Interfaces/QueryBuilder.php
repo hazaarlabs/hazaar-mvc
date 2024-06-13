@@ -30,7 +30,7 @@ interface QueryBuilder
         mixed $fields,
         array $criteria = [],
         array $from = [],
-        ?string $returning = null,
+        mixed $returning = null,
         array $tables = []
     ): string;
 

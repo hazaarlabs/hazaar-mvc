@@ -60,7 +60,7 @@ class Table
     /**
      * @param array<mixed> $values
      */
-    public function insert(array $values, ?string $returning = null): mixed
+    public function insert(array $values, mixed $returning = null): mixed
     {
         $result = $this->driver->query($this->queryBuilder->insert($this->table, $values, $returning));
         if (null !== $returning) {
@@ -77,12 +77,18 @@ class Table
     /**
      * @param array<mixed>|string $where
      */
-    public function update(mixed $values, array|string $where, ?string $returning = null): int
+    public function update(mixed $values, array|string $where = [], mixed $returning = null): mixed
     {
         $result = $this->driver->query($this->queryBuilder->update($this->table, $values, $where, [], $returning));
-        dump($result);
+        if (null !== $returning) {
+            if ('*' === $returning) {
+                return $result->fetch();
+            }
 
-        return 0;
+            return $result->fetchColumn(0);
+        }
+
+        return $result->rowCount();
     }
 
     /**
