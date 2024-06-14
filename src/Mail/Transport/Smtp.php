@@ -33,9 +33,12 @@ class Smtp extends Transport
 
     /**
      * Send an email via the transport.
+     *
+     * @param null|mixed $message
      */
     public function send(
-        array $to,
+        array $recipients,
+        array $from,
         ?string $subject = null,
         $message = null,
         array $headers = [],
@@ -43,10 +46,6 @@ class Smtp extends Transport
     ): bool {
         if ($message instanceof Message && is_array($attachments) && count($attachments) > 0) {
             $message = $message->addParts($attachments);
-        }
-        $from = ake($headers, 'From');
-        if (preg_match('/\<([^\>]+)\>/', $from, $matches)) {
-            $from = $matches[1];
         }
         $this->connect($this->server, $this->port);
         if (!$this->read(220, 1024, $result)) {
@@ -118,35 +117,32 @@ class Smtp extends Transport
                 throw new \Exception('SMTP Auth failed: '.$result);
             }
         }
-        $this->write("MAIL FROM: {$from}".($dsn_active ? ' RET=HDRS' : ''));
+        $this->write("MAIL FROM: {$from[0]}".($dsn_active ? ' RET=HDRS' : ''));
         if (!$this->read(250, 1024, $result)) {
             throw new \Exception('Bad response on mail from: '.$result);
         }
-        $rcpt = $to;
-        if ($cc = ake($headers, 'CC')) {
-            $rcpt = array_merge($rcpt, array_map('trim', explode(',', $cc)));
+        $rcpt = $recipients['to'];
+        if ($cc = ake($recipients, 'cc')) {
+            $rcpt = array_merge($rcpt, $cc);
         }
-        if ($bcc = ake($headers, 'BCC')) {
-            $rcpt = array_merge($rcpt, array_map('trim', explode(',', $bcc)));
+        if ($bcc = ake($recipients, 'bcc')) {
+            $rcpt = array_merge($rcpt, $bcc);
         }
-        foreach ($rcpt as $x) {
-            if (preg_match('/^(.*)<(.*)>$/', $x, $matches)) {
-                if (!(array_key_exists('To', $headers) && is_array($headers['To']))) {
-                    $headers['To'] = (array_key_exists('To', $headers) ? $headers['To'] : []);
+        foreach($recipients as $type => $addresses) {
+            foreach ($addresses as $x) {
+                $this->write("RCPT TO: <{$x[0]}>".($dsn_active ? ' NOTIFY='.implode(',', $this->dsn) : ''));
+                if (!$this->read(250, 1024, $result)) {
+                    throw new \Exception('Bad response on mail to: '.$result);
                 }
-                $headers['To'][] = $x;
-                $x = $matches[2];
-            }
-            $this->write("RCPT TO: <{$x}>".($dsn_active ? ' NOTIFY='.implode(',', $this->dsn) : ''));
-            if (!$this->read(250, 1024, $result)) {
-                throw new \Exception('Bad response on mail to: '.$result);
+                $headers[ucfirst($type)][] = self::encodeEmailAddress($x[0], ake($x, 1));
             }
         }
+        $headers['From'] = self::encodeEmailAddress($from[0], ake($from, 1));
+        $headers['Subject'] = $subject;
         $this->write('DATA');
         if (!$this->read(354)) {
             throw new \Exception('Server rejected our data!');
         }
-        $headers['Subject'] = $subject;
         $out = '';
         foreach ($headers as $key => $value) {
             $out .= "{$key}: ".(is_array($value) ? implode(', ', $value) : $value)."\r\n";

@@ -40,11 +40,11 @@ class Adapter {
 
     private        $from;
 
-    private        $to                  = [];
-
-    private        $cc                  = [];
-
-    private        $bcc                 = [];
+    private        $recipients          = [
+        'to' => [],
+        'cc' => [],
+        'bcc' => []
+    ];
 
     private        $subject;
 
@@ -128,23 +128,6 @@ class Adapter {
     }
 
     /**
-     * Encodes an email address into RFC5322 standard format.
-     *
-     * @param string $email The email address
-     *
-     * @param string $name The name part
-     */
-    static private function encodeEmailAddress($email, $name) {
-
-        $email = trim($email ?? '');
-
-        $name = trim($name ?? '');
-
-        return ($name ? "$name <$email>" : $email);
-
-    }
-
-    /**
      * Set the 'From:' address header of the email
      *
      * @param string $email The email address
@@ -153,7 +136,7 @@ class Adapter {
      */
     public function setFrom($email, $name = NULL) {
 
-        $this->from = self::encodeEmailAddress($email, $name);
+        $this->from = [$email, $name];
 
     }
 
@@ -179,11 +162,11 @@ class Adapter {
      */
     public function clear($clear_attachments = false){
 
-        $this->to = [];
-
-        $this->cc = [];
-
-        $this->bcc = [];
+        $this->recipients = [
+            'to' => [],
+            'cc' => [],
+            'bcc' => []
+        ];
 
         $this->recipient_headers = [];
 
@@ -201,13 +184,13 @@ class Adapter {
      */
     public function addTo($email, $name = NULL) {
 
-        $this->to[] = [$email, $name];
+        $this->recipients['to'][] = [trim($email), trim($name??'')];
 
     }
 
     public function getTo(){
 
-        return $this->to;
+        return $this->recipients['to'];
 
     }
 
@@ -226,13 +209,13 @@ class Adapter {
      */
     public function addCC($email, $name = NULL) {
 
-        $this->cc[] = [$email, $name];
+        $this->recipients['cc'][] = [trim($email), trim($name??'')];
 
     }
 
     public function getCC(){
 
-        return $this->cc;
+        return $this->recipients['cc'];
 
     }
 
@@ -245,13 +228,13 @@ class Adapter {
      */
     public function addBCC($email, $name = NULL) {
 
-        $this->bcc[] = [$email, $name];
+        $this->recipients['bcc'][] = [trim($email), trim($name??'')];
 
     }
 
     public function getBCC(){
 
-        return $this->bcc;
+        return $this->recipients['bcc'];
 
     }
 
@@ -439,12 +422,12 @@ class Adapter {
         if($this->config->get('testmode') === true)
             return true;
 
+        $recipients = ['to' => []];
+
         /*
          * Add the from address to the extra headers
          */
         $headers = array_merge($this->headers, $this->recipient_headers);
-
-        $headers['From'] = $this->from;
 
         $message = $this->getBody($params);
 
@@ -458,21 +441,11 @@ class Adapter {
 
         }
 
-        $map_func = function($item){
-
-            return is_array($item) ? Adapter::encodeEmailAddress($item[0], $item[1]) : $item;
-
-        };
-
         if($cc = $this->config->getArray('override.cc'))
-            $headers['CC'] = implode(', ', array_map($map_func, (array)$cc));
-        elseif(count($this->cc) > 0)
-            $headers['CC'] = implode(', ', array_map($map_func, $this->cc));
+            $this->recipients['cc'] = (array)$cc;
 
         if($bcc = $this->config->getArray('override.bcc'))
-            $headers['BCC'] = implode(', ', array_map($map_func, (array)$bcc));
-        elseif(count($this->bcc) > 0)
-            $headers['BCC'] = implode(', ', array_map($map_func, $this->bcc));
+            $this->recipients['bcc'] = (array)$bcc;
 
         if(($o_to = $this->config->getArray('override.to'))){
 
@@ -480,7 +453,7 @@ class Adapter {
 
             if($this->config->has('noOverrideMatch')){
 
-                foreach($this->to as $rcpt)
+                foreach($this->recipients['to'] as $rcpt)
                     if(preg_match('/' . $this->config->noOverrideMatch . '/', $rcpt[0]))
                         $to[] = $rcpt;
 
@@ -488,18 +461,24 @@ class Adapter {
 
             if(count($to) === 0)
                 $to = $o_to;
-            
-            $to = array_map($map_func, (array)$to);
 
-        }else
-            $to = array_map($map_func, $this->to);
+            $this->recipients['to'] = $to; 
+            
+        }
             
         if($subjectPrefix = $this->config->get('subjectPrefix'))
             $this->subject->prepend($subjectPrefix);
 
-        $result = $this->transport->send($to, $this->subject->render($params), $message, $headers, $this->attachments);
+        $result = $this->transport->send(
+            $this->recipients, 
+            $this->from, 
+            $this->subject->render($params),
+            $message, 
+            $headers, 
+            $this->attachments
+        );
 
-        $this->last_to = $this->to;
+        $this->last_to = $recipients['to'];
 
         if($result)
             $this->clear();
