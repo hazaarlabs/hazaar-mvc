@@ -149,9 +149,9 @@ class Adapter {
      */
     public function setReplyTo($email, $name = NULL) {
 
-        $this->headers['Reply-To'] = self::encodeEmailAddress($email, $name);
+        $this->headers['Reply-To'] = Transport::encodeEmailAddress($email, $name);
 
-        $this->headers['Return-Path'] = self::encodeEmailAddress($email, $name);
+        $this->headers['Return-Path'] = Transport::encodeEmailAddress($email, $name);
 
     }
 
