@@ -94,6 +94,8 @@ class Application {
 
     private $metrics = false; //Internal metrics settings.  This is disabled when using the console.
 
+    private $output_functions = [];
+    
     /**
      * The main application constructor
      *
@@ -767,6 +769,11 @@ class Application {
 
                 $this->response->setCompression($this->config->app->get('compress', false));
                 
+                if(count($this->output_functions) > 0){
+                    foreach($this->output_functions as $func){
+                        $func($this->response);
+                    }
+                }
                 /*
                 * Finally, write the response to the output buffer.
                 */
@@ -1037,6 +1044,15 @@ class Application {
             return false;
 
         return json_decode(file_get_contents($path));
+
+    }
+
+    public function registerOutputFunction($function){
+
+        if(!is_callable($function))
+            throw new \Exception('Output function must be callable!');
+
+        $this->output_functions[] = $function;
 
     }
 
