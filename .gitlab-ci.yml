@@ -3,7 +3,7 @@ stages:
   - test
 
 variables:
-  UNIT_TEST_IMAGE: $CI_REGISTRY_IMAGE/ci_unit_test_image
+  UNIT_TEST_IMAGE: $CI_REGISTRY_IMAGE
 
 Docker:
   image: docker:20.10.12
