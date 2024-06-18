@@ -38,6 +38,7 @@ class OAuth2
         $config = []
     ) {
         $this->storage = new Cache();
+        $this->storage->on();
         $this->httpClient = new Client();
         $this->httpClient->authorisation($this->getToken(), $this->getTokenType() ?? 'Bearer');
         $this->grantType = $grantType;
@@ -197,7 +198,7 @@ class OAuth2
         if (false !== $this->authorize($data)) {
             // Set the standard hazaar auth session details for compatibility
             $this->storage->set('hazaar_auth_identity', $data->access_token);
-            $this->storage->set('hazaar_auth_token', hash('sha1', $this->storage->get('hazaar_auth_identity')));
+            $this->storage->set('hazaar_auth_token', hash('sha1', $data->access_token));
             if (is_callable($this->authenticateCallback)) {
                 call_user_func($this->authenticateCallback, $data);
             }
