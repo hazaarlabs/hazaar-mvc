@@ -1,108 +1,45 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Auth\Adapter;
 
-abstract class Model extends Session
+use Hazaar\Auth\Adapter;
+
+abstract class Model extends Adapter
 {
-    private $field_identity;
-    private $field_credential;
-
-    /*
-     * Construct the new authentication object with the field names
-     * in the model for id, user name, password and real name.
+    /**
+     * Create a new user record.
+     *
+     * @param string              $identity   The user identity/username
+     * @param string              $credential The user credential/password
+     * @param array<string,mixed> $data       Additional data to store with the user record
      */
-    public function __construct($args = null, $cache_config = [], $cache_backend = 'session')
-    {
-        parent::__construct($cache_config, $cache_backend);
-        $this->init($args);
-    }
-
-    public function init()
+    public function create(string $identity, string $credential, array $data = []): bool
     {
         return false;
     }
 
-    public function insert($data)
+    /**
+     * Update a user record.
+     *
+     * Use this method to set the user's password and/or update any additional data stored with the user record.
+     *
+     * @param string              $identity The user identity/username
+     * @param array<string,mixed> $data     The data to update
+     */
+    public function update(string $identity, ?string $credential = null, array $data = []): bool
     {
         return false;
     }
 
-    public function delete($criteria)
+    /**
+     * Delete a user record.
+     *
+     * @param string $identity The user identity/username
+     */
+    public function delete(string $identity): bool
     {
         return false;
     }
-
-    public function setIdentityField($identity)
-    {
-        $this->field_identity = $identity;
-    }
-
-    public function setCredentialField($credential)
-    {
-        $this->field_credential = $credential;
-    }
-
-    public function addUser($identity, $credential)
-    {
-        return $this->insert([
-            $this->field_identity => $identity,
-            $this->field_credential => $credential,
-        ]);
-    }
-
-    public function delUser($identity)
-    {
-        return $this->delete([$this->field_identity => $identity]);
-    }
-
-    public function authenticate($identity = null, $credential = null, $autologin = false, &$data = null)
-    {
-        $result = parent::authenticate($identity, $credential, $autologin, $data);
-        if (true === $result) {
-            $this->authenticationSuccess($identity, $data);
-        } else {
-            $this->authenticationFailure($identity, $data);
-        }
-
-        return $result;
-    }
-
-    public function deauth()
-    {
-        $identity = $this->identity;
-        $this->authenticationTerminated($identity);
-
-        return parent::deauth();
-    }
-
-    /**
-     * Overload function called when a user is successfully authenticated.
-     *
-     * This can occur when calling authenticate() or authenticated() where a session has been saved.  This default method does nothing but can
-     * be overridden.
-     *
-     * @param string $identity
-     * @param mixed  $data
-     */
-    protected function authenticationSuccess($identity, $data) {}
-
-    /**
-     * Overload function called when a user fails to authenticate.
-     *
-     * This can occur when calling authenticate() or authenticated() where a session has been saved.  This default method does nothing but can
-     * be overridden.
-     *
-     * @param string $identity
-     * @param mixed  $data
-     */
-    protected function authenticationFailure($identity, $data) {}
-
-    /**
-     * Overload function called when a user is deauthenticated.
-     *
-     * This can occur when calling deauth().  This default method does nothing but can be overridden.
-     *
-     * @param string $identity
-     */
-    protected function authenticationTerminated($identity) {}
 }

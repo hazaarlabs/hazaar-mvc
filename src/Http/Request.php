@@ -520,30 +520,6 @@ class Request extends \Hazaar\Map {
     }
 
     /**
-     * Use an auth adapter to set an Oauth token on the request
-     *
-     * @param \Hazaar\Auth\Adapter $user
-     * @param string $type
-     * @return bool
-     */
-    public function authorisation(\Hazaar\Auth\Adapter $user, $type = null){
-
-        if($token = $user->getToken()){
-
-            if(!$type)
-                $type = $user->getTokenType();
-
-            $this->setHeader('Authorization', $type . ' ' . $token);
-
-            return true;
-
-        }
-
-        return false;
-
-    }
-
-    /**
      * Set a local PEM encoded certificate to use for SSL communication
      *
      * @param mixed $local_cert

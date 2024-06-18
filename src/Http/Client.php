@@ -62,15 +62,14 @@ class Client {
 
     }
 
-    public function authorisation(\Hazaar\Auth\Adapter $auth){
+    public function authorisation($token, $tokenType = 'Bearer'){
 
-        $this->auth = $auth;
+        if(!(is_string($token) && is_string($tokenType)))
+            return false;
+        
+        $this->auth = ['token' => $token, 'type' => $tokenType];
 
-    }
-
-    public function authorization(\Hazaar\Auth\Adapter $auth){
-
-        return $this->authorisation($auth);
+        return true;
 
     }
 
@@ -182,7 +181,7 @@ class Client {
             $request->setLocalCertificate($this->local_cert, $this->cert_passphrase);
 
         if($this->auth)
-            $request->authorisation($this->auth);
+            $this->setHeader('Authorization', ($this->auth['type']??'Bearer') . ' ' . $this->auth['token']);
 
         if($this->username)
             $request->authorise($this->username, $this->password);
