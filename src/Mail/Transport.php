@@ -73,7 +73,7 @@ abstract class Transport implements Transport\_Interface
      * @param string $email The email address
      * @param string $name  The name part
      */
-    protected static function encodeEmailAddress($email, $name = null)
+    public static function encodeEmailAddress($email, $name = null)
     {
         if(is_array($email)){
             list($email, $name) = $email;
