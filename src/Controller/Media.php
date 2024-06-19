@@ -28,8 +28,7 @@ class Media extends \Hazaar\Controller\WebDAV {
 
         $this->application->getResponseType('json');
 
-        if(class_exists('\Hazaar\Auth\Helper'))
-            $this->auth = new \Hazaar\Auth\Helper();
+        $this->auth = new \Hazaar\Auth\Adapter\Basic();
 
         $this->connector = new \Hazaar\File\BrowserConnector($this->url(), $this->allowPreview);
 
