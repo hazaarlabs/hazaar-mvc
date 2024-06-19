@@ -110,7 +110,11 @@ class Session implements Storage
 
     public function has(string $key): bool
     {
-        return isset($this->session[$this->sessionKey]['identity']);
+        if ('identity' === $key) {
+            return isset($this->session[$this->sessionKey]['identity']);
+        }
+
+        return isset($this->session[$this->sessionKey]['data'][$key]);
     }
 
     public function get(string $key): mixed
@@ -124,12 +128,16 @@ class Session implements Storage
 
     public function set(string $key, mixed $value): void
     {
-        $this->session[$this->sessionKey]['data'][$key] = $value;
+        if ('identity' !== $key) {
+            $this->session[$this->sessionKey]['data'][$key] = $value;
+        }
     }
 
     public function unset(string $key): void
     {
-        unset($this->session[$this->sessionKey]['data'][$key]);
+        if ('identity' !== $key) {
+            unset($this->session[$this->sessionKey]['data'][$key]);
+        }
     }
 
     public function clear(): void
