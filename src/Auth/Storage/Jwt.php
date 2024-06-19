@@ -97,22 +97,35 @@ class JWT implements Storage
 
     public function has(string $key): bool
     {
-        return array_key_exists($key, $this->data);
+        if ('identity' === $key) {
+            return isset($this->data['identity']);
+        }
+
+        return isset($this->data['data'][$key]);
     }
 
     public function get(string $key): mixed
     {
-        return $this->data[$key] ?? null;
+        if ('identity' === $key) {
+            return $this->data['identity'];
+        }
+
+        return $this->data['data'][$key] ?? null;
     }
 
     public function set(string $key, mixed $value): void
     {
-        $this->data[$key] = $value;
+        if ('identity' !== $key) {
+            $this->data['data'][$key] = $value;
+            $this->writeCookie = true;
+        }
     }
 
     public function unset(string $key): void
     {
-        unset($this->data[$key]);
+        if ('identity' !== $key) {
+            unset($this->data[$key]);
+        }
     }
 
     public function clear(): void
