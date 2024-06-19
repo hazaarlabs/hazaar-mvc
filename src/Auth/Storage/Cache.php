@@ -49,6 +49,11 @@ use Hazaar\Map;
 class Cache implements Storage
 {
     protected ?HazaarCache $session = null;
+
+    /**
+     * @var array<string,mixed>
+     */
+    private array $data = [];
     private Map $config;
     private ?string $sessionID = null;
 
@@ -70,6 +75,14 @@ class Cache implements Storage
         ]);
         if (array_key_exists($config['name'], $_COOKIE)) {
             $this->initSession($_COOKIE[$config['name']]);
+            $this->data = $this->session->get('data', []);
+        }
+    }
+
+    public function __destruct()
+    {
+        if ($this->session) {
+            $this->session->set('data', $this->data);
         }
     }
 
@@ -89,10 +102,10 @@ class Cache implements Storage
     public function read(): array
     {
         if (!$this->session) {
-            return [];
+            return $this->data;
         }
 
-        return $this->session->toArray();
+        return array_merge($this->session->toArray(), ['data' => $this->data]);
     }
 
     public function write(array $data): void
@@ -109,43 +122,46 @@ class Cache implements Storage
         }
 
         $this->session->populate($data);
+        $this->data = $data['data'];
     }
 
     public function has(string $key): bool
     {
-        if (!$this->session) {
-            throw new \Exception('Session not initialized');
-        }
         if ('identity' === $key) {
+            if (!$this->session) {
+                throw new \Exception('Session not initialized');
+            }
+
             return isset($this->session['identity']);
         }
 
-        return isset($this->session[$key]);
+        return isset($this->data[$key]);
     }
 
     public function get(string $key)
     {
-        if (!$this->session) {
-            return null;
-        }
         if ('identity' === $key) {
+            if (!$this->session) {
+                return null;
+            }
+
             return $this->session['identity'] ?? null;
         }
 
-        return $this->session['data'][$key] ?? null;
+        return $this->data[$key] ?? null;
     }
 
     public function set(string $key, $value): void
     {
-        if ($this->session) {
-            $this->session['data'][$key] = $value;
+        if ('identity' !== $key) {
+            $this->data[$key] = $value;
         }
     }
 
     public function unset(string $key): void
     {
-        if ($this->session) {
-            unset($this->session['data'][$key]);
+        if ('identity' !== $key) {
+            unset($this->data[$key]);
         }
     }
 
@@ -153,6 +169,7 @@ class Cache implements Storage
     {
         if ($this->session) {
             $this->session->clear();
+            $this->data = [];
         }
         setcookie($this->config['name'], '', time() - 3600, '/', '', true, true);
     }
