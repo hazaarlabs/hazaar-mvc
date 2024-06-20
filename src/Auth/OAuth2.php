@@ -353,8 +353,8 @@ class OAuth2
     }
 
     private function authenticateCredentials(
-        string $identity,
-        string $credential,
+        ?string $identity = null,
+        ?string $credential = null,
         string $grantType = 'password',
         ?string $scope = null
     ) {
