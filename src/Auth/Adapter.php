@@ -375,11 +375,14 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
      */
     public function setStorageAdapter(string $storage, array|Map $options = []): bool
     {
-        $class = '\\Hazaar\\Auth\\Storage\\'.ucfirst($storage);
+        $class = '\Hazaar\Auth\Storage\\'.ucfirst($storage);
         if (!class_exists($class)) {
             throw new UnknownStorageAdapter($storage);
         }
         $this->storage = new $class(Map::_($options));
+        if (!$this->storage->isEmpty()) {
+            $this->identity = $this->storage->get('identity');
+        }
 
         return true;
     }
