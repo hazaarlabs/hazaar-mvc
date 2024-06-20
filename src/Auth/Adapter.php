@@ -265,7 +265,11 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
      */
     public function check(string $credential): bool
     {
-        $auth = $this->queryAuth($this->getIdentity(), $this->options['extra'] ?? []);
+        $identity = $this->getIdentity();
+        if (!$identity) {
+            return false;
+        }
+        $auth = $this->queryAuth($identity, $this->options['extra'] ?? []);
         if (false === $auth || !(is_array($auth)
             && array_key_exists('identity', $auth)
             && array_key_exists('credential', $auth))) {
@@ -380,6 +384,9 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
             throw new UnknownStorageAdapter($storage);
         }
         $this->storage = new $class(Map::_($options));
+        if (!$this->storage->isEmpty()) {
+            $this->identity = $this->storage->get('identity');
+        }
 
         return true;
     }
