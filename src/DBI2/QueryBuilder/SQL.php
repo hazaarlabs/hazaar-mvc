@@ -15,7 +15,7 @@ class SQL implements QueryBuilder
     /**
      * @var array<string>
      */
-    public static array $selectGroups = [];
+    protected array $selectGroups = [];
     protected string $quoteSpecial = '"';
 
     /**
@@ -91,6 +91,24 @@ class SQL implements QueryBuilder
         $this->schemaName = $schemaName;
     }
 
+    public function getSchemaName(): ?string
+    {
+        return $this->schemaName;
+    }
+
+    /**
+     * @return array<int,string>
+     */
+    public function parseSchemaName(string $tableName): array
+    {
+        $schemaName = $this->schemaName;
+        if (false !== strpos($tableName, '.')) {
+            list($schema, $tableName) = explode('.', $tableName);
+        }
+
+        return [$schemaName, $tableName];
+    }
+
     public function schemaName(string $tableName): string
     {
         $alias = null;
@@ -126,6 +144,25 @@ class SQL implements QueryBuilder
         });
 
         return implode('.', $parts);
+    }
+
+    public function reset(): void
+    {
+        $this->selectGroups = [];
+        $this->from = [];
+        $this->tables = [];
+        $this->where = [];
+        $this->columns = [];
+        $this->group = [];
+        $this->having = [];
+        $this->window = [];
+        $this->joins = [];
+        $this->combine = [];
+        $this->order = [];
+        $this->fetch = [];
+        $this->distinct = false;
+        $this->limit = null;
+        $this->offset = null;
     }
 
     public function insert(
@@ -258,8 +295,14 @@ class SQL implements QueryBuilder
         return $this->select('COUNT(*)')->toString();
     }
 
+    public function exists(string $tableName, mixed $criteria = null): string
+    {
+        return 'SELECT EXISTS ('.$this->select('1')->from($tableName)->where($criteria)->toString().')';
+    }
+
     public function select(mixed ...$columns): self
     {
+        $this->reset();
         $this->columns = array_filter($columns, function ($value) {
             return !(is_null($value) || (is_string($value) && '' === trim($value)));
         });
@@ -410,7 +453,9 @@ class SQL implements QueryBuilder
             $sql .= ' '.$this->prepareFields($this->columns, [], $this->tables());
         }
         // FROM
-        $sql .= ' FROM '.(false === $untable ? $this->prepareFrom() : '');
+        if ($from = $this->prepareFrom()) {
+            $sql .= ' FROM '.$from;
+        }
         if (count($this->joins) > 0) {
             foreach ($this->joins as $join) {
                 $sql .= ' '.$join['type'].' JOIN '.$this->field($join['ref']);
@@ -479,10 +524,136 @@ class SQL implements QueryBuilder
         return $sql;
     }
 
+    public function field(string $string): string
+    {
+        if (in_array(strtoupper($string), $this->reservedWords)) {
+            $string = $this->quoteSpecial($string);
+        }
+
+        return $string;
+    }
+
+    /**
+     * @param array<string> $exclude
+     * @param array<string> $tables
+     */
+    public function prepareFields(mixed $fields, array $exclude = [], array $tables = []): string
+    {
+        if (!is_array($fields)) {
+            return $this->field($fields);
+        }
+        if (!is_array($exclude)) {
+            $exclude = [];
+        }
+        $fieldDef = [];
+        foreach ($fields as $key => $value) {
+            // if ($value instanceof Table) {
+            //     $value = ((1 === $value->limit()) ? '(' : 'array(').$value.')';
+            // }
+            if (is_string($value) && in_array($value, $exclude)) {
+                $fieldDef[] = $value;
+            } elseif (is_numeric($key)) {
+                $fieldDef[] = is_array($value) ? $this->prepareFields($value, [], $tables) : $this->field($value);
+            } elseif (is_array($value)) {
+                $fields = [];
+                $fieldMap = array_to_dot_notation([$key => $this->prepareArrayAliases($value)]);
+                foreach ($fieldMap as $alias => $field) {
+                    if (preg_match('/^((\w+)\.)?\*$/', trim($field), $matches) > 0) {
+                        if (count($matches) > 1) {
+                            $alias = ake($tables, $matches[2]);
+                        } else {
+                            $alias = reset($tables);
+                            $value = key($tables).'.*';
+                        }
+                        $this->selectGroups[$alias] = $key;
+                        $fieldDef[] = $this->field($field);
+
+                        continue;
+                    }
+                    $lookup = md5(uniqid('dbi_', true));
+                    $this->selectGroups[$lookup] = $alias;
+                    $fields[$lookup] = $field;
+                }
+                $fieldDef[] = $this->prepareFields($fields, [], $tables);
+            } elseif (preg_match('/^((\w+)\.)?\*$/', trim($value), $matches) > 0) {
+                if (count($matches) > 1) {
+                    $alias = ake($tables, $matches[2]);
+                } else {
+                    $alias = reset($tables);
+                    $value = key($tables).'.*';
+                }
+                $this->selectGroups[$alias] = $key;
+                $fieldDef[] = $this->field($value);
+            } else {
+                $fieldDef[] = $this->field($value).' AS '.$this->field($key);
+            }
+        }
+
+        return implode(', ', $fieldDef);
+    }
+
+    public function prepareValues(mixed $values): string
+    {
+        if (!is_array($values)) {
+            $values = [$values];
+        }
+        foreach ($values as &$value) {
+            $value = $this->prepareValue($value);
+        }
+
+        return implode(',', $values);
+    }
+
+    public function prepareValue(mixed $value, ?string $key = null): mixed
+    {
+        if (is_array($value) && count($value) > 0) {
+            $value = $this->prepareCriteria($value, null, null, null, $key);
+        } elseif ($value instanceof Date) {
+            $value = $this->quote($value->format('Y-m-d H:i:s'));
+        } elseif (is_null($value) || (is_array($value) && 0 === count($value))) {
+            $value = 'NULL';
+        } elseif (is_bool($value)) {
+            $value = ($value ? 'TRUE' : 'FALSE');
+        } elseif ($value instanceof \stdClass) {
+            $value = $this->quote(json_encode($value));
+        } elseif (!is_int($value) && (':' !== substr($value, 0, 1) || ':' === substr($value, 1, 1))) {
+            $value = $this->quote((string) $value);
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param array<mixed> $array
+     *
+     * @return array<mixed>
+     */
+    public function prepareArrayAliases(array $array): array
+    {
+        foreach ($array as $key => &$value) {
+            if (is_array($value)) {
+                $value = $this->prepareArrayAliases($value);
+            } elseif (is_string($value) && '*' === substr($value, -1)) {
+                continue;
+            }
+            if (!is_numeric($key)) {
+                continue;
+            }
+            unset($array[$key]);
+            $key = $value;
+            if (($pos = strrpos($key, '.')) > 0) {
+                $key = substr($key, $pos + 1);
+            }
+            $array[$key] = $value;
+        }
+
+        return $array;
+    }
+
     /**
      * @param array<mixed> $criteria
      */
-    protected function prepareCriteria(
+    public function prepareCriteria(
         array|string $criteria,
         ?string $bindType = null,
         ?string $tissue = null,
@@ -554,7 +725,7 @@ class SQL implements QueryBuilder
     /**
      * @return null|array<string>|string
      */
-    protected function prepareCriteriaAction(
+    private function prepareCriteriaAction(
         string $action,
         mixed $value,
         string $tissue = '=',
@@ -647,136 +818,13 @@ class SQL implements QueryBuilder
     }
 
     /**
-     * @param array<string> $exclude
-     * @param array<string> $tables
-     */
-    protected function prepareFields(mixed $fields, array $exclude = [], array $tables = []): string
-    {
-        if (!is_array($fields)) {
-            return $this->field($fields);
-        }
-        if (!is_array($exclude)) {
-            $exclude = [];
-        }
-        $fieldDef = [];
-        foreach ($fields as $key => $value) {
-            // if ($value instanceof Table) {
-            //     $value = ((1 === $value->limit()) ? '(' : 'array(').$value.')';
-            // }
-            if (is_string($value) && in_array($value, $exclude)) {
-                $fieldDef[] = $value;
-            } elseif (is_numeric($key)) {
-                $fieldDef[] = is_array($value) ? $this->prepareFields($value, [], $tables) : $this->field($value);
-            } elseif (is_array($value)) {
-                $fields = [];
-                $fieldMap = array_to_dot_notation([$key => $this->prepareArrayAliases($value)]);
-                foreach ($fieldMap as $alias => $field) {
-                    if (preg_match('/^((\w+)\.)?\*$/', trim($field), $matches) > 0) {
-                        if (count($matches) > 1) {
-                            $alias = ake($tables, $matches[2]);
-                        } else {
-                            $alias = reset($tables);
-                            $value = key($tables).'.*';
-                        }
-                        $this->selectGroups[$alias] = $key;
-                        $fieldDef[] = $this->field($field);
-
-                        continue;
-                    }
-                    $lookup = md5(uniqid('dbi_', true));
-                    $this->selectGroups[$lookup] = $alias;
-                    $fields[$lookup] = $field;
-                }
-                $fieldDef[] = $this->prepareFields($fields, [], $tables);
-            } elseif (preg_match('/^((\w+)\.)?\*$/', trim($value), $matches) > 0) {
-                if (count($matches) > 1) {
-                    $alias = ake($tables, $matches[2]);
-                } else {
-                    $alias = reset($tables);
-                    $value = key($tables).'.*';
-                }
-                $this->selectGroups[$alias] = $key;
-                $fieldDef[] = $this->field($value);
-            } else {
-                $fieldDef[] = $this->field($value).' AS '.$this->field($key);
-            }
-        }
-
-        return implode(', ', $fieldDef);
-    }
-
-    protected function prepareValues(mixed $values): string
-    {
-        if (!is_array($values)) {
-            $values = [$values];
-        }
-        foreach ($values as &$value) {
-            $value = $this->prepareValue($value);
-        }
-
-        return implode(',', $values);
-    }
-
-    protected function prepareValue(mixed $value, ?string $key = null): mixed
-    {
-        if (is_array($value) && count($value) > 0) {
-            $value = $this->prepareCriteria($value, null, null, null, $key);
-        } elseif ($value instanceof Date) {
-            $value = $this->quote($value->format('Y-m-d H:i:s'));
-        } elseif (is_null($value) || (is_array($value) && 0 === count($value))) {
-            $value = 'NULL';
-        } elseif (is_bool($value)) {
-            $value = ($value ? 'TRUE' : 'FALSE');
-        } elseif ($value instanceof \stdClass) {
-            $value = $this->quote(json_encode($value));
-        } elseif (!is_int($value) && (':' !== substr($value, 0, 1) || ':' === substr($value, 1, 1))) {
-            $value = $this->quote((string) $value);
-        }
-
-        return $value;
-    }
-
-    protected function field(string $string): string
-    {
-        if (in_array(strtoupper($string), $this->reservedWords)) {
-            $string = $this->quoteSpecial($string);
-        }
-
-        return $string;
-    }
-
-    /**
-     * @param array<mixed> $array
-     *
-     * @return array<mixed>
-     */
-    protected function prepareArrayAliases(array $array): array
-    {
-        foreach ($array as $key => &$value) {
-            if (is_array($value)) {
-                $value = $this->prepareArrayAliases($value);
-            } elseif (is_string($value) && '*' === substr($value, -1)) {
-                continue;
-            }
-            if (!is_numeric($key)) {
-                continue;
-            }
-            unset($array[$key]);
-            $key = $value;
-            if (($pos = strrpos($key, '.')) > 0) {
-                $key = substr($key, $pos + 1);
-            }
-            $array[$key] = $value;
-        }
-
-        return $array;
-    }
-
-    /**
      * @return array<string>
      */
     private function tables(): array
     {
+        if (!$this->from) {
+            return [];
+        }
         $tables = [$this->from[1] ?? $this->from[0] => $this->from[0]];
         foreach ($this->joins as $alias => $join) {
             $tables[$alias] = $join['ref'];
@@ -818,7 +866,7 @@ class SQL implements QueryBuilder
             $order[] = $orderDefinition;
         } elseif (is_array($orderDefinition)) {
             foreach ($orderDefinition as $field => $mode) {
-                $name = ake($this->selectGroups, $this->from, $this->from).'.'.$field;
+                $name = ake($this->selectGroups, $this->from[0], $this->from[0]).'.'.$field;
                 if ($key = array_search($name, $this->selectGroups)) {
                     $field = $key;
                 }

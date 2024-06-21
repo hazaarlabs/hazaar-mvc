@@ -62,6 +62,14 @@ trait PDO
     }
 
     /**
+     * @return array{string, string, string}
+     */
+    public function errorInfo(): array
+    {
+        return $this->pdo->errorInfo();
+    }
+
+    /**
      * @param array<int, bool> $driverOptions
      */
     protected function connect(

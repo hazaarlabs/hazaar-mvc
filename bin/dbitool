@@ -1,4 +1,4 @@
 #!/bin/sh
 BASEDIR="$(dirname "$(realpath "$0")")/../"
 export CLI_COMMAND=$0
-php $BASEDIR/src/DBI/CLI.php $@
+php $BASEDIR/src/DBI2/CLI.php $@

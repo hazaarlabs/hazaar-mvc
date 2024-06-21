@@ -46,6 +46,8 @@ interface QueryBuilder
 
     public function count(): string;
 
+    public function exists(string $table, mixed $criteria = null): string;
+
     public function select(mixed ...$columns): self;
 
     public function from(string $table): self;
@@ -101,4 +103,46 @@ interface QueryBuilder
     public function offset(int $offset): int|self;
 
     public function toString(): string;
+
+    public function getSchemaName(): ?string;
+
+    /**
+     * @return array<int,string>
+     */
+    public function parseSchemaName(string $tableName): array;
+
+    public function schemaName(string $tableName): string;
+
+    public function quoteSpecial(mixed $value): mixed;
+
+    public function field(string $string): string;
+
+    /**
+     * @param array<string> $exclude
+     * @param array<string> $tables
+     */
+    public function prepareFields(mixed $fields, array $exclude = [], array $tables = []): string;
+
+    public function prepareValues(mixed $values): string;
+
+    public function prepareValue(mixed $value, ?string $key = null): mixed;
+
+    /**
+     * @param array<mixed> $array
+     *
+     * @return array<mixed>
+     */
+    public function prepareArrayAliases(array $array): array;
+
+    /**
+     * @param array<mixed> $criteria
+     */
+    public function prepareCriteria(
+        array|string $criteria,
+        ?string $bindType = null,
+        ?string $tissue = null,
+        ?string $parentRef = null,
+        null|int|string $optionalKey = null,
+        bool &$setKey = true
+    ): string;
 }

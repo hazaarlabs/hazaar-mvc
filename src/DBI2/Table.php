@@ -33,6 +33,22 @@ class Table
         return $this->queryBuilder->toString();
     }
 
+    public function exists(mixed $criteria = null): bool
+    {
+        if (null === $criteria) {
+            $criteria = [
+                'table_name' => $this->table,
+                'table_schema' => $this->queryBuilder->getSchemaName(),
+            ];
+            $tableName = 'information_schema.tables';
+        } else {
+            $tableName = $this->table;
+        }
+        $sql = $this->queryBuilder->exists($tableName, $criteria);
+
+        return $this->driver->query($sql)->fetchColumn(0);
+    }
+
     /**
      * @param array<string>|string $columns
      */
