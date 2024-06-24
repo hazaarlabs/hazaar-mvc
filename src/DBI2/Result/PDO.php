@@ -53,6 +53,11 @@ class PDO extends Result
         return $this->statement->rowCount();
     }
 
+    public function columnCount(): int
+    {
+        return $this->statement->columnCount();
+    }
+
     /**
      * @return array<mixed>|false
      */

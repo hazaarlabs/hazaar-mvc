@@ -69,6 +69,11 @@ trait PDO
         return $this->pdo->errorInfo();
     }
 
+    public function errorCode(): string
+    {
+        return $this->pdo->errorCode();
+    }
+
     /**
      * @param array<int, bool> $driverOptions
      */

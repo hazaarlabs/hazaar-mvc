@@ -33,4 +33,6 @@ interface Result
     public function fetchObject(string $className = 'stdClass', array $constructorArgs = []): false|object;
 
     public function rowCount(): int;
+
+    public function columnCount(): int;
 }

@@ -12,6 +12,7 @@ use Hazaar\Application;
 use Hazaar\Application\Config;
 use Hazaar\DBI2\Exception\DriverNotFound;
 use Hazaar\DBI2\Exception\NotConfigured;
+use Hazaar\DBI2\Schema\Manager;
 use Hazaar\Map;
 
 /**
@@ -77,6 +78,8 @@ class Adapter
 
     private DBD\Interfaces\Driver $driver;
 
+    private Manager $schemaManager;
+
     /**
      * Hazaar DBI Constructor.
      *
@@ -92,7 +95,8 @@ class Adapter
             $config = $this->getDefaultConfig($configName);
         } elseif (!is_string($config)) {
             $config = Map::_($config, self::$defaultConfig);
-        } else {
+        }
+        if (!$config) {
             throw new NotConfigured();
         }
         $this->config = $config;
@@ -102,6 +106,18 @@ class Adapter
         if (!$this->reconfigure()) {
             throw new \Exception('Unkown DBI driver: '.$this->config->get('driver'));
         }
+    }
+
+    /**
+     * Returns an instance of the Hazaar\DBI\Schema\Manager for managing database schema versions.
+     */
+    public function getSchemaManager(): Manager
+    {
+        if (!isset($this->schemaManager)) {
+            $this->schemaManager = new Manager($this->config);
+        }
+
+        return $this->schemaManager;
     }
 
     /**
@@ -124,6 +140,64 @@ class Adapter
         }
 
         return new self($configEnv);
+    }
+
+    /**
+     * @return array{string, string, string}
+     */
+    public function errorInfo(): array
+    {
+        return $this->driver->errorInfo();
+    }
+
+    public function errorCode(): string
+    {
+        return $this->driver->errorCode();
+    }
+
+    public function errorException(?string $msg = null): \Exception
+    {
+        if ($err = $this->errorInfo()) {
+            if (null !== $err[1]) {
+                $msg .= ((null !== $msg) ? ' SQL ERROR '.$err[0].': ' : $err[0].': ').$err[2];
+            }
+            if (null !== $msg) {
+                return new \Exception($msg, (int) $err[1]);
+            }
+        }
+
+        return new \Exception('Unknown DBI Error!');
+    }
+
+    public function getSchemaName(): string
+    {
+        return $this->driver->getSchemaName();
+    }
+
+    public function schemaExists(?string $schemaName = null): bool
+    {
+        return $this->driver->schemaExists($schemaName);
+    }
+
+    public function createSchema(string $name): bool
+    {
+        return $this->driver->createSchema($name);
+    }
+
+    /**
+     * @param array<string>|string $privilege
+     */
+    public function grant(array|string $privilege, string $object, string $to, ?string $schema = null): bool
+    {
+        return $this->driver->grant($privilege, $object, $to, $schema);
+    }
+
+    /**
+     * @param array<string>|string $privilege
+     */
+    public function revoke(array|string $privilege, string $object, string $from, ?string $schema = null): bool
+    {
+        return $this->driver->revoke($privilege, $object, $from, $schema);
     }
 
     /**
@@ -185,13 +259,41 @@ class Adapter
      *
      * @param string $tableName the name of the table to insert the record into
      * @param mixed  $data      The data to be inserted. This can be an associative array or an object.
-     * @param bool   $returning Optional. Whether to return the inserted record. Defaults to false.
+     * @param mixed  $returning Optional. Whether to return the inserted record. Defaults to false.
      *
-     * @return false|int returns false if the insert fails, otherwise returns the ID of the inserted record
+     * @return mixed returns false if the insert fails, otherwise returns the ID of the inserted record
      */
-    public function insert(string $tableName, mixed $data, bool $returning = false): false|int
+    public function insert(string $tableName, mixed $data, mixed $returning = null): mixed
     {
-        return $this->driver->insert($tableName, $data, $returning);
+        return $this->table($tableName)->insert($data, $returning);
+    }
+
+    /**
+     * Update a record in the specified table.
+     *
+     * @param string $tableName the name of the table to update the record in
+     * @param mixed  $data      The data to be updated. This can be an associative array or an object.
+     * @param mixed  $where     The WHERE clause to apply to the update. This can be an associative array or an object.
+     * @param mixed  $returning Optional. Whether to return the updated record. Defaults to false.
+     *
+     * @return false|int returns false if the update fails, otherwise returns the number of rows updated
+     */
+    public function update(string $tableName, mixed $data, mixed $where, mixed $returning = null): false|int
+    {
+        return $this->table($tableName)->update($data, $where, $returning);
+    }
+
+    /**
+     * Delete a record from the specified table.
+     *
+     * @param string $tableName the name of the table to delete the record from
+     * @param mixed  $where     The WHERE clause to apply to the delete. This can be an associative array or an object.
+     *
+     * @return false|int returns false if the delete fails, otherwise returns the number of rows deleted
+     */
+    public function delete(string $tableName, mixed $where): false|int
+    {
+        return $this->table($tableName)->delete($where);
     }
 
     /**
@@ -201,9 +303,9 @@ class Adapter
      *
      * @return Table the Table object for the specified table name
      */
-    public function table(string $tableName): Table
+    public function table(string $tableName, ?string $alias = null): Table
     {
-        return new Table($this->driver, $tableName);
+        return new Table($this->driver, $tableName, $alias);
     }
 
     /**

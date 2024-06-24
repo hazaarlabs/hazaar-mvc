@@ -15,9 +15,12 @@ class Table
     private string $table;
     private ?Result $result = null;
 
-    public function __construct(Driver $driver, string $table)
+    public function __construct(Driver $driver, string $table, ?string $alias = null)
     {
         $this->table = $table;
+        if (null !== $alias) {
+            $this->table .= ' '.$alias;
+        }
         $this->driver = $driver;
         $this->queryBuilder = $driver->getQueryBuilder();
         $this->queryBuilder->from($this->table);
@@ -74,20 +77,134 @@ class Table
     }
 
     /**
+     * @param array<string,int>|string $columns
+     */
+    public function order(array|string $columns, int $direction = SORT_ASC): self
+    {
+        $this->queryBuilder->order($columns, $direction);
+
+        return $this;
+    }
+
+    public function group(array|string $columns): self
+    {
+        $this->queryBuilder->group($columns);
+
+        return $this;
+    }
+
+    public function having(array|string $having): self
+    {
+        $this->queryBuilder->having($having);
+
+        return $this;
+    }
+
+    /**
+     * Join a table to the current query using the provided join criteria.
+     *
+     * @param array<mixed>|string $on    The join criteria.  This is mostly just a standard query selection criteria.
+     * @param string              $alias an alias to use for the joined table
+     * @param string              $type  the join type such as INNER, OUTER, LEFT, RIGHT, etc
+     */
+    public function join(string $table, array|string $on, ?string $alias = null, string $type = 'INNER'): self
+    {
+        $this->queryBuilder->join($table, $on, $alias, $type);
+
+        return $this;
+    }
+
+    /**
+     * Join a table to the current query using the provided join criteria.
+     *
+     * @param array<mixed>|string $on    The join criteria.  This is mostly just a standard query selection criteria.
+     * @param string              $alias an alias to use for the joined table
+     */
+    public function leftJoin(string $table, array|string $on, ?string $alias = null): self
+    {
+        $this->queryBuilder->join($table, $on, $alias, 'LEFT');
+
+        return $this;
+    }
+
+    /**
+     * Join a table to the current query using the provided join criteria.
+     *
+     * @param array<mixed>|string $on    The join criteria.  This is mostly just a standard query selection criteria.
+     * @param string              $alias an alias to use for the joined table
+     */
+    public function rightJoin(string $table, array|string $on, ?string $alias = null): self
+    {
+        $this->queryBuilder->join($table, $on, $alias, 'RIGHT');
+
+        return $this;
+    }
+
+    /**
+     * Join a table to the current query using the provided join criteria.
+     *
+     * @param array<mixed>|string $on    The join criteria.  This is mostly just a standard query selection criteria.
+     * @param string              $alias an alias to use for the joined table
+     */
+    public function innerJoin(string $table, array|string $on, ?string $alias = null): self
+    {
+        $this->queryBuilder->join($table, $on, $alias, 'INNER');
+
+        return $this;
+    }
+
+    /**
+     * Join a table to the current query using the provided join criteria.
+     *
+     * @param array<mixed>|string $on    The join criteria.  This is mostly just a standard query selection criteria.
+     * @param string              $alias an alias to use for the joined table
+     */
+    public function outerJoin(string $table, array|string $on, ?string $alias = null): self
+    {
+        $this->queryBuilder->join($table, $on, $alias, 'OUTER');
+
+        return $this;
+    }
+
+    /**
+     * Join a table to the current query using the provided join criteria.
+     *
+     * @param array<mixed>|string $on    The join criteria.  This is mostly just a standard query selection criteria.
+     * @param string              $alias an alias to use for the joined table
+     */
+    public function fullJoin(string $table, array|string $on, ?string $alias = null): self
+    {
+        $this->queryBuilder->join($table, $on, $alias, 'FULL');
+
+        return $this;
+    }
+
+    /**
+     * Join a table to the current query using the provided join criteria.
+     *
+     * @param array<mixed>|string $on    The join criteria.  This is mostly just a standard query selection criteria.
+     * @param string              $alias an alias to use for the joined table
+     */
+    public function crossJoin(string $table, array|string $on, ?string $alias = null): self
+    {
+        $this->queryBuilder->join($table, $on, $alias, 'CROSS');
+
+        return $this;
+    }
+
+    /**
      * @param array<mixed> $values
      */
     public function insert(array $values, mixed $returning = null): mixed
     {
         $result = $this->driver->query($this->queryBuilder->insert($this->table, $values, $returning));
-        if (null !== $returning) {
-            if ('*' === $returning) {
-                return $result->fetch();
-            }
-
-            return $result->fetchColumn(0);
+        if (!$result) {
+            return false;
         }
 
-        return $result->rowCount();
+        return null === $returning
+            ? $result->rowCount()
+            : ($result->columnCount() > 1 ? $result->fetch() : $result->fetchColumn(0));
     }
 
     /**
@@ -96,15 +213,28 @@ class Table
     public function update(mixed $values, array|string $where = [], mixed $returning = null): mixed
     {
         $result = $this->driver->query($this->queryBuilder->update($this->table, $values, $where, [], $returning));
-        if (null !== $returning) {
-            if ('*' === $returning) {
-                return $result->fetch();
-            }
 
-            return $result->fetchColumn(0);
-        }
+        return null === $returning
+            ? $result->rowCount()
+            : ($result->columnCount() > 1 ? $result->fetch() : $result->fetchColumn(0));
+    }
 
-        return $result->rowCount();
+    /**
+     * @param array<mixed>|string $where
+     */
+    public function delete(array|string $where): false|int
+    {
+        return $this->driver->query($this->queryBuilder->delete($this->table, $where));
+    }
+
+    public function deleteAll(): false|int
+    {
+        return $this->driver->exec($this->queryBuilder->delete($this->table, []));
+    }
+
+    public function truncate(bool $cascade = false): bool
+    {
+        return false !== $this->driver->exec($this->queryBuilder->truncate($this->table, $cascade));
     }
 
     /**
@@ -167,7 +297,7 @@ class Table
     public function fetch(): array|false
     {
         if (null === $this->result) {
-            $this->result = $this->driver->query($this->queryBuilder->select()->toString());
+            $this->result = $this->driver->query($this->queryBuilder->toString());
         }
         if ($this->result instanceof Result) {
             return $this->result->fetch();
@@ -181,12 +311,29 @@ class Table
      */
     public function fetchAll(): array|false
     {
-        $result = $this->driver->query($this->queryBuilder->select()->toString());
+        $result = $this->driver->query($this->queryBuilder->toString());
         if ($result instanceof Result) {
             return $result->fetchAll();
         }
 
         return false;
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    public function fetchAllColumn(
+        string $columnName,
+        mixed $fetchArgument = null,
+        bool $clobberDupNamedCols = false
+    ): array {
+        $result = $this->driver->query($this->queryBuilder->select($columnName)->from($this->table)->toString());
+        $data = [];
+        while ($row = $result->fetch()) {
+            $data[] = $row[$columnName];
+        }
+
+        return $data;
     }
 
     /**

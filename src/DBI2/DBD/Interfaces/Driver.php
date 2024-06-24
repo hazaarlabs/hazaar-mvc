@@ -12,7 +12,30 @@ use Hazaar\DBI2\Result;
  */
 interface Driver
 {
+    /**
+     * @return array{string, string, string}
+     */
+    public function errorInfo(): array;
+
+    public function errorCode(): string;
+
     public function setTimezone(string $tz): bool;
+
+    public function getSchemaName(): string;
+
+    public function schemaExists(?string $schemaName = null): bool;
+
+    public function createSchema(string $name): bool;
+
+    /**
+     * @param array<string>|string $privilege
+     */
+    public function grant(array|string $privilege, string $object, string $to, ?string $schema = null): bool;
+
+    /**
+     * @param array<string>|string $privilege
+     */
+    public function revoke(array|string $privilege, string $object, string $from, ?string $schema = null): bool;
 
     /**
      * Begins a database transaction.
@@ -93,7 +116,7 @@ interface Driver
     public function describeSequence(string $name): array|false;
 
     /**
-     * @return array<string,array{table:string,columns:array<string>,unique:boolean}>
+     * @return array<string,array{table:string,columns:array<string>,unique:bool}>
      */
     public function listIndexes(string $table): array|false;
 

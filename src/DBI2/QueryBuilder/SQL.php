@@ -165,6 +165,17 @@ class SQL implements QueryBuilder
         $this->offset = null;
     }
 
+    public function create(string $name, string $type, bool $ifNotExists = false): string
+    {
+        $sql = 'CREATE '.strtoupper($type).' ';
+        if ($ifNotExists) {
+            $sql .= 'IF NOT EXISTS ';
+        }
+        $sql .= $name;
+
+        return $sql;
+    }
+
     public function insert(
         string $tableName,
         mixed $fields,
@@ -290,6 +301,16 @@ class SQL implements QueryBuilder
         return $sql.' WHERE '.$this->prepareCriteria($criteria);
     }
 
+    public function truncate(string $tableName, bool $cascade = false): string
+    {
+        $sql = 'TRUNCATE TABLE '.$this->schemaName($tableName);
+        if ($cascade) {
+            $sql .= ' CASCADE';
+        }
+
+        return $sql;
+    }
+
     public function count(): string
     {
         return $this->select('COUNT(*)')->toString();
@@ -382,26 +403,6 @@ class SQL implements QueryBuilder
         ];
 
         return $this;
-    }
-
-    public function innerJoin(string $references, null|array|string $on = null, ?string $alias = null): self
-    {
-        return $this->join($references, $on, $alias, 'INNER');
-    }
-
-    public function leftJoin(string $references, null|array|string $on = null, ?string $alias = null): self
-    {
-        return $this->join($references, $on, $alias, 'LEFT');
-    }
-
-    public function rightJoin(string $references, null|array|string $on = null, ?string $alias = null): self
-    {
-        return $this->join($references, $on, $alias, 'RIGHT');
-    }
-
-    public function fullJoin(string $references, null|array|string $on = null, ?string $alias = null): self
-    {
-        return $this->join($references, $on, $alias, 'FULL');
     }
 
     public function order(array|string $fieldDef, int $sortDirection = SORT_ASC): self

@@ -29,7 +29,57 @@ class Pgsql implements Interfaces\Driver
     public function __construct(Map $config)
     {
         $this->initQueryBuilder($config->get('schema', 'public'));
-        $this->connect($this->mkdsn($config));
+        $driverOptions = [];
+        if ($config->has('options')) {
+            $driverOptions = $config['options']->toArray();
+            foreach ($driverOptions as $key => $value) {
+                if (($constKey = constant('\PDO::'.$key)) === null) {
+                    continue;
+                }
+                $driverOptions[$constKey] = $value;
+                unset($driverOptions[$key]);
+            }
+        }
+        $this->connect($this->mkdsn($config), $config->get('user'), $config->get('password'), $driverOptions);
+    }
+
+    public function getSchemaName(): string
+    {
+        return $this->queryBuilder->getSchemaName();
+    }
+
+    /**
+     * Checks if a schema exists in the database.
+     *
+     * @param string $schemaName the name of the schema to check
+     *
+     * @return bool returns true if the schema exists, false otherwise
+     */
+    public function schemaExists(?string $schemaName = null): bool
+    {
+        if (!$schemaName) {
+            $schemaName = $this->queryBuilder->getSchemaName();
+        }
+        $sql = $this->queryBuilder->exists('information_schema.schemata', ['schema_name' => $schemaName]);
+        if ($result = $this->query($sql)) {
+            return boolify($result->fetchColumn(0));
+        }
+
+        return false;
+    }
+
+    /**
+     * Creates a new database schema if it does not already exist.
+     *
+     * @param string $schemaName the name of the schema to create
+     *
+     * @return bool returns true if the schema was created successfully, false otherwise
+     */
+    public function createSchema(string $schemaName): bool
+    {
+        $sql = $this->queryBuilder->create($schemaName, 'schema', true);
+
+        return false !== $this->exec($sql);
     }
 
     public function query(string $sql): false|Result

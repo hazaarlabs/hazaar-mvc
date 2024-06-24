@@ -8,6 +8,8 @@ use Hazaar\DBI2\Table;
 
 interface QueryBuilder
 {
+    public function create(string $name, string $type, bool $ifNotExists = false): string;
+
     /**
      * @param array<mixed> $conflictTarget
      */
@@ -44,6 +46,8 @@ interface QueryBuilder
         array $from = []
     ): string;
 
+    public function truncate(string $table, bool $cascade = false): string;
+
     public function count(): string;
 
     public function exists(string $table, mixed $criteria = null): string;
@@ -74,29 +78,9 @@ interface QueryBuilder
     public function join(string $references, null|array|string $on = null, ?string $alias = null, string $type = 'INNER'): self;
 
     /**
-     * @param array<mixed> $on
+     * @param array<string,int>|string $columns
      */
-    public function innerJoin(string $references, null|array|string $on = null, ?string $alias = null): self;
-
-    /**
-     * @param array<mixed> $on
-     */
-    public function leftJoin(string $references, null|array|string $on = null, ?string $alias = null): self;
-
-    /**
-     * @param array<mixed> $on
-     */
-    public function rightJoin(string $references, null|array|string $on = null, ?string $alias = null): self;
-
-    /**
-     * @param array<mixed>|string $on
-     */
-    public function fullJoin(string $references, null|array|string $on = null, ?string $alias = null): self;
-
-    /**
-     * @param array<string,int>|string $fieldDef
-     */
-    public function order(array|string $fieldDef, int $sortDirection = SORT_ASC): self;
+    public function order(array|string $columns, int $sortDirection = SORT_ASC): self;
 
     public function limit(int $limit): int|self;
 
