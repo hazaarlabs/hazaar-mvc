@@ -397,6 +397,16 @@ class Http extends \Hazaar\Application\Request {
 
     }
 
+    public function isBrowser(){
+        
+        $pattern = '/(Mozilla\/|Opera\/|Chrome\/|Safari\/|MSIE|Trident\/|Edge\/|Edg\/)/i';
+
+        $userAgent = $_SERVER['HTTP_USER_AGENT'];
+
+        return preg_match($pattern, $userAgent) > 0;
+
+    }
+
     public function method(){
 
         return $this->method;
