@@ -79,7 +79,7 @@ class Cache implements Storage
         }
     }
 
-    public function __destruct()
+    public function close(): void
     {
         if ($this->session) {
             $this->session->set('data', $this->data);

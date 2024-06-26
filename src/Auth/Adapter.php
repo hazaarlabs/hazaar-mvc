@@ -265,15 +265,17 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
      */
     public function check(string $credential): bool
     {
-        $auth = $this->queryAuth($this->getIdentity(), $this->options['extra'] ?? []);
-        if (false === $auth || !(is_array($auth)
-            && array_key_exists('identity', $auth)
-            && array_key_exists('credential', $auth))) {
-            return false;
-        }
-        if ($auth['identity'] === $this->getIdentity()
-            && hash_equals($this->getCredentialHash($credential), $auth['credential'])) {
-            return true;
+        if ($identity = $this->getIdentity()) {
+            $auth = $this->queryAuth($identity, $this->options->get('extra', [])->toArray());
+            if (false === $auth || !(is_array($auth)
+                && array_key_exists('identity', $auth)
+                && array_key_exists('credential', $auth))) {
+                return false;
+            }
+            if ($auth['identity'] === $identity
+                && hash_equals($this->getCredentialHash($credential), $auth['credential'])) {
+                return true;
+            }
         }
 
         return false;
@@ -375,11 +377,14 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
      */
     public function setStorageAdapter(string $storage, array|Map $options = []): bool
     {
-        $class = '\\Hazaar\\Auth\\Storage\\'.ucfirst($storage);
+        $class = '\Hazaar\Auth\Storage\\'.ucfirst($storage);
         if (!class_exists($class)) {
             throw new UnknownStorageAdapter($storage);
         }
         $this->storage = new $class(Map::_($options));
+        if (!$this->storage->isEmpty()) {
+            $this->identity = $this->storage->get('identity');
+        }
 
         return true;
     }
