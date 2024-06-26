@@ -15,7 +15,7 @@ interface Driver
     /**
      * @return array{string, string, string}
      */
-    public function errorInfo(): array;
+    public function errorInfo(): array|false;
 
     public function errorCode(): string;
 
@@ -84,6 +84,10 @@ interface Driver
     public function getQueryBuilder(): QueryBuilder;
 
     /**
+     * TABLES.
+     */
+
+    /**
      * @return array<array{name:string,schema:string}>
      */
     public function listTables(): array|false;
@@ -91,7 +95,7 @@ interface Driver
     public function createTable(string $tableName, mixed $columns): bool;
 
     /**
-     * @return array<int, array<string>>|false
+     * @return array<array{name:string,data_type:string,not_null:bool,default:?mixed,length:?int,sequence:?string}>|false
      */
     public function describeTable(string $tableName, ?string $sort = null): array|false;
 
@@ -106,6 +110,26 @@ interface Driver
     public function dropColumn(string $tableName, string $column, bool $ifExists = false): bool;
 
     /**
+     * TRUNCATE empty a table or set of tables.
+     *
+     * TRUNCATE quickly removes all rows from a set of tables. It has the same effect as an unqualified DELETE on
+     * each table, but since it does not actually scan the tables it is faster. Furthermore, it reclaims disk space
+     * immediately, rather than requiring a subsequent VACUUM operation. This is most useful on large tables.
+     *
+     * @param string $tableName       The name of the table(s) to truncate.  Multiple tables are supported.
+     * @param bool   $only            Only the named table is truncated. If FALSE, the table and all its descendant tables (if any) are truncated.
+     * @param bool   $restartIdentity Automatically restart sequences owned by columns of the truncated table(s).  The default is to no restart.
+     * @param bool   $cascade         If TRUE, automatically truncate all tables that have foreign-key references to any of the named tables, or
+     *                                to any tables added to the group due to CASCADE.  If FALSE, Refuse to truncate if any of the tables have
+     *                                foreign-key references from tables that are not listed in the command. FALSE is the default.
+     */
+    public function truncate(string $tableName, bool $only = false, bool $restartIdentity = false, bool $cascade = false): bool;
+
+    /**
+     * SEQUENCES.
+     */
+
+    /**
      * @return array<string>
      */
     public function listSequences(): array|false;
@@ -115,6 +139,18 @@ interface Driver
      */
     public function describeSequence(string $name): array|false;
 
+    public function createSequence(string $name, int $start = 1, int $increment = 1): bool;
+
+    public function dropSequence(string $name, bool $ifExists = false): bool;
+
+    public function nextSequenceValue(string $name): false|int;
+
+    public function setSequenceValue(string $name, int $value): bool;
+
+    /**
+     * INDEXES.
+     */
+
     /**
      * @return array<string,array{table:string,columns:array<string>,unique:bool}>
      */
@@ -123,6 +159,10 @@ interface Driver
     public function createIndex(string $indexName, string $tableName, mixed $idxInfo): bool;
 
     public function dropIndex(string $indexName, bool $ifExists = false): bool;
+
+    /**
+     * CONSTRAINTS.
+     */
 
     /**
      * @return array<int, array<string>>|false
@@ -136,6 +176,10 @@ interface Driver
     public function addConstraint(string $constraintName, mixed $info): bool;
 
     public function dropConstraint(string $constraintName, string $tableName, bool $cascade = false, bool $ifExists = false): bool;
+
+    /**
+     * VIEWS.
+     */
 
     /**
      * @return array<int, array<string>>|false
@@ -152,6 +196,10 @@ interface Driver
     public function viewExists(string $viewName): bool;
 
     public function dropView(string $name, bool $cascade = false, bool $ifExists = false): bool;
+
+    /**
+     * FUNCTIONS.
+     */
 
     /**
      * List defined functions.
@@ -190,6 +238,10 @@ interface Driver
     ): bool;
 
     /**
+     * TRIGGERS.
+     */
+
+    /**
      * List defined triggers.
      *
      * @param string $schemaName Optional: schema name.  If not supplied the current schemaName is used.
@@ -226,6 +278,10 @@ interface Driver
     public function dropTrigger(string $triggerName, string $tableName, bool $cascade = false, bool $ifExists = false): bool;
 
     /**
+     * USERS AND GROUPS.
+     */
+
+    /**
      * @return array<int, array<string>>|false
      */
     public function listUsers(): array|false;
@@ -242,6 +298,14 @@ interface Driver
 
     public function dropRole(string $name, bool $ifExists = false): bool;
 
+    public function grantRole(string $role, string $to): bool;
+
+    public function revokeRole(string $role, string $from): bool;
+
+    /**
+     * EXTENSIONS.
+     */
+
     /**
      * @return array<string>|false
      */
@@ -251,21 +315,8 @@ interface Driver
 
     public function dropExtension(string $name, bool $ifExists = false): bool;
 
-    public function createDatabase(string $name): bool;
-
     /**
-     * TRUNCATE empty a table or set of tables.
-     *
-     * TRUNCATE quickly removes all rows from a set of tables. It has the same effect as an unqualified DELETE on
-     * each table, but since it does not actually scan the tables it is faster. Furthermore, it reclaims disk space
-     * immediately, rather than requiring a subsequent VACUUM operation. This is most useful on large tables.
-     *
-     * @param string $tableName       The name of the table(s) to truncate.  Multiple tables are supported.
-     * @param bool   $only            Only the named table is truncated. If FALSE, the table and all its descendant tables (if any) are truncated.
-     * @param bool   $restartIdentity Automatically restart sequences owned by columns of the truncated table(s).  The default is to no restart.
-     * @param bool   $cascade         If TRUE, automatically truncate all tables that have foreign-key references to any of the named tables, or
-     *                                to any tables added to the group due to CASCADE.  If FALSE, Refuse to truncate if any of the tables have
-     *                                foreign-key references from tables that are not listed in the command. FALSE is the default.
+     * DATABASES.
      */
-    public function truncate(string $tableName, bool $only = false, bool $restartIdentity = false, bool $cascade = false): bool;
+    public function createDatabase(string $name): bool;
 }

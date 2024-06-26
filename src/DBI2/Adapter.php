@@ -145,7 +145,7 @@ class Adapter
     /**
      * @return array{string, string, string}
      */
-    public function errorInfo(): array
+    public function errorInfo(): array|false
     {
         return $this->driver->errorInfo();
     }

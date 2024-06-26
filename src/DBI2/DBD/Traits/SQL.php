@@ -103,9 +103,6 @@ trait SQL
         return true;
     }
 
-    /**
-     * @return array<int, array<string>>|false
-     */
     public function describeTable(string $tableName, ?string $sort = null): array|false
     {
         if (!$sort) {
@@ -280,6 +277,26 @@ trait SQL
         $result = $this->query($sql);
 
         return $result->fetch(\PDO::FETCH_ASSOC);
+    }
+
+    public function createSequence(string $name, int $start = 1, int $increment = 1): bool
+    {
+        return false;
+    }
+
+    public function dropSequence(string $name, bool $ifExists = false): bool
+    {
+        return false;
+    }
+
+    public function nextSequenceValue(string $name): false|int
+    {
+        return false;
+    }
+
+    public function setSequenceValue(string $name, int $value): bool
+    {
+        return false;
     }
 
     public function listIndexes(?string $table = null): array|false
@@ -752,6 +769,16 @@ trait SQL
     }
 
     public function dropRole(string $name, bool $ifExists = false): bool
+    {
+        return false;
+    }
+
+    public function grantRole(string $role, string $to): bool
+    {
+        return false;
+    }
+
+    public function revokeRole(string $role, string $from): bool
     {
         return false;
     }

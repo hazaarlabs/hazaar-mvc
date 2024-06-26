@@ -359,4 +359,12 @@ class Table
 
         return 0;
     }
+
+    /**
+     * @return array<array{name:string,data_type:string,not_null:bool,default:?mixed,length:?int,sequence:?string}>|false
+     */
+    public function describe(): array|false
+    {
+        return $this->driver->describeTable($this->table);
+    }
 }
