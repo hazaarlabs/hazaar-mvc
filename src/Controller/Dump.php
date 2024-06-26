@@ -26,10 +26,10 @@ class Dump extends Diagnostic
     private float $exec_time = -1;
     private bool $backtrack = false;
 
-    public function __construct(mixed $data, float $exec_time, Router $router)
+    public function __construct(mixed $data, Router $router)
     {
         parent::__construct($router, 'debug');
-        $this->exec_time = $exec_time;
+        $this->exec_time = $this->application->GLOBALS['hazaar']['exec_start'];
         $this->data = $data;
     }
 

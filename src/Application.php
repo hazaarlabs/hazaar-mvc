@@ -25,8 +25,15 @@ use Hazaar\Controller\Response\HTTP\Redirect;
 use Hazaar\File\Metric;
 use Hazaar\Logger\Frontend;
 
+require_once __DIR__.DIRECTORY_SEPARATOR.'Constants.php';
+
+require_once __DIR__.DIRECTORY_SEPARATOR.'ErrorControl.php';
+
+require_once __DIR__.DIRECTORY_SEPARATOR.'Helpers.php';
+
 define('HAZAAR_VERSION', '3.0');
 define('HAZAAR_START', microtime(true));
+
 // Constant containing the application environment current being used.
 defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV') ? getenv('APPLICATION_ENV') : 'development');
 /*
@@ -84,7 +91,7 @@ class Application
      */
     public array $GLOBALS = [
         'hazaar' => [
-            'exec_start' => HAZAAR_EXEC_START,
+            'exec_start' => 0,
             'version' => HAZAAR_VERSION,
         ],
         'env' => APPLICATION_ENV,
@@ -132,6 +139,12 @@ class Application
     public function __construct($env)
     {
         try {
+            ob_start();
+            set_error_handler('error_handler', E_ERROR);
+            set_exception_handler('exception_handler');
+            register_shutdown_function('shutdown_handler');
+            register_shutdown_function([$this, 'shutdown']);
+            $this->GLOBALS['hazaar']['exec_start'] = HAZAAR_START;
             Application::$instance = $this;
             $this->environment = $env;
             // Create a timer for performance measuring
@@ -179,7 +192,7 @@ class Application
      * The destructor cleans up any application redirections. ifthe controller hasn't used it in this
      * run then it loses it. This prevents stale redirect URIs from accidentally being used.
      */
-    public function __destruct()
+    public function shutdown(): void
     {
         if ($this->config->loaded()) {
             $shutdown = APPLICATION_PATH.DIRECTORY_SEPARATOR.ake($this->config['app']['files'], 'shutdown', 'shutdown.php');
@@ -205,7 +218,7 @@ class Application
                         $metric->create(10);
                     }
                     $metric->setValue('hits', 1);
-                    $metric->setValue('exec', (microtime(true) - HAZAAR_EXEC_START) * 1000);
+                    $metric->setValue('exec', (microtime(true) - HAZAAR_START) * 1000);
                     $metric->setValue('mem', memory_get_peak_usage());
                 }
             }

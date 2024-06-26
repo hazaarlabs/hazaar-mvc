@@ -6,16 +6,6 @@ use Hazaar\Application;
 use Hazaar\Controller\Response\Stream;
 use Hazaar\Logger\Frontend;
 
-/*
- * @file        Hazaar/ErrorControl.php
- *
- * @author      Jamie Carl <jamie@hazaar.io>
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
- */
-set_error_handler('error_handler', E_ERROR);
-set_exception_handler('exception_handler');
-register_shutdown_function('shutdown_handler');
-
 /**
  * This function handles errors and terminates the script execution.
  */
@@ -172,14 +162,14 @@ function exception_handler(Throwable $e): void
  */
 function shutdown_handler(): void
 {
-    if ('cli' !== php_sapi_name() && headers_sent()) {
-        return;
-    }
-    global $__shutdownTasks;
-    if (is_array($__shutdownTasks) && count($__shutdownTasks) > 0) {
-        foreach ($__shutdownTasks as $task) {
-            $task();
+    if (($error = error_get_last()) !== null) {
+        if (1 == ini_get('display_errors')) {
+            ob_clean();
         }
+        match ($error['type']) {
+            E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR => errorAndDie($error, debug_backtrace()),
+            default => null
+        };
     }
 }
 
@@ -213,15 +203,4 @@ function traceAndDie(): void
             .DIRECTORY_SEPARATOR.'trace.php');
 
     exit;
-}
-
-/**
- * Registers a shutdown task to be executed when the script ends.
- *
- * @param callable    $callback the callback function to be executed
- * @param null|string $uniqID  (optional) A unique identifier for the task. If not provided, a unique ID will be generated.
- */
-function register_shutdown_task(callable $callback, ?string $uniqID = null): void
-{
-    // Function implementation...
 }
