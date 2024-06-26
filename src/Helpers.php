@@ -7,14 +7,6 @@ use Hazaar\Controller\Dump;
 use Hazaar\Controller\Error;
 use Response\Text;
 
-/*
- * @file        Hazaar/Helpers.php
- *
- * @author      Jamie Carl <jamie@hazaar.io>
- * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
- */
-define('HAZAAR_EXEC_START', microtime(true));
-
 /**
  * Array/Object value normalizer.
  *
@@ -984,7 +976,7 @@ function http_response_text($code)
     .DIRECTORY_SEPARATOR.'libs'
     .DIRECTORY_SEPARATOR.'HTTP_Status.dat';
     if (!file_exists($data_file)) {
-        throw new \Exception('HTTP status data file is missing!');
+        throw new Exception('HTTP status data file is missing!');
     }
     $text = false;
     if (preg_match('/^'.$code.'\s(.*)$/m', file_get_contents($data_file), $matches)) {
@@ -1038,16 +1030,18 @@ function guid(): string
 
 function dump(mixed $data = null, bool $backtrace = false): void
 {
-    $exec_time = round((microtime(true) - HAZAAR_EXEC_START) * 1000, 2);
     if (defined('HAZAAR_VERSION') && ($app = Application::getInstance())) {
-        $controller = new Dump($data, $exec_time, $app->router);
+        $controller = new Dump($data, $app->router);
         $controller->toggleBacktrace($backtrace);
         $controller->__initialize($app->request);
         $response = $controller->__run();
         $response->__writeOutput();
     } else {
         $out = "HAZAAR DUMP\n\n";
-        $out .= "Exec time: {$exec_time}\nStatus: ".Dump::getSpeedClass($exec_time)."\n";
+        if (defined('HAZAAR_START')) {
+            $exec_time = round((microtime(true) - HAZAAR_START) * 1000, 2);
+            $out .= "Exec time: {$exec_time}\nStatus: ".Dump::getSpeedClass($exec_time)."\n";
+        }
         $out .= 'Endtime: '.date('c')."\n\n";
         $out .= print_r($data, true);
         $out .= "\n\nBACKTRACE\n\n";
@@ -1593,7 +1587,7 @@ function array_diff_key_recursive(array ...$arrays): array
     return $diff;
 }
 
-class MatchReplaceException extends \Exception {}
+class MatchReplaceException extends Exception {}
 
 /**
  * Use the match/replace algorithm on a string to replace mustache tags with view data.

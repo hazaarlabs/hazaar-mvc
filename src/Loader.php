@@ -325,37 +325,19 @@ class Loader
      * If they both fail, the class is not found and we throw a pretty exception.
      *
      * @param string $className
-     *                           The name of the class to load
+     *                          The name of the class to load
      */
     public static function loadClassFromFile($className): void
     {
-        if (preg_match('/^(\w*)Controllers$/', $className, $matches)) {
-            $controllerClassFile = ucfirst($matches[1]).'.php';
-            if ($filename = Loader::getFilePath(FILE_PATH_CONTROLLER, $controllerClassFile)) {
-                require_once $filename;
-
-                return;
-            }
-        } elseif (preg_match('/^(\w*)Services$/', $className, $matches)) {
-            $serviceClassFile = $matches[1].'.php';
-            if ($filename = Loader::getFilePath(FILE_PATH_SERVICE, $serviceClassFile)) {
-                require_once $filename;
-
-                return;
-            }
-        } else {
-            $namepath = preg_split('/(\W|_)/', $className, -1, PREG_SPLIT_NO_EMPTY);
-            /*
-             * Check that the prefix is 'Application'. This is sort of a namespace 'key' if you will
-             * to restrict the loadable path to that of the application itself.
-             */
-            if ('Application' == $namepath[0]) {
-                $filename = implode(DIRECTORY_SEPARATOR, array_slice($namepath, 2)).'.php';
-                if ($full_path = Loader::getFilePath(strtolower($namepath[1]), $filename, null, true)) {
-                    require_once $full_path;
-
-                    return;
-                }
+        $namepath = preg_split('/(\W|_)/', $className, -1, PREG_SPLIT_NO_EMPTY);
+        /*
+         * Check that the prefix is 'Application'. This is sort of a namespace 'key' if you will
+         * to restrict the loadable path to that of the application itself.
+         */
+        if ('Application' === $namepath[0]) {
+            $filename = implode(DIRECTORY_SEPARATOR, array_slice($namepath, 2)).'.php';
+            if ($full_path = Loader::getFilePath(strtolower($namepath[1]), $filename, null, true)) {
+                require_once $full_path;
             }
         }
     }
