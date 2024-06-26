@@ -93,7 +93,6 @@ class Error extends Diagnostic
             $this->errstr = $args[0]['message'];
             $this->errfile = $args[0]['file'];
             $this->errline = $args[0]['line'];
-            $this->errtype = 'ERROR::FATAL';
             $this->callstack = $args[1];
         } else {
             $this->type = ERR_TYPE_ERROR;
@@ -106,7 +105,32 @@ class Error extends Diagnostic
                 $this->code = 500;
             }
         }
+        if (!$this->errclass) {
+            $this->errclass = self::getErrorTypeString($this->errno);
+        }
         $this->status = $this->getStatusMessage($this->code);
+    }
+
+    public static function getErrorTypeString(int $type): string
+    {
+        return match ($type) {
+            E_ERROR => 'FATAL ERROR',
+            E_WARNING => 'WARNING',
+            E_PARSE => 'PARSING ERROR',
+            E_NOTICE => 'NOTICE',
+            E_CORE_ERROR => 'CORE ERROR',
+            E_CORE_WARNING => 'CORE WARNING',
+            E_COMPILE_ERROR => 'COMPILE ERROR',
+            E_COMPILE_WARNING => 'COMPILE WARNING',
+            E_USER_ERROR => 'USER ERROR',
+            E_USER_WARNING => 'USER WARNING',
+            E_USER_NOTICE => 'USER NOTICE',
+            E_STRICT => 'RUNTIME NOTICE',
+            E_RECOVERABLE_ERROR => 'CATCHABLE FATAL ERROR',
+            E_DEPRECATED => 'DEPRECATED',
+            E_USER_DEPRECATED => 'USER DEPRECATED',
+            default => 'UNKNOWN ERROR',
+        };
     }
 
     public function getMessage(): string
