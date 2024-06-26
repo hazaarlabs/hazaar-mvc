@@ -84,6 +84,14 @@ class Cache implements \ArrayAccess
         }
     }
 
+    public function __destruct()
+    {
+        if (isset($this->backend)) {
+            $this->backend->close();
+            unset($this->backend);
+        }
+    }
+
     // MAGIC METHOD FOR DIRECT ACCESS
     public function __isset(string $key): bool
     {
