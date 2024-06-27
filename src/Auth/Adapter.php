@@ -202,7 +202,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
             && array_key_exists('identity', $auth)
             && array_key_exists('credential', $auth)
             && $auth['identity'] === $this->getIdentity()
-            && hash_equals($this->getCredentialHash(), $auth['credential'])) {
+            && hash_equals((string)$this->getCredentialHash(), (string)$auth['credential'])) {
             unset($auth['credential']);
             $this->storage->write($auth);
             $this->authenticationSuccess($identity, $auth);
@@ -237,7 +237,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
             return false;
         }
         if (false === $this->authenticate($auth[0], $auth[1])) {
-            throw new Unauthorised();
+            return false;
         }
 
         return true;
