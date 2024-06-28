@@ -17,21 +17,6 @@ trait PDO
 {
     protected \PDO $pdo;
 
-    public function begin(): bool
-    {
-        return $this->pdo->beginTransaction();
-    }
-
-    public function cancel(): bool
-    {
-        return $this->pdo->rollBack();
-    }
-
-    public function commit(): bool
-    {
-        return $this->pdo->commit();
-    }
-
     public function exec(string $sql): false|int
     {
         return $this->pdo->exec($sql);

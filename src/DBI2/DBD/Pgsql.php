@@ -13,7 +13,17 @@ class Pgsql implements Interfaces\Driver
     use Traits\PDO {
         Traits\PDO::query as pdoQuery; // Alias the trait's query method to pdoQuery
     }
+    use Traits\PDO\Transaction;
     use Traits\SQL;
+    use Traits\SQL\Constraint;
+    use Traits\SQL\Extension;
+    use Traits\SQL\Index;
+    use Traits\SQL\Schema;
+    use Traits\SQL\Table;
+    use Traits\SQL\View;
+    use Traits\SQL\StoredFunction;
+    use Traits\SQL\Trigger;
+    use Traits\SQL\Sequence;
 
     /**
      * @var array<string>
