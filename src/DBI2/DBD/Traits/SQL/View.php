@@ -5,18 +5,42 @@ namespace Hazaar\DBI2\DBD\Traits\SQL;
 trait View
 {
     /**
-     * @return array<int, array<string>>|false
+     * Retrieves a list of views from the database.
+     *
+     * @return array<int, array<string>>|false an array of views, or null if no views are found
      */
     public function listViews(): array|false
     {
+        $sql = 'SELECT table_schema as "schema", table_name as name FROM INFORMATION_SCHEMA.views WHERE ';
+        if ('public' != $this->queryBuilder->getSchemaName()) {
+            $sql .= "table_schema = '{$this->queryBuilder->getSchemaName()}'";
+        } else {
+            $sql .= "table_schema NOT IN ( 'information_schema', 'pg_catalog' )";
+        }
+        $sql .= ' ORDER BY table_name DESC;';
+        if ($result = $this->query($sql)) {
+            return $result->fetchAll(\PDO::FETCH_ASSOC);
+        }
+
         return false;
     }
 
     /**
-     * @return array<int, array<string>>|false
+     * Retrieves the description of a database view.
+     *
+     * @param string $name the name of the view
+     *
+     * @return array<int, array<string>>|false the description of the view as an associative array, or null if the view does not exist
      */
-    public function describeView(string $name): array|false
+    public function describeView($name): array|false
     {
+        list($schema, $name) = $this->queryBuilder->parseSchemaName($name);
+        $sql = 'SELECT table_name as name, trim(view_definition) as content FROM INFORMATION_SCHEMA.views WHERE table_schema='
+            .$this->queryBuilder->prepareValue($schema).' AND table_name='.$this->queryBuilder->prepareValue($name);
+        if ($result = $this->query($sql)) {
+            return $result->fetch(\PDO::FETCH_ASSOC);
+        }
+
         return false;
     }
 

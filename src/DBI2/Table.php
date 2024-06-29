@@ -86,6 +86,9 @@ class Table
         return $this;
     }
 
+    /**
+     * @param array<mixed>|string $columns
+     */
     public function group(array|string $columns): self
     {
         $this->queryBuilder->group($columns);
@@ -93,6 +96,9 @@ class Table
         return $this;
     }
 
+    /**
+     * @param array<mixed>|string $having
+     */
     public function having(array|string $having): self
     {
         $this->queryBuilder->having($having);

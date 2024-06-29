@@ -6,9 +6,12 @@ trait Table
 {
     use Schema;
 
-    public function listTables(): array
+    /**
+     * @return array{name:string,schema:string}|false
+     */
+    public function listTables(?string $schema = null): array|false
     {
-        return $this->listInformationSchema('tables', ['table_name'], [
+        return $this->listInformationSchema('tables', ['name' => 'table_name', 'schema' => 'table_schema'], [
             'table_schema' => $this->queryBuilder->getSchemaName(),
         ]);
     }
