@@ -126,10 +126,8 @@ trait StoredFunction
      *
      * @param mixed $name The name of the function to create
      * @param mixed $spec A function specification.  This is basically the array returned from describeFunction()
-     *
-     * @return bool
      */
-    public function createFunction($name, $spec)
+    public function createFunction($name, $spec): bool
     {
         $sql = 'CREATE OR REPLACE FUNCTION '.$this->queryBuilder->schemaName($name).' (';
         if ($params = ake($spec, 'parameters')) {

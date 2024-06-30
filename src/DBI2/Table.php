@@ -4,24 +4,23 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI2;
 
-use Hazaar\DBI2\DBD\Interfaces\Driver;
 use Hazaar\DBI2\Interfaces\QueryBuilder;
 use Hazaar\DBI2\Interfaces\Result;
 
 class Table
 {
-    private Driver $driver;
+    private Adapter $adapter;
     private QueryBuilder $queryBuilder;
     private string $table;
     private ?Result $result = null;
 
-    public function __construct(Driver $driver, string $table, ?string $alias = null)
+    public function __construct(Adapter $driver, string $table, ?string $alias = null)
     {
         $this->table = $table;
         if (null !== $alias) {
             $this->table .= ' '.$alias;
         }
-        $this->driver = $driver;
+        $this->adapter = $driver;
         $this->queryBuilder = $driver->getQueryBuilder();
         $this->queryBuilder->from($this->table);
     }
@@ -49,7 +48,7 @@ class Table
         }
         $sql = $this->queryBuilder->exists($tableName, $criteria);
 
-        return $this->driver->query($sql)->fetchColumn(0);
+        return $this->adapter->query($sql)->fetchColumn(0);
     }
 
     /**
@@ -203,7 +202,7 @@ class Table
      */
     public function insert(array $values, mixed $returning = null): mixed
     {
-        $result = $this->driver->query($this->queryBuilder->insert($this->table, $values, $returning));
+        $result = $this->adapter->query($this->queryBuilder->insert($this->table, $values, $returning));
         if (!$result) {
             return false;
         }
@@ -218,7 +217,7 @@ class Table
      */
     public function update(mixed $values, array|string $where = [], mixed $returning = null): mixed
     {
-        $result = $this->driver->query($this->queryBuilder->update($this->table, $values, $where, [], $returning));
+        $result = $this->adapter->query($this->queryBuilder->update($this->table, $values, $where, [], $returning));
 
         return null === $returning
             ? $result->rowCount()
@@ -230,17 +229,17 @@ class Table
      */
     public function delete(array|string $where): false|int
     {
-        return $this->driver->query($this->queryBuilder->delete($this->table, $where));
+        return $this->adapter->query($this->queryBuilder->delete($this->table, $where));
     }
 
     public function deleteAll(): false|int
     {
-        return $this->driver->exec($this->queryBuilder->delete($this->table, []));
+        return $this->adapter->exec($this->queryBuilder->delete($this->table, []));
     }
 
     public function truncate(bool $cascade = false): bool
     {
-        return false !== $this->driver->exec($this->queryBuilder->truncate($this->table, $cascade));
+        return false !== $this->adapter->exec($this->queryBuilder->truncate($this->table, $cascade));
     }
 
     /**
@@ -256,7 +255,7 @@ class Table
             $this->select($columns);
         }
 
-        return $this->driver->query($this->queryBuilder->toString());
+        return $this->adapter->query($this->queryBuilder->toString());
     }
 
     /**
@@ -271,7 +270,7 @@ class Table
         if (null !== $columns) {
             $this->select($columns);
         }
-        $result = $this->driver->query($this->queryBuilder->limit(1)->toString());
+        $result = $this->adapter->query($this->queryBuilder->limit(1)->toString());
         if ($result) {
             return $result->fetch();
         }
@@ -289,7 +288,7 @@ class Table
         if (null !== $columns) {
             $this->select($columns);
         }
-        $result = $this->driver->query($this->queryBuilder->limit(1)->toString());
+        $result = $this->adapter->query($this->queryBuilder->limit(1)->toString());
         if ($result) {
             return $result->row();
         }
@@ -303,7 +302,7 @@ class Table
     public function fetch(): array|false
     {
         if (null === $this->result) {
-            $this->result = $this->driver->query($this->queryBuilder->toString());
+            $this->result = $this->adapter->query($this->queryBuilder->toString());
         }
         if ($this->result instanceof Result) {
             return $this->result->fetch();
@@ -317,7 +316,7 @@ class Table
      */
     public function fetchAll(): array|false
     {
-        $result = $this->driver->query($this->queryBuilder->toString());
+        $result = $this->adapter->query($this->queryBuilder->toString());
         if ($result instanceof Result) {
             return $result->fetchAll();
         }
@@ -333,7 +332,7 @@ class Table
         mixed $fetchArgument = null,
         bool $clobberDupNamedCols = false
     ): array {
-        $result = $this->driver->query($this->queryBuilder->select($columnName)->from($this->table)->toString());
+        $result = $this->adapter->query($this->queryBuilder->select($columnName)->from($this->table)->toString());
         $data = [];
         while ($row = $result->fetch()) {
             $data[] = $row[$columnName];
@@ -358,7 +357,7 @@ class Table
 
     public function count(): int
     {
-        $result = $this->driver->query($this->queryBuilder->count());
+        $result = $this->adapter->query($this->queryBuilder->count());
         if ($result) {
             return $result->fetchColumn(0);
         }
@@ -371,6 +370,6 @@ class Table
      */
     public function describe(): array|false
     {
-        return $this->driver->describeTable($this->table);
+        return $this->adapter->describeTable($this->table);
     }
 }

@@ -51,15 +51,66 @@ use Hazaar\Map;
  * }
  * ```
  *
- * @method array<mixed> listTables()
- * @method array<mixed> listViews()
- * @method array<mixed> listIndexes()
- * @method array<mixed> listConstraints()
- * @method array<mixed> listExtensions()
- * @method array<mixed> listTriggers()
- * @method array<mixed> listSequences()
- * @method array<mixed> listFunctions()
- * 
+ * @method false|int           exec(string $sql)
+ * @method false|\PDOStatement query(string $sql)
+ * @method false|string        quote(mixed $string, int $type = \PDO::PARAM_STR)
+ * @method bool                setTimezone(string $tz)
+ * @method array|false         errorInfo()
+ * @method string              errorCode()
+ *
+ * TABLES                                                                                                                     TABLES
+ * @method array       listTables()
+ * @method bool        createTable(string $tableName, mixed $columns)
+ * @method array|false describeTable(string $tableName, ?string $sort = null)
+ * @method bool        renameTable(string $fromName, string $toName)
+ * @method bool        dropTable(string $name, bool $cascade = false, bool $ifExists = false)
+ * @method bool        addColumn(string $tableName, mixed $columnSpec)
+ * @method bool        alterColumn(string $tableName, string $column, mixed $columnSpec)
+ * @method bool        dropColumn(string $tableName, string $column, bool $ifExists = false)
+ * @method bool        truncate(string $tableName, bool $only = false, bool $restartIdentity = false, bool $cascade = false)
+ *
+ * VIEWS
+ * @method array       listViews()
+ * @method array|false describeView($name)
+ * @method bool        createView(string $name, mixed $content)
+ * @method bool        viewExists(string $viewName)
+ * @method bool        dropView(string $name, bool $cascade = false, bool $ifExists = false)
+ *
+ * INDEXES
+ * @method array listIndexes()
+ * @method bool  createIndex(string $indexName, string $tableName, mixed $idxInfo)
+ * @method bool  dropIndex(string $indexName, bool $ifExists = false)
+ *
+ * CONSTRAINTS
+ * @method array       listConstraints()
+ * @method array|false listConstraints($table = null, $type = null, $invertType = false)
+ * @method bool        addConstraint(string $constraintName, mixed $info)
+ * @method bool        dropConstraint(string $constraintName, string $tableName, bool $cascade = false, bool $ifExists = false)
+ *
+ * EXTENSIONS
+ * @method array listExtensions()
+ * @method bool  createExtension(string $name)
+ * @method bool  dropExtension(string $name, bool $ifExists = false)
+ *
+ * TRIGGERS
+ * @method array       listTriggers()
+ * @method array|false describeTrigger(string $triggerName, ?string $schemaName = null)
+ * @method bool        createTrigger(string $triggerName, string $tableName, mixed $spec = [])
+ * @method bool        dropTrigger(string $triggerName, string $tableName, bool $cascade = false, bool $ifExists = false)
+ *
+ * SEQUENCES
+ * @method array       listSequences()
+ * @method array|false describeSequence(string $name)
+ * @method bool        createSequence(string $name, int $start = 1, int $increment = 1)
+ * @method bool        dropSequence(string $name, bool $ifExists = false)
+ * @method false|int   nextSequenceValue(string $name)
+ * @method bool        setSequenceValue(string $name, int $value)
+ *
+ * FUNCTIONS
+ * @method array       listFunctions()
+ * @method array|false describeFunction(string $name, ?string $schemaName = null)
+ * @method bool        createFunction($name, $spec)
+ * @method bool        dropFunction(string $name, null|array|string $argTypes = null, bool $cascade = false, bool $ifExists = false)
  */
 class Adapter
 {
@@ -169,19 +220,6 @@ class Adapter
         }
 
         return new self($configEnv);
-    }
-
-    /**
-     * @return array{string, string, string}
-     */
-    public function errorInfo(): array|false
-    {
-        return $this->driver->errorInfo();
-    }
-
-    public function errorCode(): string
-    {
-        return $this->driver->errorCode();
     }
 
     public function errorException(?string $msg = null): \Exception
