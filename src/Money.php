@@ -56,13 +56,13 @@ class Money
     /**
      * @var array<string, mixed>
      */
-    private array $local_currency;
+    private array $localCurrency;
     private static ?BTree $db = null;
 
     /**
      * @var array<string, mixed>
      */
-    private static array $exchange_rates = [];
+    private static array $exchangeRates = [];
     private static ?Cache $cache = null;
 
     /**
@@ -89,7 +89,7 @@ class Money
             $currency = self::$default_currency;
         }
         $this->set($value, $currency);
-        $this->local_currency = $this->getCurrencyInfo($currency);
+        $this->localCurrency = $this->getCurrencyInfo($currency);
     }
 
     /**
@@ -202,7 +202,7 @@ class Money
             return ake($info, 'currencycode');
         }
 
-        return ake($this->local_currency, 'currencycode');
+        return ake($this->localCurrency, 'currencycode');
     }
 
     /**
@@ -214,7 +214,7 @@ class Money
      */
     public function getCurrencySymbol(): string
     {
-        return ake($this->local_currency, 'symbol', '$');
+        return ake($this->localCurrency, 'symbol', '$');
     }
 
     /**
@@ -225,46 +225,46 @@ class Money
      *              Because this method contacts another web service the response can be a little slow.  Because of this
      *              results are cached so that subsequent requests for the same conversion will be faster.
      *
-     * @param string $foreign_currency the foreign currency to get an exchange rate for
+     * @param string $foreignCurrency the foreign currency to get an exchange rate for
      *
      * @return float the current currency exchange rate
      */
-    public function getExchangeRate(string $foreign_currency): float
+    public function getExchangeRate(string $foreignCurrency): float
     {
-        if (2 == strlen($foreign_currency)) {
-            $foreign_currency = $this->getCode($foreign_currency);
+        if (2 == strlen($foreignCurrency)) {
+            $foreignCurrency = $this->getCode($foreignCurrency);
         }
-        if (0 == strcasecmp($this->local_currency['currencycode'], $foreign_currency)) {
+        if (0 == strcasecmp($this->localCurrency['currencycode'], $foreignCurrency)) {
             return 1;
         }
-        $base = strtoupper(trim($this->local_currency['currencycode'] ?? ''));
-        $foreign_currency = strtoupper(trim($foreign_currency));
-        if (!ake(self::$exchange_rates, $base)) {
+        $base = strtoupper(trim($this->localCurrency['currencycode'] ?? ''));
+        $foreignCurrency = strtoupper(trim($foreignCurrency));
+        if (!ake(self::$exchangeRates, $base)) {
             if (null === self::$cache) {
                 self::$cache = new Cache(['apc', 'file']);
             }
             $key = 'exchange_rate_'.$base;
-            if (false === (self::$exchange_rates[$base] = self::$cache->get($key))) {
+            if (!(self::$exchangeRates[$base] = self::$cache->get($key))) {
                 $url = 'https://api.hazaar.io/api/money/latest?base='.$base;
                 $result = json_decode(file_get_contents($url), true);
-                self::$exchange_rates[$base] = $result;
-                self::$cache->set($key, self::$exchange_rates[$base]);
+                self::$exchangeRates[$base] = $result;
+                self::$cache->set($key, self::$exchangeRates[$base]);
             }
         }
 
-        return ake(self::$exchange_rates[$base]['rates'], $foreign_currency);
+        return ake(self::$exchangeRates[$base]['rates'], $foreignCurrency);
     }
 
     /**
      * @detail      Convert the currency object to another currency and return a new Money object.
      *
-     * @param string $foreign_currency The currency to convert to.  Can be country or currency code.
+     * @param string $foreignCurrency The currency to convert to.  Can be country or currency code.
      *
      * @return Money a new currency object with the value of the foreign currency amount
      */
-    public function convertTo(string $foreign_currency): Money
+    public function convertTo(string $foreignCurrency): Money
     {
-        return new Money($this->value * $this->getExchangeRate($foreign_currency), $foreign_currency);
+        return new Money($this->value * $this->getExchangeRate($foreignCurrency), $foreignCurrency);
     }
 
     /**
@@ -336,11 +336,11 @@ class Money
             if (is_numeric($arg)) {
                 $total += $arg;
             } elseif ($arg instanceof Money) {
-                $total += $arg->convertTo($this->local_currency['currencycode'])->toFloat();
+                $total += $arg->convertTo($this->localCurrency['currencycode'])->toFloat();
             }
         }
 
-        return new Money($total, $this->local_currency['currencycode']);
+        return new Money($total, $this->localCurrency['currencycode']);
     }
 
     /**
@@ -357,11 +357,11 @@ class Money
             if (is_numeric($arg)) {
                 $total -= $arg;
             } elseif ($arg instanceof Money) {
-                $total -= $arg->convertTo($this->local_currency['currencycode'])->toFloat();
+                $total -= $arg->convertTo($this->localCurrency['currencycode'])->toFloat();
             }
         }
 
-        return new Money($total, $this->local_currency['currencycode']);
+        return new Money($total, $this->localCurrency['currencycode']);
     }
 
     /**
@@ -396,6 +396,6 @@ class Money
      */
     public function getCurrencyName(): string
     {
-        return ake($this->local_currency, 'name');
+        return ake($this->localCurrency, 'name');
     }
 }
