@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI2\DBD;
 
-use Hazaar\DBI2\Result;
-use Hazaar\DBI2\Result\PDO;
 use Hazaar\Map;
 
 class Pgsql implements Interfaces\Driver
@@ -51,15 +49,5 @@ class Pgsql implements Interfaces\Driver
             }
         }
         $this->connect($this->mkdsn($config), $config->get('user'), $config->get('password'), $driverOptions);
-    }
-
-    public function query(string $sql): false|Result
-    {
-        $result = $this->pdoQuery($sql);
-        if ($result instanceof \PDOStatement) {
-            return new PDO($result);
-        }
-
-        return false;
     }
 }

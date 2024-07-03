@@ -12,6 +12,7 @@ use Hazaar\Application;
 use Hazaar\Application\Config;
 use Hazaar\DBI2\Exception\DriverNotFound;
 use Hazaar\DBI2\Exception\NotConfigured;
+use Hazaar\DBI2\Interfaces\QueryBuilder;
 use Hazaar\DBI2\Schema\Manager;
 use Hazaar\Map;
 
@@ -51,14 +52,32 @@ use Hazaar\Map;
  * }
  * ```
  *
- * @method false|int           exec(string $sql)
- * @method false|\PDOStatement query(string $sql)
- * @method false|string        quote(mixed $string, int $type = \PDO::PARAM_STR)
- * @method bool                setTimezone(string $tz)
- * @method array|false         errorInfo()
- * @method string              errorCode()
+ * @method false|int    exec(string $sql)
+ * @method false|Result query(string $sql)
+ * @method false|string quote(mixed $string, int $type = \PDO::PARAM_STR)
+ * @method bool         setTimezone(string $tz)
+ * @method array|false  errorInfo()
+ * @method string       errorCode()
+ * @method QueryBuilder getQueryBuilder()
+ * @method bool         repair()
  *
- * TABLES                                                                                                                     TABLES
+ * TRANSACTION
+ * @method bool begin()
+ * @method bool commit()
+ * @method bool cancel()
+ *
+ * SCHEMA
+ * @method string getSchemaName()
+ * @method bool   schemaExists(?string $schemaName = null)
+ * @method bool   createSchema(string $schemaName)
+ *
+ * ROLES
+ * @method array       listRoles()
+ * @method bool        createRole(string $roleName, ?string $password = null)
+ * @method bool        dropRole(string $roleName)
+ * @method bool        grant(array|string $role, string $to, string $on)
+ * @method bool        revoke(array|string $role, string $from, string $on)
+ *                                                                                                                           TABLES                                                                                                                     TABLES
  * @method array       listTables()
  * @method bool        createTable(string $tableName, mixed $columns)
  * @method array|false describeTable(string $tableName, ?string $sort = null)
@@ -188,6 +207,16 @@ class Adapter
         return call_user_func_array([$this->driver, $method], $args);
     }
 
+    public function can(string $method): bool
+    {
+        return method_exists($this->driver, $method);
+    }
+
+    public function getDriverName(): string
+    {
+        return strtoupper(get_class($this->driver));
+    }
+
     /**
      * Returns an instance of the Hazaar\DBI\Schema\Manager for managing database schema versions.
      */
@@ -287,7 +316,7 @@ class Adapter
      */
     public function table(string $tableName, ?string $alias = null): Table
     {
-        return new Table($this->driver, $tableName, $alias);
+        return new Table($this, $tableName, $alias);
     }
 
     private static function getDefaultConfig(?string &$configName = null): false|Map

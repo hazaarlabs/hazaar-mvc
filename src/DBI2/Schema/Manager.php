@@ -1818,9 +1818,9 @@ class Manager
                 $this->dbi->commit();
             }
             $this->log('DBI Data sync completed successfully!');
-            if (method_exists($this->dbi->driver, 'repair')) {
-                $this->log('Running '.$this->dbi->driver.' repair process');
-                $result = $this->dbi->driver->repair();
+            if ($this->dbi->can('repair')) {
+                $this->log('Running '.$this->dbi->getDriverName().' repair process');
+                $result = $this->dbi->repair();
                 $this->log('Repair '.($result ? 'completed successfully' : 'failed'));
             }
         } catch (\Throwable $e) {

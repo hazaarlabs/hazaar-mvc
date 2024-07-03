@@ -14,14 +14,14 @@ class Table
     private string $table;
     private ?Result $result = null;
 
-    public function __construct(Adapter $driver, string $table, ?string $alias = null)
+    public function __construct(Adapter $adapter, string $table, ?string $alias = null)
     {
         $this->table = $table;
         if (null !== $alias) {
             $this->table .= ' '.$alias;
         }
-        $this->adapter = $driver;
-        $this->queryBuilder = $driver->getQueryBuilder();
+        $this->adapter = $adapter;
+        $this->queryBuilder = $adapter->getQueryBuilder();
         $this->queryBuilder->from($this->table);
     }
 

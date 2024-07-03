@@ -8,6 +8,8 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI2\DBD\Traits;
 
+use Hazaar\DBI2\Result;
+use Hazaar\DBI2\Result\PDO as PDOResult;
 use Hazaar\Map;
 
 /**
@@ -22,9 +24,14 @@ trait PDO
         return $this->pdo->exec($sql);
     }
 
-    public function query(string $sql): false|\PDOStatement
+    public function query(string $sql): false|Result
     {
-        return $this->pdo->query($sql);
+        $result = $this->pdo->query($sql);
+        if ($result instanceof \PDOStatement) {
+            return new PDOResult($result);
+        }
+
+        return false;
     }
 
     public function quote(mixed $string, int $type = \PDO::PARAM_STR): false|string

@@ -33,12 +33,18 @@ trait Role
         return false;
     }
 
-    public function grantRole(string $role, string $to): bool
+    /**
+     * @param array<string>|string $role
+     */
+    public function grant(array|string $role, string $to, string $on): bool
     {
         return false;
     }
 
-    public function revokeRole(string $role, string $from): bool
+    /**
+     * @param array<string>|string $role
+     */
+    public function revoke(array|string $role, string $from, string $on): bool
     {
         return false;
     }
