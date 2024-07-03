@@ -52,6 +52,7 @@ use Hazaar\Map;
  * }
  * ```
  *
+ * @method bool         createDatabase(string $name)
  * @method false|int    exec(string $sql)
  * @method false|Result query(string $sql)
  * @method false|string quote(mixed $string, int $type = \PDO::PARAM_STR)
@@ -69,20 +70,29 @@ use Hazaar\Map;
  * SCHEMA
  * @method string getSchemaName()
  * @method bool   schemaExists(?string $schemaName = null)
- * @method bool   createSchema(string $schemaName)
+ * @method bool   createSchema(string $schemaName = null)
  *
- * ROLES
- * @method array       listRoles()
- * @method bool        createRole(string $roleName, ?string $password = null)
- * @method bool        dropRole(string $roleName)
- * @method bool        grant(array|string $role, string $to, string $on)
- * @method bool        revoke(array|string $role, string $from, string $on)
- *                                                                                                                           TABLES                                                                                                                     TABLES
+ * USER
+ * @method array listUsers()
+ * @method bool  createUser(string $name, ?string $password = null, array $privileges = [])
+ * @method bool  dropUser(string $name, bool $ifExists = false)
+ * @method bool  grant(array|string $role, string $to, string $on)
+ * @method bool  revoke(array|string $role, string $from, string $on)
+ *
+ * GROUP
+ * @method array listGroups()
+ * @method bool  createGroup(string $groupName)
+ * @method bool  dropGroup(string $groupName)
+ * @method bool  addToGroup(string $roleName, string $parentRoleName)
+ * @method bool  removeFromGroup(string $roleName, string $parentRoleName)
+ *
+ * TABLES                                                                                                                     TABLES                                                                                                                     TABLES
  * @method array       listTables()
+ * @method bool        tableExists(string $tableName)
  * @method bool        createTable(string $tableName, mixed $columns)
  * @method array|false describeTable(string $tableName, ?string $sort = null)
  * @method bool        renameTable(string $fromName, string $toName)
- * @method bool        dropTable(string $name, bool $cascade = false, bool $ifExists = false)
+ * @method bool        dropTable(string $name, bool $ifExists = false, bool $cascade = false)
  * @method bool        addColumn(string $tableName, mixed $columnSpec)
  * @method bool        alterColumn(string $tableName, string $column, mixed $columnSpec)
  * @method bool        dropColumn(string $tableName, string $column, bool $ifExists = false)
@@ -90,35 +100,41 @@ use Hazaar\Map;
  *
  * VIEWS
  * @method array       listViews()
+ * @method bool        viewExists(string $viewName)
  * @method array|false describeView($name)
  * @method bool        createView(string $name, mixed $content)
  * @method bool        viewExists(string $viewName)
- * @method bool        dropView(string $name, bool $cascade = false, bool $ifExists = false)
+ * @method bool        dropView(string $name, bool $ifExists = false, bool $cascade = false)
  *
  * INDEXES
  * @method array listIndexes()
+ * @method bool  indexExists(string $indexName)
  * @method bool  createIndex(string $indexName, string $tableName, mixed $idxInfo)
  * @method bool  dropIndex(string $indexName, bool $ifExists = false)
  *
  * CONSTRAINTS
  * @method array       listConstraints()
+ * @method bool        constraintExists(string $constraintName)
  * @method array|false listConstraints($table = null, $type = null, $invertType = false)
  * @method bool        addConstraint(string $constraintName, mixed $info)
- * @method bool        dropConstraint(string $constraintName, string $tableName, bool $cascade = false, bool $ifExists = false)
+ * @method bool        dropConstraint(string $constraintName, string $tableName, bool $ifExists = false, bool $cascade = false)
  *
  * EXTENSIONS
  * @method array listExtensions()
+ * @method bool  extensionExists(string $name)
  * @method bool  createExtension(string $name)
  * @method bool  dropExtension(string $name, bool $ifExists = false)
  *
  * TRIGGERS
- * @method array       listTriggers()
- * @method array|false describeTrigger(string $triggerName, ?string $schemaName = null)
+ * @method array       listTriggers(?string $tableName = null)
+ * @method bool        triggerExists(string $triggerName, string $tableName)
+ * @method array|false describeTrigger(string $triggerName)
  * @method bool        createTrigger(string $triggerName, string $tableName, mixed $spec = [])
- * @method bool        dropTrigger(string $triggerName, string $tableName, bool $cascade = false, bool $ifExists = false)
+ * @method bool        dropTrigger(string $triggerName, string $tableName, bool $ifExists = false, bool $cascade = false)
  *
  * SEQUENCES
  * @method array       listSequences()
+ * @method bool        sequenceExists(string $sequenceName)
  * @method array|false describeSequence(string $name)
  * @method bool        createSequence(string $name, int $start = 1, int $increment = 1)
  * @method bool        dropSequence(string $name, bool $ifExists = false)
@@ -126,8 +142,9 @@ use Hazaar\Map;
  * @method bool        setSequenceValue(string $name, int $value)
  *
  * FUNCTIONS
- * @method array       listFunctions()
- * @method array|false describeFunction(string $name, ?string $schemaName = null)
+ * @method array       listFunctions(bool $includeParameters = false)
+ * @method bool        functionExists(string $functionName, ?string $argTypes = null)
+ * @method array|false describeFunction(string $name)
  * @method bool        createFunction($name, $spec)
  * @method bool        dropFunction(string $name, null|array|string $argTypes = null, bool $cascade = false, bool $ifExists = false)
  */
@@ -172,7 +189,7 @@ class Adapter
         $configName = null;
         if (defined('HAZAAR_VERSION') && (null === $config || is_string($config))) {
             $configName = $config;
-            $config = $this->getDefaultConfig($configName);
+            $config = $this->loadConfig($configName);
         } elseif (!is_string($config)) {
             $config = Map::_($config, self::$defaultConfig);
         }
@@ -319,7 +336,7 @@ class Adapter
         return new Table($this, $tableName, $alias);
     }
 
-    private static function getDefaultConfig(?string &$configName = null): false|Map
+    public static function loadConfig(?string &$configName = null): false|Map
     {
         if (!defined('HAZAAR_VERSION')) {
             return false;

@@ -7,18 +7,13 @@ trait Trigger
     /**
      * List defined triggers.
      *
-     * @param string $schemaName Optional: schema name.  If not supplied the current schemaName is used.
-     *
      * @return array<int,array{schema:string,name:string}>|false
      */
-    public function listTriggers(?string $tableName = null, ?string $schemaName = null): array|false
+    public function listTriggers(?string $tableName = null): array|false
     {
-        if (null === $schemaName) {
-            $schemaName = $this->queryBuilder->getSchemaName();
-        }
         $sql = 'SELECT DISTINCT trigger_schema AS schema, trigger_name AS name
                     FROM INFORMATION_SCHEMA.triggers
-                    WHERE event_object_schema='.$this->queryBuilder->prepareValue($schemaName);
+                    WHERE event_object_schema='.$this->queryBuilder->prepareValue($this->queryBuilder->getSchemaName());
         if (null !== $tableName) {
             $sql .= ' AND event_object_table='.$this->queryBuilder->prepareValue($tableName);
         }

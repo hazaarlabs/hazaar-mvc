@@ -54,6 +54,8 @@ interface QueryBuilder
 
     public function select(mixed ...$columns): self;
 
+    public function distinct(string ...$columns): self;
+
     public function from(string $table): self;
 
     public function where(mixed ...$criteria): self;

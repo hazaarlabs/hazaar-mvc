@@ -313,7 +313,9 @@ class SQL implements QueryBuilder
 
     public function count(): string
     {
-        return $this->select('COUNT(*)')->toString();
+        $this->columns = ['COUNT(*)'];
+
+        return $this->toString();
     }
 
     public function exists(string $tableName, mixed $criteria = null): string
@@ -334,9 +336,9 @@ class SQL implements QueryBuilder
     /**
      * Selects only distinct rows that match based on the specified expressions.
      */
-    public function distinct(): self
+    public function distinct(string ...$columns): self
     {
-        $this->distinct = func_num_args() > 0 ? array_merge($this->distinct, func_get_args()) : true;
+        $this->distinct = count($columns) > 0 ? $columns : true;
 
         return $this;
     }
@@ -548,9 +550,6 @@ class SQL implements QueryBuilder
         }
         $fieldDef = [];
         foreach ($fields as $key => $value) {
-            // if ($value instanceof Table) {
-            //     $value = ((1 === $value->limit()) ? '(' : 'array(').$value.')';
-            // }
             if (is_string($value) && in_array($value, $exclude)) {
                 $fieldDef[] = $value;
             } elseif (is_numeric($key)) {

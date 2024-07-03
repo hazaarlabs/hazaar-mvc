@@ -16,6 +16,17 @@ trait Table
         ]);
     }
 
+    public function tableExists(string $tableName): bool
+    {
+        $criteria = [
+            'table_name' => $tableName,
+            'table_schema' => $this->queryBuilder->getSchemaName(),
+        ];
+        $sql = $this->queryBuilder->exists('information_schema.tables', $criteria);
+
+        return $this->query($sql)->fetchColumn(0);
+    }
+
     public function createTable(string $tableName, mixed $columns): bool
     {
         $sql = 'CREATE TABLE '.$this->queryBuilder->schemaName($tableName)." (\n";
@@ -66,7 +77,7 @@ trait Table
     }
 
     /**
-     * @return array<array{name:string,data_type:string,not_null:bool,default:?mixed,length:?int,sequence:?string}>|false
+     * @return array<array{name:string,type:string,not_null:bool,default:?mixed,length:?int,sequence:?string}>|false
      */
     public function describeTable(string $tableName, ?string $sort = null): array|false
     {
@@ -87,23 +98,23 @@ trait Table
                 && $col['column_default']
                 && preg_match('/nextval\(\'(\w*)\'::regclass\)/', $col['column_default'], $matches)) {
                 if ($info = $this->describeSequence($matches[1])) {
-                    $col['data_type'] = 'serial';
+                    $col['type'] = 'serial';
                     $col['column_default'] = null;
                     $col['sequence'] = $info;
                 }
             }
             // Fixed array types to their actual SQL array data type
-            if ('ARRAY' == $col['data_type']
+            if ('ARRAY' == $col['type']
                 && ($udtName = ake($col, 'udt_name'))) {
                 if ('_' == $udtName[0]) {
-                    $col['data_type'] = substr($udtName, 1).'[]';
+                    $col['type'] = substr($udtName, 1).'[]';
                 }
             }
             $coldata = [
                 'name' => $col['column_name'],
                 'default' => $this->fixValue($col['column_default']),
                 'not_null' => (('NO' == $col['is_nullable']) ? true : false),
-                'data_type' => $this->type($col),
+                'type' => $this->type($col),
                 'length' => $col['character_maximum_length'],
             ];
             if (array_key_exists('sequence', $col)) {
@@ -153,7 +164,7 @@ trait Table
         if (!array_key_exists('name', $columnSpec)) {
             return false;
         }
-        if (!array_key_exists('data_type', $columnSpec)) {
+        if (!array_key_exists('type', $columnSpec)) {
             return false;
         }
         $sql = 'ALTER TABLE '.$this->queryBuilder->schemaName($tableName).' ADD COLUMN '.$this->queryBuilder->field($columnSpec['name']).' '.$this->type($columnSpec);
@@ -181,7 +192,7 @@ trait Table
             $column = $columnSpec['name'];
         }
         $prefix = 'ALTER TABLE '.$this->queryBuilder->schemaName($tableName).' ALTER COLUMN '.$this->queryBuilder->field($column);
-        if (array_key_exists('data_type', $columnSpec)) {
+        if (array_key_exists('type', $columnSpec)) {
             $alterType = $prefix.' TYPE '.$this->type($columnSpec);
             if (array_key_exists('using', $columnSpec)) {
                 $alterType .= ' USING '.$columnSpec['using'];

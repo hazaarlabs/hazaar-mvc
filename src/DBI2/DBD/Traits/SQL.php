@@ -9,42 +9,9 @@ use Hazaar\DBI2\QueryBuilder\SQL as SQLBuilder;
 
 trait SQL
 {
-    private QueryBuilder $queryBuilder;
-
-    public function initQueryBuilder(string $schema): void
-    {
-        $this->queryBuilder = new SQLBuilder($schema);
-    }
-
     public function getQueryBuilder(): QueryBuilder
     {
-        return $this->queryBuilder;
-    }
-
-    public function grant(array|string $privilege, string $object, string $to, ?string $schema = null): bool
-    {
-        if (is_array($privilege)) {
-            $privilege = implode(', ', $privilege);
-        }
-        $sql = 'GRANT '.$privilege.' ON '.$this->queryBuilder->schemaName($object).' TO '.$to;
-        if ($schema) {
-            $sql .= ' WITH GRANT OPTION';
-        }
-
-        return false !== $this->exec($sql);
-    }
-
-    public function revoke(array|string $privilege, string $object, string $from, ?string $schema = null): bool
-    {
-        if (is_array($privilege)) {
-            $privilege = implode(', ', $privilege);
-        }
-        $sql = 'REVOKE '.$privilege.' ON '.$this->queryBuilder->schemaName($object).' FROM '.$from;
-        if ($schema) {
-            $sql .= ' CASCADE';
-        }
-
-        return false !== $this->exec($sql);
+        return new SQLBuilder($this->config->get('schema', 'public'));
     }
 
     public function createDatabase(string $name): bool
@@ -53,6 +20,36 @@ trait SQL
         $result = $this->query($sql);
 
         return true;
+    }
+
+    /**
+     * @param array<string>|string $privilege
+     */
+    public function grant(array|string $privilege, string $object, string $to): bool
+    {
+        if (is_array($privilege)) {
+            $privilege = implode(', ', $privilege);
+        }
+        $sql = 'GRANT '.$privilege
+            .' ON '.$this->queryBuilder->schemaName($object)
+            .' TO '.$this->queryBuilder->quoteSpecial($to);
+
+        return false !== $this->exec($sql);
+    }
+
+    /**
+     * @param array<string>|string $privilege
+     */
+    public function revoke(array|string $privilege, string $object, string $from): bool
+    {
+        if (is_array($privilege)) {
+            $privilege = implode(', ', $privilege);
+        }
+        $sql = 'REVOKE '.$privilege
+            .' ON '.$this->queryBuilder->schemaName($object)
+            .' FROM '.$this->queryBuilder->quoteSpecial($from);
+
+        return false !== $this->exec($sql);
     }
 
     protected function fixValue(mixed $value): mixed
@@ -65,7 +62,7 @@ trait SQL
      */
     protected function type(array $info): string
     {
-        if (!($type = ake($info, 'data_type'))) {
+        if (!($type = ake($info, 'type'))) {
             return 'character varying';
         }
         if ($array = ('[]' === substr($type, -2))) {

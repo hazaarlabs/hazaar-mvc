@@ -24,16 +24,6 @@ interface Driver
     public function setTimezone(string $tz): bool;
 
     /**
-     * @param array<string>|string $privilege
-     */
-    public function grant(array|string $privilege, string $object, string $to, ?string $schema = null): bool;
-
-    /**
-     * @param array<string>|string $privilege
-     */
-    public function revoke(array|string $privilege, string $object, string $from, ?string $schema = null): bool;
-
-    /**
      * Executes an SQL statement and returns the number of affected rows or false on failure.
      *
      * @param string $sql the SQL statement to execute

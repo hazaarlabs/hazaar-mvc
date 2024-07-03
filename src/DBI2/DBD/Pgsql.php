@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI2\DBD;
 
+use Hazaar\DBI2\Interfaces\QueryBuilder;
 use Hazaar\Map;
 
 class Pgsql implements Interfaces\Driver
@@ -22,6 +23,8 @@ class Pgsql implements Interfaces\Driver
     use Traits\SQL\StoredFunction;
     use Traits\SQL\Trigger;
     use Traits\SQL\Sequence;
+    use Traits\SQL\User;
+    use Traits\SQL\Group;
 
     /**
      * @var array<string>
@@ -34,9 +37,13 @@ class Pgsql implements Interfaces\Driver
         'password',
     ];
 
+    private QueryBuilder $queryBuilder;
+    private Map $config;
+
     public function __construct(Map $config)
     {
-        $this->initQueryBuilder($config->get('schema', 'public'));
+        $this->config = $config;
+        $this->queryBuilder = $this->getQueryBuilder();
         $driverOptions = [];
         if ($config->has('options')) {
             $driverOptions = $config['options']->toArray();

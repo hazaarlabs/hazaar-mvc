@@ -38,15 +38,9 @@ class Table
     public function exists(mixed $criteria = null): bool
     {
         if (null === $criteria) {
-            $criteria = [
-                'table_name' => $this->table,
-                'table_schema' => $this->queryBuilder->getSchemaName(),
-            ];
-            $tableName = 'information_schema.tables';
-        } else {
-            $tableName = $this->table;
+            return $this->adapter->tableExists($this->table);
         }
-        $sql = $this->queryBuilder->exists($tableName, $criteria);
+        $sql = $this->queryBuilder->exists($this->table, $criteria);
 
         return $this->adapter->query($sql)->fetchColumn(0);
     }
@@ -56,7 +50,14 @@ class Table
      */
     public function select(array|string $columns = '*'): self
     {
-        $this->queryBuilder->select($columns);
+        $this->queryBuilder->select($columns)->from($this->table);
+
+        return $this;
+    }
+
+    public function distinct(string ...$columns): self
+    {
+        $this->queryBuilder->distinct(...$columns);
 
         return $this;
     }
@@ -198,9 +199,9 @@ class Table
     }
 
     /**
-     * @param array<mixed> $values
+     * @param array<mixed>|Table $values
      */
-    public function insert(array $values, mixed $returning = null): mixed
+    public function insert(array|Table $values, mixed $returning = null): mixed
     {
         $result = $this->adapter->query($this->queryBuilder->insert($this->table, $values, $returning));
         if (!$result) {

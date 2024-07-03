@@ -1050,7 +1050,7 @@ class Manager
         foreach ($this->dbi->listTriggers() as $trigger) {
             $name = $trigger['name'];
             $this->log("Processing trigger '{$name}'.");
-            if (!($info = $this->dbi->describeTrigger($trigger['name'], $trigger['schema']))) {
+            if (!($info = $this->dbi->describeTrigger($trigger['name']))) {
                 throw new Exception\Snapshot("Error getting trigger definition for '{$name}'.  Does the connected user have the correct permissions?");
             }
             if (true === $this->dbiConfig['manager']['functionsInFiles']) {
@@ -1242,12 +1242,12 @@ class Manager
 
         // Check that the database exists and can be written to.
         try {
-            $schemaName = $this->dbi->getSchemaName();
-            if (!$this->dbi->schemaExists($schemaName)) {
+            if (!$this->dbi->schemaExists()) {
                 $this->log('Database does not exist.  Creating...');
-                $this->dbi->createSchema($schemaName);
+                $this->dbi->createSchema();
                 if (($dbiUser = $this->dbiConfig->get('user')) && $this->dbi->config->get('user') !== $dbiUser) {
-                    $this->dbi->query("GRANT USAGE ON SCHEMA {$schemaName} TO {$dbiUser};");
+                    $schemaName = $this->dbi->getSchemaName();
+                    $this->dbi->grant('USAGE', 'SCHEMA '.$schemaName, $dbiUser);
                 }
             }
             $this->createInfoTable();
@@ -1266,19 +1266,19 @@ class Manager
                 $this->log('Current database version: '.($currentVersion ? $currentVersion : 'None'));
             }
         }
-        $roles = [];
-        if (true === $this->dbi->config->get('createRole') && $this->dbiConfig->has('user')) {
-            $roles[] = [
+        $users = [];
+        if (true === $this->dbi->config->get('createUser') && $this->dbiConfig->has('user')) {
+            $users[] = [
                 'name' => $this->dbiConfig->get('user'),
                 'password' => $this->dbiConfig->get('password'),
                 'privileges' => ['LOGIN'],
             ];
         }
-        if ($this->dbi->config->has('roles')) {
-            $roles = array_merge($roles, $this->dbi->config['roles']->toArray());
+        if ($this->dbi->config->has('users')) {
+            $users = array_merge($users, $this->dbi->config['users']->toArray());
         }
-        if (count($roles) > 0) {
-            $this->createRoleIfNotExists($roles);
+        if (count($users) > 0) {
+            $this->createUserIfNotExists($users);
         }
         if (true === $force_reinitialise) {
             $this->log('WARNING: Forcing full database re-initialisation.  THIS WILL DELETE ALL DATA!!!');
@@ -1311,7 +1311,7 @@ class Manager
             if (254 === $i) {
                 exit('Something really BAD happened!');
             }
-            $functions = $this->dbi->listFunctions(null, true);
+            $functions = $this->dbi->listFunctions(true);
             foreach ($functions as $function) {
                 $this->dbi->dropFunction($function['name'], $function['parameters'], true);
             }
@@ -1877,27 +1877,31 @@ class Manager
     }
 
     /**
-     * @param array<array<mixed>>|string $roleOrRoles
+     * @param array<array{
+     *  name:string,
+     *  password:string,
+     *  privileges:array<string>|string
+     * }>|string $userOrUsers
      */
-    public function createRoleIfNotExists(array|string $roleOrRoles): void
+    public function createUserIfNotExists(array|string $userOrUsers): void
     {
-        $roles = is_array($roleOrRoles) ? $roleOrRoles : [$roleOrRoles];
-        $currentRoles = array_merge($this->dbi->listUsers(), $this->dbi->listGroups());
-        foreach ($roles as $role) {
-            if (in_array($role['name'], $currentRoles)) {
+        $users = is_array($userOrUsers) ? $userOrUsers : ['name' => $userOrUsers];
+        $currentUsers = array_merge($this->dbi->listUsers(), $this->dbi->listGroups());
+        foreach ($users as $user) {
+            if (in_array($user['name'], $currentUsers)) {
                 continue;
             }
-            $this->log('Creating role: '.$role['name']);
+            $this->log('Creating role: '.$user['name']);
             $privileges = ['INHERIT'];
-            if (array_key_exists('privileges', $role)) {
-                if (is_array($role['privileges'])) {
-                    $privileges = array_merge($privileges, $role['privileges']);
+            if (array_key_exists('privileges', $user)) {
+                if (is_array($user['privileges'])) {
+                    $privileges = array_merge($privileges, $user['privileges']);
                 } else {
-                    $privileges[] = $role['privileges'];
+                    $privileges[] = $user['privileges'];
                 }
             }
-            if (!$this->dbi->createRole($role['name'], $role['password'], $privileges)) {
-                throw new \Exception("Error creating role '{$role['name']}': ".ake($this->dbi->errorInfo(), 2));
+            if (!$this->dbi->createUser($user['name'], $user['password'], $privileges)) {
+                throw new \Exception("Error creating role '{$user['name']}': ".ake($this->dbi->errorInfo(), 2));
             }
         }
     }
@@ -2569,7 +2573,7 @@ class Manager
                         if (!isset($source->syncKey)
                             && ($config = ake($source, 'config'))
                             && is_string($config)) {
-                            $config = Adapter::getDefaultConfig($config);
+                            $config = Adapter::loadConfig($config);
                             $source->syncKey = $config->get('syncKey');
                         }
                         $context = stream_context_create([
@@ -2862,7 +2866,7 @@ class Manager
             $this->log('Found DBI filesystem: '.$name);
 
             try {
-                $settings->enhance(['dbi' => Adapter::getDefaultConfig(), 'initialise' => true]);
+                $settings->enhance(['dbi' => Adapter::loadConfig(), 'initialise' => true]);
                 $fs_db = new Adapter($settings['dbi']);
                 if ($fs_db->table('hz_file')->exists() && $fs_db->table('hz_file_chunk')->exists()) {
                     continue;
@@ -2881,13 +2885,13 @@ class Manager
                 }
                 // Look for the old tables and if they exists, do an upgrade!
                 if ($fs_db->table('file')->exists() && $fs_db->table('file_chunk')->exists()) {
-                    if (!$fs_db->table('hz_file_chunk')->insert($fs_db->table('file_chunk')->select('id', null, 'n', 'data'))) {
+                    if (!$fs_db->table('hz_file_chunk')->insert($fs_db->table('file_chunk')->select(['id', null, 'n', 'data']))) {
                         throw $fs_db->errorException();
                     }
                     if (!$fs_db->table('hz_file')->insert($fs_db->table('file')->find(['kind' => 'dir'], ['id', 'kind', ['parent' => 'unnest(parents)'], null, 'filename', 'created_on', 'modified_on', 'length', 'mime_type', 'md5', 'owner', 'group', 'mode', 'metadata']))) {
                         throw $fs_db->errorException();
                     }
-                    $fs_db->driver->repair();
+                    $fs_db->repair();
                     if (!$fs_db->query("INSERT INTO hz_file (kind, parent, start_chunk, filename, created_on, modified_on, length, mime_type, md5, owner, \"group\", mode, metadata) SELECT kind, unnest(parents) as parent, (SELECT fc.id FROM file_chunk fc WHERE fc.file_id=f.id), filename, created_on, modified_on, length, mime_type, md5, owner, \"group\", mode, metadata FROM file f WHERE kind = 'file'")) {
                         throw $fs_db->errorException();
                     }

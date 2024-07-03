@@ -36,8 +36,11 @@ trait Schema
      *
      * @return bool returns true if the schema was created successfully, false otherwise
      */
-    public function createSchema(string $schemaName): bool
+    public function createSchema(?string $schemaName = null): bool
     {
+        if (!$schemaName) {
+            $schemaName = $this->queryBuilder->getSchemaName();
+        }
         $sql = $this->queryBuilder->create($schemaName, 'schema', true);
 
         return false !== $this->exec($sql);
