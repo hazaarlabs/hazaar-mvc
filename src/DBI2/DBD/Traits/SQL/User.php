@@ -5,13 +5,11 @@ namespace Hazaar\DBI2\DBD\Traits\SQL;
 trait User
 {
     /**
-     * @return array<int, array<string>>|false
+     * @return array<int, array<string>>
      */
-    public function listUsers(): array|false
+    public function listUsers(): array
     {
-        $sql = 'SELECT rolname FROM pg_roles WHERE rolcanlogin = true';
-
-        return $this->query($sql)->fetchAll();
+        return [];
     }
 
     /**
@@ -19,24 +17,11 @@ trait User
      */
     public function createUser(string $name, ?string $password = null, array $privileges = []): bool
     {
-        $sql = 'CREATE ROLE '
-            .$this->queryBuilder->quoteSpecial($name)
-            .' WITH LOGIN';
-        if (null !== $password) {
-            $sql .= ' PASSWORD '.$this->queryBuilder->prepareValue($password);
-        }
-        if (!empty($privileges)) {
-            $sql .= ' '.implode(' ', $privileges);
-        }
-
-        return false !== $this->exec($sql);
+        return false;
     }
 
     public function dropUser(string $name, bool $ifExists = false): bool
     {
-        $sql = 'DROP ROLE '.($ifExists ? 'IF EXISTS ' : '')
-            .$this->queryBuilder->quoteSpecial($name);
-
-        return false !== $this->exec($sql);
+        return false;
     }
 }

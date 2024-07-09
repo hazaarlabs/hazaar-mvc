@@ -155,7 +155,7 @@ class Manager
                 ksort($this->versions[1]);
             }
         }
-        $versions = $returnFullPath ? $this->versions[0] : $this->versions[1];
+        $versions = $this->versions ? ($returnFullPath ? $this->versions[0] : $this->versions[1]) : [];
         if (true === $appliedOnly) {
             if (null !== $this->appliedVersions) {
                 return $this->appliedVersions;
@@ -947,7 +947,7 @@ class Manager
                 throw new Exception\Snapshot("Error getting function definition for functions '{$name}'.  Does the connected user have the correct permissions?");
             }
             foreach ($func as $info) {
-                if (true === $this->dbiConfig['manager']['functionsInFiles']) {
+                if (true === $this->dbiConfig->get('manager.functionsInFiles', true)) {
                     $functions[$info['name']] = $info['content'];
                     unset($info['content']);
                 }
@@ -1053,7 +1053,7 @@ class Manager
             if (!($info = $this->dbi->describeTrigger($trigger['name']))) {
                 throw new Exception\Snapshot("Error getting trigger definition for '{$name}'.  Does the connected user have the correct permissions?");
             }
-            if (true === $this->dbiConfig['manager']['functionsInFiles']) {
+            if (true === $this->dbiConfig->get('manager.functionsInFiles', true)) {
                 $functions[$info['name']] = $info['content'];
                 unset($info['content']);
             }
@@ -1479,11 +1479,11 @@ class Manager
     /**
      * Undo a migration version.
      *
-     * @param array<string> $cancels
+     * @param array<string> $rollbacks
      */
-    public function cancel(int $version, bool $test = false, array &$cancels = []): bool
+    public function rollback(int $version, bool $test = false, array &$rollbacks = []): bool
     {
-        $this->log('canceling back version '.$version.($test ? ' in TEST MODE' : ''));
+        $this->log('Rolling back version '.$version.($test ? ' in TEST MODE' : ''));
         $versions = $this->getVersions(true, true);
         if (!array_key_exists($version, $versions)) {
             $this->log('Version '.$version.' is not currently applied to the schema');
@@ -1567,10 +1567,10 @@ class Manager
         }
         rsort($dependents);
         foreach ($dependents as $dependent) {
-            if (false !== array_search($dependent, $cancels)) {
+            if (false !== array_search($dependent, $rollbacks)) {
                 continue;
             }
-            $this->cancel($dependent, $test, $cancels);
+            $this->rollback($dependent, $test, $rollbacks);
         }
 
         try {
@@ -1593,8 +1593,8 @@ class Manager
 
             throw $e;
         }
-        $cancels[] = $version;
-        $this->log("cancel of version '{$version}' completed.");
+        $rollbacks[] = $version;
+        $this->log("Rollback of version '{$version}' completed.");
 
         return true;
     }

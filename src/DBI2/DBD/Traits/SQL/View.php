@@ -9,20 +9,9 @@ trait View
      *
      * @return array<int, array<string>>|false an array of views, or null if no views are found
      */
-    public function listViews(): array|false
+    public function listViews(): array
     {
-        $sql = 'SELECT table_schema as "schema", table_name as name FROM INFORMATION_SCHEMA.views WHERE ';
-        if ('public' != $this->queryBuilder->getSchemaName()) {
-            $sql .= "table_schema = '{$this->queryBuilder->getSchemaName()}'";
-        } else {
-            $sql .= "table_schema NOT IN ( 'information_schema', 'pg_catalog' )";
-        }
-        $sql .= ' ORDER BY table_name DESC;';
-        if ($result = $this->query($sql)) {
-            return $result->fetchAll(\PDO::FETCH_ASSOC);
-        }
-
-        return false;
+        return [];
     }
 
     /**
@@ -34,41 +23,21 @@ trait View
      */
     public function describeView($name): array|false
     {
-        list($schema, $name) = $this->queryBuilder->parseSchemaName($name);
-        $sql = 'SELECT table_name as name, trim(view_definition) as content FROM INFORMATION_SCHEMA.views WHERE table_schema='
-            .$this->queryBuilder->prepareValue($schema).' AND table_name='.$this->queryBuilder->prepareValue($name);
-        if ($result = $this->query($sql)) {
-            return $result->fetch(\PDO::FETCH_ASSOC);
-        }
-
         return false;
     }
 
     public function createView(string $name, mixed $content): bool
     {
-        $sql = 'CREATE OR REPLACE VIEW '.$this->queryBuilder->schemaName($name).' AS '.rtrim($content, ' ;');
-
-        return false !== $this->exec($sql);
+        return false;
     }
 
     public function viewExists(string $viewName): bool
     {
-        $views = $this->listViews();
-
-        return false !== $views && in_array($viewName, $views);
+        return false;
     }
 
     public function dropView(string $name, bool $cascade = false, bool $ifExists = false): bool
     {
-        $sql = 'DROP VIEW ';
-        if (true === $ifExists) {
-            $sql .= 'IF EXISTS ';
-        }
-        $sql .= $this->queryBuilder->schemaName($name);
-        if (true === $cascade) {
-            $sql .= ' CASCADE';
-        }
-
-        return false !== $this->exec($sql);
+        return false;
     }
 }

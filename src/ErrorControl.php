@@ -163,7 +163,7 @@ function exception_handler(Throwable $e): void
 function shutdown_handler(): void
 {
     if (($error = error_get_last()) !== null) {
-        if (1 == ini_get('display_errors')) {
+        if ('cli' !== PHP_SAPI && 1 == ini_get('display_errors')) {
             ob_clean();
         }
         match ($error['type']) {

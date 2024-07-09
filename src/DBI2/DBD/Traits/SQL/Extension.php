@@ -5,11 +5,11 @@ namespace Hazaar\DBI2\DBD\Traits\SQL;
 trait Extension
 {
     /**
-     * @return array<int, array<string>>|false
+     * @return array<int, array<string>>
      */
-    public function listExtensions(): array|false
+    public function listExtensions(): array
     {
-        return false;
+        return [];
     }
 
     public function createExtension(string $name): bool

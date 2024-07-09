@@ -6,7 +6,7 @@ namespace Hazaar\DBI2\Schema;
 
 use Hazaar\Application;
 use Hazaar\Application\Request\CLI;
-use Hazaar\DBI\Adapter;
+use Hazaar\DBI2\Adapter;
 
 class Tool
 {
@@ -45,8 +45,10 @@ class Tool
         $env = ake($options, 'env', APPLICATION_ENV);
 
         try {
-            $manager = Adapter::getSchemaManagerInstance($env, function ($time, $msg) {
+            $db = Adapter::getInstance($env);
+            $manager = $db->getSchemaManager(function ($time, $msg) {
                 echo date('Y-m-d H:i:s', (int) $time).' - '.$msg."\n";
+                ob_flush();
             });
 
             switch ($command) {
@@ -108,7 +110,7 @@ class Tool
 
                 case 'snapshot':
                     $comment = trim(implode(' ', $commandArgs)) ?: 'New Snapshot';
-                    if ($manager->snapshot($comment, ake($options, 'test'))) {
+                    if ($manager->snapshot($comment, ake($options, 'test', false))) {
                         $code = 0;
                     }
 

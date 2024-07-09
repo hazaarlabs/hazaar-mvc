@@ -7,26 +7,18 @@ trait Group
     /**
      * @return array<int, array<string>>|false
      */
-    public function listGroups(): array|false
+    public function listGroups(): array
     {
-        $sql = 'SELECT rolname FROM pg_roles WHERE rolcanlogin = false';
-
-        return $this->query($sql)->fetchAll();
+        return [];
     }
 
     public function createGroup(string $name): bool
     {
-        $sql = 'CREATE ROLE '
-            .$this->queryBuilder->prepareValue($name);
-
-        return false !== $this->exec($sql);
+        return false;
     }
 
     public function dropGroup(string $name, bool $ifExists = false): bool
     {
-        $sql = 'DROP ROLE '.($ifExists ? 'IF EXISTS ' : '')
-            .$this->queryBuilder->prepareValue($name);
-
-        return false !== $this->exec($sql);
+        return false;
     }
 }

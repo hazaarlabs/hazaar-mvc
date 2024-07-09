@@ -16,39 +16,9 @@ trait Index
      *
      * @throws \Exception if the index list retrieval fails
      */
-    public function listIndexes(?string $table = null): array|false
+    public function listIndexes(?string $table = null): array
     {
-        if ($table) {
-            list($schema, $table) = $this->queryBuilder->parseSchemaName($table);
-        } else {
-            $schema = $this->queryBuilder->getSchemaName();
-        }
-        $sql = "SELECT s.nspname, t.relname as table_name, i.relname as index_name, array_to_string(array_agg(a.attname), ', ') as column_names, ix.indisunique
-            FROM pg_namespace s, pg_class t, pg_class i, pg_index ix, pg_attribute a
-            WHERE s.oid = t.relnamespace
-                AND t.oid = ix.indrelid
-                AND i.oid = ix.indexrelid
-                AND a.attrelid = t.oid
-                AND a.attnum = ANY(ix.indkey)
-                AND t.relkind = 'r'
-                AND s.nspname = '{$schema}'";
-        if ($table) {
-            $sql .= "\nAND t.relname = '{$table}'";
-        }
-        $sql .= "\nGROUP BY s.nspname, t.relname, i.relname, ix.indisunique ORDER BY t.relname, i.relname;";
-        if (!($result = $this->query($sql))) {
-            throw new \Exception('Index list failed. '.$this->errorInfo()[2]);
-        }
-        $indexes = [];
-        while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
-            $indexes[$row['index_name']] = [
-                'table' => $row['table_name'],
-                'columns' => array_map('trim', explode(',', $row['column_names'])),
-                'unique' => boolify($row['indisunique']),
-            ];
-        }
-
-        return $indexes;
+        return [];
     }
 
     public function createIndex(string $indexName, string $tableName, mixed $idxInfo): bool

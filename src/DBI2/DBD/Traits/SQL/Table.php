@@ -98,16 +98,16 @@ trait Table
                 && $col['column_default']
                 && preg_match('/nextval\(\'(\w*)\'::regclass\)/', $col['column_default'], $matches)) {
                 if ($info = $this->describeSequence($matches[1])) {
-                    $col['type'] = 'serial';
+                    $col['data_type'] = 'serial';
                     $col['column_default'] = null;
                     $col['sequence'] = $info;
                 }
             }
             // Fixed array types to their actual SQL array data type
-            if ('ARRAY' == $col['type']
+            if ('ARRAY' == $col['data_type']
                 && ($udtName = ake($col, 'udt_name'))) {
                 if ('_' == $udtName[0]) {
-                    $col['type'] = substr($udtName, 1).'[]';
+                    $col['data_type'] = substr($udtName, 1).'[]';
                 }
             }
             $coldata = [

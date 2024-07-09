@@ -237,10 +237,10 @@ class Adapter
     /**
      * Returns an instance of the Hazaar\DBI\Schema\Manager for managing database schema versions.
      */
-    public function getSchemaManager(): Manager
+    public function getSchemaManager(?\Closure $logCallback = null): Manager
     {
         if (!isset($this->schemaManager)) {
-            $this->schemaManager = new Manager($this->config);
+            $this->schemaManager = new Manager($this->config, $logCallback);
         }
 
         return $this->schemaManager;
