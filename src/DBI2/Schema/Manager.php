@@ -30,6 +30,7 @@ class Manager
     public const MACRO_VARIABLE = 1;
     public const MACRO_LOOKUP = 2;
     public static string $schemaInfoTable = 'schema_info';
+    private string $env;
     private Adapter $dbi;
     private Map $dbiConfig;
     private string $dbDir;
@@ -49,7 +50,7 @@ class Manager
     /**
      * @var array<int,array<string>>
      */
-    private array $versions = [];
+    private ?array $versions = null;
     private ?int $currentVersion = null;
 
     /**
@@ -71,8 +72,9 @@ class Manager
         'trigger' => ['triggers', true, 'functions'],
     ];
 
-    public function __construct(Map $dbiConfig, ?\Closure $logCallback = null)
+    public function __construct(Map $dbiConfig, string $env = APPLICATION_ENV, ?\Closure $logCallback = null)
     {
+        $this->env = $env;
         if ($logCallback) {
             $this->setLogCallback($logCallback);
         }
@@ -478,7 +480,7 @@ class Manager
         if ($test) {
             $this->log('Test mode ENABLED');
         }
-        $this->log('APPLICATION_ENV: '.APPLICATION_ENV);
+        $this->log('APPLICATION_ENV: '.$this->env);
         if ($versions = $this->getVersions()) {
             end($versions);
             $latest_version = key($versions);
@@ -1216,7 +1218,7 @@ class Manager
         if ($test) {
             $this->log('Test mode ENABLED');
         }
-        $this->log('APPLICATION_ENV: '.APPLICATION_ENV);
+        $this->log('APPLICATION_ENV: '.$this->env);
         $mode = 'up';
         $currentVersion = 0;
         $versions = $this->getVersions(true);
@@ -1260,7 +1262,7 @@ class Manager
         }
         // Get the current version (if any) from the database
         if ($this->dbi->table(self::$schemaInfoTable)->exists()) {
-            $result = $this->dbi->table(self::$schemaInfoTable)->find([], ['version'])->sort('version', SORT_DESC);
+            $result = $this->dbi->table(self::$schemaInfoTable)->find([], ['version'])->order('version', SORT_DESC);
             if ($row = $result->fetch()) {
                 $currentVersion = $row['version'];
                 $this->log('Current database version: '.($currentVersion ? $currentVersion : 'None'));
@@ -1786,7 +1788,7 @@ class Manager
     public function syncData(?array $dataSchema = null, bool $test = false, bool $forceDataSync = false): bool
     {
         $this->log('Initialising DBI data sync');
-        $this->log('APPLICATION_ENV: '.APPLICATION_ENV);
+        $this->log('APPLICATION_ENV: '.$this->env);
         if (null === $dataSchema) {
             $schema = $this->getSchema($this->getVersion());
             $dataSchema = array_key_exists('data', $schema) ? $schema['data'] : [];
@@ -2494,10 +2496,10 @@ class Manager
         if (!is_array($records)) {
             $records = [];
         }
-        if (!is_array($env = ake($info, 'env', [APPLICATION_ENV]))) {
+        if (!is_array($env = ake($info, 'env', [$this->env]))) {
             $env = [$env];
         }
-        if (!in_array(APPLICATION_ENV, $env)) {
+        if (!in_array($this->env, $env)) {
             return false;
         }
         // Set up any data object variables

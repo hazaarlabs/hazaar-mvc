@@ -247,7 +247,7 @@ class Table
      * @param array<mixed>|string       $where
      * @param null|array<string>|string $columns
      */
-    public function find(null|array|string $where = null, null|array|string $columns = null): mixed
+    public function find(null|array|string $where = null, null|array|string $columns = null): self
     {
         if (null !== $where) {
             $this->queryBuilder->where($where);
@@ -256,7 +256,7 @@ class Table
             $this->select($columns);
         }
 
-        return $this->adapter->query($this->queryBuilder->toString());
+        return $this;
     }
 
     /**

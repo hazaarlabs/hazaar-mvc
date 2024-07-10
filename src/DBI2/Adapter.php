@@ -177,6 +177,8 @@ class Adapter
 
     private Manager $schemaManager;
 
+    private string $env = APPLICATION_ENV;
+
     /**
      * Hazaar DBI Constructor.
      *
@@ -186,10 +188,9 @@ class Adapter
      */
     public function __construct(null|array|Map|string $config = null)
     {
-        $configName = null;
         if (defined('HAZAAR_VERSION') && (null === $config || is_string($config))) {
-            $configName = $config;
-            $config = $this->loadConfig($configName);
+            $this->env = $config;
+            $config = $this->loadConfig($this->env);
         } elseif (!is_string($config)) {
             $config = Map::_($config, self::$defaultConfig);
         }
@@ -197,8 +198,8 @@ class Adapter
             throw new NotConfigured();
         }
         $this->config = $config;
-        if ($configName && !array_key_exists($configName, self::$instances)) {
-            self::$instances[$configName] = $this;
+        if ($this->env && !array_key_exists($this->env, self::$instances)) {
+            self::$instances[$this->env] = $this;
         }
         if (!$this->reconfigure()) {
             throw new \Exception('Unkown DBI driver: '.$this->config->get('driver'));
@@ -240,7 +241,7 @@ class Adapter
     public function getSchemaManager(?\Closure $logCallback = null): Manager
     {
         if (!isset($this->schemaManager)) {
-            $this->schemaManager = new Manager($this->config, $logCallback);
+            $this->schemaManager = new Manager($this->config, $this->env, $logCallback);
         }
 
         return $this->schemaManager;

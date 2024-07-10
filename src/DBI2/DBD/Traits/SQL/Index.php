@@ -34,7 +34,7 @@ trait Index
         if (array_key_exists('unique', $idxInfo) && $idxInfo['unique']) {
             $sql .= ' UNIQUE';
         }
-        $sql .= ' INDEX '.$this->queryBuilder->field($indexName).' ON '.$this->queryBuilder->schemaName($tableName).' ('.implode(',', array_map([$this, 'field'], $idxInfo['columns'])).')';
+        $sql .= ' INDEX '.$this->queryBuilder->field($indexName).' ON '.$this->queryBuilder->schemaName($tableName).' ('.implode(',', array_map([$this->queryBuilder, 'field'], $idxInfo['columns'])).')';
         if (array_key_exists('using', $idxInfo) && $idxInfo['using']) {
             $sql .= ' USING '.$idxInfo['using'];
         }
