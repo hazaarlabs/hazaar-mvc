@@ -271,9 +271,9 @@ class Table
         if (null !== $columns) {
             $this->select($columns);
         }
-        $result = $this->adapter->query($this->queryBuilder->limit(1)->toString());
-        if ($result) {
-            return $result->fetch();
+        $this->result = $this->adapter->query($this->queryBuilder->limit(1)->toString());
+        if ($this->result) {
+            return $this->result->fetch();
         }
 
         return false;
@@ -289,9 +289,9 @@ class Table
         if (null !== $columns) {
             $this->select($columns);
         }
-        $result = $this->adapter->query($this->queryBuilder->limit(1)->toString());
-        if ($result) {
-            return $result->row();
+        $this->result = $this->adapter->query($this->queryBuilder->limit(1)->toString());
+        if ($this->result) {
+            return $this->result->row();
         }
 
         return false;
@@ -317,9 +317,9 @@ class Table
      */
     public function fetchAll(): array|false
     {
-        $result = $this->adapter->query($this->queryBuilder->toString());
-        if ($result instanceof Result) {
-            return $result->fetchAll();
+        $this->result = $this->adapter->query($this->queryBuilder->toString());
+        if (false !== $this->result) {
+            return $this->result->fetchAll();
         }
 
         return false;
@@ -333,9 +333,9 @@ class Table
         mixed $fetchArgument = null,
         bool $clobberDupNamedCols = false
     ): array {
-        $result = $this->adapter->query($this->queryBuilder->select($columnName)->from($this->table)->toString());
+        $this->result = $this->adapter->query($this->queryBuilder->select($columnName)->from($this->table)->toString());
         $data = [];
-        while ($row = $result->fetch()) {
+        while ($row = $this->result->fetch()) {
             $data[] = $row[$columnName];
         }
 
@@ -347,9 +347,9 @@ class Table
      */
     public function toArray(): array
     {
+        $this->result = $this->adapter->query($this->queryBuilder->toString());
         $rows = [];
-        $result = $this->find()->rows();
-        foreach ($result as &$row) {
+        while ($row = $this->result->row()) {
             $rows[] = $row->toArray();
         }
 
@@ -372,5 +372,14 @@ class Table
     public function describe(): array|false
     {
         return $this->adapter->describeTable($this->table);
+    }
+
+    public function result(): Result
+    {
+        if (null === $this->result) {
+            $this->result = $this->adapter->query($this->queryBuilder->toString());
+        }
+
+        return $this->result;
     }
 }
