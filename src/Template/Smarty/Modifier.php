@@ -21,6 +21,7 @@ class Modifier
         'date_format',
         'default',
         'dump',
+        'export',
         'escape',
         'indent',
         'lower',
@@ -131,6 +132,14 @@ class Modifier
     }
 
     public function dump(mixed $value): string
+    {
+        ob_start();
+        var_dump($value);
+
+        return ob_get_clean();
+    }
+
+    public function export(mixed $value): string
     {
         return var_export($value, true);
     }

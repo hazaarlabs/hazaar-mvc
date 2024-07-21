@@ -121,7 +121,7 @@
                 .data {
                     font-family: 'Courier New', Courier, monospace;
                     font-size: 0.8rem;
-                    white-space: pre;
+                    /* white-space: pre; */
                     color: #fff;
                     background-color: #0a0a0a;
                     padding: 25px;
@@ -164,7 +164,7 @@
             </table>
         </div>
         <div class="dumpdata">
-            <div class="data">{$data|dump|escape:html}</div>
+            <div class="data">{$data|dump}</div>
         </div>
     </div>
 </body>
