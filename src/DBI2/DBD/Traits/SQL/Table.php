@@ -118,7 +118,7 @@ trait Table
                 'length' => $col['character_maximum_length'],
             ];
             if (array_key_exists('sequence', $col)) {
-                $coldata['sequence'] = $col['sequence']['sequence_schema'].'.'.$col['sequence']['sequence_name'];
+                $coldata['sequence'] = $col['sequence']['name'];
             }
             $columns[] = $coldata;
         }

@@ -64,6 +64,7 @@ class Manager
      */
     private static array $tableMap = [
         'extension' => ['extensions', false, null],
+        'sequence' => ['sequences', false, null],
         'table' => ['tables', 'cols', null],
         'view' => ['views', true, 'views'],
         'constraint' => ['constraints', true, null],
@@ -395,7 +396,8 @@ class Manager
                                 }
                             } else {
                                 if ('create' === $action || 'alter' === $action) {
-                                    $schema[$elem][$item['name']][] = $item;
+                                    $name = $item['name'] ?? $item_name;
+                                    $schema[$elem][$name][] = $item;
                                 } else {
                                     throw new Schema("I don't know how to handle: {$action}");
                                 }
@@ -565,6 +567,10 @@ class Manager
         $changes = [
             'up' => [
                 'extension' => [],
+                'sequence' => [
+                    'create' => [],
+                    'remove' => [],
+                ],
                 'table' => [
                     'create' => [],
                     'alter' => [],
@@ -630,6 +636,10 @@ class Manager
                     'remove' => [],
                     'rename' => [],
                 ],
+                'sequence' => [
+                    'create' => [],
+                    'remove' => [],
+                ],
                 'extension' => [],
             ],
         ];
@@ -658,6 +668,30 @@ class Manager
                     $this->log("- Extension '{$extension}' has been removed.");
                     $changes['up']['extension']['remove'][] = $extension;
                     $changes['down']['extension']['create'][] = $extension;
+                }
+            }
+        }
+        $this->log('*** SNAPSHOTTING SEQUENCES ***');
+        foreach ($this->dbi->listSequences() as $sequenceName) {
+            $this->log("Processing sequence '{$sequenceName}'.");
+            $sequence = $this->dbi->describeSequence($sequenceName);
+            foreach ($schema['tables'] as $table) {
+                foreach ($table as $column) {
+                    if (!('serial' === $column['type']
+                        && $column['sequence'] === $sequenceName)) {
+                        continue;
+                    }
+
+                    continue 3;
+                }
+            }
+            unset($sequence['name']);
+            $currentSchema['sequences'][$sequenceName] = $sequence;
+            if (!(array_key_exists('sequences', $schema) && array_key_exists($sequenceName, $schema['sequences']))) {
+                $this->log("+ Sequence '{$sequenceName}' has been created.");
+                $changes['up']['sequence']['create'][$sequenceName] = $sequence;
+                if (!$init) {
+                    $changes['down']['sequence']['remove'][] = $sequenceName;
                 }
             }
         }
@@ -750,42 +784,55 @@ class Manager
                 }
             }
         }
-        // Now compare the create and remove changes to see if a table is actually being renamed
-        if (true !== $init) {
-            $this->log('Looking for renamed tables.');
-            foreach ($changes['up']['table']['create'] as $create_key => $create) {
-                foreach ($changes['up']['table']['remove'] as $remove_key => $remove) {
-                    $diff = array_udiff($schema['tables'][$remove], $create['cols'], function ($a, $b) {
-                        if ($a['name'] == $b['name']) {
-                            return 0;
-                        }
-
-                        return ($a['name'] > $b['name']) ? 1 : -1;
-                    });
-                    if (!$diff) {
-                        $this->log("> Table '{$remove}' has been renamed to '{$create['name']}'.");
-                        $changes['up']['table']['rename'][] = [
-                            'from' => $remove,
-                            'to' => $create['name'],
-                        ];
-                        $changes['down']['table']['rename'][] = [
-                            'from' => $create['name'],
-                            'to' => $remove,
-                        ];
-                        // Clean up the changes
-                        $changes['up']['table']['create'][$create_key] = null;
-                        $changes['up']['table']['remove'][$remove_key] = null;
-                        foreach ($changes['down']['table']['remove'] as $down_remove_key => $down_remove) {
-                            if ($down_remove === $create['name']) {
-                                $changes['down']['table']['remove'][$down_remove_key] = null;
+        if (array_key_exists('create', $changes['up']['table'])) {
+            // Now compare the create and remove changes to see if a table is actually being renamed
+            if (true !== $init) {
+                $this->log('Looking for renamed tables.');
+                foreach ($changes['up']['table']['create'] as $create_key => $create) {
+                    foreach ($changes['up']['table']['remove'] as $remove_key => $remove) {
+                        $diff = array_udiff($schema['tables'][$remove], $create['cols'], function ($a, $b) {
+                            if ($a['name'] == $b['name']) {
+                                return 0;
                             }
-                        }
-                        foreach ($changes['down']['table']['create'] as $down_create_key => $down_create) {
-                            if ($down_create['name'] == $remove) {
-                                $changes['down']['table']['create'][$down_create_key] = null;
+
+                            return ($a['name'] > $b['name']) ? 1 : -1;
+                        });
+                        if (!$diff) {
+                            $this->log("> Table '{$remove}' has been renamed to '{$create['name']}'.");
+                            $changes['up']['table']['rename'][] = [
+                                'from' => $remove,
+                                'to' => $create['name'],
+                            ];
+                            $changes['down']['table']['rename'][] = [
+                                'from' => $create['name'],
+                                'to' => $remove,
+                            ];
+                            // Clean up the changes
+                            $changes['up']['table']['create'][$create_key] = null;
+                            $changes['up']['table']['remove'][$remove_key] = null;
+                            foreach ($changes['down']['table']['remove'] as $down_remove_key => $down_remove) {
+                                if ($down_remove === $create['name']) {
+                                    $changes['down']['table']['remove'][$down_remove_key] = null;
+                                }
+                            }
+                            foreach ($changes['down']['table']['create'] as $down_create_key => $down_create) {
+                                if ($down_create['name'] == $remove) {
+                                    $changes['down']['table']['create'][$down_create_key] = null;
+                                }
                             }
                         }
                     }
+                }
+            }
+            // Unset serial columns from the sequence list (PostgreSQL only)
+            foreach ($changes['up']['table']['create'] as $create_key => $create) {
+                foreach ($create['cols'] as $col) {
+                    if (!(array_key_exists('sequence', $col)
+                    && array_key_exists($col['sequence'], $changes['up']['sequence']['create'])
+                    && 'serial' === $col['type'])) {
+                        continue;
+                    }
+                    unset($changes['up']['sequence']['create'][$col['sequence']]);
                 }
             }
         }
