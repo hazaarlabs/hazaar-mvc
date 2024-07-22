@@ -8,7 +8,7 @@ use Hazaar\Map;
 
 abstract class Backend implements Interfaces\Backend
 {
-    protected const string LOG_LEVEL_PREFIX = 'LOG_';
+    protected const LOG_LEVEL_PREFIX = 'LOG_';
 
     /**
      * @var array<int>
