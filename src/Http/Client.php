@@ -181,7 +181,7 @@ class Client {
             $request->setLocalCertificate($this->local_cert, $this->cert_passphrase);
 
         if($this->auth)
-            $this->setHeader('Authorization', ($this->auth['type']??'Bearer') . ' ' . $this->auth['token']);
+            $request->setHeader('Authorization', ($this->auth['type']??'Bearer') . ' ' . $this->auth['token']);
 
         if($this->username)
             $request->authorise($this->username, $this->password);
