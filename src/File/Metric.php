@@ -307,7 +307,7 @@ class Metric
         $updates = [];
         foreach ($this->archives as $archiveID => $archive) {
             $data = [];
-            $lastTick = $this->lastTick['archive'][$archiveID];
+            $lastTick = $this->lastTick['archive'][$archiveID] ?? $this->getTick();
             $updateTick = $lastTick + $archive['ticks'];
             if ($currentTick > $updateTick) {
                 foreach ($this->dataSources as $dsname => $ds) {
@@ -320,7 +320,7 @@ class Metric
                         if ($this->lastTick['data'][$dsname] < $tick) {
                             $data[$tick] = 0;
                         } else {
-                            $diff = ($tick - $this->lastTick['data'][$dsname]);
+                            $diff = ($tick - ($this->lastTick['data'][$dsname] ?? $this->getTick()));
                             $row = $ds['last'] + $diff;
                             if ($row < 0) {
                                 $row = $ds['ticks'] + $row;
