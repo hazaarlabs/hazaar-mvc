@@ -229,11 +229,13 @@ class Map implements \ArrayAccess, \Iterator, \Countable
     }
 
     /**
-     * @param array<mixed>          $array
      * @param null|array<mixed>|Map ...$args
      */
-    public static function &_(array|Map $array, null|array|Map ...$args): Map
+    public static function &_(mixed $array, null|array|Map ...$args): mixed
     {
+        if (!(is_array($array) || is_object($array))) {
+            return $array;
+        }
         $map = $array instanceof Map ? $array : new Map($array);
         foreach ($args as $arg) {
             $map->extend($arg);
@@ -775,6 +777,10 @@ class Map implements \ArrayAccess, \Iterator, \Countable
                 }
                 $value = $value->get($part, ($key === $lastKey) ? $default : null, $create);
                 if (!$value) {
+                    if ($default) {
+                        $value = Map::_($default);
+                    }
+
                     break;
                 }
             }
