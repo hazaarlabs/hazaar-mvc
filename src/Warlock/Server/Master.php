@@ -300,7 +300,6 @@ class Master
                     'callable' => [$this, 'rotateLogFiles'],
                     'params' => [ake(self::$config['log'], 'logfiles')],
                 ],
-                'application' => new Struct\Application(),
             ], self::$config);
             $this->taskQueueAdd($process);
         }
@@ -310,7 +309,6 @@ class Master
                 'exec' => (object) [
                     'callable' => [$this, 'announce'],
                 ],
-                'application' => new Struct\Application(),
             ], self::$config);
             $this->taskQueueAdd($task);
         }
@@ -512,7 +510,6 @@ class Master
                 $this->log->write(W_NOTICE, "Found service: {$name}");
                 $options = $options->toArray();
                 $options['name'] = $name;
-                $options['application'] = new Struct\Application();
                 $this->services[$name] = new Task\Service($options, self::$config);
                 if (true === $options['enabled']) {
                     $this->serviceEnable($name);
@@ -881,17 +878,12 @@ class Master
         ];
         if (array_key_exists($eventID, $this->globals)) {
             $this->log->write(W_NOTICE, 'Global event triggered', $eventID);
-            $application = new Struct\Application();
             $task = new Task\Runner([
-                'application' => $application,
                 'exec' => $this->globals[$eventID],
                 'params' => [$data, $payload],
                 'timeout' => self::$config['process']['timeout'],
                 'event' => true,
             ]);
-            $this->log->write(W_DEBUG, "PROCESS: ID={$task->id}");
-            $this->log->write(W_DEBUG, 'APPLICATION_PATH: '.$application->path, $task->id);
-            $this->log->write(W_DEBUG, 'APPLICATION_ENV:  '.$application->env, $task->id);
             $this->taskQueueAdd($task);
             $this->taskProcess();
         }
@@ -1292,7 +1284,7 @@ class Master
                             ++$this->stats['limitHits'];
                             $this->log->write(W_WARN, 'Process limit of '.self::$config['process']['limit'].' processes reached!');
 
-                            continue;
+                            break;
                         }
                         $task->start();
                         $this->rrd->setValue('tasks', 1);
@@ -1498,12 +1490,15 @@ class Master
 
             return;
         }
+        $task->application = new Struct\Application();
         $this->tasks[$task->id] = $task;
         ++$this->stats['tasks'];
         $this->admins[$task->id] = $task; // Make all processes admins so they can issue delay/schedule/etc.
         $this->log->write(W_DEBUG, 'TASK->QUEUE: START='
             .date(self::$config['sys']['dateFormat'], $task->start)
             .($task->tag ? " TAG={$task->tag}" : ''), $task->id);
+        $this->log->write(W_DEBUG, 'APPLICATION_PATH: '.$task->application->path, $task->id);
+        $this->log->write(W_DEBUG, 'APPLICATION_ENV:  '.$task->application->env, $task->id);
         $task->status = TASK_QUEUED;
     }
 
