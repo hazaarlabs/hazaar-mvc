@@ -89,7 +89,10 @@ abstract class Router implements Interfaces\Router
      */
     final public function __initialise(Request $request): void
     {
-        if (!$this->evaluateRequest($request)) {
+        if ('hazaar/' === substr($request->getPath(), 0, 7)) {
+            $this->controller = '\\Hazaar\\Controller\\Internal';
+            $this->action = substr($request->getPath(), 7);
+        } elseif (!$this->evaluateRequest($request)) {
             throw new RouteNotFound($request->getPath());
         }
         if (null === $this->controller) {
@@ -117,6 +120,12 @@ abstract class Router implements Interfaces\Router
         }
         // Execute the controller action
         $response = $this->__controller->__runAction($this->action, $this->actionArgs, $this->namedActionArgs);
+        if (false === $response) {
+            $response = $this->__controller->__run();
+            if (false === $response) {
+                throw new NoAction($this->controller);
+            }
+        }
         $this->__cacheResponse($response);
 
         return $response;
