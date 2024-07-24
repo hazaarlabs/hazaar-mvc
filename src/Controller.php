@@ -186,7 +186,7 @@ abstract class Controller implements Controller\Interfaces\Controller
      */
     public function redirect(string|URL $location, bool $saveURI = false): Response
     {
-        return $this->router->application->redirect($location, $saveURI);
+        return $this->router->application->redirect((string)$location, $saveURI);
     }
 
     /**
