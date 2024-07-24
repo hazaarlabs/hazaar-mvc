@@ -1,9 +1,8 @@
-var Warlock = function (hostURL, sid) {
+var Warlock = function (hostURL) {
     var o = this;
     this.p = null; //The current protocol
     this.op = null; //The original protocol as it was sent
     this.__options = {
-        "sid": sid,
         "connect": true,
         "server": hostURL,
         "applicationName": 'hazaar',

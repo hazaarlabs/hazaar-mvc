@@ -229,6 +229,7 @@ class Master
             }
             define('RUNTIME_PATH', $path);
         }
+        self::$config->generateSystemID(APPLICATION_PATH);
         $runtime_path = $this->runtimePath(null, true);
         Logger::setDefaultLogLevel(self::$config['log']['level']);
         $this->log = new Logger();
