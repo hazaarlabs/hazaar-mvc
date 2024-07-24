@@ -19,7 +19,7 @@ class File extends OK
      *
      * @var array<string,bool|int|string>
      */
-    public static array $__default_cache_control_directives = [
+    public static array $__defaultCacheControlDirectives = [
         'public' => false,
         'max-age' => 300,
     ];
@@ -68,42 +68,42 @@ class File extends OK
 
     public function initialiseCacheControl(): bool
     {
-        $cache_config = Application::getInstance()->config->get('http.cacheControl', self::$__default_cache_control_directives, true);
+        $cacheConfig = Application::getInstance()->config->get('http.cacheControl', self::$__defaultCacheControlDirectives, true);
         if ($cacheControlHeader = ake(apache_request_headers(), 'Cache-Control')) {
             $replyable = ['no-cache', 'no-store', 'no-transform'];
             $parts = explode(',', $cacheControlHeader);
             foreach ($parts as $part) {
                 if ('max-age' === substr($part, 0, 7)) {
-                    $cache_config->set('max-age', (int) substr($part, strpos($part, '=', 7) + 1));
+                    $cacheConfig->set('max-age', (int) substr($part, strpos($part, '=', 7) + 1));
 
                     break;
                 }
                 if (in_array(strtolower(trim($part)), $replyable)) {
-                    $cache_config->set('reply', $part);
+                    $cacheConfig->set('reply', $part);
                 }
             }
         }
-        $cache_control = [];
-        if ($cache_config->has('reply')) {
-            $cache_control[] = $cache_config->get('reply');
-        } elseif (true === $cache_config->get('no-store')) {
-            $cache_control[] = 'no-store';
-        } elseif (true === $cache_config->get('no-cache')) {
-            $cache_control[] = 'no-cache';
-        } elseif ($cache_config->has('public')) {
-            $cache_control[] = $cache_config->get('public') ? 'public' : 'private';
-        } elseif ($cache_config->has('private')) {
-            $cache_control[] = $cache_config->get('private') ? 'private' : 'public';
+        $cacheControl = [];
+        if ($cacheConfig->has('reply')) {
+            $cacheControl[] = $cacheConfig->get('reply');
+        } elseif (true === $cacheConfig->get('no-store')) {
+            $cacheControl[] = 'no-store';
+        } elseif (true === $cacheConfig->get('no-cache')) {
+            $cacheControl[] = 'no-cache';
+        } elseif ($cacheConfig->has('public')) {
+            $cacheControl[] = $cacheConfig->get('public') ? 'public' : 'private';
+        } elseif ($cacheConfig->has('private')) {
+            $cacheControl[] = $cacheConfig->get('private') ? 'private' : 'public';
         }
-        if ($cache_config->has('max-age')
-            && !('no-cache' === $cache_config->reply
-                || 'no-store' === $cache_config->reply
-                || true === $cache_config->get('no-cache')
-                || true === $cache_config->get('no-store'))) {
-            $cache_control[] = 'max-age='.$cache_config->get('max-age');
+        if ($cacheConfig->has('max-age')
+            && !('no-cache' === $cacheConfig->reply
+                || 'no-store' === $cacheConfig->reply
+                || true === $cacheConfig->get('no-cache')
+                || true === $cacheConfig->get('no-store'))) {
+            $cacheControl[] = 'max-age='.$cacheConfig->get('max-age');
         }
-        if (count($cache_control) > 0) {
-            return $this->setHeader('Cache-Control', implode(', ', $cache_control));
+        if (count($cacheControl) > 0) {
+            return $this->setHeader('Cache-Control', implode(', ', $cacheControl));
         }
 
         return false;
