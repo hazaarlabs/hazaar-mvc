@@ -106,11 +106,11 @@ class Config extends Application\Config
     /**
      * @param null|array<mixed>|Map $config
      */
-    public function __construct(null|array|Map $config = null)
+    public function __construct(null|array|Map $config = null, ?string $env = APPLICATION_ENV)
     {
         $defaultConfig = self::$defaultConfig;
         $defaultConfig['sys']['applicationName'] = APPLICATION_NAME;
-        parent::__construct('warlock', APPLICATION_ENV, $defaultConfig);
+        parent::__construct('warlock', $env, $defaultConfig);
         if (!$this->sys['id']) {
             $this->sys['id'] = $this->loadSystemID();
         }
