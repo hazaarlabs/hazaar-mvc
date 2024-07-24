@@ -30,6 +30,7 @@ class Manager
     public const MACRO_VARIABLE = 1;
     public const MACRO_LOOKUP = 2;
     public static string $schemaInfoTable = 'schema_info';
+    private string $env;
     private Adapter $dbi;
     private Map $dbiConfig;
     private string $dbDir;
@@ -49,7 +50,7 @@ class Manager
     /**
      * @var array<int,array<string>>
      */
-    private array $versions = [];
+    private ?array $versions = null;
     private ?int $currentVersion = null;
 
     /**
@@ -63,6 +64,7 @@ class Manager
      */
     private static array $tableMap = [
         'extension' => ['extensions', false, null],
+        'sequence' => ['sequences', false, null],
         'table' => ['tables', 'cols', null],
         'view' => ['views', true, 'views'],
         'constraint' => ['constraints', true, null],
@@ -71,8 +73,9 @@ class Manager
         'trigger' => ['triggers', true, 'functions'],
     ];
 
-    public function __construct(Map $dbiConfig, ?\Closure $logCallback = null)
+    public function __construct(Map $dbiConfig, string $env = APPLICATION_ENV, ?\Closure $logCallback = null)
     {
+        $this->env = $env;
         if ($logCallback) {
             $this->setLogCallback($logCallback);
         }
@@ -155,7 +158,7 @@ class Manager
                 ksort($this->versions[1]);
             }
         }
-        $versions = $returnFullPath ? $this->versions[0] : $this->versions[1];
+        $versions = $this->versions ? ($returnFullPath ? $this->versions[0] : $this->versions[1]) : [];
         if (true === $appliedOnly) {
             if (null !== $this->appliedVersions) {
                 return $this->appliedVersions;
@@ -393,7 +396,8 @@ class Manager
                                 }
                             } else {
                                 if ('create' === $action || 'alter' === $action) {
-                                    $schema[$elem][$item['name']][] = $item;
+                                    $name = $item['name'] ?? $item_name;
+                                    $schema[$elem][$name][] = $item;
                                 } else {
                                     throw new Schema("I don't know how to handle: {$action}");
                                 }
@@ -478,7 +482,7 @@ class Manager
         if ($test) {
             $this->log('Test mode ENABLED');
         }
-        $this->log('APPLICATION_ENV: '.APPLICATION_ENV);
+        $this->log('APPLICATION_ENV: '.$this->env);
         if ($versions = $this->getVersions()) {
             end($versions);
             $latest_version = key($versions);
@@ -489,7 +493,7 @@ class Manager
         if ($latest_version > $version) {
             throw new Exception\Snapshot('Snapshoting a database that is not at the latest schema version is not supported.');
         }
-        $this->dbi->beginTransaction();
+        $this->dbi->begin();
         if (!is_dir($this->dbDir)) {
             if (file_exists($this->dbDir)) {
                 throw new Exception\Snapshot('Unable to create database migration directory.  It exists but is not a directory!');
@@ -563,6 +567,10 @@ class Manager
         $changes = [
             'up' => [
                 'extension' => [],
+                'sequence' => [
+                    'create' => [],
+                    'remove' => [],
+                ],
                 'table' => [
                     'create' => [],
                     'alter' => [],
@@ -628,6 +636,10 @@ class Manager
                     'remove' => [],
                     'rename' => [],
                 ],
+                'sequence' => [
+                    'create' => [],
+                    'remove' => [],
+                ],
                 'extension' => [],
             ],
         ];
@@ -656,6 +668,30 @@ class Manager
                     $this->log("- Extension '{$extension}' has been removed.");
                     $changes['up']['extension']['remove'][] = $extension;
                     $changes['down']['extension']['create'][] = $extension;
+                }
+            }
+        }
+        $this->log('*** SNAPSHOTTING SEQUENCES ***');
+        foreach ($this->dbi->listSequences() as $sequenceName) {
+            $this->log("Processing sequence '{$sequenceName}'.");
+            $sequence = $this->dbi->describeSequence($sequenceName);
+            foreach ($schema['tables'] as $table) {
+                foreach ($table as $column) {
+                    if (!('serial' === $column['type']
+                        && $column['sequence'] === $sequenceName)) {
+                        continue;
+                    }
+
+                    continue 3;
+                }
+            }
+            unset($sequence['name']);
+            $currentSchema['sequences'][$sequenceName] = $sequence;
+            if (!(array_key_exists('sequences', $schema) && array_key_exists($sequenceName, $schema['sequences']))) {
+                $this->log("+ Sequence '{$sequenceName}' has been created.");
+                $changes['up']['sequence']['create'][$sequenceName] = $sequence;
+                if (!$init) {
+                    $changes['down']['sequence']['remove'][] = $sequenceName;
                 }
             }
         }
@@ -748,42 +784,55 @@ class Manager
                 }
             }
         }
-        // Now compare the create and remove changes to see if a table is actually being renamed
-        if (true !== $init) {
-            $this->log('Looking for renamed tables.');
-            foreach ($changes['up']['table']['create'] as $create_key => $create) {
-                foreach ($changes['up']['table']['remove'] as $remove_key => $remove) {
-                    $diff = array_udiff($schema['tables'][$remove], $create['cols'], function ($a, $b) {
-                        if ($a['name'] == $b['name']) {
-                            return 0;
-                        }
-
-                        return ($a['name'] > $b['name']) ? 1 : -1;
-                    });
-                    if (!$diff) {
-                        $this->log("> Table '{$remove}' has been renamed to '{$create['name']}'.");
-                        $changes['up']['table']['rename'][] = [
-                            'from' => $remove,
-                            'to' => $create['name'],
-                        ];
-                        $changes['down']['table']['rename'][] = [
-                            'from' => $create['name'],
-                            'to' => $remove,
-                        ];
-                        // Clean up the changes
-                        $changes['up']['table']['create'][$create_key] = null;
-                        $changes['up']['table']['remove'][$remove_key] = null;
-                        foreach ($changes['down']['table']['remove'] as $down_remove_key => $down_remove) {
-                            if ($down_remove === $create['name']) {
-                                $changes['down']['table']['remove'][$down_remove_key] = null;
+        if (array_key_exists('create', $changes['up']['table'])) {
+            // Now compare the create and remove changes to see if a table is actually being renamed
+            if (true !== $init) {
+                $this->log('Looking for renamed tables.');
+                foreach ($changes['up']['table']['create'] as $create_key => $create) {
+                    foreach ($changes['up']['table']['remove'] as $remove_key => $remove) {
+                        $diff = array_udiff($schema['tables'][$remove], $create['cols'], function ($a, $b) {
+                            if ($a['name'] == $b['name']) {
+                                return 0;
                             }
-                        }
-                        foreach ($changes['down']['table']['create'] as $down_create_key => $down_create) {
-                            if ($down_create['name'] == $remove) {
-                                $changes['down']['table']['create'][$down_create_key] = null;
+
+                            return ($a['name'] > $b['name']) ? 1 : -1;
+                        });
+                        if (!$diff) {
+                            $this->log("> Table '{$remove}' has been renamed to '{$create['name']}'.");
+                            $changes['up']['table']['rename'][] = [
+                                'from' => $remove,
+                                'to' => $create['name'],
+                            ];
+                            $changes['down']['table']['rename'][] = [
+                                'from' => $create['name'],
+                                'to' => $remove,
+                            ];
+                            // Clean up the changes
+                            $changes['up']['table']['create'][$create_key] = null;
+                            $changes['up']['table']['remove'][$remove_key] = null;
+                            foreach ($changes['down']['table']['remove'] as $down_remove_key => $down_remove) {
+                                if ($down_remove === $create['name']) {
+                                    $changes['down']['table']['remove'][$down_remove_key] = null;
+                                }
+                            }
+                            foreach ($changes['down']['table']['create'] as $down_create_key => $down_create) {
+                                if ($down_create['name'] == $remove) {
+                                    $changes['down']['table']['create'][$down_create_key] = null;
+                                }
                             }
                         }
                     }
+                }
+            }
+            // Unset serial columns from the sequence list (PostgreSQL only)
+            foreach ($changes['up']['table']['create'] as $create_key => $create) {
+                foreach ($create['cols'] as $col) {
+                    if (!(array_key_exists('sequence', $col)
+                    && array_key_exists($col['sequence'], $changes['up']['sequence']['create'])
+                    && 'serial' === $col['type'])) {
+                        continue;
+                    }
+                    unset($changes['up']['sequence']['create'][$col['sequence']]);
                 }
             }
         }
@@ -947,7 +996,7 @@ class Manager
                 throw new Exception\Snapshot("Error getting function definition for functions '{$name}'.  Does the connected user have the correct permissions?");
             }
             foreach ($func as $info) {
-                if (true === $this->dbiConfig['manager']['functionsInFiles']) {
+                if (true === $this->dbiConfig->get('manager.functionsInFiles', true)) {
                     $functions[$info['name']] = $info['content'];
                     unset($info['content']);
                 }
@@ -1050,10 +1099,10 @@ class Manager
         foreach ($this->dbi->listTriggers() as $trigger) {
             $name = $trigger['name'];
             $this->log("Processing trigger '{$name}'.");
-            if (!($info = $this->dbi->describeTrigger($trigger['name'], $trigger['schema']))) {
+            if (!($info = $this->dbi->describeTrigger($trigger['name']))) {
                 throw new Exception\Snapshot("Error getting trigger definition for '{$name}'.  Does the connected user have the correct permissions?");
             }
-            if (true === $this->dbiConfig['manager']['functionsInFiles']) {
+            if (true === $this->dbiConfig->get('manager.functionsInFiles', true)) {
                 $functions[$info['name']] = $info['content'];
                 unset($info['content']);
             }
@@ -1097,7 +1146,7 @@ class Manager
             // If there are no changes, bail out now
             if (!(count(ake($changes, 'up', [])) + count(ake($changes, 'down', []))) > 0) {
                 $this->log('No changes detected.');
-                $this->dbi->rollback();
+                $this->dbi->cancel();
 
                 return false;
             }
@@ -1111,7 +1160,7 @@ class Manager
             }
             // If we are testing, then return the diff between the previous schema version
             if ($test) {
-                $this->dbi->rollback();
+                $this->dbi->cancel();
 
                 return ake($changes, 'up');
             }
@@ -1216,7 +1265,7 @@ class Manager
         if ($test) {
             $this->log('Test mode ENABLED');
         }
-        $this->log('APPLICATION_ENV: '.APPLICATION_ENV);
+        $this->log('APPLICATION_ENV: '.$this->env);
         $mode = 'up';
         $currentVersion = 0;
         $versions = $this->getVersions(true);
@@ -1242,12 +1291,12 @@ class Manager
 
         // Check that the database exists and can be written to.
         try {
-            $schemaName = $this->dbi->getSchemaName();
-            if (!$this->dbi->schemaExists($schemaName)) {
+            if (!$this->dbi->schemaExists()) {
                 $this->log('Database does not exist.  Creating...');
-                $this->dbi->createSchema($schemaName);
+                $this->dbi->createSchema();
                 if (($dbiUser = $this->dbiConfig->get('user')) && $this->dbi->config->get('user') !== $dbiUser) {
-                    $this->dbi->query("GRANT USAGE ON SCHEMA {$schemaName} TO {$dbiUser};");
+                    $schemaName = $this->dbi->getSchemaName();
+                    $this->dbi->grant('USAGE', 'SCHEMA '.$schemaName, $dbiUser);
                 }
             }
             $this->createInfoTable();
@@ -1259,26 +1308,26 @@ class Manager
             throw $e;
         }
         // Get the current version (if any) from the database
-        if ($this->dbi->tableExists(self::$schemaInfoTable)) {
-            $result = $this->dbi->table(self::$schemaInfoTable)->find([], ['version'])->sort('version', SORT_DESC);
+        if ($this->dbi->table(self::$schemaInfoTable)->exists()) {
+            $result = $this->dbi->table(self::$schemaInfoTable)->find([], ['version'])->order('version', SORT_DESC);
             if ($row = $result->fetch()) {
                 $currentVersion = $row['version'];
                 $this->log('Current database version: '.($currentVersion ? $currentVersion : 'None'));
             }
         }
-        $roles = [];
-        if (true === $this->dbi->config->get('createRole') && $this->dbiConfig->has('user')) {
-            $roles[] = [
+        $users = [];
+        if (true === $this->dbi->config->get('createUser') && $this->dbiConfig->has('user')) {
+            $users[] = [
                 'name' => $this->dbiConfig->get('user'),
                 'password' => $this->dbiConfig->get('password'),
                 'privileges' => ['LOGIN'],
             ];
         }
-        if ($this->dbi->config->has('roles')) {
-            $roles = array_merge($roles, $this->dbi->config['roles']->toArray());
+        if ($this->dbi->config->has('users')) {
+            $users = array_merge($users, $this->dbi->config['users']->toArray());
         }
-        if (count($roles) > 0) {
-            $this->createRoleIfNotExists($roles);
+        if (count($users) > 0) {
+            $this->createUserIfNotExists($users);
         }
         if (true === $force_reinitialise) {
             $this->log('WARNING: Forcing full database re-initialisation.  THIS WILL DELETE ALL DATA!!!');
@@ -1311,7 +1360,7 @@ class Manager
             if (254 === $i) {
                 exit('Something really BAD happened!');
             }
-            $functions = $this->dbi->listFunctions(null, true);
+            $functions = $this->dbi->listFunctions(true);
             foreach ($functions as $function) {
                 $this->dbi->dropFunction($function['name'], $function['parameters'], true);
             }
@@ -1397,9 +1446,9 @@ class Manager
                     }
 
                     try {
-                        $this->dbi->beginTransaction();
+                        $this->dbi->begin();
                         if (true !== $this->replay($currentSchema[$mode], $test, $globalVars, $ver)) {
-                            $this->dbi->rollback();
+                            $this->dbi->cancel();
 
                             return false;
                         }
@@ -1419,7 +1468,7 @@ class Manager
                         }
                         $this->dbi->commit();
                     } catch (\Throwable $e) {
-                        $this->dbi->rollback();
+                        $this->dbi->cancel();
 
                         throw $e;
                     }
@@ -1456,7 +1505,7 @@ class Manager
 
         try {
             $globalVars = null;
-            $this->dbi->beginTransaction();
+            $this->dbi->begin();
             $this->log('Removing version: '.$version);
             if (!$this->replay($currentSchema['down'], $test, $globalVars, $version)) {
                 throw new \Exception('Failed to migrate down!');
@@ -1467,7 +1516,7 @@ class Manager
             }
             $this->dbi->commit();
         } catch (\Throwable $e) {
-            $this->dbi->rollback();
+            $this->dbi->cancel();
 
             throw $e;
         }
@@ -1483,7 +1532,7 @@ class Manager
      */
     public function rollback(int $version, bool $test = false, array &$rollbacks = []): bool
     {
-        $this->log('Rollbacking back version '.$version.($test ? ' in TEST MODE' : ''));
+        $this->log('Rolling back version '.$version.($test ? ' in TEST MODE' : ''));
         $versions = $this->getVersions(true, true);
         if (!array_key_exists($version, $versions)) {
             $this->log('Version '.$version.' is not currently applied to the schema');
@@ -1574,9 +1623,9 @@ class Manager
         }
 
         try {
-            $this->dbi->beginTransaction();
+            $this->dbi->begin();
             if ($this->replay($items, $test) === $test) {
-                $this->dbi->rollback();
+                $this->dbi->cancel();
 
                 return false;
             }
@@ -1589,12 +1638,12 @@ class Manager
             }
             $this->dbi->commit();
         } catch (\Throwable $e) {
-            $this->dbi->rollback();
+            $this->dbi->cancel();
 
             throw $e;
         }
         $rollbacks[] = $version;
-        $this->log("rollback of version '{$version}' completed.");
+        $this->log("Rollback of version '{$version}' completed.");
 
         return true;
     }
@@ -1606,7 +1655,7 @@ class Manager
      */
     public function applySchema(array $schema, bool $test = false, bool $keepTables = false): bool
     {
-        $this->dbi->beginTransaction();
+        $this->dbi->begin();
 
         try {
             // Create Extensions
@@ -1618,7 +1667,7 @@ class Manager
             // Create tables
             if ($tables = ake($schema, 'tables')) {
                 foreach ($tables as $table => $columns) {
-                    if (true === $keepTables && $this->dbi->tableExists($table)) {
+                    if (true === $keepTables && $this->dbi->table($table)->exists()) {
                         $cur_columns = $this->dbi->describeTable($table);
                         $diff = array_diff_assoc_recursive($cur_columns, $columns);
                         if (count($diff) > 0) {
@@ -1633,7 +1682,7 @@ class Manager
                         throw new Schema('Error creating table '.$table.': '.$this->dbi->errorInfo()[2]);
                     }
                     if (($dbi_user = $this->dbiConfig->get('user')) && $this->dbi->config->get('user') !== $dbi_user) {
-                        $this->dbi->grant($table, $dbi_user, ['INSERT', 'SELECT', 'UPDATE', 'DELETE']);
+                        $this->dbi->grant(['INSERT', 'SELECT', 'UPDATE', 'DELETE'], $dbi_user, $table);
                     }
                 }
             }
@@ -1706,7 +1755,7 @@ class Manager
                         throw new Schema('Error creating view '.$view.': '.$this->dbi->errorInfo()[2]);
                     }
                     if (($dbi_user = $this->dbiConfig->get('user')) && $this->dbi->config->get('user') !== $dbi_user) {
-                        $this->dbi->grant($view, $dbi_user, ['SELECT']);
+                        $this->dbi->grant(['SELECT'], $dbi_user, $view);
                     }
                 }
             }
@@ -1754,12 +1803,12 @@ class Manager
                 }
             }
         } catch (\Throwable $e) {
-            $this->dbi->rollback();
+            $this->dbi->cancel();
 
             throw $e;
         }
         if (true === $test) {
-            $this->dbi->rollback();
+            $this->dbi->cancel();
 
             return false;
         }
@@ -1786,7 +1835,7 @@ class Manager
     public function syncData(?array $dataSchema = null, bool $test = false, bool $forceDataSync = false): bool
     {
         $this->log('Initialising DBI data sync');
-        $this->log('APPLICATION_ENV: '.APPLICATION_ENV);
+        $this->log('APPLICATION_ENV: '.$this->env);
         if (null === $dataSchema) {
             $schema = $this->getSchema($this->getVersion());
             $dataSchema = array_key_exists('data', $schema) ? $schema['data'] : [];
@@ -1804,7 +1853,7 @@ class Manager
         $this->log('Starting DBI data sync on schema version '.$this->getVersion());
         $this->currentVersion = null;  // Removed to force reload
         $this->appliedVersions = null; // Removed to force reload
-        $this->dbi->beginTransaction();
+        $this->dbi->begin();
         $globalVars = [];
 
         try {
@@ -1813,18 +1862,18 @@ class Manager
                 $this->processDataObject($info, $records, $globalVars);
             }
             if ($test) {
-                $this->dbi->rollback();
+                $this->dbi->cancel();
             } else {
                 $this->dbi->commit();
             }
             $this->log('DBI Data sync completed successfully!');
-            if (method_exists($this->dbi->driver, 'repair')) {
-                $this->log('Running '.$this->dbi->driver.' repair process');
-                $result = $this->dbi->driver->repair();
+            if ($this->dbi->can('repair')) {
+                $this->log('Running '.$this->dbi->getDriverName().' repair process');
+                $result = $this->dbi->repair();
                 $this->log('Repair '.($result ? 'completed successfully' : 'failed'));
             }
         } catch (\Throwable $e) {
-            $this->dbi->rollback();
+            $this->dbi->cancel();
             $this->log('DBI Data sync error: '.$e->getMessage());
         }
         if (false === file_exists($sync_hash_file) || is_writable($sync_hash_file)) {
@@ -1877,27 +1926,31 @@ class Manager
     }
 
     /**
-     * @param array<array<mixed>>|string $roleOrRoles
+     * @param array<array{
+     *  name:string,
+     *  password:string,
+     *  privileges:array<string>|string
+     * }>|string $userOrUsers
      */
-    public function createRoleIfNotExists(array|string $roleOrRoles): void
+    public function createUserIfNotExists(array|string $userOrUsers): void
     {
-        $roles = is_array($roleOrRoles) ? $roleOrRoles : [$roleOrRoles];
-        $currentRoles = array_merge($this->dbi->listUsers(), $this->dbi->listGroups());
-        foreach ($roles as $role) {
-            if (in_array($role['name'], $currentRoles)) {
+        $users = is_array($userOrUsers) ? $userOrUsers : ['name' => $userOrUsers];
+        $currentUsers = array_merge($this->dbi->listUsers(), $this->dbi->listGroups());
+        foreach ($users as $user) {
+            if (in_array($user['name'], $currentUsers)) {
                 continue;
             }
-            $this->log('Creating role: '.$role['name']);
+            $this->log('Creating role: '.$user['name']);
             $privileges = ['INHERIT'];
-            if (array_key_exists('privileges', $role)) {
-                if (is_array($role['privileges'])) {
-                    $privileges = array_merge($privileges, $role['privileges']);
+            if (array_key_exists('privileges', $user)) {
+                if (is_array($user['privileges'])) {
+                    $privileges = array_merge($privileges, $user['privileges']);
                 } else {
-                    $privileges[] = $role['privileges'];
+                    $privileges[] = $user['privileges'];
                 }
             }
-            if (!$this->dbi->createRole($role['name'], $role['password'], $privileges)) {
-                throw new \Exception("Error creating role '{$role['name']}': ".ake($this->dbi->errorInfo(), 2));
+            if (!$this->dbi->createUser($user['name'], $user['password'], $privileges)) {
+                throw new \Exception("Error creating role '{$user['name']}': ".ake($this->dbi->errorInfo(), 2));
             }
         }
     }
@@ -1927,7 +1980,7 @@ class Manager
      */
     private function createInfoTable(): bool
     {
-        if (!$this->dbi->tableExists(Manager::$schemaInfoTable)) {
+        if (!$this->dbi->table(Manager::$schemaInfoTable)->exists()) {
             $this->dbi->createTable(Manager::$schemaInfoTable, [
                 'version' => [
                     'data_type' => 'int8',
@@ -2128,7 +2181,7 @@ class Manager
                         }
                         $this->dbi->createTable($item['name'], $item['cols']);
                         if (($dbi_user = $this->dbiConfig->get('user')) && $dbi_user != $this->dbi->config->get('user')) {
-                            $this->dbi->grant($item['name'], $dbi_user, ['INSERT', 'SELECT', 'UPDATE', 'DELETE']);
+                            $this->dbi->grant(['INSERT', 'SELECT', 'UPDATE', 'DELETE'], $dbi_user, $item['name']);
                         }
                     } elseif ('index' === $type) {
                         $this->log("+ Creating index '{$item['name']}' on table '{$item['table']}'.");
@@ -2157,7 +2210,7 @@ class Manager
                         $this->processContent($version, 'views', $item);
                         $this->dbi->createView($item['name'], $item['content']);
                         if (($dbi_user = $this->dbiConfig->get('user')) && $dbi_user != $this->dbi->config->get('user')) {
-                            $this->dbi->grant($item['name'], $dbi_user, ['SELECT']);
+                            $this->dbi->grant(['SELECT'], $dbi_user, $item['name']);
                         }
                     } elseif ('function' === $type) {
                         $params = [];
@@ -2175,7 +2228,7 @@ class Manager
                         if (true === ake($items, 'grant')
                             && ($dbi_user = $this->dbiConfig->get('user'))
                             && $dbi_user != $this->dbi->config->get('user')) {
-                            $this->dbi->grant('FUNCTION '.$item['name'], $dbi_user, ['EXECUTE']);
+                            $this->dbi->grant(['EXECUTE'], $dbi_user, 'FUNCTION '.$item['name']);
                         }
                     } elseif ('trigger' === $type) {
                         $this->log("+ Creating trigger '{$item['name']}' on table '{$item['table']}'.");
@@ -2187,7 +2240,7 @@ class Manager
                         if (true === ake($items, 'grant')
                             && ($dbi_user = $this->dbiConfig->get('user'))
                             && $dbi_user != $this->dbi->config->get('user')) {
-                            $this->dbi->grant('FUNCTION '.$item['name'], $dbi_user, ['EXECUTE']);
+                            $this->dbi->grant(['EXECUTE'], $dbi_user, 'FUNCTION '.$item['name']);
                         }
                     } else {
                         $this->log("I don't know how to create a {$type}!");
@@ -2280,7 +2333,7 @@ class Manager
                             }
                         }
                         if (($dbi_user = $this->dbiConfig->get('user')) && $dbi_user != $this->dbi->config->get('user')) {
-                            $this->dbi->grant($item_name, $dbi_user, ['INSERT', 'SELECT', 'UPDATE', 'DELETE']);
+                            $this->dbi->grant(['INSERT', 'SELECT', 'UPDATE', 'DELETE'], $dbi_user, $item_name);
                         }
                     } elseif ('view' === $type) {
                         if ($test) {
@@ -2490,10 +2543,10 @@ class Manager
         if (!is_array($records)) {
             $records = [];
         }
-        if (!is_array($env = ake($info, 'env', [APPLICATION_ENV]))) {
+        if (!is_array($env = ake($info, 'env', [$this->env]))) {
             $env = [$env];
         }
-        if (!in_array(APPLICATION_ENV, $env)) {
+        if (!in_array($this->env, $env)) {
             return false;
         }
         // Set up any data object variables
@@ -2533,7 +2586,7 @@ class Manager
             }
         }
         if ($table = ake($info, 'table')) {
-            if (true === $this->dbi->tableExists($table)) {
+            if (true === $this->dbi->table($table)->exists()) {
                 $pkey = null;
                 if ($constraints = $this->dbi->listConstraints($table, 'PRIMARY KEY')) {
                     $pkey = ake(reset($constraints), 'column');
@@ -2569,7 +2622,7 @@ class Manager
                         if (!isset($source->syncKey)
                             && ($config = ake($source, 'config'))
                             && is_string($config)) {
-                            $config = Adapter::getDefaultConfig($config);
+                            $config = Adapter::loadConfig($config);
                             $source->syncKey = $config->get('syncKey');
                         }
                         $context = stream_context_create([
@@ -2583,7 +2636,7 @@ class Manager
                         $rowdata = file_get_contents(rtrim($hostURL, ' /').'/hazaar/dbi/sync', false, $context);
                     } elseif ($config = ake($source, 'config')) {
                         $remoteDBI = new Adapter($config);
-                        $remoteStatement = $remoteDBI->table($remote_table)->sort($pkey);
+                        $remoteStatement = $remoteDBI->table($remote_table)->order($pkey);
                         if ($select = ake($source, 'select')) {
                             $remoteStatement->select((array) $select);
                         }
@@ -2862,9 +2915,9 @@ class Manager
             $this->log('Found DBI filesystem: '.$name);
 
             try {
-                $settings->enhance(['dbi' => Adapter::getDefaultConfig(), 'initialise' => true]);
+                $settings->enhance(['dbi' => Adapter::loadConfig(), 'initialise' => true]);
                 $fs_db = new Adapter($settings['dbi']);
-                if ($fs_db->tableExists('hz_file') && $fs_db->tableExists('hz_file_chunk')) {
+                if ($fs_db->table('hz_file')->exists() && $fs_db->table('hz_file_chunk')->exists()) {
                     continue;
                 }
                 if (true !== $settings['initialise']) {
@@ -2880,14 +2933,14 @@ class Manager
                     throw new Exception\FileSystem('Unable to configure DBI filesystem schema!');
                 }
                 // Look for the old tables and if they exists, do an upgrade!
-                if ($fs_db->tableExists('file') && $fs_db->tableExists('file_chunk')) {
-                    if (!$fs_db->table('hz_file_chunk')->insert($fs_db->table('file_chunk')->select('id', null, 'n', 'data'))) {
+                if ($fs_db->table('file')->exists() && $fs_db->table('file_chunk')->exists()) {
+                    if (!$fs_db->table('hz_file_chunk')->insert($fs_db->table('file_chunk')->select(['id', null, 'n', 'data']))) {
                         throw $fs_db->errorException();
                     }
                     if (!$fs_db->table('hz_file')->insert($fs_db->table('file')->find(['kind' => 'dir'], ['id', 'kind', ['parent' => 'unnest(parents)'], null, 'filename', 'created_on', 'modified_on', 'length', 'mime_type', 'md5', 'owner', 'group', 'mode', 'metadata']))) {
                         throw $fs_db->errorException();
                     }
-                    $fs_db->driver->repair();
+                    $fs_db->repair();
                     if (!$fs_db->query("INSERT INTO hz_file (kind, parent, start_chunk, filename, created_on, modified_on, length, mime_type, md5, owner, \"group\", mode, metadata) SELECT kind, unnest(parents) as parent, (SELECT fc.id FROM file_chunk fc WHERE fc.file_id=f.id), filename, created_on, modified_on, length, mime_type, md5, owner, \"group\", mode, metadata FROM file f WHERE kind = 'file'")) {
                         throw $fs_db->errorException();
                     }

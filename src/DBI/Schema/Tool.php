@@ -17,6 +17,7 @@ class Tool
         }
         $application->request->setOptions([
             'help' => ['h', 'help', null, 'Display this help message.'],
+            'env' => ['e', 'env', 'name', 'The APPLICATION_ENV name to use for configuration.'],
             'test' => ['t', 'test', null, 'Enable test mode.  Any write actions will be simulated but not applied to the database.'],
             'force_sync' => ['f', 'force-sync', null, 'Force the data sync after migration completes, even if no changes are made.', 'migrate'],
             'keep_tables' => ['k', 'keep-tables', null, 'Keep unmanaged tables when initialising the database.', 'migrate'],
@@ -41,10 +42,13 @@ class Tool
         }
         $options = $application->request->getOptions();
         $code = 1;
+        $env = ake($options, 'env', APPLICATION_ENV);
 
         try {
-            $manager = Adapter::getSchemaManagerInstance(null, function ($time, $msg) {
+            $db = Adapter::getInstance($env);
+            $manager = $db->getSchemaManager(function ($time, $msg) {
                 echo date('Y-m-d H:i:s', (int) $time).' - '.$msg."\n";
+                ob_flush();
             });
 
             switch ($command) {
@@ -106,7 +110,7 @@ class Tool
 
                 case 'snapshot':
                     $comment = trim(implode(' ', $commandArgs)) ?: 'New Snapshot';
-                    if ($manager->snapshot($comment, ake($options, 'test'))) {
+                    if ($manager->snapshot($comment, ake($options, 'test', false))) {
                         $code = 0;
                     }
 

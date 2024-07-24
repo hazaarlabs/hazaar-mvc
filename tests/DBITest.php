@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Hazaar\Tests;
 
 use Hazaar\DBI\Adapter;
+use Hazaar\DBI\QueryBuilder\SQL;
 use Hazaar\DBI\Row;
-use Hazaar\DBI2\QueryBuilder\SQL;
 use Hazaar\Model;
 use PHPUnit\Framework\TestCase;
 
@@ -38,7 +38,7 @@ class DBITest extends TestCase
     {
         $db = new Adapter($this->config);
         $sql = 'SELECT id, name FROM "public"."test" WHERE id = 1';
-        $this->assertEquals($sql, (string) $db->table('test')->select('id', 'name')->where(['id' => 1]));
+        $this->assertEquals($sql, (string) $db->table('test')->select(['id', 'name'])->where(['id' => 1]));
         $this->assertEquals($sql, (string) $db->table('test')->find(['id' => 1], ['id', 'name']));
     }
 
@@ -65,7 +65,7 @@ class DBITest extends TestCase
         $sql = 'INSERT INTO "public"."test_table" (id, name) VALUES (1, \'test\')';
         $this->assertEquals(1, $db->table('test_table')->insert(['id' => 1, 'name' => 'test']));
         $this->assertEquals(1, $db->insert('test_table', ['id' => 1, 'name' => 'test']));
-        $this->assertEquals($sql, $db->driver->lastQueryString);
+        $this->assertEquals($sql, $db->lastQueryString());
     }
 
     public function testSQLGeneratorUPDATE(): void
@@ -74,7 +74,7 @@ class DBITest extends TestCase
         $sql = 'UPDATE "public"."test_table" SET name = \'test\' WHERE id = 1';
         $this->assertEquals(1, $db->table('test_table')->update(['name' => 'test'], ['id' => 1]));
         $this->assertEquals(1, $db->update('test_table', ['name' => 'test'], ['id' => 1]));
-        $this->assertEquals($sql, $db->driver->lastQueryString);
+        $this->assertEquals($sql, $db->lastQueryString());
     }
 
     public function testSQLGeneratorDELETE(): void
@@ -83,7 +83,7 @@ class DBITest extends TestCase
         $sql = 'DELETE FROM "public"."test_table" WHERE id = 1';
         $this->assertEquals(1, $db->table('test_table')->delete(['id' => 1]));
         $this->assertEquals(1, $db->delete('test_table', ['id' => 1]));
-        $this->assertEquals($sql, $db->driver->lastQueryString);
+        $this->assertEquals($sql, $db->lastQueryString());
     }
 
     public function testModelInsert(): void
@@ -97,7 +97,7 @@ class DBITest extends TestCase
         ];
         $model = new DBITestModel($data);
         $this->assertEquals(1, $db->insert('test_table', $model));
-        $this->assertEquals($sql, $db->driver->lastQueryString);
+        $this->assertEquals($sql, $db->lastQueryString());
     }
 
     public function testInsertSelect(): void
