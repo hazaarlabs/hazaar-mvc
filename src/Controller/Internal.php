@@ -25,4 +25,23 @@ class Internal extends Controller
 
         return new File($file);
     }
+
+    public function __runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): false|Response
+    {
+        if (!($offset = strpos($actionName, '/'))) {
+            return false;
+        }
+        $route = substr($actionName, 0, $offset);
+        $internalClassName = '\\Hazaar\\Controller\\Internal\\'.ucfirst($route);
+        if (!class_exists($internalClassName)) {
+            return false;
+        }
+        $controller = new $internalClassName($this->router, $route);
+        $response = $controller->__runAction(substr($actionName, $offset + 1), $actionArgs, $namedActionArgs);
+        if (!$response) {
+            throw new \Exception("Internal controller action '{$actionName}' not found!", 404);
+        }
+
+        return $response;
+    }
 }

@@ -95,6 +95,7 @@ abstract class Router implements Interfaces\Router
             $route = substr($path, 0, $offset);
             if (array_key_exists($route, self::$internal)) {
                 $this->controller = self::$internal[$route];
+                $this->action = substr($path, $offset + 1);
                 $request->setPath(substr($path, $offset + 1));
 
                 return;
