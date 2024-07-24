@@ -40,7 +40,7 @@ abstract class Router implements Interfaces\Router
      * @var array<string, string>
      */
     public static array $internal = [
-        'hazaar' => 'Hazaar\Controller\Internal',
+        'hazaar' => '\Hazaar\Controller\Internal',
     ];
 
     public Application $application;
@@ -89,17 +89,22 @@ abstract class Router implements Interfaces\Router
      */
     final public function __initialise(Request $request): void
     {
-        if ('hazaar/' === substr($request->getPath(), 0, 7)) {
-            $this->controller = '\\Hazaar\\Controller\\Internal';
-            $this->action = substr($request->getPath(), 7);
-        } elseif (!$this->evaluateRequest($request)) {
+        // Search for internal controllers
+        if (($path = $request->getPath())
+            && ($offset = strpos($path, '/', 1))) {
+            $route = substr($path, 0, $offset);
+            if (array_key_exists($route, self::$internal)) {
+                $this->controller = self::$internal[$route];
+                $request->setPath(substr($path, $offset + 1));
+
+                return;
+            }
+        }
+        if (!$this->evaluateRequest($request)) {
             throw new RouteNotFound($request->getPath());
         }
         if (null === $this->controller) {
             throw new RouteNotFound($request->getPath());
-        }
-        if (null === $this->action) {
-            throw new NoAction($this->controller);
         }
     }
 
