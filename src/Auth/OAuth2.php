@@ -30,6 +30,7 @@ class OAuth2
     protected array $scopes = [];
     private ?\Closure $authenticateCallback = null;
     private $storage;
+    private $storageKey;
 
     public function __construct(
         string $clientID,
@@ -44,6 +45,7 @@ class OAuth2
         $this->grantType = $grantType;
         $this->clientID = $clientID;
         $this->clientSecret = $clientSecret;
+        $this->storageKey = 'oauth2_data_'.$this->clientID;
         if ($config = Application::getInstance()->config['auth']) {
             $this->metadata = $config;
             if (isset($this->metadata['discover_endpoint'])) {
@@ -90,16 +92,16 @@ class OAuth2
     public function discover(string $uri): bool
     {
         $key = hash('sha1', $uri);
-        if (!$this->storage->has('oauth2_metadata')) {
-            $this->storage->set('oauth2_metadata', []);
+        if (!$this->storage->has($this->storageKey.'_metadata')) {
+            $this->storage->set($this->storageKey.'_metadata', []);
         }
-        $metadata = $this->storage->get('oauth2_metadata');
+        $metadata = $this->storage->get($this->storageKey.'_metadata');
         if (!(array_key_exists($key, $metadata) && $metadata[$key])) {
             if (!($meta_source = @file_get_contents($uri))) {
                 throw new \Exception('Authentication platform offline.  Service discovery failed!');
             }
             $metadata[$key] = json_decode($meta_source, true);
-            $this->storage->set('oauth2_metadata', $metadata);
+            $this->storage->set($this->storageKey.'_metadata', $metadata);
         }
         $this->metadata = $metadata[$key];
 
@@ -140,11 +142,11 @@ class OAuth2
      */
     public function authenticated(): bool
     {
-        if ($this->storage->has('oauth2_data')
-            && ($this->storage->has('oauth2_expiry') && $this->storage->get('oauth2_expiry') > time())) {
-            return '' !== ake($this->storage->get('oauth2_data'), 'access_token', '');
+        if ($this->storage->has($this->storageKey)
+            && ($this->storage->has($this->storageKey.'_expiry') && $this->storage->get($this->storageKey.'_expiry') > time())) {
+            return '' !== ake($this->storage->get($this->storageKey), 'access_token', '');
         }
-        if ($refresh_token = ake($this->storage->get('oauth2_data'), 'refresh_token')) {
+        if ($refresh_token = ake($this->storage->get($this->storageKey), 'refresh_token')) {
             return $this->refresh($refresh_token);
         }
 
@@ -252,8 +254,8 @@ class OAuth2
 
     public function getAccessToken()
     {
-        if ($this->has('oauth2_data')) {
-            return ake($this->storage['oauth2_data'], 'access_token');
+        if ($this->has($this->storageKey)) {
+            return ake($this->storage[$this->storageKey], 'access_token');
         }
 
         return false;
@@ -261,8 +263,8 @@ class OAuth2
 
     public function getRefreshToken()
     {
-        if ($this->has('oauth2_data')) {
-            return ake($this->storage['oauth2_data'], 'refresh_token', false);
+        if ($this->has($this->storageKey)) {
+            return ake($this->storage[$this->storageKey], 'refresh_token', false);
         }
 
         return false;
@@ -280,12 +282,12 @@ class OAuth2
 
     public function getToken(): ?string
     {
-        return ake($this->storage->get('oauth2_data'), 'access_token');
+        return ake($this->storage->get($this->storageKey), 'access_token');
     }
 
     public function getTokenType(): string
     {
-        return ake($this->storage->get('oauth2_data'), 'token_type', 'Bearer');
+        return ake($this->storage->get($this->storageKey), 'token_type', 'Bearer');
     }
 
     public function introspect(?string $token = null, string $token_type = 'access_token')
@@ -296,7 +298,7 @@ class OAuth2
         $request = new Request($uri, 'POST');
         $request['client_id'] = $this->clientID;
         $request['client_secret'] = $this->clientSecret;
-        $request['token = $token'] ? $token : ake($this->storage['oauth2_data'], 'access_token');
+        $request['token = $token'] ? $token : ake($this->storage[$this->storageKey], 'access_token');
         $request['token_type_hint'] = $token_type;
         $response = $this->httpClient->send($request);
 
@@ -311,7 +313,7 @@ class OAuth2
         $request = new Request($uri, 'POST');
         $request['client_id'] = $this->clientID;
         $request['token_type_hint'] = 'access_token';
-        $request['token'] = ake($this->storage['oauth2_data'], 'access_token');
+        $request['token'] = ake($this->storage[$this->storageKey], 'access_token');
         $response = $this->httpClient->send($request);
 
         return ake($response->body(), 'result', false);
@@ -346,8 +348,8 @@ class OAuth2
             && \property_exists($data, 'expires_in'))) {
             return false;
         }
-        $this->storage['oauth2_expiry'] = time() + ake($data, 'expires_in');
-        $this->storage['oauth2_data'] = $data;
+        $this->storage[$this->storageKey.'_expiry'] = time() + ake($data, 'expires_in');
+        $this->storage[$this->storageKey] = $data;
 
         return true;
     }
