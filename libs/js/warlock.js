@@ -1,5 +1,6 @@
 var Warlock = function (hostURL) {
     var o = this;
+    this.cid = null; //The client ID
     this.p = null; //The current protocol
     this.op = null; //The original protocol as it was sent
     this.__options = {
@@ -16,23 +17,12 @@ var Warlock = function (hostURL) {
     this.__callbacks = {};
     this.__socket = null;
     this.__connect = false;
-    this.__getGUID = function () {
-        var guid = window.name;
-        if (!guid) {
-            this.__log('Generating new GUID');
-            guid = window.name = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-                var r = Math.random() * 16 | 0, v = c === 'x' ? r : r & 0x3 | 0x8;
-                return v.toString(16);
-            });
-        }
-        return guid;
-    };
     this.connect = function () {
         this.__connect = true;
         if (!this.__socket) {
             var url = this.__options.server + '/'
                 + this.__options.applicationName
-                + '/warlock?CID=' + this.guid;
+                + '/warlock';//?CID=' + this.guid;
             this.__socket = new WebSocket(url, 'warlock');
             try {
                 this.__socket.onopen = function (event) {
@@ -74,49 +64,53 @@ var Warlock = function (hostURL) {
         if (this.__callbacks.connect) this.__callbacks.connect(event);
     };
     this.__messageHandler = function (packet) {
-        if (typeof packet === 'object' && '0' in packet && packet['0'] === 'NOOP') { //Initial packet
-            this.op = packet;
-            this.p = {};
-            for (x in packet) this.p[packet[x].toLowerCase()] = parseInt(x);
-            if (Object.keys(o.__subscribeQueue).length > 0)
-                for (event_id in o.__subscribeQueue) o.__subscribe(event_id, o.__subscribeQueue[event_id].filter);
-            if (this.__messageQueue.length > 0) {
-                for (i in this.__messageQueue) {
-                    var msg = this.__messageQueue[i];
-                    this.__send(msg[0], msg[1]);
+        if (typeof packet === 'object') {
+            if (packet.TYP === 1) { //Initial packet
+                this.cid = packet.CID;
+                this.__log('Connected with CID ' + this.cid);
+                this.op = packet.PLD;
+                this.p = {};
+                for (x in packet.PLD) this.p[packet.PLD[x].toLowerCase()] = parseInt(x);
+                if (Object.keys(o.__subscribeQueue).length > 0)
+                    for (event_id in o.__subscribeQueue) o.__subscribe(event_id, o.__subscribeQueue[event_id].filter);
+                if (this.__messageQueue.length > 0) {
+                    for (i in this.__messageQueue) {
+                        var msg = this.__messageQueue[i];
+                        this.__send(msg[0], msg[1]);
+                    }
+                    this.__messageQueue = [];
                 }
-                this.__messageQueue = [];
-            }
-        } else if (packet.TYP in this.op && this.op[packet.TYP].substr(0, 2) === 'kv') {
-            var type = this.op[packet.TYP].toLowerCase();
-            if (type in this.__callbacks && Array.isArray(this.__callbacks[type])) {
-                let callback = this.__callbacks[type].shift();
-                if (typeof callback === 'function') callback(packet.PLD);
-            }
-        } else {
-            switch (packet.TYP) {
-                case this.p.event:
-                    var event = packet.PLD;
-                    if (this.__subscribeQueue[event.id]) this.__subscribeQueue[event.id].callback(event.data, event);
-                    break;
-                case this.p.error:
-                    if (this.__callbacks.error) this.__callbacks.error(packet.PLD);
-                    else console.error('Command: ' + packet.PLD.command + ' Reason: ' + packet.PLD.reason);
-                    return false;
-                case this.p.status:
-                    if (this.__callbacks.status) this.__callbacks.status(packet.PLD);
-                    break;
-                case this.p.ping:
-                    this.__send('pong');
-                    break;
-                case this.p.pong:
-                    if (this.__callbacks.pong) this.__callbacks.pong(packet.PLD);
-                    break;
-                case this.p.ok:
-                    break;
-                default:
-                    console.log(packet.PLD);
-                    break;
+            } else if (packet.TYP in this.op && this.op[packet.TYP].substr(0, 2) === 'kv') {
+                var type = this.op[packet.TYP].toLowerCase();
+                if (type in this.__callbacks && Array.isArray(this.__callbacks[type])) {
+                    let callback = this.__callbacks[type].shift();
+                    if (typeof callback === 'function') callback(packet.PLD);
+                }
+            } else {
+                switch (packet.TYP) {
+                    case this.p.event:
+                        var event = packet.PLD;
+                        if (this.__subscribeQueue[event.id]) this.__subscribeQueue[event.id].callback(event.data, event);
+                        break;
+                    case this.p.error:
+                        if (this.__callbacks.error) this.__callbacks.error(packet.PLD);
+                        else console.error('Command: ' + packet.PLD.command + ' Reason: ' + packet.PLD.reason);
+                        return false;
+                    case this.p.status:
+                        if (this.__callbacks.status) this.__callbacks.status(packet.PLD);
+                        break;
+                    case this.p.ping:
+                        this.__send('pong');
+                        break;
+                    case this.p.pong:
+                        if (this.__callbacks.pong) this.__callbacks.pong(packet.PLD);
+                        break;
+                    case this.p.ok:
+                        break;
+                    default:
+                        console.log(packet.PLD);
+                        break;
+                }
             }
         }
         return true;
@@ -157,7 +151,7 @@ var Warlock = function (hostURL) {
             if (type_id >= 0) {
                 var packet = {
                     'TYP': type_id,
-                    'SID': this.__options.sid,
+                    'CID': this.cid,
                     'TME': Math.round((new Date).getTime() / 1000)
                 };
                 if (typeof payload !== 'undefined') packet.PLD = payload;
@@ -319,9 +313,6 @@ var Warlock = function (hostURL) {
     this.values = function (key, c) {
         this.__kv_send('kvclear', { k: key }, c);
     };
-    this.guid = this.__getGUID();
-    this.__log('GUID=' + this.guid);
-    this.__log('Server ID=' + this.__options.sid);
     if (this.__options.connect === true) this.connect();
     return this;
 };
