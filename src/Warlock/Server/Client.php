@@ -73,7 +73,7 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
         $this->log = new Logger();
         $this->stream = $stream;
         $this->name = 'SOCKET#'.(int) $stream;
-        $this->id = uniqid();
+        $this->id = guid();
         $this->applicationName = $options['applicationName'];
         $this->since = time();
         if (is_resource($this->stream)) {
