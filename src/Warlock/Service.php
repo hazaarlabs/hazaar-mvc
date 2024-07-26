@@ -130,7 +130,7 @@ abstract class Service extends Process
             $this->serviceFileMtime = filemtime($this->serviceFile);
             $this->lastCheckfile = time();
         }
-        parent::__construct($application, $protocol, (string) getmypid());
+        parent::__construct($application, $protocol);
         if (method_exists($this, 'construct')) {
             $this->construct($this->application);
         }
@@ -647,7 +647,7 @@ abstract class Service extends Process
                 return false;
             }
         } else {
-            $conn = new Pipe($protocol);
+            $conn = new Pipe($protocol, $guid);
         }
 
         return $conn;
@@ -676,8 +676,8 @@ abstract class Service extends Process
                     $diff = $next - time();
                 }
                 if ($diff > 0) {
-                    $tv_sec = (int)floor($diff);
-                    $tv_usec = (int)round(($diff - floor($diff)) * 1000000);
+                    $tv_sec = (int) floor($diff);
+                    $tv_usec = (int) round(($diff - floor($diff)) * 1000000);
                 } else {
                     $tv_sec = 1;
                 }
