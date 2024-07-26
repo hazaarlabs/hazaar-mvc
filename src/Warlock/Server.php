@@ -22,7 +22,9 @@ if (!(is_dir(APPLICATION_PATH)
     exit("Application path '".APPLICATION_PATH."' is not a valid application directory!\n");
 }
 chdir(APPLICATION_PATH);
-define('APPLICATION_ENV', getenv('APPLICATION_ENV') ? getenv('APPLICATION_ENV') : 'development');
+$ops = getopt('s', ['env:'], $opts);
+$env = array_key_exists('env', $ops) ? $ops['env'] : (getenv('APPLICATION_ENV') ? getenv('APPLICATION_ENV') : 'development');
+define('APPLICATION_ENV', $env);
 define('SERVER_PATH', realpath(dirname(__FILE__).DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'Warlock'));
 
 include APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR.'autoload.php';
@@ -37,6 +39,6 @@ set_include_path(implode(PATH_SEPARATOR, [
 ]));
 $reflector = null;
 $log_level = W_INFO;
-$warlock = new Server\Master(in_array('-s', $argv) ? true : boolify('file' === getenv('WARLOCK_OUTPUT')));
+$warlock = new Server\Master($env, in_array('-s', $argv) ? true : boolify('file' === getenv('WARLOCK_OUTPUT')));
 
 exit($warlock->bootstrap()->run());
