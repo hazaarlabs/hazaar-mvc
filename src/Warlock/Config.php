@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock;
 
+use Hazaar\Application;
 use Hazaar\Map;
 
-class Config extends \Hazaar\Application\Config
+class Config extends Application\Config
 {
     /**
      * @var array<mixed>
      */
     private static array $defaultConfig = [
         'sys' => [
-            'id' => '0',                  // Server ID is used to prevent clients from talking to the wrong server.
+            'id' => null,                 // Server ID is used to prevent clients from talking to the wrong server.
+            'IDFile' => 'server.id',
             'applicationName' => 'hazaar', // The application is also used to prevent clients from talking to the wrong server.
             'autostart' => false,         // If TRUE the Warlock\Control class will attempt to autostart the server if it is not running.
             'pid' => 'server.pid',        // The name of the warlock process ID file relative to the application runtime directory.  For absolute paths prefix with /.
@@ -104,17 +106,45 @@ class Config extends \Hazaar\Application\Config
     /**
      * @param null|array<mixed>|Map $config
      */
-    public function __construct(null|array|Map $config = null)
+    public function __construct(null|array|Map $config = null, ?string $env = APPLICATION_ENV)
     {
         $defaultConfig = self::$defaultConfig;
-        $defaultConfig['sys']['id'] = crc32(APPLICATION_PATH);
         $defaultConfig['sys']['applicationName'] = APPLICATION_NAME;
-        parent::__construct('warlock', APPLICATION_ENV, $defaultConfig);
+        parent::__construct('warlock', $env, $defaultConfig);
+        if (!$this->sys['id']) {
+            $this->sys['id'] = $this->loadSystemID();
+        }
         if (!$this->loaded()) {
             throw new \Exception('There is no warlock configuration file.  Warlock is disabled!');
         }
         if (null !== $config) {
             $this->extend($config);
         }
+    }
+
+    public function generateSystemID(string $path): string
+    {
+        $hashes = [];
+        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path));
+        foreach ($files as $file) {
+            if ($file->isFile()) {
+                $hashes[] = md5_file($file->getPathname());
+            }
+        }
+        $systemID = md5(implode('', $hashes));
+        $systemIDFile = $this->sys['runtimePath'].'/'.$this->sys['IDFile'];
+        file_put_contents($systemIDFile, $systemID);
+
+        return $systemID;
+    }
+
+    private function loadSystemID(): string
+    {
+        $systemIDFile = $this->sys['runtimePath'].'/'.$this->sys['IDFile'];
+        if (file_exists($systemIDFile)) {
+            return file_get_contents($systemIDFile);
+        }
+
+        return (string) crc32(APPLICATION_PATH);
     }
 }

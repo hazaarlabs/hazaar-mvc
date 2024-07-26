@@ -108,7 +108,7 @@ abstract class WebSockets
             if (!array_key_exists('host', $headers) || !($results['host'] = $this->checkHost($headers['host']))) {
                 return 400;
             }
-            if (!($results['url'] = $this->checkRequestURL($headers['get']))) {
+            if (false === ($results['url'] = $this->checkRequestURL($headers['get']))) {
                 return 404;
             }
             if (array_key_exists('upgrade', $headers)) {

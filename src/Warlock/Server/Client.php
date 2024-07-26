@@ -129,9 +129,6 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
 
             return false;
         }
-        if (!($this->id = $results['url']['CID'])) {
-            return false;
-        }
         if (array_key_exists('UID', $results['url'])) {
             $this->username = base64_decode($results['url']['UID']);
             if (null != $this->username) {
@@ -145,15 +142,15 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
         if (false === $result || $result !== $bytes) {
             return false;
         }
-        $init_packet = json_encode(Protocol::$typeCodes);
+        $initPacket = Master::$protocol->encode('init', ['CID' => $this->id, 'EVT' => Protocol::$typeCodes]);
         if (Master::$protocol->encoded()) {
-            $init_packet = base64_encode($init_packet);
+            $initPacket = base64_encode($initPacket);
         }
-        $init_frame = $this->frame($init_packet, 'text', false);
+        $initFrame = $this->frame($initPacket, 'text', false);
         // If this is NOT a Warlock process request (ie: it's a browser) send the protocol init frame!
         if (!(array_key_exists('x-warlock-php', $headers) && 'true' === $headers['x-warlock-php'])) {
             $this->log->write(W_DEBUG, "CLIENT->INIT: HOST={$this->address} POST={$this->port} CLIENT={$this->id}", $this->name);
-            $this->write($init_frame);
+            $this->write($initFrame);
         }
         if (array_key_exists('x-warlock-access-key', $headers)) {
             $payload = (object) [
@@ -306,14 +303,9 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
         if ($parts['path'] != '/'.$this->applicationName.'/warlock') {
             return false;
         }
-        // Check to see if there is a query part as this should contain the CID
-        if (!array_key_exists('query', $parts)) {
-            return false;
-        }
-        // Get the CID
-        parse_str($parts['query'], $query);
-        if (!array_key_exists('CID', $query)) {
-            return false;
+        $query = [];
+        if (array_key_exists('query', $parts)) {
+            parse_str($parts['query'], $query);
         }
 
         return $query;

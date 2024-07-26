@@ -26,13 +26,14 @@ class Protocol
     public static array $typeCodes = [
         // SYSTEM MESSAGES
         0x00 => 'NOOP',         // Null Opperation
-        0x01 => 'SYNC',         // Sync client
-        0x02 => 'OK',           // OK response
-        0x03 => 'ERROR',        // Error response
-        0x04 => 'STATUS',       // Status request/response
-        0x05 => 'SHUTDOWN',     // Shutdown request
-        0x06 => 'PING',         // Typical PING
-        0x07 => 'PONG',         // Typical PONG
+        0x01 => 'INIT',         // Initialise client
+        0x02 => 'SYNC',         // Sync client
+        0x03 => 'OK',           // OK response
+        0x04 => 'ERROR',        // Error response
+        0x05 => 'STATUS',       // Status request/response
+        0x06 => 'SHUTDOWN',     // Shutdown request
+        0x07 => 'PING',         // Typical PING
+        0x08 => 'PONG',         // Typical PONG
         // CODE EXECUTION MESSAGES
         0x10 => 'DELAY',        // Execute code after a period
         0x11 => 'SCHEDULE',     // Execute code at a set time
@@ -71,13 +72,13 @@ class Protocol
         0x90 => 'LOG',          // Generic log message
         0x91 => 'DEBUG',
     ];
-    private string $id;
+    private string $sid;
     private string $lastError;
     private bool $encoded = true;
 
-    public function __construct(string $id, bool $encoded = true)
+    public function __construct(string $sid, bool $encoded = true)
     {
-        $this->id = $id;
+        $this->sid = $sid;
         $this->encoded = $encoded;
     }
 
@@ -136,7 +137,7 @@ class Protocol
         }
         $packet = (object) [
             'TYP' => $type,
-            'SID' => $this->id,
+            'SID' => $this->sid,
             'TME' => time(),
         ];
         if (null !== $payload) {
@@ -147,7 +148,7 @@ class Protocol
         return $this->encoded ? base64_encode($packet) : $packet;
     }
 
-    public function decode(string $packet, mixed &$payload = null, ?int &$time = null): false|string
+    public function decode(string &$packet, mixed &$payload = null, ?int &$time = null): false|string
     {
         $payload = null;
         if (!($packet = json_decode($this->encoded ? base64_decode($packet) : $packet))) {
@@ -158,10 +159,6 @@ class Protocol
         }
         if (!property_exists($packet, 'TYP')) {
             return $this->error('No packet type');
-        }
-        // This is a security thing to ensure that the client is connecting to the correct instance of Warlock
-        if (!property_exists($packet, 'SID') || $packet->SID != $this->id) {
-            return $this->error('Packet decode rejected due to bad SID');
         }
         if (property_exists($packet, 'PLD')) {
             $payload = $packet->PLD;

@@ -209,7 +209,7 @@ class Master
      * @param bool $silent By default, log output will be displayed on the screen.  Silent mode will redirect all
      *                     log output to a file.
      */
-    public function __construct(bool $silent = false)
+    public function __construct(string $env = APPLICATION_ENV, bool $silent = false)
     {
         if (self::$instance) {
             throw new \Exception('Warlock is already running!');
@@ -220,7 +220,7 @@ class Master
         $app = Application::getInstance();
         Application\Config::$overridePaths = ['host'.DIRECTORY_SEPARATOR.ake($_SERVER, 'SERVER_NAME'), 'local'];
         $this->silent = $silent;
-        self::$config = new Config();
+        self::$config = new Config([], $env);
         if (!defined('RUNTIME_PATH')) {
             $path = APPLICATION_PATH.DIRECTORY_SEPARATOR.'.runtime';
             $appConfig = new Application\Config('application', APPLICATION_ENV);
@@ -229,6 +229,7 @@ class Master
             }
             define('RUNTIME_PATH', $path);
         }
+        self::$config->generateSystemID(APPLICATION_PATH);
         $runtime_path = $this->runtimePath(null, true);
         Logger::setDefaultLogLevel(self::$config['log']['level']);
         $this->log = new Logger();
