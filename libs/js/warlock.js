@@ -22,7 +22,7 @@ var Warlock = function (hostURL) {
         if (!this.__socket) {
             var url = this.__options.server + '/'
                 + this.__options.applicationName
-                + '/warlock';//?CID=' + this.guid;
+                + '/warlock';
             this.__socket = new WebSocket(url, 'warlock');
             try {
                 this.__socket.onopen = function (event) {
@@ -66,11 +66,11 @@ var Warlock = function (hostURL) {
     this.__messageHandler = function (packet) {
         if (typeof packet === 'object') {
             if (packet.TYP === 1) { //Initial packet
-                this.cid = packet.CID;
+                this.cid = packet.PLD.CID;
                 this.__log('Connected with CID ' + this.cid);
-                this.op = packet.PLD;
+                this.op = packet.PLD.EVT;
                 this.p = {};
-                for (x in packet.PLD) this.p[packet.PLD[x].toLowerCase()] = parseInt(x);
+                for (x in packet.PLD.EVT) this.p[packet.PLD.EVT[x].toLowerCase()] = parseInt(x);
                 if (Object.keys(o.__subscribeQueue).length > 0)
                     for (event_id in o.__subscribeQueue) o.__subscribe(event_id, o.__subscribeQueue[event_id].filter);
                 if (this.__messageQueue.length > 0) {
@@ -151,7 +151,6 @@ var Warlock = function (hostURL) {
             if (type_id >= 0) {
                 var packet = {
                     'TYP': type_id,
-                    'CID': this.cid,
                     'TME': Math.round((new Date).getTime() / 1000)
                 };
                 if (typeof payload !== 'undefined') packet.PLD = payload;

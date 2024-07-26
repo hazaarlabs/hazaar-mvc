@@ -130,7 +130,7 @@ class Protocol
         return Protocol::$typeCodes[$type];
     }
 
-    public function encode(string $cid, string $type, mixed $payload = null): false|string
+    public function encode(string $type, mixed $payload = null): false|string
     {
         if (($type = $this->check($type)) === false) {
             return false;
@@ -138,7 +138,6 @@ class Protocol
         $packet = (object) [
             'TYP' => $type,
             'SID' => $this->sid,
-            'CID' => $cid,
             'TME' => time(),
         ];
         if (null !== $payload) {
@@ -149,7 +148,7 @@ class Protocol
         return $this->encoded ? base64_encode($packet) : $packet;
     }
 
-    public function decode(string $cid, string $packet, mixed &$payload = null, ?int &$time = null): false|string
+    public function decode(string &$packet, mixed &$payload = null, ?int &$time = null): false|string
     {
         $payload = null;
         if (!($packet = json_decode($this->encoded ? base64_decode($packet) : $packet))) {
@@ -160,9 +159,6 @@ class Protocol
         }
         if (!property_exists($packet, 'TYP')) {
             return $this->error('No packet type');
-        }
-        if (!(property_exists($packet, 'CID') && $packet->CID === $cid)) {
-            return $this->error('Invalid client ID');
         }
         if (property_exists($packet, 'PLD')) {
             $payload = $packet->PLD;
