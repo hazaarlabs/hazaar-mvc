@@ -25,6 +25,7 @@ class Main
         $application->request->setCommands([
             'create' => ['Create a new application object (view, controller or model).'],
             'config' => ['Manage application configuration.'],
+            'show' => ['Show the contents of a configuration file, decrypting if neccessary.'],
             'encrypt' => ['Encrypt a configuration file using the application secret key.'],
             'decrypt' => ['Decrypt a configuration file using the application secret key.'],
         ]);
@@ -49,7 +50,7 @@ class Main
                 case 'config':
                     if ((float) HAZAAR_VERSION < 3.0) {
                         echo 'This feature is only available in Hazaar 3.0 and above'.PHP_EOL;
-            
+
                         return 1;
                     }
                     $configCommand = ake($commandArgs, 0, 'list');
@@ -100,6 +101,15 @@ class Main
                             break;
                     }
 
+                    break;
+
+                case 'show':
+                    $file = new File($application->loader->getFilePath(FILE_PATH_CONFIG, $commandArgs[0]));
+                    if ($file->exists()) {
+                        echo json_encode($file->parseJSON(), JSON_PRETTY_PRINT)."\n"; //Output pretty JSON
+                    } else {
+                        throw new \Exception('File not found', 1);
+                    }
                     break;
 
                 case 'encrypt':
