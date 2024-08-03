@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Hazaar\HTTP;
 
-use Hazaar\Exception;
-
 class Response
 {
     // Status code of the response
@@ -338,7 +336,11 @@ class Response
             $cipher = Client::$encryptionDefaultCipher;
         }
         $iv = base64_decode($iv);
-        $this->body = openssl_decrypt(base64_decode($this->body), $cipher, $key, OPENSSL_RAW_DATA, $iv);
+        $decryptedValue = openssl_decrypt(base64_decode($this->body), $cipher, $key, OPENSSL_RAW_DATA, $iv);
+        if (false === $decryptedValue) {
+            throw new Exception\DecryptFailed(openssl_error_string());
+        }
+        $this->body = $decryptedValue;
 
         return true;
     }

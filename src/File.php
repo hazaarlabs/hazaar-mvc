@@ -979,7 +979,7 @@ class File implements \JsonSerializable
         return $this->manager->seekStream($this->stream, $offset, $whence);
     }
 
-    public function tell(): int|false
+    public function tell(): false|int
     {
         if (null === $this->stream) {
             return false;
@@ -1067,6 +1067,9 @@ class File implements \JsonSerializable
             $cipher_len = openssl_cipher_iv_length(File::$default_cipher);
             $iv = substr($content, 3, $cipher_len);
             $data = openssl_decrypt(substr($content, 3 + $cipher_len), File::$default_cipher, $this->getEncryptionKey(), OPENSSL_RAW_DATA, $iv);
+            if (false === $data) {
+                throw new \Exception('Failed to decrypt file: '.$this->source_file.'. Bad key?');
+            }
             $hash = substr($data, 0, 8);
             $content = substr($data, 8);
             if ($hash !== hash('crc32', $content)) {
