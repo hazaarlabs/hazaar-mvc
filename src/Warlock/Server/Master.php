@@ -42,6 +42,7 @@ class Master
         SIGTERM => 'SIGTERM',
         SIGQUIT => 'SIGQUIT',
     ];
+    public ?Cluster $cluster = null;
 
     /**
      * Enable silent mode.
@@ -557,6 +558,8 @@ class Master
                 $this->globals[$eventName] = $callable;
             }
         }
+        $this->cluster = new Cluster($this->log, self::$config['cluster']);
+        $this->cluster->start();
         $this->log->write(W_INFO, 'Ready...');
 
         return $this;
@@ -607,6 +610,7 @@ class Master
             }
             $now = time();
             if ($this->time < $now) {
+                $this->cluster->process();
                 $this->taskProcess();
                 $this->eventCleanup();
                 $this->clientCheck();
@@ -643,6 +647,7 @@ class Master
                 }
             }
         }
+        $this->cluster->stop();
         $this->log->write(W_NOTICE, 'Closing all remaining connections');
         foreach ($this->streams as $stream) {
             fclose($stream);
@@ -662,7 +667,7 @@ class Master
         if ($key !== self::$config['admin']['key']) {
             return false;
         }
-        $this->log->write(W_NOTICE, 'Warlock control authorised to '.$client->id, $client->name);
+        $this->log->write(W_NOTICE, 'Warlock access authorised to '.$client->id, $client->name);
         $client->type = 'admin';
         $this->admins[$client->id] = $client;
 
@@ -860,12 +865,16 @@ class Master
         return true;
     }
 
-    public function trigger(string $eventID, mixed $data, ?string $clientID = null): bool
+    public function trigger(string $eventID, mixed $data, ?string $clientID = null, ?string $triggerID = null): bool
     {
         $this->log->write(W_NOTICE, "TRIGGER: {$eventID}");
         ++$this->stats['events'];
         $this->rrd->setValue('events', 1);
-        $triggerID = uniqid();
+        if (null === $triggerID) {
+            $triggerID = uniqid();
+        } elseif (array_key_exists($eventID, $this->events) && array_key_exists($triggerID, $this->events[$eventID])) {
+            return true;
+        }
         $seen = [];
         if ($clientID > 0) {
             $seen[] = $clientID;
@@ -890,6 +899,7 @@ class Master
         }
         // Check to see if there are any clients waiting for this event and send notifications to them all.
         $this->subscriptionProcess($eventID, $triggerID);
+        $this->cluster->sendEvent($eventID, $triggerID, $data);
 
         return true;
     }
@@ -958,6 +968,45 @@ class Master
     }
 
     /**
+     * @param resource $stream
+     */
+    public function clientAdd(mixed $stream, ?Client $client = null): Client|false
+    {
+        // If we don't have a stream or id, return false
+        if (!is_resource($stream)) {
+            return false;
+        }
+        $streamID = (int) $stream;
+        // If the stream is already has a client object, return it
+        if (array_key_exists($streamID, $this->clients)) {
+            return $this->clients[$streamID];
+        }
+        // Create the new client object
+        if (null === $client) {
+            $client = new Client($stream, self::$config['client']);
+        }
+        // Add it to the client array
+        $this->clients[$streamID] = $client;
+        if (!array_key_exists($streamID, $this->streams)) {
+            $this->streams[$streamID] = $stream;
+        }
+        ++$this->stats['clients'];
+
+        return $client;
+    }
+
+    public function clientReplace(mixed $stream, ?Client $client = null):bool
+    {
+        $streamID = (int) $stream;
+        if (!array_key_exists($streamID, $this->clients)) {
+            return false;
+        }
+        $this->clients[$streamID] = $client;
+
+        return true;
+    }
+
+    /**
      * Check if the server is already running.
      *
      * This checks if the PID file exists, grabs the PID from that file and checks to see if a process with that ID
@@ -978,29 +1027,6 @@ class Master
         }
 
         return false;
-    }
-
-    /**
-     * @param resource $stream
-     */
-    private function clientAdd(mixed $stream): Client|false
-    {
-        // If we don't have a stream or id, return false
-        if (!is_resource($stream)) {
-            return false;
-        }
-        $streamID = (int) $stream;
-        // If the stream is already has a client object, return it
-        if (array_key_exists($streamID, $this->clients)) {
-            return $this->clients[$streamID];
-        }
-        // Create the new client object
-        $client = new Client($stream, self::$config['client']);
-        // Add it to the client array
-        $this->clients[$streamID] = $client;
-        ++$this->stats['clients'];
-
-        return $client;
     }
 
     /**
