@@ -179,7 +179,7 @@ class Peer extends Client
 
             case 'EVENT':
                 $this->log->write(W_DEBUG, 'Received event from peer '.$this->address.':'.$this->port);
-                Master::$instance->trigger($payload->id, $payload->data);
+                Master::$instance->trigger($payload->id, $payload->data, $this->name, $payload->trigger);
 
                 return true;
 

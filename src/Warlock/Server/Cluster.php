@@ -9,13 +9,12 @@ use Hazaar\Warlock\Server\Client\Peer;
 
 class Cluster
 {
-    private Logger $log;
-    private Map $config;
-
     /**
      * @var array<Peer>
      */
-    private array $peers = [];
+    public array $peers = [];
+    private Logger $log;
+    private Map $config;
 
     public function __construct(Logger $log, Map $config)
     {
@@ -84,16 +83,6 @@ class Cluster
                 continue;
             }
             $peer->process();
-            $this->log->write(W_DEBUG, 'Peer status: '.$peer->status());
         }
-    }
-
-    public function sendEvent(string $eventID, string $triggerID, mixed $data): bool
-    {
-        foreach ($this->peers as $peer) {
-            $peer->sendEvent($eventID, $triggerID, $data);
-        }
-
-        return true;
     }
 }

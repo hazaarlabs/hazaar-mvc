@@ -899,7 +899,6 @@ class Master
         }
         // Check to see if there are any clients waiting for this event and send notifications to them all.
         $this->subscriptionProcess($eventID, $triggerID);
-        $this->cluster->sendEvent($eventID, $triggerID, $data);
 
         return true;
     }
@@ -995,7 +994,7 @@ class Master
         return $client;
     }
 
-    public function clientReplace(mixed $stream, ?Client $client = null):bool
+    public function clientReplace(mixed $stream, ?Client $client = null): bool
     {
         $streamID = (int) $stream;
         if (!array_key_exists($streamID, $this->clients)) {
@@ -1717,6 +1716,13 @@ class Master
                 continue;
             }
             $event = &$this->events[$eventID][$trigger];
+            foreach ($this->cluster->peers as $peer) {
+                if (in_array($peer->name, $event['seen'])) {
+                    continue;
+                }
+                $peer->sendEvent($eventID, $triggerID, $event['data']);
+                $event['seen'][] = $peer->name;
+            }
             if (!array_key_exists($eventID, $this->subscriptions)) {
                 continue;
             }
