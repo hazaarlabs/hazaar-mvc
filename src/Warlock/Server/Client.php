@@ -19,9 +19,9 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
     public string $type = 'client';
 
     /**
-     * @var resource
+     * @var null|false|resource
      */
-    public mixed $stream;
+    public mixed $stream = null;
     public bool $closing = false;
     // Buffer for fragmented frames
     public ?string $frameBuffer = null;
@@ -164,6 +164,8 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
             if ('service' === $type) {
                 $this->send('OK');
             }
+        } elseif (array_key_exists('x-cluster-access-key', $headers)) {
+            Master::$instance->cluster->addPeer($headers, $this);
         }
         $this->log->write(W_NOTICE, "WebSockets connection from {$this->address}:{$this->port}", $this->name);
 
@@ -224,11 +226,15 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
     public function disconnect(): bool
     {
         $this->subscriptions = [];
-        Master::$instance->clientRemove($this->stream);
-        stream_socket_shutdown($this->stream, STREAM_SHUT_RDWR);
-        $this->log->write(W_DEBUG, "CLIENT->CLOSE: HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", $this->name);
+        if (is_resource($this->stream)) {
+            Master::$instance->clientRemove($this->stream);
+            stream_socket_shutdown($this->stream, STREAM_SHUT_RDWR);
+            $this->log->write(W_DEBUG, "CLIENT->CLOSE: HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", $this->name);
 
-        return fclose($this->stream);
+            return fclose($this->stream);
+        }
+
+        return false;
     }
 
     public function commandUnsubscribe(string $eventID): bool
@@ -248,16 +254,16 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
         return Master::$instance->trigger($eventID, $data, false === $echoClient ? $this->id : null);
     }
 
-    public function sendEvent(string $eventID, string $trigger_id, mixed $data): bool
+    public function sendEvent(string $eventID, string $triggerID, mixed $data): bool
     {
-        if (!in_array($eventID, $this->subscriptions)) {
-            $this->log->write(W_WARN, "Client {$this->id} is not subscribe to event {$eventID}", $this->name);
+        if ('peer' !== $this->type && !in_array($eventID, $this->subscriptions)) {
+            $this->log->write(W_WARN, "Client {$this->id} is not subscribed to event {$eventID}", $this->name);
 
             return false;
         }
         $packet = [
             'id' => $eventID,
-            'trigger' => $trigger_id,
+            'trigger' => $triggerID,
             'time' => microtime(true),
             'data' => $data,
         ];
