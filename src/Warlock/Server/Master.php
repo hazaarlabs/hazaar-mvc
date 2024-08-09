@@ -42,6 +42,7 @@ class Master
         SIGTERM => 'SIGTERM',
         SIGQUIT => 'SIGQUIT',
     ];
+    public ?Cluster $cluster = null;
 
     /**
      * Enable silent mode.
@@ -338,6 +339,10 @@ class Master
         ?string $errfile = null,
         ?int $errline = null,
     ): ?bool {
+        if (!(error_reporting() & $errno)) {
+            // Error was suppressed with '@', so skip handling it
+            return false;
+        }
         $type = match ($errno) {
             E_ERROR => W_ERR,
             E_WARNING => W_WARN,
@@ -557,6 +562,7 @@ class Master
                 $this->globals[$eventName] = $callable;
             }
         }
+        $this->cluster = new Cluster($this->log, self::$config['cluster']);
         $this->log->write(W_INFO, 'Ready...');
 
         return $this;
@@ -574,6 +580,7 @@ class Master
     {
         $this->start = time();
         file_put_contents($this->pidfile, $this->pid);
+        $this->cluster->start();
         while ($this->running) {
             pcntl_signal_dispatch();
             if (null !== $this->shutdown && $this->shutdown <= time()) {
@@ -607,6 +614,7 @@ class Master
             }
             $now = time();
             if ($this->time < $now) {
+                $this->cluster->process();
                 $this->taskProcess();
                 $this->eventCleanup();
                 $this->clientCheck();
@@ -643,6 +651,7 @@ class Master
                 }
             }
         }
+        $this->cluster->stop();
         $this->log->write(W_NOTICE, 'Closing all remaining connections');
         foreach ($this->streams as $stream) {
             fclose($stream);
@@ -662,44 +671,9 @@ class Master
         if ($key !== self::$config['admin']['key']) {
             return false;
         }
-        $this->log->write(W_NOTICE, 'Warlock control authorised to '.$client->id, $client->name);
+        $this->log->write(W_NOTICE, 'Warlock access authorised to '.$client->id, $client->name);
         $client->type = 'admin';
         $this->admins[$client->id] = $client;
-
-        return true;
-    }
-
-    /**
-     * Removes a client from a stream.
-     *
-     * Because a client can have multiple stream connections (in legacy mode) this removes the client reference
-     * for that stream. Once there are no more references left the client is completely removed.
-     *
-     * @param mixed $stream
-     *
-     * @return bool
-     */
-    public function clientRemove($stream)
-    {
-        if (!$stream) {
-            return false;
-        }
-        $streamID = (int) $stream;
-        if (!array_key_exists($streamID, $this->clients)) {
-            return false;
-        }
-        $client = $this->clients[$streamID];
-        foreach ($this->subscriptions as $eventID => &$queue) {
-            if (!array_key_exists($client->id, $queue)) {
-                continue;
-            }
-            $this->log->write(W_DEBUG, "CLIENT->UNSUBSCRIBE: EVENT={$eventID} CLIENT={$client->id}", $client->name);
-            unset($queue[$client->id]);
-        }
-        $this->log->write(W_DEBUG, "CLIENT->REMOVE: CLIENT={$client->id}", $client->name);
-        unset($this->clients[$streamID], $this->streams[$streamID]);
-
-        --$this->stats['clients'];
 
         return true;
     }
@@ -860,12 +834,16 @@ class Master
         return true;
     }
 
-    public function trigger(string $eventID, mixed $data, ?string $clientID = null): bool
+    public function trigger(string $eventID, mixed $data, ?string $clientID = null, ?string $triggerID = null): bool
     {
         $this->log->write(W_NOTICE, "TRIGGER: {$eventID}");
         ++$this->stats['events'];
         $this->rrd->setValue('events', 1);
-        $triggerID = uniqid();
+        if (null === $triggerID) {
+            $triggerID = uniqid();
+        } elseif (array_key_exists($eventID, $this->events) && array_key_exists($triggerID, $this->events[$eventID])) {
+            return true;
+        }
         $seen = [];
         if ($clientID > 0) {
             $seen[] = $clientID;
@@ -958,6 +936,81 @@ class Master
     }
 
     /**
+     * @param resource $stream
+     */
+    public function clientAdd(mixed $stream, ?Client $client = null): Client|false
+    {
+        // If we don't have a stream or id, return false
+        if (!is_resource($stream)) {
+            return false;
+        }
+        $streamID = (int) $stream;
+        // If the stream is already has a client object, return it
+        if (array_key_exists($streamID, $this->clients)) {
+            return $this->clients[$streamID];
+        }
+        // Create the new client object
+        if (null === $client) {
+            $client = new Client($stream, self::$config['client']);
+        }
+        $this->log->write(W_DEBUG, "CLIENT->ADD: CLIENT={$client->id}", $client->name);
+        // Add it to the client array
+        $this->clients[$streamID] = $client;
+        if (!array_key_exists($streamID, $this->streams)) {
+            $this->streams[$streamID] = $stream;
+        }
+        ++$this->stats['clients'];
+
+        return $client;
+    }
+
+    public function clientReplace(mixed $stream, ?Client $client = null): bool
+    {
+        $streamID = (int) $stream;
+        if (!array_key_exists($streamID, $this->clients)) {
+            return false;
+        }
+        $this->clients[$streamID] = $client;
+
+        return true;
+    }
+
+    /**
+     * Removes a client from a stream.
+     *
+     * Because a client can have multiple stream connections (in legacy mode) this removes the client reference
+     * for that stream. Once there are no more references left the client is completely removed.
+     *
+     * @param mixed $stream
+     *
+     * @return bool
+     */
+    public function clientRemove($stream)
+    {
+        if (!$stream) {
+            return false;
+        }
+        $streamID = (int) $stream;
+        if (!array_key_exists($streamID, $this->clients)) {
+            return false;
+        }
+        $client = $this->clients[$streamID];
+        foreach ($this->subscriptions as $eventID => &$queue) {
+            if (!array_key_exists($client->id, $queue)) {
+                continue;
+            }
+            $this->log->write(W_DEBUG, "CLIENT->UNSUBSCRIBE: EVENT={$eventID} CLIENT={$client->id}", $client->name);
+            unset($queue[$client->id]);
+        }
+        $this->log->write(W_DEBUG, "CLIENT->REMOVE: CLIENT={$client->id}", $client->name);
+        unset($this->clients[$streamID], $this->streams[$streamID]);
+
+        --$this->stats['clients'];
+
+        return true;
+    }
+
+    /**
      * Check if the server is already running.
      *
      * This checks if the PID file exists, grabs the PID from that file and checks to see if a process with that ID
@@ -981,29 +1034,6 @@ class Master
     }
 
     /**
-     * @param resource $stream
-     */
-    private function clientAdd(mixed $stream): Client|false
-    {
-        // If we don't have a stream or id, return false
-        if (!is_resource($stream)) {
-            return false;
-        }
-        $streamID = (int) $stream;
-        // If the stream is already has a client object, return it
-        if (array_key_exists($streamID, $this->clients)) {
-            return $this->clients[$streamID];
-        }
-        // Create the new client object
-        $client = new Client($stream, self::$config['client']);
-        // Add it to the client array
-        $this->clients[$streamID] = $client;
-        ++$this->stats['clients'];
-
-        return $client;
-    }
-
-    /**
      * Retrieve a client object for a stream resource.
      *
      * @param resource $stream The stream resource
@@ -1020,7 +1050,13 @@ class Master
      */
     private function clientProcess(mixed $stream): bool
     {
-        $bytes_received = strlen($buf = fread($stream, 65535));
+        $buf = fread($stream, 65535);
+        if (false === $buf) {
+            $this->disconnect($stream);
+
+            return false;
+        }
+        $bytes_received = strlen($buf);
         $client = $this->clientGet($stream);
         if ($client instanceof ClientInterface) {
             if ('client' === $client->type) {
@@ -1691,6 +1727,13 @@ class Master
                 continue;
             }
             $event = &$this->events[$eventID][$trigger];
+            foreach ($this->cluster->peers as $peer) {
+                if (in_array($peer->name, $event['seen'])) {
+                    continue;
+                }
+                $peer->sendEvent($eventID, $triggerID, $event['data']);
+                $event['seen'][] = $peer->name;
+            }
             if (!array_key_exists($eventID, $this->subscriptions)) {
                 continue;
             }
