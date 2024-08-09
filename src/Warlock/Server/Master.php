@@ -339,6 +339,10 @@ class Master
         ?string $errfile = null,
         ?int $errline = null,
     ): ?bool {
+        if (!(error_reporting() & $errno)) {
+            // Error was suppressed with '@', so skip handling it
+            return false;
+        }
         $type = match ($errno) {
             E_ERROR => W_ERR,
             E_WARNING => W_WARN,
@@ -559,7 +563,6 @@ class Master
             }
         }
         $this->cluster = new Cluster($this->log, self::$config['cluster']);
-        $this->cluster->start();
         $this->log->write(W_INFO, 'Ready...');
 
         return $this;
@@ -577,6 +580,7 @@ class Master
     {
         $this->start = time();
         file_put_contents($this->pidfile, $this->pid);
+        $this->cluster->start();
         while ($this->running) {
             pcntl_signal_dispatch();
             if (null !== $this->shutdown && $this->shutdown <= time()) {
@@ -670,41 +674,6 @@ class Master
         $this->log->write(W_NOTICE, 'Warlock access authorised to '.$client->id, $client->name);
         $client->type = 'admin';
         $this->admins[$client->id] = $client;
-
-        return true;
-    }
-
-    /**
-     * Removes a client from a stream.
-     *
-     * Because a client can have multiple stream connections (in legacy mode) this removes the client reference
-     * for that stream. Once there are no more references left the client is completely removed.
-     *
-     * @param mixed $stream
-     *
-     * @return bool
-     */
-    public function clientRemove($stream)
-    {
-        if (!$stream) {
-            return false;
-        }
-        $streamID = (int) $stream;
-        if (!array_key_exists($streamID, $this->clients)) {
-            return false;
-        }
-        $client = $this->clients[$streamID];
-        foreach ($this->subscriptions as $eventID => &$queue) {
-            if (!array_key_exists($client->id, $queue)) {
-                continue;
-            }
-            $this->log->write(W_DEBUG, "CLIENT->UNSUBSCRIBE: EVENT={$eventID} CLIENT={$client->id}", $client->name);
-            unset($queue[$client->id]);
-        }
-        $this->log->write(W_DEBUG, "CLIENT->REMOVE: CLIENT={$client->id}", $client->name);
-        unset($this->clients[$streamID], $this->streams[$streamID]);
-
-        --$this->stats['clients'];
 
         return true;
     }
@@ -984,6 +953,7 @@ class Master
         if (null === $client) {
             $client = new Client($stream, self::$config['client']);
         }
+        $this->log->write(W_DEBUG, "CLIENT->ADD: CLIENT={$client->id}", $client->name);
         // Add it to the client array
         $this->clients[$streamID] = $client;
         if (!array_key_exists($streamID, $this->streams)) {
@@ -1001,6 +971,41 @@ class Master
             return false;
         }
         $this->clients[$streamID] = $client;
+
+        return true;
+    }
+
+    /**
+     * Removes a client from a stream.
+     *
+     * Because a client can have multiple stream connections (in legacy mode) this removes the client reference
+     * for that stream. Once there are no more references left the client is completely removed.
+     *
+     * @param mixed $stream
+     *
+     * @return bool
+     */
+    public function clientRemove($stream)
+    {
+        if (!$stream) {
+            return false;
+        }
+        $streamID = (int) $stream;
+        if (!array_key_exists($streamID, $this->clients)) {
+            return false;
+        }
+        $client = $this->clients[$streamID];
+        foreach ($this->subscriptions as $eventID => &$queue) {
+            if (!array_key_exists($client->id, $queue)) {
+                continue;
+            }
+            $this->log->write(W_DEBUG, "CLIENT->UNSUBSCRIBE: EVENT={$eventID} CLIENT={$client->id}", $client->name);
+            unset($queue[$client->id]);
+        }
+        $this->log->write(W_DEBUG, "CLIENT->REMOVE: CLIENT={$client->id}", $client->name);
+        unset($this->clients[$streamID], $this->streams[$streamID]);
+
+        --$this->stats['clients'];
 
         return true;
     }
@@ -1045,7 +1050,13 @@ class Master
      */
     private function clientProcess(mixed $stream): bool
     {
-        $bytes_received = strlen($buf = fread($stream, 65535));
+        $buf = fread($stream, 65535);
+        if (false === $buf) {
+            $this->disconnect($stream);
+
+            return false;
+        }
+        $bytes_received = strlen($buf);
         $client = $this->clientGet($stream);
         if ($client instanceof ClientInterface) {
             if ('client' === $client->type) {

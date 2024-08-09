@@ -27,8 +27,9 @@ class Cluster
         if (true !== $this->config['enabled']) {
             return;
         }
-        $this->log->write(W_INFO, 'Initialising Cluster');
+        $this->log->write(W_INFO, 'Starting Cluster Manager');
         if ($this->config->has('peers')) {
+            Peer::$reconnectTimeout = $this->config->get('peerReconnect', 30);
             $peers = $this->config->get('peers');
             foreach ($peers as $peerConfig) {
                 if (false === strpos(':', $peerConfig)) {
@@ -62,15 +63,23 @@ class Cluster
     public function addPeer(array $headers, Client $client): void
     {
         if (!$client instanceof Peer) {
-            $peer = new Peer($this->config['name'], $client->address, $client->port);
+            $peer = new Peer($this->config['name'], $client->address, $client->port, true);
             $peer->stream = $client->stream;
             $peer->status = Peer::STATUS_STREAMING;
             Master::$instance->clientReplace($peer->stream, $peer);
         } else {
             $peer = $client;
         }
-        $this->peers[] = $peer;
+        $this->peers[$peer->name] = $peer;
         $this->log->write(W_INFO, 'Peer added: '.$peer->name.' at '.$peer->address.':'.$peer->port);
+    }
+
+    public function removePeer(Peer $peer): void
+    {
+        if (array_key_exists($peer->name, $this->peers)) {
+            unset($this->peers[$peer->name]);
+            $this->log->write(W_INFO, 'Peer removed: '.$peer->name.' at '.$peer->address.':'.$peer->port);
+        }
     }
 
     public function process(): void

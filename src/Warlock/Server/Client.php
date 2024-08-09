@@ -226,11 +226,15 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
     public function disconnect(): bool
     {
         $this->subscriptions = [];
-        Master::$instance->clientRemove($this->stream);
-        stream_socket_shutdown($this->stream, STREAM_SHUT_RDWR);
-        $this->log->write(W_DEBUG, "CLIENT->CLOSE: HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", $this->name);
+        if (is_resource($this->stream)) {
+            Master::$instance->clientRemove($this->stream);
+            stream_socket_shutdown($this->stream, STREAM_SHUT_RDWR);
+            $this->log->write(W_DEBUG, "CLIENT->CLOSE: HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", $this->name);
 
-        return fclose($this->stream);
+            return fclose($this->stream);
+        }
+
+        return false;
     }
 
     public function commandUnsubscribe(string $eventID): bool

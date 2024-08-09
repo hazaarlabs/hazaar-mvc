@@ -20,10 +20,13 @@ class Peer extends Client
     public string $type = 'peer';
     public int $status = self::STATUS_DISCONNECTED;
     public string $clusterName;
+    public static int $reconnectTimeout = 15;
 
     private string $accessKey = '';
+    private int $lastConnectAttempt = 0;
+    private bool $isRemote = false;
 
-    public function __construct(string $clusterName, string $address, int $port = 8000)
+    public function __construct(string $clusterName, string $address, int $port = 8000, bool $isRemote = false)
     {
         $this->log = new Logger();
         $this->clusterName = $clusterName;
@@ -31,28 +34,23 @@ class Peer extends Client
         $this->port = $port;
         $this->id = md5($this->address.':'.$this->port);
         $this->name = 'PEER_'.strtoupper($this->address).':'.$this->port;
+        $this->isRemote = $isRemote;
+        $this->log->write(W_DEBUG, 'PEER->CONSTRUCT: HOST='.$this->address.' PORT='.$this->port.' REMOTE='.strbool($this->isRemote));
     }
 
-    // public function close(): void
-    // {
-    //     $this->log->write(W_DEBUG, 'Closing peer connection to '.$this->address.':'.$this->port);
-    //     $this->status = self::STATUS_DISCONNECTED;
-    //     if (is_resource($this->stream)) {
-    //         stream_socket_shutdown($this->stream, STREAM_SHUT_RDWR);
-    //         Master::$instance->clientRemove($this->stream);
-    //     }
-    //     $this->stream = null;
-    // }
+    public function __destruct()
+    {
+        $this->log->write(W_DEBUG, 'PEER->DESTRUCT: HOST='.$this->address.' PORT='.$this->port);
+    }
 
     public function process(): void
     {
         if (false === $this->isConnected()) {
             if (self::STATUS_DISCONNECTED === $this->status) {
-                $this->status = self::STATUS_CONNECTING;
                 $this->connect();
             } else {
-                $this->log->write(W_NOTICE, 'Connection to peer '.$this->address.':'.$this->port.' is not connected');
-                $this->disconnect();
+                $this->log->write(W_DEBUG, 'Connection to peer '.$this->address.':'.$this->port.' is not connected');
+                $this->status = self::STATUS_DISCONNECTED;
             }
 
             return;
@@ -122,8 +120,6 @@ class Peer extends Client
                 $this->log->write(W_INFO, 'Peer '.$this->address.' connected');
                 $this->status = self::STATUS_STREAMING;
             }
-        } else {
-            $this->log->write(W_NOTICE, 'Received data from peer '.$this->address.' while not streaming');
         }
     }
 
@@ -142,13 +138,38 @@ class Peer extends Client
 
     public function connect(?string $accessKey = null): void
     {
+        if ((time() - $this->lastConnectAttempt) < self::$reconnectTimeout) {
+            return;
+        }
+        $this->lastConnectAttempt = time();
         if (null !== $accessKey) {
             $this->accessKey = $accessKey;
         }
         $this->status = self::STATUS_CONNECTING;
-        $this->log->write(W_DEBUG, 'Connecting to peer '.$this->address.':'.$this->port);
-        $this->stream = stream_socket_client('tcp://'.$this->address.':'.$this->port, $errno, $errstr, STREAM_CLIENT_ASYNC_CONNECT);
-        Master::$instance->clientAdd($this->stream, $this);
+        $this->log->write(W_DEBUG, "PEER->OPEN: HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", $this->name);
+        $connectFlags = STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT;
+        $this->stream = @stream_socket_client('tcp://'.$this->address.':'.$this->port, $errno, $errstr, 30, $connectFlags);
+        if (false !== $this->stream) {
+            Master::$instance->clientAdd($this->stream, $this);
+        } else {
+            $this->status = self::STATUS_DISCONNECTED;
+        }
+    }
+
+    public function disconnect(): bool
+    {
+        if (is_resource($this->stream)) {
+            Master::$instance->clientRemove($this->stream);
+            stream_socket_shutdown($this->stream, STREAM_SHUT_RDWR);
+            $this->log->write(W_DEBUG, "PEER->CLOSE: HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", $this->name);
+            fclose($this->stream);
+        }
+        $this->status = self::STATUS_DISCONNECTED;
+        if (true === $this->isRemote) {
+            Master::$instance->cluster->removePeer($this);
+        }
+
+        return true;
     }
 
     public function isConnected(): bool
