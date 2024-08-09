@@ -101,6 +101,12 @@ class Config extends Application\Config
             // still get events and was the founding principle that allowed Warlock to work with long-polling HTTP connections.  Still
             // very useful in the WebSocket world though.
         ],
+        'cluster' => [
+            'enabled' => true,
+            'name' => 'warlock',
+            'accessKey' => null,
+            'peers' => [],
+        ],
     ];
 
     /**
