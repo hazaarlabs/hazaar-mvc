@@ -8,40 +8,28 @@ use Hazaar\Date;
 
 class Modifier
 {
-    /**
-     * @var array<string>
-     */
-    private static array $modifiers = [
-        'capitalize',
-        'cat',
-        'count_characters',
-        'count_paragraphs',
-        'count_sentences',
-        'count_words',
-        'date_format',
-        'default',
-        'dump',
-        'escape',
-        'indent',
-        'lower',
-        'nl2br',
-        'number_format',
-        'regex_replace',
-        'replace',
-        'spacify',
-        'string_format',
-        'strip',
-        'strip_tags',
-        'truncate',
-        'upper',
-        'wordwrap',
-        // Custom Hazaar MVC Modifiers
-        'implode',
-    ];
-
-    public static function hasFunction(string $func): bool
+    public function execute(string $name, mixed $value, mixed ...$args): mixed
     {
-        return in_array($func, Modifier::$modifiers);
+        if (!method_exists($this, $name)) {
+            throw new \Exception('Modifier '.$name.' does not exist!');
+        }
+        $reflectionMethod = new \ReflectionMethod($this, $name);
+        $reflectionParameter = $reflectionMethod->getParameters()[0];
+        $type = (string) $reflectionParameter->getType();
+        if ('mixed' === $type && $value === null) {
+            $type = 'string';
+        }
+        $value = match ($type) {
+            'int' => (int) $value,
+            'float' => (float) $value,
+            'bool' => (bool) $value,
+            'string' => (string) $value,
+            'array' => (array) $value,
+            'object' => (object) $value,
+            default => $value,
+        };
+
+        return $reflectionMethod->invokeArgs($this, array_merge([$value], $args));
     }
 
     public function capitalize(string $string): string
