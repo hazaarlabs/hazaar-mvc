@@ -14,7 +14,7 @@ abstract class Process
     public int $start = 0;
     public ?int $state = HAZAAR_SERVICE_NONE;
     protected Connection $conn;
-    protected string $id;
+    protected ?string $id = null;
     protected Application $application;
     protected Protocol $protocol;
 

@@ -244,7 +244,11 @@ abstract class Result implements Interfaces\Result, \Countable
             if (2 !== count($parts)) {
                 continue;
             }
-            list($checkbit, $decryptedValue) = preg_split('/(?<=.{'.strlen($checkstring).'})/s', openssl_decrypt($parts[1], $cipher, $key, OPENSSL_RAW_DATA, $parts[0]), 2);
+            $decrypted_value = openssl_decrypt($parts[1], $cipher, $key, 0, $parts[0]);
+            if (false === $decrypted_value) {
+                continue;
+            }
+            list($checkbit, $decrypted_value) = preg_split('/(?<=.{'.strlen($checkstring).'})/s', $decrypted_value, 2);
             if ($checkbit === $checkstring) {
                 $value = $decryptedValue;
             }

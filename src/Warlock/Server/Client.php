@@ -19,9 +19,9 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
     public string $type = 'client';
 
     /**
-     * @var resource
+     * @var null|false|resource
      */
-    public mixed $stream;
+    public mixed $stream = null;
     public bool $closing = false;
     // Buffer for fragmented frames
     public ?string $frameBuffer = null;
@@ -129,9 +129,6 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
 
             return false;
         }
-        if (!($this->id = $results['url']['CID'])) {
-            return false;
-        }
         if (array_key_exists('UID', $results['url'])) {
             $this->username = base64_decode($results['url']['UID']);
             if (null != $this->username) {
@@ -145,15 +142,15 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
         if (false === $result || $result !== $bytes) {
             return false;
         }
-        $init_packet = json_encode(Protocol::$typeCodes);
+        $initPacket = Master::$protocol->encode('init', ['CID' => $this->id, 'EVT' => Protocol::$typeCodes]);
         if (Master::$protocol->encoded()) {
-            $init_packet = base64_encode($init_packet);
+            $initPacket = base64_encode($initPacket);
         }
-        $init_frame = $this->frame($init_packet, 'text', false);
+        $initFrame = $this->frame($initPacket, 'text', false);
         // If this is NOT a Warlock process request (ie: it's a browser) send the protocol init frame!
         if (!(array_key_exists('x-warlock-php', $headers) && 'true' === $headers['x-warlock-php'])) {
             $this->log->write(W_DEBUG, "CLIENT->INIT: HOST={$this->address} POST={$this->port} CLIENT={$this->id}", $this->name);
-            $this->write($init_frame);
+            $this->write($initFrame);
         }
         if (array_key_exists('x-warlock-access-key', $headers)) {
             $payload = (object) [
@@ -167,6 +164,8 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
             if ('service' === $type) {
                 $this->send('OK');
             }
+        } elseif (array_key_exists('x-cluster-access-key', $headers)) {
+            Master::$instance->cluster->addPeer($headers, $this);
         }
         $this->log->write(W_NOTICE, "WebSockets connection from {$this->address}:{$this->port}", $this->name);
 
@@ -227,11 +226,15 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
     public function disconnect(): bool
     {
         $this->subscriptions = [];
-        Master::$instance->clientRemove($this->stream);
-        stream_socket_shutdown($this->stream, STREAM_SHUT_RDWR);
-        $this->log->write(W_DEBUG, "CLIENT->CLOSE: HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", $this->name);
+        if (is_resource($this->stream)) {
+            Master::$instance->clientRemove($this->stream);
+            stream_socket_shutdown($this->stream, STREAM_SHUT_RDWR);
+            $this->log->write(W_DEBUG, "CLIENT->CLOSE: HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", $this->name);
 
-        return fclose($this->stream);
+            return fclose($this->stream);
+        }
+
+        return false;
     }
 
     public function commandUnsubscribe(string $eventID): bool
@@ -251,16 +254,16 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
         return Master::$instance->trigger($eventID, $data, false === $echoClient ? $this->id : null);
     }
 
-    public function sendEvent(string $eventID, string $trigger_id, mixed $data): bool
+    public function sendEvent(string $eventID, string $triggerID, mixed $data): bool
     {
-        if (!in_array($eventID, $this->subscriptions)) {
-            $this->log->write(W_WARN, "Client {$this->id} is not subscribe to event {$eventID}", $this->name);
+        if ('peer' !== $this->type && !in_array($eventID, $this->subscriptions)) {
+            $this->log->write(W_WARN, "Client {$this->id} is not subscribed to event {$eventID}", $this->name);
 
             return false;
         }
         $packet = [
             'id' => $eventID,
-            'trigger' => $trigger_id,
+            'trigger' => $triggerID,
             'time' => microtime(true),
             'data' => $data,
         ];
@@ -306,14 +309,9 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
         if ($parts['path'] != '/'.$this->applicationName.'/warlock') {
             return false;
         }
-        // Check to see if there is a query part as this should contain the CID
-        if (!array_key_exists('query', $parts)) {
-            return false;
-        }
-        // Get the CID
-        parse_str($parts['query'], $query);
-        if (!array_key_exists('CID', $query)) {
-            return false;
+        $query = [];
+        if (array_key_exists('query', $parts)) {
+            parse_str($parts['query'], $query);
         }
 
         return $query;

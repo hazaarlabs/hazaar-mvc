@@ -383,9 +383,7 @@ class Smarty
             foreach ($modifiers as $modifier) {
                 $params = str_getcsv($modifier, ':');
                 $func = array_shift($params);
-                if (Smarty\Modifier::hasFunction($func)) {
-                    $name = '$this->modify->'.$func.'('.$name.((count($params) > 0) ? ', "'.implode('", "', $params).'"' : '').')';
-                }
+                $name = '$this->modify->execute("'.$func.'", '.$name.((count($params) > 0) ? ', "'.implode('", "', $params).'"' : '').')';
             }
         }
 
