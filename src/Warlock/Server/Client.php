@@ -101,75 +101,24 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
     /**
      * Initiates a WebSocket client handshake.
      *
-     * @param mixed $request
-     *
      * @return bool
      */
-    public function initiateHandshake($request)
+    public function initiateHandshake(string $request)
     {
-        if (!($headers = $this->parseHeaders($request))) {
+        $body = '';
+        if (!($headers = $this->parseHeaders($request, $body))) {
             $this->log->write(W_WARN, 'Unable to parse request while initiating WebSocket handshake!', $this->name);
 
             return false;
         }
-        if (!(array_key_exists('connection', $headers) && preg_match('/upgrade/', strtolower($headers['connection'])))) {
-            return false;
+        if (array_key_exists('post', $headers)) {
+            return $this->initiateRESTHandshake($headers, $body);
         }
-        $this->log->write(W_DEBUG, "WEBSOCKETS<-HANDSHAKE: HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", $this->name);
-        $responseHeaders = [];
-        $results = [];
-        $responseCode = $this->acceptHandshake($headers, $responseHeaders, null, $results);
-        if (!(array_key_exists('get', $headers) && 101 === $responseCode)) {
-            $responseHeaders['Connection'] = 'close';
-            $responseHeaders['Content-Type'] = 'text/text';
-            $body = $responseCode.' '.http_response_text($responseCode);
-            $response = $this->httpResponse($responseCode, $body, $responseHeaders);
-            $this->log->write(W_WARN, "Handshake failed with code {$body}", $this->name);
-            @fwrite($this->stream, $response, strlen($response));
+        if (array_key_exists('connection', $headers) && preg_match('/upgrade/', strtolower($headers['connection']))) {
+            return $this->initiateWebSocketsHandshake($headers);
+        }
 
-            return false;
-        }
-        if (array_key_exists('UID', $results['url'])) {
-            $this->username = base64_decode($results['url']['UID']);
-            if (null != $this->username) {
-                $this->log->write(W_NOTICE, "USER: {$this->username}", $this->name);
-            }
-        }
-        $this->log->write(W_DEBUG, "WEBSOCKETS->ACCEPT: HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", $this->name);
-        $response = $this->httpResponse($responseCode, null, $responseHeaders);
-        $bytes = strlen($response);
-        $result = @fwrite($this->stream, $response, $bytes);
-        if (false === $result || $result !== $bytes) {
-            return false;
-        }
-        $initPacket = Master::$protocol->encode('init', ['CID' => $this->id, 'EVT' => Protocol::$typeCodes]);
-        if (Master::$protocol->encoded()) {
-            $initPacket = base64_encode($initPacket);
-        }
-        $initFrame = $this->frame($initPacket, 'text', false);
-        // If this is NOT a Warlock process request (ie: it's a browser) send the protocol init frame!
-        if (!(array_key_exists('x-warlock-php', $headers) && 'true' === $headers['x-warlock-php'])) {
-            $this->log->write(W_DEBUG, "CLIENT->INIT: HOST={$this->address} POST={$this->port} CLIENT={$this->id}", $this->name);
-            $this->write($initFrame);
-        }
-        if (array_key_exists('x-warlock-access-key', $headers)) {
-            $payload = (object) [
-                'client_id' => $this->id,
-                'type' => $type = ake($headers, 'x-warlock-client-type', 'admin'),
-                'access_key' => base64_decode($headers['x-warlock-access-key']),
-            ];
-            if (!$this->commandSync($payload, false)) {
-                return false;
-            }
-            if ('service' === $type) {
-                $this->send('OK');
-            }
-        } elseif (array_key_exists('x-cluster-access-key', $headers)) {
-            Master::$instance->cluster->addPeer($headers, $this);
-        }
-        $this->log->write(W_NOTICE, "WebSockets connection from {$this->address}:{$this->port}", $this->name);
-
-        return true;
+        return false;
     }
 
     public function recv(string &$buf): void
@@ -610,5 +559,102 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
         }
 
         return true;
+    }
+
+    /**
+     * Initiates a WebSocket client handshake.
+     *
+     * @param array<string,string> $headers
+     */
+    private function initiateWebSocketsHandshake(array $headers): bool
+    {
+        $this->log->write(W_DEBUG, "WEBSOCKETS<-HANDSHAKE: HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", $this->name);
+        $responseHeaders = [];
+        $results = [];
+        $responseCode = $this->acceptHandshake($headers, $responseHeaders, null, $results);
+        if (!(array_key_exists('get', $headers) && 101 === $responseCode)) {
+            $responseHeaders['Connection'] = 'close';
+            $responseHeaders['Content-Type'] = 'text/text';
+            $body = $responseCode.' '.http_response_text($responseCode);
+            $response = $this->httpResponse($responseCode, $body, $responseHeaders);
+            $this->log->write(W_WARN, "Handshake failed with code {$body}", $this->name);
+            @fwrite($this->stream, $response, strlen($response));
+
+            return false;
+        }
+        if (array_key_exists('UID', $results['url'])) {
+            $this->username = base64_decode($results['url']['UID']);
+            if (null != $this->username) {
+                $this->log->write(W_NOTICE, "USER: {$this->username}", $this->name);
+            }
+        }
+        $this->log->write(W_DEBUG, "WEBSOCKETS->ACCEPT: HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", $this->name);
+        $response = $this->httpResponse($responseCode, null, $responseHeaders);
+        $bytes = strlen($response);
+        $result = @fwrite($this->stream, $response, $bytes);
+        if (false === $result || $result !== $bytes) {
+            return false;
+        }
+        $initPacket = Master::$protocol->encode('init', ['CID' => $this->id, 'EVT' => Protocol::$typeCodes]);
+        if (Master::$protocol->encoded()) {
+            $initPacket = base64_encode($initPacket);
+        }
+        $initFrame = $this->frame($initPacket, 'text', false);
+        // If this is NOT a Warlock process request (ie: it's a browser) send the protocol init frame!
+        if (!(array_key_exists('x-warlock-php', $headers) && 'true' === $headers['x-warlock-php'])) {
+            $this->log->write(W_DEBUG, "CLIENT->INIT: HOST={$this->address} POST={$this->port} CLIENT={$this->id}", $this->name);
+            $this->write($initFrame);
+        }
+        if (array_key_exists('x-warlock-access-key', $headers)) {
+            $payload = (object) [
+                'client_id' => $this->id,
+                'type' => $type = ake($headers, 'x-warlock-client-type', 'admin'),
+                'access_key' => base64_decode($headers['x-warlock-access-key']),
+            ];
+            if (!$this->commandSync($payload, false)) {
+                return false;
+            }
+            if ('service' === $type) {
+                $this->send('OK');
+            }
+        } elseif (array_key_exists('x-cluster-access-key', $headers)) {
+            Master::$instance->cluster->addPeer($headers, $this);
+        }
+        $this->log->write(W_NOTICE, "WebSockets connection from {$this->address}:{$this->port}", $this->name);
+
+        return true;
+    }
+
+    /**
+     * Initiates a REST client handshake.
+     *
+     * @param array<string,string> $headers
+     */
+    private function initiateRESTHandshake(array $headers, string $body): bool
+    {
+        $this->log->write(W_DEBUG, 'POST: '.$headers['post'], $this->name);
+        $payload = null;
+        $time = null;
+        $type = Master::$protocol->decode($body, $payload, $time);
+        $this->offset = (time() - $time);
+
+        try {
+            if ('TRIGGER' !== $type) {
+                throw new \Exception('Unsupported command type: '.$type, 400);
+            }
+            if (!is_object($payload)) {
+                throw new \Exception('Invalid payload for TRIGGER command');
+            }
+            if (!property_exists($payload, 'id')) {
+                throw new \Exception('No event ID specified for TRIGGER command');
+            }
+            $this->commandTrigger($payload->id, ake($payload, 'data'), ake($payload, 'echo', false));
+            $response = $this->httpResponse(200, 'OK');
+        } catch (\Exception $e) {
+            $response = $this->httpResponse(400, $e->getMessage());
+        }
+        $this->write($response);
+
+        return false;
     }
 }
