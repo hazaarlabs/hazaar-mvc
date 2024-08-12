@@ -118,7 +118,7 @@ class Protocol
         return array_search(strtoupper($name), Protocol::$typeCodes);
     }
 
-    public function getTypeName(int $type): false|string
+    public function getTypeName(mixed $type): false|string
     {
         if (!is_int($type)) {
             return $this->error('Bad packet type');

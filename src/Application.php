@@ -29,8 +29,6 @@ require_once __DIR__.DIRECTORY_SEPARATOR.'Constants.php';
 
 require_once __DIR__.DIRECTORY_SEPARATOR.'ErrorControl.php';
 
-require_once __DIR__.DIRECTORY_SEPARATOR.'Helpers.php';
-
 define('HAZAAR_VERSION', '3.0');
 define('HAZAAR_START', microtime(true));
 
