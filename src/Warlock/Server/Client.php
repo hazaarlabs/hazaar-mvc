@@ -633,13 +633,33 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
      */
     private function initiateRESTHandshake(array $headers, string $body): bool
     {
-        $this->log->write(W_DEBUG, 'POST: '.$headers['post'], $this->name);
-        $payload = null;
-        $time = null;
-        $type = Master::$protocol->decode($body, $payload, $time);
-        $this->offset = (time() - $time);
-
         try {
+            if (false === $this->checkRequestURL($headers['post'])) {
+                throw new \Exception('Invalid REST request: '.$headers['post'], 400);
+            }
+            $this->log->write(W_DEBUG, 'POST: '.$headers['post'], $this->name);
+            if (!array_key_exists('authorization', $headers)) {
+                throw new \Exception('Unauthorised', 401);
+            }
+            list($type, $key) = preg_split('/\s+/', $headers['authorization']);
+            if ('apikey' !== strtolower($type)) {
+                throw new \Exception('Unacceptable authorization type', 401);
+            }
+            $authPayload = (object) [
+                'client_id' => $this->id,
+                'type' => 'client',
+                'access_key' => base64_decode($key),
+            ];
+            if (!$this->commandAuthorise($authPayload, false)) {
+                throw new \Exception('Unauthorised', 401);
+            }
+            $payload = null;
+            $time = null;
+            $type = Master::$protocol->decode($body, $payload, $time);
+            $this->offset = (time() - $time);
+            if (!$type) {
+                throw new \Exception('Bad request', 400);
+            }
             if ('TRIGGER' !== $type) {
                 throw new \Exception('Unsupported command type: '.$type, 400);
             }
@@ -649,10 +669,13 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
             if (!property_exists($payload, 'id')) {
                 throw new \Exception('No event ID specified for TRIGGER command');
             }
-            $this->commandTrigger($payload->id, ake($payload, 'data'), ake($payload, 'echo', false));
-            $response = $this->httpResponse(200, 'OK');
+            if ($this->commandTrigger($payload->id, ake($payload, 'data'), ake($payload, 'echo', false))) {
+                $response = $this->httpResponse(200, 'OK');
+            } else {
+                throw new \Exception('Bad trigger data', 400);
+            }
         } catch (\Exception $e) {
-            $response = $this->httpResponse(400, $e->getMessage());
+            $response = $this->httpResponse($e->getCode(), $e->getMessage());
         }
         $this->write($response);
 
