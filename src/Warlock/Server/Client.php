@@ -605,17 +605,18 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
             $this->log->write(W_DEBUG, "CLIENT->INIT: HOST={$this->address} POST={$this->port} CLIENT={$this->id}", $this->name);
             $this->write($initFrame);
         }
-        if (array_key_exists('x-warlock-access-key', $headers)) {
+        if (array_key_exists('authorization', $headers)) {
+            list($type, $key) = preg_split('/\s+/', $headers['authorization']);
+            if ('apikey' !== strtolower($type)) {
+                return false;
+            }
             $payload = (object) [
                 'client_id' => $this->id,
                 'type' => $type = ake($headers, 'x-warlock-client-type', 'admin'),
-                'access_key' => base64_decode($headers['x-warlock-access-key']),
+                'access_key' => base64_decode($key),
             ];
-            if (!$this->commandSync($payload, false)) {
+            if (!$this->commandAuthorise($payload, 'service' === $type)) {
                 return false;
-            }
-            if ('service' === $type) {
-                $this->send('OK');
             }
         } elseif (array_key_exists('x-cluster-access-key', $headers)) {
             Master::$instance->cluster->addPeer($headers, $this);

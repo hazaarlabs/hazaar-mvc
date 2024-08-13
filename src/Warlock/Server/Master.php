@@ -836,6 +836,9 @@ class Master
 
     public function trigger(string $eventID, mixed $data, ?string $clientID = null, ?string $triggerID = null): bool
     {
+        if (null === $data) {
+            return false;
+        }
         $this->log->write(W_NOTICE, "TRIGGER: {$eventID}");
         ++$this->stats['events'];
         $this->rrd->setValue('events', 1);
