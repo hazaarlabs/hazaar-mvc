@@ -27,7 +27,7 @@ class Protocol
         // SYSTEM MESSAGES
         0x00 => 'NOOP',         // Null Opperation
         0x01 => 'INIT',         // Initialise client
-        0x02 => 'SYNC',         // Sync client
+        0x02 => 'AUTH',         // Authorise client
         0x03 => 'OK',           // OK response
         0x04 => 'ERROR',        // Error response
         0x05 => 'STATUS',       // Status request/response
@@ -118,7 +118,7 @@ class Protocol
         return array_search(strtoupper($name), Protocol::$typeCodes);
     }
 
-    public function getTypeName(int $type): false|string
+    public function getTypeName(mixed $type): false|string
     {
         if (!is_int($type)) {
             return $this->error('Bad packet type');
