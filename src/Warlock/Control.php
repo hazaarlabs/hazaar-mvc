@@ -183,7 +183,7 @@ class Control extends Process
     {
         $headers = [];
         if (null !== $this->serverConfig['admin']['key']) {
-            $headers['X-WARLOCK-ACCESS-KEY'] = base64_encode($this->serverConfig['admin']['key']);
+            $headers['Authorization'] = 'Apikey '.base64_encode($this->serverConfig['admin']['key']);
         }
         if (null === $this->serverConfig['client']['port']) {
             $this->serverConfig['client']['port'] = $this->serverConfig['server']['port'];
