@@ -46,7 +46,7 @@ class Config extends Application\Config
             'port' => null,               // Server port override.  By default the client will connect to the port in server->port.
             // Useful for reverse proxies or firewalls with port forward, etc.  Allows only the port to
             // be overridden but still auto generate the server part.
-            'encoded' => null,
+            'encoded' => false,
         ],
         'webClient' => [
             'applicationName' => null,
@@ -66,11 +66,11 @@ class Config extends Application\Config
         ],
         'timeouts' => [
             'startup' => 1000,                     // Timeout for Warlock\Control to wait for the server to start
-            'connect' => 5,                       // Timeout for Warlock\Control attempting to connect to a server.
+            'connect' => 5,                        // Timeout for Warlock\Control attempting to connect to a server.
         ],
         'admin' => [
             'trigger' => 'warlockadmintrigger',    // The name of the admin event trigger.  Only change this is you really know what you're doing.
-            'key' => '0000',                        // The admin key.  This is a simple passcode that allows admin clients to do a few more things, like start/stop services, subscribe to admin events, etc.
+            'key' => '0000',                       // The admin key.  This is a simple passcode that allows admin clients to do a few more things, like start/stop services, subscribe to admin events, etc.
         ],
         'log' => [
             'rrd' => 'server.rrd',                 // The RRD data file.  Used to store RRD data for graphing realtime statistics.
