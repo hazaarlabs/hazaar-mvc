@@ -451,8 +451,8 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
 
                 return true;
 
-            case 'SYNC':
-                return $this->commandSync($payload);
+            case 'AUTH':
+                return $this->commandAuthorise($payload);
 
             case 'SUBSCRIBE' :
                 $filter = (property_exists($payload, 'filter') ? $payload->filter : null);
@@ -482,7 +482,7 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
                 return $this->commandLog($payload);
 
             case 'DEBUG':
-                $this->log->write(W_DEBUG, ake($payload, 'data'), $this->name);
+                $this->log->write(W_DEBUG, ake($payload, 'type', 'Client').': '.ake($payload, 'data', 'NO DATA'), $this->name);
 
                 return true;
 
@@ -499,13 +499,13 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
         return false;
     }
 
-    protected function commandSync(\stdClass $payload, bool $acknowledge = true): bool
+    protected function commandAuthorise(\stdClass $payload, bool $acknowledge = true): bool
     {
-        $this->log->write(W_DEBUG, "CLIENT<-SYNC: OFFSET={$this->offset} HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", $this->name);
+        $this->log->write(W_DEBUG, "CLIENT<-AUTH: OFFSET={$this->offset} HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", $this->name);
         if (!property_exists($payload, 'access_key')) {
             return false;
         }
-        if (!Master::$instance->authorise($this, $payload->access_key)) {
+        if (!Master::$instance->authorise($this, (string) $payload->access_key)) {
             $this->log->write(W_WARN, 'Warlock control rejected to client '.$this->id, $this->name);
             if (true === $acknowledge) {
                 $this->send('ERROR');

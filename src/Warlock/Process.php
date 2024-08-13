@@ -100,7 +100,7 @@ abstract class Process
                 break;
 
             default:
-                $this->send('DEBUG', 'Unhandled command: '.$command);
+                $this->send('DEBUG', ['type' => get_class($this), 'data' => 'Unhandled command: '.$command]);
 
                 break;
         }
@@ -178,7 +178,7 @@ abstract class Process
             'id' => $event,
             'echo' => $echoSelf,
         ];
-        if ($data) {
+        if (null !== $data) {
             $packet['data'] = $data;
         }
 
@@ -525,11 +525,11 @@ abstract class Process
                             } elseif ($class instanceof \ReflectionClass
                                 && $method instanceof \ReflectionMethod
                                 && $class->isInstantiable()
-                                && $class->isSubclassOf('Hazaar\\Warlock\\Process')
+                                && $class->isSubclassOf('Hazaar\Warlock\Process')
                                 && $method->isPublic()
                                 && !$method->isStatic()) {
                                 $process = $class->newInstance($application, $protocol);
-                                if ($class->isSubclassOf('Hazaar\\Warlock\\Service')) {
+                                if ($class->isSubclassOf('Hazaar\Warlock\Service')) {
                                     $process->state = HAZAAR_SERVICE_RUNNING;
                                 }
                                 $method->invokeArgs($process, ake($payload, 'params', []));
@@ -590,7 +590,7 @@ abstract class Process
         bool $remote = false
     ): false|Service {
         $class_search = [
-            'Application\\Services\\'.ucfirst($serviceName),
+            'Application\Services\\'.ucfirst($serviceName),
             ucfirst($serviceName).'Service',
         ];
         $service = null;

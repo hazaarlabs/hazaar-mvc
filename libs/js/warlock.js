@@ -190,9 +190,9 @@ var Warlock = function (hostURL) {
         return this;
     };
     /* Client Commands */
-    this.sync = function (admin_key) {
+    this.authorise = function (admin_key) {
         this.admin_key = admin_key;
-        this.__send('sync', { 'access_key': this.admin_key }, true);
+        this.__send('auth', { 'access_key': this.admin_key }, true);
         return this;
     };
     this.subscribe = function (event_id, callback, filter) {
@@ -217,7 +217,7 @@ var Warlock = function (hostURL) {
         }, true);
         return this;
     };
-    /* Admin Commands (These require sync with admin key) */
+    /* Admin Commands (These require auth with admin key) */
     this.stop = function (delay_sec) {
         this.__send('shutdown', delay_sec > 0 ? { delay: delay_sec } : null);
         return this;

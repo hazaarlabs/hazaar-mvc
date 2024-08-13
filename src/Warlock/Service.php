@@ -13,7 +13,7 @@ use Hazaar\Warlock\Connection\Pipe;
 use Hazaar\Warlock\Connection\Socket;
 use Hazaar\Warlock\Interfaces\Connection;
 
-require 'Functions.php';
+require 'Server/Functions.php';
 define('W_LOCAL', -1);
 
 /**
