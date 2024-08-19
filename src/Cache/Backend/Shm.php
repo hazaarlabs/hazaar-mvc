@@ -39,11 +39,18 @@ class Shm extends \Hazaar\Cache\Backend {
 
     function init($namespace) {
 
+        $this->configure(array(
+            'size' => 1024 * 1024,
+            'permissions' => 0666
+        ));
+
         $this->namespace = $namespace;
 
         $this->addCapabilities('store_objects', 'keepalive', 'array');
 
-        $shm_index = shm_attach(1);
+        $indexKey = ftok(__FILE__, chr(0));
+
+        $shm_index = shm_attach($indexKey);
 
         if(shm_has_var($shm_index, 0)){
 
@@ -51,7 +58,7 @@ class Shm extends \Hazaar\Cache\Backend {
 
         }else{
 
-            $namespaces = [0 => 'index'];
+            $namespaces = [1 => 'index'];
 
             shm_put_var($shm_index, 0, $namespaces);
 
@@ -67,7 +74,9 @@ class Shm extends \Hazaar\Cache\Backend {
 
         }
 
-        $this->shm = shm_attach($key);
+        $storageKey = ftok(__FILE__, chr($key));
+
+        $this->shm = shm_attach($storageKey, $this->options->get('size'), $this->options->get('permissions'));
 
         if(!is_resource($this->shm))
             throw new \Exception('shm_attach() failed.  did not return resource.');
