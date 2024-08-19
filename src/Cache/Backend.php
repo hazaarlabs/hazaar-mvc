@@ -72,4 +72,10 @@ abstract class Backend implements Backend\_Interface {
 
     }
 
+    public function getName(){
+
+        return strtolower(basename(str_replace('\\', '/', get_class($this))));
+
+    }
+
 }

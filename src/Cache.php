@@ -125,6 +125,12 @@ class Cache implements \ArrayAccess {
 
     }
 
+    public function getBackendName(){
+            
+        return $this->backend->getName();
+
+    }
+
     public function setBackendOption($key, $value){
 
         $this->backend->options->extend([$key => $value]);
