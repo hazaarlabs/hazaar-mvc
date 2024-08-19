@@ -19,8 +19,10 @@ class RateLimiter
     private array $headers = [
         'X-RateLimit-Window' => '{{window}}',
         'X-RateLimit-Limit' => '{{limit}}',
+        'X-RateLimit-Attempts' => '{{attempts}}',
         'X-RateLimit-Remaining' => '{{remaining}}',
         'X-RateLimit-Identifier' => '{{identifier}}',
+        'X-RateLimit-Cache' => '{{cache}}',
     ];
 
     public function __construct(array $options, ?Cache $cache = null)
@@ -50,6 +52,7 @@ class RateLimiter
             'window' => $this->windowLength,
             'remaining' => max(0, $this->requestLimit - count($info['log'])),
             'identifier' => $identifier,
+            'cache' => $this->cache->getBackendName(),
         ];
     }
 
