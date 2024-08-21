@@ -46,6 +46,35 @@ class Cli extends \Hazaar\Application\Request
     }
 
     /**
+     * Retrieves the argument at the specified index from the command line arguments.
+     *
+     * @param int $index The index of the argument to retrieve.
+     * @param mixed $default The default value to return if the argument is not found. Default is null.
+     * @return mixed The value of the argument at the specified index, or the default value if the argument is not found.
+     */
+    public function argv($index, $default = null) {
+
+        if(array_key_exists($index, $this->params))
+            return $this->params[$index];
+
+        return $default;
+
+    }
+
+    /**
+     * Get the number of command-line arguments.
+     *
+     * This method returns the count of the command-line arguments passed to the script.
+     *
+     * @return int The number of command-line arguments.
+     */
+    public function argc() {
+
+        return count($this->params);
+
+    }
+
+    /**
      * Sets the available options.
      * 
      * Format of `$options` is an array where the key is the name of the option and:
