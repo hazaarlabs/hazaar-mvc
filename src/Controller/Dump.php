@@ -38,15 +38,17 @@ class Dump extends Diagnostic
         $this->backtrack = $value;
     }
 
-    public function json(): Response\JSON
+    /**
+     * This is the default JSON response for the dump controller.
+     *
+     * @param array<mixed> $dump The data to be displayed in the dump
+     */
+    public function json(array $dump = []): Response\JSON
     {
-        $dump = [
-            'exec' => $this->exec_time,
-            'status' => self::getSpeedClass($this->exec_time),
-            'end' => date('c'),
-            'data' => $this->data,
-        ];
-
+        $dump['exec'] = $this->exec_time;
+        $dump['status'] = self::getSpeedClass($this->exec_time);
+        $dump['end'] = date('c');
+        $dump['data'] = $this->data;
         if (true === $this->backtrack) {
             $e = new \Exception('Backtrace');
             $dump['trace'] = $e->getTrace();
@@ -55,13 +57,21 @@ class Dump extends Diagnostic
         return new Response\JSON($dump, 200);
     }
 
-    public function xmlrpc(): Response\XML
+    /**
+     * This is the default XML response for the dump controller.
+     *
+     * @param array<mixed> $data The data to be displayed in the dump
+     */
+    public function xmlrpc(array $data = []): Response\XML
     {
         $xml = new Element('xml');
         $app = $xml->add('app');
         $app->add('exec', $this->exec_time);
         $app->add('status', self::getSpeedClass($this->exec_time));
         $app->add('end', date('c'));
+        foreach ($data as $key => $value) {
+            $app->add($key, $value);
+        }
         $xml->add('data', print_r($this->data, true));
         if (true === $this->backtrack) {
             $e = new \Exception('Backtrace');
@@ -71,13 +81,21 @@ class Dump extends Diagnostic
         return new Response\XML($xml);
     }
 
-    public function text(): Response\Text
+    /**
+     * This is the default text response for the dump controller.
+     *
+     * @param array<mixed> $data The data to be displayed in the dump
+     */
+    public function text(array $data = []): Response\Text
     {
         $out = "HAZAAR DUMP\n\n";
         $out .= print_r($this->data, true)."\n\n";
         $out .= "Exec time: {$this->exec_time}\n";
         $out .= 'Status: '.self::getSpeedClass($this->exec_time)."\n";
         $out .= 'Endtime: '.date('c')."\n";
+        foreach ($data as $key => $value) {
+            $out .= "{$key}: {$value}\n";
+        }
         if (true === $this->backtrack) {
             $out .= "\n\nBACKTRACE\n\n";
             $e = new \Exception('Backtrace');
@@ -87,15 +105,18 @@ class Dump extends Diagnostic
         return new Response\Text($out."\n", 200);
     }
 
-    public function html(): Response\HTML
+    /**
+     * @detail  This is the default HTML response for the dump controller
+     *
+     * @param array<mixed> $data The data to be displayed in the dump
+     */
+    public function html(array $data = []): Response\HTML
     {
         $view = new Layout('@views/dump');
-        $view->populate([
-            'env' => APPLICATION_ENV,
-            'data' => $this->data,
-            'time' => $this->application->timer->all(),
-        ]);
-
+        $data['env'] = APPLICATION_ENV;
+        $data['data'] = $this->data;
+        $data['time'] = $this->application->timer->all();
+        $view->populate($data);
         if (true === $this->backtrack) {
             $e = new \Exception('Backtrace');
             $view->set('trace', $e->getTrace());

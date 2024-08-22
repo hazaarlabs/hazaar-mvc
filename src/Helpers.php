@@ -1030,11 +1030,21 @@ function guid(): string
 
 function dump(mixed $data = null, bool $backtrace = false): void
 {
+    $caller = [];
+    $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+    if (count($trace) > 0) {
+        $caller['file'] = $trace[0]['file'];
+        $caller['line'] = $trace[0]['line'];
+    }
+    if (count($trace) > 1) {
+        $caller['function'] = $trace[1]['function'];
+        $caller['class'] = $trace[1]['class'];
+    }
     if (defined('HAZAAR_VERSION') && ($app = Application::getInstance())) {
         $controller = new Dump($data, $app->router);
         $controller->toggleBacktrace($backtrace);
         $controller->__initialize($app->request);
-        $response = $controller->__run();
+        $response = $controller->__run($caller);
         $response->__writeOutput();
     } else {
         $out = "HAZAAR DUMP\n\n";
