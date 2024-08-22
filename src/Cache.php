@@ -126,6 +126,16 @@ class Cache implements \ArrayAccess
         $this->backend->options->extend([$key => $value]);
     }
 
+    public function lock(string $key): bool
+    {
+        return $this->backend->lock($key);
+    }
+
+    public function unlock(string $key): bool
+    {
+        return $this->backend->unlock($key);
+    }
+
     /**
      * Retrieve a value from cache storage.
      *
