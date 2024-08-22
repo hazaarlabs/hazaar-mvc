@@ -58,7 +58,7 @@ class Cache implements \ArrayAccess
             $backend = [$backend];
         }
         foreach ($backend as $name) {
-            $backendClass = '\\Hazaar\\Cache\\Backend\\'.ucfirst($name);
+            $backendClass = '\Hazaar\Cache\Backend\\'.ucfirst($name);
             if (class_exists($backendClass) && $backendClass::available()) {
                 break;
             }
@@ -87,7 +87,6 @@ class Cache implements \ArrayAccess
     public function __destruct()
     {
         if (isset($this->backend)) {
-            $this->backend->close();
             unset($this->backend);
         }
     }
@@ -145,7 +144,7 @@ class Cache implements \ArrayAccess
      *
      * @return mixed the value that was stored in cache
      */
-    public function &get(string $key, mixed $default = null, bool $saveDefault = false): mixed
+    public function &get(string $key, mixed $default = null, bool $saveDefault = false, int $timeout = 0): mixed
     {
         if (!$this->useCache) {
             return $default;
@@ -156,7 +155,7 @@ class Cache implements \ArrayAccess
         }
         if (false === $result) {
             if (true === $saveDefault) {
-                $this->set($key, $default);
+                $this->set($key, $default, $timeout);
             }
 
             return $default;
