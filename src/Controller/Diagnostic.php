@@ -54,10 +54,15 @@ class Diagnostic extends Action
         return $response;
     }
 
-    final public function __run(): Response
+    /**
+     * @detail Run the controller action
+     *
+     * @param array<mixed> $caller
+     */
+    final public function __run(array $caller = []): Response
     {
         if ($this->responseType && method_exists($this, $this->responseType)) {
-            $response = call_user_func([$this, $this->responseType]);
+            $response = call_user_func([$this, $this->responseType], $caller);
         } elseif (method_exists($this, 'run')) {
             $response = $this->run();
         } else {
