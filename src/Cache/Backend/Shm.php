@@ -23,63 +23,82 @@ use Hazaar\Cache\Backend;
 class Shm extends Backend
 {
     protected int $weight = 0;
-    private ?\SysvSharedMemory $shm_index;
     private ?\SysvSharedMemory $shm;
+    private ?\SysvSemaphore $sem;
 
     /**
-     * @var array<mixed>
+     * @var array<string,\SysvSemaphore>
      */
-    private array $index = [];
+    private array $locks = [];
 
     public static function available(): bool
     {
-        return function_exists('shm_attach');
+        return function_exists('shm_attach') && function_exists('sem_get');
     }
 
     public function init(string $namespace): void
     {
-        $this->addCapabilities('store_objects', 'keepalive', 'array');
-        $this->shm_index = shm_attach(1);
-        if (shm_has_var($this->shm_index, 0)) {
-            $namespaces = shm_get_var($this->shm_index, 0);
-        } else {
-            $namespaces = [0 => 'index'];
-            shm_put_var($this->shm_index, 0, $namespaces);
-        }
-        if (!($key = array_search($namespace, $namespaces))) {
-            $key = count($namespaces) + 1;
-            $namespaces[$key] = $namespace;
-            shm_put_var($this->shm_index, 0, $namespaces);
-        }
-        $this->shm = shm_attach($key);
-        if (!$this->shm instanceof \SysvSharedMemory) {
+        $this->addCapabilities('store_objects', 'keepalive', 'array', 'lock');
+        $shmNamespaceAddr = ftok(__FILE__, chr(0));
+        $shmNamespaceIndex = shm_attach($shmNamespaceAddr);
+        if (!$shmNamespaceIndex instanceof \SysvSharedMemory) {
             throw new \Exception('shm_attach() failed.  did not return \SysvSharedMemory.');
         }
-        if (shm_has_var($this->shm, 0)) {
-            $this->index = shm_get_var($this->shm, 0);
+        // Create a semaphore to lock the namespace index
+        $this->sem = sem_get($shmNamespaceAddr, 1, 0666, true);
+        if (!sem_acquire($this->sem)) {
+            throw new \Exception('Failed to acquire semaphore lock.');
+        }
+        if (shm_has_var($shmNamespaceIndex, 0)) {
+            $namespaces = shm_get_var($shmNamespaceIndex, 0);
+        }
+        if (!(isset($namespaces) && is_array($namespaces))) {
+            $namespaces = [];
+        }
+        if (!($key = array_key_exists($namespace, $namespaces))) {
+            $namespaces[$namespace] = ftok(__FILE__, chr(count($namespaces) + 1)); // Plus one because we can't use zero as it's our index.
+            shm_put_var($shmNamespaceIndex, 0, $namespaces);
+        }
+        // Release the semaphore
+        sem_release($this->sem);
+        shm_detach($shmNamespaceIndex);
+        $this->shm = shm_attach($namespaces[$namespace]);
+        if (!$this->shm instanceof \SysvSharedMemory) {
+            throw new \Exception('shm_attach() failed.  did not return \SysvSharedMemory.');
         }
     }
 
     public function close(): bool
     {
-        if (null === $this->shm) {
+        if (null === $this->shm || !isset($this->shmNamespaceAddr)) {
             return false;
         }
+        if (!sem_acquire($this->sem)) {
+            return false;
+        }
+        $index = $this->getIndex();
+        foreach ($index as $key => $i) {
+            // TODO: Remove expired items
+        }
+        shm_put_var($this->shm, 0, $index);
+        shm_detach($this->shm);
+        sem_release($this->sem);
+        $this->shm = null;
 
-        return shm_detach($this->shm);
+        return true;
     }
 
     public function has(string $key, bool $check_empty = false): bool
     {
-        $key = $this->namespace.'::'.$key;
-        if (!($index = array_search($key, $this->index))) {
+        $index = $this->getIndex();
+        if (!array_key_exists($key, $index)) {
             return false;
         }
-        if (!shm_has_var($this->shm, $index)) {
+        if (!shm_has_var($this->shm, $index[$key])) {
             return false;
         }
-        $info = shm_get_var($this->shm, $index);
-        if (array_key_exists('expire', $info) && $info['expire'] < time()) {
+        $info = $this->infoByAddr($index[$key]);
+        if (false === $info) {
             return false;
         }
 
@@ -88,49 +107,40 @@ class Shm extends Backend
 
     public function get(string $key): mixed
     {
-        $key = $this->namespace.'::'.$key;
-        if (!($index = array_search($key, $this->index))) {
+        $info = $this->infoByKey($key);
+        if (false === $info) {
             return false;
         }
-        $info = $this->info($index);
 
         return $info['data'];
     }
 
     public function set(string $key, mixed $value, int $timeout = 0): bool
     {
-        $key = $this->namespace.'::'.$key;
-        if (!($index = array_search($key, $this->index))) {
-            $index = count($this->index) + 1; // Plus one because we can't use zero as it's our index.
-            $this->index[$index] = $key;
-            shm_put_var($this->shm, 0, $this->index);
-        }
+        $addr = $this->getAddr($key);
         $info = ['data' => $value];
         if ($timeout > 0) {
             $info['timeout'] = $timeout;
             $info['expire'] = time() + $timeout;
         }
 
-        return shm_put_var($this->shm, $index, $info);
+        return shm_put_var($this->shm, $addr, $info);
     }
 
     public function remove(string $key): bool
     {
-        $key = $this->namespace.'::'.$key;
-        if (!($index = array_search($key, $this->index))) {
+        $addr = $this->getAddr($key);
+        if (false === $addr) {
             return false;
         }
-        unset($this->index[$index]);
-        shm_put_var($this->shm, 0, $this->index);
+        $this->removeIndex($key);
 
-        return shm_remove_var($this->shm, $index);
+        return shm_remove_var($this->shm, $addr);
     }
 
     public function clear(): bool
     {
         if (shm_remove($this->shm)) {
-            $this->index = [];
-
             return true;
         }
 
@@ -143,8 +153,9 @@ class Shm extends Backend
     public function toArray(): array
     {
         $array = [];
-        foreach ($this->index as $index => $key) {
-            if ($info = $this->info($index)) {
+        $index = $this->getIndex();
+        foreach ($index as $key => $addr) {
+            if ($info = $this->infoByAddr($addr)) {
                 $array[$key] = $info['data'];
             }
         }
@@ -154,23 +165,122 @@ class Shm extends Backend
 
     public function count(): int
     {
-        return count($this->index);
+        $index = $this->getIndex();
+
+        return count($index);
+    }
+
+    public function lock(string $key): bool
+    {
+        $addr = $this->getAddr($key, true);
+        $this->locks[$key] = sem_get($addr, 1, 0666, true);
+        if (!sem_acquire($this->locks[$key])) {
+            unset($this->locks[$key]);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    public function unlock(string $key): bool
+    {
+        if (!array_key_exists($key, $this->locks)) {
+            return false;
+        }
+        if (!sem_release($this->locks[$key])) {
+            return false;
+        }
+        unset($this->locks[$key]);
+
+        return true;
+    }
+
+    /**
+     * @return array<string,int>
+     */
+    private function getIndex(): array
+    {
+        return shm_has_var($this->shm, 0) ? shm_get_var($this->shm, 0) : [];
+    }
+
+    private function getAddr(string $key, bool $create = false): false|int
+    {
+        $index = $this->getIndex();
+        if (!array_key_exists($key, $index)) {
+            if (!$create) {
+                return false;
+            }
+
+            return $this->addIndex($key);
+        }
+
+        return $index[$key];
+    }
+
+    private function addIndex(string $key): false|int
+    {
+        if (!sem_acquire($this->sem)) {
+            return false;
+        }
+        $index = $this->getIndex();
+        // TODO: Find a better way to get the next available address
+        $index[$key] = count($index) + 1;
+        shm_put_var($this->shm, 0, $index);
+        sem_release($this->sem);
+
+        return $index[$key];
+    }
+
+    private function removeIndex(string $key): bool
+    {
+        if (!sem_acquire($this->sem)) {
+            return false;
+        }
+        $index = $this->getIndex();
+        if (array_key_exists($key, $index)) {
+            unset($index[$key]);
+            shm_put_var($this->shm, 0, $index);
+        }
+        sem_release($this->sem);
+
+        return true;
     }
 
     /**
      * @return array<mixed>|bool
      */
-    private function info(int $index): array|bool
+    private function infoByAddr(int $addr): array|bool
     {
-        $info = shm_get_var($this->shm, $index);
+        if (!shm_has_var($this->shm, $addr)) {
+            return false;
+        }
+        $info = @shm_get_var($this->shm, $addr);
+        if (false === $info) {
+            return false;
+        }
         if (array_key_exists('expire', $info)) {
             if ($info['expire'] < time()) {
                 return false;
             }
+            // Keepalive
             $info['expire'] = time() + $info['timeout'];
-            shm_put_var($this->shm, $index, $info);
+            shm_put_var($this->shm, $addr, $info);
         }
 
         return $info;
+    }
+
+    /**
+     * @return array<mixed>|bool
+     */
+    private function infoByKey(string $key): array|bool
+    {
+        $index = $this->getIndex();
+        if (!array_key_exists($key, $index)) {
+            return false;
+        }
+
+        return $this->infoByAddr($index[$key]);
     }
 }
