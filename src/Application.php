@@ -537,6 +537,9 @@ class Application
 
         try {
             $this->timer->start('exec');
+            if('cli' === php_sapi_name()) {
+                $this->request->setPath(ake($_SERVER, 'argv[1]'));
+            } 
             if (null !== $controller) {
                 $response = $controller->__initialize($this->request);
                 if (null === $response) {
