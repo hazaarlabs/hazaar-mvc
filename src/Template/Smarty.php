@@ -220,7 +220,7 @@ class Smarty
                 return new \\Hazaar\\Application\\Url(urldecode(implode('/', func_get_args())));
             }
             private function write(\$var){
-                echo (\$var ? @\$var : \$this->params['__DEFAULT_VAR__']);
+                echo (\$var === null ? \$this->params['__DEFAULT_VAR__'] : @\$var);
             }
         }";
         $errors = error_reporting();
@@ -700,7 +700,7 @@ class Smarty
         }
         $file = trim($params['file'], '\'"');
         unset($params['file']);
-        if ('/' !== $file[0] && !preg_match('/^\w+\\:\\/\\//', $file)) {
+        if ('/' !== $file[0] && !preg_match('/^\w+\:\/\//', $file)) {
             $file = getcwd().DIRECTORY_SEPARATOR.$file;
         }
         $info = pathinfo($file);
