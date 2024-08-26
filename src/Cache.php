@@ -42,7 +42,7 @@ class Cache implements \ArrayAccess
         $this->options = Map::_($configOptions);
         if (!$backend) {
             // Set up a default backend chain
-            $backend = ['apc', 'session'];
+            $backend = ['shm', 'session'];
             // Grab the application context so we can load any cache settings
             if (($app = Application::getInstance())
                 && $app->config->has('cache.backend')) {
@@ -53,12 +53,13 @@ class Cache implements \ArrayAccess
         $this->configure([
             'lifetime' => 3600,
             'use_pragma' => true,
+            'keepalive' => false,
         ]);
         if (!is_array($backend)) {
             $backend = [$backend];
         }
         foreach ($backend as $name) {
-            $backendClass = '\\Hazaar\\Cache\\Backend\\'.ucfirst($name);
+            $backendClass = '\Hazaar\Cache\Backend\\'.ucfirst($name);
             if (class_exists($backendClass) && $backendClass::available()) {
                 break;
             }
@@ -87,7 +88,6 @@ class Cache implements \ArrayAccess
     public function __destruct()
     {
         if (isset($this->backend)) {
-            $this->backend->close();
             unset($this->backend);
         }
     }
@@ -108,6 +108,11 @@ class Cache implements \ArrayAccess
         $this->remove($key);
     }
 
+    public function can(string $feature): bool
+    {
+        return $this->backend->can($feature);
+    }
+
     /**
      * @param array<mixed>|Map $options
      */
@@ -126,6 +131,16 @@ class Cache implements \ArrayAccess
         $this->backend->options->extend([$key => $value]);
     }
 
+    public function lock(string $key): bool
+    {
+        return $this->backend->lock($key);
+    }
+
+    public function unlock(string $key): bool
+    {
+        return $this->backend->unlock($key);
+    }
+
     /**
      * Retrieve a value from cache storage.
      *
@@ -135,7 +150,7 @@ class Cache implements \ArrayAccess
      *
      * @return mixed the value that was stored in cache
      */
-    public function &get(string $key, mixed $default = null, bool $saveDefault = false): mixed
+    public function &get(string $key, mixed $default = null, bool $saveDefault = false, int $timeout = 0): mixed
     {
         if (!$this->useCache) {
             return $default;
@@ -146,7 +161,7 @@ class Cache implements \ArrayAccess
         }
         if (false === $result) {
             if (true === $saveDefault) {
-                $this->set($key, $default);
+                $this->set($key, $default, $timeout);
             }
 
             return $default;
