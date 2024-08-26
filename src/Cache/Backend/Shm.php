@@ -4,208 +4,415 @@
  * @file        Hazaar/Cache/Backend/Shm.php
  *
  * @author      Jamie Carl <jamie@hazaar.io>
- *
  * @copyright   Copyright (c) 2016 Jamie Carl (http://www.hazaar.io)
  */
+
 namespace Hazaar\Cache\Backend;
+
+use Hazaar\Cache\Backend;
 
 /**
  * @brief The PHP-SHM (shared memory) cache backend.
  *
  * @detail This is the absolute fastest caching backend.
- * 
+ *
  * There are no configuration options required for the backend.
- *
- * @since 2.2.0
- *
  */
-class Shm extends \Hazaar\Cache\Backend {
-
-    protected $weight = 0;
-
-    private $namespace;
-
-    private $shm_index;
-
+class Shm extends Backend
+{
+    private const GC_KEY = '__garbage_collection__';
     private $shm;
+    private $sem;
+    private bool $keepalive;
 
-    private $index = [];
+    /**
+     * @var array<string,\SysvSemaphore>
+     */
+    private array $locks = [];
 
-    static public function available(){
-
-        return function_exists('shm_attach');
-
+    /**
+     * Check if the shared memory cache backend is available.
+     *
+     * @return bool returns true if the shared memory cache backend is available, false otherwise
+     */
+    public static function available(): bool
+    {
+        return function_exists('shm_attach') && function_exists('sem_get');
     }
 
-    function init($namespace) {
-
-        $this->configure(array(
-            'size' => 1024 * 1024,
-            'permissions' => 0666
-        ));
-
-        $this->namespace = $namespace;
-
-        $this->addCapabilities('store_objects', 'keepalive', 'array');
-
-        $indexKey = ftok(__FILE__, chr(0));
-
-        $shm_index = shm_attach($indexKey);
-
-        if(shm_has_var($shm_index, 0)){
-
-            $namespaces = shm_get_var($shm_index, 0);
-
-        }else{
-
-            $namespaces = [1 => 'index'];
-
-            shm_put_var($shm_index, 0, $namespaces);
-
-        }
-
-        if(!($key = array_search($namespace, $namespaces))){
-
-            $key = count($namespaces) + 1;
-
-            $namespaces[$key] = $namespace;
-
-            shm_put_var($shm_index, 0, $namespaces);
-
-        }
-
-        $storageKey = ftok(__FILE__, chr($key));
-
-        $this->shm = shm_attach($storageKey, $this->options->get('size'), $this->options->get('permissions'));
-
-        if(!is_resource($this->shm))
+    /**
+     * Initializes the shared memory cache backend for a given namespace.
+     *
+     * @param string $namespace the namespace for the cache backend
+     *
+     * @throws \Exception if the shared memory attachment or semaphore acquisition fails
+     */
+    public function init($namespace): void
+    {
+        $this->addCapabilities('store_objects', 'keepalive', 'array', 'lock');
+        $this->configure([
+            'size' => 1000000,
+            'permissions' => 0666,
+            'gc_interval' => 300,
+            'index.size' => 1000000,
+            'index.permissions' => 0666,
+            'keepalive' => false,
+        ]);
+        $this->keepalive = $this->options['keepalive'];
+        $shmNamespaceAddr = ftok(__FILE__, chr(0));
+        $shmNamespaceIndex = shm_attach($shmNamespaceAddr, $this->options->get('index.size', 1000000), $this->options->get('index.permissions', 0666));
+        if (!is_resource($shmNamespaceIndex)) {
             throw new \Exception('shm_attach() failed.  did not return resource.');
-
-        if(shm_has_var($this->shm, 0))
-            $this->index = shm_get_var($this->shm, 0);
-
+        }
+        // Create a semaphore to lock the namespace index
+        $this->sem = sem_get($shmNamespaceAddr, 1, 0666, true);
+        if (!sem_acquire($this->sem)) {
+            throw new \Exception('Failed to acquire semaphore lock.');
+        }
+        if (shm_has_var($shmNamespaceIndex, 0)) {
+            $namespaces = shm_get_var($shmNamespaceIndex, 0);
+        }
+        if (!(isset($namespaces) && is_array($namespaces))) {
+            $namespaces = [];
+        }
+        if (!($key = array_key_exists($namespace, $namespaces))) {
+            $namespaces[$namespace] = ftok(__FILE__, chr(count($namespaces) + 1)); // Plus one because we can't use zero as it's our index.
+            shm_put_var($shmNamespaceIndex, 0, $namespaces);
+        }
+        // Release the semaphore
+        sem_release($this->sem);
+        shm_detach($shmNamespaceIndex);
+        $this->shm = shm_attach($namespaces[$namespace], $this->options->get('size', 1000000), $this->options->get('permissions', 0666));
+        if (!is_resource($this->shm)) {
+            throw new \Exception('shm_attach() failed.  did not return resource.');
+        }
     }
 
-    function close(){
+    /**
+     * Closes the shared memory cache.
+     *
+     * @return bool returns true if the shared memory cache is successfully closed, false otherwise
+     */
+    public function close(): bool
+    {
+        if (!isset($this->shm) || null === $this->shm) {
+            return false;
+        }
+        if (!sem_acquire($this->sem)) {
+            return false;
+        }
+        $index = $this->getIndex();
+        if (!(array_key_exists(self::GC_KEY, $index)
+            && $index[self::GC_KEY] > 0
+            && (time() - $this->options->get('gc_interval', 300)) < $index[self::GC_KEY])) {
+            $now = time();
+            foreach ($index as $key => $i) {
+                if ('__' === substr($key, 0, 2)) {
+                    continue;
+                }
+                $result = $this->infoByAddr($i, true);
+                if (false === $result) {
+                    unset($index[$key]);
+                }
+            }
+            $index[self::GC_KEY] = $now;
+            shm_put_var($this->shm, 0, $index);
+        }
+        shm_detach($this->shm);
+        sem_release($this->sem);
+        $this->shm = null;
 
-        if(is_resource($this->shm))
-            shm_detach($this->shm);
-
+        return true;
     }
 
-    public function has($key) {
-
-        if(!($index = array_search($key, $this->index)))
+    /**
+     * Check if a key exists in the shared memory cache.
+     *
+     * @param string $key         the key to check
+     * @param bool   $check_empty whether to check if the data associated with the key is empty
+     *
+     * @return bool returns true if the key exists in the cache, false otherwise
+     */
+    public function has($key, $check_empty = false): bool
+    {
+        $index = $this->getIndex();
+        if (!array_key_exists($key, $index)) {
             return false;
-
-        if(!shm_has_var($this->shm, $index))
+        }
+        if (!shm_has_var($this->shm, $index[$key])) {
             return false;
-
-        $info = shm_get_var($this->shm, $index);
-
-        if(array_key_exists('expire', $info) && $info['expire'] < time())
+        }
+        $info = $this->infoByAddr($index[$key]);
+        if (false === $info) {
             return false;
-
-        return $info['data'];
-
-    }
-
-    private function info($index){
-
-        $info = shm_get_var($this->shm, $index);
-
-        if(array_key_exists('expire', $info)){
-
-            if($info['expire'] < time())
-                return false;
-
-            $info['expire'] = time() + $info['timeout'];
-
-            shm_put_var($this->shm, $index, $info);
-
         }
 
-        return $info;
-
+        return true === $check_empty ? empty($info['data']) : true;
     }
 
-    public function get($key) {
-
-            if(!($index = array_search($key, $this->index)))
-                return false;
-
-        $info = $this->info($index);
-
-        return $info['data'];
-
-    }
-
-    public function set($key, $value, $timeout = NULL) {
-
-        if(!($index = array_search($key, $this->index))){
-
-            $index = count($this->index) + 1; //Plus one because we can't use zero as it's our index.
-
-            $this->index[$index] = $key;
-
-            shm_put_var($this->shm, 0, $this->index);
-
+    /**
+     * Retrieves the value associated with the given key from the cache.
+     *
+     * @param string $key the key to retrieve the value for
+     *
+     * @return false|mixed the value associated with the key, or false if the key does not exist
+     */
+    public function get($key)
+    {
+        $info = $this->infoByKey($key);
+        if (false === $info) {
+            return false;
         }
 
+        return $info['data'];
+    }
+
+    /**
+     * Sets a value in the shared memory cache.
+     *
+     * @param string $key     the key to store the value under
+     * @param mixed  $value   the value to be stored
+     * @param int    $timeout The timeout for the value in seconds. Default is 0 (no timeout).
+     *
+     * @return bool returns true on success, false on failure
+     */
+    public function set($key, $value, $timeout = 0): bool
+    {
+        $addr = $this->getAddr($key, true);
         $info = ['data' => $value];
-
-        if($timeout !== null){
-
+        if ($timeout > 0) {
             $info['timeout'] = $timeout;
-
             $info['expire'] = time() + $timeout;
-
         }
 
-        return shm_put_var($this->shm, $index, $info);
-
+        return shm_put_var($this->shm, $addr, $info);
     }
 
-    public function remove($key) {
-
-        if(!($index = array_search($key, $this->index)))
+    /**
+     * Remove a value from the shared memory cache.
+     *
+     * @param string $key the key of the value to remove
+     *
+     * @return bool returns true if the value was successfully removed, false otherwise
+     */
+    public function remove($key): bool
+    {
+        $addr = $this->getAddr($key);
+        if (false === $addr) {
             return false;
+        }
+        $this->removeIndex($key);
 
-        unset($this->index[$index]);
-
-        shm_put_var($this->shm, 0, $this->index);
-
-        return shm_remove_var($this->shm, $index);
-
+        return shm_remove_var($this->shm, $addr);
     }
 
-    public function clear() {
-
-        if(shm_remove($this->shm)){
-
-            $this->index = [];
-
+    /**
+     * Clears the shared memory cache.
+     *
+     * @return bool returns true if the shared memory cache was successfully cleared, false otherwise
+     */
+    public function clear(): bool
+    {
+        if (shm_remove($this->shm)) {
             return true;
-
         }
 
         return false;
-
     }
 
-    public function toArray(){
-
+    /**
+     * Converts the cache data to an array.
+     *
+     * @return array<string,mixed> the cache data as an array
+     */
+    public function toArray(): array
+    {
         $array = [];
-
-        foreach($this->index as $index =>  $key){
-
-            if($info = $this->info($index))
+        $index = $this->getIndex();
+        foreach ($index as $key => $addr) {
+            if ($info = $this->infoByAddr($addr)) {
                 $array[$key] = $info['data'];
-
+            }
         }
 
         return $array;
-        
     }
 
+    /**
+     * Returns the number of items in the cache.
+     *
+     * @return int the number of items in the cache
+     */
+    public function count(): int
+    {
+        return count($this->toArray());
+    }
+
+    /**
+     * Locks a cache entry for exclusive access.
+     *
+     * @param string $key the key of the cache entry
+     *
+     * @return bool returns true if the cache entry was successfully locked, false otherwise
+     */
+    public function lock($key): bool
+    {
+        $addr = $this->getAddr($key, true);
+        $this->locks[$key] = sem_get($addr, 1, 0666, true);
+        if (!sem_acquire($this->locks[$key])) {
+            unset($this->locks[$key]);
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Unlock a lock for a given key.
+     *
+     * @param string $key the key of the lock to unlock
+     *
+     * @return bool returns true if the lock was successfully unlocked, false otherwise
+     */
+    public function unlock($key): bool
+    {
+        if (!array_key_exists($key, $this->locks)) {
+            return false;
+        }
+        if (!sem_release($this->locks[$key])) {
+            return false;
+        }
+        unset($this->locks[$key]);
+
+        return true;
+    }
+
+    /**
+     * Retrieves the index from the shared memory.
+     *
+     * @return array<string,int> The index array retrieved from the shared memory. If the shared memory does not have any variables, an empty array is returned.
+     */
+    private function getIndex(): array
+    {
+        return shm_has_var($this->shm, 0) ? shm_get_var($this->shm, 0) : [];
+    }
+
+    /**
+     * Retrieves the address of a key in the cache.
+     *
+     * @param string $key    the key to retrieve the address for
+     * @param bool   $create whether to create the key if it doesn't exist
+     *
+     * @return false|int the address of the key if it exists, false if it doesn't exist and $create is false
+     */
+    private function getAddr($key, $create = false)
+    {
+        $index = $this->getIndex();
+        if (!array_key_exists($key, $index)) {
+            if (!$create) {
+                return false;
+            }
+
+            return $this->addIndex($key);
+        }
+
+        return $index[$key];
+    }
+
+    /**
+     * Adds an index for the given key in the shared memory cache backend.
+     *
+     * @param string $key the key to add an index for
+     *
+     * @return false|int the index of the added key, or false if acquiring the semaphore fails
+     */
+    private function addIndex($key)
+    {
+        if (!sem_acquire($this->sem)) {
+            return false;
+        }
+        $index = $this->getIndex();
+        // TODO: Find a better way to get the next available address
+        $index[$key] = count($index) + 1;
+        shm_put_var($this->shm, 0, $index);
+        sem_release($this->sem);
+
+        return $index[$key];
+    }
+
+    /**
+     * Remove an entry from the cache index.
+     *
+     * @param string $key the key of the entry to be removed
+     *
+     * @return bool returns true if the entry was successfully removed, false otherwise
+     */
+    private function removeIndex($key): bool
+    {
+        if (!sem_acquire($this->sem)) {
+            return false;
+        }
+        $index = $this->getIndex();
+        if (array_key_exists($key, $index)) {
+            unset($index[$key]);
+            shm_put_var($this->shm, 0, $index);
+        }
+        sem_release($this->sem);
+
+        return true;
+    }
+
+    /**
+     * Retrieves information stored in shared memory by address.
+     *
+     * @param int $addr the address of the shared memory variable
+     *
+     * @return array<mixed>|bool the information stored in shared memory if it exists and has not expired, otherwise false
+     */
+    private function infoByAddr($addr, $noKeepalive = false)
+    {
+        if (!shm_has_var($this->shm, $addr)) {
+            return false;
+        }
+        $info = @shm_get_var($this->shm, $addr);
+        if (false === $info) {
+            return false;
+        }
+        if (array_key_exists('expire', $info)) {
+            if ($info['expire'] < time()) {
+                shm_remove_var($this->shm, $addr);
+
+                return false;
+            }
+            // Keepalive
+            if (true === $this->keepalive && false === $noKeepalive) {
+                $info['expire'] = time() + $info['timeout'];
+                shm_put_var($this->shm, $addr, $info);
+            }
+        }
+
+        return $info;
+    }
+
+    /**
+     * Retrieves information about a cache entry by its key.
+     *
+     * @param string $key the key of the cache entry
+     *
+     * @return array<mixed>|bool returns an array containing information about the cache entry if it exists, or false otherwise
+     */
+    private function infoByKey($key)
+    {
+        $index = $this->getIndex();
+        if (!array_key_exists($key, $index)) {
+            return false;
+        }
+        $value = $this->infoByAddr($index[$key]);
+        if (false === $value) {
+            $this->removeIndex($key);
+        }
+
+        return $value;
+    }
 }

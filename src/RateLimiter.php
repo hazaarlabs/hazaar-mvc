@@ -29,6 +29,9 @@ class RateLimiter
     {
         $this->cache = $cache ?? new Cache();
         $this->cache->on(); // Force cache on even if no_pragma is set
+        if (!$this->cache->can('lock')) {
+            throw new \Exception('Cache backend does not support locking! ('.$this->cache->getBackendName().')');
+        }
         $this->prefix = $options['prefix'] ?? $this->prefix;
         $this->windowLength = $options['window'] ?? 60;
         $this->requestLimit = $options['limit'] ?? 60;
@@ -96,6 +99,7 @@ class RateLimiter
     public function check(string $identifier): bool
     {
         $now = time();
+        $this->cache->lock($identifier);
         $info = $this->get($identifier, $now, $key);
         if (isset($info['result'])) {
             $info['last_result'] = $info['result'];
@@ -114,6 +118,7 @@ class RateLimiter
             }
         }
         $this->cache->set($key, $info, $this->windowLength * 2);
+        $this->cache->unlock($identifier);
 
         return $info['result']; // Request limit exceeded
     }
