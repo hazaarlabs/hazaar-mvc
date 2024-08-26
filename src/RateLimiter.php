@@ -35,6 +35,9 @@ class RateLimiter
     public function __construct(array $options, ?Cache $cache = null)
     {
         $this->cache = $cache ?? new Cache();
+        if (!$this->cache->can('lock')) {
+            throw new \Exception('Cache backend does not support locking!');
+        }
         $this->prefix = $options['prefix'] ?? $this->prefix;
         $this->windowLength = $options['window'] ?? 60;
         $this->requestLimit = $options['limit'] ?? 60;
@@ -94,18 +97,20 @@ class RateLimiter
      */
     public function check(string $identifier): bool
     {
+        $result = false;
         $now = time();
         $key = $this->getKey($identifier);
+        $this->cache->lock($key);
         $log = $this->get($identifier, $now);
         if (count($log) < $this->requestLimit) {
             // Log the current request timestamp
             $log[] = $now;
             $this->cache->set($key, $log, $this->windowLength * 2);
-
-            return true;
+            $result = true;
         }
+        $this->cache->unlock($key);
 
-        return false; // Request limit exceeded
+        return $result; // Request limit exceeded
     }
 
     /**
