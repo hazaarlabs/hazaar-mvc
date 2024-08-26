@@ -35,6 +35,7 @@ class RateLimiter
     public function __construct(array $options, ?Cache $cache = null)
     {
         $this->cache = $cache ?? new Cache();
+        $this->cache->on(); //Force cache on even if no_pragma is set
         if (!$this->cache->can('lock')) {
             throw new \Exception('Cache backend does not support locking!');
         }
