@@ -16,7 +16,7 @@ class Modifier
         $reflectionMethod = new \ReflectionMethod($this, $name);
         $reflectionParameter = $reflectionMethod->getParameters()[0];
         $type = (string) $reflectionParameter->getType();
-        if ('mixed' === $type && $value === null) {
+        if ('mixed' === $type && null === $value) {
             $type = 'string';
         }
         $value = match ($type) {
@@ -118,6 +118,11 @@ class Modifier
         return $default;
     }
 
+    public function print(mixed $value): string
+    {
+        return print_r($value, true);
+    }
+
     public function dump(mixed $value): string
     {
         ob_start();
@@ -126,9 +131,9 @@ class Modifier
         return ob_get_clean();
     }
 
-    public function export(mixed $value): string
+    public function type(mixed $value): string
     {
-        return var_export($value, true);
+        return gettype($value);
     }
 
     public function escape(string $string, string $format = 'html', string $character_encoding = 'ISO-8859-1'): string

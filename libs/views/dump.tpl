@@ -14,7 +14,13 @@
 
     <style>
         :root {
-            --elem-padding: 25px;
+            --elem-padding: 2rem;
+            --elem-margin: 2rem;
+            --dump-radius: 1rem;
+            --col-bg: #030005;
+            --col-fg: #fff;
+            --col-em: #ff005a;
+            --col-mt: #999;
             color-scheme: dark;
         }
 
@@ -32,12 +38,12 @@
             display: flex;
             flex-direction: column;
             font-family: 'Montserrat', sans-serif;
-            background: #030005;
+            background: var(--col-bg);
             height: 100vh;
 
 
             .dumpheader {
-                background: #030005;
+                background: var(--col-bg);
                 display: flex;
                 flex-direction: row;
                 width: 100%;
@@ -51,15 +57,15 @@
                     a {
                         display: inline-block;
                         text-transform: uppercase;
-                        color: #ff005a;
+                        color: var(--col-em);
                         text-decoration: none;
                         border: 2px solid;
                         background: transparent;
                         padding: 10px 40px;
                         font-size: 14px;
                         font-weight: 700;
-                        -webkit-transition: 0.2s all;
-                        transition: 0.2s all;
+                        -webkit-transition: 0.5s color;
+                        transition: 0.5s color;
                         cursor: pointer;
                     }
 
@@ -79,7 +85,7 @@
                         margin-top: 0px;
                         margin-bottom: 0px;
                         margin-left: -12px;
-                        color: #030005;
+                        color: var(--col-bg);
                         text-transform: uppercase;
                         text-shadow: -1px -1px 0px #8400ff, 1px 1px 0px #ff005a;
                     }
@@ -91,13 +97,13 @@
                     th {
                         text-align: right;
                         padding: 0 5px 0 0;
-                        color: #ff005a;
+                        color: var(--col-em);
                         font-weight: normal;
                     }
 
                     td {
                         padding: 0;
-                        color: #fff;
+                        color: var(--col-fg);
                         font-weight: bold;
                     }
 
@@ -106,27 +112,41 @@
                     }
 
                     tr:not(:last-child) td {
-                        color: #999;
+                        color: var(--col-mt);
                         font-weight: normal;
                     }
                 }
             }
 
             .dumpdata {
-                padding: var(--elem-padding);
+                margin: var(--elem-margin);
                 line-height: 1.4;
                 font-family: 'Montserrat', sans-serif;
                 overflow-y: auto;
 
+
+
+                .hdr {
+                    font-size: .7rem;
+                    font-weight: 100;
+                    color: var(--col-mt);
+                    margin: 0 var(--dump-radius);
+
+                    em {
+                        font-style: normal;
+                        color: var(--col-em);
+                    }
+                }
+
                 .data {
                     font-family: 'Courier New', Courier, monospace;
                     font-size: 0.8rem;
-                    /* white-space: pre; */
-                    color: #fff;
-                    background-color: #0a0a0a;
-                    padding: 25px;
+                    padding: var(--elem-padding);
+                    color: var(--col-fg);
+                    background-color: var(--col-bg);
                     border: 1px solid #333;
-                    border-radius: 15px;
+                    border-radius: var(--dump-radius);
+                    white-space: pre-wrap;
                 }
             }
 
@@ -164,7 +184,11 @@
             </table>
         </div>
         <div class="dumpdata">
-            <div class="data">{$data|dump}</div>
+            <div class="hdr">
+                Dumping <em>{$data|type}</em> data from
+                <em>{$class}::{$function}</em> on line <em>#{$line}</em> of file <em>{$file}</em>
+            </div>
+            <div class="data">{$data|print}</div>
         </div>
     </div>
 </body>
