@@ -47,6 +47,8 @@ class Cache implements \ArrayAccess {
         if($config_options)
             $options->extend($config_options);
 
+        $looseBackend = false;
+
         if (!$backend){
 
             //Set up a default backend chain
@@ -62,20 +64,23 @@ class Cache implements \ArrayAccess {
 
             }
 
+            $looseBackend = true;
+
         }
 
         $this->options = $options;
 
         $this->configure([
             'lifetime' => 3600,
-            'use_pragma' => TRUE
+            'use_pragma' => TRUE,
+            'keepalive' => false
         ]);
 
         if(!is_array($backend))
             $backend = [$backend];
 
         //We set this now as it is an absolute safe fallback
-        if(!in_array('file', $backend))
+        if($looseBackend === true && !in_array('file', $backend))
             $backend[] = 'file';
 
         foreach($backend as $name){
@@ -90,7 +95,7 @@ class Cache implements \ArrayAccess {
         }
 
         if (!isset($backendClass))
-            throw new Cache\Exception\NoBackendAvailable();
+            throw new Cache\Exception\NoBackendAvailable($backend);
 
         $this->backend = new $backendClass($options, $namespace);
 
@@ -110,6 +115,12 @@ class Cache implements \ArrayAccess {
                 $this->use_cache = FALSE;
 
         }
+
+    }
+
+    public function can($capability){
+
+        return $this->backend->can($capability);
 
     }
 
@@ -455,6 +466,18 @@ class Cache implements \ArrayAccess {
         $this->set($key, $value -= $amount);
 
         return $value;
+
+    }
+
+    public function lock($key){
+
+        return $this->backend->lock($key);
+
+    }
+
+    public function unlock($key){
+
+        return $this->backend->unlock($key);
 
     }
 

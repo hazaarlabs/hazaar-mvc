@@ -4,9 +4,14 @@ namespace Hazaar\Cache\Exception;
 
 class NoBackendAvailable extends \Hazaar\Exception {
 
-    function __construct() {
+    function __construct($backends = []) {
     
-        parent::__construct("None of the requested cache backends are currently available.");
+        $msg = "None of the requested cache backends are currently available.";
+
+        if(count($backends) > 0)
+            $msg .= " Requested backends: " . implode(', ', $backends);
+        
+        parent::__construct($msg);
         
     }
     
