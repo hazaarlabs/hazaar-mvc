@@ -63,6 +63,16 @@ abstract class Backend implements Interfaces\Backend
         $this->options->set($key, $value);
     }
 
+    public function lock(string $key): bool
+    {
+        return false;
+    }
+
+    public function unlock(string $key): bool
+    {
+        return false;
+    }
+
     protected function addCapabilities(string ...$args): void
     {
         foreach ($args as $arg) {
