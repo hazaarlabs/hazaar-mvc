@@ -64,8 +64,8 @@
                         padding: 10px 40px;
                         font-size: 14px;
                         font-weight: 700;
-                        -webkit-transition: 0.2s all;
-                        transition: 0.2s all;
+                        -webkit-transition: 0.5s color;
+                        transition: 0.5s color;
                         cursor: pointer;
                     }
 
@@ -142,12 +142,12 @@
                 .data {
                     font-family: 'Courier New', Courier, monospace;
                     font-size: 0.8rem;
-                    white-space: pre;
                     padding: var(--elem-padding);
                     color: var(--col-fg);
                     background-color: var(--col-bg);
                     border: 1px solid #333;
                     border-radius: var(--dump-radius);
+                    white-space: pre-wrap;
                 }
             }
 
@@ -185,8 +185,11 @@
             </table>
         </div>
         <div class="dumpdata">
-            <div class="hdr"><em>{$class}::{$function}</em> on line <em>#{$line}</em> of file <em>{$file}</em></div>
-            <div class="data">{$data|dump|escape:html}</div>
+            <div class="hdr">
+                Dumping <em>{$data|type}</em> data from
+                <em>{$class}::{$function}</em> on line <em>#{$line}</em> of file <em>{$file}</em>
+            </div>
+            <div class="data">{$data|print}</div>
         </div>
     </div>
 </body>
