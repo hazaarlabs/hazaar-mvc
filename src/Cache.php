@@ -108,6 +108,11 @@ class Cache implements \ArrayAccess
         $this->remove($key);
     }
 
+    public function can(string $feature): bool
+    {
+        return $this->backend->can($feature);
+    }
+
     /**
      * @param array<mixed>|Map $options
      */
