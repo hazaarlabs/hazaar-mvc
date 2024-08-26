@@ -42,7 +42,7 @@ class Cache implements \ArrayAccess
         $this->options = Map::_($configOptions);
         if (!$backend) {
             // Set up a default backend chain
-            $backend = ['apc', 'session'];
+            $backend = ['shm', 'session'];
             // Grab the application context so we can load any cache settings
             if (($app = Application::getInstance())
                 && $app->config->has('cache.backend')) {
@@ -53,6 +53,7 @@ class Cache implements \ArrayAccess
         $this->configure([
             'lifetime' => 3600,
             'use_pragma' => true,
+            'keepalive' => false,
         ]);
         if (!is_array($backend)) {
             $backend = [$backend];

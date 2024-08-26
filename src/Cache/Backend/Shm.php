@@ -22,9 +22,11 @@ use Hazaar\Cache\Backend;
  */
 class Shm extends Backend
 {
+    private const GC_KEY = '__garbage_collection__';
     protected int $weight = 0;
     private ?\SysvSharedMemory $shm;
     private ?\SysvSemaphore $sem;
+    private bool $keepalive;
 
     /**
      * @var array<string,\SysvSemaphore>
@@ -51,6 +53,7 @@ class Shm extends Backend
     public function init(string $namespace): void
     {
         $this->addCapabilities('store_objects', 'keepalive', 'array', 'lock');
+        $this->keepalive = $this->options['keepalive'];
         $shmNamespaceAddr = ftok(__FILE__, chr(0));
         $shmNamespaceIndex = shm_attach($shmNamespaceAddr, $this->options->get('index.size', 1000000), $this->options->get('index.permissions', 0666));
         if (!$shmNamespaceIndex instanceof \SysvSharedMemory) {
@@ -94,9 +97,10 @@ class Shm extends Backend
             return false;
         }
         $index = $this->getIndex();
-        if (!(array_key_exists('__garbage_collection__', $index)
-            && $index['__garbage_collection__'] > 0
-            && time() < $index['__garbage_collection__'])) {
+        if (!(array_key_exists(self::GC_KEY, $index)
+            && $index[self::GC_KEY] > 0
+            && (time() - $this->options->get('gc_interval', 300)) < $index[self::GC_KEY])) {
+            $now = time();
             foreach ($index as $key => $i) {
                 if ('__' === substr($key, 0, 2)) {
                     continue;
@@ -106,7 +110,7 @@ class Shm extends Backend
                     unset($index[$key]);
                 }
             }
-            $index['__garbage_collection__'] = time() + $this->options->get('gc_interval', 60);
+            $index[self::GC_KEY] = $now;
             shm_put_var($this->shm, 0, $index);
         }
         shm_detach($this->shm);
@@ -284,7 +288,7 @@ class Shm extends Backend
      *
      * @return array<string,int> The index array retrieved from the shared memory. If the shared memory does not have any variables, an empty array is returned.
      */
-    public function getIndex(): array
+    private function getIndex(): array
     {
         return shm_has_var($this->shm, 0) ? shm_get_var($this->shm, 0) : [];
     }
@@ -377,7 +381,7 @@ class Shm extends Backend
                 return false;
             }
             // Keepalive
-            if (false === $noKeepalive) {
+            if (true === $this->keepalive && false === $noKeepalive) {
                 $info['expire'] = time() + $info['timeout'];
                 shm_put_var($this->shm, $addr, $info);
             }
