@@ -121,6 +121,11 @@ class Shm extends Backend
         shm_detach($this->shm);
         sem_release($this->sem);
         $this->shm = null;
+        // Release all locks
+        foreach ($this->locks as $key => $lock) {
+            sem_release($lock);
+            unset($this->locks[$key]);
+        }
 
         return true;
     }
@@ -293,7 +298,7 @@ class Shm extends Backend
      *
      * @return array<string,int> The index array retrieved from the shared memory. If the shared memory does not have any variables, an empty array is returned.
      */
-    private function getIndex(): array
+    private function getIndex()
     {
         return shm_has_var($this->shm, 0) ? shm_get_var($this->shm, 0) : [];
     }
