@@ -116,6 +116,11 @@ class Shm extends Backend
         shm_detach($this->shm);
         sem_release($this->sem);
         $this->shm = null;
+        // Release all locks
+        foreach ($this->locks as $key => $lock) {
+            sem_release($lock);
+            unset($this->locks[$key]);
+        }
 
         return true;
     }
