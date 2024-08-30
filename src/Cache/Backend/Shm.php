@@ -9,6 +9,7 @@
 
 namespace Hazaar\Cache\Backend;
 
+use Hazaar\Application;
 use Hazaar\Cache\Backend;
 
 /**
@@ -21,9 +22,11 @@ use Hazaar\Cache\Backend;
 class Shm extends Backend
 {
     private const GC_KEY = '__garbage_collection__';
-    private $shm;
+    protected $weight = 0;
     private $sem;
+    private $shm;
     private bool $keepalive;
+    private int $indexKey;
 
     /**
      * @var array<string,\SysvSemaphore>
@@ -35,7 +38,7 @@ class Shm extends Backend
      *
      * @return bool returns true if the shared memory cache backend is available, false otherwise
      */
-    public static function available(): bool
+    public static function available()
     {
         return function_exists('shm_attach') && function_exists('sem_get');
     }
@@ -47,45 +50,63 @@ class Shm extends Backend
      *
      * @throws \Exception if the shared memory attachment or semaphore acquisition fails
      */
-    public function init($namespace): void
+    public function init($namespace)
     {
         $this->addCapabilities('store_objects', 'keepalive', 'array', 'lock');
         $this->configure([
             'size' => 1000000,
             'permissions' => 0666,
-            'gc_interval' => 300,
-            'index.size' => 1000000,
-            'index.permissions' => 0666,
-            'keepalive' => false,
+            'gc_interval' => 10,
+            'keepalive' => true,
+            'ns_index.size' => 10000,
+            'ns_index.permissions' => 0666,
         ]);
         $this->keepalive = $this->options['keepalive'];
-        $shmNamespaceAddr = ftok(__FILE__, chr(0));
-        $shmNamespaceIndex = shm_attach($shmNamespaceAddr, $this->options->get('index.size', 1000000), $this->options->get('index.permissions', 0666));
-        if (!is_resource($shmNamespaceIndex)) {
+        $app = Application::getInstance();
+        $inodeFile = $app->runtimePath('.shm_inode'); // The inode file is used to create a unique key for the shared memory segment
+        file_exists($inodeFile) || touch($inodeFile); // Create the inode file if it doesn't exist
+        $addrIndex = ftok($inodeFile, chr(0));
+        if (-1 === $addrIndex) {
+            throw new \Exception('ftok() failed.');
+        }
+        $shmNSIndex = shm_attach($addrIndex, $this->options->get('ns_index.size', 10000), $this->options->get('ns_index.permissions', 0666));
+        if (!\is_resource($shmNSIndex)) {
             throw new \Exception('shm_attach() failed.  did not return resource.');
         }
+        $shmNSKey = crc32('cache_'.$namespace);
         // Create a semaphore to lock the namespace index
-        $this->sem = sem_get($shmNamespaceAddr, 1, 0666, true);
-        if (!sem_acquire($this->sem)) {
+        $semNSKey = sem_get($shmNSKey, 1, 0666, 1);
+        if (!sem_acquire($semNSKey)) {
             throw new \Exception('Failed to acquire semaphore lock.');
         }
-        if (shm_has_var($shmNamespaceIndex, 0)) {
-            $namespaces = shm_get_var($shmNamespaceIndex, 0);
+        if (shm_has_var($shmNSIndex, $shmNSKey)) {
+            $NSIndex = shm_get_var($shmNSIndex, $shmNSKey);
+        } else {
+            $NSIndex = [];
         }
-        if (!(isset($namespaces) && is_array($namespaces))) {
-            $namespaces = [];
+        if (!($NSkey = array_search($namespace, $NSIndex, true))) {
+            $NSIndex[] = $namespace;
+            $NSkey = array_search($namespace, $NSIndex, true) + 1;
+            shm_put_var($shmNSIndex, $shmNSKey, $NSIndex);
         }
-        if (!($key = array_key_exists($namespace, $namespaces))) {
-            $namespaces[$namespace] = ftok(__FILE__, chr(count($namespaces) + 1)); // Plus one because we can't use zero as it's our index.
-            shm_put_var($shmNamespaceIndex, 0, $namespaces);
+        $shmAddr = ftok($inodeFile, chr($NSkey));
+        if (-1 === $shmAddr) {
+            throw new \Exception('ftok() failed.');
         }
         // Release the semaphore
-        sem_release($this->sem);
-        shm_detach($shmNamespaceIndex);
-        $this->shm = shm_attach($namespaces[$namespace], $this->options->get('size', 1000000), $this->options->get('permissions', 0666));
+        sem_release($semNSKey);
+        shm_detach($shmNSIndex);
+        // Create a semaphore to lock the shared memory segment
+        $this->sem = sem_get($shmAddr, 1, 0666, 1);
+        if (false === $this->sem) {
+            throw new \Exception('sem_get() failed.');
+        }
+        // Attach to the shared memory segment
+        $this->shm = shm_attach($shmAddr, $this->options->get('size', 1000000), $this->options->get('permissions', 0666));
         if (!is_resource($this->shm)) {
             throw new \Exception('shm_attach() failed.  did not return resource.');
         }
+        $this->indexKey = crc32('cache_'.$this->namespace.'_index');
     }
 
     /**
@@ -93,21 +114,18 @@ class Shm extends Backend
      *
      * @return bool returns true if the shared memory cache is successfully closed, false otherwise
      */
-    public function close(): bool
+    public function close()
     {
-        if (!isset($this->shm) || null === $this->shm) {
-            return false;
-        }
-        if (!sem_acquire($this->sem)) {
+        if (null === $this->shm || null === $this->sem) {
             return false;
         }
         $index = $this->getIndex();
         if (!(array_key_exists(self::GC_KEY, $index)
             && $index[self::GC_KEY] > 0
-            && (time() - $this->options->get('gc_interval', 300)) < $index[self::GC_KEY])) {
+            && (time() - $this->options->get('gc_interval', 10)) < $index[self::GC_KEY])) {
             $now = time();
             foreach ($index as $key => $i) {
-                if ('__' === substr($key, 0, 2)) {
+                if (self::GC_KEY === $key) {
                     continue;
                 }
                 $result = $this->infoByAddr($i, true);
@@ -116,16 +134,17 @@ class Shm extends Backend
                 }
             }
             $index[self::GC_KEY] = $now;
-            shm_put_var($this->shm, 0, $index);
+            shm_put_var($this->shm, $this->indexKey, $index);
         }
-        shm_detach($this->shm);
-        sem_release($this->sem);
-        $this->shm = null;
         // Release all locks
         foreach ($this->locks as $key => $lock) {
             sem_release($lock);
             unset($this->locks[$key]);
         }
+        shm_detach($this->shm);
+        $this->shm = null;
+        sem_remove($this->sem);
+        $this->sem = null;
 
         return true;
     }
@@ -138,7 +157,7 @@ class Shm extends Backend
      *
      * @return bool returns true if the key exists in the cache, false otherwise
      */
-    public function has($key, $check_empty = false): bool
+    public function has($key, $check_empty = false)
     {
         $index = $this->getIndex();
         if (!array_key_exists($key, $index)) {
@@ -160,7 +179,7 @@ class Shm extends Backend
      *
      * @param string $key the key to retrieve the value for
      *
-     * @return false|mixed the value associated with the key, or false if the key does not exist
+     * @return mixed the value associated with the key, or false if the key does not exist
      */
     public function get($key)
     {
@@ -181,7 +200,7 @@ class Shm extends Backend
      *
      * @return bool returns true on success, false on failure
      */
-    public function set($key, $value, $timeout = 0): bool
+    public function set($key, $value, $timeout = 0)
     {
         $addr = $this->getAddr($key, true);
         $info = ['data' => $value];
@@ -200,7 +219,7 @@ class Shm extends Backend
      *
      * @return bool returns true if the value was successfully removed, false otherwise
      */
-    public function remove($key): bool
+    public function remove($key)
     {
         $addr = $this->getAddr($key);
         if (false === $addr) {
@@ -216,7 +235,7 @@ class Shm extends Backend
      *
      * @return bool returns true if the shared memory cache was successfully cleared, false otherwise
      */
-    public function clear(): bool
+    public function clear()
     {
         if (shm_remove($this->shm)) {
             return true;
@@ -230,14 +249,23 @@ class Shm extends Backend
      *
      * @return array<string,mixed> the cache data as an array
      */
-    public function toArray(): array
+    public function toArray()
     {
         $array = [];
         $index = $this->getIndex();
+        $removed = [];
         foreach ($index as $key => $addr) {
+            if (self::GC_KEY === $key) {
+                continue;
+            }
             if ($info = $this->infoByAddr($addr)) {
                 $array[$key] = $info['data'];
+            } else {
+                $removed[] = $key;
             }
+        }
+        if (count($removed) > 0) {
+            $this->removeIndex($removed);
         }
 
         return $array;
@@ -248,7 +276,7 @@ class Shm extends Backend
      *
      * @return int the number of items in the cache
      */
-    public function count(): int
+    public function count()
     {
         return count($this->toArray());
     }
@@ -260,14 +288,14 @@ class Shm extends Backend
      *
      * @return bool returns true if the cache entry was successfully locked, false otherwise
      */
-    public function lock($key): bool
+    public function lock($key)
     {
         $addr = $this->getAddr($key, true);
-        $this->locks[$key] = sem_get($addr, 1, 0666, true);
-        if (!sem_acquire($this->locks[$key])) {
-            unset($this->locks[$key]);
+        $lock = sem_get($addr, 1, 0666, 1);
+        if (sem_acquire($lock)) {
+            $this->locks[$addr] = $lock;
 
-            return false;
+            return true;
         }
 
         return true;
@@ -280,15 +308,16 @@ class Shm extends Backend
      *
      * @return bool returns true if the lock was successfully unlocked, false otherwise
      */
-    public function unlock($key): bool
+    public function unlock($key)
     {
-        if (!array_key_exists($key, $this->locks)) {
+        $addr = $this->getAddr($key, true);
+        if (!array_key_exists($addr, $this->locks)) {
             return false;
         }
-        if (!sem_release($this->locks[$key])) {
+        if (!sem_release($this->locks[$addr])) {
             return false;
         }
-        unset($this->locks[$key]);
+        unset($this->locks[$addr]);
 
         return true;
     }
@@ -300,7 +329,7 @@ class Shm extends Backend
      */
     private function getIndex()
     {
-        return shm_has_var($this->shm, 0) ? shm_get_var($this->shm, 0) : [];
+        return shm_has_var($this->shm, $this->indexKey) ? shm_get_var($this->shm, $this->indexKey) : [];
     }
 
     /**
@@ -339,8 +368,8 @@ class Shm extends Backend
         }
         $index = $this->getIndex();
         // TODO: Find a better way to get the next available address
-        $index[$key] = count($index) + 1;
-        shm_put_var($this->shm, 0, $index);
+        $index[$key] = crc32('cache_'.$this->namespace.'_'.$key);
+        shm_put_var($this->shm, $this->indexKey, $index);
         sem_release($this->sem);
 
         return $index[$key];
@@ -349,7 +378,7 @@ class Shm extends Backend
     /**
      * Remove an entry from the cache index.
      *
-     * @param string $key the key of the entry to be removed
+     * @param array<string>|string $key the key of the entry to be removed
      *
      * @return bool returns true if the entry was successfully removed, false otherwise
      */
@@ -359,10 +388,16 @@ class Shm extends Backend
             return false;
         }
         $index = $this->getIndex();
-        if (array_key_exists($key, $index)) {
+        if (is_array($key)) {
+            foreach ($key as $k) {
+                if (array_key_exists($k, $index)) {
+                    unset($index[$k]);
+                }
+            }
+        } elseif (array_key_exists($key, $index)) {
             unset($index[$key]);
-            shm_put_var($this->shm, 0, $index);
         }
+        shm_put_var($this->shm, $this->indexKey, $index);
         sem_release($this->sem);
 
         return true;
@@ -385,7 +420,7 @@ class Shm extends Backend
             return false;
         }
         if (array_key_exists('expire', $info)) {
-            if ($info['expire'] < time()) {
+            if ($info['expire'] <= time()) {
                 shm_remove_var($this->shm, $addr);
 
                 return false;
