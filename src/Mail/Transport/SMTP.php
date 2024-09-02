@@ -242,11 +242,11 @@ class SMTP extends Transport
         if (!is_numeric($matches[1])) {
             return false;
         }
-        if (isset($matches[2])) {
+        if (null !== $matches[2]) {
             $message = $matches[2];
         }
 
-        return (int)$matches[1];
+        return (int) $matches[1];
     }
 
     /**
