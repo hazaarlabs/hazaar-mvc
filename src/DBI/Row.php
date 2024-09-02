@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI;
 
-use Hazaar\Exception;
 use Hazaar\Model;
 
 if (!defined('HAZAAR_VERSION')) {
@@ -145,7 +144,7 @@ final class Row extends Model
                 $conditions[] = ake($tables[$table], 'condition');
             } elseif ($tables[$table]['condition']) {
                 foreach ($tables as $fromTable => $data) {
-                    if ($data['condition']) {
+                    if (null !== $data['condition']) {
                         $conditions[] = $data['condition'];
                     }
                     if ($table !== $fromTable) {
