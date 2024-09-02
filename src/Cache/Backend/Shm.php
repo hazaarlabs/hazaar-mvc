@@ -67,20 +67,23 @@ class Shm extends Backend
         if (!$shmNSIndex instanceof \SysvSharedMemory) {
             throw new \Exception('shm_attach() failed.  did not return \SysvSharedMemory.');
         }
-        $shmNSKey = crc32('cache_'.$namespace);
         // Create a semaphore to lock the namespace index
-        $semNSKey = sem_get($shmNSKey, 1, 0666, true);
+        $semNSKey = sem_get($addrIndex, 1, 0666, true);
         if (!sem_acquire($semNSKey)) {
             throw new \Exception('Failed to acquire semaphore lock.');
         }
+        $shmNSKey = 0;
         if (shm_has_var($shmNSIndex, $shmNSKey)) {
             $NSIndex = shm_get_var($shmNSIndex, $shmNSKey);
         } else {
             $NSIndex = [];
         }
-        if (!($NSkey = array_search($namespace, $NSIndex, true))) {
-            $NSIndex[] = $namespace;
-            $NSkey = array_search($namespace, $NSIndex, true) + 1;
+        if (false === ($NSkey = array_search($namespace, $NSIndex, true))) {
+            $NSkey = $this->findFirstAvailableAddress(array_keys($NSIndex));
+            if (array_key_exists($NSkey, $NSIndex)) {
+                throw new \Exception('Failed to find an available address.');
+            }
+            $NSIndex[$NSkey] = $namespace;
             shm_put_var($shmNSIndex, $shmNSKey, $NSIndex);
         }
         $shmAddr = ftok($inodeFile, chr($NSkey));
@@ -314,6 +317,20 @@ class Shm extends Backend
         unset($this->locks[$addr]);
 
         return true;
+    }
+
+    /**
+     * @param array<int> $index
+     */
+    private function findFirstAvailableAddress(array $index): int
+    {
+        for ($i = 1; $i <= count($index) + 1; ++$i) {
+            if (!in_array($i, $index)) {
+                return $i;
+            }
+        }
+
+        return $i;
     }
 
     /**
