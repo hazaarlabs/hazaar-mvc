@@ -31,7 +31,7 @@ class Frontend
         if ('database' == strtolower($backend)) {
             $backend = 'Database';
         }
-        $backend_class = 'Hazaar\\Logger\\Backend\\'.ucfirst($backend);
+        $backend_class = 'Hazaar\Logger\Backend\\'.ucfirst($backend);
         if (!class_exists($backend_class)) {
             throw new Exception\NoBackend();
         }
@@ -72,9 +72,9 @@ class Frontend
             Frontend::$logger->writeLog($message, $level, $tag);
         } else {
             Frontend::$message_buffer[] = [
-                $tag,
                 $message,
                 $level,
+                $tag,
             ];
         }
     }
@@ -139,7 +139,7 @@ class Frontend
                 $message = 'OBJECT DUMP:'.LINE_BREAK.preg_replace('/\n/', LINE_BREAK, print_r($message, true));
             }
         }
-        $this->backend->write($tag ?? 'APP', $message, $level);
+        $this->backend->write($message, $level, $tag);
     }
 
     public function backtrace(): void

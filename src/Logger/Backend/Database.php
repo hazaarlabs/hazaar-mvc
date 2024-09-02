@@ -35,7 +35,7 @@ class Database extends Backend
         $this->db = new Adapter($config);
     }
 
-    public function write(string $tag, string $message, int $level = LOG_NOTICE): void
+    public function write(string $message, int $level = LOG_INFO, ?string $tag = null): void
     {
         if (true === $this->failed) {
             return;
@@ -43,9 +43,9 @@ class Database extends Backend
 
         try {
             $row = [
-                'tag' => $tag,
                 'message' => $message,
                 'level' => $level,
+                'tag' => $tag,
             ];
             $remote = $_SERVER['REMOTE_ADDR'];
             if ($this->getOption('write_ip')) {

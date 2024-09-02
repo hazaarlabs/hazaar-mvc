@@ -6,7 +6,7 @@ namespace Hazaar\Logger\Interfaces;
 
 interface Backend
 {
-    public function write(string $tag, string $message, int $level = LOG_NOTICE): void;
+    public function write(string $message, int $level = LOG_INFO, ?string $tag = null): void;
 
     public function trace(): void;
 

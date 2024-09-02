@@ -36,10 +36,10 @@ class Chain extends Backend
         }
     }
 
-    public function write(string $tag, string $message, int $level = LOG_NOTICE): void
+    public function write(string $message, int $level = LOG_INFO, ?string $tag = null): void
     {
         foreach ($this->backends as $backend) {
-            $backend->write($tag, $message, $level);
+            $backend->write($message, $level, $tag);
         }
     }
 
