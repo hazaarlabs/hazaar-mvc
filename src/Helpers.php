@@ -7,6 +7,8 @@ use Hazaar\Controller\Dump;
 use Hazaar\Controller\Error;
 use Response\Text;
 
+$dumpLog = [];
+
 /**
  * Array/Object value normalizer.
  *
@@ -1028,8 +1030,15 @@ function guid(): string
     }, $format);
 }
 
+function log_dump(mixed $data): void
+{
+    global $dumpLog;
+    $dumpLog[] = ['time' => microtime(true), 'data' => $data];
+}
+
 function dump(mixed $data = null, bool $backtrace = false): void
 {
+    global $dumpLog;
     $caller = [];
     $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
     if (count($trace) > 0) {
@@ -1043,6 +1052,9 @@ function dump(mixed $data = null, bool $backtrace = false): void
     if (defined('HAZAAR_VERSION') && ($app = Application::getInstance())) {
         $controller = new Dump($data, $app->router);
         $controller->toggleBacktrace($backtrace);
+        if (is_array($dumpLog)) {
+            $controller->addLogEntries($dumpLog);
+        }
         $controller->__initialize($app->request);
         $response = $controller->__run($caller);
         $response->__writeOutput();
@@ -1054,11 +1066,16 @@ function dump(mixed $data = null, bool $backtrace = false): void
         }
         $out .= 'Endtime: '.date('c')."\n\n";
         $out .= print_r($data, true);
+        if (count($dumpLog) > 0) {
+            $out .= "\n\nLOG\n\n";
+            $out .= print_r($dumpLog, true);
+        }
         $out .= "\n\nBACKTRACE\n\n";
         $e = new Exception('Backtrace');
         $out .= print_r(str_replace('/path/to/code/', '', $e->getTraceAsString()), true);
 
         echo $out;
+        ob_flush();
     }
 
     exit;

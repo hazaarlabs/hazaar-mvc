@@ -26,6 +26,11 @@ class Dump extends Diagnostic
     private float $exec_time = -1;
     private bool $backtrack = false;
 
+    /**
+     * @var array<array{time:int,data:mixed}>
+     */
+    private array $log = [];
+
     public function __construct(mixed $data, Router $router)
     {
         parent::__construct($router, 'debug');
@@ -39,6 +44,14 @@ class Dump extends Diagnostic
     }
 
     /**
+     * @param array<array{time:int,data:mixed}> $entries
+     */
+    public function addLogEntries(array $entries): void
+    {
+        $this->log = $entries;
+    }
+
+    /**
      * This is the default JSON response for the dump controller.
      *
      * @param array<mixed> $dump The data to be displayed in the dump
@@ -49,6 +62,9 @@ class Dump extends Diagnostic
         $dump['status'] = self::getSpeedClass($this->exec_time);
         $dump['end'] = date('c');
         $dump['data'] = $this->data;
+        if (count($this->log) > 0) {
+            $dump['log'] = $this->log;
+        }
         if (true === $this->backtrack) {
             $e = new \Exception('Backtrace');
             $dump['trace'] = $e->getTrace();
@@ -73,6 +89,13 @@ class Dump extends Diagnostic
             $app->add($key, $value);
         }
         $xml->add('data', print_r($this->data, true));
+        if (count($this->log) > 0) {
+            $log = $xml->add('log');
+            foreach ($this->log as $entry) {
+                $item = $log->add('entry', $entry['data']);
+                $item->attr('time', (string) $entry['time']);
+            }
+        }
         if (true === $this->backtrack) {
             $e = new \Exception('Backtrace');
             $xml->addFromArray('backtrace', $e->getTrace());
@@ -96,6 +119,12 @@ class Dump extends Diagnostic
         foreach ($data as $key => $value) {
             $out .= "{$key}: {$value}\n";
         }
+        if (count($this->log) > 0) {
+            $out .= "\n\nLOG\n\n";
+            foreach ($this->log as $entry) {
+                $out .= date('c', $entry['time']).' - '.$entry['data']."\n";
+            }
+        }
         if (true === $this->backtrack) {
             $out .= "\n\nBACKTRACE\n\n";
             $e = new \Exception('Backtrace');
@@ -116,6 +145,7 @@ class Dump extends Diagnostic
         $data['env'] = APPLICATION_ENV;
         $data['data'] = $this->data;
         $data['time'] = $this->application->timer->all();
+        $data['log'] = $this->log;
         $view->populate($data);
         if (true === $this->backtrack) {
             $e = new \Exception('Backtrace');
