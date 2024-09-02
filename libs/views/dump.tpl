@@ -41,7 +41,6 @@
             background: var(--col-bg);
             height: 100vh;
 
-
             .dumpheader {
                 background: var(--col-bg);
                 display: flex;
@@ -118,13 +117,19 @@
                 }
             }
 
-            .dumpdata {
+            .dumpmain {
+                display: flex;
+                flex-direction: row;
+                padding: var(--elem-padding);
+                overflow: auto;
+            }
+
+            .dumpdata,
+            .dumplog {
                 margin: var(--elem-margin);
                 line-height: 1.4;
                 font-family: 'Montserrat', sans-serif;
-                overflow-y: auto;
-
-
+                flex-grow: 1;
 
                 .hdr {
                     font-size: .7rem;
@@ -148,10 +153,19 @@
                     border: 1px solid #333;
                     border-radius: var(--dump-radius);
                     white-space: pre-wrap;
+                    flex-grow: 1;
+                }
+
+                .log {
+                    font-family: 'Courier New', Courier, monospace;
+                    font-size: 0.8rem;
+
+                    .entry {
+                        padding: 0.5rem;
+                        border-bottom: 1px solid #333;
+                    }
                 }
             }
-
-
         }
 
         @media only screen and (max-width: 767px) {
@@ -184,14 +198,28 @@
                 {/foreach}
             </table>
         </div>
-        <div class="dumpdata">
-            <div class="hdr">
-                Dumping <em>{$data|type}</em> data from
-                <em>{$class}::{$function}</em> on line <em>#{$line}</em> of file <em>{$file}</em>
-            </div>
-            <div class="data">{$data|print}</div>
+        <div class="dumpmain">
+            {if $data !== null}<div class="dumpdata">
+                    <div class="hdr">
+                        Dumping <em>{$data|type}</em> data from
+                        <em>{$class}::{$function}</em> on line <em>#{$line}</em> of file <em>{$file}</em>
+                    </div>
+                    <div class="data">{$data|print}</div>
+                </div>
+            {/if}
+            {if $log} <div class="dumplog">
+                    <div class="hdr">
+                        Log entries
+                    </div>
+                    <div class="log">
+                        {foreach from=$log item=log}
+                            {assign var="millis" value=round(($log['time']-floor($log['time']))*1000000)}
+                            <div class="entry">{$log.time|date_format:"%Y-%m-%d %H:%M:%S"}.{$millis} - {$log.data|print}</div>
+                        {/foreach}
+                    </div>
+                </div>
+            {/if}
         </div>
-    </div>
 </body>
 
 </html>
