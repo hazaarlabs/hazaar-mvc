@@ -57,7 +57,7 @@ class File extends Backend
         }
     }
 
-    public function write(string $tag, string $message, int $level = LOG_NOTICE): void
+    public function write(string $message, int $level = LOG_INFO, ?string $tag = null): void
     {
         if (null !== $this->hLog) {
             return;
@@ -74,7 +74,9 @@ class File extends Backend
             $line[] = getmypid();
         }
         $line[] = str_pad(strtoupper($this->getLogLevelName($level)), $this->level_padding, ' ', STR_PAD_RIGHT);
-        $line[] = str_pad($tag, 8, ' ', STR_PAD_RIGHT);
+        if (null !== $tag) {
+            $line[] = $tag;
+        }
         $line[] = $message;
         fwrite($this->hLog, implode(' | ', $line)."\r\n");
         if (null !== $this->hErr && LOG_NOTICE == $level) {
