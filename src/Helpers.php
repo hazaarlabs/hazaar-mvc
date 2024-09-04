@@ -186,7 +186,13 @@ function strbool(mixed $value): string
     }
     if (is_string($value)) {
         $value = strtolower(trim($value));
-        if ('t' == $value || 'true' == $value || 'on' == $value || 'yes' == $value || 'y' == $value || 'ok' == $value) {
+        if ('t' == $value 
+            || 'true' == $value 
+            || 'on' == $value 
+            || 'yes' == $value 
+            || 'y' == $value 
+            || 'ok' == $value
+            || '1' == $value) {
             return 'true';
         }
         if (preg_match('/(\!|not)\s*null/', $value)) {
