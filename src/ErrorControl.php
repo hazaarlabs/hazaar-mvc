@@ -18,7 +18,7 @@ function errorAndDie(): void
     if ('stream' == ake($headers, 'X-Response-Type')) {
         $stream = new Stream($args[0]);
         $stream->__writeOutput();
-    } elseif ($app instanceof Application) {
+    } elseif ($app instanceof Application && isset($app->router)) {
         $controller = $app->router->getErrorController();
         call_user_func_array([$controller, 'setError'], $args);
         $controller->cleanOutputBuffer();
@@ -29,48 +29,50 @@ function errorAndDie(): void
             if ($args[0] instanceof Exception
                 || $args[0] instanceof Error) {
                 $error = [
-                    $args[0]->getCode(),
-                    $args[0]->getMessage(),
-                    $args[0]->getFile(),
-                    $args[0]->getLine(),
-                    null,
-                    $args[0]->getTrace(),
+                    'code' => $args[0]->getCode(),
+                    'message' => $args[0]->getMessage(),
+                    'file' => $args[0]->getFile(),
+                    'line' => $args[0]->getLine(),
+                    'context' => null,
+                    'trace' => $args[0]->getTrace(),
                 ];
             } elseif (isset($args[0]) && is_array($args[0]) && array_key_exists('type', $args[0])) {
                 $error = [
-                    $args[0]['type'],
-                    $args[0]['message'],
-                    $args[0]['file'],
-                    $args[0]['line'],
-                    null,
-                    isset($args[1]) ? $args[1] : null,
+                    'code' => $args[0]['type'],
+                    'message' => $args[0]['message'],
+                    'file' => $args[0]['file'],
+                    'line' => $args[0]['line'],
+                    'trace' => isset($args[1]) ? $args[1] : null,
                 ];
             } else {
-                $error = $args;
+                $error = [
+                    'code' => $args[0],
+                    'message' => $args[1],
+                    'file' => $args[2],
+                    'line' => $args[3],
+                    'trace' => isset($args[4]) ? $args[4] : null,
+                ];
             }
             if ('cli' === php_sapi_name()) {
                 $die = "##############################\n# Hazaar MVC - Console Error #\n##############################\n\n";
-
-                $die .= "{$error[1]}\n\n";
-                if (!is_array($error[5])) {
-                    $error[5] = [];
+                $die .= "{$error['message']}\n\n";
+                if (!is_array($error['trace'])) {
+                    $error['trace'] = debug_backtrace();
                 }
-                $error[5][] = ['file' => $error[2], 'line' => $error[3], 'class' => '', 'function' => ''];
                 $die .= "Call stack:\n\n";
-                for ($x = count($error[5]) - 1; $x >= 0; --$x) {
-                    $die .= count($error[5]) - $x.". {$error[5][$x]['class']}->{$error[5][$x]['function']} {$error[5][$x]['file']}:{$error[5][$x]['line']}\n";
+                foreach ($error['trace'] as $x => $trace) {
+                    $die .= count($error['trace']) - $x.'. '
+                        .(array_key_exists('class', $trace) ? ". {$trace['class']}->" : '')
+                        .(array_key_exists('function', $trace) ? "{$trace['function']}" : '')
+                        .(array_key_exists('file', $trace) ? "{$trace['file']}:{$trace['line']}\n" : '');
                 }
 
                 exit($die);
             }
         }
-
-        include realpath(__DIR__
-            .DIRECTORY_SEPARATOR.'..'
-            .DIRECTORY_SEPARATOR.'libs'
-            .DIRECTORY_SEPARATOR.'error'
-            .DIRECTORY_SEPARATOR.'fatal.php');
-        $code = $error[0];
+        echo 'FATAL ERROR';
+        var_dump($error);
+        $code = $error['code'];
     }
 
     exit($code);

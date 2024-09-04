@@ -15,13 +15,14 @@ use Hazaar\Application;
 use Hazaar\Application\Router\Exception\ControllerNotFound;
 use Hazaar\Application\Router\Exception\NoAction;
 use Hazaar\Application\Router\Exception\RouteNotFound;
+use Hazaar\Application\Router\Loader;
 use Hazaar\Cache;
 use Hazaar\Controller;
 use Hazaar\Controller\Error;
 use Hazaar\Controller\Response;
 use Hazaar\Map;
 
-abstract class Router implements Interfaces\Router
+class Router implements Interfaces\Router
 {
     /**
      * Default configuration.
@@ -44,6 +45,11 @@ abstract class Router implements Interfaces\Router
     ];
 
     public Application $application;
+
+    /**
+     * @var array<string,array<string,mixed>>
+     */
+    public array $routes = [];
     protected Map $config;
 
     protected ?string $controller = null;
@@ -54,6 +60,7 @@ abstract class Router implements Interfaces\Router
      */
     protected array $actionArgs = [];
     protected bool $namedActionArgs = false;
+    private static ?self $instance = null;
 
     private ?Controller $__controller = null;
 
@@ -68,15 +75,24 @@ abstract class Router implements Interfaces\Router
     private array $__cachedResponses = [];
 
     private ?Cache $__responseCache = null;
+    private Loader $loader;
 
-    final public function __construct(Application $application, Config $config)
+    final public function __construct(Application $application, Map $config)
     {
+        self::$instance = $this;
         $this->application = $application;
-        $this->config = $config->get('router', self::$defaultConfig);
+        $this->config = $config;
+        $this->config->enhance(self::$defaultConfig);
         if ($controller = $this->config->get('controller')) {
             $this->controller = ucfirst($controller);
         }
         $this->action = $this->config->get('action');
+        $type = $this->config->get('type', 'file');
+        $loaderClass = '\Hazaar\Application\Router\Loader\\'.ucfirst($type);
+        if (!class_exists($loaderClass)) {
+            throw new Router\Exception\LoaderNotSupported($type);
+        }
+        $this->loader = new $loaderClass($this->config);
     }
 
     /**
@@ -101,6 +117,7 @@ abstract class Router implements Interfaces\Router
                 return;
             }
         }
+        $this->loader->loadRoutes($request);
         if (!$this->evaluateRequest($request)) {
             throw new RouteNotFound($request->getPath());
         }
@@ -115,7 +132,7 @@ abstract class Router implements Interfaces\Router
             return $response;
         }
         $controllerClass = '\\' === substr($this->controller, 0, 1)
-            ? $this->controller : '\\Application\\Controllers\\'.ucfirst($this->controller);
+            ? $this->controller : '\Application\Controllers\\'.ucfirst($this->controller);
         if (!class_exists($controllerClass)) {
             throw new ControllerNotFound($controllerClass, $request->getPath());
         }
@@ -194,7 +211,52 @@ abstract class Router implements Interfaces\Router
 
     public function evaluateRequest(Request $request): bool
     {
-        return false;
+        dump($this->routes);
+
+        if (!$request instanceof Request\HTTP) {
+            throw new Router\Exception\NotSupported();
+        }
+        $method = $request->method();
+        if (!array_key_exists($method, $this->routes)) {
+            return false;
+        }
+
+        $path = explode('/', $request->getPath());
+        $routes = $this->routes[$method];
+        $match = false;
+        foreach ($routes as $route => $callback) {
+            $route = explode('/', trim($route, '/'));
+            if (count($route) !== count($path)) {
+                continue;
+            }
+            $args = [];
+            foreach ($route as $i => &$part) {
+                if ($part === $path[$i]) {
+                    continue;
+                }
+                if ('{' === substr($part, 0, 1) && '}' === substr($part, -1)) {
+                    $args[] = $path[$i];
+
+                    continue;
+                }
+
+                continue 2;
+            }
+            if ('Application\Controllers\\' === substr($callback[0], 0, 24)) {
+                $this->controller = substr($callback[0], 24);
+            } else {
+                $this->controller = '\\'.$callback[0];
+            }
+            if (isset($callback[1])) {
+                $this->action = $callback[1];
+            }
+            $this->actionArgs = $args;
+            $match = true;
+
+            break;
+        }
+
+        return $match;
     }
 
     public function getControllerName(): ?string
@@ -226,7 +288,7 @@ abstract class Router implements Interfaces\Router
     {
         $controller = null;
         if ($errorController = $this->config->get('errorController')) {
-            $controllerClass = '\\Application\\Controllers\\'.ucfirst($errorController);
+            $controllerClass = '\Application\Controllers\\'.ucfirst($errorController);
             if (class_exists($controllerClass) && is_subclass_of($controllerClass, Error::class)) {
                 $controller = new $controllerClass($this, $errorController);
             }
@@ -250,5 +312,70 @@ abstract class Router implements Interfaces\Router
         ];
 
         return true;
+    }
+
+    public static function get(string $path, mixed $callback): void
+    {
+        self::match(['GET'], $path, $callback);
+    }
+
+    public static function post(string $path, mixed $callback): void
+    {
+        self::match(['POST'], $path, $callback);
+    }
+
+    public static function put(string $path, mixed $callback): void
+    {
+        self::match(['PUT'], $path, $callback);
+    }
+
+    public static function delete(string $path, mixed $callback): void
+    {
+        self::match(['DELETE'], $path, $callback);
+    }
+
+    public static function patch(string $path, mixed $callback): void
+    {
+        self::match(['PATCH'], $path, $callback);
+    }
+
+    public static function options(string $path, mixed $callback): void
+    {
+        self::match(['OPTIONS'], $path, $callback);
+    }
+
+    public static function any(string $path, mixed $callback): void
+    {
+        self::match(['ANY'], $path, $callback);
+    }
+
+    public static function default(mixed $callback): void
+    {
+        if (!self::$instance) {
+            return;
+        }
+        $route = new Route($callback);
+        self::$instance->routes['DEFAULT'] = $route;
+    }
+
+    /**
+     * @param array<string>        $methods
+     * @param array{string,string} $callback
+     */
+    public static function match(array $methods, string $path, mixed $callback): void
+    {
+        if (!(
+            self::$instance
+            && (
+                is_callable($callback)
+                || (is_array($callback) && class_exists($callback[0]))
+            )
+        )) {
+            return;
+        }
+        $route = new Route($methods, $path, $callback);
+        foreach ($methods as $method) {
+            self::$instance->routes[$method][$path] = $route;
+        }
     }
 }

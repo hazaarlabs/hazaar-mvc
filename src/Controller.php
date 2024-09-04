@@ -186,7 +186,7 @@ abstract class Controller implements Controller\Interfaces\Controller
      */
     public function redirect(string|URL $location, bool $saveURI = false): Response
     {
-        return $this->router->application->redirect((string)$location, $saveURI);
+        return $this->router->application->redirect((string) $location, $saveURI);
     }
 
     /**
@@ -328,7 +328,7 @@ abstract class Controller implements Controller\Interfaces\Controller
         /**
          * Search paths for view helpers. The order here matters because apps should be able to override built-in helpers.
          */
-        $searchPrefixes = ['\\Application\\Helper\\Controller', '\\Hazaar\\Controller\\Helper'];
+        $searchPrefixes = ['\Application\Helper\Controller', '\Hazaar\Controller\Helper'];
         $name = \ucfirst($name);
         foreach ($searchPrefixes as $prefix) {
             $class = $prefix.'\\'.$name;
