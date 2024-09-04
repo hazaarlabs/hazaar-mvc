@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Application\Router\Exception;
+namespace Hazaar\Application\Router\Loader\Exception;
 
 class MissingRouteFile extends \Exception
 {

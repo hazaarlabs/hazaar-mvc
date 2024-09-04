@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller;
 
-use Hazaar\Application\Router;
+use Hazaar\Application\Router ;
 use Hazaar\View\Layout;
 use Hazaar\XML\Element;
 

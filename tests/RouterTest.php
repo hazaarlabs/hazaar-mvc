@@ -8,7 +8,7 @@ use Hazaar\Application\Request\HTTP;
 use Hazaar\Application\Router\Advanced;
 use Hazaar\Application\Router\Annotated;
 use Hazaar\Application\Router\Basic;
-use Hazaar\Application\Router\Custom;
+use Hazaar\Application\Router;
 use PHPUnit\Framework\TestCase;
 
 /**

@@ -7,8 +7,6 @@ namespace Hazaar\Application\Router;
 use Hazaar\Application\Config;
 use Hazaar\Application\Request;
 use Hazaar\Application\Request\HTTP;
-use Hazaar\Application\Router;
-use Hazaar\Exception;
 use Hazaar\Map;
 
 /**
@@ -58,7 +56,7 @@ use Hazaar\Map;
  * to the view action of the user controller.  The third route will match /user/123/edit and pass 123 as an argument to the
  * edit action of the user controller.
  */
-class Json extends Router
+class Json extends Loader
 {
     /**
      * Matches the given route path with the provided path and populates the action arguments.
@@ -129,7 +127,7 @@ class Json extends Router
      *
      * @return bool returns true if the evaluation is successful, false otherwise
      */
-    public function evaluateRequest(Request $request): bool
+    public function loadRoutes(Request $request): bool
     {
         $jsonRouterFile = $this->config->get('file', 'routes.json');
         $routeFile = new Config('routes.json');
@@ -141,6 +139,7 @@ class Json extends Router
             return true;
         }
         $routes = $routeFile->get('routes');
+        dump($routes);
         $method = $request instanceof HTTP ? $request->getMethod() : 'GET';
         foreach ($routes as $route) {
             if ($route->has('method') && strtoupper($route->get('method')) !== $method) {

@@ -172,12 +172,7 @@ class Application
             // Create the request object
             $this->request = Request\Loader::load();
             // Create a new router object for evaluating routes
-            $routerType = $this->config->get('router.type', 'basic');
-            $routerClass = 'Hazaar\\Application\\Router\\'.ucfirst($routerType);
-            if (false === class_exists($routerClass)) {
-                throw new Application\Exception\RouterUnknown($routerType);
-            }
-            $this->router = new $routerClass($this, $this->config);
+            $this->router = new Router($this, $this->config->get('router'));
             $this->timer->stop('init');
         } catch (\Throwable $e) {
             dieDieDie($e);
@@ -272,7 +267,7 @@ class Application
                 'responseType' => 'html',
             ],
             'router' => [
-                'type' => 'basic',
+                'type' => null,
                 'controller' => 'index',
                 'action' => 'index',
             ],
@@ -509,6 +504,7 @@ class Application
                 throw new \Exception('The application failed to start!');
             }
         }
+        $this->router->__initialise($this->request);
         $this->timer->stop('boot');
 
         return $this;
@@ -537,16 +533,16 @@ class Application
 
         try {
             $this->timer->start('exec');
-            if('cli' === php_sapi_name()) {
+            if ('cli' === php_sapi_name()) {
                 $this->request->setPath(ake($_SERVER, 'argv[1]'));
-            } 
+            }
             if (null !== $controller) {
+                $controller = $this->router->getController();
                 $response = $controller->__initialize($this->request);
                 if (null === $response) {
                     $response = $controller->__run();
                 }
             } else {
-                $this->router->__initialise($this->request);
                 $response = $this->router->__run($this->request);
             }
             if (!$response instanceof Response) {

@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Application\Router;
+namespace Hazaar\Application\Router\Loader;
 
 use Hazaar\Application\Request;
 use Hazaar\Application\Router;
+use Hazaar\Application\Router\Loader;
 use Hazaar\Controller;
-use Hazaar\Loader;
 
-class Advanced extends Router
+class Advanced extends Loader
 {
-    public function evaluateRequest(Request $request): bool
+    public function loadRoutes(Request $request): bool
     {
         $path = $request->getPath();
         if (empty($path) || '/' === $path) {
@@ -22,17 +22,19 @@ class Advanced extends Router
         }
         $parts = [];
         $controller = $this->findController($path, $parts);
+        $action = 'index';
         if (null === $controller) {
             $slashPos = strpos($path, '/');
-            $this->action = false === $slashPos ? $path : substr($this->action, 0, $slashPos);
+            $action = false === $slashPos ? $path : substr($action, 0, $slashPos);
 
             return false;
         }
-        $this->controller = ucfirst($controller);
+        $controller = ucfirst($controller);
         if (count($parts) > 0) {
-            $this->action = array_shift($parts);
+            $action = array_shift($parts);
         }
-        $this->actionArgs = $parts;
+        $actionArgs = $parts;
+        Router::default([$controller, $action, $actionArgs]);
 
         return true;
     }
