@@ -39,7 +39,7 @@ class PDF extends OK
         return false;
     }
 
-    public function __writeOutput(): void
+    public function writeOutput(): void
     {
         $this->setContentType('application/pdf');
         if (true === $this->downloadable) {
@@ -70,7 +70,7 @@ class PDF extends OK
             }
         }
 
-        parent::__writeOutput();
+        parent::writeOutput();
     }
 
     public function getContent(): string

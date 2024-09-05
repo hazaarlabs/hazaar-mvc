@@ -38,7 +38,7 @@ abstract class Action extends Basic
         $this->view = new ViewRenderer();
     }
 
-    public function __initialize(Request $request): ?Response
+    public function initialize(Request $request): ?Response
     {
         if ($request instanceof HTTP
             && false === $request->isXmlHttpRequest()
@@ -48,10 +48,10 @@ abstract class Action extends Basic
             $this->view->layout($this->router->application->config['app']['layout']);
         }
 
-        return parent::__initialize($request);
+        return parent::initialize($request);
     }
 
-    public function __registerMethod(string $name, callable $callback): bool
+    public function registerMethod(string $name, callable $callback): bool
     {
         if (array_key_exists($name, $this->methods)) {
             throw new Exception\MethodExists($name);
@@ -61,16 +61,16 @@ abstract class Action extends Basic
         return true;
     }
 
-    public function __runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): Response
+    public function runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): Response
     {
         try {
-            $response = parent::__runAction($actionName, $actionArgs, $namedActionArgs);
+            $response = parent::runAction($actionName, $actionArgs, $namedActionArgs);
         } catch (Exception\ResponseInvalid $e) {
             $response = null;
         }
         if (null === $response) {
             $response = new Response\HTML();
-            $this->view->__exec($response);
+            $this->view->exec($response);
         }
 
         return $response;

@@ -1062,10 +1062,11 @@ function dump(mixed $data = null, bool $backtrace = false): void
             if (is_array($dumpLog)) {
                 $controller->addLogEntries($dumpLog);
             }
-            $controller->__initialize($app->request);
-            $response = $controller->__run($caller);
-            $response->__writeOutput();
-        }else{
+            $controller->initialize($app->request);
+            $controller->setCaller($caller);
+            $response = $controller->run();
+            $response->writeOutput();
+        } else {
             var_dump($data);
         }
     } else {

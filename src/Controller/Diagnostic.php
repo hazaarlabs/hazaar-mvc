@@ -13,6 +13,7 @@ namespace Hazaar\Controller;
 
 use Hazaar\Application\Request;
 use Hazaar\Application\Request\HTTP;
+use Hazaar\Application\Route;
 
 /**
  * @brief Basic controller class
@@ -24,9 +25,14 @@ class Diagnostic extends Action
     protected int $code = 204;
     protected string $responseType = 'html';
 
-    public function __initialize(?Request $request = null): ?Response
+    /**
+     * @var array<mixed>
+     */
+    protected array $caller = [];
+
+    public function initialize(?Request $request = null): ?Response
     {
-        $response = parent::__initialize($request);
+        $response = parent::initialize($request);
         if (getenv('HAZAAR_SID')) {
             $this->responseType = 'hazaar';
         } elseif (PHP_SAPI == 'cli') {
@@ -55,16 +61,22 @@ class Diagnostic extends Action
     }
 
     /**
-     * @detail Run the controller action
-     *
      * @param array<mixed> $caller
      */
-    final public function __run(array $caller = []): Response
+    public function setCaller(array $caller): void
+    {
+        $this->caller = $caller;
+    }
+
+    /**
+     * @detail Run the controller action
+     */
+    final public function run(?Route $route = null): Response
     {
         if ($this->responseType && method_exists($this, $this->responseType)) {
-            $response = call_user_func([$this, $this->responseType], $caller);
+            $response = call_user_func([$this, $this->responseType]);
         } elseif (method_exists($this, 'run')) {
-            $response = $this->run();
+            $response = $this->run($route);
         } else {
             $response = $this->html();
         }

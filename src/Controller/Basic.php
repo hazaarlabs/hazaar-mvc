@@ -31,11 +31,11 @@ use Hazaar\Controller;
  */
 abstract class Basic extends Controller
 {
-    protected bool $__stream = false;
+    protected bool $stream = false;
 
-    public function __initialize(Request $request): ?Response
+    public function initialize(Request $request): ?Response
     {
-        parent::__initialize($request);
+        parent::initialize($request);
         $this->init($request);
 
         return $this->initResponse($request);
@@ -53,7 +53,7 @@ abstract class Basic extends Controller
      * @throws Exception\ActionNotPublic
      * @throws Exception\ResponseInvalid
      */
-    public function __runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): Response
+    public function runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): Response
     {
         /*
          * Check if we have routed to the default controller, or the action method does not
@@ -97,7 +97,7 @@ abstract class Basic extends Controller
         if (null === $response) {
             throw new Exception\ResponseInvalid(get_class($this), $actionName);
         }
-        if ($this->__stream) {
+        if ($this->stream) {
             return new Response\Stream($response);
         }
         if (is_array($response)) {
@@ -136,7 +136,7 @@ abstract class Basic extends Controller
             header('X-Accel-Buffering: no');
             header('X-Response-Type: stream');
             flush();
-            $this->__stream = true;
+            $this->stream = true;
             ob_implicit_flush();
         }
         $type = 's';

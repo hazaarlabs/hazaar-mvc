@@ -28,7 +28,7 @@ class Response implements Interfaces\Response
     /**
      * Write the response to the output buffer.
      */
-    public function __writeOutput(): void
+    public function writeOutput(): void
     {
         $content = '';
         if ($this->modified()) {
