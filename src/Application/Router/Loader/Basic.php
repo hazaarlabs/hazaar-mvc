@@ -30,7 +30,7 @@ class Basic extends Loader
      *
      * @return bool returns true if the evaluation is successful, false otherwise
      */
-    public function loadRoutes(Request $request): bool
+    public function exec(Request $request): bool
     {
         if (!$request instanceof Request\HTTP) {
             throw new ProtocolNotSupported();
@@ -40,7 +40,7 @@ class Basic extends Loader
         $controller = (isset($parts[0]) && '' !== $parts[0]) ? ucfirst($parts[0]) : null;
         $action = (isset($parts[1]) && '' !== $parts[1]) ? $parts[1] : null;
         $actionArgs = (count($parts) > 2) ? array_slice($parts, 2) : null;
-        Router::default([$controller, $action, $actionArgs]);
+        Router::set([$controller, $action, $actionArgs]);
 
         return true;
     }

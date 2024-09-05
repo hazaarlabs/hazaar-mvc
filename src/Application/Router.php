@@ -12,17 +12,14 @@ declare(strict_types=1);
 namespace Hazaar\Application;
 
 use Hazaar\Application;
-use Hazaar\Application\Router\Exception\ControllerNotFound;
-use Hazaar\Application\Router\Exception\NoAction;
 use Hazaar\Application\Router\Exception\RouteNotFound;
 use Hazaar\Application\Router\Loader;
 use Hazaar\Cache;
-use Hazaar\Controller;
 use Hazaar\Controller\Error;
 use Hazaar\Controller\Response;
 use Hazaar\Map;
 
-class Router implements Interfaces\Router
+class Router
 {
     /**
      * Default configuration.
@@ -46,10 +43,6 @@ class Router implements Interfaces\Router
 
     public Application $application;
 
-    /**
-     * @var array<string,array<string,mixed>>
-     */
-    public array $routes = [];
     protected Map $config;
 
     protected ?string $controller = null;
@@ -62,20 +55,14 @@ class Router implements Interfaces\Router
     protected bool $namedActionArgs = false;
     private static ?self $instance = null;
 
-    private ?Controller $__controller = null;
+  
+    private Loader $routeLoader;
 
     /**
-     * @var array<array<bool|int>>
+     * @var array<Route>
      */
-    private array $__cachedActions = [];
-
-    /**
-     * @var array<Response>
-     */
-    private array $__cachedResponses = [];
-
-    private ?Cache $__responseCache = null;
-    private Loader $loader;
+    private array $routes = [];
+    private ?Route $route = null;
 
     final public function __construct(Application $application, Map $config)
     {
@@ -92,7 +79,7 @@ class Router implements Interfaces\Router
         if (!class_exists($loaderClass)) {
             throw new Router\Exception\LoaderNotSupported($type);
         }
-        $this->loader = new $loaderClass($this->config);
+        $this->routeLoader = new $loaderClass($this->config);
     }
 
     /**
@@ -101,9 +88,8 @@ class Router implements Interfaces\Router
      * @param Request $request the request object
      *
      * @throws RouteNotFound
-     * @throws NoAction
      */
-    final public function __initialise(Request $request): void
+    final public function initialise(Request $request): void
     {
         // Search for internal controllers
         if (($path = $request->getPath())
@@ -117,146 +103,30 @@ class Router implements Interfaces\Router
                 return;
             }
         }
-        $this->loader->loadRoutes($request);
-        if (!$this->evaluateRequest($request)) {
-            throw new RouteNotFound($request->getPath());
-        }
-        if (null === $this->controller) {
-            throw new RouteNotFound($request->getPath());
-        }
-    }
-
-    public function __run(Request $request): Response
-    {
-        if ($response = $this->__getCachedResponse()) {
-            return $response;
-        }
-        $controllerClass = '\\' === substr($this->controller, 0, 1)
-            ? $this->controller : '\Application\Controllers\\'.ucfirst($this->controller);
-        if (!class_exists($controllerClass)) {
-            throw new ControllerNotFound($controllerClass, $request->getPath());
-        }
-        $this->__controller = new $controllerClass($this, $this->controller);
-        // Initialise the controller with the current request
-        if ($response = $this->__controller->__initialize($request)) {
-            return $response;
-        }
-        // Execute the controller action
-        $response = $this->__controller->__runAction($this->action, $this->actionArgs, $this->namedActionArgs);
-        if (false === $response) {
-            $response = $this->__controller->__run();
-            if (false === $response) {
-                throw new NoAction($this->controller);
-            }
-        }
-        $this->__cacheResponse($response);
-
-        return $response;
-    }
-
-    final public function __shutdown(Response $response): void
-    {
-        if (null !== $this->__controller) {
-            $this->__controller->__shutdown($response);
-        }
-        if ($this->__responseCache && count($this->__cachedResponses) > 0) {
-            foreach ($this->__cachedResponses as $cacheItem) {
-                $this->__responseCache->set($cacheItem[0], $cacheItem[1], $cacheItem[2]);
+        self::$instance = $this; // Set the instance to this object so that static methods will use this instance
+        $this->routeLoader->exec($request);
+        if (null === $this->route) {
+            $this->route = $this->evaluateRequest($request);
+            if (null === $this->route) {
+                throw new RouteNotFound($request->getPath());
             }
         }
     }
 
-    private function __getCacheKey(string $controller, string $action, ?string &$cacheName = null): false|string
+    public function addRoute(Route $route): void
     {
-        $cacheName = $this->controller.'::'.$this->action;
-        if (!array_key_exists($cacheName, $this->__cachedActions)) {
-            return false;
-        }
-        $cacheKey = $cacheName.'('.serialize($this->actionArgs).')';
-        if (true === $this->__cachedActions[$cacheName]['private'] && ($sid = session_id())) {
-            $cacheKey .= '::'.$sid;
-        }
-
-        return $cacheKey;
+        $route->setRouter($this);
+        $this->routes[] = $route;
     }
 
-    /**
-     * Cache a response to the current action invocation.
-     *
-     * @param Response $response The response to cache
-     */
-    private function __cacheResponse(Response $response): bool
+    public function setRoute(Route $route): void
     {
-        if (null === $this->__responseCache) {
-            return false;
-        }
-        $cacheKey = $this->__getCacheKey($this->controller, $this->action, $cacheName);
-        $this->__cachedResponses[] = [$cacheKey, $response, $this->__cachedActions[$cacheName]['timeout']];
-
-        return true;
+        $this->route = $route;
     }
 
-    private function __getCachedResponse(): false|Response
+    public function getRoute(): ?Route
     {
-        if (null === $this->__responseCache) {
-            return false;
-        }
-        $cacheKey = $this->__getCacheKey($this->controller, $this->action);
-        if ($response = $this->__responseCache->get($cacheKey)) {
-            return $response;
-        }
-
-        return false;
-    }
-
-    public function evaluateRequest(Request $request): bool
-    {
-        dump($this->routes);
-
-        if (!$request instanceof Request\HTTP) {
-            throw new Router\Exception\NotSupported();
-        }
-        $method = $request->method();
-        if (!array_key_exists($method, $this->routes)) {
-            return false;
-        }
-
-        $path = explode('/', $request->getPath());
-        $routes = $this->routes[$method];
-        $match = false;
-        foreach ($routes as $route => $callback) {
-            $route = explode('/', trim($route, '/'));
-            if (count($route) !== count($path)) {
-                continue;
-            }
-            $args = [];
-            foreach ($route as $i => &$part) {
-                if ($part === $path[$i]) {
-                    continue;
-                }
-                if ('{' === substr($part, 0, 1) && '}' === substr($part, -1)) {
-                    $args[] = $path[$i];
-
-                    continue;
-                }
-
-                continue 2;
-            }
-            if ('Application\Controllers\\' === substr($callback[0], 0, 24)) {
-                $this->controller = substr($callback[0], 24);
-            } else {
-                $this->controller = '\\'.$callback[0];
-            }
-            if (isset($callback[1])) {
-                $this->action = $callback[1];
-            }
-            $this->actionArgs = $args;
-            $match = true;
-
-            break;
-        }
-
-        return $match;
+        return $this->route;
     }
 
     public function getControllerName(): ?string
@@ -267,11 +137,6 @@ class Router implements Interfaces\Router
     public function getActionName(): ?string
     {
         return $this->action;
-    }
-
-    public function getActionArgs(): array
-    {
-        return $this->actionArgs;
     }
 
     public function getDefaultControllerName(): string
@@ -300,82 +165,79 @@ class Router implements Interfaces\Router
         return $controller;
     }
 
-    public function cacheAction(string $controllerName, string $actionName, int $timeout = 60, bool $private = false): bool
+    public static function get(string $path, mixed $callable): void
     {
-        if (null === $this->__responseCache) {
-            $this->__responseCache = new Cache('apc');
-        }
-        $this->__getCacheKey($controllerName, $actionName, $cacheName);
-        $this->__cachedActions[$cacheName] = [
-            'timeout' => $timeout,
-            'private' => $private,
-        ];
-
-        return true;
+        self::match(['GET'], $path, $callable);
     }
 
-    public static function get(string $path, mixed $callback): void
+    public static function post(string $path, mixed $callable): void
     {
-        self::match(['GET'], $path, $callback);
+        self::match(['POST'], $path, $callable);
     }
 
-    public static function post(string $path, mixed $callback): void
+    public static function put(string $path, mixed $callable): void
     {
-        self::match(['POST'], $path, $callback);
+        self::match(['PUT'], $path, $callable);
     }
 
-    public static function put(string $path, mixed $callback): void
+    public static function delete(string $path, mixed $callable): void
     {
-        self::match(['PUT'], $path, $callback);
+        self::match(['DELETE'], $path, $callable);
     }
 
-    public static function delete(string $path, mixed $callback): void
+    public static function patch(string $path, mixed $callable): void
     {
-        self::match(['DELETE'], $path, $callback);
+        self::match(['PATCH'], $path, $callable);
     }
 
-    public static function patch(string $path, mixed $callback): void
+    public static function options(string $path, mixed $callable): void
     {
-        self::match(['PATCH'], $path, $callback);
+        self::match(['OPTIONS'], $path, $callable);
     }
 
-    public static function options(string $path, mixed $callback): void
+    public static function any(string $path, mixed $callable): void
     {
-        self::match(['OPTIONS'], $path, $callback);
+        self::match(['ANY'], $path, $callable);
     }
 
-    public static function any(string $path, mixed $callback): void
-    {
-        self::match(['ANY'], $path, $callback);
-    }
-
-    public static function default(mixed $callback): void
+    public static function set(mixed $callable): void
     {
         if (!self::$instance) {
             return;
         }
-        $route = new Route($callback);
-        self::$instance->routes['DEFAULT'] = $route;
+        self::$instance->setRoute(new Route($callable));
     }
 
     /**
      * @param array<string>        $methods
-     * @param array{string,string} $callback
+     * @param array{string,string} $callable
      */
-    public static function match(array $methods, string $path, mixed $callback): void
+    public static function match(array $methods, string $path, mixed $callable): void
     {
         if (!(
             self::$instance
             && (
-                is_callable($callback)
-                || (is_array($callback) && class_exists($callback[0]))
+                is_callable($callable)
+                || (is_array($callable) && class_exists($callable[0]))
             )
         )) {
             return;
         }
-        $route = new Route($methods, $path, $callback);
-        foreach ($methods as $method) {
-            self::$instance->routes[$method][$path] = $route;
+        self::$instance->addRoute(new Route($callable, $path, $methods));
+    }
+
+    private function evaluateRequest(Request $request): ?Route
+    {
+        if (!$request instanceof Request\HTTP) {
+            throw new Router\Exception\ProtocolNotSupported();
         }
+        $method = $request->method();
+        foreach ($this->routes as $route) {
+            if ($route->match($method, $request->getPath())) {
+                return $this->route = $route;
+            }
+        }
+
+        return null;
     }
 }

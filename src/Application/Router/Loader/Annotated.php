@@ -355,18 +355,18 @@ class Annotated extends Advanced
         return $api;
     }
 
-    public function __run(Request $request): Response
+    public function run(Request $request): Response
     {
-        if (true === $this->__selectedEndpoint[0]['cache']) {
+        if (true === $this->selectedEndpoint[0]['cache']) {
             $this->cacheAction(
                 $this->controller,
                 $this->action,
-                $this->__selectedEndpoint[0]['cache_ttl'],
-                $this->__selectedEndpoint[0]['private']
+                $this->selectedEndpoint[0]['cache_ttl'],
+                $this->selectedEndpoint[0]['private']
             );
         }
 
-        return parent::__run($request);
+        return parent::run($request);
     }
 
     public function evaluateRequest(Request $request): bool
@@ -381,7 +381,7 @@ class Annotated extends Advanced
         if ('\\' === substr($this->controller, 0, 1)) {
             $controllerClass = $this->controller;
         } else {
-            $controllerClass = '\\Application\\Controllers\\'.ucfirst($this->controller);
+            $controllerClass = '\Application\Controllers\\'.ucfirst($this->controller);
         }
         $this->__loadRoutes($controllerClass);
         if (0 === count($this->__controllerEndpoints)) {

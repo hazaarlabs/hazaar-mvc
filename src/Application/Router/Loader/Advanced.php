@@ -11,7 +11,7 @@ use Hazaar\Controller;
 
 class Advanced extends Loader
 {
-    public function loadRoutes(Request $request): bool
+    public function exec(Request $request): bool
     {
         $path = $request->getPath();
         if (empty($path) || '/' === $path) {

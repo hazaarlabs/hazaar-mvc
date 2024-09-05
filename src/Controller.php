@@ -12,8 +12,10 @@ declare(strict_types=1);
 namespace Hazaar;
 
 use Hazaar\Application\Request;
+use Hazaar\Application\Route;
 use Hazaar\Application\Router;
 use Hazaar\Application\URL;
+use Hazaar\Controller\Exception\NoAction;
 use Hazaar\Controller\Helper;
 use Hazaar\Controller\Response;
 
@@ -39,6 +41,18 @@ abstract class Controller implements Controller\Interfaces\Controller
      */
     private array $_helpers = [];
 
+    // /**
+    //  * @var array<array<bool|int>>
+    //  */
+    // private array $cachedActions = [];
+
+    /**
+     * @var array<Response>
+     */
+    private array $cachedResponses = [];
+
+    private ?Cache $responseCache = null;
+
     /**
      * Base controller constructor.
      *
@@ -54,51 +68,11 @@ abstract class Controller implements Controller\Interfaces\Controller
     }
 
     /**
-     * Controller shutdown method.
-     *
-     * This method is called when a controller is being shut down.  It will call the extending controllers
-     * shutdown method if it exists, otherwise it will silently carry on.
-     */
-    public function __shutdown(Response $response): void
-    {
-        $this->shutdown($response);
-    }
-
-    /**
-     * Controller initialisation method.
-     *
-     * This should be called by all extending controllers and is simply responsible for storing the calling request.
-     *
-     * @param Request $request the application request object
-     */
-    public function __initialize(Request $request): ?Response
-    {
-        $this->request = $request;
-
-        return null;
-    }
-
-    /**
      * Convert the controller object into a string.
      */
     public function __toString(): string
     {
         return get_class($this);
-    }
-
-    /**
-     * Default run method.
-     *
-     * The run method is where the controller does all it's work.  This default one does nothing.
-     */
-    public function __run(): false|Response
-    {
-        return false;
-    }
-
-    public function __runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): false|Response
-    {
-        return false;
     }
 
     /**
@@ -118,17 +92,46 @@ abstract class Controller implements Controller\Interfaces\Controller
     }
 
     /**
-     * Shutdown the controller.
+     * Controller initialisation method.
      *
-     * This method is called when the controller is being shut down.
+     * This should be called by all extending controllers and is simply responsible for storing the calling request.
      *
-     * @param Response $response the response object
-     *
-     * @return bool returns true
+     * @param Request $request the application request object
      */
-    public function shutdown(Response $response): bool
+    public function initialize(Request $request): ?Response
     {
-        return true;
+        $this->request = $request;
+
+        return null;
+    }
+
+    public function run(?Route $route = null): Response
+    {
+        // if ($response = $this->getCachedResponse($route)) {
+        //     return $response;
+        // }
+        // Execute the controller action
+        $response = $this->runAction($route->getAction(), $route->getActionArgs(), false);
+        if (false === $response) {
+            throw new NoAction($this->name);
+        }
+        // $this->cacheResponse($response);
+
+        return $response;
+    }
+
+    public function runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): false|Response
+    {
+        return false;
+    }
+
+    final public function shutdown(Response $response): void
+    {
+        if ($this->responseCache && count($this->cachedResponses) > 0) {
+            foreach ($this->cachedResponses as $cacheItem) {
+                $this->responseCache->set($cacheItem[0], $cacheItem[1], $cacheItem[2]);
+            }
+        }
     }
 
     /**
@@ -309,12 +312,21 @@ abstract class Controller implements Controller\Interfaces\Controller
         return array_key_exists($helper, $this->_helpers);
     }
 
-    public function cacheAction(string $action, int $timeout = 0): void
-    {
-        $this->router->cacheAction($this->name, $action, $timeout);
-    }
+    // public function cacheAction(string $actionName, int $timeout = 60, bool $private = false): bool
+    // {
+    //     if (null === $this->responseCache) {
+    //         $this->responseCache = new Cache('apc');
+    //     }
+    //     $this->getCacheKey($controllerName, $actionName, $cacheName);
+    //     $this->cachedActions[$cacheName] = [
+    //         'timeout' => $timeout,
+    //         'private' => $private,
+    //     ];
 
-    /**
+    //     return true;
+    // }
+
+    /*s
      * Find a helper class by name.
      *
      * This method searches for view helper classes based on the given name. The search order is important because it allows apps to override built-in helpers.
@@ -339,4 +351,39 @@ abstract class Controller implements Controller\Interfaces\Controller
 
         return null;
     }
+
+    // private function getCacheKey(string $controller, string $action, ?string &$cacheName = null): false|string
+    // {
+    //     $cacheName = $controller.'::'.$this->action;
+    //     if (!array_key_exists($cacheName, $this->__cachedActions)) {
+    //         return false;
+    //     }
+
+    //     return $cacheName.'('.serialize($this->actionArgs).')';
+    // }
+
+    // Cache a response to the current action invocation.
+    // private function cacheResponse(Response $response): bool
+    // {
+    //     if (null === $this->__responseCache) {
+    //         return false;
+    //     }
+    //     $cacheKey = $this->__getCacheKey($this->controller, $this->action, $cacheName);
+    //     $this->__cachedResponses[] = [$cacheKey, $response, $this->__cachedActions[$cacheName]['timeout']];
+
+    //     return true;
+    // }
+
+    // private function getCachedResponse(): false|Response
+    // {
+    //     if (null === $this->__responseCache) {
+    //         return false;
+    //     }
+    //     $cacheKey = $this->__getCacheKey($this->controller, $this->action);
+    //     if ($response = $this->__responseCache->get($cacheKey)) {
+    //         return $response;
+    //     }
+
+    //     return false;
+    // }
 }

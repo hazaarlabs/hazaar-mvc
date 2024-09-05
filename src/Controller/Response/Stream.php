@@ -42,7 +42,7 @@ class Stream extends OK
         }
     }
 
-    public function __writeoutput(): void
+    public function writeoutput(): void
     {
         echo "\0".$this->type.$this->final;
         flush();

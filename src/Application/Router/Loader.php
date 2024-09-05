@@ -16,5 +16,5 @@ abstract class Loader
         $this->config = $config;
     }
 
-    abstract public function loadRoutes(Request $request): bool;
+    abstract public function exec(Request $request): bool;
 }

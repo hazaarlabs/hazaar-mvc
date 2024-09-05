@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Application\Router\Exception;
+namespace Hazaar\Controller\Exception;
 
 class NoAction extends \Exception
 {
     public function __construct(string $controller)
     {
-        parent::__construct("Route has no action for controller '{$controller}'", 404);
+        parent::__construct("Controller '{$controller}' has no runnable action", 404);
     }
 }

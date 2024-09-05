@@ -56,7 +56,7 @@ use Hazaar\Map;
  * to the view action of the user controller.  The third route will match /user/123/edit and pass 123 as an argument to the
  * edit action of the user controller.
  */
-class Json extends Loader
+class JSON extends Loader
 {
     /**
      * Matches the given route path with the provided path and populates the action arguments.
@@ -127,7 +127,7 @@ class Json extends Loader
      *
      * @return bool returns true if the evaluation is successful, false otherwise
      */
-    public function loadRoutes(Request $request): bool
+    public function exec(Request $request): bool
     {
         $jsonRouterFile = $this->config->get('file', 'routes.json');
         $routeFile = new Config('routes.json');

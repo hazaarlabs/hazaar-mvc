@@ -9,7 +9,7 @@ use Hazaar\Application\Router\Loader;
 
 class File extends Loader
 {
-    public function loadRoutes(Request $request): bool
+    public function exec(Request $request): bool
     {
         $filename = $this->config->get('file', 'route.php');
         $file = APPLICATION_PATH.DIRECTORY_SEPARATOR.$filename;

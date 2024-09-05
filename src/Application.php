@@ -504,7 +504,7 @@ class Application
                 throw new \Exception('The application failed to start!');
             }
         }
-        $this->router->__initialise($this->request);
+        $this->router->initialise($this->request);
         $this->timer->stop('boot');
 
         return $this;
@@ -533,17 +533,24 @@ class Application
 
         try {
             $this->timer->start('exec');
+            $route = $this->router->getRoute();
             if ('cli' === php_sapi_name()) {
                 $this->request->setPath(ake($_SERVER, 'argv[1]'));
             }
             if (null !== $controller) {
-                $controller = $this->router->getController();
-                $response = $controller->__initialize($this->request);
+                $response = $controller->initialize($this->request);
                 if (null === $response) {
-                    $response = $controller->__run();
+                    $response = $controller->run($route);
                 }
             } else {
-                $response = $this->router->__run($this->request);
+                if (!$route) {
+                    throw new \Exception('No route found');
+                }
+                $controller = $route->getController();
+                $response = $controller->initialize($this->request);
+                if (null === $response) {
+                    $response = $controller->run($route);
+                }
             }
             if (!$response instanceof Response) {
                 $response = new NoContent();
@@ -558,10 +565,10 @@ class Application
                 }
             }
             // Finally, write the response to the output buffer.
-            $response->__writeOutput();
+            $response->writeOutput();
             // Shutdown the controller
-            $this->router->__shutdown($response);
             $this->timer->start('shutdown');
+            $controller->shutdown($response);
             $this->timer->stop('exec');
             $code = $response->getStatus();
         } catch (Controller\Exception\HeadersSent $e) {

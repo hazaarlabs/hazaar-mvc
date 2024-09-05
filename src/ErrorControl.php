@@ -17,7 +17,7 @@ function errorAndDie(): void
     $args = func_get_args();
     if ('stream' == ake($headers, 'X-Response-Type')) {
         $stream = new Stream($args[0]);
-        $stream->__writeOutput();
+        $stream->writeOutput();
     } elseif ($app instanceof Application && isset($app->router)) {
         $controller = $app->router->getErrorController();
         call_user_func_array([$controller, 'setError'], $args);

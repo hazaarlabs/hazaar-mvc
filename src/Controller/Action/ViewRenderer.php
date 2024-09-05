@@ -24,16 +24,6 @@ class ViewRenderer implements \ArrayAccess
      */
     private array $_data = [];
 
-    // Helper execution call.  This renders the layout file.
-    public function __exec(HTML $response): void
-    {
-        $content = $this->render($this->view);
-        if (!$content) {
-            throw new NoContent(get_class($this->view));
-        }
-        $response->setContent($content);
-    }
-
     public function __set(string $key, mixed $value)
     {
         $this->_data[$key] = $value;
@@ -47,6 +37,16 @@ class ViewRenderer implements \ArrayAccess
     public function __unset(string $name): void
     {
         unset($this->_data[$name]);
+    }
+
+    // Helper execution call.  This renders the layout file.
+    public function exec(HTML $response): void
+    {
+        $content = $this->render($this->view);
+        if (!$content) {
+            throw new NoContent(get_class($this->view));
+        }
+        $response->setContent($content);
     }
 
     /**

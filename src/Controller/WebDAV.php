@@ -44,7 +44,7 @@ abstract class WebDAV extends Basic
         'LOCK',
     ];
 
-    public function __runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): Response
+    public function runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): Response
     {
         if (true === $namedActionArgs) {
             throw new \Exception('Named action arguments are not supported for WebDAV actions.');
@@ -64,7 +64,7 @@ abstract class WebDAV extends Basic
             return $this->__default($this->name, $actionName);
         }
         $response = call_user_func([$this, $method]);
-        if ($this->__stream) {
+        if ($this->stream) {
             $response = new Response\Stream($response);
         }
         if (!$response instanceof Response) {

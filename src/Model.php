@@ -87,7 +87,7 @@ abstract class Model implements \jsonSerializable, \Iterator
                 $reflectionProperty->setValue($this, $propertyValue);
             }
             if ($reflectionProperty->isInitialized($this) && isset($this->propertyRules[$propertyName])) {
-                $this->__execPropertyRules($propertyName, $propertyValue, $this->propertyRules[$propertyName]);
+                $this->execPropertyRules($propertyName, $propertyValue, $this->propertyRules[$propertyName]);
             }
             $this->propertyNames[] = $propertyName;
         }
@@ -225,7 +225,7 @@ abstract class Model implements \jsonSerializable, \Iterator
      * @param mixed                      &$propertyValue The value of the property
      * @param array<int,callable|string> $rules          the array of rules to be applied
      */
-    private function __execPropertyRules(string $propertyName, mixed &$propertyValue, array $rules): void
+    private function execPropertyRules(string $propertyName, mixed &$propertyValue, array $rules): void
     {
         foreach ($rules as $rule => $ruleData) {
             $propertyValue = call_user_func_array([$this, $ruleData[0]], array_merge([$propertyName, $propertyValue], $ruleData[1]));
@@ -520,7 +520,7 @@ abstract class Model implements \jsonSerializable, \Iterator
          * Executes read event hooks and property rules for a given property.
          *
          * If a read event hook is registered for the property, it is executed with the current property value as the argument.
-         * If property rules are defined for the property, they are executed using the __execPropertyRules() method.
+         * If property rules are defined for the property, they are executed using the execPropertyRules() method.
          *
          * @param string $propertyName  the name of the property
          * @param mixed  $propertyValue the current value of the property
@@ -528,13 +528,13 @@ abstract class Model implements \jsonSerializable, \Iterator
         if (isset($this->eventHooks['read'][$propertyName])) {
             $propertyValue = $this->eventHooks['read'][$propertyName]($propertyValue);
             if (isset($this->propertyRules[$propertyName])) {
-                $this->__execPropertyRules($propertyName, $propertyValue, $this->propertyRules[$propertyName]);
+                $this->execPropertyRules($propertyName, $propertyValue, $this->propertyRules[$propertyName]);
             }
         }
         if (isset($this->eventHooks['read'][true])) {
             $propertyValue = $this->eventHooks['read'][true]($propertyValue);
             if (isset($this->propertyRules[$propertyName])) {
-                $this->__execPropertyRules($propertyName, $propertyValue, $this->propertyRules[$propertyName]);
+                $this->execPropertyRules($propertyName, $propertyValue, $this->propertyRules[$propertyName]);
             }
         }
 
@@ -562,7 +562,7 @@ abstract class Model implements \jsonSerializable, \Iterator
             }
         }
         if (isset($this->propertyRules[$propertyName])) {
-            $this->__execPropertyRules($propertyName, $propertyValue, $this->propertyRules[$propertyName]);
+            $this->execPropertyRules($propertyName, $propertyValue, $this->propertyRules[$propertyName]);
         }
         if (isset($this->eventHooks['write'][$propertyName])) {
             $propertyValue = $this->eventHooks['write'][$propertyName]($propertyValue);
