@@ -11,6 +11,14 @@ use Hazaar\Controller;
 
 class Advanced extends Loader
 {
+    protected string $controller;
+    protected string $action;
+
+    /**
+     * @var array<mixed>
+     */
+    protected array $actionArgs;
+
     public function exec(Request $request): bool
     {
         $path = $request->getPath();
@@ -22,19 +30,13 @@ class Advanced extends Loader
         }
         $parts = [];
         $controller = $this->findController($path, $parts);
-        $action = 'index';
         if (null === $controller) {
-            $slashPos = strpos($path, '/');
-            $action = false === $slashPos ? $path : substr($action, 0, $slashPos);
-
             return false;
         }
-        $controller = ucfirst($controller);
-        if (count($parts) > 0) {
-            $action = array_shift($parts);
-        }
-        $actionArgs = $parts;
-        Router::default([$controller, $action, $actionArgs]);
+        $this->controller = 'Application\Controllers\\'.$controller;
+        $this->action = (count($parts) > 0) ? array_shift($parts) : null;
+        $this->actionArgs = $parts;
+        Router::set([$this->controller, $this->action, $this->actionArgs], $path);
 
         return true;
     }
@@ -72,7 +74,7 @@ class Advanced extends Loader
     {
         $controllerParts = explode('/', $path);
         $controller = null;
-        $controllerRoot = Loader::getFilePath(FILE_PATH_CONTROLLER);
+        $controllerRoot = \Hazaar\Loader::getFilePath(FILE_PATH_CONTROLLER);
         $controllerPath = DIRECTORY_SEPARATOR;
         $controllerIndex = null;
         $defaultController = ucfirst($this->config['controller']);

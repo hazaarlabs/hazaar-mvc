@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller;
 
+use Hazaar\Application;
 use Hazaar\Application\Route;
-use Hazaar\Application\Router;
 use Hazaar\Controller;
 use Hazaar\Controller\Response\JSON;
 use Hazaar\Controller\Response\Text;
@@ -15,9 +15,9 @@ class Closure extends Controller
 {
     protected \Closure $closure;
 
-    public function __construct(Router $router, \Closure $closure)
+    public function __construct(Application $application, \Closure $closure)
     {
-        parent::__construct($router);
+        parent::__construct($application);
         $this->closure = $closure;
     }
 

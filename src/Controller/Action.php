@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller;
 
+use Hazaar\Application;
 use Hazaar\Application\Request;
 use Hazaar\Application\Request\HTTP;
-use Hazaar\Application\Router;
 use Hazaar\Controller;
 use Hazaar\Controller\Action\ViewRenderer;
 use Hazaar\View;
@@ -32,9 +32,9 @@ abstract class Action extends Basic
      */
     protected array $methods = [];
 
-    public function __construct(Router $router, string $name)
+    public function __construct(Application $application, string $name)
     {
-        parent::__construct($router, $name);
+        parent::__construct($application, $name);
         $this->view = new ViewRenderer();
     }
 
@@ -42,10 +42,10 @@ abstract class Action extends Basic
     {
         if ($request instanceof HTTP
             && false === $request->isXmlHttpRequest()
-            && null !== $this->router->application
-            && 'html' === $this->router->application->getResponseType()
-            && $this->router->application->config['app']->has('layout')) {
-            $this->view->layout($this->router->application->config['app']['layout']);
+            && null !== $this->application
+            && 'html' === $this->application->getResponseType()
+            && $this->application->config['app']->has('layout')) {
+            $this->view->layout($this->application->config['app']['layout']);
         }
 
         return parent::initialize($request);

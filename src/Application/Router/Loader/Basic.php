@@ -35,12 +35,15 @@ class Basic extends Loader
         if (!$request instanceof Request\HTTP) {
             throw new ProtocolNotSupported();
         }
-        $path = $request->getPath();
+        $path = trim($request->getPath());
+        if (0 === strlen($path)) {
+            return true; // Return true if the path is empty.  Allows for default controller/action to be used.
+        }
         $parts = explode('/', $path);
-        $controller = (isset($parts[0]) && '' !== $parts[0]) ? ucfirst($parts[0]) : null;
+        $controller = 'Application\Controllers\\'.((isset($parts[0]) && '' !== $parts[0]) ? ucfirst($parts[0]) : null);
         $action = (isset($parts[1]) && '' !== $parts[1]) ? $parts[1] : null;
         $actionArgs = (count($parts) > 2) ? array_slice($parts, 2) : null;
-        Router::set([$controller, $action, $actionArgs]);
+        Router::set([$controller, $action, $actionArgs], $path);
 
         return true;
     }

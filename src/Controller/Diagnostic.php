@@ -50,7 +50,7 @@ class Diagnostic extends Action
 
                         break;
                 }
-            } elseif ($responseType = $this->router->application->getResponseType()) {
+            } elseif ($responseType = $this->application->getResponseType()) {
                 $this->responseType = $responseType;
             }
         } else {

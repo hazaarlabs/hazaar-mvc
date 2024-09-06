@@ -20,7 +20,7 @@ class Internal extends Controller
     {
         dump($route);
         $filename = $this->request->getPath();
-        $file = $this->router->application->loader->getFilePath(FILE_PATH_SUPPORT, $filename);
+        $file = $this->application->loader->getFilePath(FILE_PATH_SUPPORT, $filename);
         if (null === $file) {
             throw new \Exception("Hazaar support file '{$filename}' not found!", 404);
         }
@@ -38,7 +38,7 @@ class Internal extends Controller
         if (!class_exists($internalClassName)) {
             return false;
         }
-        $controller = new $internalClassName($this->router, $route);
+        $controller = new $internalClassName($this->application, $route);
         $response = $controller->runAction(substr($actionName, $offset + 1), $actionArgs, $namedActionArgs);
         if (!$response) {
             throw new \Exception("Internal controller action '{$actionName}' not found!", 404);

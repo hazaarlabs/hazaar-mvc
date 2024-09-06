@@ -13,7 +13,6 @@ namespace Hazaar;
 
 use Hazaar\Application\Request;
 use Hazaar\Application\Route;
-use Hazaar\Application\Router;
 use Hazaar\Application\URL;
 use Hazaar\Controller\Exception\NoAction;
 use Hazaar\Controller\Helper;
@@ -28,8 +27,6 @@ use Hazaar\Controller\Response;
  */
 abstract class Controller implements Controller\Interfaces\Controller
 {
-    public string $urlDefaultActionName = 'index';
-    protected Router $router;
     protected Application $application;
     protected string $name;
     protected Request $request;
@@ -58,13 +55,11 @@ abstract class Controller implements Controller\Interfaces\Controller
      *
      * @param string $name The name of the controller.  This is the name used when generating URLs.
      */
-    public function __construct(Router $router, ?string $name = null)
+    public function __construct(Application $application, ?string $name = null)
     {
-        $this->router = $router;
-        $this->application = $router->application;
+        $this->application = $application;
         $this->name = strtolower(null !== $name ? $name : get_class($this));
         $this->addHelper('response');
-        $this->urlDefaultActionName = $router->getDefaultActionName();
     }
 
     /**
@@ -189,7 +184,7 @@ abstract class Controller implements Controller\Interfaces\Controller
      */
     public function redirect(string|URL $location, bool $saveURI = false): Response
     {
-        return $this->router->application->redirect((string) $location, $saveURI);
+        return $this->application->redirect((string) $location, $saveURI);
     }
 
     /**
@@ -202,7 +197,7 @@ abstract class Controller implements Controller\Interfaces\Controller
      */
     public function redirectBack(null|string|URL $altURL = null): Response
     {
-        return $this->router->application->redirectBack($altURL);
+        return $this->application->redirectBack($altURL);
     }
 
     /**
@@ -220,13 +215,7 @@ abstract class Controller implements Controller\Interfaces\Controller
     {
         $url = new URL();
         $parts = func_get_args();
-        if (1 === count($parts) && strtolower(trim($parts[0] ?? '')) === $this->urlDefaultActionName) {
-            $parts = [];
-        }
         $thisParts = explode('/', $this->name);
-        if (0 === count($parts) && $thisParts[count($thisParts) - 1] === $this->urlDefaultActionName) {
-            array_pop($thisParts);
-        }
         call_user_func_array([$url, '__construct'], array_merge($thisParts, $parts));
 
         return $url;
@@ -254,7 +243,7 @@ abstract class Controller implements Controller\Interfaces\Controller
     {
         $parts = func_get_args();
 
-        return call_user_func_array([$this->router->application, 'active'], array_merge([$this->name], $parts));
+        return call_user_func_array([$this->application, 'active'], array_merge([$this->name], $parts));
     }
 
     /**
