@@ -334,16 +334,6 @@ class HTTP extends Request
     }
 
     /**
-     * Get the HTTP method of the request.
-     *
-     * @return string the HTTP method
-     */
-    public function method(): string
-    {
-        return $this->method;
-    }
-
-    /**
      * Get the referer URL from the HTTP request headers.
      *
      * @return null|string the referer URL if available, null otherwise

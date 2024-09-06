@@ -291,7 +291,7 @@ class Router
         if (!$request instanceof Request\HTTP) {
             throw new Router\Exception\ProtocolNotSupported();
         }
-        $method = $request->method();
+        $method = $request->getMethod();
         foreach ($this->routes as $route) {
             if ($route->match($method, $request->getPath())) {
                 return $this->route = $route;

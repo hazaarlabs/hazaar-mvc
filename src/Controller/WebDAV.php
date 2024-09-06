@@ -54,7 +54,7 @@ abstract class WebDAV extends Basic
                 throw new \Exception('Unknown media source!', 404);
             }
         }
-        $method = strtolower($this->request->method());
+        $method = strtolower($this->request->getMethod());
         // If the method is not supported, check for a __default handler to pass it off to, or else 405.
         if (!(in_array(strtoupper($method), $this->__allowed_methods) && method_exists($this, $method))) {
             if (!method_exists($this, '__default')) {
