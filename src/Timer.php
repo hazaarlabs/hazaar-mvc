@@ -60,7 +60,7 @@ class Timer
     public function __construct(int $precision = 2, ?float $start = null)
     {
         $this->precision = $precision;
-        $this->start('total', $start ?? microtime());
+        $this->start('total', $start ?? microtime(true));
     }
 
     /**

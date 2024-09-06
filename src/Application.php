@@ -146,8 +146,9 @@ class Application
             Application::$instance = $this;
             $this->environment = $env;
             // Create a timer for performance measuring
-            $this->timer = new Timer(5, isset($_SERVER['REQUEST_TIME_FLOAT']) ? $_SERVER['REQUEST_TIME_FLOAT'] : microtime());
-            $this->timer->start('init');
+            $startTime = isset($_SERVER['REQUEST_TIME_FLOAT']) ? floatval($_SERVER['REQUEST_TIME_FLOAT']) : microtime(true);
+            $this->timer = new Timer(5, $startTime);
+            $this->timer->start('init', $startTime);
             // Create a loader object and register it as the default autoloader
             $this->loader = Loader::getInstance();
             $this->loader->register();
