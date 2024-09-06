@@ -71,7 +71,7 @@ class Router
      *
      * @throws RouteNotFound
      */
-    final public function initialise(Request $request): void
+    final public function initialise(Request $request): bool
     {
         // Search for internal controllers
         if (($path = $request->getPath())
@@ -83,12 +83,12 @@ class Router
                 $request->setPath(substr($path, $offset + 1));
                 $this->setRoute(new Route([$controller, $action]));
 
-                return;
+                return true;
             }
         }
         self::$instance = $this; // Set the instance to this object so that static methods will use this instance
         if (false === $this->routeLoader->exec($request)) {
-            throw new RouteNotFound($request->getPath());
+            return false;
         }
         // If the loader has not already set a route, evaluate the request
         if (null === $this->route) {
@@ -101,8 +101,10 @@ class Router
             $this->setRoute(new Route([$controllerClass, $this->config->get('action')]));
         }
         if (null === $this->route) {
-            throw new RouteNotFound($request->getPath());
+            return false;
         }
+
+        return true;
     }
 
     public static function reset(): void
