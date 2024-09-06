@@ -11,8 +11,8 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller;
 
+use Hazaar\Application;
 use Hazaar\Application\Request\HTTP;
-use Hazaar\Application\Router;
 use Hazaar\Loader;
 use Hazaar\View\Layout;
 use Hazaar\XML\Element;
@@ -51,12 +51,12 @@ class Error extends Diagnostic
      */
     private static ?array $status_codes = null;
 
-    public function __construct(Router $router, $name = 'Error')
+    public function __construct(Application $application, $name = 'Error')
     {
         if (!is_array(self::$status_codes)) {
             self::$status_codes = $this->loadStatusCodes();
         }
-        parent::__construct($router, $name);
+        parent::__construct($application, $name);
     }
 
     public function getStatusMessage(?int $code = null): ?string

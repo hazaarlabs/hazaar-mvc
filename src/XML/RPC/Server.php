@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Xml\Rpc;
 
 use Hazaar\Application\Request;
+use Hazaar\Application\Route;
 use Hazaar\Controller;
 use Hazaar\Controller\Response;
 use Hazaar\Controller\Response\XML;
@@ -20,9 +21,14 @@ abstract class Server extends Controller
      */
     protected array $registered_methods = [];
 
-    public function __initialize(Request $request): ?Response
+    public function __toString()
     {
-        parent::__initialize($request);
+        return get_class($this);
+    }
+
+    public function initialize(Request $request): ?Response
+    {
+        parent::initialize($request);
         $auto_register = true;
         if (method_exists($this, 'init')) {
             $auto_register = $this->init($request);
@@ -42,12 +48,7 @@ abstract class Server extends Controller
         return null;
     }
 
-    public function __toString()
-    {
-        return get_class($this);
-    }
-
-    public function __run(): XML
+    public function run(?Route $route = null): XML
     {
         $raw_post_data = file_get_contents('php://input');
         $method = null;

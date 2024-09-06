@@ -12,16 +12,12 @@ declare(strict_types=1);
 namespace Hazaar\Application;
 
 use Hazaar\Application;
-use Hazaar\Application\Router\Exception\ControllerNotFound;
-use Hazaar\Application\Router\Exception\NoAction;
 use Hazaar\Application\Router\Exception\RouteNotFound;
-use Hazaar\Cache;
-use Hazaar\Controller;
+use Hazaar\Application\Router\Loader;
 use Hazaar\Controller\Error;
-use Hazaar\Controller\Response;
 use Hazaar\Map;
 
-abstract class Router implements Interfaces\Router
+class Router
 {
     /**
      * Default configuration.
@@ -44,39 +40,28 @@ abstract class Router implements Interfaces\Router
     ];
 
     public Application $application;
-    protected Map $config;
-
-    protected ?string $controller = null;
-    protected ?string $action = null;
-
-    /**
-     * @var array<string>
-     */
-    protected array $actionArgs = [];
-    protected bool $namedActionArgs = false;
-
-    private ?Controller $__controller = null;
+    public Map $config;
+    private static ?self $instance = null;
+    private Loader $routeLoader;
 
     /**
-     * @var array<array<bool|int>>
+     * @var array<Route>
      */
-    private array $__cachedActions = [];
+    private array $routes = [];
+    private ?Route $route = null;
 
-    /**
-     * @var array<Response>
-     */
-    private array $__cachedResponses = [];
-
-    private ?Cache $__responseCache = null;
-
-    final public function __construct(Application $application, Config $config)
+    final public function __construct(Application $application, Map $config)
     {
+        self::$instance = $this;
         $this->application = $application;
-        $this->config = $config->get('router', self::$defaultConfig);
-        if ($controller = $this->config->get('controller')) {
-            $this->controller = ucfirst($controller);
+        $this->config = $config;
+        $this->config->enhance(self::$defaultConfig);
+        $type = $this->config->get('type', 'file');
+        $loaderClass = '\Hazaar\Application\Router\Loader\\'.ucfirst($type);
+        if (!class_exists($loaderClass)) {
+            throw new Router\Exception\LoaderNotSupported($type);
         }
-        $this->action = $this->config->get('action');
+        $this->routeLoader = new $loaderClass($this->config);
     }
 
     /**
@@ -85,170 +70,235 @@ abstract class Router implements Interfaces\Router
      * @param Request $request the request object
      *
      * @throws RouteNotFound
-     * @throws NoAction
      */
-    final public function __initialise(Request $request): void
+    final public function initialise(Request $request): bool
     {
         // Search for internal controllers
         if (($path = $request->getPath())
             && ($offset = strpos($path, '/', 1))) {
             $route = substr($path, 0, $offset);
             if (array_key_exists($route, self::$internal)) {
-                $this->controller = self::$internal[$route];
-                $this->action = substr($path, $offset + 1);
+                $controller = self::$internal[$route];
+                $action = substr($path, $offset + 1);
                 $request->setPath(substr($path, $offset + 1));
+                $this->setRoute(new Route([$controller, $action]));
 
-                return;
+                return true;
             }
         }
-        if (!$this->evaluateRequest($request)) {
-            throw new RouteNotFound($request->getPath());
-        }
-        if (null === $this->controller) {
-            throw new RouteNotFound($request->getPath());
-        }
-    }
-
-    public function __run(Request $request): Response
-    {
-        if ($response = $this->__getCachedResponse()) {
-            return $response;
-        }
-        $controllerClass = '\\' === substr($this->controller, 0, 1)
-            ? $this->controller : '\\Application\\Controllers\\'.ucfirst($this->controller);
-        if (!class_exists($controllerClass)) {
-            throw new ControllerNotFound($controllerClass, $request->getPath());
-        }
-        $this->__controller = new $controllerClass($this, $this->controller);
-        // Initialise the controller with the current request
-        if ($response = $this->__controller->__initialize($request)) {
-            return $response;
-        }
-        // Execute the controller action
-        $response = $this->__controller->__runAction($this->action, $this->actionArgs, $this->namedActionArgs);
-        if (false === $response) {
-            $response = $this->__controller->__run();
-            if (false === $response) {
-                throw new NoAction($this->controller);
-            }
-        }
-        $this->__cacheResponse($response);
-
-        return $response;
-    }
-
-    final public function __shutdown(Response $response): void
-    {
-        if (null !== $this->__controller) {
-            $this->__controller->__shutdown($response);
-        }
-        if ($this->__responseCache && count($this->__cachedResponses) > 0) {
-            foreach ($this->__cachedResponses as $cacheItem) {
-                $this->__responseCache->set($cacheItem[0], $cacheItem[1], $cacheItem[2]);
-            }
-        }
-    }
-
-    private function __getCacheKey(string $controller, string $action, ?string &$cacheName = null): false|string
-    {
-        $cacheName = $this->controller.'::'.$this->action;
-        if (!array_key_exists($cacheName, $this->__cachedActions)) {
+        self::$instance = $this; // Set the instance to this object so that static methods will use this instance
+        if (false === $this->routeLoader->exec($request)) {
             return false;
         }
-        $cacheKey = $cacheName.'('.serialize($this->actionArgs).')';
-        if (true === $this->__cachedActions[$cacheName]['private'] && ($sid = session_id())) {
-            $cacheKey .= '::'.$sid;
+        // If the loader has not already set a route, evaluate the request
+        if (null === $this->route) {
+            $this->route = $this->evaluateRequest($request);
         }
-
-        return $cacheKey;
-    }
-
-    /**
-     * Cache a response to the current action invocation.
-     *
-     * @param Response $response The response to cache
-     */
-    private function __cacheResponse(Response $response): bool
-    {
-        if (null === $this->__responseCache) {
+        if (null === $this->route && !$request->getPath() && ($controller = $this->config->get('controller'))) {
+            $controllerClass = '\\' === substr($controller, 0, 1)
+                ? $controller
+                : 'Application\Controllers\\'.ucfirst($controller);
+            $this->setRoute(new Route([$controllerClass, $this->config->get('action')]));
+        }
+        if (null === $this->route) {
             return false;
         }
-        $cacheKey = $this->__getCacheKey($this->controller, $this->action, $cacheName);
-        $this->__cachedResponses[] = [$cacheKey, $response, $this->__cachedActions[$cacheName]['timeout']];
 
         return true;
     }
 
-    private function __getCachedResponse(): false|Response
+    public static function reset(): void
     {
-        if (null === $this->__responseCache) {
-            return false;
+        if (self::$instance) {
+            self::$instance->route = null;
         }
-        $cacheKey = $this->__getCacheKey($this->controller, $this->action);
-        if ($response = $this->__responseCache->get($cacheKey)) {
-            return $response;
-        }
-
-        return false;
     }
 
-    public function evaluateRequest(Request $request): bool
+    /**
+     * Adds a route to the router.
+     *
+     * This method sets the router for the given route and then adds the route
+     * to the list of routes managed by this router.
+     *
+     * @param Route $route the route to be added
+     */
+    public function addRoute(Route $route): void
     {
-        return false;
+        $route->setRouter($this);
+        $this->routes[] = $route;
     }
 
-    public function getControllerName(): ?string
+    /**
+     * Sets the current route for the router.
+     *
+     * This method assigns the provided route to the router and sets the router
+     * instance within the route.
+     *
+     * @param Route $route the route to be set
+     */
+    public function setRoute(Route $route): void
     {
-        return $this->controller;
+        $route->setRouter($this);
+        $this->route = $route;
     }
 
-    public function getActionName(): ?string
+    /**
+     * Retrieves the current route.
+     *
+     * @return null|Route the current route, or null if no route is set
+     */
+    public function getRoute(): ?Route
     {
-        return $this->action;
-    }
-
-    public function getActionArgs(): array
-    {
-        return $this->actionArgs;
-    }
-
-    public function getDefaultControllerName(): string
-    {
-        return $this->config->get('controller');
-    }
-
-    public function getDefaultActionName(): string
-    {
-        return $this->config->get('action');
+        return $this->route;
     }
 
     public function getErrorController(): Error
     {
         $controller = null;
         if ($errorController = $this->config->get('errorController')) {
-            $controllerClass = '\\Application\\Controllers\\'.ucfirst($errorController);
+            $controllerClass = '\Application\Controllers\\'.ucfirst($errorController);
             if (class_exists($controllerClass) && is_subclass_of($controllerClass, Error::class)) {
                 $controller = new $controllerClass($this, $errorController);
             }
         }
         if (null === $controller) {
-            $controller = new Error($this);
+            $controller = new Error($this->application, 'error');
         }
 
         return $controller;
     }
 
-    public function cacheAction(string $controllerName, string $actionName, int $timeout = 60, bool $private = false): bool
+    /**
+     * Registers a route that responds to HTTP GET requests.
+     *
+     * @param string $path     the URL path for the route
+     * @param mixed  $callable the callback or controller action to handle the request
+     */
+    public static function get(string $path, mixed $callable): void
     {
-        if (null === $this->__responseCache) {
-            $this->__responseCache = new Cache('apc');
-        }
-        $this->__getCacheKey($controllerName, $actionName, $cacheName);
-        $this->__cachedActions[$cacheName] = [
-            'timeout' => $timeout,
-            'private' => $private,
-        ];
+        self::match(['GET'], $path, $callable);
+    }
 
-        return true;
+    /**
+     * Registers a route that responds to HTTP POST requests.
+     *
+     * @param string $path     the URL path for the route
+     * @param mixed  $callable the callback or controller method to handle the request
+     */
+    public static function post(string $path, mixed $callable): void
+    {
+        self::match(['POST'], $path, $callable);
+    }
+
+    /**
+     * Registers a route that responds to HTTP PUT requests.
+     *
+     * @param string $path     the URI path that the route will respond to
+     * @param mixed  $callable the handler for the route, which can be a callable or other valid route handler
+     */
+    public static function put(string $path, mixed $callable): void
+    {
+        self::match(['PUT'], $path, $callable);
+    }
+
+    /**
+     * Registers a route that responds to HTTP DELETE requests.
+     *
+     * @param string $path     the URL path that the route should match
+     * @param mixed  $callable the callback or controller action to be executed when the route is matched
+     */
+    public static function delete(string $path, mixed $callable): void
+    {
+        self::match(['DELETE'], $path, $callable);
+    }
+
+    /**
+     * Registers a route that responds to HTTP PATCH requests.
+     *
+     * @param string $path     the URI path that the route will match
+     * @param mixed  $callable the callback or controller action to be executed when the route is matched
+     */
+    public static function patch(string $path, mixed $callable): void
+    {
+        self::match(['PATCH'], $path, $callable);
+    }
+
+    /**
+     * Registers a route that responds to HTTP OPTIONS requests.
+     *
+     * @param string $path     the URL path to match
+     * @param mixed  $callable the callback or controller action to handle the request
+     */
+    public static function options(string $path, mixed $callable): void
+    {
+        self::match(['OPTIONS'], $path, $callable);
+    }
+
+    /**
+     * Registers a route that responds to any HTTP method.
+     *
+     * @param string $path     the path pattern to match
+     * @param mixed  $callable the callback to execute when the route is matched
+     */
+    public static function any(string $path, mixed $callable): void
+    {
+        self::match(['ANY'], $path, $callable);
+    }
+
+    /**
+     * Sets a new route for the application.
+     *
+     * This method sets a new route by accepting a callable and creating a new Route instance with it.
+     * If the Router instance is not initialized, the method will return without setting the route.
+     *
+     * @param mixed $callable the callable to be used for the new route
+     */
+    public static function set(mixed $callable, ?string $path = null, bool $namedActionArgs = false): void
+    {
+        if (!self::$instance) {
+            return;
+        }
+        self::$instance->setRoute(new Route($callable, $path, [], $namedActionArgs));
+    }
+
+    /**
+     * Matches a route with the given HTTP methods, path, and callable.
+     *
+     * @param null|array<string>|string $methods         The HTTP methods to match (e.g., ['GET', 'POST']).
+     * @param string                    $path            The path to match (e.g., '/user/{id}').
+     * @param mixed                     $callable        The callable to execute when the route is matched.
+     *                                                   It can be a string in the format 'Class::method',
+     *                                                   an array with the class and method, or a Closure.
+     * @param bool                      $namedActionArgs whether to use named action arguments
+     */
+    public static function match(null|array|string $methods, string $path, mixed $callable, bool $namedActionArgs = false): void
+    {
+        if (!self::$instance) {
+            return;
+        }
+        if (is_string($callable)) {
+            $callable = explode('::', $callable);
+        }
+        self::$instance->addRoute(new Route($callable, $path, $methods, $namedActionArgs));
+    }
+
+    /**
+     * Evaluates the given request and matches it against the defined routes.
+     *
+     * @param Request $request the request to evaluate
+     *
+     * @return null|Route the matched route or null if no route matches
+     */
+    private function evaluateRequest(Request $request): ?Route
+    {
+        $method = $request->getMethod();
+        $path = $request->getPath();
+        foreach ($this->routes as $route) {
+            if ($route->match($method, $path)) {
+                return $this->route = $route;
+            }
+        }
+
+        return null;
     }
 }

@@ -6,7 +6,7 @@ namespace Hazaar\Controller\Interfaces;
 
 interface Response
 {
-    public function __writeOutput(): void;
+    public function writeOutput(): void;
 
     public function getContent(): string;
 

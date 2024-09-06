@@ -31,18 +31,18 @@ abstract class REST extends Controller
      *
      * @throws \Exception if there is an invalid JSON parameter
      */
-    public function __initialize(Request $request): ?Response
+    public function initialize(Request $request): ?Response
     {
         if (!$request instanceof HTTP) {
             throw new \Exception('REST controllers require an HTTP request object!');
         }
-        parent::__initialize($request);
+        parent::initialize($request);
         $this->init($request);
         $response = $this->initResponse($request);
         if (null !== $response) {
             return $response;
         }
-        $this->router->application->setResponseType('json');
+        $this->application->setResponseType('json');
 
         /*
          *  if ('OPTIONS' == $this->request->method()) {
@@ -70,7 +70,7 @@ abstract class REST extends Controller
      *
      * @throws \Exception if the endpoint is not found or directory listing is not allowed
      */
-    public function __runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): Response
+    public function runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): Response
     {
         if (!method_exists($this, $actionName)) {
             throw new ActionNotFound(get_class($this), $actionName);

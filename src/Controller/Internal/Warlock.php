@@ -11,7 +11,7 @@ use Hazaar\Warlock\Config;
 
 class Warlock extends Controller
 {
-    public function __runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): false|Response
+    public function runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): false|Response
     {
         if (!method_exists($this, $actionName)) {
             return false;

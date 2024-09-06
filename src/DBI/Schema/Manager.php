@@ -146,7 +146,7 @@ class Manager
                     if (!(isset($info['extension']) && 'json' === $info['extension'] && preg_match('/^(\d+)_(\w+)$/', $info['filename'], $matches))) {
                         continue;
                     }
-                    if (is_array($matches) && count($matches) >= 3) {
+                    if (is_array($matches)) {
                         $version = (int) str_pad($matches[1], 14, '0', STR_PAD_RIGHT);
                         $this->versions[0][$version] = $this->migrateDir.DIRECTORY_SEPARATOR.$file;
                         $this->versions[1][$version] = str_replace('_', ' ', $matches[2]);

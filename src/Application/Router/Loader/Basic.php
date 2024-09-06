@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Application\Router;
+namespace Hazaar\Application\Router\Loader;
 
 use Hazaar\Application\Request;
 use Hazaar\Application\Router;
+use Hazaar\Application\Router\Exception\ProtocolNotSupported;
+use Hazaar\Application\Router\Loader;
 
 /**
  * Basic Application Router.
@@ -19,7 +21,7 @@ use Hazaar\Application\Router;
  * arguments to ['arg1', 'arg2', 'arg3'] which will result in the
  * \Application\Controllers\Controller::action('arg1', 'arg2', 'arg3') method being called.
  */
-class Basic extends Router
+class Basic extends Loader
 {
     /**
      * Evaluates the request and sets the controller, action, and arguments based on the request path.
@@ -28,19 +30,17 @@ class Basic extends Router
      *
      * @return bool returns true if the evaluation is successful, false otherwise
      */
-    public function evaluateRequest(Request $request): bool
+    public function exec(Request $request): bool
     {
-        $path = $request->getPath();
+        $path = trim($request->getPath());
+        if (0 === strlen($path)) {
+            return true; // Return true if the path is empty.  Allows for default controller/action to be used.
+        }
         $parts = explode('/', $path);
-        if (isset($parts[0]) && '' !== $parts[0]) {
-            $this->controller = ucfirst($parts[0]);
-        }
-        if (isset($parts[1]) && '' !== $parts[1]) {
-            $this->action = $parts[1];
-        }
-        if (count($parts) > 2) {
-            $this->actionArgs = array_slice($parts, 2);
-        }
+        $controller = 'Application\Controllers\\'.((isset($parts[0]) && '' !== $parts[0]) ? ucfirst($parts[0]) : null);
+        $action = (isset($parts[1]) && '' !== $parts[1]) ? $parts[1] : null;
+        $actionArgs = (count($parts) > 2) ? array_slice($parts, 2) : null;
+        Router::set([$controller, $action, $actionArgs], $path);
 
         return true;
     }
