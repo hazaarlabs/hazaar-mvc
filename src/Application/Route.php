@@ -90,17 +90,17 @@ class Route
     public function getController(): ?Controller
     {
         if ($this->callable instanceof \Closure) {
-            return new Closure($this->router, $this->callable);
+            return new Closure($this->router->application, $this->callable);
         }
         if (is_array($this->callable)) {
             $controllerClass = $this->callable[0];
             $parts = explode('\\', $this->callable[0]);
             $controllerClassName = strtolower(end($parts));
             if (!class_exists($controllerClass)) {
-                throw new Router\Exception\ControllerNotFound($controllerClass, $this->path);
+                throw new Router\Exception\ControllerNotFound($controllerClass, $this->path ?? '/');
             }
 
-            return new $controllerClass($this->router, $controllerClassName);
+            return new $controllerClass($this->router->application, $controllerClassName);
         }
 
         return null;

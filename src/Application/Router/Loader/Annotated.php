@@ -1,13 +1,12 @@
 <?php
 
-namespace Hazaar\Application\Router;
+namespace Hazaar\Application\Router\Loader;
 
 use Hazaar\Application\Request;
 use Hazaar\Application\Request\HTTP;
+use Hazaar\Application\Router;
 use Hazaar\Application\Router\Exception\ControllerHasNoRoutes;
-use Hazaar\Application\Router\Exception\NotSupported;
 use Hazaar\Application\Router\Exception\RouteNotFound;
-use Hazaar\Controller\Response;
 use Hazaar\Date;
 
 /**
@@ -101,16 +100,93 @@ class Annotated extends Advanced
     /**
      * @var array<string, array<mixed>>
      */
-    private array $__controllerEndpoints = [];
+    private array $controllerEndpoints = [];
 
     /**
      * @var array<mixed>
      */
-    private ?array $__selectedEndpoint = null;
+    private ?array $selectedEndpoint = null;
 
     private bool $describeFull = true;
 
-    private function __loadRoutes(string $controllerClass): void
+    /**
+     * Private method to describe the REST API.
+     *
+     * @return array<mixed> returns an array containing the description of the REST API
+     */
+    public function describeAPI(): array
+    {
+        $api = [];
+        foreach ($this->controllerEndpoints as $endpoint) {
+            $this->describeEndpoint($endpoint, $this->describeFull, $api);
+        }
+
+        return $api;
+    }
+
+    public function exec(Request $request): bool
+    {
+        if (!$request instanceof HTTP) {
+            throw new \Exception('Annotated router requires an HTTP request');
+        }
+        parent::exec($request);
+        if (!$this->controller) {
+            throw new RouteNotFound($request->getPath());
+        }
+        $this->loadRoutes($this->controller);
+        if (0 === count($this->controllerEndpoints)) {
+            throw new ControllerHasNoRoutes($this->controller);
+        }
+        if ($this->action === $this->config['action']) {
+            $controllerPath = '/';
+        } else {
+            $controllerPath = implode('/', array_merge([$this->action], $this->actionArgs));
+        }
+        $this->findRoute($controllerPath, $request->getMethod());
+        if (!$this->selectedEndpoint) {
+            return false;
+        }
+        Router::set([
+            $this->controller,
+            $this->selectedEndpoint[1]['func']->name,
+            $this->selectedEndpoint[2],
+        ], $request->getPath(), true); // Set the route for the router with named parameters
+
+        return true;
+    }
+
+    /**
+     * Get the tags for a given endpoint name.
+     *
+     * @param string $name the name of the endpoint
+     *
+     * @return array<string>|false the tags for the endpoint or false if not found
+     */
+    protected function getEndpointTags(string $name): array|false
+    {
+        foreach ($this->controllerEndpoints as $endpoint) {
+            foreach ($endpoint['routes'] as $route) {
+                if ($route['func']->name === $name) {
+                    if (!array_key_exists('tags', $route)) {
+                        $route['tags'] = [];
+                        preg_match_all('/\*\s*@((\w+).*)/', $endpoint['comment'], $matches);
+                        foreach ($matches[1] as $annotation) {
+                            if (!preg_match('/^(\w+)(\W.*)$/', $annotation, $parts)) {
+                                continue;
+                            }
+                            $route['tags'][$parts[1]] = trim($parts[2]);
+                        }
+                    }
+
+                    return $route['tags'];
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function loadRoutes(string $controllerClass): void
     {
         $controllerReflection = new \ReflectionClass($controllerClass);
         foreach ($controllerReflection->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
@@ -186,17 +262,17 @@ class Annotated extends Advanced
             }
             $endpoint['private'] = in_array('private', $methodMatches[2]);
             if (count($endpoint['routes']) > 0) {
-                $this->__controllerEndpoints[$method->name] = $endpoint;
+                $this->controllerEndpoints[$method->name] = $endpoint;
             }
         }
     }
 
-    private function __findRoute(string $path, string $requestMethod = 'GET'): void
+    private function findRoute(string $path, string $requestMethod = 'GET'): void
     {
-        foreach ($this->__controllerEndpoints as $endpoint) {
+        foreach ($this->controllerEndpoints as $endpoint) {
             foreach ($endpoint['routes'] as $target => $route) {
-                if ($this->__matchRoute($requestMethod, $path, $target, $route, $args)) {
-                    $this->__selectedEndpoint = [$endpoint, $route, $args];
+                if ($this->matchRoute($requestMethod, $path, $target, $route, $args)) {
+                    $this->selectedEndpoint = [$endpoint, $route, $args];
 
                     return;
                 }
@@ -215,7 +291,7 @@ class Annotated extends Advanced
      *
      * @return bool returns true if the request method and path match the route and endpoint, false otherwise
      */
-    private function __matchRoute(string $request_method, mixed &$path, string $route, array $endpoint, ?array &$args = null): bool
+    private function matchRoute(string $request_method, mixed &$path, string $route, array $endpoint, ?array &$args = null): bool
     {
         $args = [];
         if (!is_array($path)) {
@@ -269,52 +345,6 @@ class Annotated extends Advanced
     }
 
     /**
-     * Private method to describe the REST API.
-     *
-     * @return array<mixed> returns an array containing the description of the REST API
-     */
-    public function __describeAPI(): array
-    {
-        $api = [];
-        foreach ($this->__controllerEndpoints as $endpoint) {
-            $this->__describeEndpoint($endpoint, $this->describeFull, $api);
-        }
-
-        return $api;
-    }
-
-    /**
-     * Get the tags for a given endpoint name.
-     *
-     * @param string $name the name of the endpoint
-     *
-     * @return array<string>|false the tags for the endpoint or false if not found
-     */
-    protected function __getEndpointTags(string $name): array|false
-    {
-        foreach ($this->__controllerEndpoints as $endpoint) {
-            foreach ($endpoint['routes'] as $route) {
-                if ($route['func']->name === $name) {
-                    if (!array_key_exists('tags', $route)) {
-                        $route['tags'] = [];
-                        preg_match_all('/\*\s*@((\w+).*)/', $endpoint['comment'], $matches);
-                        foreach ($matches[1] as $annotation) {
-                            if (!preg_match('/^(\w+)(\W.*)$/', $annotation, $parts)) {
-                                continue;
-                            }
-                            $route['tags'][$parts[1]] = trim($parts[2]);
-                        }
-                    }
-
-                    return $route['tags'];
-                }
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * Describes an endpoint by generating an array of information about the endpoint.
      *
      * @param array<mixed> $endpoint      the endpoint to describe
@@ -323,7 +353,7 @@ class Annotated extends Advanced
      *
      * @return array<mixed> the array of information about the endpoint
      */
-    private function __describeEndpoint(array $endpoint, bool $describe_full = false, ?array &$api = null): array
+    private function describeEndpoint(array $endpoint, bool $describe_full = false, ?array &$api = null): array
     {
         if (!$api) {
             $api = [];
@@ -353,53 +383,5 @@ class Annotated extends Advanced
         }
 
         return $api;
-    }
-
-    public function run(Request $request): Response
-    {
-        if (true === $this->selectedEndpoint[0]['cache']) {
-            $this->cacheAction(
-                $this->controller,
-                $this->action,
-                $this->selectedEndpoint[0]['cache_ttl'],
-                $this->selectedEndpoint[0]['private']
-            );
-        }
-
-        return parent::run($request);
-    }
-
-    public function evaluateRequest(Request $request): bool
-    {
-        if (!$request instanceof HTTP) {
-            throw new NotSupported();
-        }
-        parent::evaluateRequest($request);
-        if (!$this->controller) {
-            throw new RouteNotFound($request->getPath());
-        }
-        if ('\\' === substr($this->controller, 0, 1)) {
-            $controllerClass = $this->controller;
-        } else {
-            $controllerClass = '\Application\Controllers\\'.ucfirst($this->controller);
-        }
-        $this->__loadRoutes($controllerClass);
-        if (0 === count($this->__controllerEndpoints)) {
-            throw new ControllerHasNoRoutes($controllerClass);
-        }
-        if ($this->action === $this->config['action']) {
-            $controllerPath = '/';
-        } else {
-            $controllerPath = implode('/', array_merge([$this->action], $this->actionArgs));
-        }
-        $this->__findRoute($controllerPath, $request->getMethod());
-        if (!$this->__selectedEndpoint) {
-            return false;
-        }
-        $this->action = $this->__selectedEndpoint[1]['func']->name;
-        $this->actionArgs = $this->__selectedEndpoint[2];
-        $this->namedActionArgs = true;
-
-        return true;
     }
 }

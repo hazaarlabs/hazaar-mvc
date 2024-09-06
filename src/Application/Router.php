@@ -87,7 +87,9 @@ class Router
             }
         }
         self::$instance = $this; // Set the instance to this object so that static methods will use this instance
-        $this->routeLoader->exec($request);
+        if (false === $this->routeLoader->exec($request)) {
+            throw new RouteNotFound($request->getPath());
+        }
         if (null === $this->route) {
             $this->route = $this->evaluateRequest($request);
         }
@@ -150,7 +152,7 @@ class Router
             }
         }
         if (null === $controller) {
-            $controller = new Error($this);
+            $controller = new Error($this->application, 'error');
         }
 
         return $controller;

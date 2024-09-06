@@ -42,7 +42,7 @@ abstract class REST extends Controller
         if (null !== $response) {
             return $response;
         }
-        $this->router->application->setResponseType('json');
+        $this->application->setResponseType('json');
 
         /*
          *  if ('OPTIONS' == $this->request->method()) {
