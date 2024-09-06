@@ -38,10 +38,10 @@ abstract class Controller implements Controller\Interfaces\Controller
      */
     private array $_helpers = [];
 
-    // /**
-    //  * @var array<array<bool|int>>
-    //  */
-    // private array $cachedActions = [];
+    /**
+     * @var array<array<bool|int>>
+     */
+    private array $cachedActions = [];
 
     /**
      * @var array<Response>
@@ -102,15 +102,15 @@ abstract class Controller implements Controller\Interfaces\Controller
 
     public function run(?Route $route = null): Response
     {
-        // if ($response = $this->getCachedResponse($route)) {
-        //     return $response;
-        // }
+        if ($response = $this->getCachedResponse($route)) {
+            return $response;
+        }
         // Execute the controller action
         $response = $this->runAction($route->getAction(), $route->getActionArgs(), $route->hasNamedActionArgs());
         if (false === $response) {
             throw new NoAction($this->name);
         }
-        // $this->cacheResponse($response);
+        $this->cacheResponse($route, $response);
 
         return $response;
     }
@@ -122,10 +122,11 @@ abstract class Controller implements Controller\Interfaces\Controller
 
     final public function shutdown(Response $response): void
     {
-        if ($this->responseCache && count($this->cachedResponses) > 0) {
-            foreach ($this->cachedResponses as $cacheItem) {
-                $this->responseCache->set($cacheItem[0], $cacheItem[1], $cacheItem[2]);
-            }
+        if (!($this->responseCache && count($this->cachedResponses) > 0)) {
+            return;
+        }
+        foreach ($this->cachedResponses as $cacheItem) {
+            $this->responseCache->set($cacheItem[0], $cacheItem[1], $cacheItem[2]);
         }
     }
 
@@ -301,19 +302,19 @@ abstract class Controller implements Controller\Interfaces\Controller
         return array_key_exists($helper, $this->_helpers);
     }
 
-    // public function cacheAction(string $actionName, int $timeout = 60, bool $private = false): bool
-    // {
-    //     if (null === $this->responseCache) {
-    //         $this->responseCache = new Cache('apc');
-    //     }
-    //     $this->getCacheKey($controllerName, $actionName, $cacheName);
-    //     $this->cachedActions[$cacheName] = [
-    //         'timeout' => $timeout,
-    //         'private' => $private,
-    //     ];
+    public function cacheAction(string $actionName, int $timeout = 60, bool $private = false): bool
+    {
+        if (null === $this->responseCache) {
+            $this->responseCache = new Cache();
+        }
+        $this->getCacheKey($this->name, $actionName, [], $cacheName);
+        $this->cachedActions[$cacheName] = [
+            'timeout' => $timeout,
+            'private' => $private,
+        ];
 
-    //     return true;
-    // }
+        return true;
+    }
 
     /*s
      * Find a helper class by name.
@@ -341,38 +342,50 @@ abstract class Controller implements Controller\Interfaces\Controller
         return null;
     }
 
-    // private function getCacheKey(string $controller, string $action, ?string &$cacheName = null): false|string
-    // {
-    //     $cacheName = $controller.'::'.$this->action;
-    //     if (!array_key_exists($cacheName, $this->__cachedActions)) {
-    //         return false;
-    //     }
+    /**
+     * Get the cache key for the current action.
+     *
+     * @param string       $controller the controller name
+     * @param string       $action     the action name
+     * @param array<mixed> $actionArgs the action arguments
+     * @param null|string  $cacheName  the cache name
+     *
+     * @return false|string the cache key, or false if the action is not cached
+     */
+    private function getCacheKey(string $controller, string $action, ?array $actionArgs = null, ?string &$cacheName = null): false|string
+    {
+        $cacheName = $controller.'::'.$action;
+        if (!array_key_exists($cacheName, $this->cachedActions)) {
+            return false;
+        }
 
-    //     return $cacheName.'('.serialize($this->actionArgs).')';
-    // }
+        return $cacheName.'('.serialize($actionArgs).')';
+    }
 
     // Cache a response to the current action invocation.
-    // private function cacheResponse(Response $response): bool
-    // {
-    //     if (null === $this->__responseCache) {
-    //         return false;
-    //     }
-    //     $cacheKey = $this->__getCacheKey($this->controller, $this->action, $cacheName);
-    //     $this->__cachedResponses[] = [$cacheKey, $response, $this->__cachedActions[$cacheName]['timeout']];
+    private function cacheResponse(Route $route, Response $response): bool
+    {
+        if (null === $this->responseCache) {
+            return false;
+        }
+        $cacheKey = $this->getCacheKey($this->name, $route->getAction(), $route->getActionArgs(), $cacheName);
+        if (false !== $cacheKey) {
+            $this->cachedResponses[] = [$cacheKey, $response, $this->cachedActions[$cacheName]['timeout']];
+        }
 
-    //     return true;
-    // }
+        return true;
+    }
 
-    // private function getCachedResponse(): false|Response
-    // {
-    //     if (null === $this->__responseCache) {
-    //         return false;
-    //     }
-    //     $cacheKey = $this->__getCacheKey($this->controller, $this->action);
-    //     if ($response = $this->__responseCache->get($cacheKey)) {
-    //         return $response;
-    //     }
+    private function getCachedResponse(Route $route): ?Response
+    {
+        if (null === $this->responseCache) {
+            return null;
+        }
+        $cacheKey = $this->getCacheKey($this->name, $route->getAction(), $route->getActionArgs());
+        if (false !== $cacheKey && ($response = $this->responseCache->get($cacheKey))) {
+            return $response;
+        }
 
-    //     return false;
-    // }
+        return null;
+    }
 }
