@@ -243,12 +243,12 @@ class Router
      *
      * @param mixed $callable the callable to be used for the new route
      */
-    public static function set(mixed $callable): void
+    public static function set(mixed $callable, ?string $path = null, bool $namedActionArgs = false): void
     {
         if (!self::$instance) {
             return;
         }
-        self::$instance->setRoute(new Route($callable));
+        self::$instance->setRoute(new Route($callable, $path, [], $namedActionArgs));
     }
 
     /**

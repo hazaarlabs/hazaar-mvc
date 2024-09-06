@@ -106,7 +106,7 @@ abstract class Controller implements Controller\Interfaces\Controller
         //     return $response;
         // }
         // Execute the controller action
-        $response = $this->runAction($route->getAction(), $route->getActionArgs(), false);
+        $response = $this->runAction($route->getAction(), $route->getActionArgs(), $route->hasNamedActionArgs());
         if (false === $response) {
             throw new NoAction($this->name);
         }
