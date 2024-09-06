@@ -17,6 +17,7 @@ namespace Hazaar;
 use Hazaar\Application\Config;
 use Hazaar\Application\Request;
 use Hazaar\Application\Router;
+use Hazaar\Application\Router\Exception\RouteNotFound;
 use Hazaar\Application\URL;
 use Hazaar\Controller\Response;
 use Hazaar\Controller\Response\File;
@@ -505,7 +506,10 @@ class Application
                 throw new \Exception('The application failed to start!');
             }
         }
-        $this->router->initialise($this->request);
+        if (false === $this->router->initialise($this->request)) {
+            throw new RouteNotFound($this->request->getPath());
+        }
+
         $this->timer->stop('boot');
 
         return $this;
