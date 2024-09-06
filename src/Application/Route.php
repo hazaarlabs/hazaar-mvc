@@ -20,15 +20,20 @@ class Route
      * @var array<mixed>
      */
     private array $actionArgs = [];
+    private bool $namedActionArgs = false;
 
     /**
      * @param array<string> $methods
      */
-    public function __construct(mixed $callable, ?string $path = null, array $methods = [])
+    public function __construct(mixed $callable, ?string $path = null, array $methods = [], bool $namedActionArgs = false)
     {
         $this->callable = $callable;
         $this->path = $path;
         $this->methods = array_map('strtoupper', $methods);
+        $this->namedActionArgs = $namedActionArgs;
+        if (isset($this->callable[2])) {
+            $this->actionArgs = $this->callable[2];
+        }
     }
 
     /**
@@ -130,5 +135,18 @@ class Route
     public function getActionArgs(): array
     {
         return $this->actionArgs;
+    }
+
+    /**
+     * Retrieves the named action arguments flag.
+     *
+     * This method returns the namedActionArgs property, which is used to determine
+     * whether the action arguments are named.
+     *
+     * @return bool the namedActionArgs flag
+     */
+    public function hasNamedActionArgs(): bool
+    {
+        return $this->namedActionArgs;
     }
 }
