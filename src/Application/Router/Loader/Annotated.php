@@ -3,11 +3,9 @@
 namespace Hazaar\Application\Router\Loader;
 
 use Hazaar\Application\Request;
-use Hazaar\Application\Request\HTTP;
 use Hazaar\Application\Route;
 use Hazaar\Application\Router;
 use Hazaar\Application\Router\Exception\ControllerHasNoRoutes;
-use Hazaar\Application\Router\Exception\RouteNotFound;
 use Hazaar\Date;
 
 /**
@@ -122,9 +120,6 @@ class Annotated extends Advanced
 
     public function exec(Request $request): bool
     {
-        if (!$request instanceof HTTP) {
-            throw new \Exception('Annotated router requires an HTTP request');
-        }
         parent::exec($request);
         Router::reset();
         if (!$this->controller) {

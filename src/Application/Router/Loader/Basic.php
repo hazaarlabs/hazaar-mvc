@@ -32,9 +32,6 @@ class Basic extends Loader
      */
     public function exec(Request $request): bool
     {
-        if (!$request instanceof Request\HTTP) {
-            throw new ProtocolNotSupported();
-        }
         $path = trim($request->getPath());
         if (0 === strlen($path)) {
             return true; // Return true if the path is empty.  Allows for default controller/action to be used.

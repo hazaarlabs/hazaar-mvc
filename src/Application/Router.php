@@ -286,14 +286,9 @@ class Router
      * @param Request $request the request to evaluate
      *
      * @return null|Route the matched route or null if no route matches
-     *
-     * @throws Router\Exception\ProtocolNotSupported if the request is not an instance of Request\HTTP
      */
     private function evaluateRequest(Request $request): ?Route
     {
-        if (!$request instanceof Request\HTTP) {
-            throw new Router\Exception\ProtocolNotSupported();
-        }
         $method = $request->getMethod();
         $path = $request->getPath();
         foreach ($this->routes as $route) {

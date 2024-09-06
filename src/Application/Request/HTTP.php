@@ -38,11 +38,6 @@ class HTTP extends Request
     public string $body = '';
 
     /**
-     * Request method.
-     */
-    private string $method = 'GET';
-
-    /**
      * Array of headers, one line per element.
      *
      * @var array<mixed>
@@ -132,16 +127,6 @@ class HTTP extends Request
         }
 
         return substr($requestURI, 1);
-    }
-
-    /**
-     * @detail      Returns the method used to initiate this request on the server.  .
-     *
-     * @return string The request method. Usually one of GET, POST, PUT or DELETE.
-     */
-    public function getMethod(): string
-    {
-        return $this->method;
     }
 
     /**
