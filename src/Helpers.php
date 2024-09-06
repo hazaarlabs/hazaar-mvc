@@ -186,11 +186,11 @@ function strbool(mixed $value): string
     }
     if (is_string($value)) {
         $value = strtolower(trim($value));
-        if ('t' == $value 
-            || 'true' == $value 
-            || 'on' == $value 
-            || 'yes' == $value 
-            || 'y' == $value 
+        if ('t' == $value
+            || 'true' == $value
+            || 'on' == $value
+            || 'yes' == $value
+            || 'y' == $value
             || 'ok' == $value
             || '1' == $value) {
             return 'true';
@@ -1056,14 +1056,19 @@ function dump(mixed $data = null, bool $backtrace = false): void
         $caller['class'] = $trace[1]['class'];
     }
     if (defined('HAZAAR_VERSION') && ($app = Application::getInstance())) {
-        $controller = new Dump($data, $app->router);
-        $controller->toggleBacktrace($backtrace);
-        if (is_array($dumpLog)) {
-            $controller->addLogEntries($dumpLog);
+        if (isset($app->router)) {
+            $controller = new Dump($data, $app);
+            $controller->toggleBacktrace($backtrace);
+            if (is_array($dumpLog)) {
+                $controller->addLogEntries($dumpLog);
+            }
+            $controller->initialize($app->request);
+            $controller->setCaller($caller);
+            $response = $controller->run();
+            $response->writeOutput();
+        } else {
+            var_dump($data);
         }
-        $controller->__initialize($app->request);
-        $response = $controller->__run($caller);
-        $response->__writeOutput();
     } else {
         $out = "HAZAAR DUMP\n\n";
         if (defined('HAZAAR_START')) {
@@ -1072,7 +1077,7 @@ function dump(mixed $data = null, bool $backtrace = false): void
         }
         $out .= 'Endtime: '.date('c')."\n\n";
         $out .= print_r($data, true);
-        if (count($dumpLog) > 0) {
+        if (is_array($dumpLog) && count($dumpLog) > 0) {
             $out .= "\n\nLOG\n\n";
             $out .= print_r($dumpLog, true);
         }

@@ -789,12 +789,10 @@ class Map implements \ArrayAccess, \Iterator, \Countable
             $elem = new Map(null, null, $this->filter);
             array_push($this->elements, $elem);
         } elseif (!array_key_exists($key, $this->elements) && !$this->locked) {
-            if (true === $create || null !== $default) {
-                if (is_array($default) || $default instanceof \stdClass) {
-                    $elem = new Map($default, null, $this->filter);
-                } else {
-                    $elem = $default;
-                }
+            if (true === $create && (is_array($default) || $default instanceof \stdClass)) {
+                $elem = new Map($default, null, $this->filter);
+            } elseif (null !== $default) {
+                $elem = $default;
             } elseif (array_key_exists($key, $this->defaults)) {
                 $elem = $this->defaults[$key];
             } else {

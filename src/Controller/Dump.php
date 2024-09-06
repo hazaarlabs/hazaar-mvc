@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller;
 
-use Hazaar\Application\Router;
+use Hazaar\Application;
 use Hazaar\View\Layout;
 use Hazaar\XML\Element;
 
@@ -31,9 +31,9 @@ class Dump extends Diagnostic
      */
     private array $log = [];
 
-    public function __construct(mixed $data, Router $router)
+    public function __construct(mixed $data, Application $application)
     {
-        parent::__construct($router, 'debug');
+        parent::__construct($application, 'debug');
         $this->exec_time = $this->application->GLOBALS['hazaar']['exec_start'];
         $this->data = $data;
     }

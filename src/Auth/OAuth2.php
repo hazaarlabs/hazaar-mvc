@@ -405,7 +405,7 @@ class OAuth2 extends Adapter
                 document.location.search = uri;';
             $view = new HTML();
             $view->setContent("<script>{$code}</script>");
-            $view->__writeOutput();
+            $view->writeOutput();
 
             exit;
         }

@@ -22,6 +22,11 @@ abstract class Request implements Interfaces\Request
     protected \Exception $exception;
 
     /**
+     * Request method.
+     */
+    protected string $method = 'GET';
+
+    /**
      * The requested path.
      */
     private string $path = '';
@@ -275,6 +280,16 @@ abstract class Request implements Interfaces\Request
     public function count(): int
     {
         return count($this->params);
+    }
+
+    /**
+     * @detail      Returns the method used to initiate this request on the server.  .
+     *
+     * @return string The request method. Usually one of GET, POST, PUT or DELETE.
+     */
+    public function getMethod(): string
+    {
+        return $this->method;
     }
 
     /**

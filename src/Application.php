@@ -17,6 +17,7 @@ namespace Hazaar;
 use Hazaar\Application\Config;
 use Hazaar\Application\Request;
 use Hazaar\Application\Router;
+use Hazaar\Application\Router\Exception\RouteNotFound;
 use Hazaar\Application\URL;
 use Hazaar\Controller\Response;
 use Hazaar\Controller\Response\File;
@@ -173,12 +174,7 @@ class Application
             // Create the request object
             $this->request = Request\Loader::load();
             // Create a new router object for evaluating routes
-            $routerType = $this->config->get('router.type', 'basic');
-            $routerClass = 'Hazaar\\Application\\Router\\'.ucfirst($routerType);
-            if (false === class_exists($routerClass)) {
-                throw new Application\Exception\RouterUnknown($routerType);
-            }
-            $this->router = new $routerClass($this, $this->config);
+            $this->router = new Router($this, $this->config->get('router'));
             $this->timer->stop('init');
         } catch (\Throwable $e) {
             dieDieDie($e);
@@ -273,7 +269,7 @@ class Application
                 'responseType' => 'html',
             ],
             'router' => [
-                'type' => 'basic',
+                'type' => null,
                 'controller' => 'index',
                 'action' => 'index',
             ],
@@ -510,6 +506,10 @@ class Application
                 throw new \Exception('The application failed to start!');
             }
         }
+        if (false === $this->router->initialise($this->request)) {
+            throw new RouteNotFound($this->request->getPath());
+        }
+
         $this->timer->stop('boot');
 
         return $this;
@@ -538,17 +538,24 @@ class Application
 
         try {
             $this->timer->start('exec');
-            if('cli' === php_sapi_name()) {
+            $route = $this->router->getRoute();
+            if ('cli' === php_sapi_name()) {
                 $this->request->setPath(ake($_SERVER, 'argv[1]'));
-            } 
+            }
             if (null !== $controller) {
-                $response = $controller->__initialize($this->request);
+                $response = $controller->initialize($this->request);
                 if (null === $response) {
-                    $response = $controller->__run();
+                    $response = $controller->run($route);
                 }
             } else {
-                $this->router->__initialise($this->request);
-                $response = $this->router->__run($this->request);
+                if (!$route) {
+                    throw new \Exception('No route found');
+                }
+                $controller = $route->getController();
+                $response = $controller->initialize($this->request);
+                if (null === $response) {
+                    $response = $controller->run($route);
+                }
             }
             if (!$response instanceof Response) {
                 $response = new NoContent();
@@ -563,10 +570,10 @@ class Application
                 }
             }
             // Finally, write the response to the output buffer.
-            $response->__writeOutput();
+            $response->writeOutput();
             // Shutdown the controller
-            $this->router->__shutdown($response);
             $this->timer->start('shutdown');
+            $controller->shutdown($response);
             $this->timer->stop('exec');
             $code = $response->getStatus();
         } catch (Controller\Exception\HeadersSent $e) {

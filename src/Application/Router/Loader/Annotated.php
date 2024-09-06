@@ -1,13 +1,11 @@
 <?php
 
-namespace Hazaar\Application\Router;
+namespace Hazaar\Application\Router\Loader;
 
 use Hazaar\Application\Request;
-use Hazaar\Application\Request\HTTP;
+use Hazaar\Application\Route;
+use Hazaar\Application\Router;
 use Hazaar\Application\Router\Exception\ControllerHasNoRoutes;
-use Hazaar\Application\Router\Exception\NotSupported;
-use Hazaar\Application\Router\Exception\RouteNotFound;
-use Hazaar\Controller\Response;
 use Hazaar\Date;
 
 /**
@@ -101,17 +99,86 @@ class Annotated extends Advanced
     /**
      * @var array<string, array<mixed>>
      */
-    private array $__controllerEndpoints = [];
-
-    /**
-     * @var array<mixed>
-     */
-    private ?array $__selectedEndpoint = null;
+    private array $controllerEndpoints = [];
 
     private bool $describeFull = true;
 
-    private function __loadRoutes(string $controllerClass): void
+    /**
+     * Private method to describe the REST API.
+     *
+     * @return array<mixed> returns an array containing the description of the REST API
+     */
+    public function describeAPI(): array
     {
+        $api = [];
+        foreach ($this->controllerEndpoints as $endpoint) {
+            $this->describeEndpoint($endpoint, $this->describeFull, $api);
+        }
+
+        return $api;
+    }
+
+    public function exec(Request $request): bool
+    {
+        parent::exec($request);
+        Router::reset();
+        if (!$this->controller) {
+            return true;
+        }
+        $this->controllerEndpoints = $this->loadEndpoints($this->controllerClass);
+        if (0 === count($this->controllerEndpoints)) {
+            throw new ControllerHasNoRoutes($this->controller);
+        }
+        foreach ($this->controllerEndpoints as $endpoint) {
+            if (!array_key_exists('routes', $endpoint)) {
+                continue;
+            }
+            foreach ($endpoint['routes'] as $path => $route) {
+                $path = '/'.strtolower($this->controller).'/'.ltrim($path, '/');
+                Router::match($route['args']['methods'], $path, $route['func']);
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Get the tags for a given endpoint name.
+     *
+     * @param string $name the name of the endpoint
+     *
+     * @return array<string>|false the tags for the endpoint or false if not found
+     */
+    protected function getEndpointTags(string $name): array|false
+    {
+        foreach ($this->controllerEndpoints as $endpoint) {
+            foreach ($endpoint['routes'] as $route) {
+                if ($route['func']->name === $name) {
+                    if (!array_key_exists('tags', $route)) {
+                        $route['tags'] = [];
+                        preg_match_all('/\*\s*@((\w+).*)/', $endpoint['comment'], $matches);
+                        foreach ($matches[1] as $annotation) {
+                            if (!preg_match('/^(\w+)(\W.*)$/', $annotation, $parts)) {
+                                continue;
+                            }
+                            $route['tags'][$parts[1]] = trim($parts[2]);
+                        }
+                    }
+
+                    return $route['tags'];
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    private function loadEndpoints(string $controllerClass): array
+    {
+        $endpoints = [];
         $controllerReflection = new \ReflectionClass($controllerClass);
         foreach ($controllerReflection->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
             if ('__' === substr($method->getName(), 0, 2) || $method->isPrivate()) {
@@ -186,132 +253,11 @@ class Annotated extends Advanced
             }
             $endpoint['private'] = in_array('private', $methodMatches[2]);
             if (count($endpoint['routes']) > 0) {
-                $this->__controllerEndpoints[$method->name] = $endpoint;
-            }
-        }
-    }
-
-    private function __findRoute(string $path, string $requestMethod = 'GET'): void
-    {
-        foreach ($this->__controllerEndpoints as $endpoint) {
-            foreach ($endpoint['routes'] as $target => $route) {
-                if ($this->__matchRoute($requestMethod, $path, $target, $route, $args)) {
-                    $this->__selectedEndpoint = [$endpoint, $route, $args];
-
-                    return;
-                }
-            }
-        }
-    }
-
-    /**
-     * Matches the given request method and path to the specified route and endpoint.
-     *
-     * @param string       $request_method the HTTP request method
-     * @param mixed        $path           the path to match against the route
-     * @param string       $route          the route to match against the path
-     * @param array<mixed> $endpoint       the endpoint to match against the path
-     * @param array<mixed> $args           the arguments extracted from the path
-     *
-     * @return bool returns true if the request method and path match the route and endpoint, false otherwise
-     */
-    private function __matchRoute(string $request_method, mixed &$path, string $route, array $endpoint, ?array &$args = null): bool
-    {
-        $args = [];
-        if (!is_array($path)) {
-            $path = explode('/', ltrim($path, '/'));
-        }
-        $route = explode('/', ltrim($route, '/'));
-        if (count($path) !== count($route)) {
-            return false;
-        }
-        for ($i = 0; $i < count($path); ++$i) {
-            // If this part is identical to the route part, it matches so keep checking
-            if ($path[$i] === $route[$i]) {
-                continue;
-            }
-            // If this part of the route is not a variable, there's no match to return
-            if (!preg_match('/\<(\w+)(:(\w+))?\>/', $route[$i], $matches)) {
-                return false;
-            }
-            $value = $path[$i];
-            if (4 == count($matches)) {
-                $key = $matches[3];
-                if (!in_array($matches[1], self::$validTypes)
-                    || ('string' === $matches[1] && is_numeric($value))
-                    || (('int' === $matches[1] || 'float' === $matches[1]) && !is_numeric($value))
-                    || ('bool' === $matches[1] && !is_boolean($value))) {
-                    return false;
-                }
-                if ('date' === $matches[1]) {
-                    $value = new Date($value.' 00:00:00');
-                } elseif ('timestamp' === $matches[1]) {
-                    $value = new Date($value);
-                } elseif ('bool' === $matches[1] || 'boolean' === $matches[1]) {
-                    $value = boolify($value);
-                } else {
-                    settype($value, $matches[1]);
-                }
-                if ('string' === $matches[1] && '' === $value) {
-                    return false;
-                }
-            } else {
-                $key = $matches[1];
-            }
-            $args[$key] = $value;
-        }
-        $httpMethods = ake(ake($endpoint, 'args'), 'methods', ['GET']);
-        if (!in_array($request_method, $httpMethods)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Private method to describe the REST API.
-     *
-     * @return array<mixed> returns an array containing the description of the REST API
-     */
-    public function __describeAPI(): array
-    {
-        $api = [];
-        foreach ($this->__controllerEndpoints as $endpoint) {
-            $this->__describeEndpoint($endpoint, $this->describeFull, $api);
-        }
-
-        return $api;
-    }
-
-    /**
-     * Get the tags for a given endpoint name.
-     *
-     * @param string $name the name of the endpoint
-     *
-     * @return array<string>|false the tags for the endpoint or false if not found
-     */
-    protected function __getEndpointTags(string $name): array|false
-    {
-        foreach ($this->__controllerEndpoints as $endpoint) {
-            foreach ($endpoint['routes'] as $route) {
-                if ($route['func']->name === $name) {
-                    if (!array_key_exists('tags', $route)) {
-                        $route['tags'] = [];
-                        preg_match_all('/\*\s*@((\w+).*)/', $endpoint['comment'], $matches);
-                        foreach ($matches[1] as $annotation) {
-                            if (!preg_match('/^(\w+)(\W.*)$/', $annotation, $parts)) {
-                                continue;
-                            }
-                            $route['tags'][$parts[1]] = trim($parts[2]);
-                        }
-                    }
-
-                    return $route['tags'];
-                }
+                $endpoints[$method->name] = $endpoint;
             }
         }
 
-        return false;
+        return $endpoints;
     }
 
     /**
@@ -323,7 +269,7 @@ class Annotated extends Advanced
      *
      * @return array<mixed> the array of information about the endpoint
      */
-    private function __describeEndpoint(array $endpoint, bool $describe_full = false, ?array &$api = null): array
+    private function describeEndpoint(array $endpoint, bool $describe_full = false, ?array &$api = null): array
     {
         if (!$api) {
             $api = [];
@@ -353,53 +299,5 @@ class Annotated extends Advanced
         }
 
         return $api;
-    }
-
-    public function __run(Request $request): Response
-    {
-        if (true === $this->__selectedEndpoint[0]['cache']) {
-            $this->cacheAction(
-                $this->controller,
-                $this->action,
-                $this->__selectedEndpoint[0]['cache_ttl'],
-                $this->__selectedEndpoint[0]['private']
-            );
-        }
-
-        return parent::__run($request);
-    }
-
-    public function evaluateRequest(Request $request): bool
-    {
-        if (!$request instanceof HTTP) {
-            throw new NotSupported();
-        }
-        parent::evaluateRequest($request);
-        if (!$this->controller) {
-            throw new RouteNotFound($request->getPath());
-        }
-        if ('\\' === substr($this->controller, 0, 1)) {
-            $controllerClass = $this->controller;
-        } else {
-            $controllerClass = '\\Application\\Controllers\\'.ucfirst($this->controller);
-        }
-        $this->__loadRoutes($controllerClass);
-        if (0 === count($this->__controllerEndpoints)) {
-            throw new ControllerHasNoRoutes($controllerClass);
-        }
-        if ($this->action === $this->config['action']) {
-            $controllerPath = '/';
-        } else {
-            $controllerPath = implode('/', array_merge([$this->action], $this->actionArgs));
-        }
-        $this->__findRoute($controllerPath, $request->getMethod());
-        if (!$this->__selectedEndpoint) {
-            return false;
-        }
-        $this->action = $this->__selectedEndpoint[1]['func']->name;
-        $this->actionArgs = $this->__selectedEndpoint[2];
-        $this->namedActionArgs = true;
-
-        return true;
     }
 }

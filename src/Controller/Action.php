@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller;
 
+use Hazaar\Application;
 use Hazaar\Application\Request;
 use Hazaar\Application\Request\HTTP;
-use Hazaar\Application\Router;
 use Hazaar\Controller;
 use Hazaar\Controller\Action\ViewRenderer;
 use Hazaar\View;
@@ -32,26 +32,26 @@ abstract class Action extends Basic
      */
     protected array $methods = [];
 
-    public function __construct(Router $router, string $name)
+    public function __construct(Application $application, string $name = null)
     {
-        parent::__construct($router, $name);
+        parent::__construct($application, $name);
         $this->view = new ViewRenderer();
     }
 
-    public function __initialize(Request $request): ?Response
+    public function initialize(Request $request): ?Response
     {
         if ($request instanceof HTTP
             && false === $request->isXmlHttpRequest()
-            && null !== $this->router->application
-            && 'html' === $this->router->application->getResponseType()
-            && $this->router->application->config['app']->has('layout')) {
-            $this->view->layout($this->router->application->config['app']['layout']);
+            && null !== $this->application
+            && 'html' === $this->application->getResponseType()
+            && $this->application->config['app']->has('layout')) {
+            $this->view->layout($this->application->config['app']['layout']);
         }
 
-        return parent::__initialize($request);
+        return parent::initialize($request);
     }
 
-    public function __registerMethod(string $name, callable $callback): bool
+    public function registerMethod(string $name, callable $callback): bool
     {
         if (array_key_exists($name, $this->methods)) {
             throw new Exception\MethodExists($name);
@@ -61,16 +61,16 @@ abstract class Action extends Basic
         return true;
     }
 
-    public function __runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): Response
+    public function runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): Response
     {
         try {
-            $response = parent::__runAction($actionName, $actionArgs, $namedActionArgs);
+            $response = parent::runAction($actionName, $actionArgs, $namedActionArgs);
         } catch (Exception\ResponseInvalid $e) {
             $response = null;
         }
         if (null === $response) {
             $response = new Response\HTML();
-            $this->view->__exec($response);
+            $this->view->exec($response);
         }
 
         return $response;

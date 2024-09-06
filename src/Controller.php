@@ -12,8 +12,9 @@ declare(strict_types=1);
 namespace Hazaar;
 
 use Hazaar\Application\Request;
-use Hazaar\Application\Router;
+use Hazaar\Application\Route;
 use Hazaar\Application\URL;
+use Hazaar\Controller\Exception\NoAction;
 use Hazaar\Controller\Helper;
 use Hazaar\Controller\Response;
 
@@ -26,8 +27,6 @@ use Hazaar\Controller\Response;
  */
 abstract class Controller implements Controller\Interfaces\Controller
 {
-    public string $urlDefaultActionName = 'index';
-    protected Router $router;
     protected Application $application;
     protected string $name;
     protected Request $request;
@@ -40,42 +39,27 @@ abstract class Controller implements Controller\Interfaces\Controller
     private array $_helpers = [];
 
     /**
+     * @var array<array<bool|int>>
+     */
+    private array $cachedActions = [];
+
+    /**
+     * @var array<Response>
+     */
+    private array $cachedResponses = [];
+
+    private ?Cache $responseCache = null;
+
+    /**
      * Base controller constructor.
      *
      * @param string $name The name of the controller.  This is the name used when generating URLs.
      */
-    public function __construct(Router $router, ?string $name = null)
+    public function __construct(Application $application, ?string $name = null)
     {
-        $this->router = $router;
-        $this->application = $router->application;
+        $this->application = $application;
         $this->name = strtolower(null !== $name ? $name : get_class($this));
         $this->addHelper('response');
-        $this->urlDefaultActionName = $router->getDefaultActionName();
-    }
-
-    /**
-     * Controller shutdown method.
-     *
-     * This method is called when a controller is being shut down.  It will call the extending controllers
-     * shutdown method if it exists, otherwise it will silently carry on.
-     */
-    public function __shutdown(Response $response): void
-    {
-        $this->shutdown($response);
-    }
-
-    /**
-     * Controller initialisation method.
-     *
-     * This should be called by all extending controllers and is simply responsible for storing the calling request.
-     *
-     * @param Request $request the application request object
-     */
-    public function __initialize(Request $request): ?Response
-    {
-        $this->request = $request;
-
-        return null;
     }
 
     /**
@@ -84,21 +68,6 @@ abstract class Controller implements Controller\Interfaces\Controller
     public function __toString(): string
     {
         return get_class($this);
-    }
-
-    /**
-     * Default run method.
-     *
-     * The run method is where the controller does all it's work.  This default one does nothing.
-     */
-    public function __run(): false|Response
-    {
-        return false;
-    }
-
-    public function __runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): false|Response
-    {
-        return false;
     }
 
     /**
@@ -118,17 +87,47 @@ abstract class Controller implements Controller\Interfaces\Controller
     }
 
     /**
-     * Shutdown the controller.
+     * Controller initialisation method.
      *
-     * This method is called when the controller is being shut down.
+     * This should be called by all extending controllers and is simply responsible for storing the calling request.
      *
-     * @param Response $response the response object
-     *
-     * @return bool returns true
+     * @param Request $request the application request object
      */
-    public function shutdown(Response $response): bool
+    public function initialize(Request $request): ?Response
     {
-        return true;
+        $this->request = $request;
+
+        return null;
+    }
+
+    public function run(?Route $route = null): Response
+    {
+        if ($response = $this->getCachedResponse($route)) {
+            return $response;
+        }
+        // Execute the controller action
+        $response = $this->runAction($route->getAction(), $route->getActionArgs(), $route->hasNamedActionArgs());
+        if (false === $response) {
+            throw new NoAction($this->name);
+        }
+        $this->cacheResponse($route, $response);
+
+        return $response;
+    }
+
+    public function runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): false|Response
+    {
+        return false;
+    }
+
+    final public function shutdown(Response $response): void
+    {
+        if (!($this->responseCache && count($this->cachedResponses) > 0)) {
+            return;
+        }
+        foreach ($this->cachedResponses as $cacheItem) {
+            $this->responseCache->set($cacheItem[0], $cacheItem[1], $cacheItem[2]);
+        }
     }
 
     /**
@@ -186,7 +185,7 @@ abstract class Controller implements Controller\Interfaces\Controller
      */
     public function redirect(string|URL $location, bool $saveURI = false): Response
     {
-        return $this->router->application->redirect((string)$location, $saveURI);
+        return $this->application->redirect((string) $location, $saveURI);
     }
 
     /**
@@ -199,7 +198,7 @@ abstract class Controller implements Controller\Interfaces\Controller
      */
     public function redirectBack(null|string|URL $altURL = null): Response
     {
-        return $this->router->application->redirectBack($altURL);
+        return $this->application->redirectBack($altURL);
     }
 
     /**
@@ -217,13 +216,7 @@ abstract class Controller implements Controller\Interfaces\Controller
     {
         $url = new URL();
         $parts = func_get_args();
-        if (1 === count($parts) && strtolower(trim($parts[0] ?? '')) === $this->urlDefaultActionName) {
-            $parts = [];
-        }
         $thisParts = explode('/', $this->name);
-        if (0 === count($parts) && $thisParts[count($thisParts) - 1] === $this->urlDefaultActionName) {
-            array_pop($thisParts);
-        }
         call_user_func_array([$url, '__construct'], array_merge($thisParts, $parts));
 
         return $url;
@@ -251,7 +244,7 @@ abstract class Controller implements Controller\Interfaces\Controller
     {
         $parts = func_get_args();
 
-        return call_user_func_array([$this->router->application, 'active'], array_merge([$this->name], $parts));
+        return call_user_func_array([$this->application, 'active'], array_merge([$this->name], $parts));
     }
 
     /**
@@ -309,12 +302,21 @@ abstract class Controller implements Controller\Interfaces\Controller
         return array_key_exists($helper, $this->_helpers);
     }
 
-    public function cacheAction(string $action, int $timeout = 0): void
+    public function cacheAction(string $actionName, int $timeout = 60, bool $private = false): bool
     {
-        $this->router->cacheAction($this->name, $action, $timeout);
+        if (null === $this->responseCache) {
+            $this->responseCache = new Cache();
+        }
+        $this->getCacheKey($this->name, $actionName, [], $cacheName);
+        $this->cachedActions[$cacheName] = [
+            'timeout' => $timeout,
+            'private' => $private,
+        ];
+
+        return true;
     }
 
-    /**
+    /*s
      * Find a helper class by name.
      *
      * This method searches for view helper classes based on the given name. The search order is important because it allows apps to override built-in helpers.
@@ -328,13 +330,60 @@ abstract class Controller implements Controller\Interfaces\Controller
         /**
          * Search paths for view helpers. The order here matters because apps should be able to override built-in helpers.
          */
-        $searchPrefixes = ['\\Application\\Helper\\Controller', '\\Hazaar\\Controller\\Helper'];
+        $searchPrefixes = ['\Application\Helper\Controller', '\Hazaar\Controller\Helper'];
         $name = \ucfirst($name);
         foreach ($searchPrefixes as $prefix) {
             $class = $prefix.'\\'.$name;
             if (\class_exists($class)) {
                 return $class;
             }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the cache key for the current action.
+     *
+     * @param string       $controller the controller name
+     * @param string       $action     the action name
+     * @param array<mixed> $actionArgs the action arguments
+     * @param null|string  $cacheName  the cache name
+     *
+     * @return false|string the cache key, or false if the action is not cached
+     */
+    private function getCacheKey(string $controller, string $action, ?array $actionArgs = null, ?string &$cacheName = null): false|string
+    {
+        $cacheName = $controller.'::'.$action;
+        if (!array_key_exists($cacheName, $this->cachedActions)) {
+            return false;
+        }
+
+        return $cacheName.'('.serialize($actionArgs).')';
+    }
+
+    // Cache a response to the current action invocation.
+    private function cacheResponse(Route $route, Response $response): bool
+    {
+        if (null === $this->responseCache) {
+            return false;
+        }
+        $cacheKey = $this->getCacheKey($this->name, $route->getAction(), $route->getActionArgs(), $cacheName);
+        if (false !== $cacheKey) {
+            $this->cachedResponses[] = [$cacheKey, $response, $this->cachedActions[$cacheName]['timeout']];
+        }
+
+        return true;
+    }
+
+    private function getCachedResponse(Route $route): ?Response
+    {
+        if (null === $this->responseCache) {
+            return null;
+        }
+        $cacheKey = $this->getCacheKey($this->name, $route->getAction(), $route->getActionArgs());
+        if (false !== $cacheKey && ($response = $this->responseCache->get($cacheKey))) {
+            return $response;
         }
 
         return null;

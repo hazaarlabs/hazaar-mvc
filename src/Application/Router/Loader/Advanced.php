@@ -2,16 +2,25 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Application\Router;
+namespace Hazaar\Application\Router\Loader;
 
 use Hazaar\Application\Request;
 use Hazaar\Application\Router;
+use Hazaar\Application\Router\Loader;
 use Hazaar\Controller;
-use Hazaar\Loader;
 
-class Advanced extends Router
+class Advanced extends Loader
 {
-    public function evaluateRequest(Request $request): bool
+    protected ?string $controller = null;
+    protected ?string $controllerClass = null;
+    protected ?string $action = null;
+
+    /**
+     * @var array<mixed>
+     */
+    protected array $actionArgs;
+
+    public function exec(Request $request): bool
     {
         $path = $request->getPath();
         if (empty($path) || '/' === $path) {
@@ -21,18 +30,14 @@ class Advanced extends Router
             $path = $this->evaluateAliases($path, $this->config['aliases']->toArray());
         }
         $parts = [];
-        $controller = $this->findController($path, $parts);
-        if (null === $controller) {
-            $slashPos = strpos($path, '/');
-            $this->action = false === $slashPos ? $path : substr($this->action, 0, $slashPos);
-
+        $this->controller = trim($this->findController($path, $parts)??'', '\\');
+        if ('' === $this->controller) {
             return false;
         }
-        $this->controller = ucfirst($controller);
-        if (count($parts) > 0) {
-            $this->action = array_shift($parts);
-        }
+        $this->controllerClass = 'Application\Controllers\\'.$this->controller;
+        $this->action = (count($parts) > 0) ? array_shift($parts) : null;
         $this->actionArgs = $parts;
+        Router::set([$this->controllerClass, $this->action, $this->actionArgs], $path);
 
         return true;
     }
@@ -70,7 +75,7 @@ class Advanced extends Router
     {
         $controllerParts = explode('/', $path);
         $controller = null;
-        $controllerRoot = Loader::getFilePath(FILE_PATH_CONTROLLER);
+        $controllerRoot = \Hazaar\Loader::getFilePath(FILE_PATH_CONTROLLER);
         $controllerPath = DIRECTORY_SEPARATOR;
         $controllerIndex = null;
         $defaultController = ucfirst($this->config['controller']);
