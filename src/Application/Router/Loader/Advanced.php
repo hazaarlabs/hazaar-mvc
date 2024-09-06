@@ -11,8 +11,9 @@ use Hazaar\Controller;
 
 class Advanced extends Loader
 {
-    protected string $controller;
-    protected string $action;
+    protected ?string $controller = null;
+    protected ?string $controllerClass = null;
+    protected ?string $action = null;
 
     /**
      * @var array<mixed>
@@ -29,14 +30,14 @@ class Advanced extends Loader
             $path = $this->evaluateAliases($path, $this->config['aliases']->toArray());
         }
         $parts = [];
-        $controller = $this->findController($path, $parts);
-        if (null === $controller) {
+        $this->controller = trim($this->findController($path, $parts)??'', '\\');
+        if ('' === $this->controller) {
             return false;
         }
-        $this->controller = 'Application\Controllers\\'.$controller;
+        $this->controllerClass = 'Application\Controllers\\'.$this->controller;
         $this->action = (count($parts) > 0) ? array_shift($parts) : null;
         $this->actionArgs = $parts;
-        Router::set([$this->controller, $this->action, $this->actionArgs], $path);
+        Router::set([$this->controllerClass, $this->action, $this->actionArgs], $path);
 
         return true;
     }

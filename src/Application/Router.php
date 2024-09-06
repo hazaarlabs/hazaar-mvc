@@ -90,10 +90,11 @@ class Router
         if (false === $this->routeLoader->exec($request)) {
             throw new RouteNotFound($request->getPath());
         }
+        // If the loader has not already set a route, evaluate the request
         if (null === $this->route) {
             $this->route = $this->evaluateRequest($request);
         }
-        if (null === $this->route && $controller = $this->config->get('controller')) {
+        if (null === $this->route && !$request->getPath() && ($controller = $this->config->get('controller'))) {
             $controllerClass = '\\' === substr($controller, 0, 1)
                 ? $controller
                 : 'Application\Controllers\\'.ucfirst($controller);
@@ -101,6 +102,13 @@ class Router
         }
         if (null === $this->route) {
             throw new RouteNotFound($request->getPath());
+        }
+    }
+
+    public static function reset(): void
+    {
+        if (self::$instance) {
+            self::$instance->route = null;
         }
     }
 
@@ -254,27 +262,22 @@ class Router
     /**
      * Matches a route with the given HTTP methods, path, and callable.
      *
-     * @param array<string>                        $methods  The HTTP methods to match (e.g., ['GET', 'POST']).
-     * @param string                               $path     The path to match (e.g., '/user/{id}').
-     * @param array{string,string}|\Closure|string $callable The callable to execute when the route is matched.
-     *                                                       It can be a string in the format 'Class::method',
-     *                                                       an array with the class and method, or a Closure.
+     * @param null|array<string>|string $methods         The HTTP methods to match (e.g., ['GET', 'POST']).
+     * @param string                    $path            The path to match (e.g., '/user/{id}').
+     * @param mixed                     $callable        The callable to execute when the route is matched.
+     *                                                   It can be a string in the format 'Class::method',
+     *                                                   an array with the class and method, or a Closure.
+     * @param bool                      $namedActionArgs whether to use named action arguments
      */
-    public static function match(array $methods, string $path, array|\Closure|string $callable): void
+    public static function match(null|array|string $methods, string $path, mixed $callable, bool $namedActionArgs = false): void
     {
+        if (!self::$instance) {
+            return;
+        }
         if (is_string($callable)) {
             $callable = explode('::', $callable);
         }
-        if (!(
-            self::$instance
-            && (
-                is_callable($callable)
-                || (is_array($callable) && class_exists($callable[0]))
-            )
-        )) {
-            return;
-        }
-        self::$instance->addRoute(new Route($callable, $path, $methods));
+        self::$instance->addRoute(new Route($callable, $path, $methods, $namedActionArgs));
     }
 
     /**
@@ -292,8 +295,9 @@ class Router
             throw new Router\Exception\ProtocolNotSupported();
         }
         $method = $request->getMethod();
+        $path = $request->getPath();
         foreach ($this->routes as $route) {
-            if ($route->match($method, $request->getPath())) {
+            if ($route->match($method, $path)) {
                 return $this->route = $route;
             }
         }

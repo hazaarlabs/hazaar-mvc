@@ -31,7 +31,7 @@ class Route
         $this->path = $path;
         $this->methods = array_map('strtoupper', $methods);
         $this->namedActionArgs = $namedActionArgs;
-        if (isset($this->callable[2])) {
+        if (is_array($this->callable) && isset($this->callable[2]) && is_array($this->callable[2])) {
             $this->actionArgs = $this->callable[2];
         }
     }
@@ -56,7 +56,18 @@ class Route
      */
     public function match(string $method, string $path): bool
     {
-        if (!in_array($method, $this->methods)) {
+        if (count($this->methods) > 0 && !in_array($method, $this->methods)) {
+            return false;
+        }
+        // If the route path contains a regex, match it
+        if (false !== strpos($this->path, '(') && false !== strpos($this->path, ')')) {
+            $routePath = ltrim($this->path,'/');
+            if (1 === preg_match('!'.$routePath.'!', $path, $matches)) {
+                $this->actionArgs = array_slice($matches, 1);
+
+                return true;
+            }
+
             return false;
         }
         $path = explode('/', $path);
@@ -64,12 +75,32 @@ class Route
         if (count($routePath) !== count($path)) {
             return false;
         }
-        foreach ($routePath as $i => &$part) {
-            if ($part === $path[$i]) {
+        foreach ($routePath as $i => &$routePart) {
+            if ($routePart === $path[$i]) {
                 continue;
             }
-            if ('{' === substr($part, 0, 1) && '}' === substr($part, -1)) {
-                $this->actionArgs[] = $path[$i];
+            if (('{' === substr($routePart, 0, 1) && '}' === substr($routePart, -1))
+                || '<' === substr($routePart, 0, 1) && '>' === substr($routePart, -1)) {
+                if (false !== strpos($routePart, ':')) {
+                    list($type, $key) = explode(':', substr($routePart, 1, -1));
+                    if (('int' === $type || 'integer' === $type
+                        || 'float' === $type || 'double' === $type)
+                        && !is_numeric($path[$i])) {
+                        return false;
+                    }
+                    if ('bool' === $type || 'boolean' === $type) {
+                        $path[$i] = boolify($path[$i]);
+                    } elseif ('array' === $type) {
+                        $path[$i] = explode(',', $path[$i]);
+                    } elseif ('json' === $type) {
+                        $path[$i] = json_decode($path[$i], true);
+                    } else {
+                        settype($path[$i], $type);
+                    }
+                    $this->actionArgs[$key] = $path[$i];
+                } else {
+                    $this->actionArgs[] = $path[$i];
+                }
 
                 continue;
             }
@@ -97,6 +128,14 @@ class Route
         if ($this->callable instanceof \Closure) {
             return new Closure($this->router->application, $this->callable);
         }
+        if ($this->callable instanceof \ReflectionMethod) {
+            $controllerReflection = $this->callable->getDeclaringClass();
+            if (!$controllerReflection->isSubclassOf('\Hazaar\Controller')) {
+                throw new Router\Exception\ControllerNotFound($controllerReflection->getName(), $this->path ?? '/');
+            }
+
+            return $controllerReflection->newInstance($this->router->application);
+        }
         if (is_array($this->callable)) {
             $controllerClass = $this->callable[0];
             $parts = explode('\\', $this->callable[0]);
@@ -122,6 +161,10 @@ class Route
      */
     public function getAction(): string
     {
+        if ($this->callable instanceof \ReflectionMethod) {
+            return $this->callable->getName();
+        }
+
         return isset($this->callable[1]) ? $this->callable[1] : $this->router->config->get('action');
     }
 

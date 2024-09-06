@@ -4,6 +4,7 @@ namespace Hazaar\Application\Router\Loader;
 
 use Hazaar\Application\Request;
 use Hazaar\Application\Request\HTTP;
+use Hazaar\Application\Route;
 use Hazaar\Application\Router;
 use Hazaar\Application\Router\Exception\ControllerHasNoRoutes;
 use Hazaar\Application\Router\Exception\RouteNotFound;
@@ -102,11 +103,6 @@ class Annotated extends Advanced
      */
     private array $controllerEndpoints = [];
 
-    /**
-     * @var array<mixed>
-     */
-    private ?array $selectedEndpoint = null;
-
     private bool $describeFull = true;
 
     /**
@@ -130,27 +126,23 @@ class Annotated extends Advanced
             throw new \Exception('Annotated router requires an HTTP request');
         }
         parent::exec($request);
+        Router::reset();
         if (!$this->controller) {
-            throw new RouteNotFound($request->getPath());
+            return true;
         }
-        $this->loadRoutes($this->controller);
+        $this->controllerEndpoints = $this->loadEndpoints($this->controllerClass);
         if (0 === count($this->controllerEndpoints)) {
             throw new ControllerHasNoRoutes($this->controller);
         }
-        if ($this->action === $this->config['action']) {
-            $controllerPath = '/';
-        } else {
-            $controllerPath = implode('/', array_merge([$this->action], $this->actionArgs));
+        foreach ($this->controllerEndpoints as $endpoint) {
+            if (!array_key_exists('routes', $endpoint)) {
+                continue;
+            }
+            foreach ($endpoint['routes'] as $path => $route) {
+                $path = '/'.strtolower($this->controller).'/'.ltrim($path, '/');
+                Router::match($route['args']['methods'], $path, $route['func']);
+            }
         }
-        $this->findRoute($controllerPath, $request->getMethod());
-        if (!$this->selectedEndpoint) {
-            return false;
-        }
-        Router::set([
-            $this->controller,
-            $this->selectedEndpoint[1]['func']->name,
-            $this->selectedEndpoint[2],
-        ], $request->getPath(), true); // Set the route for the router with named parameters
 
         return true;
     }
@@ -186,8 +178,12 @@ class Annotated extends Advanced
         return false;
     }
 
-    private function loadRoutes(string $controllerClass): void
+    /**
+     * @return array<mixed>
+     */
+    private function loadEndpoints(string $controllerClass): array
     {
+        $endpoints = [];
         $controllerReflection = new \ReflectionClass($controllerClass);
         foreach ($controllerReflection->getMethods(\ReflectionMethod::IS_PUBLIC) as $method) {
             if ('__' === substr($method->getName(), 0, 2) || $method->isPrivate()) {
@@ -262,86 +258,11 @@ class Annotated extends Advanced
             }
             $endpoint['private'] = in_array('private', $methodMatches[2]);
             if (count($endpoint['routes']) > 0) {
-                $this->controllerEndpoints[$method->name] = $endpoint;
+                $endpoints[$method->name] = $endpoint;
             }
-        }
-    }
-
-    private function findRoute(string $path, string $requestMethod = 'GET'): void
-    {
-        foreach ($this->controllerEndpoints as $endpoint) {
-            foreach ($endpoint['routes'] as $target => $route) {
-                if ($this->matchRoute($requestMethod, $path, $target, $route, $args)) {
-                    $this->selectedEndpoint = [$endpoint, $route, $args];
-
-                    return;
-                }
-            }
-        }
-    }
-
-    /**
-     * Matches the given request method and path to the specified route and endpoint.
-     *
-     * @param string       $request_method the HTTP request method
-     * @param mixed        $path           the path to match against the route
-     * @param string       $route          the route to match against the path
-     * @param array<mixed> $endpoint       the endpoint to match against the path
-     * @param array<mixed> $args           the arguments extracted from the path
-     *
-     * @return bool returns true if the request method and path match the route and endpoint, false otherwise
-     */
-    private function matchRoute(string $request_method, mixed &$path, string $route, array $endpoint, ?array &$args = null): bool
-    {
-        $args = [];
-        if (!is_array($path)) {
-            $path = explode('/', ltrim($path, '/'));
-        }
-        $route = explode('/', ltrim($route, '/'));
-        if (count($path) !== count($route)) {
-            return false;
-        }
-        for ($i = 0; $i < count($path); ++$i) {
-            // If this part is identical to the route part, it matches so keep checking
-            if ($path[$i] === $route[$i]) {
-                continue;
-            }
-            // If this part of the route is not a variable, there's no match to return
-            if (!preg_match('/\<(\w+)(:(\w+))?\>/', $route[$i], $matches)) {
-                return false;
-            }
-            $value = $path[$i];
-            if (4 == count($matches)) {
-                $key = $matches[3];
-                if (!in_array($matches[1], self::$validTypes)
-                    || ('string' === $matches[1] && is_numeric($value))
-                    || (('int' === $matches[1] || 'float' === $matches[1]) && !is_numeric($value))
-                    || ('bool' === $matches[1] && !is_boolean($value))) {
-                    return false;
-                }
-                if ('date' === $matches[1]) {
-                    $value = new Date($value.' 00:00:00');
-                } elseif ('timestamp' === $matches[1]) {
-                    $value = new Date($value);
-                } elseif ('bool' === $matches[1] || 'boolean' === $matches[1]) {
-                    $value = boolify($value);
-                } else {
-                    settype($value, $matches[1]);
-                }
-                if ('string' === $matches[1] && '' === $value) {
-                    return false;
-                }
-            } else {
-                $key = $matches[1];
-            }
-            $args[$key] = $value;
-        }
-        $httpMethods = ake(ake($endpoint, 'args'), 'methods', ['GET']);
-        if (!in_array($request_method, $httpMethods)) {
-            return false;
         }
 
-        return true;
+        return $endpoints;
     }
 
     /**
