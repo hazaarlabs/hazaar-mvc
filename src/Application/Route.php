@@ -61,7 +61,7 @@ class Route
         }
         // If the route path contains a regex, match it
         if (false !== strpos($this->path, '(') && false !== strpos($this->path, ')')) {
-            $routePath = ltrim($this->path,'/');
+            $routePath = ltrim($this->path, '/');
             if (1 === preg_match('!'.$routePath.'!', $path, $matches)) {
                 $this->actionArgs = array_slice($matches, 1);
 
