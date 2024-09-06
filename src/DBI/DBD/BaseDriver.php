@@ -68,7 +68,7 @@ abstract class BaseDriver implements Interfaces\Driver
     public static function mkdsn(Map $config): false|string
     {
         $options = $config->toArray();
-        $DBD = 'Hazaar\\DBI\\DBD\\'.ucfirst($config['driver']);
+        $DBD = 'Hazaar\DBI\DBD\\'.ucfirst($config['driver']);
         if (!class_exists($DBD)) {
             return false;
         }
@@ -600,7 +600,6 @@ abstract class BaseDriver implements Interfaces\Driver
             if (is_string($returning)) {
                 $returning = trim($returning);
                 $sql .= ' RETURNING '.$this->field($returning);
-            // @phpstan-ignore-next-line
             } elseif (is_array($returning) && count($returning) > 0) {
                 $sql .= ' RETURNING '.$this->prepareFields($returning);
             }
@@ -651,7 +650,6 @@ abstract class BaseDriver implements Interfaces\Driver
             if (is_string($returning)) {
                 $returning = trim($returning);
                 $sql .= ' RETURNING '.$this->field($returning);
-            // @phpstan-ignore-next-line
             } elseif (is_array($returning) && count($returning) > 0) {
                 $sql .= ' RETURNING '.$this->prepareFields($returning, [], $tables);
             }
