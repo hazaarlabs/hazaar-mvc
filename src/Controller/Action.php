@@ -32,7 +32,7 @@ abstract class Action extends Basic
      */
     protected array $methods = [];
 
-    public function __construct(Application $application, string $name)
+    public function __construct(Application $application, string $name = null)
     {
         parent::__construct($application, $name);
         $this->view = new ViewRenderer();
