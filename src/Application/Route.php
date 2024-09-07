@@ -7,7 +7,7 @@ use Hazaar\Controller\Closure;
 
 class Route
 {
-    private Router $router;
+    public Router $router;
     private mixed $callable;
     private ?string $path = null;
 
@@ -44,6 +44,16 @@ class Route
     public function setRouter(Router $router): void
     {
         $this->router = $router;
+    }
+
+    /**
+     * Retrieves the path associated with the current route.
+     *
+     * @return null|string the path of the route, or null if no path is set
+     */
+    public function getPath(): ?string
+    {
+        return $this->path;
     }
 
     /**

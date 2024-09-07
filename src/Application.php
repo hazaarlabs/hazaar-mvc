@@ -139,9 +139,9 @@ class Application
     {
         try {
             ob_start();
-            set_error_handler('error_handler', E_ERROR);
-            set_exception_handler('exception_handler');
-            register_shutdown_function('shutdown_handler');
+            set_error_handler('errorHandler', E_ERROR);
+            set_exception_handler('exceptionHandler');
+            register_shutdown_function('shutdownHandler');
             register_shutdown_function([$this, 'shutdown']);
             $this->GLOBALS['hazaar']['exec_start'] = HAZAAR_START;
             Application::$instance = $this;
@@ -195,7 +195,7 @@ class Application
                 include $shutdown;
             }
             if (true === $this->config->get('app.metrics')) {
-                $metricFile = $this->runtimePath('metrics.dat');
+                $metricFile = $this->getRuntimePath('metrics.dat');
                 if ((!file_exists($metricFile) && is_writable(dirname($metricFile))) || is_writable($metricFile)) {
                     $metric = new Metric($metricFile);
                     if (!$metric->exists()) {
@@ -293,7 +293,7 @@ class Application
         }
         $this->config = $config;
         if ($this->config['app']->has('alias')) {
-            URL::$__aliases = $this->config['app']->getArray('alias');
+            URL::$aliases = $this->config['app']->getArray('alias');
         }
         // Allow the root to be configured but the default absolutely has to be set so here we double
         $this->config['app']->addInputFilter(function (mixed $value) {
@@ -376,7 +376,7 @@ class Application
      *
      * @return string The path to the runtime directory
      */
-    public function runtimePath($suffix = null, $createDir = false): string
+    public function getRuntimePath($suffix = null, $createDir = false): string
     {
         $path = $this->config['app']->get('runtimePath');
         if (!file_exists($path)) {
@@ -418,7 +418,7 @@ class Application
      * @param string $path          path suffix to append to the application path
      * @param bool   $forceRealpath Return the real path to a file.  If the file does not exist, this will return false.
      */
-    public static function filePath(?string $path = null, bool $forceRealpath = true): false|string
+    public static function getFilePath(?string $path = null, bool $forceRealpath = true): false|string
     {
         if (strlen($path) > 0) {
             $path = DIRECTORY_SEPARATOR.trim($path ?? '', DIRECTORY_SEPARATOR);
@@ -494,7 +494,7 @@ class Application
             throw new Application\Exception\BadTimezone($tz);
         }
         if (!defined('RUNTIME_PATH')) {
-            define('RUNTIME_PATH', $this->runtimePath(null, true));
+            define('RUNTIME_PATH', $this->getRuntimePath(null, true));
             $this->GLOBALS['runtime'] = RUNTIME_PATH;
         }
         // Check for an application bootstrap file and execute it
@@ -599,7 +599,7 @@ class Application
      *
      * This method allows access to the raw URL path part, relative to the current application request.
      */
-    public static function path(?string $path = null): string
+    public static function getPath(?string $path = null): string
     {
         return Application::$root.($path ? trim($path, '/') : null);
     }
@@ -615,7 +615,7 @@ class Application
      *
      * For examples see: [Generating URLs](/guide/basics/urls.md)
      */
-    public function url(): URL
+    public function getURL(): URL
     {
         $url = new URL();
         call_user_func_array([$url, '__construct'], func_get_args());
@@ -639,7 +639,7 @@ class Application
      *
      * @return bool true if the supplied URL is active as the current URL
      */
-    public function active(): bool
+    public function isActive(): bool
     {
         $parts = [];
         foreach (func_get_args() as $part) {
@@ -730,7 +730,7 @@ class Application
     /**
      * Return the current Hazaar MVC framework version.
      */
-    public function version(): string
+    public function getVersion(): string
     {
         return HAZAAR_VERSION;
     }

@@ -1794,7 +1794,7 @@ class Manager
             $this->loadDataFromFile($dataSchema, $this->dataFile);
         }
         $sync_hash = md5(json_encode($dataSchema));
-        $sync_hash_file = Application::getInstance()->runtimePath('.dbi_sync_hash');
+        $sync_hash_file = Application::getInstance()->getRuntimePath('.dbi_sync_hash');
         if (true !== $forceDataSync
             && file_exists($sync_hash_file)
             && $sync_hash == trim(file_get_contents($sync_hash_file))) {

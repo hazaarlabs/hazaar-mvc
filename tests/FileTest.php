@@ -18,7 +18,7 @@ class FileTest extends TestCase
     public function testTextFile(): void
     {
         $filename = 'UnitTestTempFile.txt';
-        $file = new File(Application::getInstance()->runtimePath($filename));
+        $file = new File(Application::getInstance()->getRuntimePath($filename));
         if ($file->exists()) {
             $file->unlink();
         }
@@ -37,7 +37,7 @@ class FileTest extends TestCase
     public function testJSONFile(): void
     {
         $filename = 'UnitTestTempFile.json';
-        $file = new File(Application::getInstance()->runtimePath($filename));
+        $file = new File(Application::getInstance()->getRuntimePath($filename));
         if ($file->exists()) {
             $file->unlink();
         }
@@ -62,7 +62,7 @@ class FileTest extends TestCase
 
     public function testEncryptedFile(): void
     {
-        $file = Application::getInstance()->runtimePath('UnitTestEncryption.txt');
+        $file = Application::getInstance()->getRuntimePath('UnitTestEncryption.txt');
         $encryptFile = new File($file);
         if ($encryptFile->exists()) {
             $encryptFile->unlink();
@@ -86,7 +86,7 @@ class FileTest extends TestCase
 
     public function testBTreeFile(): void
     {
-        $db = new BTree(Application::getInstance()->runtimePath('UnitTest.db'));
+        $db = new BTree(Application::getInstance()->getRuntimePath('UnitTest.db'));
         $this->assertInstanceOf('\Hazaar\BTree', $db);
         $this->assertTrue($db->set('test', 'value'));
         $this->assertEquals('value', $db->get('test'));

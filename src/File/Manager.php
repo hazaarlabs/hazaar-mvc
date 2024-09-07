@@ -178,7 +178,7 @@ class Manager implements Backend
     public function activateFailover(): void
     {
         $this->failover = new Manager('local', [
-            'root' => Application::getInstance()->runtimePath('media'.DIRECTORY_SEPARATOR.$this->name, true),
+            'root' => Application::getInstance()->getRuntimePath('media'.DIRECTORY_SEPARATOR.$this->name, true),
         ]);
     }
 

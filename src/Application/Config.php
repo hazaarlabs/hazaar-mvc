@@ -257,9 +257,9 @@ class Config extends Map
      *
      * @return string the string representation of the configuration object
      */
-    public function tostring(): string
+    public function toString(): string
     {
-        $config = $this->todotnotation();
+        $config = $this->toDotNotation();
         $output = "[{$this->env}]\n";
         foreach ($config as $key => $value) {
             $output .= "{$key}={$value}\n";

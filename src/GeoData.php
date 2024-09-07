@@ -50,7 +50,7 @@ class GeoData
 
     public function __construct(bool $re_intialise = false)
     {
-        $filename = Application::getInstance()->runtimePath('geodata.db');
+        $filename = Application::getInstance()->getRuntimePath('geodata.db');
         $file = new File($filename);
         if (true === $re_intialise || !$file->exists()) {
             $this->__initialise();
@@ -78,7 +78,7 @@ class GeoData
             GeoData::$db->close();
         }
         $zip = new \ZipArchive();
-        $geodataFile = new File(Application::getInstance()->runtimePath(basename(GeoData::$sources['url'])));
+        $geodataFile = new File(Application::getInstance()->getRuntimePath(basename(GeoData::$sources['url'])));
         // Download the Hazaar GeoData file and check it's MD5 signature
         $geodataFile->putContents(file_get_contents(GeoData::$sources['url']));
         if (!$geodataFile->size() > 0) {
@@ -88,7 +88,7 @@ class GeoData
         if ($geodataFile->md5() !== $md5) {
             throw new \Exception('GeoData source file MD5 signature does not match!');
         }
-        $dir = new File\Dir(Application::getInstance()->runtimePath());
+        $dir = new File\Dir(Application::getInstance()->getRuntimePath());
         $zip->open($geodataFile->fullpath());
         $zip->extractTo((string) $dir);
         $geodataFile->unlink(); // Cleanup now

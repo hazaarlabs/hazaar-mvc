@@ -50,41 +50,97 @@ class OAuth2 extends Adapter
         }
     }
 
+    /**
+     * Sets the authorization endpoint URI for OAuth2 authentication.
+     *
+     * @param string $uri the URI of the authorization endpoint
+     */
     public function setAuthURI(string $uri): void
     {
         $this->metadata['authorization_endpoint'] = $uri;
     }
 
+    /**
+     * Sets the URI for the token endpoint.
+     *
+     * @param string $uri the URI to be set for the token endpoint
+     */
     public function setTokenURI(string $uri): void
     {
         $this->metadata['token_endpoint'] = $uri;
     }
 
+    /**
+     * Sets the registration URI for the OAuth2 metadata.
+     *
+     * This method updates the 'registration_endpoint' key in the metadata array
+     * with the provided URI.
+     *
+     * @param string $uri the registration URI to be set
+     */
     public function setRegistrationURI(string $uri): void
     {
         $this->metadata['registration_endpoint'] = $uri;
     }
 
+    /**
+     * Sets the URI for the introspection endpoint.
+     *
+     * This method updates the metadata to include the provided URI for the
+     * introspection endpoint, which is used to validate access tokens.
+     *
+     * @param string $uri the URI of the introspection endpoint
+     */
     public function setIntrospectURI(string $uri): void
     {
         $this->metadata['introspection_endpoint'] = $uri;
     }
 
+    /**
+     * Sets the URI for the revocation endpoint.
+     *
+     * This method allows you to specify the URI that will be used to revoke OAuth2 tokens.
+     *
+     * @param string $uri the URI of the revocation endpoint
+     */
     public function setRevokeURI(string $uri): void
     {
         $this->metadata['revocation_endpoint'] = $uri;
     }
 
+    /**
+     * Sets the URI for the user info endpoint in the OAuth2 metadata.
+     *
+     * @param string $uri the URI of the user info endpoint
+     */
     public function setUserinfoURI(string $uri): void
     {
         $this->metadata['user_info_endpoint'] = $uri;
     }
 
+    /**
+     * Sets the callback function to be used for authentication.
+     *
+     * @param \Closure $cb the callback function to be used for authentication
+     */
     public function setAuthenticateCallback(\Closure $cb): void
     {
         $this->authenticateCallback = $cb;
     }
 
+    /**
+     * Discover OAuth2 metadata from a given URI.
+     *
+     * This method attempts to retrieve and cache OAuth2 metadata from the specified URI.
+     * If the metadata is not already cached, it fetches the metadata from the URI and stores it.
+     * If the URI cannot be accessed, an exception is thrown.
+     *
+     * @param string $uri the URI to discover OAuth2 metadata from
+     *
+     * @return bool returns true on successful discovery
+     *
+     * @throws \Exception if the authentication platform is offline or service discovery fails
+     */
     public function discover(string $uri): bool
     {
         $key = hash('sha1', $uri);
@@ -104,6 +160,12 @@ class OAuth2 extends Adapter
         return true;
     }
 
+    /**
+     * Adds one or more scopes to the OAuth2 authorization.
+     *
+     * This method accepts a variable number of arguments. Each argument can be a string representing a single scope
+     * or an array of scopes. If an array is provided, the method will recursively add each scope in the array.
+     */
     public function addScope(): void
     {
         $scopes = func_get_args();
@@ -116,6 +178,16 @@ class OAuth2 extends Adapter
         }
     }
 
+    /**
+     * Checks if the authenticated user has a specific scope.
+     *
+     * This method verifies if the user is authenticated and if the specified
+     * scope key exists within the user's scopes.
+     *
+     * @param string $key the scope key to check
+     *
+     * @return bool returns true if the user is authenticated and has the specified scope, false otherwise
+     */
     public function hasScope(string $key): bool
     {
         return $this->authenticated() && in_array($key, $this->scopes);
@@ -210,6 +282,23 @@ class OAuth2 extends Adapter
         return false;
     }
 
+    /**
+     * Refreshes the OAuth2 token.
+     *
+     * This method attempts to refresh the OAuth2 token using the provided refresh token,
+     * identity, and credential. If no token is provided, it will attempt to retrieve a
+     * refresh token using the `getRefreshToken` method. The method sends a POST request
+     * to the token endpoint with the necessary parameters to obtain a new access token.
+     *
+     * @param null|string $token      the refresh token to use for refreshing the access token
+     * @param null|string $identity   the identity (username) to use for authentication
+     * @param null|string $credential the credential (password) to use for authentication
+     *
+     * @return bool returns true if the token was successfully refreshed and authorized,
+     *              false otherwise
+     *
+     * @throws \Exception if there is no token endpoint set for this auth adapter
+     */
     public function refresh(?string $token = null, ?string $identity = null, ?string $credential = null): bool
     {
         if (!$token) {
@@ -245,6 +334,15 @@ class OAuth2 extends Adapter
         return false;
     }
 
+    /**
+     * Retrieves the OAuth2 access token.
+     *
+     * This method checks if the 'oauth2_data' key exists in the storage.
+     * If it exists, it returns the 'access_token' from the 'oauth2_data'.
+     * Otherwise, it returns false.
+     *
+     * @return bool|string the access token if available, otherwise false
+     */
     public function getAccessToken(): bool|string
     {
         if ($this->has('oauth2_data')) {
@@ -254,6 +352,15 @@ class OAuth2 extends Adapter
         return false;
     }
 
+    /**
+     * Retrieves the refresh token from the OAuth2 data storage.
+     *
+     * This method checks if the 'oauth2_data' key exists in the storage. If it does,
+     * it attempts to retrieve the 'refresh_token' from the 'oauth2_data' array.
+     * If the 'refresh_token' is not found, it returns false.
+     *
+     * @return bool|string returns the refresh token if available, otherwise false
+     */
     public function getRefreshToken(): bool|string
     {
         if ($this->has('oauth2_data')) {
@@ -273,16 +380,42 @@ class OAuth2 extends Adapter
         return false;
     }
 
+    /**
+     * Retrieves the OAuth2 token from the storage.
+     *
+     * This method returns an associative array containing the 'access_token'
+     * from the 'oauth2_data' stored in the class. If the 'access_token' is not
+     * present, it returns null.
+     *
+     * @return null|array{token:string} an associative array with the 'access_token' or null if not found
+     */
     public function getToken(): ?array
     {
         return ['token' => ake($this->storage['oauth2_data'], 'access_token')];
     }
 
+    /**
+     * Retrieves the token type from the OAuth2 data storage.
+     *
+     * This method accesses the 'oauth2_data' array within the storage and returns the value
+     * associated with the 'token_type' key. If the 'token_type' key does not exist, it defaults
+     * to returning 'Bearer'.
+     *
+     * @return string the token type, defaulting to 'Bearer' if not specified
+     */
     public function getTokenType(): string
     {
         return ake($this->storage['oauth2_data'], 'token_type', 'Bearer');
     }
 
+    /**
+     * Introspects the given token using the OAuth2 introspection endpoint.
+     *
+     * @param null|string $token      The token to introspect. If null, the access token from storage will be used.
+     * @param string      $token_type the type of the token, default is 'access_token'
+     *
+     * @return bool|string the response body from the introspection endpoint, or false if the endpoint is not available
+     */
     public function introspect(?string $token = null, string $token_type = 'access_token'): bool|string
     {
         if (!($uri = ake($this->metadata, 'introspection_endpoint'))) {
@@ -298,6 +431,16 @@ class OAuth2 extends Adapter
         return $response->body();
     }
 
+    /**
+     * Revokes the OAuth2 access token.
+     *
+     * This method sends a revocation request to the OAuth2 server's revocation endpoint.
+     * It constructs a POST request with the client ID and access token, and sends it
+     * using the HTTP client. The response from the server is then checked for a result.
+     *
+     * @return bool|string Returns false if the revocation endpoint is not found or if the revocation fails.
+     *                     Returns the result from the server's response body if the revocation is successful.
+     */
     public function revoke(): bool|string
     {
         if (!($uri = ake($this->metadata, 'revocation_endpoint'))) {
@@ -312,6 +455,15 @@ class OAuth2 extends Adapter
         return ake($response->body(), 'result', false);
     }
 
+    /**
+     * Retrieves user information from the OAuth2 user info endpoint.
+     *
+     * This method sends a GET request to the user info endpoint specified in the metadata.
+     * If the endpoint is not available or the request fails, it returns false.
+     * Otherwise, it returns the response body containing the user information.
+     *
+     * @return bool|string returns the user information as a string on success, or false on failure
+     */
     public function userinfo(): bool|string
     {
         if (!($uri = ake($this->metadata, 'user_info_endpoint'))) {
@@ -327,7 +479,11 @@ class OAuth2 extends Adapter
     }
 
     /**
-     * Authorize the OAuth2 data.
+     * Authorizes the OAuth2 data by validating the required properties and storing the data.
+     *
+     * @param \stdClass $data the OAuth2 data object containing token information
+     *
+     * @return bool returns true if the data contains valid OAuth2 token information, otherwise false
      */
     private function authorize(\stdClass $data): bool
     {
@@ -342,6 +498,16 @@ class OAuth2 extends Adapter
         return true;
     }
 
+    /**
+     * Authenticates user credentials against an OAuth2 token endpoint.
+     *
+     * @param string      $identity   The user's identity (e.g., username or email).
+     * @param string      $credential The user's credential (e.g., password).
+     * @param string      $grantType  The type of grant being requested. Defaults to 'password'.
+     * @param null|string $scope      optional scope of the access request
+     *
+     * @return bool|\stdClass returns a stdClass object containing the token information if authentication is successful, or false otherwise
+     */
     private function authenticateCredentials(
         string $identity,
         string $credential,
@@ -372,6 +538,21 @@ class OAuth2 extends Adapter
         return false;
     }
 
+    /**
+     * Authenticates the user using the OAuth2 authorization code flow.
+     *
+     * This method handles the OAuth2 authorization code flow by performing the following steps:
+     * 1. Checks if an authorization code is present in the request.
+     * 2. Validates the state parameter to prevent CSRF attacks.
+     * 3. Sends a request to the token endpoint to exchange the authorization code for an access token.
+     * 4. Handles the implicit grant type by converting the hash response to a query response.
+     * 5. Redirects the user to the authorization endpoint if no authorization code or access token is present.
+     *
+     * @return bool|\stdClass returns the response body as an object if the authentication is successful,
+     *                        or false if the authentication fails
+     *
+     * @throws \Exception if the state code is invalid or if there is no authorization endpoint set
+     */
     private function authenticateCode(): bool|\stdClass
     {
         if ($code = ake($_REQUEST, 'code')) {
@@ -434,6 +615,13 @@ class OAuth2 extends Adapter
         exit;
     }
 
+    /**
+     * Generates the redirect URI based on the current request URI.
+     *
+     * @return string the generated redirect URI
+     *
+     * @throws \Exception if the current APPLICATION_BASE does not match the REQUEST_URI
+     */
     private function getRedirectUri(): string
     {
         if (APPLICATION_BASE !== substr($_SERVER['REQUEST_URI'], 0, strlen(APPLICATION_BASE))) {

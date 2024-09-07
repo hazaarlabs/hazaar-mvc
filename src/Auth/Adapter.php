@@ -124,16 +124,31 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         }
     }
 
+    /**
+     * Sets the identity for the authentication adapter.
+     *
+     * @param string $identity the identity to be set
+     */
     public function setIdentity(string $identity): void
     {
         $this->identity = $identity;
     }
 
+    /**
+     * Sets the credential for authentication.
+     *
+     * @param string $credential the credential to be set
+     */
     public function setCredential(string $credential): void
     {
         $this->credential = $credential;
     }
 
+    /**
+     * Retrieves the identity of the current user.
+     *
+     * @return null|string the identity of the user, or null if not set
+     */
     public function getIdentity(): ?string
     {
         return $this->identity;
@@ -185,6 +200,15 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         return $hash;
     }
 
+    /**
+     * Authenticates a user based on the provided identity and credential.
+     *
+     * @param null|string $identity   The identity of the user (e.g., username or email).
+     * @param null|string $credential The credential of the user (e.g., password).
+     * @param bool        $autologin  whether to enable autologin
+     *
+     * @return mixed returns true if authentication is successful, false otherwise
+     */
     public function authenticate(?string $identity = null, ?string $credential = null, bool $autologin = false): mixed
     {
         // Save the authentication data
@@ -215,6 +239,19 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         return false;
     }
 
+    /**
+     * Authenticates an HTTP request using Basic Authentication.
+     *
+     * This method checks if the request contains a valid 'Authorization' header
+     * with Basic Authentication credentials. It decodes the credentials and
+     * verifies them using the `authenticate` method.
+     *
+     * @param Request $request the HTTP request to authenticate
+     *
+     * @return bool returns true if the request is authenticated successfully, false otherwise
+     *
+     * @throws Unauthorised if the authentication fails
+     */
     public function authenticateRequest(Request $request): bool
     {
         if (!$request instanceof HTTP) {
@@ -243,6 +280,15 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         return true;
     }
 
+    /**
+     * Checks if the user is authenticated.
+     *
+     * This method verifies if the storage is not empty and contains an 'identity' key.
+     * If the storage is empty or does not have the 'identity' key, it clears the storage
+     * and returns false. Otherwise, it returns true indicating the user is authenticated.
+     *
+     * @return bool true if the user is authenticated, false otherwise
+     */
     public function authenticated(): bool
     {
         if (true === $this->storage->isEmpty()) {
@@ -281,6 +327,14 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         return false;
     }
 
+    /**
+     * Clears the authentication storage.
+     *
+     * This method checks if the storage is empty. If it is not empty, it clears the storage
+     * and returns true. If the storage is already empty, it returns false.
+     *
+     * @return bool returns true if the storage was cleared, false if the storage was already empty
+     */
     public function clear(): bool
     {
         if ($this->storage->isEmpty()) {
@@ -313,16 +367,36 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         $this->noCredentialHashing = $value;
     }
 
+    /**
+     * Retrieves a value from the storage based on the provided key.
+     *
+     * @param string $key the key used to retrieve the value from the storage
+     *
+     * @return mixed the value associated with the provided key
+     */
     public function get(string $key): mixed
     {
         return $this->storage->get($key);
     }
 
+    /**
+     * Sets a value in the storage with the specified key.
+     *
+     * @param string $key   the key under which the value will be stored
+     * @param mixed  $value the value to be stored
+     */
     public function set(string $key, mixed $value): void
     {
         $this->storage->set($key, $value);
     }
 
+    /**
+     * Checks if a given key exists in the storage.
+     *
+     * @param string $key the key to check for existence in the storage
+     *
+     * @return bool returns true if the key exists, false otherwise
+     */
     public function has(string $key): bool
     {
         return $this->storage->has($key);
@@ -354,7 +428,9 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
     }
 
     /**
-     * @return array<string,mixed>
+     * Retrieves authentication data from the storage.
+     *
+     * @return array<string,mixed> the authentication data
      */
     public function getAuthData(): array
     {
@@ -373,7 +449,14 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
     }
 
     /**
-     * @param array<string,mixed>|Map $options
+     * Sets the storage adapter for authentication.
+     *
+     * @param string                  $storage the name of the storage adapter to use
+     * @param array<string,mixed>|Map $options optional configuration options for the storage adapter
+     *
+     * @return bool returns true if the storage adapter was successfully set
+     *
+     * @throws UnknownStorageAdapter if the specified storage adapter class does not exist
      */
     public function setStorageAdapter(string $storage, array|Map $options = []): bool
     {
@@ -389,6 +472,16 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         return true;
     }
 
+    /**
+     * Generates a hashed identifier for the given identity string.
+     *
+     * This method takes an identity string and returns its SHA-1 hash. If the
+     * identity string is empty or null, the method returns null.
+     *
+     * @param string $identity the identity string to be hashed
+     *
+     * @return null|string the SHA-1 hash of the identity string, or null if the identity is empty
+     */
     protected function getIdentifier(string $identity): ?string
     {
         if (!$identity) {

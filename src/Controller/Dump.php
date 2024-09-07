@@ -16,14 +16,31 @@ use Hazaar\View\Layout;
 use Hazaar\XML\Element;
 
 /**
- * @brief Basic controller class
+ * Class Dump.
  *
- * @detail This controller does basic stuff
+ * This class extends the Diagnostic class and provides various methods to handle and format debugging information.
+ * It supports multiple response formats including JSON, XML, text, and HTML.
+ *
+ * @property mixed                             $data      The data to be dumped.
+ * @property float                             $execTime  The execution time of the application.
+ * @property bool                              $backtrack Flag to enable or disable backtrace functionality.
+ * @property array<array{time:int,data:mixed}> $log       Log entries containing time and data.
+ *
+ * @method        void          toggleBacktrace(bool $value = true) Toggles the backtrace functionality.
+ * @method        void          addLogEntries(array $entries)       Adds log entries to the dump.
+ * @method        Response\JSON json(array $dump = [])              Returns a JSON response with the dump data.
+ * @method        Response\XML  xmlrpc(array $data = [])            Returns an XML response with the dump data.
+ * @method        Response\Text text(array $data = [])              Returns a text response with the dump data.
+ * @method        Response\HTML html(array $data = [])              Returns an HTML response with the dump data.
+ * @method static string        getSpeedClass(float $execTime)      Returns a string representing the speed class based on execution time.
+ *
+ * @param mixed       $data        the data to be dumped
+ * @param Application $application the application instance
  */
 class Dump extends Diagnostic
 {
     private mixed $data = null;
-    private float $exec_time = -1;
+    private float $execTime = -1;
     private bool $backtrack = false;
 
     /**
@@ -34,17 +51,26 @@ class Dump extends Diagnostic
     public function __construct(mixed $data, Application $application)
     {
         parent::__construct($application, 'debug');
-        $this->exec_time = $this->application->GLOBALS['hazaar']['exec_start'];
+        $this->execTime = $this->application->GLOBALS['hazaar']['exec_start'];
         $this->data = $data;
     }
 
+    /**
+     * Toggles the backtrace functionality.
+     *
+     * @param bool $value Optional. If true, enables backtrace. If false, disables backtrace. Default is true.
+     */
     public function toggleBacktrace(bool $value = true): void
     {
         $this->backtrack = $value;
     }
 
     /**
-     * @param array<array{time:int,data:mixed}> $entries
+     * Adds log entries to the controller.
+     *
+     * This method accepts an array of log entries and assigns it to the log property.
+     *
+     * @param array<array{time:int,data:mixed}> $entries an array of log entries to be added
      */
     public function addLogEntries(array $entries): void
     {
@@ -52,14 +78,16 @@ class Dump extends Diagnostic
     }
 
     /**
-     * This is the default JSON response for the dump controller.
+     * Generates a JSON response with execution details and data.
      *
-     * @param array<mixed> $dump The data to be displayed in the dump
+     * @param array<mixed> $dump optional array to include additional data in the response
+     *
+     * @return Response\JSON JSON response containing execution time, status, end time, data, log, and optionally a backtrace
      */
     public function json(array $dump = []): Response\JSON
     {
-        $dump['exec'] = $this->exec_time;
-        $dump['status'] = self::getSpeedClass($this->exec_time);
+        $dump['exec'] = $this->execTime;
+        $dump['status'] = self::getSpeedClass($this->execTime);
         $dump['end'] = date('c');
         $dump['data'] = $this->data;
         if (count($this->log) > 0) {
@@ -82,8 +110,8 @@ class Dump extends Diagnostic
     {
         $xml = new Element('xml');
         $app = $xml->add('app');
-        $app->add('exec', $this->exec_time);
-        $app->add('status', self::getSpeedClass($this->exec_time));
+        $app->add('exec', $this->execTime);
+        $app->add('status', self::getSpeedClass($this->execTime));
         $app->add('end', date('c'));
         foreach ($data as $key => $value) {
             $app->add($key, $value);
@@ -113,8 +141,8 @@ class Dump extends Diagnostic
     {
         $out = "HAZAAR DUMP\n\n";
         $out .= print_r($this->data, true)."\n\n";
-        $out .= "Exec time: {$this->exec_time}\n";
-        $out .= 'Status: '.self::getSpeedClass($this->exec_time)."\n";
+        $out .= "Exec time: {$this->execTime}\n";
+        $out .= 'Status: '.self::getSpeedClass($this->execTime)."\n";
         $out .= 'Endtime: '.date('c')."\n";
         foreach ($data as $key => $value) {
             $out .= "{$key}: {$value}\n";
@@ -155,8 +183,15 @@ class Dump extends Diagnostic
         return $response = new Response\HTML($view->render());
     }
 
-    public static function getSpeedClass(float $exec_time): string
+    /**
+     * Determines the speed class based on the execution time.
+     *
+     * @param float $execTime the execution time in milliseconds
+     *
+     * @return string the speed class, which can be 'excellent', 'good', 'ok', or 'bad'
+     */
+    public static function getSpeedClass(float $execTime): string
     {
-        return ($exec_time > 250) ? (($exec_time > 500) ? 'bad' : 'ok') : ($exec_time < 50 ? 'excellent' : 'good');
+        return ($execTime > 250) ? (($execTime > 500) ? 'bad' : 'ok') : ($execTime < 50 ? 'excellent' : 'good');
     }
 }

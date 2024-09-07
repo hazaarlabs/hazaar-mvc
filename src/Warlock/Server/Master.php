@@ -231,7 +231,7 @@ class Master
             define('RUNTIME_PATH', $path);
         }
         self::$config->generateSystemID(APPLICATION_PATH);
-        $runtime_path = $this->runtimePath(null, true);
+        $runtime_path = $this->getRuntimePath(null, true);
         Logger::setDefaultLogLevel(self::$config['log']['level']);
         $this->log = new Logger();
         set_error_handler([$this, '__errorHandler']);
@@ -443,7 +443,7 @@ class Master
      *
      * @throws \Exception
      */
-    public function runtimePath($suffix = null, $create_dir = false)
+    public function getRuntimePath($suffix = null, $create_dir = false)
     {
         $path = self::$config['sys']->get('runtimePath');
         if (!file_exists($path)) {
@@ -1818,7 +1818,7 @@ class Master
         global $STDOUT;
         global $STDERR;
         $this->log->write(W_NOTICE, "ROTATING LOG FILES: MAX={$logfiles}");
-        $runtime_path = rtrim(self::$config['sys']->runtimePath);
+        $runtime_path = rtrim(self::$config['sys']->getRuntimePath);
         if (!\is_dir($runtime_path)) {
             return false;
         }

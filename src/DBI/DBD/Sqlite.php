@@ -152,7 +152,7 @@ class Sqlite extends BaseDriver
     {
         $filename = $config->get('filename', 'database.sqlite');
         if (!('/' === substr($filename, 0, 1) || ':' === substr($filename, 1, 1))) {
-            $filename = Application::getInstance()->runtimePath($filename);
+            $filename = Application::getInstance()->getRuntimePath($filename);
         }
 
         return 'sqlite:'.$filename;

@@ -214,6 +214,12 @@ class Protocol
         return $this->getTypeName($packet->TYP);
     }
 
+    /**
+     * Sets the last error message and returns false.
+     *
+     * @param string $msg The error message to be set.
+     * @return bool Always returns false.
+     */
     private function error(string $msg): bool
     {
         $this->last_error = $msg;

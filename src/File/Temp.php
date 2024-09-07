@@ -26,7 +26,7 @@ class Temp extends File
         if (!$name) {
             $name = uniqid().'.tmp';
         }
-        $name = Application::getInstance()->runtimePath('temp', true).DIRECTORY_SEPARATOR.$name;
+        $name = Application::getInstance()->getRuntimePath('temp', true).DIRECTORY_SEPARATOR.$name;
         parent::__construct($name);
     }
 

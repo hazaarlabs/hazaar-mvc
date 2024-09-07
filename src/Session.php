@@ -55,7 +55,7 @@ class Session extends Cache
     public function set(mixed $key, mixed $value, int $timeout = 0): bool
     {
         if (true !== $this->session_init && false === strpos(php_sapi_name(), 'cli')) {
-            setcookie($this->session_name, $this->session_id, 0, Application::path());
+            setcookie($this->session_name, $this->session_id, 0, Application::getPath());
             $this->session_init = true;
         }
 
@@ -66,7 +66,7 @@ class Session extends Cache
     {
         parent::clear();
         if (ake($_COOKIE, $this->session_name) === $this->session_id) {
-            setcookie($this->session_name, '', time() - 3600, Application::path());
+            setcookie($this->session_name, '', time() - 3600, Application::getPath());
         }
     }
 }

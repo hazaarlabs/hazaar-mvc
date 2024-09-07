@@ -80,7 +80,7 @@ abstract class Model implements \jsonSerializable, \Iterator
             $propertyValue = $data[$propertyName] ?? null;
             if (null !== $propertyValue) {
                 try {
-                    $this->__convertPropertyValueDataType($reflectionProperty, $propertyValue);
+                    $this->convertPropertyValueDataType($reflectionProperty, $propertyValue);
                 } catch (\Exception $e) {
                     throw new \Exception("Error initialising property '{$propertyName}' in class '".static::class."': ".$e->getMessage());
                 }
@@ -95,7 +95,7 @@ abstract class Model implements \jsonSerializable, \Iterator
             if (!array_key_exists($propertyName, $data)) {
                 continue;
             }
-            $this->__setUserProperty($propertyName, $data[$propertyName]);
+            $this->setUserProperty($propertyName, $data[$propertyName]);
         }
         $this->constructed($data, ...$args);
         sort($this->propertyNames);
@@ -145,90 +145,6 @@ abstract class Model implements \jsonSerializable, \Iterator
         }
         if (array_key_exists($propertyName, $this->userProperties)) {
             unset($this->userProperties[$propertyName], $this->propertyNames[array_search($propertyName, $this->propertyNames)]);
-        }
-    }
-
-    /**
-     * Converts the data type of a property value based on its reflection.
-     *
-     * @param \ReflectionProperty $reflectionProperty the reflection of the property
-     * @param mixed               &$propertyValue     The value of the property to be converted
-     *
-     * @throws \Exception if the property type is unsupported or not a subclass of 'Hazaar\Model'
-     */
-    private function __convertPropertyValueDataType(\ReflectionProperty $reflectionProperty, mixed &$propertyValue): void
-    {
-        /** @var ?\ReflectionNamedType $propertyType */
-        $propertyType = $reflectionProperty->getType();
-        if (null === $propertyType) {
-            return;
-        }
-        $propertyTypeName = $propertyType->getName();
-        if (false === $propertyType->isBuiltin()) {
-            if (is_subclass_of($propertyTypeName, 'Hazaar\Model')) {
-                if (null !== $propertyValue && !$propertyValue instanceof $propertyTypeName) {
-                    $propertyValue = new $propertyTypeName($propertyValue);
-                }
-            } elseif ('Hazaar\Date' === $propertyTypeName) {
-                if (null !== $propertyValue && !$propertyValue instanceof Date) {
-                    $propertyValue = new Date($propertyValue);
-                }
-            } elseif (!(is_object($propertyValue)
-                && ($propertyTypeName === get_class($propertyValue) || is_subclass_of($propertyTypeName, get_class($propertyValue))))) {
-                throw new \Exception("Implicit conversion of unsupported type '{$propertyTypeName}'.  Type must be a subclass of 'Hazaar\\Model'");
-            }
-        } elseif (null !== $propertyValue && false === $propertyType->allowsNull()) {
-            if ('bool' === $propertyTypeName) {
-                $propertyValue = boolify($propertyValue);
-            }
-        }
-        if (null === $propertyValue && $reflectionProperty->hasDefaultValue()) {
-            $propertyValue = $reflectionProperty->getDefaultValue();
-        }
-    }
-
-    private function __convertValueDataType(string $propertyType, mixed &$propertyValue): void
-    {
-        if (in_array($propertyType, self::$allowTypes, true)) {
-            if ('bool' === $propertyType) {
-                $propertyValue = boolify($propertyValue);
-            } else {
-                settype($propertyValue, $propertyType);
-            }
-        } elseif (is_subclass_of($propertyType, 'Hazaar\Model')) {
-            if (null !== $propertyValue && !$propertyValue instanceof $propertyType) {
-                $propertyValue = new $propertyType($propertyValue);
-            }
-        } elseif ('Hazaar\Date' === $propertyType) {
-            if (null !== $propertyValue && !$propertyValue instanceof Date) {
-                $propertyValue = new Date($propertyValue);
-            }
-        } elseif (!(is_object($propertyValue)
-            && ($propertyType === get_class($propertyValue) || is_subclass_of($propertyType, get_class($propertyValue))))) {
-            throw new \Exception("Implicit conversion of unsupported type '{$propertyType}'.  Type must be a subclass of 'Hazaar\\Model'");
-        }
-    }
-
-    private function __setUserProperty(string $propertyName, mixed $propertyValue): void
-    {
-        if (!array_key_exists($propertyName, $this->userProperties)) {
-            throw new PropertyException(static::class, $propertyName, 'is not a user defined property');
-        }
-        $this->__convertValueDataType($this->userProperties[$propertyName]['type'], $propertyValue);
-        $this->userProperties[$propertyName]['value'] = $propertyValue;
-    }
-
-    /**
-     * Executes the property rules for a given property.
-     *
-     * @param string                     $propertyName   the name of the property
-     * @param mixed                      &$propertyValue The value of the property
-     * @param array<int,callable|string> $rules          the array of rules to be applied
-     */
-    private function execPropertyRules(string $propertyName, mixed &$propertyValue, array $rules): void
-    {
-        foreach ($rules as $rule => $ruleData) {
-            $propertyValue = call_user_func_array([$this, $ruleData[0]], array_merge([$propertyName, $propertyValue], $ruleData[1]));
         }
     }
 
@@ -579,7 +495,7 @@ abstract class Model implements \jsonSerializable, \Iterator
             }
 
             try {
-                $this->__convertPropertyValueDataType($reflectionProperty, $propertyValue);
+                $this->convertPropertyValueDataType($reflectionProperty, $propertyValue);
             } catch (\Exception $e) {
                 throw new \Exception("Error setting property '{$propertyName}' in class '".static::class."': ".$e->getMessage());
             }
@@ -842,4 +758,88 @@ abstract class Model implements \jsonSerializable, \Iterator
      * @param array<string,mixed> $data
      */
     protected function constructed(array &$data): void {}
+
+    private function setUserProperty(string $propertyName, mixed $propertyValue): void
+    {
+        if (!array_key_exists($propertyName, $this->userProperties)) {
+            throw new PropertyException(static::class, $propertyName, 'is not a user defined property');
+        }
+        $this->convertValueDataType($this->userProperties[$propertyName]['type'], $propertyValue);
+        $this->userProperties[$propertyName]['value'] = $propertyValue;
+    }
+
+    /**
+     * Converts the data type of a property value based on its reflection.
+     *
+     * @param \ReflectionProperty $reflectionProperty the reflection of the property
+     * @param mixed               &$propertyValue     The value of the property to be converted
+     *
+     * @throws \Exception if the property type is unsupported or not a subclass of 'Hazaar\Model'
+     */
+    private function convertPropertyValueDataType(\ReflectionProperty $reflectionProperty, mixed &$propertyValue): void
+    {
+        /** @var ?\ReflectionNamedType $propertyType */
+        $propertyType = $reflectionProperty->getType();
+        if (null === $propertyType) {
+            return;
+        }
+        $propertyTypeName = $propertyType->getName();
+        if (false === $propertyType->isBuiltin()) {
+            if (is_subclass_of($propertyTypeName, 'Hazaar\Model')) {
+                if (null !== $propertyValue && !$propertyValue instanceof $propertyTypeName) {
+                    $propertyValue = new $propertyTypeName($propertyValue);
+                }
+            } elseif ('Hazaar\Date' === $propertyTypeName) {
+                if (null !== $propertyValue && !$propertyValue instanceof Date) {
+                    $propertyValue = new Date($propertyValue);
+                }
+            } elseif (!(is_object($propertyValue)
+                && ($propertyTypeName === get_class($propertyValue) || is_subclass_of($propertyTypeName, get_class($propertyValue))))) {
+                throw new \Exception("Implicit conversion of unsupported type '{$propertyTypeName}'.  Type must be a subclass of 'Hazaar\\Model'");
+            }
+        } elseif (null !== $propertyValue && false === $propertyType->allowsNull()) {
+            if ('bool' === $propertyTypeName) {
+                $propertyValue = boolify($propertyValue);
+            }
+        }
+        if (null === $propertyValue && $reflectionProperty->hasDefaultValue()) {
+            $propertyValue = $reflectionProperty->getDefaultValue();
+        }
+    }
+
+    private function convertValueDataType(string $propertyType, mixed &$propertyValue): void
+    {
+        if (in_array($propertyType, self::$allowTypes, true)) {
+            if ('bool' === $propertyType) {
+                $propertyValue = boolify($propertyValue);
+            } else {
+                settype($propertyValue, $propertyType);
+            }
+        } elseif (is_subclass_of($propertyType, 'Hazaar\Model')) {
+            if (null !== $propertyValue && !$propertyValue instanceof $propertyType) {
+                $propertyValue = new $propertyType($propertyValue);
+            }
+        } elseif ('Hazaar\Date' === $propertyType) {
+            if (null !== $propertyValue && !$propertyValue instanceof Date) {
+                $propertyValue = new Date($propertyValue);
+            }
+        } elseif (!(is_object($propertyValue)
+            && ($propertyType === get_class($propertyValue) || is_subclass_of($propertyType, get_class($propertyValue))))) {
+            throw new \Exception("Implicit conversion of unsupported type '{$propertyType}'.  Type must be a subclass of 'Hazaar\\Model'");
+        }
+    }
+
+    /**
+     * Executes the property rules for a given property.
+     *
+     * @param string                     $propertyName   the name of the property
+     * @param mixed                      &$propertyValue The value of the property
+     * @param array<int,callable|string> $rules          the array of rules to be applied
+     */
+    private function execPropertyRules(string $propertyName, mixed &$propertyValue, array $rules): void
+    {
+        foreach ($rules as $rule => $ruleData) {
+            $propertyValue = call_user_func_array([$this, $ruleData[0]], array_merge([$propertyName, $propertyValue], $ruleData[1]));
+        }
+    }
 }

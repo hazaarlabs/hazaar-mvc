@@ -20,7 +20,7 @@ class CacheTest extends TestCase
                 'apc' => [
                 ],
                 'file' => [
-                    'path' => Application::getInstance()->runtimePath('cache'),
+                    'path' => Application::getInstance()->getRuntimePath('cache'),
                 ],
             ],
         ];
@@ -32,7 +32,7 @@ class CacheTest extends TestCase
     public function testFileCache(): void
     {
         $options = [
-            'path' => Application::getInstance()->runtimePath('cache'),
+            'path' => Application::getInstance()->getRuntimePath('cache'),
         ];
         $cache = new Cache('file', $options);
         $this->assertTrue($cache->set('test', 'value'));

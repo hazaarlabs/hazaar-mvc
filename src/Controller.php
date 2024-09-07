@@ -212,7 +212,7 @@ abstract class Controller implements Controller\Interfaces\Controller
      *
      * For examples see: [Generating URLs](/guide/basics/urls.md)
      */
-    public function url(): URL
+    public function getURL(): URL
     {
         $url = new URL();
         $parts = func_get_args();
@@ -240,7 +240,7 @@ abstract class Controller implements Controller\Interfaces\Controller
      *
      * @return bool true if the supplied URL is active as the current URL
      */
-    public function active(): bool
+    public function isActive(): bool
     {
         $parts = func_get_args();
 

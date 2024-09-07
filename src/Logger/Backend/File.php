@@ -27,7 +27,7 @@ class File extends Backend
         $this->setDefaultOption('write_ip', true);
         $this->setDefaultOption('write_timestamp', true);
         $this->setDefaultOption('write_pid', false);
-        $this->setDefaultOption('logfile', Application::getInstance()->runtimePath('hazaar.log'));
+        $this->setDefaultOption('logfile', Application::getInstance()->getRuntimePath('hazaar.log'));
         if (($log_file = $this->getOption('logfile'))
             && is_writable(dirname($log_file))
             && (!\file_exists($log_file) || \is_writable($log_file))) {
@@ -36,7 +36,7 @@ class File extends Backend
             }
         }
 
-        $this->setDefaultOption('errfile', Application::getInstance()->runtimePath('error.log'));
+        $this->setDefaultOption('errfile', Application::getInstance()->getRuntimePath('error.log'));
         if (($error_file = $this->getOption('errfile'))
             && is_writable(dirname($error_file))
             && (!\file_exists($error_file) || \is_writeable($error_file))) {
