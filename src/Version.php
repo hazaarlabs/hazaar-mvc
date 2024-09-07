@@ -66,6 +66,14 @@ class Version
         return implode('.', array_pad($version, $precision, '0'));
     }
 
+    /**
+     * Sets the version string and updates the version parts and precision.
+     *
+     * @param string      $version   the version string to set
+     * @param null|string $delimiter The delimiter used in the version string. If null, the default delimiter is used.
+     *
+     * @throws \Exception if the version string does not match the expected format
+     */
     public function set(string $version, ?string $delimiter = null): void
     {
         if (null === $delimiter) {
@@ -121,8 +129,8 @@ class Version
         $thatParts = $that->getParts();
         $length = max(count($this->__version_parts), count($thatParts));
         for ($i = 0; $i < $length; ++$i) {
-            $thisPart = $i < count($this->__version_parts) ? (int)$this->__version_parts[$i] : 0;
-            $thatPart = $i < count($thatParts) ? (int)$thatParts[$i] : 0;
+            $thisPart = $i < count($this->__version_parts) ? (int) $this->__version_parts[$i] : 0;
+            $thatPart = $i < count($thatParts) ? (int) $thatParts[$i] : 0;
             if ($thisPart < $thatPart) {
                 return -1;
             }
@@ -150,6 +158,12 @@ class Version
         return 0 == $this->compareTo($that);
     }
 
+    /**
+     * Sets the current version to the given version if the given version is higher.
+     *
+     * @param string|Version $version   the version to compare against the current version
+     * @param null|string    $delimiter optional delimiter used for version comparison
+     */
     public function setIfHigher(string|Version $version, ?string $delimiter = null): void
     {
         if (-1 === $this->compareTo($version, $delimiter)) {
@@ -157,6 +171,12 @@ class Version
         }
     }
 
+    /**
+     * Sets the current version to the given version if the given version is lower.
+     *
+     * @param string|Version $version   the version to compare against the current version
+     * @param null|string    $delimiter optional delimiter to use for version comparison
+     */
     public function setIfLower(string|Version $version, ?string $delimiter = null): void
     {
         if (1 === $this->compareTo($version, $delimiter)) {

@@ -118,7 +118,7 @@ class Smarty extends \Hazaar\Template\Smarty
     private function getCompiledContentFromCache(): false|string
     {
         $cache_id = md5($this->__source_file->fullpath());
-        $cache_dir = new Dir(Application::getInstance()->runtimePath('template_cache', true));
+        $cache_dir = new Dir(Application::getInstance()->getRuntimePath('template_cache', true));
         $this->__cache_file = $cache_dir->get($cache_id.'.tpl');
         if (!$this->__cache_file->exists()) {
             return false;

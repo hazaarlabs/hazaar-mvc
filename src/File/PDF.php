@@ -191,7 +191,7 @@ class PDF extends File
                 }
             }
             $cmd = $this->getCommand();
-            $target = Application::getInstance()->runtimePath('bin', true);
+            $target = Application::getInstance()->getRuntimePath('bin', true);
             if (!is_writable($target)) {
                 throw new \Exception('The runtime binary directory is not writable!');
             }
@@ -344,7 +344,7 @@ class PDF extends File
         if ($cmd = trim(shell_exec('which wkhtmltopdf'))) {
             return $cmd;
         }
-        $path = Application::getInstance()->runtimePath('bin');
+        $path = Application::getInstance()->getRuntimePath('bin');
         $cmd = 'wkhtmltox';
 
         return $path.DIRECTORY_SEPARATOR.$cmd;

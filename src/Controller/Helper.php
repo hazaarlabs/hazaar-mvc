@@ -33,20 +33,14 @@ abstract class Helper
     }
 
     /**
-     * TODO: Maybe remove this method?
+     * Retrieves the name of the current class without the namespace.
      *
-     * @param array<mixed> $args
+     * This method uses the `get_class` function to get the fully qualified class name
+     * of the current object, and then extracts the class name by removing the namespace
+     * part.
+     *
+     * @return string the name of the current class without the namespace
      */
-    public function __requires(string $helper, array $args = []): bool
-    {
-        if (!$this->controller || $this->controller->hasHelper($helper)) {
-            return false;
-        }
-        //$this->view->addHelper($helper, $args);
-
-        return true;
-    }
-
     public function getName(): string
     {
         $class = get_class($this);

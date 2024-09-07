@@ -15,16 +15,15 @@ use Hazaar\View;
 
 class Layout extends View
 {
-    private string $_content = '';
-
-    private ?string $_rendered_views = null;
+    private string $content = '';
+    private ?string $renderedViews = null;
 
     /**
      * @var array<View>
      */
-    private array $_views = [];
+    private array $views = [];
 
-    public function __construct(string $view = null)
+    public function __construct(?string $view = null)
     {
         if (!$view) {
             $view = 'application';
@@ -39,7 +38,7 @@ class Layout extends View
      */
     public function setContent(string $content): void
     {
-        $this->_content = $content;
+        $this->content = $content;
     }
 
     /**
@@ -55,14 +54,14 @@ class Layout extends View
      */
     public function prepare(bool $merge_data = true): bool
     {
-        if (null !== $this->_rendered_views) {
+        if (null !== $this->renderedViews) {
             return false;
         }
-        $this->_rendered_views = '';
-        foreach ($this->_views as $view) {
-            $view->addHelper($this->_helpers);
-            $view->extend($this->_data);
-            $this->_rendered_views .= $view->render();
+        $this->renderedViews = '';
+        foreach ($this->views as $view) {
+            $view->addHelper($this->helpers);
+            $view->extend($this->data);
+            $this->renderedViews .= $view->render();
             if ($merge_data) {
                 $this->extend($view->getData());
             }
@@ -97,11 +96,11 @@ class Layout extends View
      */
     public function layout(): string
     {
-        $output = $this->_content;
-        if (null === $this->_rendered_views) {
+        $output = $this->content;
+        if (null === $this->renderedViews) {
             $this->prepare(false);
         } // Prepare the views now, but don't bother merging data back in
-        $output .= $this->_rendered_views;
+        $output .= $this->renderedViews;
 
         return $output;
     }
@@ -116,15 +115,15 @@ class Layout extends View
      * @param string|View $view A string naming the view to load, or an existing Hazaar_View object
      * @param string      $key  Optional key to store the view as.  Allows direct referencing later.
      */
-    public function add(string|View $view, string $key = null): View
+    public function add(string|View $view, ?string $key = null): View
     {
         if (!$view instanceof View) {
             $view = new View($view);
         }
         if ($key) {
-            $this->_views[$key] = $view;
+            $this->views[$key] = $view;
         } else {
-            $this->_views[] = $view;
+            $this->views[] = $view;
         }
 
         return $view;
@@ -137,8 +136,8 @@ class Layout extends View
      */
     public function remove(string $key): void
     {
-        if (array_key_exists($key, $this->_views)) {
-            unset($this->_views[$key]);
+        if (array_key_exists($key, $this->views)) {
+            unset($this->views[$key]);
         }
     }
 }

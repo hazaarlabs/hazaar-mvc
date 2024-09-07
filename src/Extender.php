@@ -168,7 +168,7 @@ abstract class Extender
      *
      * @return bool true if any of the child classes extend the specified class
      */
-    public function instanceof($class): bool
+    public function instanceOf($class): bool
     {
         if ($this instanceof $class) {
             return true;

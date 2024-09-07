@@ -127,7 +127,7 @@ function dieDieDie(string|Throwable $err): void
  *
  * @return bool returns true to prevent the default PHP error handler from being called
  */
-function error_handler(int $errno, string $errstr, ?string $errfile = null, ?int $errline = null): bool
+function errorHandler(int $errno, string $errstr, ?string $errfile = null, ?int $errline = null): bool
 {
     if ($errno >= 500) {
         Frontend::e('CORE', "Error #{$errno} on line {$errline} of file {$errfile}: {$errstr}");
@@ -148,7 +148,7 @@ function error_handler(int $errno, string $errstr, ?string $errfile = null, ?int
  *
  * @param Throwable $e the exception object
  */
-function exception_handler(Throwable $e): void
+function exceptionHandler(Throwable $e): void
 {
     if ($e->getCode() >= 500) {
         Frontend::e('CORE', 'Error #'.$e->getCode().' on line '.$e->getLine().' of file '.$e->getFile().': '.$e->getMessage());
@@ -162,7 +162,7 @@ function exception_handler(Throwable $e): void
  * This function is responsible for executing the shutdown tasks registered in the global variable $__shutdownTasks.
  * It checks if the script is running in CLI mode or if headers have already been sent before executing the tasks.
  */
-function shutdown_handler(): void
+function shutdownHandler(): void
 {
     if (($error = error_get_last()) !== null) {
         if (1 == ini_get('display_errors')) {
@@ -183,7 +183,7 @@ function shutdown_handler(): void
  * @param null|string $errfile the file where the error occurred
  * @param null|int    $errline the line number where the error occurred
  */
-function basic_handler(int $errno, string $errstr, ?string $errfile = null, ?int $errline = null): void
+function basicHandler(int $errno, string $errstr, ?string $errfile = null, ?int $errline = null): void
 {
     dieDieDie("PHP Error #{$errno}: {$errstr} in file {$errfile} on line {$errline}");
 }

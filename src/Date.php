@@ -526,7 +526,7 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
      *
      * @return string returns a nice fuzzy interval like "yesterday at xx:xx" or "4 days ago"
      */
-    public function fuzzy(bool $precise = false, int $dateThresholdDays = 30): string
+    public function getFuzzyDiff(bool $precise = false, int $dateThresholdDays = 30): string
     {
         $diff = $this->diff(new Date(null, $this->getTimezone()));
         if ($diff->days > $dateThresholdDays) {

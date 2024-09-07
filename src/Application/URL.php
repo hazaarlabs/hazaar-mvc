@@ -36,13 +36,13 @@ class URL implements \JsonSerializable
     public array $params = [];
     public ?string $hash = null;
     public ?string $basePath = null;
-    public static ?string $__base_url = '';
-    public static bool $__rewrite_url = true;
+    public static ?string $baseURL = '';
+    public static bool $rewriteURL = true;
 
     /**
      * @var array<string>
      */
-    public static array $__aliases;
+    public static array $aliases;
     private bool $encoded = false;
 
     public function __construct()
@@ -94,8 +94,8 @@ class URL implements \JsonSerializable
      */
     public static function initialise(Map $config): void
     {
-        self::$__base_url = $config->get('base');
-        self::$__rewrite_url = $config->get('rewrite');
+        self::$baseURL = $config->get('base');
+        self::$rewriteURL = $config->get('rewrite');
     }
 
     /**
@@ -208,7 +208,7 @@ class URL implements \JsonSerializable
         if (!is_array($params)) {
             $params = [];
         }
-        if (URL::$__rewrite_url && true !== $encode) {
+        if (URL::$rewriteURL && true !== $encode) {
             $path .= $this->path;
         } elseif ($this->path) {
             $params[Request\HTTP::$pathParam] = $this->path;
@@ -216,8 +216,8 @@ class URL implements \JsonSerializable
         if (is_array($this->params)) {
             $params = array_merge($this->params, $params);
         }
-        if (URL::$__base_url) {
-            $url = rtrim(trim(URL::$__base_url), '/').'/'.$path;
+        if (URL::$baseURL) {
+            $url = rtrim(trim(URL::$baseURL), '/').'/'.$path;
         } else {
             // Figure out the hostname and protocol
             $host = ake($_SERVER, 'HTTP_HOST', 'localhost');
@@ -228,7 +228,7 @@ class URL implements \JsonSerializable
                 $host .= ':'.$_SERVER['SERVER_PORT'];
             }
             $proto = ((443 == ake($_SERVER, 'SERVER_PORT')) ? 'https' : 'http');
-            $url = $proto.'://'.$host.Application::path($path);
+            $url = $proto.'://'.$host.Application::getPath($path);
         }
         if (count($params) > 0) {
             $params = http_build_query($params);

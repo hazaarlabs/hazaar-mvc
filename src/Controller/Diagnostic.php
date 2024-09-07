@@ -30,6 +30,16 @@ class Diagnostic extends Action
      */
     protected array $caller = [];
 
+    /**
+     * Initializes the controller with the given request and determines the response type.
+     *
+     * This method overrides the parent initialize method to set the response type based on
+     * various conditions such as environment variables, the PHP SAPI, and request headers.
+     *
+     * @param null|Request $request the request object, or null if not available
+     *
+     * @return null|Response the response object, or null if not available
+     */
     public function initialize(?Request $request = null): ?Response
     {
         $response = parent::initialize($request);
@@ -69,7 +79,15 @@ class Diagnostic extends Action
     }
 
     /**
-     * @detail Run the controller action
+     * Executes the diagnostic run process.
+     *
+     * This method determines the appropriate response type based on the presence of a response type method
+     * or the existence of a 'run' method. If neither is found, it defaults to an HTML response.
+     * The response is then wrapped in the appropriate Response object if it is not already an instance of Response.
+     *
+     * @param null|Route $route the route object, which may be null
+     *
+     * @return Response the response object, which can be of type JSON or HTML
      */
     final public function run(?Route $route = null): Response
     {
@@ -93,6 +111,11 @@ class Diagnostic extends Action
         return $response;
     }
 
+    /**
+     * Returns a JSON response with an error message.
+     *
+     * @return Response\JSON the JSON response containing the error message
+     */
     public function json(): Response\JSON
     {
         $error = [
@@ -102,6 +125,14 @@ class Diagnostic extends Action
         return new Response\JSON($error, $this->code);
     }
 
+    /**
+     * Generates an XML-RPC response.
+     *
+     * This method creates a SimpleXMLElement with a root element <xml> and adds a child element <data> with the content 'NO CONTENT'.
+     * It then returns this XML structure wrapped in a Response\XML object.
+     *
+     * @return Response\XML the XML response object containing the generated XML structure
+     */
     public function xmlrpc(): Response\XML
     {
         $xml = new \SimpleXMLElement('<xml/>');
@@ -110,16 +141,33 @@ class Diagnostic extends Action
         return new Response\XML($xml, $this->code);
     }
 
+    /**
+     * Generates an HTML response with a predefined message.
+     *
+     * @return Response\HTML the HTML response containing 'NO CONTENT' and the specified status code
+     */
     public function html(): Response\HTML
     {
         return new Response\HTML('NO CONTENT', $this->code);
     }
 
+    /**
+     * Returns a text response with the content 'NO CONTENT' and the specified status code.
+     *
+     * @return Response\Text the text response object
+     */
     public function text(): Response\Text
     {
         return new Response\Text('NO CONTENT', $this->code);
     }
 
+    /**
+     * Outputs a diagnostic dump and terminates the script.
+     *
+     * This method sets the HTTP response code to the value of the `$code` property,
+     * outputs a diagnostic message, dumps a placeholder string 'NO CONTENT',
+     * prints a backtrace, and then exits the script.
+     */
     public function hazaar(): void
     {
         http_response_code($this->code);

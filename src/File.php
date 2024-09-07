@@ -68,7 +68,7 @@ class File implements \JsonSerializable
             $file = $meta['uri'];
         } else {
             if (empty($file)) {
-                $file = Application::getInstance()->runtimePath('tmp', true).DIRECTORY_SEPARATOR.uniqid();
+                $file = Application::getInstance()->getRuntimePath('tmp', true).DIRECTORY_SEPARATOR.uniqid();
             }
         }
         if (!$manager instanceof Manager) {

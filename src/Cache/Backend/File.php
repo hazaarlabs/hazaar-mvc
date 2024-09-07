@@ -70,7 +70,7 @@ class File extends Backend
     {
         $app = Application::getInstance();
         $this->configure([
-            'cache_dir' => $app instanceof Application ? $app->runtimePath('cache', true) : sys_get_temp_dir(),
+            'cache_dir' => $app instanceof Application ? $app->getRuntimePath('cache', true) : sys_get_temp_dir(),
             'file_prefix' => null,
             'use_zlib' => false,
             'encode_fs' => false,
@@ -160,7 +160,7 @@ class File extends Backend
         $this->keepalive();
         $this->local = [];
 
-        return $this->store->reset_btree_file();
+        return $this->store->resetBTreeFile();
     }
 
     /**

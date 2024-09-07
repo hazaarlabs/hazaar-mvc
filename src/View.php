@@ -26,45 +26,45 @@ class View implements \ArrayAccess
     /**
      * @var array<mixed>
      */
-    protected array $_data = [];
+    protected array $data = [];
 
     /**
      * View Helpers.
      *
      * @var array<Helper>
      */
-    protected array $_helpers = [];
+    protected array $helpers = [];
 
     protected Application $application;
 
-    private ?string $_viewfile = null;
+    private ?string $viewFile = null;
 
     /**
      * Array for storing names of initialised helpers so we only initialise them once.
      *
      * @var array<string>
      */
-    private array $_helpers_init = [];
+    private array $helpersInit = [];
 
     /**
      * @var array<string>
      */
-    private array $_prepared = [];
+    private array $prepared = [];
 
     /**
      * @var array<mixed>
      */
-    private $_requires_param = [];
+    private $requiresParam = [];
 
     /**
-     * @param array<string> $init_helpers
+     * @param array<string> $inithelpers
      */
-    public function __construct(string|View $view, array $init_helpers = [])
+    public function __construct(string|View $view, array $inithelpers = [])
     {
         $this->load($view);
         $this->application = Application::getInstance();
-        if (count($init_helpers) > 0) {
-            foreach ($init_helpers as $helper) {
+        if (count($inithelpers) > 0) {
+            foreach ($inithelpers as $helper) {
                 $this->addHelper($helper);
             }
         }
@@ -123,10 +123,10 @@ class View implements \ArrayAccess
     public function load(string $view): void
     {
         if (Loader::isAbsolutePath($view)) {
-            $this->_viewfile = $view;
+            $this->viewFile = $view;
         } else {
-            $this->_viewfile = View::getViewPath($view, $this->name);
-            if (!$this->_viewfile) {
+            $this->viewFile = View::getViewPath($view, $this->name);
+            if (!$this->viewFile) {
                 throw new \Exception("File not found or permission denied accessing view '{$this->name}'.");
             }
         }
@@ -145,7 +145,7 @@ class View implements \ArrayAccess
      */
     public function getViewFile(): string
     {
-        return $this->_viewfile;
+        return $this->viewFile;
     }
 
     /**
@@ -160,11 +160,11 @@ class View implements \ArrayAccess
      */
     public function get($helper, $default = null)
     {
-        if (array_key_exists($helper, $this->_helpers)) {
-            return $this->_helpers[$helper];
+        if (array_key_exists($helper, $this->helpers)) {
+            return $this->helpers[$helper];
         }
-        if (array_key_exists($helper, $this->_data)) {
-            return $this->_data[$helper];
+        if (array_key_exists($helper, $this->data)) {
+            return $this->data[$helper];
         }
 
         return $default;
@@ -178,7 +178,7 @@ class View implements \ArrayAccess
      */
     public function set(string $key, mixed $value): void
     {
-        $this->_data[$key] = $value;
+        $this->data[$key] = $value;
     }
 
     /**
@@ -190,7 +190,7 @@ class View implements \ArrayAccess
      */
     public function has(string $key): bool
     {
-        return array_key_exists($key, $this->_data);
+        return array_key_exists($key, $this->data);
     }
 
     /**
@@ -200,7 +200,7 @@ class View implements \ArrayAccess
      */
     public function remove(string $key): void
     {
-        unset($this->_data[$key]);
+        unset($this->data[$key]);
     }
 
     /**
@@ -213,7 +213,7 @@ class View implements \ArrayAccess
         if (!is_array($array)) {
             return false;
         }
-        $this->_data = $array;
+        $this->data = $array;
 
         return false;
     }
@@ -228,7 +228,7 @@ class View implements \ArrayAccess
         if (!is_array($array)) {
             return false;
         }
-        $this->_data = array_merge($this->_data, $array);
+        $this->data = array_merge($this->data, $array);
 
         return true;
     }
@@ -240,7 +240,7 @@ class View implements \ArrayAccess
      */
     public function getData(): array
     {
-        return $this->_data;
+        return $this->data;
     }
 
     /**
@@ -265,19 +265,19 @@ class View implements \ArrayAccess
             if (null === $alias) {
                 $alias = strtolower($helper->getName());
             }
-            $this->_helpers[$alias] = $helper;
+            $this->helpers[$alias] = $helper;
         } elseif (null !== $helper) {
             if (null === $alias) {
                 $alias = strtolower($helper);
             }
-            if (!array_key_exists($alias, $this->_helpers)) {
+            if (!array_key_exists($alias, $this->helpers)) {
                 if (!($class = $this->findHelper($helper))) {
                     return false;
                 }
                 $helper = new $class($this, $args);
-                $this->_helpers[$alias] = $helper;
+                $this->helpers[$alias] = $helper;
             } else {
-                if (($helper = $this->_helpers[$alias]) instanceof Helper) {
+                if (($helper = $this->helpers[$alias]) instanceof Helper) {
                     $helper->extendArgs($args);
                 }
             }
@@ -293,7 +293,7 @@ class View implements \ArrayAccess
      */
     public function hasHelper(string $helper): bool
     {
-        return array_key_exists($helper, $this->_helpers);
+        return array_key_exists($helper, $this->helpers);
     }
 
     /**
@@ -303,7 +303,7 @@ class View implements \ArrayAccess
      */
     public function getHelpers(): array
     {
-        return array_keys($this->_helpers);
+        return array_keys($this->helpers);
     }
 
     /**
@@ -313,10 +313,10 @@ class View implements \ArrayAccess
      */
     public function removeHelper(string $helper): bool
     {
-        if (!array_key_exists($helper, $this->_helpers)) {
+        if (!array_key_exists($helper, $this->helpers)) {
             return false;
         }
-        unset($this->_helpers[$helper]);
+        unset($this->helpers[$helper]);
 
         return true;
     }
@@ -328,11 +328,11 @@ class View implements \ArrayAccess
      */
     public function &getHelper(string $key): ?Helper
     {
-        if (!array_key_exists($key, $this->_helpers)) {
+        if (!array_key_exists($key, $this->helpers)) {
             return null;
         }
 
-        return $this->_helpers[$key];
+        return $this->helpers[$key];
     }
 
     /**
@@ -345,16 +345,16 @@ class View implements \ArrayAccess
      */
     public function initHelpers(): void
     {
-        foreach ($this->_helpers as $helper) {
+        foreach ($this->helpers as $helper) {
             if (!$helper instanceof Helper) {
                 continue;
             }
             $name = get_class($helper);
-            if (in_array($name, $this->_helpers_init)) {
+            if (in_array($name, $this->helpersInit)) {
                 continue;
             }
             $helper->initialise();
-            $this->_helpers_init[] = $name;
+            $this->helpersInit[] = $name;
         }
     }
 
@@ -365,7 +365,7 @@ class View implements \ArrayAccess
      */
     public function runHelpers(): void
     {
-        foreach ($this->_helpers as $helper) {
+        foreach ($this->helpers as $helper) {
             if (!$helper instanceof Helper) {
                 continue;
             }
@@ -383,11 +383,11 @@ class View implements \ArrayAccess
     public function render(): string
     {
         $output = '';
-        $parts = pathinfo($this->_viewfile);
+        $parts = pathinfo($this->viewFile);
         if ('tpl' == ake($parts, 'extension')) {
-            $template = new File\Template\Smarty($this->_viewfile);
+            $template = new File\Template\Smarty($this->viewFile);
             $template->registerFunctionHandler($this);
-            $output = $template->render($this->_data);
+            $output = $template->render($this->data);
         } else {
             ob_start();
             if (!($file = $this->getViewFile()) || !file_exists($file)) {
@@ -415,10 +415,10 @@ class View implements \ArrayAccess
      *
      * @return string The rendered view output will be returned.  This can then be echo'd directly to the client.
      */
-    public function partial(string $view, null|array|bool $data = null, bool $merge_data = false): string
+    public function partial(string $view, null|array|bool $data = null, bool $mergedata = false): string
     {
-        if (array_key_exists($view, $this->_prepared)) {
-            return $this->_prepared[$view];
+        if (array_key_exists($view, $this->prepared)) {
+            return $this->prepared[$view];
         }
         /*
          * This converts "absolute paths" to paths that are relative to FILE_PATH_VIEW.
@@ -428,18 +428,18 @@ class View implements \ArrayAccess
         if ('/' === substr($view, 0, 1)) {
             $view = substr($view, 1);
         } else {
-            $view = dirname($this->_viewfile).'/'.$view.'.phtml';
+            $view = dirname($this->viewFile).'/'.$view.'.phtml';
         }
         $output = '';
         $partial = new View($view);
-        $partial->addHelper($this->_helpers);
+        $partial->addHelper($this->helpers);
         if (is_array($data)) {
             $partial->extend($data);
         } elseif (true === $data) {
-            $partial->extend($this->_data);
+            $partial->extend($this->data);
         }
         $output = $partial->render();
-        if (true === $merge_data) {
+        if (true === $mergedata) {
             $this->extend($partial->getData());
         }
 
@@ -459,7 +459,7 @@ class View implements \ArrayAccess
     public function preparePartial(string $view, null|array|bool $data = null): void
     {
         $content = $this->partial($view, $data, true);
-        $this->_prepared[$view] = $content;
+        $this->prepared[$view] = $content;
     }
 
     /**
@@ -471,7 +471,7 @@ class View implements \ArrayAccess
      */
     public function setRequiresParam(array $array): void
     {
-        $this->_requires_param = array_merge($this->_requires_param, $array);
+        $this->requiresParam = array_merge($this->requiresParam, $array);
     }
 
     /**
@@ -506,7 +506,7 @@ class View implements \ArrayAccess
      */
     public function url(?string $controller = null, ?string $action = null, array $params = [], bool $absolute = false): URL
     {
-        return $this->application->url($controller, $action, $params, $absolute);
+        return $this->application->getURL($controller, $action, $params, $absolute);
     }
 
     /**
@@ -557,26 +557,26 @@ class View implements \ArrayAccess
 
     public function offsetExists(mixed $offset): bool
     {
-        return isset($this->_data[$offset]);
+        return isset($this->data[$offset]);
     }
 
     public function offsetGet(mixed $offset): mixed
     {
-        return $this->_data[$offset];
+        return $this->data[$offset];
     }
 
     public function offsetSet($offset, $value): void
     {
         if (null === $offset) {
-            $this->_data[] = $value;
+            $this->data[] = $value;
         } else {
-            $this->_data[$offset] = $value;
+            $this->data[$offset] = $value;
         }
     }
 
     public function offsetUnset($offset): void
     {
-        unset($this->_data[$offset]);
+        unset($this->data[$offset]);
     }
 
     /**
@@ -595,7 +595,7 @@ class View implements \ArrayAccess
      */
     public function matchReplace(string $string): string
     {
-        return match_replace($string, $this->_data);
+        return match_replace($string, $this->data);
     }
 
     /**

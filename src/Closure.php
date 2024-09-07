@@ -29,7 +29,7 @@ class Closure implements \JsonSerializable
         if ($function instanceof \Closure) {
             $this->closure = $function;
             $this->reflection = new \ReflectionFunction($function);
-            $this->code = $this->_fetchCode();
+            $this->code = $this->fetchCode();
         } elseif ($function instanceof \stdClass && isset($function->code)) {
             $this->code = $function->code;
             eval('$_function = '.rtrim($function->code, ' ;').';');
@@ -105,7 +105,7 @@ class Closure implements \JsonSerializable
         ];
     }
 
-    protected function _fetchCode(): string
+    protected function fetchCode(): string
     {
         $file = new \SplFileObject($this->reflection->getFileName());
         $file->seek($this->reflection->getStartLine() - 1);

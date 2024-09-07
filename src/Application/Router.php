@@ -80,8 +80,8 @@ class Router
             if (array_key_exists($route, self::$internal)) {
                 $controller = self::$internal[$route];
                 $action = substr($path, $offset + 1);
-                $request->setPath(substr($path, $offset + 1));
-                $this->setRoute(new Route([$controller, $action]));
+                $route = new Route([$controller, $action], substr($path, $offset + 1));
+                $this->setRoute($route);
 
                 return true;
             }

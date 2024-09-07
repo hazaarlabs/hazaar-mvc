@@ -900,6 +900,11 @@ class Map implements \ArrayAccess, \Iterator, \Countable
         unset($this->elements[$key]);
     }
 
+    /**
+     * Iterates over each element in the map and returns the current key-value pair.
+     *
+     * @return mixed returns an associative array with the current key and value, or false if there are no more elements
+     */
     public function each(): mixed
     {
         if (($key = key($this->elements)) === null) {

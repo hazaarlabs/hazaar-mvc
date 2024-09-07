@@ -57,7 +57,7 @@ class Shm extends Backend
         $this->addCapabilities('store_objects', 'keepalive', 'array', 'lock');
         $this->keepalive = $this->options['keepalive'];
         $app = Application::getInstance();
-        $inodeFile = $app->runtimePath('.shm_inode'); // The inode file is used to create a unique key for the shared memory segment
+        $inodeFile = $app->getRuntimePath('.shm_inode'); // The inode file is used to create a unique key for the shared memory segment
         file_exists($inodeFile) || touch($inodeFile); // Create the inode file if it doesn't exist
         $addrIndex = ftok($inodeFile, chr(0));
         if (-1 === $addrIndex) {

@@ -144,7 +144,7 @@ class BTree
     /**
      * The the B-Tree source file.
      */
-    public function reset_btree_file(): bool
+    public function resetBTreeFile(): bool
     {
         if (!$this->file) {
             return false;
@@ -370,11 +370,11 @@ class BTree
      */
     public function leaves(): ?array
     {
-        if (($root = $this->roothunt()) === null) {
+        if (($root = $this->rootHunt()) === null) {
             return null;
         }
 
-        return $this->leafhunt($root);
+        return $this->leafHunt($root);
     }
 
     /**
@@ -389,7 +389,7 @@ class BTree
             return false;
         }
         if (!((-1 !== $compactFile->seek(0, SEEK_END)
-            && ($root = $this->copyto($compactFile)) !== null)
+            && ($root = $this->copyTo($compactFile)) !== null)
             && false !== self::header($compactFile, $root)
             && $compactFile->flush()
             && $compactFile->close()
@@ -477,7 +477,7 @@ class BTree
      *
      * @return array<int> pairs of (leaf, pointer); null on failure
      */
-    private function leafhunt(int $p): ?array
+    private function leafHunt(int $p): ?array
     {
         list($nodeType, $node) = $this->node($p);
         if (null === $nodeType || null === $node) {
@@ -519,7 +519,7 @@ class BTree
      *
      * @return int new pointer to copied node;
      */
-    private function copyto(File $to, ?string $nodeType = null, ?array $node = null): ?int
+    private function copyTo(File $to, ?string $nodeType = null, ?array $node = null): ?int
     {
         $p = false;
         if (null === $nodeType || null === $node) {
@@ -589,7 +589,7 @@ class BTree
      */
     private function root(): array
     {
-        if (($p = $this->roothunt()) === null) {
+        if (($p = $this->rootHunt()) === null) {
             return [null, null];
         }
 
@@ -601,7 +601,7 @@ class BTree
      *
      * @return int pointer to root; null on failure
      */
-    private function roothunt(): ?int
+    private function rootHunt(): ?int
     {
         // try EOF
         if (-1 === $this->file->seek(-(self::SIZEOF_HEADER + self::SIZEOF_INT), SEEK_END)) {

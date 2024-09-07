@@ -40,7 +40,7 @@ class Error extends Diagnostic
      * @var array<mixed>
      */
     protected array $callstack = [];
-    protected string $short_message = '';
+    protected string $shortMessage = '';
     // The HTTP error code to throw. By default it is 500 Internal Server Error.
     protected int $code = 500;
     protected string $status = 'Internal Error';
@@ -59,6 +59,15 @@ class Error extends Diagnostic
         parent::__construct($application, $name);
     }
 
+    /**
+     * Retrieves the status message corresponding to a given status code.
+     *
+     * If no status code is provided, it uses the instance's current status code.
+     *
+     * @param null|int $code The status code to get the message for. If null, the instance's current status code is used.
+     *
+     * @return null|string the status message corresponding to the provided status code, or null if the status code is not found
+     */
     public function getStatusMessage(?int $code = null): ?string
     {
         if (null === $code) {
@@ -68,6 +77,14 @@ class Error extends Diagnostic
         return array_key_exists($code, self::$status_codes) ? self::$status_codes[$code] : null;
     }
 
+    /**
+     * Sets the error details based on the provided arguments.
+     *
+     * This method can handle different types of errors:
+     * - If the first argument is an instance of \Throwable, it extracts the error details from the exception.
+     * - If the first argument is an array, it assumes it's a shutdown error and extracts the details accordingly.
+     * - Otherwise, it assumes it's a standard error and extracts the details from the provided arguments.
+     */
     public function setError(): void
     {
         $args = func_get_args();
@@ -111,6 +128,13 @@ class Error extends Diagnostic
         $this->status = $this->getStatusMessage($this->code);
     }
 
+    /**
+     * Returns a string representation of the given error type.
+     *
+     * @param int $type The error type constant (e.g., E_ERROR, E_WARNING).
+     *
+     * @return string the string representation of the error type
+     */
     public static function getErrorTypeString(int $type): string
     {
         return match ($type) {
@@ -133,14 +157,28 @@ class Error extends Diagnostic
         };
     }
 
-    public function getMessage(): string
-    {
-        return $this->errstr;
-    }
-
+    /**
+     * Retrieves the error message with details about the error.
+     *
+     * This method constructs a string that includes the error message,
+     * the line number where the error occurred, and the file in which
+     * the error was found.
+     *
+     * @return string the detailed error message
+     */
     public function getErrorMessage(): string
     {
         return $this->errstr.' on line '.$this->errline.' in file '.$this->errfile;
+    }
+
+    /**
+     * Retrieves the error message.
+     *
+     * @return string the error message
+     */
+    public function getMessage(): string
+    {
+        return $this->errstr;
     }
 
     /**
@@ -153,6 +191,13 @@ class Error extends Diagnostic
         return $this->callstack;
     }
 
+    /**
+     * Cleans the output buffer by ending all active output buffering levels.
+     *
+     * This method iterates through all active output buffering levels and ends them
+     * using `ob_end_clean()`. This ensures that any buffered output is discarded and
+     * the output buffer is completely cleaned.
+     */
     public function cleanOutputBuffer(): void
     {
         while (count(ob_get_status()) > 0) {
@@ -160,6 +205,14 @@ class Error extends Diagnostic
         }
     }
 
+    /**
+     * Outputs an error message and terminates the script.
+     *
+     * This method prints a formatted error message that includes the error number,
+     * the line number where the error occurred, the file in which the error occurred,
+     * and the error string. After printing the error message, the script is terminated
+     * with the error number as the exit status.
+     */
     public function runner(): void
     {
         echo "Runner Error #{$this->errno} at line #{$this->errline} in file {$this->errfile}\n\n{$this->errstr}\n\n";
@@ -167,6 +220,23 @@ class Error extends Diagnostic
         exit($this->errno);
     }
 
+    /**
+     * Generates a JSON response containing error details.
+     *
+     * This method constructs an error array with the following structure:
+     * - 'ok': A boolean indicating the success status (always false).
+     * - 'timestamp': The current timestamp.
+     * - 'error': An array containing error details:
+     *   - 'type': The error number.
+     *   - 'status': The HTTP status code.
+     *   - 'str': The error message.
+     *   - 'class' (optional): The class where the error occurred (if display_errors is enabled).
+     *   - 'line' (optional): The line number where the error occurred (if display_errors is enabled).
+     *   - 'file' (optional): The file where the error occurred (if display_errors is enabled).
+     * - 'trace' (optional): The debug backtrace (if display_errors is enabled).
+     *
+     * @return Response\JSON the JSON response containing the error details
+     */
     public function json(): Response\JSON
     {
         $error = [
@@ -188,6 +258,15 @@ class Error extends Diagnostic
         return new Response\JSON($error, $this->code);
     }
 
+    /**
+     * Generates an XML-RPC fault response.
+     *
+     * This method constructs an XML structure representing an XML-RPC fault response.
+     * The response includes details about the error class, error code, status, error
+     * message, file, and line number where the error occurred.
+     *
+     * @return Response\XML the XML-RPC fault response
+     */
     public function xmlrpc(): Response\XML
     {
         $xml = new Element('xml');
@@ -214,6 +293,16 @@ class Error extends Diagnostic
         return new Response\XML($xml);
     }
 
+    /**
+     * Generates a detailed text response for an exception.
+     *
+     * This method constructs a formatted string containing information about the
+     * exception, including the environment, timestamp, class, error number, file,
+     * line, message, and backtrace. The backtrace includes details about each call
+     * in the stack, such as the file, line, class, and function.
+     *
+     * @return Response\Text a text response containing the formatted exception details
+     */
     public function text(): Response\Text
     {
         $out = "*****************************\n\tEXCEPTION\n*****************************\n\n";
@@ -239,6 +328,16 @@ class Error extends Diagnostic
         return new Response\Text($out, $this->code);
     }
 
+    /**
+     * Generates an HTML response for an error.
+     *
+     * This method creates a new Layout instance for the error view and populates it with
+     * various error details such as environment, error type, error code, error message,
+     * file, line, class, type, short message, trace, status code, and execution time.
+     * It then renders the view and returns it as an HTML response.
+     *
+     * @return Response\HTML the rendered HTML response containing the error details
+     */
     public function html(): Response\HTML
     {
         $view = new Layout('@views/error');
@@ -252,7 +351,7 @@ class Error extends Diagnostic
                 'line' => $this->errline,
                 'class' => $this->errclass,
                 'type' => $this->errtype,
-                'short_message' => ($this->short_message ? $this->short_message : $this->status),
+                'short_message' => $this->shortMessage ?? $this->status,
             ],
             'trace' => $this->callstack,
             'code' => $this->code,

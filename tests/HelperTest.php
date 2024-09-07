@@ -52,7 +52,7 @@ class HelperTest extends TestCase
 
     public function testBTreeFile(): void
     {
-        $btree = new BTree($this->app->runtimePath('test.btree'));
+        $btree = new BTree($this->app->getRuntimePath('test.btree'));
         $this->assertTrue($btree->set('key', 'value'));
         $this->assertEquals('value', $btree->get('key'));
         $this->assertTrue($btree->remove('key'));
