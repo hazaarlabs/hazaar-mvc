@@ -27,6 +27,7 @@ class Shm extends Backend
     private $shm;
     private bool $keepalive;
     private int $indexKey;
+    private string $namespace;
 
     /**
      * @var array<string,\SysvSemaphore>
@@ -61,6 +62,7 @@ class Shm extends Backend
             'ns_index.size' => 10000,
             'ns_index.permissions' => 0666,
         ]);
+        $this->namespace = $namespace;
         $this->keepalive = $this->options['keepalive'];
         $app = Application::getInstance();
         $inodeFile = $app->runtimePath('.shm_inode'); // The inode file is used to create a unique key for the shared memory segment
@@ -84,12 +86,12 @@ class Shm extends Backend
         } else {
             $NSIndex = [];
         }
-        if (false === ($NSkey = array_search($namespace, $NSIndex, true))) {
+        if (false === ($NSkey = array_search($this->namespace, $NSIndex, true))) {
             $NSkey = $this->findFirstAvailableAddress(array_keys($NSIndex));
             if (array_key_exists($NSkey, $NSIndex)) {
                 throw new \Exception('Failed to find an available address.');
             }
-            $NSIndex[$NSkey] = $namespace;
+            $NSIndex[$NSkey] = $this->namespace;
             shm_put_var($shmNSIndex, $shmNSKey, $NSIndex);
         }
         $shmAddr = ftok($inodeFile, chr($NSkey));
@@ -100,7 +102,7 @@ class Shm extends Backend
         sem_release($semNSKey);
         shm_detach($shmNSIndex);
         // Create a semaphore to lock the shared memory segment
-        $this->sem = sem_get($shmAddr,1 , 0666, 1);
+        $this->sem = sem_get($shmAddr, 1, 0666, 1);
         if (false === $this->sem) {
             throw new \Exception('sem_get() failed.');
         }
