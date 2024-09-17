@@ -72,7 +72,7 @@ class Shm extends Backend
             throw new \Exception('ftok() failed.');
         }
         $shmNSIndex = shm_attach($addrIndex, $this->options->get('ns_index.size', 10000), $this->options->get('ns_index.permissions', 0666));
-        if (!\is_resource($shmNSIndex)) {
+        if (!(\is_resource($shmNSIndex) || $shmNSIndex instanceof \SysvSharedMemory)) {
             throw new \Exception('shm_attach() failed.  did not return resource.');
         }
         // Create a semaphore to lock the namespace index
@@ -108,7 +108,7 @@ class Shm extends Backend
         }
         // Attach to the shared memory segment
         $this->shm = shm_attach($shmAddr, $this->options->get('size', 1000000), $this->options->get('permissions', 0666));
-        if (!is_resource($this->shm)) {
+        if (!(is_resource($this->shm) || $this->shm instanceof \SysvSharedMemory)) {
             throw new \Exception('shm_attach() failed.  did not return resource.');
         }
         $this->indexKey = crc32('cache_'.$this->namespace.'_index');
@@ -425,7 +425,8 @@ class Shm extends Backend
     /**
      * Retrieves information stored in shared memory by address.
      *
-     * @param int $addr the address of the shared memory variable
+     * @param int   $addr        the address of the shared memory variable
+     * @param mixed $noKeepalive
      *
      * @return array<mixed>|bool the information stored in shared memory if it exists and has not expired, otherwise false
      */
