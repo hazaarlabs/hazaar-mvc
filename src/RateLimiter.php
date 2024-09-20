@@ -41,7 +41,11 @@ class RateLimiter
         $this->windowLength = $options['window'] ?? 60;
         $this->requestLimit = $options['limit'] ?? 60;
         $this->requestMinimumPeriod = $options['minimum'] ?? 0;
-        $this->backend = $backend ?? new Cache(['type' => 'shm']);
+        $this->backend = $backend ?? match (ake($options, 'backend', 'cache')) {
+            'cache' => new Cache(['type' => 'shm']),
+            'file' => new Backend\File(),
+            default => throw new \Exception('Invalid rate limiter backend type!'),
+        };
         $this->backend->setWindowLength($this->windowLength);
     }
 
