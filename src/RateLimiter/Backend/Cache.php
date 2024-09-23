@@ -29,7 +29,7 @@ class Cache extends Backend
         $this->prefix = ake($options, 'prefix', $this->prefix);
     }
 
-    public function __destruct()
+    public function shutdown(): void
     {
         foreach ($this->index as $identifier => $info) {
             $this->cache->set($this->getKey($identifier), $info);

@@ -28,4 +28,9 @@ interface Backend
      * @param string $identifier the identifier for which to remove the rate limit information
      */
     public function remove(string $identifier): void;
+
+    /**
+     * Shutdown the rate limiter backend a commit any changes.
+     */
+    public function shutdown(): void;
 }
