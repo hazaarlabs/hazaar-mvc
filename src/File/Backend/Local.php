@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\File\Backend;
 
-use Hazaar\BTree;
+use Hazaar\File\BTree;
 use Hazaar\File\Manager;
 use Hazaar\Loader;
 use Hazaar\Map;

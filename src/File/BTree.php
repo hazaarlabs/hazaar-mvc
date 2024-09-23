@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Hazaar;
+namespace Hazaar\File;
+
+use Hazaar\File;
 
 /**
  * B-Tree key/value database file access class.
@@ -258,7 +260,7 @@ class BTree
         }
         // traverse tree up
         do {
-            if (count($node) <= (int)(self::NODE_SLOTS / 2) && !empty($lookup)) {
+            if (count($node) <= (int) (self::NODE_SLOTS / 2) && !empty($lookup)) {
                 $upnode = (array) array_pop($lookup);
                 $newIndex = current(array_keys($upnode));
                 $sibling = $prev = [null, null];
@@ -398,7 +400,6 @@ class BTree
             && @$compactFile->rename((string) $this->file))) { // will not work under windows, sorry
             $compactFile->close();
             @$compactFile->unlink();
-            dump(error_get_last());
 
             return false;
         }
@@ -451,7 +452,7 @@ class BTree
                 $l = 0;
                 $r = count($keys);
                 while ($l < $r) {
-                    $i = $l + (int)(($r - $l) / 2);
+                    $i = $l + (int) (($r - $l) / 2);
                     if (strcmp($keys[$i], $key) < 0) {
                         $l = $i + 1;
                     } else {

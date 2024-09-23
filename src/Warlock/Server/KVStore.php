@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Server;
 
-use Hazaar\BTree;
 use Hazaar\File;
+use Hazaar\File\BTree;
 
 class KVStore
 {
