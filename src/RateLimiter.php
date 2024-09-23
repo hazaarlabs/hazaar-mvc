@@ -96,6 +96,9 @@ class RateLimiter
                 $info['result'] = false;
             }
         }
+        if (true === $info['result']) {
+            $this->backend->commit();
+        }
 
         return $info['result']; // Request limit exceeded
     }

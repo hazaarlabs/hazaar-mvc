@@ -15,7 +15,7 @@ class File extends Backend
      */
     private array $index = [];
     private ?int $created = null;
-    private int $compactInterval = 300;
+    private int $compactInterval = 3600;
 
     /**
      * File rate limiter constructor.
@@ -34,7 +34,7 @@ class File extends Backend
         $this->compactInterval = ake($options, 'compactInterval', $this->compactInterval);
     }
 
-    public function __destruct()
+    public function shutdown(): void
     {
         if (0 === count($this->index)) {
             return;
@@ -42,7 +42,7 @@ class File extends Backend
         foreach ($this->index as $identifier => $info) {
             $this->db->set($identifier, $info);
         }
-        if (null !== $this->created && $this->created > (time() - $this->compactInterval)) {
+        if (null !== $this->created && $this->created < (time() - $this->compactInterval)) {
             $this->db->compact();
         }
     }
