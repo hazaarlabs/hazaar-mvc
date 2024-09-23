@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hazaar;
 
+use Hazaar\File\BTree;
+
 /**
  * The GeoData class for accessing geographic information on countries.
  *
