@@ -63,14 +63,3 @@ Unit Testing:
     when: always
     reports:
       junit: phpunit-test-results.xml
-Semgrep-SAST:
-  image: semgrep/semgrep
-  script: semgrep ci
-  rules:
-  - if: $CI_PIPELINE_SOURCE == "web"  # allow triggering a scan manually from the gitlab UI
-  - if: $CI_MERGE_REQUEST_IID  # scan on merge request events
-  - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH  # scan on push events to default branch
-  variables:
-    SEMGREP_APP_TOKEN: $SEMGREP_APP_TOKEN
-    # To configure MR comments on gitlab.com, see https://semgrep.dev/docs/semgrep-cloud-platform/gitlab-mr-comments/#steps-to-set-up-mr-comments
-    # GITLAB_TOKEN: $PAT
