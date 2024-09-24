@@ -309,8 +309,14 @@ class Response {
 
         $http_response = "{$this->version} {$this->status} {$this->name}\r\n";
 
-        foreach($this->headers as $header => $value)
-            $http_response .= $header . ': ' . $value . "\r\n";
+        foreach($this->headers as $header => $value){
+
+            if(is_array($value)){
+                foreach($value as $v)
+                    $http_response .= $header . ': ' . $v . "\r\n";
+            }else $http_response .= $header . ': ' . $value . "\r\n";
+
+        }
 
         $content_len = strlen($this->body);
 
