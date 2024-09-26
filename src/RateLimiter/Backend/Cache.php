@@ -46,8 +46,9 @@ class Cache extends Backend
 
     public function get(string $identifier): array
     {
-        $key = $this->getKey($identifier);
-        $info = $this->cache->get($key);
+        $info = array_key_exists($identifier, $this->index)
+            ? $this->index[$identifier]
+            : $this->cache->get($this->getKey($identifier));
         if (!$info) {
             $info = [];
         }
@@ -63,6 +64,11 @@ class Cache extends Backend
         }
 
         return $this->index[$identifier] = $info;
+    }
+
+    public function set(string $identifier, array $info): void
+    {
+        $this->index[$identifier] = $info;
     }
 
     /**

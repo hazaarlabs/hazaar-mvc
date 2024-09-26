@@ -34,7 +34,7 @@ class RateLimiter
      * RateLimiter constructor.
      *
      * @param array<mixed> $options the options for the rate limiter
-     * @param null|Backend $backend the backend to use for the rate limiter
+     * @param Backend|null $backend the backend to use for the rate limiter
      */
     public function __construct(array $options, ?Backend $backend = null)
     {
@@ -42,16 +42,16 @@ class RateLimiter
         $this->requestLimit = $options['limit'] ?? 60;
         $this->requestMinimumPeriod = $options['minimum'] ?? 0;
         $backendType = ake($options, 'backend', 'cache');
-        if ($backend === null) {
+        if (null === $backend) {
             switch ($backendType) {
-            case 'cache':
-                $this->backend = new Cache(['type' => 'shm'], $options);
-                break;
-            case 'file':
-                $this->backend = new Backend\File($options);
-                break;
-            default:
-                throw new \Exception('Invalid rate limiter backend type!');
+                case 'cache':
+                    $this->backend = new Cache(['type' => 'shm'], $options);
+                    break;
+                case 'file':
+                    $this->backend = new Backend\File($options);
+                    break;
+                default:
+                    throw new \Exception('Invalid rate limiter backend type!');
             }
         } else {
             $this->backend = $backend;
@@ -100,13 +100,13 @@ class RateLimiter
             $info['last'] = $now;
             if (count($info['log']) <= $this->requestLimit) {
                 // Log the current request timestamp
-                $info['log'][] = $now;
                 $info['result'] = true;
             } else {
                 $info['result'] = false;
             }
         }
         if (true === $info['result']) {
+            $this->backend->set($identifier, $info);
             $this->backend->commit();
         }
 
