@@ -47,14 +47,6 @@ class File extends Backend
         }
     }
 
-    public function check(string $identifier): array
-    {
-        $info = $this->get($identifier);
-        $info['log'][] = time();
-
-        return $this->index[$identifier] = $info;
-    }
-
     public function get(string $identifier): array
     {
         $info = array_key_exists($identifier, $this->index) ? $this->index[$identifier] : $this->db->get($identifier);
