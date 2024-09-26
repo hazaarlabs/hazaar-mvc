@@ -89,7 +89,7 @@ class RateLimiter
     public function check(string $identifier): bool
     {
         $now = time();
-        $info = $this->backend->check($identifier);
+        $info = $this->backend->get($identifier);
         if (isset($info['result'])) {
             $info['last_result'] = $info['result'];
         }
@@ -98,17 +98,15 @@ class RateLimiter
             $info['result'] = false;
         } else {
             $info['last'] = $now;
-            if (count($info['log']) <= $this->requestLimit) {
+            if (count($info['log']) < $this->requestLimit) {
                 // Log the current request timestamp
                 $info['result'] = true;
+                $info['log'][] = $now;
             } else {
                 $info['result'] = false;
             }
         }
-        if (true === $info['result']) {
-            $this->backend->set($identifier, $info);
-            $this->backend->commit();
-        }
+        $this->backend->set($identifier, $info);
 
         return $info['result']; // Request limit exceeded
     }
