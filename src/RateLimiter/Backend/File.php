@@ -75,6 +75,11 @@ class File extends Backend
         return $this->index[$identifier] = $info;
     }
 
+    public function set(string $identifier, array $info): void
+    {
+        $this->index[$identifier] = $info;
+    }
+
     public function remove(string $identifier): void
     {
         $this->db->remove($identifier);
