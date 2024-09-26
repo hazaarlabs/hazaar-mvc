@@ -114,6 +114,16 @@ class RateLimiter
     }
 
     /**
+     * Retrieves the rate limiter entry identified by the given identifier.
+     *
+     * @return array<mixed> the rate limiter entry identified by the given identifier
+     */
+    public function get(string $identifier): array
+    {
+        return $this->backend->get($identifier);
+    }
+
+    /**
      * Deletes a rate limiter entry identified by the given identifier.
      *
      * @param string $identifier the identifier of the rate limiter entry to delete
