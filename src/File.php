@@ -1274,8 +1274,16 @@ class File implements File\_Interface, \JsonSerializable {
      * @return boolean
      */
     public function rename($newname, $overwrite = false) {
+        if ('/' !== substr(trim($newname), 0, 1)) {
+            $newname = $this->dirname().'/'.$newname;
+        }
+        if (true === $this->manager->move($this->source_file, $newname)) {
+            $this->source_file = $newname;
 
-        return $this->manager->move($this->source_file, $this->dirname() . '/' . $newname, $overwrite);
+            return true;
+        }
+
+        return false;
     }
 
     /**
