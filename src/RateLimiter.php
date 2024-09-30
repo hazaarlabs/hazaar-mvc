@@ -97,10 +97,10 @@ class RateLimiter
             && $now < $info['last'] + $this->requestMinimumPeriod) {
             $info['result'] = false;
         } else {
-            $info['last'] = $now;
             if (count($info['log']) < $this->requestLimit) {
                 // Log the current request timestamp
                 $info['result'] = true;
+                $info['last'] = $now;
                 $info['log'][] = $now;
             } else {
                 $info['result'] = false;

@@ -639,7 +639,7 @@ class Btree {
             && $compact_file->close()
             && $this->file->close()
             && $this->file->unlink()
-            && @$compact_file->rename((string)$this->file))) { /* will not work under windows, sorry */
+            && @$compact_file->rename(basename((string)$this->file)))) { /* will not work under windows, sorry */
 
             $compact_file->close();
 

@@ -64,11 +64,16 @@ class File extends Backend
             $info['log'] = [];
         }
 
-        return $this->index[$identifier] = $info;
+        return $info;
     }
 
     public function set(string $identifier, array $info): void
     {
+        $current = $this->get($identifier);
+        $diff = array_diff_assoc_recursive($info, $current);
+        if (0 === count($diff)) {
+            return;
+        }
         $this->index[$identifier] = $info;
     }
 
