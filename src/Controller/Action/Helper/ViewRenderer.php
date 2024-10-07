@@ -2,7 +2,7 @@
 
 namespace Hazaar\Controller\Action\Helper;
 
-class ViewRenderer extends \Hazaar\Controller\Action\Helper {
+class ViewRenderer extends \Hazaar\Controller\Action\Helper implements \ArrayAccess  {
 
     private $view            = [];
 
@@ -66,6 +66,30 @@ class ViewRenderer extends \Hazaar\Controller\Action\Helper {
 
         if($this->view instanceof \Hazaar\View)
             $this->view->removeHelper($name);
+
+    }
+
+    public function offsetExists($key) {
+
+        return isset($this->_data[$key]);
+
+    }
+
+    public function offsetGet($key) {
+
+        return $this->_data[$key];
+
+    }
+
+    public function offsetSet($key, $value) {
+
+        $this->_data[$key] = $value;
+
+    }
+
+    public function offsetUnset($key) {
+
+        unset($this->_data[$key]);
 
     }
 
