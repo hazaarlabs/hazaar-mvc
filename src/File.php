@@ -880,8 +880,13 @@ class File implements \JsonSerializable
         if ('/' !== substr(trim($newname), 0, 1)) {
             $newname = $this->dirname().'/'.$newname;
         }
+        if (true === $this->manager->move($this->source_file, $newname)) {
+            $this->source_file = $newname;
 
-        return $this->manager->move($this->source_file, $newname);
+            return true;
+        }
+
+        return false;
     }
 
     public static function delete(string $path): bool
