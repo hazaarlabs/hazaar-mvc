@@ -12,8 +12,8 @@ declare(strict_types=1);
 namespace Hazaar\Cache\Backend;
 
 use Hazaar\Application;
-use Hazaar\BTree;
 use Hazaar\Cache\Backend;
+use Hazaar\File\BTree;
 
 /**
  * @brief The file cache backend.

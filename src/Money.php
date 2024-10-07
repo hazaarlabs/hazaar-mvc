@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Hazaar;
 
+use Hazaar\File\BTree;
+
 /**
  * @brief       Money class
  *

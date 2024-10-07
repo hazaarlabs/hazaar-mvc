@@ -1,10 +1,10 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Hazaar;
 
 use Hazaar\Application\Request\HTTP;
+use Hazaar\RateLimiter\Backend;
+use Hazaar\RateLimiter\Backend\Cache;
 
 /**
  * Class RateLimiter.
@@ -13,10 +13,10 @@ use Hazaar\Application\Request\HTTP;
  */
 class RateLimiter
 {
-    private Cache $cache;
-    private string $prefix = 'rate_limiter_';
+    private Backend $backend;
     private int $windowLength;
     private int $requestLimit;
+    private int $requestMinimumPeriod = 0;
 
     /**
      * @var array<string,string>
@@ -24,24 +24,29 @@ class RateLimiter
     private array $headers = [
         'X-RateLimit-Window' => '{{window}}',
         'X-RateLimit-Limit' => '{{limit}}',
+        'X-RateLimit-Attempts' => '{{attempts}}',
         'X-RateLimit-Remaining' => '{{remaining}}',
+        'X-RateLimit-Identifier' => '{{identifier}}',
+        'X-RateLimit-Cache' => '{{cache}}',
     ];
 
     /**
      * RateLimiter constructor.
      *
-     * @param array<string,mixed> $options the options for the rate limiter
+     * @param array<mixed> $options the options for the rate limiter
+     * @param null|Backend $backend the backend to use for the rate limiter
      */
-    public function __construct(array $options, ?Cache $cache = null)
+    public function __construct(array $options, ?Backend $backend = null)
     {
-        $this->cache = $cache ?? new Cache();
-        $this->cache->on(); //Force cache on even if no_pragma is set
-        if (!$this->cache->can('lock')) {
-            throw new \Exception('Cache backend does not support locking!');
-        }
-        $this->prefix = $options['prefix'] ?? $this->prefix;
         $this->windowLength = $options['window'] ?? 60;
         $this->requestLimit = $options['limit'] ?? 60;
+        $this->requestMinimumPeriod = $options['minimum'] ?? 0;
+        $this->backend = $backend ?? match (ake($options, 'backend', 'cache')) {
+            'cache' => new Cache(['type' => 'shm']),
+            'file' => new Backend\File(),
+            default => throw new \Exception('Invalid rate limiter backend type!'),
+        };
+        $this->backend->setWindowLength($this->windowLength);
     }
 
     /**
@@ -49,44 +54,19 @@ class RateLimiter
      *
      * @param string $identifier the identifier to retrieve information for
      *
-     * @return array<mixed> an array containing the information about the identifier
+     * @return array{attempts:int,limit:int,window:int,remaining:int,identifier:string} an array containing the information about the identifier
      */
     public function getInfo(string $identifier): array
     {
-        $log = $this->get($identifier);
+        $info = $this->backend->get($identifier);
 
         return [
-            'attempts' => count($log),
+            'attempts' => count($info['log']),
             'limit' => $this->requestLimit,
             'window' => $this->windowLength,
-            'remaining' => $this->requestLimit - count($log),
+            'remaining' => max(0, $this->requestLimit - count($info['log'])),
+            'identifier' => $identifier,
         ];
-    }
-
-    /**
-     * Retrieves the rate limit information for the specified identifier.
-     *
-     * @param string $identifier the identifier for which to retrieve the rate limit information
-     *
-     * @return array<mixed> the rate limit information for the specified identifier
-     */
-    public function get(string $identifier, ?int $time = null): array
-    {
-        $key = $this->getKey($identifier);
-        $log = $this->cache->get($key);
-        if (!$log) {
-            $log = [];
-        }
-        if (!$time > 0) {
-            $time = time();
-        }
-        foreach ($log as $index => $timestamp) {
-            if ($timestamp < $time - $this->windowLength) {
-                unset($log[$index]);
-            }
-        }
-
-        return $log;
     }
 
     /**
@@ -98,20 +78,29 @@ class RateLimiter
      */
     public function check(string $identifier): bool
     {
-        $result = false;
         $now = time();
-        $key = $this->getKey($identifier);
-        $this->cache->lock($key);
-        $log = $this->get($identifier, $now);
-        if (count($log) < $this->requestLimit) {
-            // Log the current request timestamp
-            $log[] = $now;
-            $this->cache->set($key, $log, $this->windowLength * 2);
-            $result = true;
+        $info = $this->backend->check($identifier);
+        if (isset($info['result'])) {
+            $info['last_result'] = $info['result'];
         }
-        $this->cache->unlock($key);
+        if ($this->requestMinimumPeriod > 0
+            && $now < $info['last'] + $this->requestMinimumPeriod) {
+            $info['result'] = false;
+        } else {
+            $info['last'] = $now;
+            if (count($info['log']) <= $this->requestLimit) {
+                // Log the current request timestamp
+                $info['log'][] = $now;
+                $info['result'] = true;
+            } else {
+                $info['result'] = false;
+            }
+        }
+        if (true === $info['result']) {
+            $this->backend->commit();
+        }
 
-        return $result; // Request limit exceeded
+        return $info['result']; // Request limit exceeded
     }
 
     /**
@@ -121,8 +110,7 @@ class RateLimiter
      */
     public function delete(string $identifier): void
     {
-        $key = $this->getKey($identifier);
-        $this->cache->remove($key);
+        $this->backend->remove($identifier);
     }
 
     /**
@@ -130,7 +118,7 @@ class RateLimiter
      *
      * @param string $identifier the identifier for the headers
      *
-     * @return array<string> the headers for the specified identifier
+     * @return array<string,mixed> the headers for the specified identifier
      */
     public function getHeaders(string $identifier): array
     {
@@ -145,15 +133,10 @@ class RateLimiter
         return $headers;
     }
 
-    /**
-     * Get the key for rate limiting based on the provided identifier.
-     *
-     * @param string $identifier the identifier used for rate limiting
-     *
-     * @return string the key for rate limiting
-     */
-    private function getKey(string $identifier): string
+    public function getLastRequestTime(string $identifier): int
     {
-        return $this->prefix.$identifier;
+        $info = $this->backend->get($identifier);
+
+        return ake($info, 'last', 0);
     }
 }
