@@ -2,6 +2,9 @@
 
 namespace Hazaar\Controller\Response;
 
+/**
+ * @method void addHelper(string $name)
+ */
 class View extends \Hazaar\Controller\Response\Html {
 
     private $_view;
