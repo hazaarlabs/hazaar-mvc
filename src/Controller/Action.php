@@ -15,6 +15,12 @@ use Hazaar\Application\Request;
  * @brief       Abstract controller action class
  *
  * @detail      This controller handles actions and responses using views
+ * 
+ * @method void view(string $name) Render a view
+ * @method void layout(string $name) Set the layout view
+ * @method void setNoLayout() Disable the layout for the view
+ * @method bool hasView(string $name) Check if a view variable exists
+ * @method void post(string $name) Set a post variable
  */
 abstract class Action extends \Hazaar\Controller\Basic {
 
