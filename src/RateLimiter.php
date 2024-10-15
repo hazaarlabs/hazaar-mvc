@@ -94,6 +94,7 @@ class RateLimiter
             $info['last_result'] = $info['result'];
         }
         if ($this->requestMinimumPeriod > 0
+            && array_key_exists('last', $info)
             && $now < $info['last'] + $this->requestMinimumPeriod) {
             $info['result'] = false;
         } else {
