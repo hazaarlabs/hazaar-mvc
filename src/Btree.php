@@ -64,6 +64,14 @@ class Btree {
 
     private $read_only = false;
 
+    private $locked = false;
+
+    private const LOCK_OK = 0; //Lock was successful
+
+    private const LOCK_NA = 1; //Lock is not required as it is already locked
+
+    private const LOCK_NO = 2; //Lock failed
+
     /**
      * Use static method open() to get instance
      */
@@ -135,34 +143,34 @@ class Btree {
 
         if ($this->file->tell() === 0) {
 
-            if (!$this->file->lock(LOCK_EX)) {
+            try {
+
+                if (self::LOCK_NO === ($lockState = $this->lock(LOCK_EX)))
+                    throw new \Exception('Unable to lock file: ' . $this->file);
+
+                $root = self::serialize(self::KVNODE, []);
+
+                $to_write = pack('N', strlen($root)) . $root;
+
+                if ($this->file->write($to_write, strlen($to_write)) !== strlen($to_write) 
+                    || !self::header($this->file, 0)) {
+
+                    throw new \Exception('Unable to write root node to file: ' . $this->file);
+
+                }
+
+            }catch(\Exception $e){
+
+                $this->file->truncate(0);
 
                 $this->file->close();
 
                 return false;
 
-            }
-
-            $root = self::serialize(self::KVNODE, []);
-
-            $to_write = pack('N', strlen($root)) . $root;
-
-            try {
-
-                if ($this->file->write($to_write, strlen($to_write)) !== strlen($to_write) 
-                    || !self::header($this->file, 0)) {
-
-                    $this->file->truncate(0);
-
-                    $this->file->close();
-
-                    return false;
-
-                }
-
             }finally{
 
-                $this->file->lock(LOCK_UN);
+                if($lockState === self::LOCK_OK)
+                    $this->lock(LOCK_UN);
 
             }
 
@@ -181,6 +189,22 @@ class Btree {
 
         unset($this->file);
         
+    }
+
+    private function lock($type){
+
+        if($type !== LOCK_UN && $this->locked === true)
+            return self::LOCK_NA;
+
+        $result = $this->file->lock($type);
+
+        if($result === false)
+            return self::LOCK_NO;
+
+        $this->locked = $type === LOCK_UN ? false : true;
+
+        return self::LOCK_OK;
+
     }
 
     /**
@@ -292,7 +316,7 @@ class Btree {
         try {
 
             // Obtain an exclusive file lock
-            if (!$this->file->lock(LOCK_EX)
+            if (self::LOCK_NO === ($lockState = $this->lock(LOCK_EX))
                 || $this->file->seek(0, SEEK_END) === -1
                 || ($pos = $this->file->tell()) === false)
                 return false;
@@ -302,7 +326,7 @@ class Btree {
             $cursor = $pos;
 
             // key lookup
-            $lookup = $this->lookup($key);
+            $lookup = $this->lookup($key, true);
 
             $node = array_pop($lookup);
 
@@ -432,7 +456,8 @@ class Btree {
 
         }finally{
 
-            $this->file->lock(LOCK_UN);
+            if($lockState === self::LOCK_OK)
+                $this->lock(LOCK_UN);
 
         }
 
@@ -457,7 +482,7 @@ class Btree {
      */
     private function lookup($key, $node_type = null, $node = null) {
 
-        if(!$this->file->lock(LOCK_SH))
+        if(self::LOCK_NO === ($lockState = $this->lock(LOCK_SH)))
             return false;
 
         try{
@@ -510,7 +535,8 @@ class Btree {
 
         }finally{
 
-            $this->file->lock(LOCK_UN);
+            if($lockState === self::LOCK_OK)
+                $this->lock(LOCK_UN);
 
         }
             
@@ -647,7 +673,8 @@ class Btree {
             if (!$this->semFile->lock(LOCK_EX))
                 throw new \Exception('Unable to lock semaphore file: ' . $this->semFile);
 
-            $this->file->lock(LOCK_EX);
+            if(self::LOCK_NO === $this->lock(LOCK_EX))
+                return false;
 
             $compact_file = new \Hazaar\File(uniqid($this->file . '~', true));
                 
@@ -681,7 +708,7 @@ class Btree {
 
             @$compact_file->unlink();
 
-            $this->file->lock(LOCK_UN);
+            $this->lock(LOCK_UN);
 
             return false;
 
