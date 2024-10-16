@@ -45,7 +45,8 @@ class File extends Backend
         if (null !== $this->created && $this->created < (time() - $this->compactInterval)) {
             // Remove any entries that are older than the window length
             foreach ($this->db->toArray() as $identifier => $info) {
-                if (array_key_exists('last', $info)
+                if (is_array($info) 
+                    && array_key_exists('last', $info)
                     && $info['last'] < time() - $this->windowLength) {
                     $this->db->remove($identifier);
                 }
