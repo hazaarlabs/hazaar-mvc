@@ -147,13 +147,22 @@ class Btree {
 
             $to_write = pack('N', strlen($root)) . $root;
 
-            if ($this->file->write($to_write, strlen($to_write)) !== strlen($to_write) || !self::header($this->file, 0) || !$this->file->lock(LOCK_UN)) {
+            try {
 
-                $this->file->truncate(0);
+                if ($this->file->write($to_write, strlen($to_write)) !== strlen($to_write) 
+                    || !self::header($this->file, 0)) {
 
-                $this->file->close();
+                    $this->file->truncate(0);
 
-                return false;
+                    $this->file->close();
+
+                    return false;
+
+                }
+
+            }finally{
+
+                $this->file->lock(LOCK_UN);
 
             }
 
@@ -280,166 +289,152 @@ class Btree {
      */
     public function set($key, $value) {
 
-        // Obtain an exclusive file lock
-        if (!$this->file->lock(LOCK_EX))
-            return false;
+        try {
 
-        if ($this->file->seek(0, SEEK_END) === -1) {
+            // Obtain an exclusive file lock
+            if (!$this->file->lock(LOCK_EX)
+                || $this->file->seek(0, SEEK_END) === -1
+                || ($pos = $this->file->tell()) === false)
+                return false;
 
-            $this->file->lock(LOCK_UN);
+            $root = null;
+            
+            $cursor = $pos;
 
-            return false;
+            // key lookup
+            $lookup = $this->lookup($key);
 
-        }
+            $node = array_pop($lookup);
 
-        if (($pos = $this->file->tell()) === false) {
+            if ($node === null)
+                return false;
 
-            $this->file->lock(LOCK_UN);
+            // change value
+            $index = current(array_keys($node));
 
-            return false;
-
-        }
-
-        $root = null;
-        
-        $cursor = $pos;
-
-        // key lookup
-        $lookup = $this->lookup($key);
-
-        $node = array_pop($lookup);
-
-        if ($node === null)
-            return false;
-
-        // change value
-        $index = current(array_keys($node));
-
-        $node_type = self::KVNODE;
-
-        $new_index = null;
-
-        if ($value === null)
-            unset($node[$key]);
-        else
-            $node[$key] = $value;
-
-        // traverse tree up
-        do {
-
-            if (count($node) <= intval(self::NODE_SLOTS / 2) && !empty($lookup)) {
-
-                $upnode = (array) array_pop($lookup);
-
-                $new_index = current(array_keys($upnode));
-
-                $sibling = $prev = [null, null];
-
-                foreach ($upnode as $k => $v) {
-
-                    if ($index === $k)
-                        $sibling = $prev; // left sibling
-                    else if ($index === $prev[0])
-                        $sibling = [$k, $v]; // right sibling
-
-                    if ($sibling[0] !== null) {
-
-                        list($sibling_type, $sibling_node) = $this->node($sibling[1]);
-
-                        if ($sibling_type === null || $sibling_node === null) {
-
-                            $this->file->truncate($pos);
-
-                            $this->file->lock(LOCK_UN);
-
-                            return false;
-
-                        }
-
-                        $node = array_merge($node, $sibling_node);
-
-                        unset($upnode[$sibling[0]]);
-
-                    }
-
-                    $prev = [$k, $v];
-
-                    $sibling = [null, null];
-
-                }
-
-                array_push($lookup, $upnode);
-
-            }
-
-            ksort($node, SORT_STRING);
-
-            if (count($node) <= self::NODE_SLOTS)
-                $nodes = [$node];
-            else
-                $nodes = array_chunk($node, ceil(count($node) / ceil(count($node) / self::NODE_SLOTS)), true);
-
-            $upnode = array_merge([], (array) array_pop($lookup));
-
-            if ($new_index === null)
-                $new_index = current(array_keys($upnode));
-
-            unset($upnode[$index]);
-
-            foreach ($nodes as $_) {
-
-                $serialized = self::serialize($node_type, $_);
-
-                $to_write = pack('N', strlen($serialized)) . $serialized;
-
-                if ($this->file->write($to_write, strlen($to_write)) !== strlen($to_write)) {
-
-                    $this->file->truncate($pos);
-
-                    $this->file->lock(LOCK_UN);
-
-                    return false;
-
-                }
-
-                $upnode[current(array_keys($_))] = $cursor;
-
-                $cursor += strlen($to_write);
-
-            }
-
-            $node_type = self::KPNODE;
-
-            $index = $new_index;
+            $node_type = self::KVNODE;
 
             $new_index = null;
 
-            if (count($upnode) <= 1) {
+            if ($value === null)
+                unset($node[$key]);
+            else
+                $node[$key] = $value;
 
-                $root = current(array_values($upnode));
+            // traverse tree up
+            do {
 
-                break;
+                if (count($node) <= intval(self::NODE_SLOTS / 2) && !empty($lookup)) {
 
-            } else {
+                    $upnode = (array) array_pop($lookup);
 
-                array_push($lookup, $upnode);
+                    $new_index = current(array_keys($upnode));
+
+                    $sibling = $prev = [null, null];
+
+                    foreach ($upnode as $k => $v) {
+
+                        if ($index === $k)
+                            $sibling = $prev; // left sibling
+                        else if ($index === $prev[0])
+                            $sibling = [$k, $v]; // right sibling
+
+                        if ($sibling[0] !== null) {
+
+                            list($sibling_type, $sibling_node) = $this->node($sibling[1]);
+
+                            if ($sibling_type === null || $sibling_node === null) {
+
+                                $this->file->truncate($pos);
+
+                                return false;
+
+                            }
+
+                            $node = array_merge($node, $sibling_node);
+
+                            unset($upnode[$sibling[0]]);
+
+                        }
+
+                        $prev = [$k, $v];
+
+                        $sibling = [null, null];
+
+                    }
+
+                    array_push($lookup, $upnode);
+
+                }
+
+                ksort($node, SORT_STRING);
+
+                if (count($node) <= self::NODE_SLOTS)
+                    $nodes = [$node];
+                else
+                    $nodes = array_chunk($node, ceil(count($node) / ceil(count($node) / self::NODE_SLOTS)), true);
+
+                $upnode = array_merge([], (array) array_pop($lookup));
+
+                if ($new_index === null)
+                    $new_index = current(array_keys($upnode));
+
+                unset($upnode[$index]);
+
+                foreach ($nodes as $_) {
+
+                    $serialized = self::serialize($node_type, $_);
+
+                    $to_write = pack('N', strlen($serialized)) . $serialized;
+
+                    if ($this->file->write($to_write, strlen($to_write)) !== strlen($to_write)) {
+
+                        $this->file->truncate($pos);
+
+                        return false;
+
+                    }
+
+                    $upnode[current(array_keys($_))] = $cursor;
+
+                    $cursor += strlen($to_write);
+
+                }
+
+                $node_type = self::KPNODE;
+
+                $index = $new_index;
+
+                $new_index = null;
+
+                if (count($upnode) <= 1) {
+
+                    $root = current(array_values($upnode));
+
+                    break;
+
+                } else {
+
+                    array_push($lookup, $upnode);
+
+                }
+
+            } while (($node = array_pop($lookup)));
+
+            //Write root header to the current database file
+            if (!($this->file->flush() && self::header($this->file, $root) && $this->file->flush())) {
+
+                $this->file->truncate($pos);
+
+                return false;
 
             }
 
-        } while (($node = array_pop($lookup)));
-
-        //Write root header to the current database file
-        if (!($this->file->flush() && self::header($this->file, $root) && $this->file->flush())) {
-
-            $this->file->truncate($pos);
+        }finally{
 
             $this->file->lock(LOCK_UN);
 
-            return false;
-
         }
-
-        $this->file->lock(LOCK_UN);
 
         return true;
 
@@ -465,52 +460,59 @@ class Btree {
         if(!$this->file->lock(LOCK_SH))
             return false;
 
-        if ($node_type === null || $node === null)
-            list($node_type, $node) = $this->root();
+        try{
 
-        if ($node_type === null || $node === null)
-            return [null];
+            if ($node_type === null || $node === null)
+                list($node_type, $node) = $this->root();
 
-        $ret = [];
+            if ($node_type === null || $node === null)
+                return [null];
 
-        do {
+            $ret = [];
 
-            array_push($ret, $node);
+            do {
 
-            if ($node_type === self::KVNODE){
+                array_push($ret, $node);
 
-                $node = null;
+                if ($node_type === self::KVNODE){
 
-            } else {
+                    $node = null;
 
-                $keys = array_keys($node);
+                } else {
 
-                $l = 0;
+                    $keys = array_keys($node);
 
-                $r = count($keys);
+                    $l = 0;
 
-                while ($l < $r) {
+                    $r = count($keys);
 
-                    $i = $l + intval(($r - $l) / 2);
+                    while ($l < $r) {
 
-                    if (strcmp($keys[$i], $key) < 0)
-                        $l = $i + 1;
-                    else
-                        $r = $i;
+                        $i = $l + intval(($r - $l) / 2);
+
+                        if (strcmp($keys[$i], $key) < 0)
+                            $l = $i + 1;
+                        else
+                            $r = $i;
+
+                    }
+
+                    $l = max(0, $l + ($l >= count($keys) ? -1 : (strcmp($keys[$l], $key) <= 0 ? 0 : -1)));
+
+                    list($node_type, $node) = $this->node($node[$keys[$l]]);
+
+                    if ($node_type === null || $node === null) 
+                        return [null];
 
                 }
 
-                $l = max(0, $l + ($l >= count($keys) ? -1 : (strcmp($keys[$l], $key) <= 0 ? 0 : -1)));
+            } while ($node !== null);
 
-                list($node_type, $node) = $this->node($node[$keys[$l]]);
+        }finally{
 
-                if ($node_type === null || $node === null) return [null];
+            $this->file->lock(LOCK_UN);
 
-            }
-
-        } while ($node !== null);
-
-        $this->file->lock(LOCK_UN);
+        }
             
         return $ret;
 
