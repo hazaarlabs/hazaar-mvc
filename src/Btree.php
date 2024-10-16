@@ -55,12 +55,12 @@ class Btree {
      */
     private $file;
 
+    private $semFile;
+
     /**
      * @var array Node cache
      */
     private $nodecache = [];
-
-    public $LOCK_EX = LOCK_EX;
 
     private $read_only = false;
 
@@ -70,6 +70,14 @@ class Btree {
     public function __construct($file, $read_only = false) {
 
         $this->read_only = (boolean)$read_only;
+
+        $this->semFile = new \Hazaar\File($file . '.sem');
+
+        if($this->semFile->exists()){
+            $this->semFile->open('r');
+            $this->semFile->lock(LOCK_EX);
+            $this->semFile->close();
+        }
         
         if(!$this->open($file))
             throw new \Hazaar\Exception('Unable to open file: ' . $file);
@@ -127,7 +135,7 @@ class Btree {
 
         if ($this->file->tell() === 0) {
 
-            if (!$this->file->lock($this->LOCK_EX)) {
+            if (!$this->file->lock(LOCK_EX)) {
 
                 $this->file->close();
 
@@ -273,7 +281,7 @@ class Btree {
     public function set($key, $value) {
 
         // Obtain an exclusive file lock
-        if (!$this->file->lock($this->LOCK_EX))
+        if (!$this->file->lock(LOCK_EX))
             return false;
 
         if ($this->file->seek(0, SEEK_END) === -1) {
@@ -627,37 +635,61 @@ class Btree {
      */
     public function compact() {
 
-        $compact_file = new \Hazaar\File(uniqid($this->file . '~', true));
+        try {
+            
+            if($this->semFile->exists())
+                return false;
 
-        if (!($compact_file->open('a+b')))
-            return false;
+            $this->semFile->open('w');
 
-        if (!(($compact_file->seek(0, SEEK_END) !== -1
-            && $root = $this->copyto($compact_file)) !== null
-            && self::header($compact_file, $root) !== false
-            && $compact_file->flush()
-            && $compact_file->close()
-            && $this->file->close()
-            && $this->file->unlink()
-            && @$compact_file->rename(basename((string)$this->file)))) { /* will not work under windows, sorry */
+            if (!$this->semFile->lock(LOCK_EX))
+                throw new \Exception('Unable to lock semaphore file: ' . $this->semFile);
 
+            $this->file->lock(LOCK_EX);
+
+            $compact_file = new \Hazaar\File(uniqid($this->file . '~', true));
+                
+            if (!($compact_file->open('a+b')))
+                return false;
+
+            if (!(($compact_file->seek(0, SEEK_END) !== -1
+                && $root = $this->copyto($compact_file)) !== null
+                && self::header($compact_file, $root) !== false
+                && $compact_file->flush()
+                && $compact_file->close()
+                && $this->file->close()
+                && $this->file->unlink()
+                && @$compact_file->rename(basename((string)$this->file)))) { /* will not work under windows, sorry */
+
+                throw new \Exception(error_get_last());
+
+            }
+
+            $this->nodecache = [];
+
+            $this->file->close();
+
+            $this->file = $compact_file;
+
+            $this->file->open('a+b');
+            
+        } catch (\Exception $e) {
+            
             $compact_file->close();
 
             @$compact_file->unlink();
 
-            dump(error_get_last());
+            $this->file->lock(LOCK_UN);
 
             return false;
 
+        } finally {
+
+            $this->semFile->close();
+
+            @$this->semFile->unlink();
+
         }
-
-        $this->nodecache = [];
-
-        $this->file->close();
-
-        $this->file = $compact_file;
-
-        $this->file->open('a+b');
 
         return true;
 
