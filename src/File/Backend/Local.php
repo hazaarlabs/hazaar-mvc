@@ -261,7 +261,7 @@ class Local implements _Interface {
 
         if($ret) {
 
-            if($srcMeta = $this->meta($rSrc)) {
+            if($this->hasMeta() && ($srcMeta = $this->meta($rSrc))) {
 
                 $this->meta[$rDst] = [$srcMeta, true];
 
@@ -575,6 +575,12 @@ class Local implements _Interface {
     public function chgrp($path, $group) {
 
         return chgrp($this->resolvePath($path), $group);
+
+    }
+
+    private function hasMeta(){
+
+        return file_exists($metafile = dirname($fullpath) . DIRECTORY_SEPARATOR . '.metadata');
 
     }
 
