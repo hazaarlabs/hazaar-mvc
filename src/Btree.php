@@ -367,13 +367,8 @@ class Btree {
 
                             list($sibling_type, $sibling_node) = $this->node($sibling[1]);
 
-                            if ($sibling_type === null || $sibling_node === null) {
-
-                                $this->file->truncate($pos);
-
-                                return false;
-
-                            }
+                            if ($sibling_type === null || $sibling_node === null) 
+                                throw new \Exception('Unable to read sibling node: ' . $sibling[1]);
 
                             $node = array_merge($node, $sibling_node);
 
@@ -411,13 +406,8 @@ class Btree {
 
                     $to_write = pack('N', strlen($serialized)) . $serialized;
 
-                    if ($this->file->write($to_write, strlen($to_write)) !== strlen($to_write)) {
-
-                        $this->file->truncate($pos);
-
-                        return false;
-
-                    }
+                    if ($this->file->write($to_write, strlen($to_write)) !== strlen($to_write))
+                        throw new \Exception('Unable to write node to file: ' . $this->file);
 
                     $upnode[current(array_keys($_))] = $cursor;
 
@@ -446,13 +436,14 @@ class Btree {
             } while (($node = array_pop($lookup)));
 
             //Write root header to the current database file
-            if (!($this->file->flush() && self::header($this->file, $root) && $this->file->flush())) {
+            if (!($this->file->flush() && self::header($this->file, $root) && $this->file->flush()))
+                throw new \Exception('Unable to write root node to file: ' . $this->file);
 
-                $this->file->truncate($pos);
+        }catch(\Exception $e){
 
-                return false;
+            $this->file->truncate($pos);
 
-            }
+            return false;
 
         }finally{
 
