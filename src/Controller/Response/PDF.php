@@ -45,12 +45,6 @@ class PDF extends \Hazaar\Controller\Response\HTTP\OK {
 
     }
 
-    public function setTitle($content){
-
-        return $this->pdf_file->set_title($content);
-        
-    }
-
     public function __writeOutput() {
 
         $this->content = $this->pdf_file->get_contents();
