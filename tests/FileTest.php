@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Tests;
 
 use Hazaar\Application;
-use Hazaar\BTree;
+use Hazaar\File\BTree;
 use Hazaar\File;
 use Hazaar\GeoData;
 use PHPUnit\Framework\TestCase;
@@ -87,7 +87,7 @@ class FileTest extends TestCase
     public function testBTreeFile(): void
     {
         $db = new BTree(Application::getInstance()->getRuntimePath('UnitTest.db'));
-        $this->assertInstanceOf('\Hazaar\BTree', $db);
+        $this->assertInstanceOf('\Hazaar\File\BTree', $db);
         $this->assertTrue($db->set('test', 'value'));
         $this->assertEquals('value', $db->get('test'));
         // $this->assertTrue($db->compact());
