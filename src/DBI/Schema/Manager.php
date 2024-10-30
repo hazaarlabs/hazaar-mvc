@@ -225,7 +225,7 @@ class Manager
             if (!($migrate = json_decode($fileContent, true))) {
                 throw new \Exception('Error decoding schema migration file: '.$file);
             }
-            if (!($migrate && array_key_exists('up', $migrate))) {
+            if (!array_key_exists('up', $migrate)) {
                 continue;
             }
             foreach ($migrate['up'] as $level1 => $actions) {

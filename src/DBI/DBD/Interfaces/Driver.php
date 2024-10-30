@@ -49,11 +49,15 @@ interface Driver
 
     public function prepare(string $sql): false|\PDOStatement;
 
+    /**
+     * @param array<mixed>                   $conflictTarget
+     * @param null|array<string>|bool|string $returning
+     */
     public function insert(
         string $tableName,
         mixed $fields,
-        mixed $returning = null,
-        ?string $conflictTarget = null,
+        null|array|bool|string $returning = null,
+        null|array|string $conflictTarget = null,
         mixed $conflictUpdate = null,
         ?Table $table = null
     ): false|int|\PDOStatement;
