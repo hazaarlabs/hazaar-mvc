@@ -66,11 +66,11 @@ class View extends HTML
             $this->_view_name = $view->getName();
         } else {
             $this->_view_name = $view;
-            $this->_view = new HazaarView($view, ['html']);
+            $this->_view = new HazaarView($view);
         }
     }
 
-    public function render(): string
+    public function getContent(): string
     {
         return $this->_view->render();
     }
