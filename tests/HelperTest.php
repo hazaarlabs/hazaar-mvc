@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Tests;
 
 use Hazaar\Application;
-use Hazaar\BTree;
+use Hazaar\File\BTree;
 use Hazaar\File;
 use Hazaar\Map;
 use PHPUnit\Framework\TestCase;
