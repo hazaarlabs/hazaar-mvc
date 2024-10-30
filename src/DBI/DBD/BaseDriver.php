@@ -527,13 +527,10 @@ abstract class BaseDriver implements Interfaces\Driver
         return $value;
     }
 
-    /**
-     * @param array<mixed> $conflictTarget
-     */
     public function insert(
         string $tableName,
         mixed $fields,
-        mixed $returning = null,
+        null|array|bool|string $returning = null,
         null|array|string $conflictTarget = null,
         mixed $conflictUpdate = null,
         ?Table $table = null
@@ -600,7 +597,7 @@ abstract class BaseDriver implements Interfaces\Driver
             if (is_string($returning)) {
                 $returning = trim($returning);
                 $sql .= ' RETURNING '.$this->field($returning);
-            } elseif (is_array($returning) && count($returning) > 0) {
+            } elseif (is_array($returning)) {
                 $sql .= ' RETURNING '.$this->prepareFields($returning);
             }
             if ($result = $this->query($sql)) {
@@ -611,12 +608,15 @@ abstract class BaseDriver implements Interfaces\Driver
         return $returnValue;
     }
 
+    /**
+     * @param null|array<string>|bool|string $returning
+     */
     public function update(
         string $tableName,
         mixed $fields,
         array $criteria = [],
         array $from = [],
-        mixed $returning = null,
+        null|array|bool|string $returning = null,
         array $tables = []
     ): false|int|\PDOStatement {
         if ($fields instanceof Map) {
@@ -650,7 +650,7 @@ abstract class BaseDriver implements Interfaces\Driver
             if (is_string($returning)) {
                 $returning = trim($returning);
                 $sql .= ' RETURNING '.$this->field($returning);
-            } elseif (is_array($returning) && count($returning) > 0) {
+            } elseif (is_array($returning)) {
                 $sql .= ' RETURNING '.$this->prepareFields($returning, [], $tables);
             }
             if ($result = $this->query($sql)) {
