@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Model;
 
 use Hazaar\Model;
+use Hazaar\Model\Attributes\Required;
 
 /**
  * Email Address Strict Model.
@@ -17,12 +18,13 @@ use Hazaar\Model;
  */
 class Email extends Model
 {
-    protected string $name;
-    protected string $address;
+    #[Required]
+    public string $name ;
 
-    public function construct(array &$data): void
-    {
-        $this->defineRule('required', 'address');
-        $this->defineRule('filter', 'address', FILTER_VALIDATE_EMAIL);
+    #[Required]
+    public string $address {
+        get  {
+            return '"'.$this->address.'"!!!';
+        }
     }
 }

@@ -86,8 +86,14 @@ abstract class Model implements \jsonSerializable, \Iterator
                 }
                 $reflectionProperty->setValue($this, $propertyValue);
             }
-            if ($reflectionProperty->isInitialized($this) && isset($this->propertyRules[$propertyName])) {
-                $this->execPropertyRules($propertyName, $propertyValue, $this->propertyRules[$propertyName]);
+            if (count($reflectionAttributes = $reflectionProperty->getAttributes()) > 0) {
+                foreach ($reflectionAttributes as $reflectionAttribute) {
+                    $reflectionAttributeClass = new \ReflectionClass($reflectionAttribute->getName());
+                    if (!$reflectionAttributeClass->implementsInterface('Hazaar\Model\Interfaces\Attribute')) {
+                        continue;
+                    }
+                    $reflectionAttribute->newInstance()->check($this, $reflectionProperty);
+                }
             }
             $this->propertyNames[] = $propertyName;
         }
@@ -103,13 +109,12 @@ abstract class Model implements \jsonSerializable, \Iterator
 
     final public function __destruct()
     {
-        if (method_exists($this, 'destruct')) {
-            $this->destruct();
-        }
+        $this->destruct();
     }
 
     public function __get(string $propertyName): mixed
     {
+        dump('asd');
         return $this->get($propertyName);
     }
 
@@ -721,38 +726,11 @@ abstract class Model implements \jsonSerializable, \Iterator
     }
 
     /**
-     * Defines a rule for a property in the model.
-     *
-     * @param string        $rule          the name of the rule
-     * @param array<string> $propertyNames the name of one or more properties
-     * @param mixed         ...$args       Additional arguments for the rule.
-     *
-     * @throws \Exception if the specified rule does not exist
-     */
-    public function defineRule(string $rule, array|string $propertyNames, mixed ...$args): void
-    {
-        $ruleName = '__propertyRule__'.$rule;
-        if (!method_exists($this, $ruleName)) {
-            throw new \Exception("Rule '{$rule}' does not exist");
-        }
-        if (!is_array($propertyNames)) {
-            $propertyNames = [$propertyNames];
-        }
-        foreach ($propertyNames as $propertyName) {
-            if (!array_key_exists($propertyName, $this->propertyRules)) {
-                $this->propertyRules[$propertyName] = [];
-            }
-            $this->propertyRules[$propertyName][$rule] = [
-                $ruleName,
-                $args,
-            ];
-        }
-    }
-
-    /**
      * @param array<string,mixed> $data
      */
     protected function construct(array &$data): void {}
+
+    protected function destruct(): void {}
 
     /**
      * @param array<string,mixed> $data
@@ -838,6 +816,13 @@ abstract class Model implements \jsonSerializable, \Iterator
      */
     private function execPropertyRules(string $propertyName, mixed &$propertyValue, array $rules): void
     {
+        $classReflection = new \ReflectionClass($this);
+        $properties = $classReflection->getProperties();
+
+        foreach ($properties as $property) {
+            var_dump([$property->getName(), $property->getAttributes()]);
+        }
+
         foreach ($rules as $rule => $ruleData) {
             $propertyValue = call_user_func_array([$this, $ruleData[0]], array_merge([$propertyName, $propertyValue], $ruleData[1]));
         }
