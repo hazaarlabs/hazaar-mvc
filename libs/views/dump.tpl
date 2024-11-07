@@ -17,10 +17,11 @@
             --elem-padding: 2rem;
             --elem-margin: 2rem;
             --dump-radius: 1rem;
-            --col-bg: #030005;
-            --col-fg: #fff;
-            --col-em: #ff005a;
-            --col-mt: #999;
+            --bg-color: #212A37;
+            --fg-color: #c6d3e4;
+            --fm-color: #a21c1c;
+            --mt-color: #999999;
+            --shadow-color: #1a212a;
             color-scheme: dark;
         }
 
@@ -38,16 +39,16 @@
             display: flex;
             flex-direction: column;
             font-family: 'Montserrat', sans-serif;
-            background: var(--col-bg);
+            background: var(--bg-color);
             height: 100vh;
 
             .dumpheader {
-                background: var(--col-bg);
+                background: var(--bg-color);
                 display: flex;
                 flex-direction: row;
                 width: 100%;
                 padding: calc(var(--elem-padding) / 2) var(--elem-padding);
-                box-shadow: 0 4px 8px black;
+                box-shadow: 0 4px 8px var(--shadow-color);
                 z-index: 1;
 
                 .actions {
@@ -56,7 +57,7 @@
                     a {
                         display: inline-block;
                         text-transform: uppercase;
-                        color: var(--col-em);
+                        color: var(--fm-color);
                         text-decoration: none;
                         border: 2px solid;
                         background: transparent;
@@ -79,30 +80,34 @@
                     flex-grow: 1;
 
                     h1 {
+                        font-family: 'Montserrat', sans-serif;
                         font-size: 42px;
                         font-weight: 900;
                         margin-top: 0px;
                         margin-bottom: 0px;
                         margin-left: -12px;
-                        color: var(--col-bg);
+                        color: #000000;
                         text-transform: uppercase;
-                        text-shadow: -1px -1px 0px #8400ff, 1px 1px 0px #ff005a;
+                        text-shadow: -1px -1px 0px #ffffff, 1px 1px 0px #606060;
+                        opacity: 0.2;
                     }
+
                 }
 
                 .timetable {
-                    font-size: x-small;
+                    font-size: 11px;
 
                     th {
                         text-align: right;
                         padding: 0 5px 0 0;
-                        color: var(--col-em);
+                        color: var(--fm-color);
                         font-weight: normal;
+                        text-transform: capitalize;
                     }
 
                     td {
                         padding: 0;
-                        color: var(--col-fg);
+                        color: var(--fg-color);
                         font-weight: bold;
                     }
 
@@ -111,7 +116,7 @@
                     }
 
                     tr:not(:last-child) td {
-                        color: var(--col-mt);
+                        color: var(--mt-color);
                         font-weight: normal;
                     }
                 }
@@ -134,13 +139,13 @@
                 .hdr {
                     font-size: .7rem;
                     font-weight: 100;
-                    color: var(--col-mt);
+                    color: var(--mt-color);
                     text-align: right;
                     margin: 0 var(--dump-radius);
 
                     em {
                         font-style: normal;
-                        color: var(--col-em);
+                        color: var(--fm-color);
                     }
                 }
 
@@ -148,9 +153,9 @@
                     font-family: 'Courier New', Courier, monospace;
                     font-size: 0.8rem;
                     padding: var(--elem-padding);
-                    color: var(--col-fg);
-                    background-color: var(--col-bg);
-                    border: 1px solid #333;
+                    color: var(--fg-color);
+                    background-color: var(--bg-color);
+                    border: 1px solid #666666;
                     border-radius: var(--dump-radius);
                     white-space: pre-wrap;
                     flex-grow: 1;
