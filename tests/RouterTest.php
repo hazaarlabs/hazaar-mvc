@@ -2,7 +2,6 @@
 
 namespace Hazaar\Tests;
 
-use Hazaar\Application;
 use Hazaar\Application\Config;
 use Hazaar\Application\Request\HTTP;
 use Hazaar\Application\Router;
@@ -32,7 +31,7 @@ class RouterTest extends TestCase
             'REQUEST_URI' => '/test/index/arg1/arg2/arg3',
         ]);
         $this->config['type'] = 'basic';
-        $router = new Router(Application::getInstance(), $this->config);
+        $router = new Router($this->config);
         $this->assertTrue($router->initialise($request));
         $this->assertInstanceOf('Hazaar\Application\Route', $route = $router->getRoute());
         $this->assertInstanceOf('Application\Controllers\Test', $controller = $route->getController());
@@ -49,7 +48,7 @@ class RouterTest extends TestCase
             'REQUEST_URI' => '/',
         ]);
         $this->config['type'] = 'basic';
-        $router = new Router(Application::getInstance(), $this->config);
+        $router = new Router($this->config);
         $this->assertTrue($router->initialise($request));
         $this->assertInstanceOf('Hazaar\Application\Route', $route = $router->getRoute());
         $this->assertInstanceOf('Application\Controllers\Index', $controller = $route->getController());
@@ -64,7 +63,7 @@ class RouterTest extends TestCase
             'REQUEST_URI' => '/bad/missing',
         ]);
         $this->config['type'] = 'basic';
-        $router = new Router(Application::getInstance(), $this->config);
+        $router = new Router($this->config);
         $this->assertTrue($router->initialise($request));
         $this->assertInstanceOf('Hazaar\Application\Route', $route = $router->getRoute());
         $this->expectException('Hazaar\Application\Router\Exception\ControllerNotFound');
@@ -78,7 +77,7 @@ class RouterTest extends TestCase
             'REQUEST_URI' => '/index/missing',
         ]);
         $this->config['type'] = 'basic';
-        $router = new Router(Application::getInstance(), $this->config);
+        $router = new Router($this->config);
         $this->assertTrue($router->initialise($request));
         $this->assertInstanceOf('Hazaar\Application\Route', $route = $router->getRoute());
         $this->assertInstanceOf('Application\Controllers\Index', $controller = $route->getController());
@@ -94,7 +93,7 @@ class RouterTest extends TestCase
             'REQUEST_URI' => '/test/foo/word',
         ]);
         $this->config['type'] = 'advanced';
-        $router = new Router(Application::getInstance(), $this->config);
+        $router = new Router($this->config);
         $this->assertTrue($router->initialise($request));
         $this->assertInstanceOf('Hazaar\Application\Route', $route = $router->getRoute());
         $this->assertTrue($router->initialise($request));
@@ -111,7 +110,7 @@ class RouterTest extends TestCase
             'REQUEST_URI' => '/test/word',
         ]);
         $this->config['type'] = 'file';
-        $router = new Router(Application::getInstance(), $this->config);
+        $router = new Router($this->config);
         $this->assertTrue($router->initialise($request));
         $this->assertInstanceOf('Hazaar\Application\Route', $route = $router->getRoute());
         $this->assertInstanceOf('Application\Controllers\Test', $controller = $route->getController());
@@ -127,7 +126,7 @@ class RouterTest extends TestCase
             'REQUEST_URI' => '/api/test/1234',
         ]);
         $this->config['type'] = 'annotated';
-        $router = new Router(Application::getInstance(), $this->config);
+        $router = new Router($this->config);
         $this->assertTrue($router->initialise($request));
         $this->assertInstanceOf('Hazaar\Application\Route', $route = $router->getRoute());
         $this->assertEquals('Application\Controllers\Api', $controller = $route->getController());
