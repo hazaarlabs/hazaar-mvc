@@ -109,7 +109,6 @@ class Application
     protected string $urlDefaultPart;
     private static ?Application $instance = null;
     private static string $root;
-    private static string $redirectCookieName = 'hazaar-redirect-token';
 
     /**
      * @var array<callable>
@@ -174,7 +173,7 @@ class Application
             // Create the request object
             $this->request = Request\Loader::load();
             // Create a new router object for evaluating routes
-            $this->router = new Router($this, $this->config->get('router'));
+            $this->router = new Router($this->config->get('router'));
             $this->timer->stop('init');
         } catch (\Throwable $e) {
             dieDieDie($e);
@@ -660,71 +659,6 @@ class Application
         }
 
         return true;
-    }
-
-    /**
-     * Generate a redirect response to redirect the browser.
-     *
-     * It's quite common to redirect the user to an alternative URL. This may be to forward the request
-     * to another website, forward them to an authentication page or even just remove processed request
-     * parameters from the URL to neaten the URL up.
-     *
-     * @param string $location The URI you want to redirect to
-     * @param bool   $saveURI  Optionally save the URI so we can redirect back. See: `Hazaar\Application::redirectBack()`
-     */
-    public function redirect(string $location, bool $saveURI = false): false|Redirect
-    {
-        $headers = apache_request_headers();
-        if (array_key_exists('X-Requested-With', $headers) && 'XMLHttpRequest' === $headers['X-Requested-With']) {
-            echo "<script>document.location = '{$location}';</script>";
-        } else {
-            if ($saveURI) {
-                $data = [
-                    'URI' => $_SERVER['REQUEST_URI'],
-                    'METHOD' => $_SERVER['REQUEST_METHOD'],
-                ];
-                if ('POST' === $_SERVER['REQUEST_METHOD']) {
-                    $data['POST'] = $_POST;
-                }
-                setcookie(self::$redirectCookieName, base64_encode(serialize($data)), time() + 3600, '/');
-            }
-        }
-
-        return new Redirect($location);
-    }
-
-    /**
-     * Redirect back to a URI saved during redirection.
-     *
-     * This mechanism is used with the $saveURI parameter of `Hazaar\Application::redirect()` so save the current
-     * URI into the session so that once we're done processing the request somewhere else we can come back
-     * to where we were. This is useful for when a user requests a page but isn't authenticated, we can
-     * redirect them to a login page and then that page can call this `Hazaar\Application::redirectBack()` method to redirect the
-     * user back to the page they were originally looking for.
-     */
-    public function redirectBack(?string $altURL = null): false|Redirect
-    {
-        if (array_key_exists(self::$redirectCookieName, $_COOKIE)) {
-            $data = unserialize(base64_decode($_COOKIE[self::$redirectCookieName]));
-            if ($uri = ake($data, 'URI')) {
-                if ('POST' === ake($data, 'METHOD')) {
-                    if ('?' !== substr($uri, -1, 1)) {
-                        $uri .= '?';
-                    } else {
-                        $uri .= '&';
-                    }
-                    $uri .= http_build_query(ake($data, 'POST'));
-                }
-            }
-            setcookie(self::$redirectCookieName, '', time() - 3600, '/');
-        } else {
-            $uri = $altURL;
-        }
-        if ($uri) {
-            return new Redirect($uri);
-        }
-
-        return false;
     }
 
     /**

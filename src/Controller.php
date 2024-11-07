@@ -17,6 +17,7 @@ use Hazaar\Application\URL;
 use Hazaar\Controller\Exception\NoAction;
 use Hazaar\Controller\Helper;
 use Hazaar\Controller\Response;
+use Hazaar\Controller\Response\HTTP\Redirect;
 
 /**
  * Base Controller class.
@@ -47,8 +48,8 @@ abstract class Controller implements Controller\Interfaces\Controller
      * @var array<Response>
      */
     private array $cachedResponses = [];
-
     private ?Cache $responseCache = null;
+    private static string $redirectCookieName = 'hazaar-redirect-token';
 
     /**
      * Base controller constructor.
@@ -181,24 +182,68 @@ abstract class Controller implements Controller\Interfaces\Controller
     }
 
     /**
-     * Initiate a redirect response to the client.
+     * Generate a redirect response to redirect the browser.
+     *
+     * It's quite common to redirect the user to an alternative URL. This may be to forward the request
+     * to another website, forward them to an authentication page or even just remove processed request
+     * parameters from the URL to neaten the URL up.
+     *
+     * @param string $location The URI you want to redirect to
+     * @param bool   $saveURI  Optionally save the URI so we can redirect back. See: `Hazaar\Application::redirectBack()`
      */
-    public function redirect(string|URL $location, bool $saveURI = false): Response
+    public function redirect(string $location, bool $saveURI = false): Redirect
     {
-        return $this->application->redirect((string) $location, $saveURI);
+        $headers = apache_request_headers();
+        if (array_key_exists('X-Requested-With', $headers) && 'XMLHttpRequest' === $headers['X-Requested-With']) {
+            echo "<script>document.location = '{$location}';</script>";
+        } else {
+            if ($saveURI) {
+                $data = [
+                    'URI' => $_SERVER['REQUEST_URI'],
+                    'METHOD' => $_SERVER['REQUEST_METHOD'],
+                ];
+                if ('POST' === $_SERVER['REQUEST_METHOD']) {
+                    $data['POST'] = $_POST;
+                }
+                setcookie(self::$redirectCookieName, base64_encode(serialize($data)), time() + 3600, '/');
+            }
+        }
+
+        return new Redirect($location);
     }
 
     /**
-     * Redirect back to a URL saved during redirection.
+     * Redirect back to a URI saved during redirection.
      *
-     * This mechanism is used with the $saveURI parameter of `Hazaar\Application::redirect()` so save the current URL into the session
-     * so that once we're done processing the request somewhere else we can come back to where we were. This is useful for when
-     * a user requests a page but isn't authenticated, we can redirect them to a login page and then that page can call this
-     * `Hazaar\Controller::redirectBack()` method to redirect the user back to the page they were originally looking for.
+     * This mechanism is used with the $saveURI parameter of `Hazaar\Application::redirect()` so save the current
+     * URI into the session so that once we're done processing the request somewhere else we can come back
+     * to where we were. This is useful for when a user requests a page but isn't authenticated, we can
+     * redirect them to a login page and then that page can call this `Hazaar\Application::redirectBack()` method to redirect the
+     * user back to the page they were originally looking for.
      */
-    public function redirectBack(null|string|URL $altURL = null): Response
+    public function redirectBack(?string $altURL = null): false|Redirect
     {
-        return $this->application->redirectBack($altURL);
+        if (array_key_exists(self::$redirectCookieName, $_COOKIE)) {
+            $data = unserialize(base64_decode($_COOKIE[self::$redirectCookieName]));
+            if ($uri = ake($data, 'URI')) {
+                if ('POST' === ake($data, 'METHOD')) {
+                    if ('?' !== substr($uri, -1, 1)) {
+                        $uri .= '?';
+                    } else {
+                        $uri .= '&';
+                    }
+                    $uri .= http_build_query(ake($data, 'POST'));
+                }
+            }
+            setcookie(self::$redirectCookieName, '', time() - 3600, '/');
+        } else {
+            $uri = $altURL;
+        }
+        if ($uri) {
+            return new Redirect($uri);
+        }
+
+        return false;
     }
 
     /**
@@ -220,31 +265,6 @@ abstract class Controller implements Controller\Interfaces\Controller
         call_user_func_array([$url, '__construct'], array_merge($thisParts, $parts));
 
         return $url;
-    }
-
-    /**
-     * Test if a URL is active, relative to this controller.
-     *
-     * Parameters are simply a list of URL 'parts' that will be combined to test against the current URL to see if it is active.  Essentially
-     * the argument list is the same as `Hazaar\Controller::url()` except that parameter arrays are not supported.
-     *
-     * * Example
-     * ```php
-     * if($controller->active('index')){
-     * ```
-     *
-     * If the current URL has more parts than the function argument list, this will mean that only a portion of the URL is tested
-     * against.  This allows an action to be tested without looking at it's argument list URL parts.  This also means that it is
-     * possible to call the `active()` method without any arguments to test if the controller itself is active, which if you are
-     * calling it from within the controller, should always return `TRUE`.
-     *
-     * @return bool true if the supplied URL is active as the current URL
-     */
-    public function isActive(): bool
-    {
-        $parts = func_get_args();
-
-        return call_user_func_array([$this->application, 'active'], array_merge([$this->name], $parts));
     }
 
     /**
