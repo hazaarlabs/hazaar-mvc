@@ -32,9 +32,9 @@ abstract class Action extends Basic
      */
     protected array $methods = [];
 
-    public function __construct(Application $application, ?string $name = null)
+    public function __construct(?string $name = null)
     {
-        parent::__construct($application, $name);
+        parent::__construct($name);
         $this->view = new ViewRenderer();
     }
 
@@ -53,12 +53,13 @@ abstract class Action extends Basic
      */
     public function initialize(Request $request): ?Response
     {
+        $app = Application::getInstance();
         if ($request instanceof HTTP
             && false === $request->isXmlHttpRequest()
-            && null !== $this->application
-            && 'html' === $this->application->getResponseType()
-            && $this->application->config['app']->has('layout')) {
-            $this->view->layout($this->application->config['app']['layout']);
+            && null !== $app
+            && 'html' === $app->getResponseType()
+            && $app->config['app']->has('layout')) {
+            $this->view->layout($app->config['app']['layout']);
         }
 
         return parent::initialize($request);

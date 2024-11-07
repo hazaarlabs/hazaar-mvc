@@ -39,7 +39,6 @@ class Router
         'hazaar' => '\Hazaar\Controller\Internal',
     ];
 
-    public Application $application;
     public Map $config;
     private static ?self $instance = null;
     private Loader $routeLoader;
@@ -50,10 +49,9 @@ class Router
     private array $routes = [];
     private ?Route $route = null;
 
-    final public function __construct(Application $application, Map $config)
+    final public function __construct(Map $config)
     {
         self::$instance = $this;
-        $this->application = $application;
         $this->config = $config;
         $this->config->enhance(self::$defaultConfig);
         $type = $this->config->get('type', 'file');
@@ -162,7 +160,7 @@ class Router
             }
         }
         if (null === $controller) {
-            $controller = new Error($this->application, 'error');
+            $controller = new Error('error');
         }
 
         return $controller;

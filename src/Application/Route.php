@@ -136,7 +136,7 @@ class Route
     public function getController(): ?Controller
     {
         if ($this->callable instanceof \Closure) {
-            return new Closure($this->router->application, $this->callable);
+            return new Closure($this->callable);
         }
         if ($this->callable instanceof \ReflectionMethod) {
             $controllerReflection = $this->callable->getDeclaringClass();
@@ -144,7 +144,7 @@ class Route
                 throw new Router\Exception\ControllerNotFound($controllerReflection->getName(), $this->path ?? '/');
             }
 
-            return $controllerReflection->newInstance($this->router->application);
+            return $controllerReflection->newInstance();
         }
         if (is_array($this->callable)) {
             $controllerClass = $this->callable[0];
@@ -154,7 +154,7 @@ class Route
                 throw new Router\Exception\ControllerNotFound($controllerClass, $this->path ?? '/');
             }
 
-            return new $controllerClass($this->router->application, $controllerClassName);
+            return new $controllerClass($controllerClassName);
         }
 
         return null;

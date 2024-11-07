@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller;
 
+use Hazaar\Application;
 use Hazaar\Application\Request;
 use Hazaar\Application\Request\HTTP;
 use Hazaar\Controller;
@@ -42,7 +43,8 @@ abstract class REST extends Controller
         if (null !== $response) {
             return $response;
         }
-        $this->application->setResponseType('json');
+        $app = Application::getInstance();
+        $app->setResponseType('json');
 
         /*
          *  if ('OPTIONS' == $this->request->method()) {

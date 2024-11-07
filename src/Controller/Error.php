@@ -51,12 +51,12 @@ class Error extends Diagnostic
      */
     private static ?array $status_codes = null;
 
-    public function __construct(Application $application, $name = 'Error')
+    public function __construct($name = 'Error')
     {
         if (!is_array(self::$status_codes)) {
             self::$status_codes = $this->loadStatusCodes();
         }
-        parent::__construct($application, $name);
+        parent::__construct($name);
     }
 
     /**
@@ -340,6 +340,7 @@ class Error extends Diagnostic
      */
     public function html(): Response\HTML
     {
+        $app = Application::getInstance();
         $view = new Layout('@views/error');
         $view->populate([
             'env' => APPLICATION_ENV,
@@ -356,7 +357,7 @@ class Error extends Diagnostic
             'trace' => $this->callstack,
             'code' => $this->code,
             'status' => $this->status,
-            'time' => $this->application->timer->all(5),
+            'time' => $app->timer->all(5),
         ]);
 
         return new Response\HTML($view->render(), $this->code);

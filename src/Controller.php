@@ -28,7 +28,6 @@ use Hazaar\Controller\Response\HTTP\Redirect;
  */
 abstract class Controller implements Controller\Interfaces\Controller
 {
-    protected Application $application;
     protected string $name;
     protected Request $request;
     protected int $statusCode = 0;
@@ -56,9 +55,8 @@ abstract class Controller implements Controller\Interfaces\Controller
      *
      * @param string $name The name of the controller.  This is the name used when generating URLs.
      */
-    public function __construct(Application $application, ?string $name = null)
+    public function __construct(?string $name = null)
     {
-        $this->application = $application;
         $this->name = strtolower(null !== $name ? $name : get_class($this));
         $this->addHelper('response');
     }

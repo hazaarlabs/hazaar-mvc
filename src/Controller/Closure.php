@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller;
 
-use Hazaar\Application;
 use Hazaar\Application\Route;
 use Hazaar\Controller;
 use Hazaar\Controller\Response\JSON;
@@ -21,9 +20,9 @@ class Closure extends Controller
 {
     protected \Closure $closure;
 
-    public function __construct(Application $application, \Closure $closure)
+    public function __construct(\Closure $closure)
     {
-        parent::__construct($application);
+        parent::__construct();
         $this->closure = $closure;
     }
 
@@ -40,7 +39,7 @@ class Closure extends Controller
      */
     public function run(?Route $route = null): Response
     {
-        $response = call_user_func($this->closure);
+        $response = call_user_func_array($this->closure, $route->getActionArgs());
         if ($response instanceof Response) {
             return $response;
         }
