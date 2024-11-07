@@ -19,12 +19,8 @@ use Hazaar\Model\Attributes\Required;
 class Email extends Model
 {
     #[Required]
-    public string $name ;
+    protected string $name;
 
     #[Required]
-    public string $address {
-        get  {
-            return '"'.$this->address.'"!!!';
-        }
-    }
+    protected string $address;
 }

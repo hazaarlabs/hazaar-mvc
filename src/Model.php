@@ -114,7 +114,6 @@ abstract class Model implements \jsonSerializable, \Iterator
 
     public function __get(string $propertyName): mixed
     {
-        dump('asd');
         return $this->get($propertyName);
     }
 
