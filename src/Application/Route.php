@@ -20,19 +20,30 @@ class Route
      * @var array<mixed>
      */
     private array $actionArgs = [];
-    private bool $namedActionArgs = false;
+
+    /**
+     * @var array<string,\ReflectionParameter>
+     */
+    private array $callableParameters = [];
 
     /**
      * @param array<string> $methods
      */
-    public function __construct(mixed $callable, ?string $path = null, array $methods = [], bool $namedActionArgs = false)
+    public function __construct(mixed $callable, ?string $path = null, array $methods = [])
     {
         $this->callable = $callable;
         $this->path = $path;
         $this->methods = array_map('strtoupper', $methods);
-        $this->namedActionArgs = $namedActionArgs;
         if (is_array($this->callable) && isset($this->callable[2]) && is_array($this->callable[2])) {
             $this->actionArgs = $this->callable[2];
+        } else {
+            $callableReflection = ($this->callable instanceof \Closure)
+                ? new \ReflectionFunction($this->callable)
+                : new \ReflectionMethod($this->callable[0], $this->callable[1]);
+
+            foreach ($callableReflection->getParameters() as $param) {
+                $this->callableParameters[$param->getName()] = $param;
+            }
         }
     }
 
@@ -85,37 +96,44 @@ class Route
         if (count($routePath) !== count($path)) {
             return false;
         }
-        foreach ($routePath as $i => &$routePart) {
-            if ($routePart === $path[$i]) {
+        foreach ($routePath as $routePartID => &$routePart) {
+            if ($routePart === $path[$routePartID]) {
                 continue;
             }
-            if (('{' === substr($routePart, 0, 1) && '}' === substr($routePart, -1))
-                || '<' === substr($routePart, 0, 1) && '>' === substr($routePart, -1)) {
-                if (false !== strpos($routePart, ':')) {
-                    list($type, $key) = explode(':', substr($routePart, 1, -1));
-                    if (('int' === $type || 'integer' === $type
-                        || 'float' === $type || 'double' === $type)
-                        && !is_numeric($path[$i])) {
-                        return false;
-                    }
-                    if ('bool' === $type || 'boolean' === $type) {
-                        $path[$i] = boolify($path[$i]);
-                    } elseif ('array' === $type) {
-                        $path[$i] = explode(',', $path[$i]);
-                    } elseif ('json' === $type) {
-                        $path[$i] = json_decode($path[$i], true);
-                    } else {
-                        settype($path[$i], $type);
-                    }
-                    $this->actionArgs[$key] = $path[$i];
+            if (!(('{' === substr($routePart, 0, 1) && '}' === substr($routePart, -1))
+                || '<' === substr($routePart, 0, 1) && '>' === substr($routePart, -1))) {
+                return false;
+            }
+            if (false !== strpos($routePart, ':')) {
+                list($routeType, $actionArgName) = explode(':', substr($routePart, 1, -1));
+            } else {
+                $actionArgName = substr($routePart, 1, -1);
+                if (isset($this->callableParameters[$actionArgName])
+                    && $this->callableParameters[$actionArgName]->hasType()) {
+                    // @phpstan-ignore method.notFound
+                    $routeType = $this->callableParameters[$actionArgName]->getType()->getName();
                 } else {
-                    $this->actionArgs[] = $path[$i];
+                    $routeType = 'mixed';
                 }
-
-                continue;
             }
-
-            return false;
+            if (!isset($this->callableParameters[$actionArgName])) {
+                return false;
+            }
+            if (('int' === $routeType || 'integer' === $routeType
+                || 'float' === $routeType || 'double' === $routeType)
+                && !is_numeric($path[$routePartID])) {
+                return false;
+            }
+            if ('bool' === $routeType || 'boolean' === $routeType) {
+                $path[$routePartID] = boolify($path[$routePartID]);
+            } elseif ('array' === $routeType) {
+                $path[$routePartID] = explode(',', $path[$routePartID]);
+            } elseif ('json' === $routeType) {
+                $path[$routePartID] = json_decode($path[$routePartID], true);
+            } elseif ('mixed' !== $routeType) {
+                settype($path[$routePartID], $routeType);
+            }
+            $this->actionArgs[$actionArgName] = $path[$routePartID];
         }
 
         return true;
@@ -188,18 +206,5 @@ class Route
     public function getActionArgs(): array
     {
         return $this->actionArgs;
-    }
-
-    /**
-     * Retrieves the named action arguments flag.
-     *
-     * This method returns the namedActionArgs property, which is used to determine
-     * whether the action arguments are named.
-     *
-     * @return bool the namedActionArgs flag
-     */
-    public function hasNamedActionArgs(): bool
-    {
-        return $this->namedActionArgs;
     }
 }

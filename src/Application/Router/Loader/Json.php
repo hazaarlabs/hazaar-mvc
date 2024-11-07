@@ -80,13 +80,11 @@ class Json extends Loader
                 $controller = 'Application\Controllers\\'.ucfirst($controller);
             }
             $action = $route->get('action');
-            $namedActionArgs = false;
             $args = null;
             if ($route->has('args')) {
-                $namedActionArgs = true;
                 $args = $route->get('args')->toArray();
             }
-            Router::match($route->get('methods', []), $route->get('route', ''), [$controller, $action, $args], $namedActionArgs);
+            Router::match($route->get('methods', []), $route->get('route', ''), [$controller, $action, $args]);
         }
 
         return true;

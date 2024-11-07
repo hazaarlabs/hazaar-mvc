@@ -105,7 +105,7 @@ abstract class Controller implements Controller\Interfaces\Controller
             return $response;
         }
         // Execute the controller action
-        $response = $this->runAction($route->getAction(), $route->getActionArgs(), $route->hasNamedActionArgs());
+        $response = $this->runAction($route->getAction(), $route->getActionArgs());
         if (false === $response) {
             throw new NoAction($this->name);
         }
@@ -114,7 +114,7 @@ abstract class Controller implements Controller\Interfaces\Controller
         return $response;
     }
 
-    public function runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): false|Response
+    public function runAction(string $actionName, array $actionArgs = []): false|Response
     {
         return false;
     }
