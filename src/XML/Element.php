@@ -69,7 +69,7 @@ class Element implements \ArrayAccess, \Iterator
     /**
      * The default namespace prefix to use when accessing child members.
      */
-    protected string $__default_namespace;
+    protected ?string $__default_namespace = null;
 
     /**
      * An array of namespaces defined on this node.
@@ -649,7 +649,9 @@ class Element implements \ArrayAccess, \Iterator
                                 if (']' == $c) {
                                     if (substr($xml, $i, strlen($this->close_tag) + 2) == (']]'.$this->close_tag)) {
                                         $i += 3;
-                                        $parent->value($cdata);
+                                        if ($parent) {
+                                            $parent->value($cdata);
+                                        }
 
                                         continue 2;
                                     }
@@ -667,7 +669,7 @@ class Element implements \ArrayAccess, \Iterator
                     continue;
                 }
                 if ('/' == substr($node, 0, 1)) {
-                    if (substr($node, 1) == $parent->getName(true)) {
+                    if ($parent && substr($node, 1) == $parent->getName(true)) {
                         $parent->value($data);
                         $parent = array_pop($parents);
                         $data = '';
@@ -858,6 +860,28 @@ class Element implements \ArrayAccess, \Iterator
             $this->__reset = true;
         }
         reset($this->__children);
+    }
+
+    /**
+     * Returns the child element at the specified index.
+     *
+     * @param int $index The index of the child element to return
+     */
+    public function removeIndex(int $index): void
+    {
+        if (is_array($this->__children) && array_key_exists($index, $this->__children)) {
+            unset($this->__children[$index]);
+        }
+    }
+
+    /**
+     * Returns the child element at the specified index.
+     *
+     * @param int $index The index of the child element to return
+     */
+    public function getIndex(int $index): mixed
+    {
+        return ake($this->__children, $index);
     }
 
     /**
