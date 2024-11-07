@@ -93,9 +93,7 @@ class Diagnostic extends Action
     final public function run(?Route $route = null): Response
     {
         if ($this->responseType && method_exists($this, $this->responseType)) {
-            $response = call_user_func([$this, $this->responseType]);
-        } elseif (method_exists($this, 'run')) {
-            $response = $this->run($route);
+            $response = call_user_func([$this, $this->responseType], $this->caller);
         } else {
             $response = $this->html();
         }
