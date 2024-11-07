@@ -47,9 +47,14 @@ class Dump extends Diagnostic
      */
     private array $log = [];
 
-    public function __construct(mixed $data)
+    /**
+     * Constructor.
+     *
+     * @param array<mixed> $data the data items to be dumped
+     */
+    public function __construct(array $data)
     {
-        parent::__construct( 'debug');
+        parent::__construct('debug');
         $this->data = $data;
     }
 
