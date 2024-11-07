@@ -40,7 +40,6 @@ use Hazaar\XML\Element;
 class Dump extends Diagnostic
 {
     private mixed $data = null;
-    private float $execTime = -1;
     private bool $backtrack = false;
 
     /**
@@ -48,10 +47,9 @@ class Dump extends Diagnostic
      */
     private array $log = [];
 
-    public function __construct(mixed $data, Application $application)
+    public function __construct(mixed $data)
     {
-        parent::__construct($application, 'debug');
-        $this->execTime = $this->application->GLOBALS['hazaar']['exec_start'];
+        parent::__construct( 'debug');
         $this->data = $data;
     }
 
@@ -169,10 +167,11 @@ class Dump extends Diagnostic
      */
     public function html(array $data = []): Response\HTML
     {
+        $app = Application::getInstance();
         $view = new Layout('@views/dump');
         $data['env'] = APPLICATION_ENV;
         $data['data'] = $this->data;
-        $data['time'] = $this->application->timer->all();
+        $data['time'] = $app->timer->all();
         $data['log'] = $this->log;
         $view->populate($data);
         if (true === $this->backtrack) {

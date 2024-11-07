@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller;
 
+use Hazaar\Application;
 use Hazaar\Application\Request;
 use Hazaar\Application\Request\HTTP;
 use Hazaar\Application\Route;
@@ -60,7 +61,7 @@ class Diagnostic extends Action
 
                         break;
                 }
-            } elseif ($responseType = $this->application->getResponseType()) {
+            } elseif (($app = Application::getInstance()) && ($responseType = $app->getResponseType())) {
                 $this->responseType = $responseType;
             }
         } else {

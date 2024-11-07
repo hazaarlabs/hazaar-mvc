@@ -1057,7 +1057,7 @@ function dump(mixed $data = null, bool $backtrace = false): void
     }
     if (defined('HAZAAR_VERSION') && ($app = Application::getInstance())) {
         if (isset($app->router)) {
-            $controller = new Dump($data, $app);
+            $controller = new Dump($data);
             $controller->toggleBacktrace($backtrace);
             if (is_array($dumpLog)) {
                 $controller->addLogEntries($dumpLog);
