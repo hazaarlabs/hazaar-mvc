@@ -378,16 +378,18 @@ class View implements \ArrayAccess
      *
      * This method is responsible for loading the view files from disk, rendering it and returning it's output.
      *
+     * @param array<mixed> $data The data to pass to the view.  This data will be merged with any existing view data.
+     *
      * @internal
      */
-    public function render(): string
+    public function render(?array $data = null): string
     {
         $output = '';
         $parts = pathinfo($this->viewFile);
         if ('tpl' == ake($parts, 'extension')) {
             $template = new File\Template\Smarty($this->viewFile);
             $template->registerFunctionHandler($this);
-            $output = $template->render($this->data);
+            $output = $template->render($data ?? $this->data);
         } else {
             ob_start();
             if (!($file = $this->getViewFile()) || !file_exists($file)) {
@@ -613,7 +615,7 @@ class View implements \ArrayAccess
         /**
          * Search paths for view helpers. The order here matters because apps should be able to override built-in helpers.
          */
-        $search_prefixes = ['\\Application\\Helper\\View', '\\Hazaar\\View\\Helper'];
+        $search_prefixes = ['\Application\Helper\View', '\Hazaar\View\Helper'];
         $name = \ucfirst($name);
         foreach ($search_prefixes as $prefix) {
             $class = $prefix.'\\'.$name;
