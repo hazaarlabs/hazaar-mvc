@@ -75,9 +75,11 @@ class Layout extends View
      *
      * If the 'prepare' flag is set to true in the view configuration, the layout will be prepared before rendering.
      *
+     * @param array<mixed> $data the data to render the layout with
+     *
      * @return string the rendered layout as a string
      */
-    public function render(): string
+    public function render(?array $data = []): string
     {
         if (true === $this->application->config['view']['prepare']) {
             $this->prepare();

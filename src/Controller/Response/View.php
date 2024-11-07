@@ -17,10 +17,16 @@ class View extends HTML
      */
     private array $__data = [];
 
-    public function __construct(HazaarView|string $view)
+    /**
+     * @param null|array<string, mixed> $data
+     */
+    public function __construct(HazaarView|string $view, ?array $data = null)
     {
         parent::__construct();
         $this->load($view);
+        if (null !== $data) {
+            $this->populate($data);
+        }
     }
 
     protected function __prepare(Controller $controller): void
@@ -72,6 +78,6 @@ class View extends HTML
 
     public function getContent(): string
     {
-        return $this->_view->render();
+        return $this->_view->render($this->__data);
     }
 }
