@@ -251,25 +251,24 @@ class Router
      *
      * @param mixed $callable the callable to be used for the new route
      */
-    public static function set(mixed $callable, ?string $path = null, bool $namedActionArgs = false): void
+    public static function set(mixed $callable, ?string $path = null): void
     {
         if (!self::$instance) {
             return;
         }
-        self::$instance->setRoute(new Route($callable, $path, [], $namedActionArgs));
+        self::$instance->setRoute(new Route($callable, $path, []));
     }
 
     /**
      * Matches a route with the given HTTP methods, path, and callable.
      *
-     * @param null|array<string>|string $methods         The HTTP methods to match (e.g., ['GET', 'POST']).
-     * @param string                    $path            The path to match (e.g., '/user/{id}').
-     * @param mixed                     $callable        The callable to execute when the route is matched.
-     *                                                   It can be a string in the format 'Class::method',
-     *                                                   an array with the class and method, or a Closure.
-     * @param bool                      $namedActionArgs whether to use named action arguments
+     * @param null|array<string>|string $methods  The HTTP methods to match (e.g., ['GET', 'POST']).
+     * @param string                    $path     The path to match (e.g., '/user/{id}').
+     * @param mixed                     $callable The callable to execute when the route is matched.
+     *                                            It can be a string in the format 'Class::method',
+     *                                            an array with the class and method, or a Closure.
      */
-    public static function match(null|array|string $methods, string $path, mixed $callable, bool $namedActionArgs = false): void
+    public static function match(null|array|string $methods, string $path, mixed $callable): void
     {
         if (!self::$instance) {
             return;
@@ -277,7 +276,7 @@ class Router
         if (is_string($callable)) {
             $callable = explode('::', $callable);
         }
-        self::$instance->addRoute(new Route($callable, $path, $methods, $namedActionArgs));
+        self::$instance->addRoute(new Route($callable, $path, $methods));
     }
 
     /**

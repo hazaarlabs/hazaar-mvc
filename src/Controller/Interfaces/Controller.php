@@ -14,5 +14,5 @@ interface Controller
     /**
      * @param array<int|string,mixed> $actionArgs
      */
-    public function runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): false|Response;
+    public function runAction(string $actionName, array $actionArgs = []): false|Response;
 }
