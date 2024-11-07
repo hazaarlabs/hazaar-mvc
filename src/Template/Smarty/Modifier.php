@@ -127,8 +127,21 @@ class Modifier
     {
         ob_start();
         var_dump($value);
+        $output = ob_get_clean();
+        if ('<pre' === substr($output, 0, 4)) {
+            $offsetCR = strpos($output, "\n") + 1;
+            $suffixPRE = strrpos($output, '</pre>');
+            $offsetSmallOpen = strpos($output, '<small>', $offsetCR);
+            $offsetSmallClose = strpos($output, '</small>', $offsetSmallOpen) + 8;
+            $output = substr($output, $offsetSmallClose, $suffixPRE - $offsetSmallClose);
+        }
 
-        return ob_get_clean();
+        return trim($output);
+    }
+
+    public function export(mixed $value): string
+    {
+        return var_export($value, true);
     }
 
     public function type(mixed $value): string
