@@ -114,10 +114,6 @@ Build Docs:
       - docs/src/api
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
-    - changes:
-        - docs/**/*
-      when: always
-    - when: never
 
 Build Production Documentation:
   extends: .Build Image
