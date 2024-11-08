@@ -1,27 +1,37 @@
-export default {
-    title: "Hazaar MVC",
-    description: "A lightweight MVC framework for PHP",
-    lastUpdated: true,
-    cleanUrls: true,
+import { defaultTheme } from '@vuepress/theme-default'
+import { defineUserConfig } from 'vuepress/cli'
+import { viteBundler } from '@vuepress/bundler-vite'
+
+export default defineUserConfig({
+    lang: 'en-US',
+
+    title: 'Hazaar MVC',
+    description: 'Documentation for the Hazaar MVC Framework',
+
     head: [
         ['meta', { name: 'theme-color', content: '#3c8772' }]
     ],
-    themeConfig: {
-        nav: nav(),
+
+    theme: defaultTheme({
+        logo: 'images/hazaar-logo.svg',
+
+        navbar: nav(),
         sidebar: {
             '/guide/': sidebarGuide(),
             '/example/': sidebarExample(),
-            '/reference/': sidebarReference()
+            '/reference/': sidebarReference(),
+            '/api/': [
+                { text: 'API Reference', link: '/api/Home' },
+            ],
         },
-        socialLinks: [
-            { icon: 'github', link: 'https://github.com/vuejs/vitepress' }
-        ],
         footer: {
             message: 'Released under the Apache 2.0 License.',
             copyright: 'Copyright © 2012-present Jamie Carl'
         }
-    }
-}
+    }),
+
+    bundler: viteBundler(),
+});
 
 function nav() {
     return [
@@ -29,19 +39,8 @@ function nav() {
         { text: 'API', link: '/api/Home', activeMatch: '/api/' },
         { text: 'Examples', link: '/example/your-first-app', activeMatch: '/example/' },
         { text: 'Reference', link: '/reference/constants', activeMatch: '/reference/' },
-        {
-            text: 'About',
-            items: [
-              {
-                text: 'What is Hazaar MVC?',
-                link: '/guide/what-is-hazaar-mvc'
-              },
-              {
-                text: 'The Team',
-                link: '/team'
-              }
-            ]
-        }
+        { text: 'Team', link: '/team' },
+        { text: 'Test', link: '/test' }
     ]
 }
 
@@ -49,6 +48,7 @@ function sidebarGuide() {
     return [
         {
             text: 'Introduction',
+            link: '/guide/introduction',
             items: [
                 { text: 'What is Hazaar MVC?', link: '/guide/what-is-hazaar-mvc' },
                 { text: 'Getting Started', link: '/guide/getting-started' },
@@ -74,9 +74,9 @@ function sidebarGuide() {
                 { text: 'Helpers', link: '/guide/basics/helper-functions' }
             ]
         },
-	{
-	    text: 'Databases',
-	    items: [
+        {
+            text: 'Databases',
+            items: [
                 { text: 'Overview', link: '/guide/dbi/overview', },
                 { text: 'Configuration', link: '/guide/dbi/configure', },
                 { text: 'Schema Manager', link: '/guide/dbi/schema-manager', },
@@ -84,8 +84,8 @@ function sidebarGuide() {
                 { text: 'Encryption', link: '/guide/dbi/encryption', },
                 { text: 'Filesystem', link: '/guide/dbi/filesystem', },
                 { text: 'Parser', link: '/guide/dbi/parser', }
-	    ]
-	},
+            ]
+        },
         {
             text: 'Advanced',
             items: [
