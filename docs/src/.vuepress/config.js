@@ -9,13 +9,16 @@ export default defineUserConfig({
     description: 'Documentation for the Hazaar MVC Framework',
 
     theme: defaultTheme({
-        logo: 'https://vuejs.press/images/hero.png',
+        logo: 'images/hazaar-logo.svg',
 
         navbar: nav(),
         sidebar: {
             '/guide/': sidebarGuide(),
             '/example/': sidebarExample(),
-            '/reference/': sidebarReference()
+            '/reference/': sidebarReference(),
+            '/api/': [
+                { text: 'API Reference', link: '/api/Home' },
+            ]
         },
         footer: {
             message: 'Released under the Apache 2.0 License.',
@@ -32,6 +35,7 @@ function nav() {
         { text: 'API', link: '/api/Home', activeMatch: '/api/' },
         { text: 'Examples', link: '/example/your-first-app', activeMatch: '/example/' },
         { text: 'Reference', link: '/reference/constants', activeMatch: '/reference/' },
+        { text: 'Team', link: '/team' },
     ]
 }
 
@@ -39,6 +43,7 @@ function sidebarGuide() {
     return [
         {
             text: 'Introduction',
+            link: '/guide/introduction',
             items: [
                 { text: 'What is Hazaar MVC?', link: '/guide/what-is-hazaar-mvc' },
                 { text: 'Getting Started', link: '/guide/getting-started' },

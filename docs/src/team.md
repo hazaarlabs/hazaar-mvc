@@ -6,7 +6,7 @@ import {
   VPTeamPage,
   VPTeamPageTitle,
   VPTeamMembers
-} from 'vitepress/theme'
+} from 'vuepress/theme'
 
 const members = [
   {
