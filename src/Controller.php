@@ -73,8 +73,6 @@ abstract class Controller implements Controller\Interfaces\Controller
      * Get the specified helper object.
      *
      * @param string $helper the name of the helper
-     *
-     * @return null|Helper the helper object if found, null otherwise
      */
     public function __get(string $helper): ?Helper
     {
@@ -131,8 +129,6 @@ abstract class Controller implements Controller\Interfaces\Controller
 
     /**
      * Get the name of the controller.
-     *
-     * @return string the name of the controller
      */
     public function getName(): string
     {
@@ -141,18 +137,14 @@ abstract class Controller implements Controller\Interfaces\Controller
 
     /**
      * Set the default return status code.
-     *
-     * @param int $code the default status code that will used on responses
      */
-    public function setStatus($code = null): void
+    public function setStatus(?int $code = null): void
     {
         $this->statusCode = $code;
     }
 
     /**
      * Get the status code of the controller.
-     *
-     * @return int the status code
      */
     public function getStatus(): int
     {
@@ -161,8 +153,6 @@ abstract class Controller implements Controller\Interfaces\Controller
 
     /**
      * Get the base path of the controller.
-     *
-     * @return string the base path of the controller
      */
     public function getBasePath(): string
     {
@@ -171,8 +161,6 @@ abstract class Controller implements Controller\Interfaces\Controller
 
     /**
      * Set the base path for the controller.
-     *
-     * @param string $path the base path to set
      */
     public function setBasePath(string $path): void
     {
@@ -271,8 +259,6 @@ abstract class Controller implements Controller\Interfaces\Controller
      * @param array<Helper|string>|Helper|string $helper The helper to add to the controller.  This can be a helper object, a helper class name or an array of helpers.
      * @param array<mixed>                       $args   an array of arguments to pass to the helper constructor
      * @param string                             $alias  The alias to use for the helper.  If not provided, the helper name will be used.
-     *
-     * @return bool returns true if the helper was added successfully
      */
     public function addHelper(array|Helper|string $helper, array $args = [], ?string $alias = null): bool
     {
@@ -312,8 +298,6 @@ abstract class Controller implements Controller\Interfaces\Controller
      * Checks if a helper exists.
      *
      * @param string $helper the name of the helper to check
-     *
-     * @return bool returns true if the helper exists, false otherwise
      */
     public function hasHelper($helper): bool
     {
@@ -334,14 +318,12 @@ abstract class Controller implements Controller\Interfaces\Controller
         return true;
     }
 
-    /*s
+    /**
      * Find a helper class by name.
      *
      * This method searches for view helper classes based on the given name. The search order is important because it allows apps to override built-in helpers.
      *
      * @param string $name the name of the helper class to find
-     *
-     * @return null|string the fully qualified class name of the helper, or null if not found
      */
     private function findHelper(string $name): ?string
     {
@@ -367,8 +349,6 @@ abstract class Controller implements Controller\Interfaces\Controller
      * @param string       $action     the action name
      * @param array<mixed> $actionArgs the action arguments
      * @param null|string  $cacheName  the cache name
-     *
-     * @return false|string the cache key, or false if the action is not cached
      */
     private function getCacheKey(string $controller, string $action, ?array $actionArgs = null, ?string &$cacheName = null): false|string
     {

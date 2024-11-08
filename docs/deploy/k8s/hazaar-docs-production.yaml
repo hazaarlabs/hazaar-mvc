@@ -1,0 +1,94 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hazaar-docs
+  namespace: hazaar
+  labels:
+    app: hazaar-docs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hazaar-docs
+  template:
+    metadata:
+      labels:
+        app: hazaar-docs
+    spec:
+      containers:
+      - name: hazaar-docs
+        image: registry.hazaar.io/hazaar/hazaar-docs:production
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 800m
+            memory: 500M
+          requests:
+            cpu: 400m
+            memory: 250M
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hazaar-docs
+  namespace: hazaar
+spec:
+  selector:
+    app: hazaar-docs
+  ports:
+    - protocol: TCP
+      port: 80
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hazaar-docs
+  namespace: hazaar
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: hazaar.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hazaar-docs
+                port:
+                  number: 80
+ 
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hazaar-docs
+  namespace: hazaar
+spec:
+  scaleTargetRef:
+    kind: Deployment
+    name: hazaar-docs
+    apiVersion: apps/v1
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+
+ 

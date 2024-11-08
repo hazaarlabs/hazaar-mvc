@@ -6,13 +6,48 @@
 # Note that environment variables can be set in several places
 # See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
 stages:
-- build
+- build_test
 - test
+- build
+- package
+- deploy
+
 variables:
   APPLICATION_PATH: "."
-  UNIT_TEST_IMAGE: "$CI_REGISTRY_IMAGE"
+  UNIT_TEST_IMAGE: "$CI_REGISTRY_IMAGE:test"
+  APP_VERSION: $CI_PIPELINE_IID
+
+.Build Image:
+  stage: package
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - echo "ENVIRONMENT - $CI_ENVIRONMENT_NAME"
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+    - apk add npm git
+  script:
+    - cd docs
+    - npm install
+    - npm run build
+    - docker build --pull --rm --target $CI_ENVIRONMENT_NAME -f "Dockerfile" -t $CI_REGISTRY_IMAGE:docs -t $CI_REGISTRY_IMAGE:docs-$APP_VERSION -t $CI_REGISTRY_IMAGE:docs-$CI_ENVIRONMENT_NAME --build-arg CI_ENVIRONMENT_NAME .
+    - docker push --all-tags $CI_REGISTRY_IMAGE
+
+.Deploy Image:
+  stage: deploy
+  image:    
+    name: bitnami/kubectl:latest
+    entrypoint: ['']
+  script:
+    - kubectl config get-contexts
+    - kubectl config use-context $GITLAB_AGENT_CONTEXT
+    - kubectl config set-context --current --namespace=hazaar
+    - kubectl get pods
+    - kubectl apply -f docs/deploy/k8s/hazaar-docs-$CI_ENVIRONMENT_NAME.yaml
+    - kubectl set image $K8_DEPLOYMENT_NAME $K8_CONTAINER_NAME=$CI_REGISTRY_IMAGE:docs-$APP_VERSION
+
 Build Test Image:
-  stage: build
+  stage: build_test
   image: docker:latest
   services:
   - docker:dind
@@ -28,6 +63,7 @@ Build Test Image:
     - master
     changes:
     - Dockerfile
+
 Code Quality:
   stage: test
   image: overtrue/phplint:latest
@@ -39,6 +75,7 @@ Code Quality:
     when: always
     reports:
       junit: phplint-test-results.xml
+
 Static Analysis:
   stage: test
   image: composer
@@ -50,9 +87,10 @@ Static Analysis:
     when: always
     reports:
       junit: phpstan-test-results.xml
+
 Unit Testing:
   stage: test
-  image: "$UNIT_TEST_IMAGE:latest"
+  image: $UNIT_TEST_IMAGE
   variables:
     APPLICATION_PATH: tests/application
   before_script:
@@ -63,3 +101,36 @@ Unit Testing:
     when: always
     reports:
       junit: phpunit-test-results.xml
+
+Build Docs:
+  stage: build
+  image:
+    name: jamiecarl/phpdoc-markdown
+    entrypoint: [""]
+  script:
+    - phpdoc -d src -t docs/src/api --template="/md/themes/markdown"
+  artifacts:
+    paths:
+      - docs/src/api
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+    - changes:
+        - docs/**/*
+      when: always
+    - when: never
+
+Build Production Documentation:
+  extends: .Build Image
+  environment: production
+  needs: 
+    - Build Docs
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+Deploy Documentation to Production:
+  extends: .Deploy Image
+  environment: production
+  needs: 
+    - Build Production Documentation
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'

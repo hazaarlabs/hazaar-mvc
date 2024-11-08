@@ -12,7 +12,10 @@ declare(strict_types=1);
 namespace Hazaar\Controller;
 
 use Hazaar\Application;
-use Hazaar\Application\Request\HTTP;
+use Hazaar\Controller\Response\HTML;
+use Hazaar\Controller\Response\JSON;
+use Hazaar\Controller\Response\Text;
+use Hazaar\Controller\Response\XML;
 use Hazaar\Loader;
 use Hazaar\View\Layout;
 use Hazaar\XML\Element;
@@ -41,7 +44,10 @@ class Error extends Diagnostic
      */
     protected array $callstack = [];
     protected string $shortMessage = '';
-    // The HTTP error code to throw. By default it is 500 Internal Server Error.
+
+    /**
+     * The HTTP error code to throw. By default it is 500 Internal Server Error.
+     */
     protected int $code = 500;
     protected string $status = 'Internal Error';
     protected string $responseType = 'html';
@@ -235,9 +241,9 @@ class Error extends Diagnostic
      *   - 'file' (optional): The file where the error occurred (if display_errors is enabled).
      * - 'trace' (optional): The debug backtrace (if display_errors is enabled).
      *
-     * @return Response\JSON the JSON response containing the error details
+     * @return JSON the JSON response containing the error details
      */
-    public function json(): Response\JSON
+    public function json(): JSON
     {
         $error = [
             'ok' => false,
@@ -255,7 +261,7 @@ class Error extends Diagnostic
             $error['trace'] = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
         }
 
-        return new Response\JSON($error, $this->code);
+        return new JSON($error, $this->code);
     }
 
     /**
@@ -265,9 +271,9 @@ class Error extends Diagnostic
      * The response includes details about the error class, error code, status, error
      * message, file, and line number where the error occurred.
      *
-     * @return Response\XML the XML-RPC fault response
+     * @return XML the XML-RPC fault response
      */
-    public function xmlrpc(): Response\XML
+    public function xmlrpc(): XML
     {
         $xml = new Element('xml');
         $struct = $xml->add('fault')->add('value')->add('struct');
@@ -290,7 +296,7 @@ class Error extends Diagnostic
         $line->add('name', 'faultLine');
         $line->add('value')->add('int', (string) $this->errline);
 
-        return new Response\XML($xml);
+        return new XML($xml);
     }
 
     /**
@@ -301,9 +307,9 @@ class Error extends Diagnostic
      * line, message, and backtrace. The backtrace includes details about each call
      * in the stack, such as the file, line, class, and function.
      *
-     * @return Response\Text a text response containing the formatted exception details
+     * @return Text a text response containing the formatted exception details
      */
-    public function text(): Response\Text
+    public function text(): Text
     {
         $out = "*****************************\n\tEXCEPTION\n*****************************\n\n";
         $out .= "Environment:\t".APPLICATION_ENV."\n";
@@ -325,7 +331,7 @@ class Error extends Diagnostic
         }
         $out .= "\n";
 
-        return new Response\Text($out, $this->code);
+        return new Text($out, $this->code);
     }
 
     /**
@@ -336,9 +342,9 @@ class Error extends Diagnostic
      * file, line, class, type, short message, trace, status code, and execution time.
      * It then renders the view and returns it as an HTML response.
      *
-     * @return Response\HTML the rendered HTML response containing the error details
+     * @return HTML the rendered HTML response containing the error details
      */
-    public function html(): Response\HTML
+    public function html(): HTML
     {
         $app = Application::getInstance();
         $view = new Layout('@views/error');
@@ -360,13 +366,14 @@ class Error extends Diagnostic
             'time' => $app->timer->all(5),
         ]);
 
-        return new Response\HTML($view->render(), $this->code);
+        return new HTML($view->render(), $this->code);
     }
 
     /**
      * Loads the status codes from the HTTP_Status.dat file and returns an array of status codes.
      *
-     * @return array<int, string> the array of status codes, where the key is the status code and the value is the corresponding status message
+     * @return array<int, string> the array of status codes, where the key is the status code and
+     *                            the value is the corresponding status message
      */
     private function loadStatusCodes(): array
     {
