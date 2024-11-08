@@ -8,6 +8,10 @@ export default defineUserConfig({
     title: 'Hazaar MVC',
     description: 'Documentation for the Hazaar MVC Framework',
 
+    head: [
+        ['meta', { name: 'theme-color', content: '#3c8772' }]
+    ],
+
     theme: defaultTheme({
         logo: 'images/hazaar-logo.svg',
 
@@ -18,7 +22,7 @@ export default defineUserConfig({
             '/reference/': sidebarReference(),
             '/api/': [
                 { text: 'API Reference', link: '/api/Home' },
-            ]
+            ],
         },
         footer: {
             message: 'Released under the Apache 2.0 License.',
@@ -36,6 +40,7 @@ function nav() {
         { text: 'Examples', link: '/example/your-first-app', activeMatch: '/example/' },
         { text: 'Reference', link: '/reference/constants', activeMatch: '/reference/' },
         { text: 'Team', link: '/team' },
+        { text: 'Test', link: '/test' }
     ]
 }
 
