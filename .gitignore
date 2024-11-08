@@ -19,5 +19,8 @@ composer.lock
 phpunit-test-results.xml
 phplint-test-results.xml
 docs/node_modules
-docs/src/.vitepress/cache
-docs/src/.vitepress/dist
+docs/src/.vuepress/.cache
+docs/src/.vuepress/.temp
+docs/src/.vuepress/dist
+docs/src/api
+.phpdoc
