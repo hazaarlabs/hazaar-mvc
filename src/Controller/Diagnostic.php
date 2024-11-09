@@ -127,7 +127,7 @@ class Diagnostic extends Action
     /**
      * Generates an XML-RPC response.
      *
-     * This method creates a SimpleXMLElement with a root element <xml> and adds a child element <data> with the content 'NO CONTENT'.
+     * This method creates a SimpleXMLElement with a root element `xml` and adds a child element `data` with the content 'NO CONTENT'.
      * It then returns this XML structure wrapped in a Response\XML object.
      *
      * @return Response\XML the XML response object containing the generated XML structure

@@ -1,21 +1,20 @@
 ---
-# https://vitepress.dev/reference/default-theme-home-page
-layout: home
+home: true
+title: Home
+heroImage: images/hazaar-logo.svg
+heroFullScreen: true
+actions:
+  - text: Get Started
+    link: /guide/getting-started
+    type: primary
 
-title: Hazaar MVC
-titleTemplate: A lightweight, high performance MVC framework for PHP
+  - text: Introduction
+    link: /guide/what-is-hazaar-mvc
+    type: default
 
-hero:
-  name: Hazaar MVC
-  text: A lightweight, high performance MVC framework for PHP
-  tagline: It works just like magic!
-  actions:
-    - theme: brand
-      text: Get Started
-      link: /guide/getting-started
-    - theme: alt
-      text: View Code 
-      link: https://git.hazaar.io/hazaar/hazaar-mvc
+  - text: API Documentation
+    link: /api/Home
+    type: default
 
 features:
   - title: High Performance
@@ -24,4 +23,6 @@ features:
     details: Hazaar MVC provides a simple and easy to use database ORM that supports multiple database types.
   - title: Realtime
     details: Hazaar MVC provides a realtime WebSockets server that allows you to push data to the browser in realtime.
+
+copyright: Apache-2.0 Licensed | Copyright © 2012-present Hazaar Labs
 ---

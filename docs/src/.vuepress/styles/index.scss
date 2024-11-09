@@ -1,0 +1,39 @@
+/**
+ * Customize default theme styling by overriding CSS variables:
+ * https://github.com/vuejs/vitepress/blob/main/src/client/theme-default/styles/vars.css
+ */
+
+:root {
+  scroll-behavior: smooth;
+}
+
+[data-theme='dark'] {
+  // brand colors
+  --vp-c-accent: #646cff;
+  --vp-c-accent-bg: #747bff;
+  --vp-c-accent-hover: #9499ff;
+  --vp-c-accent-soft: #454ce1;
+
+  // background colors
+  --vp-c-bg: #212A37;
+  --vp-c-bg-alt: #161618;
+  --vp-c-bg-elv: #202127;
+
+  // text colors
+  --vp-c-text: rgb(235 235 245 / 86%);
+  --vp-c-text-mute: rgb(235 235 245 / 60%);
+  --vp-c-text-subtle: rgb(235 235 245 / 38%);
+
+  // border colors
+  --vp-c-gutter: #000;
+  --vp-c-border: #3c3f44;
+  --vp-c-border-hard: #45484e;
+
+  // shadow color
+  --vp-c-shadow: rgb(0 0 0 / 30%);
+
+  // control colors
+  --vp-c-control: rgb(101 117 133 / 12%);
+  --vp-c-control-hover: rgb(101 117 133 / 18%);
+  --vp-c-control-disabled: #363636;
+}
