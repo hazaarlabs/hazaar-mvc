@@ -17,6 +17,17 @@ variables:
   UNIT_TEST_IMAGE: "$CI_REGISTRY_IMAGE:test"
   APP_VERSION: $CI_PIPELINE_IID
 
+.Build Docs:
+  stage: build
+  image:
+    name: jamiecarl/phpdoc-markdown
+    entrypoint: [""]
+  script:
+    - phpdoc -d src -t docs/src/api --template="/md/themes/markdown"
+  artifacts:
+    paths:
+      - docs/src/api
+
 .Build Image:
   stage: package
   image: docker:latest
@@ -29,7 +40,7 @@ variables:
   script:
     - cd docs
     - npm install
-    - npm run build
+    - npm run docs:build
     - docker build --pull --rm --target $CI_ENVIRONMENT_NAME -f "Dockerfile" -t $CI_REGISTRY_IMAGE:docs -t $CI_REGISTRY_IMAGE:docs-$APP_VERSION -t $CI_REGISTRY_IMAGE:docs-$CI_ENVIRONMENT_NAME --build-arg CI_ENVIRONMENT_NAME .
     - docker push --all-tags $CI_REGISTRY_IMAGE
 
@@ -102,28 +113,31 @@ Unit Testing:
     reports:
       junit: phpunit-test-results.xml
 
-Build Docs:
-  stage: build
-  image:
-    name: jamiecarl/phpdoc-markdown
-    entrypoint: [""]
-  script:
-    - phpdoc -d src -t docs/src/api --template="/md/themes/markdown"
-  artifacts:
-    paths:
-      - docs/src/api
+Build Testing Documentation:
+  extends: .Build Docs
+  environment: testing
   rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
-    - changes:
-        - docs/**/*
-      when: always
-    - when: never
+    - if: $CI_MERGE_REQUEST_ID
+
+Build Testing Image:
+  extends: .Build Image
+  environment: testing
+  needs: 
+    - Build Testing Documentation
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
 
 Build Production Documentation:
   extends: .Build Image
   environment: production
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+
+Build Production Image:
+  extends: .Build Image
+  environment: production
   needs: 
-    - Build Docs
+    - Build Production Documentation
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
 
@@ -134,3 +148,4 @@ Deploy Documentation to Production:
     - Build Production Documentation
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
+
