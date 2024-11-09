@@ -582,25 +582,6 @@ class View implements \ArrayAccess
     }
 
     /**
-     * Use the match/replace algorithm on a string to replace mustache tags with view data.
-     *
-     * This is similar code used in the Smarty view template renderer.
-     *
-     * So strings such as:
-     *
-     * * "Hello, {{entity}}" will replace {{entity}} with the value of `$this->entity`.
-     * * "The quick brown {{animal.one}}, jumped over the lazy {{animal.two}}" will replace the tags with values in a multi-dimensional array.
-     *
-     * @param string $string the string to perform the match/replace on
-     *
-     * @return string the modified string with mustache tags replaced with view data, or removed if the view data does not exist
-     */
-    public function matchReplace(string $string): string
-    {
-        return match_replace($string, $this->data);
-    }
-
-    /**
      * Find a helper class for the given name.
      *
      * This method searches for view helper classes in the specified search paths.
