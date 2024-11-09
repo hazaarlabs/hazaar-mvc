@@ -1,54 +1,28 @@
-export default {
-    title: "Hazaar MVC",
-    description: "A lightweight MVC framework for PHP",
-    lastUpdated: true,
-    cleanUrls: true,
-    head: [
-        ['meta', { name: 'theme-color', content: '#3c8772' }]
-    ],
-    themeConfig: {
-        nav: nav(),
-        sidebar: {
-            '/guide/': sidebarGuide(),
-            '/example/': sidebarExample(),
-            '/reference/': sidebarReference()
-        },
-        socialLinks: [
-            { icon: 'github', link: 'https://github.com/vuejs/vitepress' }
-        ],
-        footer: {
-            message: 'Released under the Apache 2.0 License.',
-            copyright: 'Copyright © 2012-present Jamie Carl'
-        }
-    }
-}
+import { hopeTheme } from "vuepress-theme-hope";
+import navbar from './navbar';
 
-function nav() {
-    return [
-        { text: 'Guide', link: '/guide/what-is-hazaar-mvc', activeMatch: '/guide/' },
-        { text: 'API', link: '/api/Home', activeMatch: '/api/' },
-        { text: 'Examples', link: '/example/your-first-app', activeMatch: '/example/' },
-        { text: 'Reference', link: '/reference/constants', activeMatch: '/reference/' },
-        {
-            text: 'About',
-            items: [
-              {
-                text: 'What is Hazaar MVC?',
-                link: '/guide/what-is-hazaar-mvc'
-              },
-              {
-                text: 'The Team',
-                link: '/team'
-              }
-            ]
-        }
-    ]
-}
+export default hopeTheme({
+    logo: 'images/hazaar-logo.svg',
+    navbar,
+    sidebar: {
+        '/guide/': sidebarGuide(),
+        '/example/': sidebarExample(),
+        '/reference/': sidebarReference(),
+        '/api/': [
+            { text: 'API Reference', link: '/api/Home' },
+        ],
+    },
+    footer: {
+        message: 'Released under the Apache 2.0 License.',
+        copyright: 'Copyright © 2012-present Jamie Carl'
+    }
+});
 
 function sidebarGuide() {
     return [
         {
             text: 'Introduction',
+            link: '/guide/introduction',
             items: [
                 { text: 'What is Hazaar MVC?', link: '/guide/what-is-hazaar-mvc' },
                 { text: 'Getting Started', link: '/guide/getting-started' },
@@ -74,9 +48,9 @@ function sidebarGuide() {
                 { text: 'Helpers', link: '/guide/basics/helper-functions' }
             ]
         },
-	{
-	    text: 'Databases',
-	    items: [
+        {
+            text: 'Databases',
+            items: [
                 { text: 'Overview', link: '/guide/dbi/overview', },
                 { text: 'Configuration', link: '/guide/dbi/configure', },
                 { text: 'Schema Manager', link: '/guide/dbi/schema-manager', },
@@ -84,8 +58,8 @@ function sidebarGuide() {
                 { text: 'Encryption', link: '/guide/dbi/encryption', },
                 { text: 'Filesystem', link: '/guide/dbi/filesystem', },
                 { text: 'Parser', link: '/guide/dbi/parser', }
-	    ]
-	},
+            ]
+        },
         {
             text: 'Advanced',
             items: [
