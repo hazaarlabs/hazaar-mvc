@@ -145,7 +145,7 @@ Deploy Documentation to Production:
   extends: .Deploy Image
   environment: production
   needs: 
-    - Build Production Documentation
+    - Build Production Image
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
 
