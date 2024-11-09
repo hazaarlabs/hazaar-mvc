@@ -1,7 +1,7 @@
 ---
 home: true
 title: Home
-heroImage: images/hazaar-logo.svg
+heroImage: hazaar-logo.svg
 heroFullScreen: true
 actions:
   - text: Get Started
@@ -23,6 +23,4 @@ features:
     details: Hazaar MVC provides a simple and easy to use database ORM that supports multiple database types.
   - title: Realtime
     details: Hazaar MVC provides a realtime WebSockets server that allows you to push data to the browser in realtime.
-
-copyright: Apache-2.0 Licensed | Copyright © 2012-present Hazaar Labs
 ---

@@ -12,10 +12,8 @@ export default hopeTheme({
             { text: 'API Reference', link: '/api/Home' },
         ],
     },
-    footer: {
-        message: 'Released under the Apache 2.0 License.',
-        copyright: 'Copyright © 2012-present Jamie Carl'
-    }
+    displayFooter: true,
+    copyright: 'Copyright © 2012-present Jamie Carl'
 });
 
 function sidebarGuide() {

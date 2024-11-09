@@ -1,7 +1,7 @@
 ---
 home: true
 title: Test Page
-heroImage: images/hazaar-logo.svg
+heroImage: hazaar-logo.svg
 actions:
   - text: Back Home
     link: /
@@ -14,8 +14,6 @@ features:
     details: This is feature two.
   - title: Feature Three
     details: This is feature three.
-
-footer: Apache-2.0 Licensed | Copyright © 2012-present Hazaar Labs
 ---
 
 ## Why Choose Hazaar MVC?

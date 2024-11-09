@@ -6,7 +6,7 @@ Hazaar MVC is a lightweight Model-View-Controller (MVC) framework written in PHP
 
 Hazaar MVC follows the traditional MVC principles, where the Model represents the data and business logic, the View handles the presentation and user interface, and the Controller manages the communication between the Model and the View.  To get a better understanding of MVC, see: [What is MVC?](/guide/what-is-mvc).
 
-![Hazaar MVC Architecture](/images/hazaar-mvc-architecture.svg)
+![Hazaar MVC Architecture](/assets/hazaar-mvc-architecture.svg)
 
 Hazaar MVC also includes a number of other features that make it easy to build web applications.  These include:
 
