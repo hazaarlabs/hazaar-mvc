@@ -37,3 +37,16 @@
   --vp-c-control-hover: rgb(101 117 133 / 18%);
   --vp-c-control-disabled: #363636;
 }
+
+.vp-hero-mask {
+  filter: blur(5px);
+  opacity: 0.25;
+}
+
+#main-title {
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+#main-description {
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.5);
+}

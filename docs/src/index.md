@@ -2,6 +2,8 @@
 home: true
 title: Home
 heroImage: hazaar-logo.svg
+bgImage: home-bg.jpg
+bgImageStyle: bg-image-blurred
 heroFullScreen: true
 actions:
   - text: Get Started
