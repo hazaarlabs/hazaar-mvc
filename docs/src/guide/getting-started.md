@@ -12,10 +12,15 @@ Rest assured, we are actively working on organizing and rewriting the documentat
 
 ### Pre-requisites
 
-* Docker Desktop
-* Visual Studio Code with the devContainers plugin.  For help with setting up Visual Studio Code for Hazaar MVC development, see [Tooling](/guide/tooling).
-* Git
-* Composer (optional)
+* [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+* [Git](https://git-scm.com/)
+* [Composer](https://getcomposer.org/) (optional)
+* [Visual Studio Code](https://code.visualstudio.com/)
+* [devContainers plugin for VSCode](https://code.visualstudio.com/docs/devcontainers/containers).  
+
+::: tip
+For help with setting up Visual Studio Code for Hazaar MVC development, see [Tooling](/guide/tooling).
+:::
 
 To get started with Hazaar MVC, you need to create an application using composer.  This is a simple process that will create a new directory containing your application and all the required dependencies.
 
