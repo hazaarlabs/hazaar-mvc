@@ -301,8 +301,6 @@ class Cron
                     }
                 }
             }
-
-            return null;
         }
 
         return mktime($rtime[1], $rtime[0], 0, $rtime[3], $rtime[2], $rtime[5]);
