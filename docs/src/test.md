@@ -237,3 +237,26 @@ markmap:
   - $x = {-b \pm \sqrt{b^2-4ac} \over 2a}$
 - Now we can wrap very very very very long text based on `maxWidth` option
 ````
+
+# Mermaid
+
+```mermaid
+---
+title: Flowchart
+---
+flowchart TB
+    c1-->a2
+    subgraph Graph One
+    a1-->a2
+    end
+    subgraph two
+    b1-->b2
+    end
+    subgraph three
+    c1-->c2
+    end
+    one --> two
+    three --> two
+    two --> c2
+```
+
