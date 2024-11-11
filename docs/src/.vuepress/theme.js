@@ -22,7 +22,8 @@ export default hopeTheme({
         mdEnhance: {
             echarts: true,
             flowchart: true,
-            markmap: true
+            markmap: true,
+            mermaid: true,
         },
         copyright: {
             global: true,
