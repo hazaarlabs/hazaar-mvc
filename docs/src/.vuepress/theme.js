@@ -36,9 +36,9 @@ export default hopeTheme({
 function sidebarGuide() {
     return [
         {
-            text: 'Introduction',
-            link: '/guide/introduction',
-            items: [
+            text: 'Introduction',  
+            collapsable: true,
+            children: [
                 { text: 'What is Hazaar MVC?', link: '/guide/what-is-hazaar-mvc' },
                 { text: 'Getting Started', link: '/guide/getting-started' },
                 { text: 'Manual Setup', link: '/guide/manual-setup' },
@@ -49,7 +49,8 @@ function sidebarGuide() {
         },
         {
             text: 'The Basics',
-            items: [
+            collapsable: true,
+            children: [
                 { text: 'Project Layout', link: '/guide/basics/layout' },
                 { text: 'Configuration', link: '/guide/basics/configuration' },
                 { text: 'Bootstrap', link: '/guide/basics/bootstrap' },
@@ -65,7 +66,8 @@ function sidebarGuide() {
         },
         {
             text: 'Databases',
-            items: [
+            collapsable: true,
+            children: [
                 { text: 'Overview', link: '/guide/dbi/overview', },
                 { text: 'Configuration', link: '/guide/dbi/configure', },
                 { text: 'Schema Manager', link: '/guide/dbi/schema-manager', },
@@ -77,7 +79,8 @@ function sidebarGuide() {
         },
         {
             text: 'Advanced',
-            items: [
+            collapsable: true,
+            children: [
                 { text: 'Caching', link: '/guide/advanced/caching/overview' },
                 { text: 'PDF Generation', link: '/guide/advanced/pdf-generation' },
                 { text: 'Strict Models', link: '/guide/advanced/strict-models' },
@@ -86,7 +89,8 @@ function sidebarGuide() {
         },
         {
             text: 'Warlock',
-            items: [
+            collapsable: true,
+            children: [
                 { text: 'Overview', link: '/guide/warlock/overview' },
                 { text: 'Delayed Execution', link: '/guide/warlock/delayed-exec' },
                 { text: 'Realtime Signals', link: '/guide/warlock/realtime-signalling' },
@@ -97,7 +101,8 @@ function sidebarGuide() {
         },
         {
             text: 'Deploy',
-            items: [
+            collapsable: true,
+            children: [
                 { text: 'Overview', link: '/guide/deploy/overview' },
                 { text: 'Apache', link: '/guide/deploy/apache' },
                 { text: 'Nginx', link: '/guide/deploy/nginx' },
