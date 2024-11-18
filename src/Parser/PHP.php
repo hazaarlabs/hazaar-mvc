@@ -61,11 +61,11 @@ class PHP
                     $this->functions[] = new ParserFunction($tokens, ake($currentNamespace, 'name'));
 
                     break;
-                    // case T_NAMESPACE:
-                    //     $this->namespaces[] = $currentNamespace = $this->parseNamespace($array);
 
-                    //     break;
+                case T_NAMESPACE:
+                    $this->namespaces[] = $currentNamespace = new ParserNamespace($tokens);
 
+                    break;
                     // case T_INTERFACE:
                     //     $this->interfaces[] = $this->parseClass($array, ake($currentNamespace, 'name'));
 
@@ -126,32 +126,6 @@ class PHP
         }
 
         return $fixedTokens;
-    }
-
-    private function parseNamespace(&$ar)
-    {
-        $token = current($ar);
-        if (T_NAMESPACE == $token->type) {
-            $namespace = [
-                'name' => [],
-                'line' => $token->line,
-            ];
-            if ($comment = $this->checkDocComment($ar)) {
-                $namespace['comment'] = $comment;
-            }
-            while ($token = next($ar)) {
-                if (is_array($token)) {
-                    if (T_NS_SEPARATOR == $token->type) {
-                        continue;
-                    }
-                    $namespace['name'][] = $token->value;
-                } elseif (';' == $token) {
-                    return $namespace;
-                }
-            }
-        }
-
-        return null;
     }
 
     private function parseConstant(&$ar)
