@@ -40,7 +40,13 @@ class ParserFunction implements TokenParser
      * @var array<ParserParameter>
      */
     public array $params = [];
-    public ?string $comment = null;
+
+    /**
+     * The comment block for the function.
+     *
+     * @var null|array<mixed>
+     */
+    public ?array $comment = null;
     public int $line;
 
     /**
@@ -87,7 +93,7 @@ class ParserFunction implements TokenParser
             next($tokens);
         }
         if ($comment = $this->checkDocComment($tokens, $count > 1)) {
-            // $this->comment = $comment;
+            $this->comment = $comment;
         }
         $token = next($tokens);
         if (T_FUNCTION == $token->type) {
@@ -104,31 +110,49 @@ class ParserFunction implements TokenParser
         while ($token = next($tokens)) {
             if ((is_string($token) && '{' === $token)
                 || ($token instanceof Token && T_CURLY_OPEN == $token->type)) {
-                return true;
+                break;
             }
             if (':' === $token) {
                 $token = next($tokens);
                 if ($token instanceof Token && T_STRING == $token->type) {
                     $this->returns = $token->value;
                 }
-            } elseif (0 === $depth) {
+            } elseif (0 === $depth && ')' !== $token) {
                 $this->params[] = new ParserParameter($tokens);
             }
         }
+        if ('variaticFunction' === $this->name) {
+            echo '';
+        }
         /*
          * If the function has no parameters, but params are defined in the docblock, we now
-         * assume that this is an old variadic function (ie: uses func_get_args() or something)
-         * so we take the docblock parameters as is
+         * assume that this is an old-style variadic function (ie: uses func_get_args())
+         * so we take the docblock parameters as is.
          */
-        // if (!array_key_exists('params', $func)
-        //     && array_key_exists('comment', $func)
-        //     && array_key_exists('tags', $func['comment'])
-        //     && array_key_exists('param', $func['comment']['tags'])) {
-        //     foreach ($func['comment']['tags']['param'] as $param) {
-        //         $func['params'][] = array_merge($param, ['name' => $param['var']]);
-        //     }
-        // }
+        if ($this->comment
+            && array_key_exists('tags', $this->comment)
+            && array_key_exists('param', $this->comment['tags'])) {
+            if (0 === count($this->params)) {
+                foreach ($this->comment['tags']['param'] as $param) {
+                    $functionParam = new ParserParameter();
+                    $functionParam->name = ltrim($param['var'] ?? '', '$');
+                    $functionParam->type = $param['type'] ?? 'mixed';
+                    $functionParam->comment = $param['desc'] ?? '';
+                    $this->params[] = $functionParam;
+                }
+            } else {
+                foreach ($this->comment['tags']['param'] as $param) {
+                    $name = ltrim($param['var'], '$');
+                    $functionParam = current(array_filter($this->params, function ($item) use ($name) {
+                        return $item->name === $name;
+                    }));
+                    if ($functionParam) {
+                        $functionParam->comment = $param['desc'] ?? '';
+                    }
+                }
+            }
+        }
 
-        return false;
+        return true;
     }
 }

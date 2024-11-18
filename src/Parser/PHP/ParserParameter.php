@@ -13,12 +13,16 @@ class ParserParameter implements TokenParser
     public mixed $default = null;
     public bool $byRef = false;
     public bool $variadic = false;
+    public string $comment = '';
 
     /**
      * @param array<Token> $tokens
      */
-    public function __construct(array &$tokens)
+    public function __construct(?array &$tokens = null)
     {
+        if (null === $tokens) {
+            return;
+        }
         if (!$this->parse($tokens)) {
             throw new \Exception('Failed to parse PHP parameter');
         }
