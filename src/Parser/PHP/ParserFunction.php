@@ -2,10 +2,9 @@
 
 namespace Hazaar\Parser\PHP;
 
-use Hazaar\Parser\PHP\Interfaces\TokenParser;
 use Hazaar\Parser\PHP\Traits\DocBlockParser;
 
-class ParserFunction implements TokenParser
+class ParserFunction extends TokenParser
 {
     use DocBlockParser;
 
@@ -13,13 +12,6 @@ class ParserFunction implements TokenParser
      * Indicates if the function is static.
      */
     public bool $static = false;
-
-    /**
-     * The namespace of the function.
-     *
-     * @var null|array<string>|string
-     */
-    public null|array|string $namespace = null;
 
     /**
      * The return access modifier of the function.
@@ -49,28 +41,13 @@ class ParserFunction implements TokenParser
     public ?array $comment = null;
     public int $line;
 
-    /**
-     * PHPFunction constructor.
-     *
-     * @param array<string|Token> $tokens
-     */
-    public function __construct(array &$tokens, ?string $namespace = null)
-    {
-        if (!$this->parse($tokens, $namespace)) {
-            throw new \Exception('Failed to parse function');
-        }
-    }
-
-    public function parse(array &$tokens, null|array|string $ns = null): bool
+    protected function parse(array &$tokens): bool
     {
         $token = current($tokens);
         if (T_FUNCTION !== $token->type) {
             return false;
         }
         $this->line = $token->line;
-        if (is_array($ns)) {
-            $this->namespace = $ns;
-        }
         $count = 0;
         while ($token = prev($tokens)) {
             if (!$token instanceof Token) {

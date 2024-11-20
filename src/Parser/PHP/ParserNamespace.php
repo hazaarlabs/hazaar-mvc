@@ -2,26 +2,14 @@
 
 namespace Hazaar\Parser\PHP;
 
-use Hazaar\Parser\PHP\Interfaces\TokenParser;
-
-class ParserNamespace implements TokenParser
+class ParserNamespace extends TokenParser
 {
     use Traits\DocBlockParser;
 
     public ?string $name = null;
     public string $comment = '';
 
-    /**
-     * @param array<Token> $tokens
-     */
-    public function __construct(array &$tokens)
-    {
-        if (!$this->parse($tokens)) {
-            throw new \Exception('Failed to parse PHP namespace');
-        }
-    }
-
-    public function parse(array &$tokens, null|array|string $ns = null): bool
+    protected function parse(array &$tokens): bool
     {
         $token = current($tokens);
         if (T_NAMESPACE == $token->type) {

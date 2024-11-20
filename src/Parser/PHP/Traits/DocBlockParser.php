@@ -14,7 +14,7 @@ trait DocBlockParser
      *
      * @return null|array<string,mixed>
      */
-    private function checkDocComment(array &$tokens, bool $doubleJump = false): ?array
+    protected function checkDocComment(array &$tokens, bool $doubleJump = false): ?array
     {
         $docBlockComment = null;
         $docBlackParser = new DocBlock();
