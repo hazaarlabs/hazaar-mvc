@@ -1,12 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Parser\PHP;
 
+use Hazaar\Parser\DocBlock;
 use Hazaar\Parser\PHP\Traits\DocBlockParser;
 
 class ParserFunction extends TokenParser
 {
     use DocBlockParser;
+
+    public int $line;
 
     /**
      * Indicates if the function is static.
@@ -19,11 +24,6 @@ class ParserFunction extends TokenParser
     public ?string $access = 'public';
 
     /**
-     * The name of the function.
-     */
-    public string $name;
-
-    /**
      * The return type of the function.
      */
     public string $returns = 'mixed';
@@ -33,13 +33,7 @@ class ParserFunction extends TokenParser
      */
     public array $params = [];
 
-    /**
-     * The comment block for the function.
-     *
-     * @var null|array<mixed>
-     */
-    public ?array $comment = null;
-    public int $line;
+    public ?DocBlock $comment = null;
 
     protected function parse(array &$tokens): bool
     {
@@ -69,9 +63,7 @@ class ParserFunction extends TokenParser
         for ($i = 0; $i < $count; ++$i) {
             next($tokens);
         }
-        if ($comment = $this->checkDocComment($tokens, $count > 1)) {
-            $this->comment = $comment;
-        }
+        $this->comment = $this->checkDocComment($tokens);
         $token = next($tokens);
         if (T_FUNCTION == $token->type) {
             $token = next($tokens);
@@ -85,7 +77,7 @@ class ParserFunction extends TokenParser
         }
         $depth = 0;
         while ($token = next($tokens)) {
-            if ((is_string($token) && '{' === $token)
+            if ((is_string($token) && ('{' === $token || ';' === $token))
                 || ($token instanceof Token && T_CURLY_OPEN == $token->type)) {
                 break;
             }
@@ -98,19 +90,46 @@ class ParserFunction extends TokenParser
                 $this->params[] = new ParserParameter($tokens);
             }
         }
-        if ('variaticFunction' === $this->name) {
-            echo '';
+        // If the next token is a semicolon, then this is a function prototype and we can stop here.
+        if (';' === $token) {
+            return true;
+        }
+
+        /**
+         * Find the end of the function by searching for it's closing bracket.
+         */
+        $openBrackets = 1;
+        while ($token = next($tokens)) {
+            if ($token instanceof Token
+                && match ($token->type) {
+                    T_FUNCTION, T_STATIC, T_PUBLIC, T_PRIVATE, T_PROTECTED, T_CLASS, T_INTERFACE => true,
+                    default => false,
+                }) {
+                prev($tokens);
+
+                break;
+            }
+            if (!is_string($token)) {
+                continue;
+            }
+            if ('{' === $token) {
+                ++$openBrackets;
+            } elseif ('}' === $token) {
+                --$openBrackets;
+            }
+            if (0 === $openBrackets) {
+                break;
+            }
         }
         /*
          * If the function has no parameters, but params are defined in the docblock, we now
          * assume that this is an old-style variadic function (ie: uses func_get_args())
          * so we take the docblock parameters as is.
          */
-        if ($this->comment
-            && array_key_exists('tags', $this->comment)
-            && array_key_exists('param', $this->comment['tags'])) {
+        if ($this->comment instanceof DocBlock
+            && $this->comment->hasTag('param')) {
             if (0 === count($this->params)) {
-                foreach ($this->comment['tags']['param'] as $param) {
+                foreach ($this->comment->tag('param') as $param) {
                     $functionParam = new ParserParameter();
                     $functionParam->name = ltrim($param['var'] ?? '', '$');
                     $functionParam->type = $param['type'] ?? 'mixed';
@@ -118,7 +137,7 @@ class ParserFunction extends TokenParser
                     $this->params[] = $functionParam;
                 }
             } else {
-                foreach ($this->comment['tags']['param'] as $param) {
+                foreach ($this->comment->tag('param') as $param) {
                     $name = ltrim($param['var'], '$');
                     $functionParam = current(array_filter($this->params, function ($item) use ($name) {
                         return $item->name === $name;

@@ -8,7 +8,6 @@ class ParserParameter extends TokenParser
 {
     use Traits\TypedValueParser;
 
-    public string $name;
     public ?string $type = null;
     public mixed $default = null;
     public bool $byRef = false;

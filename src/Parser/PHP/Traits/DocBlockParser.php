@@ -11,26 +11,17 @@ trait DocBlockParser
 {
     /**
      * @param array<Token> $tokens the tokens to parse
-     *
-     * @return null|array<string,mixed>
      */
-    protected function checkDocComment(array &$tokens, bool $doubleJump = false): ?array
+    protected function checkDocComment(array &$tokens, bool $doubleJump = false): ?DocBlock
     {
-        $docBlockComment = null;
-        $docBlackParser = new DocBlock();
+        $docBlock = null;
         if ($doubleJump) {
             prev($tokens);
         }
         // Peak at the previous token to see if it is a comment and if so return the comment.
         if ($token = prev($tokens)) {
             if ($token instanceof Token && T_DOC_COMMENT == $token->type) {
-                $docBlackParser->setComment($token->value);
-                if (!$docBlackParser->hasTag('file')) {
-                    $docBlockComment = $docBlackParser->toArray();
-                    unset($docBlockComment['comment']);
-                } else {
-                    $docBlockComment = $token->value;
-                }
+                $docBlock = new DocBlock($token->value);
             }
             next($tokens);
         }
@@ -38,6 +29,6 @@ trait DocBlockParser
             next($tokens);
         }
 
-        return $docBlockComment;
+        return $docBlock;
     }
 }

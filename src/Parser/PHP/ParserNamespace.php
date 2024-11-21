@@ -1,13 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Parser\PHP;
+
+use Hazaar\Parser\DocBlock;
 
 class ParserNamespace extends TokenParser
 {
     use Traits\DocBlockParser;
 
-    public ?string $name = null;
-    public string $comment = '';
+    public ?DocBlock $comment = null;
+
+    /**
+     * Apply the namespace to the given array of namespaces.
+     */
+    public function apply(string $namespace): string
+    {
+        if ('\\' === substr($namespace, 0, 1)) {
+            return $namespace;
+        }
+
+        return '\\'.$this->name.'\\'.$namespace;
+    }
 
     protected function parse(array &$tokens): bool
     {
@@ -17,9 +32,7 @@ class ParserNamespace extends TokenParser
                 'name' => [],
                 'line' => $token->line,
             ];
-            if ($comment = $this->checkDocComment($tokens)) {
-                $this->comment = $comment['brief'] ?? '';
-            }
+            $this->comment = $this->checkDocComment($tokens);
             while ($token = next($tokens)) {
                 if ($token instanceof Token) {
                     if (T_NS_SEPARATOR == $token->type) {

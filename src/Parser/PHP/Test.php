@@ -8,6 +8,8 @@ declare(strict_types=1);
 
 namespace Hazaar\Test;
 
+const TEST_CONSTANT = 'test';
+
 /**
  * This is a test function.
  *
@@ -18,7 +20,9 @@ function testFunction(float $text = 1.2, string $description = 'none'): bool
 {
     echo $text;
 
-    dump($description);
+    if ($description) {
+        echo $description;
+    }
 
     return true;
 }
@@ -34,11 +38,40 @@ function variaticFunction(string $name, int $dob): void
     dump($args);
 }
 
-class TestClass
+interface TestInterface
 {
-    private string $name;
+    public function testMethod(string $text = 'Hello World'): void;
+}
 
+class BaseClass {}
+
+/**
+ * @internal
+ */
+class TestClass extends BaseClass implements TestInterface
+{
+    public const TEST_CONSTANT = 'test';
+
+    /**
+     * This is a test property.
+     */
+    protected static string $name = 'John Doe';
+
+    /**
+     * This is a test method.
+     */
     public function testMethod(string $text = 'Hello World'): void
+    {
+        echo $text;
+        if ('test' === $text) {
+            echo 'true';
+        }
+    }
+
+    /**
+     * This is also a test method.
+     */
+    public function testMethod2(string $text = 'Hello World'): void
     {
         echo $text;
     }

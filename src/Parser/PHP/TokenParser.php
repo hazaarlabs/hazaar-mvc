@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Parser\PHP;
 
 class TokenParser
 {
-    protected ?ParserNamespace $namespace;
+    public ?ParserNamespace $namespace;
+    public ?string $name = null;
 
     /**
      * @param array<Token> $tokens
@@ -16,10 +19,15 @@ class TokenParser
             return;
         }
         if (!$this->parse($tokens)) {
-            $parserType = strtolower(substr(get_class($this), 7));
+            $parserType = strtolower(substr(basename(str_replace('\\', '/', get_class($this))), 6));
 
             throw new \Exception('Failed to parse PHP '.$parserType);
         }
+    }
+
+    public function fullName(): string
+    {
+        return $this->namespace ? $this->namespace->apply($this->name) : $this->name;
     }
 
     /**

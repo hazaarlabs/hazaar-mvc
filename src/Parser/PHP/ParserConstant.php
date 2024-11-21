@@ -1,19 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Parser\PHP;
+
+use Hazaar\Parser\DocBlock;
 
 class ParserConstant extends TokenParser
 {
     use Traits\DocBlockParser;
     use Traits\TypedValueParser;
 
-    public string $name;
     public int $line;
 
-    /**
-     * @var array<string>
-     */
-    public ?array $comment = null;
+    public ?DocBlock $comment = null;
     public mixed $value;
 
     protected function parse(array &$tokens): bool
@@ -25,11 +25,12 @@ class ParserConstant extends TokenParser
         $token = next($tokens);
         $this->name = $token->value;
         $this->line = $token->line;
-        if ($comment = $this->checkDocComment($tokens, true)) {
-            $this->comment = $comment;
-        }
+        $this->comment = $this->checkDocComment($tokens);
         $token = next($tokens);
-        $this->value = $this->getTypedValue($tokens, false);
+        if (is_string($token) && '=' === $token) {
+            next($tokens);
+            $this->value = $this->getTypedValue($tokens, false);
+        }
 
         return true;
     }

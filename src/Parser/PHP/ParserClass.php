@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Parser\PHP;
 
+use Hazaar\Parser\DocBlock;
 use Hazaar\Parser\PHP\Traits\DocBlockParser;
 
 class ParserClass extends TokenParser
@@ -10,11 +13,10 @@ class ParserClass extends TokenParser
 
     public bool $abstract = false;
     public int $line;
-    public string $name;
     public ?string $extends = null;
 
     /**
-     * @var array<ParserInterface>
+     * @var array<string>
      */
     public array $implements = [];
 
@@ -33,15 +35,13 @@ class ParserClass extends TokenParser
      */
     public array $constants = [];
 
-    /**
-     * @var array<string>
-     */
-    public array $comment = [];
+    public ?DocBlock $comment = null;
+    protected int $parserObjectType = T_CLASS;
 
     protected function parse(array &$tokens): bool
     {
         $token = current($tokens);
-        if (!(T_CLASS == $token->type || T_INTERFACE == $token->type)) {
+        if ($this->parserObjectType !== $token->type) {
             return false;
         }
         $this->line = $token->line;
@@ -50,9 +50,7 @@ class ParserClass extends TokenParser
             $this->abstract = true;
         }
         $token = next($tokens);
-        if ($comment = $this->checkDocComment($tokens, $this->abstract)) {
-            $this->comment = $comment;
-        }
+        $this->comment = $this->checkDocComment($tokens);
         prev($tokens);
         while ($token = next($tokens)) {
             if (!$token instanceof Token) {
@@ -61,8 +59,7 @@ class ParserClass extends TokenParser
                 }
             } else {
                 switch ($token->type) {
-                    case T_INTERFACE:
-                    case T_CLASS:
+                    case $this->parserObjectType:
                         $token = next($tokens);
                         $this->name = $token->value;
 
@@ -80,7 +77,7 @@ class ParserClass extends TokenParser
                             $extends .= $token->value;
                         }
                         prev($tokens);
-                        $this->extends = $extends;
+                        $this->extends = $this->namespace ? $this->namespace->apply($extends) : $extends;
 
                         break;
 
@@ -93,16 +90,23 @@ class ParserClass extends TokenParser
 
                                 continue;
                             }
-                            if (!$token instanceof Token || !in_array($token->type, [
+                            if (!$token instanceof Token || match ($token->type) {
+                                T_NAME_FULLY_QUALIFIED,
                                 T_NS_SEPARATOR,
-                                T_STRING,
-                            ])) {
+                                T_STRING => false,
+                                default => true,
+                            }) {
                                 break;
                             }
                             $implements .= $token->value;
                         }
                         prev($tokens);
                         $this->implements[] = $implements;
+                        if ($this->namespace) {
+                            foreach ($this->implements as &$implement) {
+                                $implement = $this->namespace->apply($implement);
+                            }
+                        }
 
                         break;
 

@@ -1,6 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Parser\PHP;
+
+use Hazaar\Parser\DocBlock;
 
 class ParserProperty extends TokenParser
 {
@@ -8,15 +12,12 @@ class ParserProperty extends TokenParser
     use Traits\TypedValueParser;
 
     public int $line;
-    public string $name;
     public string $type;
+    public string $access = 'public';
     public mixed $value;
     public bool $static = false;
 
-    /**
-     * @var array<string>
-     */
-    public ?array $comment = null;
+    public ?DocBlock $comment = null;
 
     protected function parse(array &$tokens): bool
     {
@@ -24,7 +25,6 @@ class ParserProperty extends TokenParser
         if (T_VARIABLE !== $token->type) {
             return false;
         }
-
         $this->line = $token->line;
         $this->static = false;
         $count = 0;
@@ -33,26 +33,27 @@ class ParserProperty extends TokenParser
                 break;
             }
             if (T_PRIVATE == $token->type || T_PUBLIC == $token->type || T_PROTECTED == $token->type) {
-                $this->type = $token->value;
+                $this->access = $token->value;
             } elseif (T_STATIC == $token->type) {
                 $this->static = true;
+            } elseif (T_STRING == $token->type) {
+                $this->type = $token->value;
             } else {
                 break;
             }
             ++$count;
         }
+        next($tokens);
+        $this->comment = $this->checkDocComment($tokens);
         for ($i = 0; $i < $count; ++$i) {
-            next($tokens);
+            $token = next($tokens);
         }
-        if ($comment = $this->checkDocComment($tokens, $count > 1)) {
-            $this->comment = $comment;
-        }
-        $token = next($tokens);
         if (T_VARIABLE == $token->type) {
-            $this->name = $token->value;
+            $this->name = ltrim($token->value, '$');
         }
         $token = next($tokens);
-        if ($token instanceof Token) {
+        if (is_string($token) && '=' === $token) {
+            next($tokens);
             $this->value = $this->getTypedValue($tokens);
         }
 
