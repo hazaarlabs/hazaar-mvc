@@ -43,39 +43,43 @@ class ParserFile extends TokenParser
                 continue;
             }
 
-            switch ($token->type) {
-                case T_CONST:
-                    $this->constants[] = new ParserConstant($tokens, $this->namespace);
+            try {
+                switch ($token->type) {
+                    case T_CONST:
+                        $this->constants[] = new ParserConstant($tokens, $this->namespace);
 
-                    break;
+                        break;
 
-                case T_FUNCTION:
-                    $this->functions[] = new ParserFunction($tokens, $this->namespace);
+                    case T_FUNCTION:
+                        $this->functions[] = new ParserFunction($tokens, $this->namespace);
 
-                    break;
+                        break;
 
-                case T_NAMESPACE:
-                    $this->namespace = new ParserNamespace($tokens);
+                    case T_NAMESPACE:
+                        $this->namespace = new ParserNamespace($tokens);
 
-                    break;
+                        break;
 
-                case T_INTERFACE:
-                    $this->interfaces[] = new ParserInterface($tokens, $this->namespace);
+                    case T_INTERFACE:
+                        $this->interfaces[] = new ParserInterface($tokens, $this->namespace);
 
-                    break;
+                        break;
 
-                case T_CLASS:
-                    $this->classes[] = new ParserClass($tokens, $this->namespace);
+                    case T_CLASS:
+                        $this->classes[] = new ParserClass($tokens, $this->namespace);
 
-                    break;
+                        break;
 
-                case T_DOC_COMMENT:
-                    $docBlock = new DocBlock($token->value);
-                    if ($docBlock->hasTag('file')) {
-                        $this->docBlock = $docBlock;
-                    }
+                    case T_DOC_COMMENT:
+                        $docBlock = new DocBlock($token->value);
+                        if ($docBlock->hasTag('file')) {
+                            $this->docBlock = $docBlock;
+                        }
 
-                    break;
+                        break;
+                }
+            } catch (\Exception $e) {
+                throw new \Exception($e->getMessage().' in '.$this->source);
             }
         }
     }
@@ -94,11 +98,6 @@ class ParserFile extends TokenParser
     public function getSize(): int
     {
         return $this->size;
-    }
-
-    public function getNamespace(): ParserNamespace
-    {
-        return $this->namespace;
     }
 
     /**

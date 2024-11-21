@@ -52,7 +52,10 @@ interface TestInterface
     public function testMethod(string $text = 'Hello World'): void;
 }
 
-class BaseClass {}
+class BaseClass
+{
+    public static array $names = ['one' => 'John', 'two' => 'Jane', 'three' => ['Jill', 'Jack']];
+}
 
 /**
  * @internal

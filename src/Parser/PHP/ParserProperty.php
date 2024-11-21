@@ -36,7 +36,7 @@ class ParserProperty extends TokenParser
                 $this->access = $token->value;
             } elseif (T_STATIC == $token->type) {
                 $this->static = true;
-            } elseif (T_STRING == $token->type) {
+            } elseif (T_STRING == $token->type || T_ARRAY == $token->type) {
                 $this->type = $token->value;
             } else {
                 break;

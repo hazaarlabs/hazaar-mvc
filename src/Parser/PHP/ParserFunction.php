@@ -26,7 +26,7 @@ class ParserFunction extends TokenParser
     /**
      * The return type of the function.
      */
-    public string $returns = 'mixed';
+    public ?ParserParameter $returns = null;
 
     /**
      * @var array<ParserParameter>
@@ -81,13 +81,22 @@ class ParserFunction extends TokenParser
                 || ($token instanceof Token && T_CURLY_OPEN == $token->type)) {
                 break;
             }
+            $nullable = false;
             if (':' === $token) {
                 $token = next($tokens);
+                if ('?' === $token) {
+                    $nullable = true;
+                    $token = next($tokens);
+                }
                 if ($token instanceof Token && T_STRING == $token->type) {
-                    $this->returns = $token->value;
+                    $this->returns = new ParserParameter($tokens, $nullable);
                 }
             } elseif (0 === $depth && ')' !== $token) {
-                $this->params[] = new ParserParameter($tokens);
+                if ('?' === $token) {
+                    $nullable = true;
+                    $token = next($tokens);
+                }
+                $this->params[] = new ParserParameter($tokens, $nullable);
             }
         }
         // If the next token is a semicolon, then this is a function prototype and we can stop here.

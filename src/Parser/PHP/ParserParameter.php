@@ -9,19 +9,36 @@ class ParserParameter extends TokenParser
     use Traits\TypedValueParser;
 
     public ?string $type = null;
+    public bool $isNullable = false;
     public mixed $default = null;
     public bool $byRef = false;
     public bool $variadic = false;
     public string $comment = '';
 
+    public function __construct(?array &$tokens = null, bool $isNullable = false)
+    {
+        $this->isNullable = $isNullable;
+        parent::__construct($tokens);
+    }
+
     protected function parse(array &$tokens): bool
     {
         $token = current($tokens);
         do {
-            if (!$token instanceof Token && (',' === $token || ')' === $token)) {
+            if (!$token instanceof Token
+                && match ($token) {
+                    ';', ',', ')', '{' => true,
+                    default => false
+                }) {
+                if (match ($token) {
+                    '{', ';' => true,
+                    default => false
+                }) {
+                    prev($tokens);
+                }
+
                 return true;
             }
-
             if ($token instanceof Token) {
                 switch ($token->type) {
                     case T_ELLIPSIS:
@@ -34,6 +51,7 @@ class ParserParameter extends TokenParser
 
                         break;
 
+                    case T_ARRAY:
                     case T_STRING:
                         $this->type = $token->value;
 

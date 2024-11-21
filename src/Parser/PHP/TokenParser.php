@@ -6,7 +6,7 @@ namespace Hazaar\Parser\PHP;
 
 class TokenParser
 {
-    public ?ParserNamespace $namespace;
+    public ?ParserNamespace $namespace = null;
     public ?string $name = null;
 
     /**
@@ -23,6 +23,11 @@ class TokenParser
 
             throw new \Exception('Failed to parse PHP '.$parserType);
         }
+    }
+
+    public function getNamespace(): ?ParserNamespace
+    {
+        return $this->namespace;
     }
 
     public function fullName(): string

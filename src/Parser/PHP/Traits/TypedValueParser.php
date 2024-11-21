@@ -12,6 +12,30 @@ trait TypedValueParser
     protected function getTypedValue(array &$tokens, bool $prev_after = true): mixed
     {
         $token = current($tokens);
+        if (!$token instanceof Token) {
+            if ('[' !== $token) {
+                return null;
+            }
+            $openBackets = 1;
+            $value = '';
+            while ($token = next($tokens)) {
+                if (is_string($token)) {
+                    if ('[' === $token) {
+                        ++$openBackets;
+                    } elseif (']' === $token) {
+                        --$openBackets;
+                    }
+                    if (0 === $openBackets) {
+                        break;
+                    }
+                    $value .= $token;
+                } elseif ($token instanceof Token) {
+                    $value .= $token->value;
+                }
+            }
+
+            return '['.$value.']';
+        }
         $value = null;
         if (T_CONSTANT_ENCAPSED_STRING == $token->type) {
             $value = trim($token->value, "'");

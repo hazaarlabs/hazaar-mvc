@@ -69,6 +69,7 @@ class ParserClass extends TokenParser
                         $extends = '';
                         while ($token = next($tokens)) {
                             if (!$token instanceof Token || !in_array($token->type, [
+                                T_NAME_FULLY_QUALIFIED,
                                 T_NS_SEPARATOR,
                                 T_STRING,
                             ])) {
