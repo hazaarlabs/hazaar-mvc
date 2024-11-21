@@ -17,7 +17,7 @@ class ParserProperty extends TokenParser
     public mixed $value;
     public bool $static = false;
 
-    public ?DocBlock $comment = null;
+    public ?DocBlock $docBlock = null;
 
     protected function parse(array &$tokens): bool
     {
@@ -44,7 +44,7 @@ class ParserProperty extends TokenParser
             ++$count;
         }
         next($tokens);
-        $this->comment = $this->checkDocComment($tokens);
+        $this->docBlock = $this->checkDocComment($tokens);
         for ($i = 0; $i < $count; ++$i) {
             $token = next($tokens);
         }

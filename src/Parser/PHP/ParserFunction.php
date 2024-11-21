@@ -33,7 +33,7 @@ class ParserFunction extends TokenParser
      */
     public array $params = [];
 
-    public ?DocBlock $comment = null;
+    public ?DocBlock $docBlock = null;
 
     protected function parse(array &$tokens): bool
     {
@@ -63,7 +63,7 @@ class ParserFunction extends TokenParser
         for ($i = 0; $i < $count; ++$i) {
             next($tokens);
         }
-        $this->comment = $this->checkDocComment($tokens);
+        $this->docBlock = $this->checkDocComment($tokens);
         $token = next($tokens);
         if (T_FUNCTION == $token->type) {
             $token = next($tokens);
@@ -126,10 +126,10 @@ class ParserFunction extends TokenParser
          * assume that this is an old-style variadic function (ie: uses func_get_args())
          * so we take the docblock parameters as is.
          */
-        if ($this->comment instanceof DocBlock
-            && $this->comment->hasTag('param')) {
+        if ($this->docBlock instanceof DocBlock
+            && $this->docBlock->hasTag('param')) {
             if (0 === count($this->params)) {
-                foreach ($this->comment->tag('param') as $param) {
+                foreach ($this->docBlock->tag('param') as $param) {
                     $functionParam = new ParserParameter();
                     $functionParam->name = ltrim($param['var'] ?? '', '$');
                     $functionParam->type = $param['type'] ?? 'mixed';
@@ -137,7 +137,7 @@ class ParserFunction extends TokenParser
                     $this->params[] = $functionParam;
                 }
             } else {
-                foreach ($this->comment->tag('param') as $param) {
+                foreach ($this->docBlock->tag('param') as $param) {
                     $name = ltrim($param['var'], '$');
                     $functionParam = current(array_filter($this->params, function ($item) use ($name) {
                         return $item->name === $name;

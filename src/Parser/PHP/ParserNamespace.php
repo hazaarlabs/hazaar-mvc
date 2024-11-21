@@ -10,7 +10,7 @@ class ParserNamespace extends TokenParser
 {
     use Traits\DocBlockParser;
 
-    public ?DocBlock $comment = null;
+    public ?DocBlock $docBlock = null;
 
     /**
      * Apply the namespace to the given array of namespaces.
@@ -32,7 +32,7 @@ class ParserNamespace extends TokenParser
                 'name' => [],
                 'line' => $token->line,
             ];
-            $this->comment = $this->checkDocComment($tokens);
+            $this->docBlock = $this->checkDocComment($tokens);
             while ($token = next($tokens)) {
                 if ($token instanceof Token) {
                     if (T_NS_SEPARATOR == $token->type) {

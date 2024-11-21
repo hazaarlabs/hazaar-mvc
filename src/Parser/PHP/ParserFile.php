@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hazaar\Parser\PHP;
 
+use Hazaar\Parser\DocBlock;
+
 class ParserFile extends TokenParser
 {
     private string $source;
@@ -28,6 +30,8 @@ class ParserFile extends TokenParser
      * @var array<ParserClass>
      */
     private array $classes = [];
+
+    private ?DocBlock $docBlock = null;
 
     public function __construct(string $filename)
     {
@@ -64,17 +68,14 @@ class ParserFile extends TokenParser
                     $this->classes[] = new ParserClass($tokens, $this->namespace);
 
                     break;
-                    // case T_DOC_COMMENT:
-                    //     if ($this->docBlockParser instanceof DocBlock) {
-                    //         $this->docBlockParser->setComment($token->value);
-                    //         if ($this->docBlockParser->hasTag('file')) {
-                    //             $this->comment = $this->docBlockParser->toArray();
-                    //         }
-                    //     } else {
-                    //         $this->comment = $token->value;
-                    //     }
 
-                    //     break;
+                case T_DOC_COMMENT:
+                    $docBlock = new DocBlock($token->value);
+                    if ($docBlock->hasTag('file')) {
+                        $this->docBlock = $docBlock;
+                    }
+
+                    break;
             }
         }
     }
@@ -138,6 +139,11 @@ class ParserFile extends TokenParser
     public function getClasses(): array
     {
         return $this->classes;
+    }
+
+    public function getDocBlock(): ?DocBlock
+    {
+        return $this->docBlock;
     }
 
     /**

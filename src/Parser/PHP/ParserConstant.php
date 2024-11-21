@@ -13,7 +13,7 @@ class ParserConstant extends TokenParser
 
     public int $line;
 
-    public ?DocBlock $comment = null;
+    public ?DocBlock $docBlock = null;
     public mixed $value;
 
     protected function parse(array &$tokens): bool
@@ -25,7 +25,7 @@ class ParserConstant extends TokenParser
         $token = next($tokens);
         $this->name = $token->value;
         $this->line = $token->line;
-        $this->comment = $this->checkDocComment($tokens);
+        $this->docBlock = $this->checkDocComment($tokens);
         $token = next($tokens);
         if (is_string($token) && '=' === $token) {
             next($tokens);

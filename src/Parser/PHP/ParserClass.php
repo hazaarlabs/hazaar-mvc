@@ -35,7 +35,7 @@ class ParserClass extends TokenParser
      */
     public array $constants = [];
 
-    public ?DocBlock $comment = null;
+    public ?DocBlock $docBlock = null;
     protected int $parserObjectType = T_CLASS;
 
     protected function parse(array &$tokens): bool
@@ -50,7 +50,7 @@ class ParserClass extends TokenParser
             $this->abstract = true;
         }
         $token = next($tokens);
-        $this->comment = $this->checkDocComment($tokens);
+        $this->docBlock = $this->checkDocComment($tokens);
         prev($tokens);
         while ($token = next($tokens)) {
             if (!$token instanceof Token) {

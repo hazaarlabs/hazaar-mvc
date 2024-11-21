@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * @file Test.php
+ *
+ * @brief This file contains the Test class.
+ *
+ * @details This file contains the Test class. This is a test class.
+ *
+ * @version 1.0
+ */
 declare(strict_types=1);
 
 /**
