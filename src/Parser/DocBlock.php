@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Parser;
 
 /**
@@ -19,7 +21,7 @@ class DocBlock
      *
      * @var array{param: array{fields: array<string>}, return: array<string>, var: array{key: string, fields: array<string>}, exception: array<string>}
      */
-    private static $vectors = [
+    private static array $vectors = [
         'param' => [
             'fields' => [
                 'type',
@@ -47,17 +49,13 @@ class DocBlock
 
     /**
      * The brief description from the docblock.
-     *
-     * @var string
      */
-    private $brief;
+    private ?string $brief = null;
 
     /**
      * The long detailed description from the docblock.
-     *
-     * @var string
      */
-    private $detail;
+    private ?string $detail = null;
 
     /**
      * The tags defined in the docblock.
@@ -71,14 +69,7 @@ class DocBlock
      *
      * @var array<array<string>>
      */
-    private $tags;
-
-    /**
-     * The entire DocBlock comment that was parsed.
-     *
-     * @var string
-     */
-    private $comment;
+    private array $tags;
 
     /**
      * CONSTRUCTOR.
@@ -99,10 +90,9 @@ class DocBlock
      */
     public function setComment(string $comment): void
     {
-        $this->brief = '';
-        $this->detail = '';
+        $this->brief = null;
+        $this->detail = null;
         $this->tags = [];
-        $this->comment = $comment;
         $this->parseComment($comment);
     }
 
@@ -121,7 +111,7 @@ class DocBlock
     /**
      * The value of a tag.
      *
-     * @return null|array<string>
+     * @return null|array<mixed>
      */
     public function tag(string $tag): ?array
     {
@@ -151,7 +141,7 @@ class DocBlock
     /**
      * Return the parsed DocBlock as a nice friendly array.
      *
-     * @return array{brief: string, detail: string, tags: array<array<string>>, comment: string}
+     * @return array{brief: string, detail: string, tags: array<array<string>>}
      */
     public function toArray(): array
     {
@@ -159,7 +149,6 @@ class DocBlock
             'brief' => $this->brief,
             'detail' => $this->detail,
             'tags' => $this->tags,
-            'comment' => $this->comment,
         ];
     }
 
