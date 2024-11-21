@@ -22,17 +22,15 @@ use Hazaar\XML\Element;
  * It supports multiple response formats including JSON, XML, text, and HTML.
  *
  * @property mixed                             $data      The data to be dumped.
- * @property float                             $execTime  The execution time of the application.
  * @property bool                              $backtrack Flag to enable or disable backtrace functionality.
  * @property array<array{time:int,data:mixed}> $log       Log entries containing time and data.
  *
- * @method        void          toggleBacktrace(bool $value = true) Toggles the backtrace functionality.
- * @method        void          addLogEntries(array $entries)       Adds log entries to the dump.
- * @method        Response\JSON json(array $dump = [])              Returns a JSON response with the dump data.
- * @method        Response\XML  xmlrpc(array $data = [])            Returns an XML response with the dump data.
- * @method        Response\Text text(array $data = [])              Returns a text response with the dump data.
- * @method        Response\HTML html(array $data = [])              Returns an HTML response with the dump data.
- * @method static string        getSpeedClass(float $execTime)      Returns a string representing the speed class based on execution time.
+ * @method void          toggleBacktrace(bool $value = true) Toggles the backtrace functionality.
+ * @method void          addLogEntries(array $entries)       Adds log entries to the dump.
+ * @method Response\JSON json(array $dump = [])              Returns a JSON response with the dump data.
+ * @method Response\XML  xmlrpc(array $data = [])            Returns an XML response with the dump data.
+ * @method Response\Text text(array $data = [])              Returns a text response with the dump data.
+ * @method Response\HTML html(array $data = [])              Returns an HTML response with the dump data.
  *
  * @param mixed       $data        the data to be dumped
  * @param Application $application the application instance
@@ -89,9 +87,10 @@ class Dump extends Diagnostic
      */
     public function json(array $dump = []): Response\JSON
     {
-        $dump['exec'] = $this->execTime;
-        $dump['status'] = self::getSpeedClass($this->execTime);
-        $dump['end'] = date('c');
+        $application = Application::getInstance();
+        foreach ($application->timer->all() as $timer => $sec) {
+            $dump[$timer] = $sec;
+        }
         $dump['data'] = $this->data;
         if (count($this->log) > 0) {
             $dump['log'] = $this->log;
@@ -111,11 +110,12 @@ class Dump extends Diagnostic
      */
     public function xmlrpc(array $data = []): Response\XML
     {
+        $application = Application::getInstance();
         $xml = new Element('xml');
         $app = $xml->add('app');
-        $app->add('exec', $this->execTime);
-        $app->add('status', self::getSpeedClass($this->execTime));
-        $app->add('end', date('c'));
+        foreach ($application->timer->all() as $timer => $sec) {
+            $app->add($timer, $sec);
+        }
         foreach ($data as $key => $value) {
             $app->add($key, $value);
         }
@@ -142,11 +142,15 @@ class Dump extends Diagnostic
      */
     public function text(array $data = []): Response\Text
     {
+        $application = Application::getInstance();
         $out = "HAZAAR DUMP\n\n";
-        $out .= print_r($this->data, true)."\n\n";
-        $out .= "Exec time: {$this->execTime}\n";
-        $out .= 'Status: '.self::getSpeedClass($this->execTime)."\n";
-        $out .= 'Endtime: '.date('c')."\n";
+        foreach ($this->data as $dataItem) {
+            $out .= print_r($dataItem, true)."\n";
+        }
+        $out .= "\n\nTIMERS\n\n";
+        foreach ($application->timer->all() as $timer => $sec) {
+            $out .= "{$timer}: {$sec}\n";
+        }
         foreach ($data as $key => $value) {
             $out .= "{$key}: {$value}\n";
         }
@@ -172,11 +176,11 @@ class Dump extends Diagnostic
      */
     public function html(array $data = []): Response\HTML
     {
-        $app = Application::getInstance();
+        $application = Application::getInstance();
         $view = new Layout('@views/dump');
         $data['env'] = APPLICATION_ENV;
         $data['data'] = $this->data;
-        $data['time'] = $app->timer->all();
+        $data['time'] = $application->timer->all();
         $data['log'] = $this->log;
         $view->populate($data);
         if (true === $this->backtrack) {
@@ -184,18 +188,6 @@ class Dump extends Diagnostic
             $view->set('trace', $e->getTrace());
         }
 
-        return $response = new Response\HTML($view->render());
-    }
-
-    /**
-     * Determines the speed class based on the execution time.
-     *
-     * @param float $execTime the execution time in milliseconds
-     *
-     * @return string the speed class, which can be 'excellent', 'good', 'ok', or 'bad'
-     */
-    public static function getSpeedClass(float $execTime): string
-    {
-        return ($execTime > 250) ? (($execTime > 500) ? 'bad' : 'ok') : ($execTime < 50 ? 'excellent' : 'good');
+        return new Response\HTML($view->render());
     }
 }
