@@ -1072,7 +1072,7 @@ function dump(mixed ...$data): void
         $out = "HAZAAR DUMP\n\n";
         if (defined('HAZAAR_START')) {
             $exec_time = round((microtime(true) - HAZAAR_START) * 1000, 2);
-            $out .= "Exec time: {$exec_time}\nStatus: ".Dump::getSpeedClass($exec_time)."\n";
+            $out .= "Exec time: {$exec_time}\n";
         }
         $out .= 'Endtime: '.date('c')."\n\n";
         $out .= print_r($data, true);
