@@ -34,6 +34,7 @@ class Main
             'adduser' => ['Add a new user to the application.'],
             'deluser' => ['Delete a user from the application.'],
             'passwd' => ['Change a user password.'],
+            'doc' => ['Generate documentation for the application.'],
         ]);
         if (!($command = $application->request->getCommand($commandArgs))) {
             $application->request->showHelp();
@@ -112,10 +113,11 @@ class Main
                 case 'show':
                     $file = new File($application->loader->getFilePath(FILE_PATH_CONFIG, $commandArgs[0]));
                     if ($file->exists()) {
-                        echo json_encode($file->parseJSON(), JSON_PRETTY_PRINT)."\n"; //Output pretty JSON
+                        echo json_encode($file->parseJSON(), JSON_PRETTY_PRINT)."\n"; // Output pretty JSON
                     } else {
                         throw new \Exception('File not found', 1);
                     }
+
                     break;
 
                 case 'encrypt':
@@ -177,6 +179,11 @@ class Main
                     } else {
                         throw new \Exception('Failed to update password', 1);
                     }
+
+                    // no break
+                case 'doc':
+                    $doc = new APIDoc(APIDoc::DOC_OUTPUT_MARKDOWN);
+                    $doc->generate($commandArgs[0]);
             }
         } catch (\Throwable $e) {
             echo $e->getMessage()."\n";
