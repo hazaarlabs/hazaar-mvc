@@ -42,8 +42,6 @@ defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV'
  */
 define('APPLICATION_NAME', array_values(array_slice(explode(DIRECTORY_SEPARATOR, realpath(APPLICATION_PATH.DIRECTORY_SEPARATOR.'..')), -1))[0]);
 putenv('HOME='.APPLICATION_PATH);
-// Change the current working directory to the application path so that all paths are relative to it.
-chdir(APPLICATION_PATH);
 
 /**
  * The Application.
