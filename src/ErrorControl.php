@@ -165,7 +165,7 @@ function exceptionHandler(Throwable $e): void
 function shutdownHandler(): void
 {
     if (($error = error_get_last()) !== null) {
-        if (1 == ini_get('display_errors')) {
+        if (1 == ini_get('display_errors') && 'cli' !== php_sapi_name()) {
             ob_clean();
         }
         match ($error['type']) {
