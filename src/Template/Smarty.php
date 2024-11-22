@@ -27,6 +27,7 @@ class Smarty
     public string $ldelim = '{';
     public string $rdelim = '}';
     public bool $allow_globals = true;
+    public ?string $cwd = null;
 
     /**
      * @var array<string>
@@ -123,6 +124,7 @@ class Smarty
         if (!$file instanceof File) {
             $file = new File($file);
         }
+        $this->cwd = $file->dirname();
         $this->loadFromString($file->getContents());
     }
 
@@ -701,7 +703,7 @@ class Smarty
         $file = trim($params['file'], '\'"');
         unset($params['file']);
         if ('/' !== $file[0] && !preg_match('/^\w+\:\/\//', $file)) {
-            $file = getcwd().DIRECTORY_SEPARATOR.$file;
+            $file = $this->cwd ? rtrim($this->cwd, ' /').'/' : getcwd().DIRECTORY_SEPARATOR.$file;
         }
         $info = pathinfo($file);
         if (!(array_key_exists('extension', $info) && $info['extension'])
