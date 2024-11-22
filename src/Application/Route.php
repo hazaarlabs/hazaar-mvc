@@ -37,12 +37,16 @@ class Route
         if (is_array($this->callable) && isset($this->callable[2]) && is_array($this->callable[2])) {
             $this->actionArgs = $this->callable[2];
         } else {
-            $callableReflection = ($this->callable instanceof \Closure)
-                ? new \ReflectionFunction($this->callable)
-                : new \ReflectionMethod($this->callable[0], $this->callable[1]);
+            try{
+                $callableReflection = ($this->callable instanceof \Closure)
+                    ? new \ReflectionFunction($this->callable)
+                    : new \ReflectionMethod($this->callable[0], $this->callable[1]);
 
-            foreach ($callableReflection->getParameters() as $param) {
-                $this->callableParameters[$param->getName()] = $param;
+                foreach ($callableReflection->getParameters() as $param) {
+                    $this->callableParameters[$param->getName()] = $param;
+                }
+            } catch (\ReflectionException $e) {
+                throw new Router\Exception\ControllerNotFound($this->callable[0], $this->path ?? '/');
             }
         }
     }
