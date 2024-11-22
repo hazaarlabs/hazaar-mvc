@@ -144,15 +144,17 @@ class Dump extends Diagnostic
     {
         $application = Application::getInstance();
         $out = "HAZAAR DUMP\n\n";
-        foreach ($this->data as $dataItem) {
-            $out .= print_r($dataItem, true)."\n";
-        }
-        $out .= "\n\nTIMERS\n\n";
+        $out .= "TIMERS\n\n";
         foreach ($application->timer->all() as $timer => $sec) {
             $out .= "{$timer}: {$sec}\n";
         }
+        $out .= "\nCONTEXT\n\n";
         foreach ($data as $key => $value) {
             $out .= "{$key}: {$value}\n";
+        }
+        $out .= "\nDATA\n\n";
+        foreach ($this->data as $dataItem) {
+            $out .= print_r($dataItem, true)."\n";
         }
         if (count($this->log) > 0) {
             $out .= "\n\nLOG\n\n";
