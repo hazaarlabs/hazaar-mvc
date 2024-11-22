@@ -16,25 +16,33 @@ trait TypedValueParser
             if ('[' !== $token) {
                 return null;
             }
-            $openBackets = 1;
-            $value = '';
+            $value = [];
             while ($token = next($tokens)) {
                 if (is_string($token)) {
+                    if (',' === $token) {
+                        continue;
+                    }
                     if ('[' === $token) {
-                        ++$openBackets;
+                        $value[] = $this->getTypedValue($tokens);
                     } elseif (']' === $token) {
-                        --$openBackets;
-                    }
-                    if (0 === $openBackets) {
                         break;
+                    } else {
+                        $value[] = $token;
                     }
-                    $value .= $token;
                 } elseif ($token instanceof Token) {
-                    $value .= $token->value;
+                    $key = $this->getTypedValue($tokens, false);
+                    $token = next($tokens);
+                    if ($token instanceof Token && T_DOUBLE_ARROW === $token->type) {
+                        next($tokens);
+                        $value[$key] = $this->getTypedValue($tokens, false);
+                    } else {
+                        prev($tokens);
+                        $value[] = $key;
+                    }
                 }
             }
 
-            return '['.$value.']';
+            return $value;
         }
         $value = null;
         if (T_CONSTANT_ENCAPSED_STRING == $token->type) {

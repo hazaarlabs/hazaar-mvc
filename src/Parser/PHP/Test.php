@@ -54,7 +54,23 @@ interface TestInterface
 
 class BaseClass
 {
-    public static array $names = ['one' => 'John', 'two' => 'Jane', 'three' => ['Jill', 'Jack']];
+    /**
+     * @var array<mixed>
+     */
+    public static array $names = [
+        'one' => 'John',
+        'two' => 'Jane',
+        'three' => [
+            'Jill', 'Jack',
+        ],
+        'four' => [
+            'Jenny', 'James', [1, 2, 3, 4, 5],
+        ],
+        'five' => [
+            'primary' => 'John',
+            'secondary' => 'Jane',
+        ],
+    ];
 }
 
 /**
