@@ -266,7 +266,7 @@ class Application
                 'responseType' => 'html',
             ],
             'router' => [
-                'type' => null,
+                'type' => 'basic',
                 'controller' => 'index',
                 'action' => 'index',
             ],
