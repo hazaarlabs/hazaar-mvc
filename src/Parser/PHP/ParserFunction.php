@@ -111,7 +111,7 @@ class ParserFunction extends TokenParser
         while ($token = next($tokens)) {
             if ($token instanceof Token
                 && match ($token->type) {
-                    T_FUNCTION, T_STATIC, T_PUBLIC, T_PRIVATE, T_PROTECTED, T_CLASS, T_INTERFACE => true,
+                    T_STATIC, T_PUBLIC, T_PRIVATE, T_PROTECTED, T_CLASS, T_INTERFACE => true,
                     default => false,
                 }) {
                 prev($tokens);

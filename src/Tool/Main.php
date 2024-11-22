@@ -24,6 +24,7 @@ class Main
         $application->request->setOptions([
             'help' => ['h', 'help', null, 'Display this help message.'],
             'env' => ['e', 'env', 'string', 'Set the application environment.', 'config'],
+            'scan' => ['s', 'scan', 'path', 'Scan the application for new classes.', 'doc'],
         ]);
         $application->request->setCommands([
             'create' => ['Create a new application object (view, controller or model).'],
@@ -182,8 +183,12 @@ class Main
 
                     // no break
                 case 'doc':
+                    if (!isset($commandArgs[0])) {
+                        throw new \Exception('No output path specified', 1);
+                    }
+                    $scanPath = ake($options, 'scan', '.');
                     $doc = new APIDoc(APIDoc::DOC_OUTPUT_MARKDOWN);
-                    $doc->generate($commandArgs[0]);
+                    $doc->generate($scanPath, $commandArgs[0]);
             }
         } catch (\Throwable $e) {
             echo $e->getMessage()."\n";

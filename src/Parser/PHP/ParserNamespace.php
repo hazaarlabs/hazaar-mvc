@@ -13,6 +13,26 @@ class ParserNamespace extends TokenParser
     public ?DocBlock $docBlock = null;
 
     /**
+     * @var array<ParserConstant>
+     */
+    public array $constants = [];
+
+    /**
+     * @var array<ParserClass>
+     */
+    public array $classes = [];
+
+    /**
+     * @var array<ParserInterface>
+     */
+    public array $interfaces = [];
+
+    /**
+     * @var array<ParserFunction>
+     */
+    public array $functions = [];
+
+    /**
      * Apply the namespace to the given array of namespaces.
      */
     public function apply(string $namespace): string
