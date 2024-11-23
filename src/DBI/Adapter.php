@@ -263,7 +263,7 @@ class Adapter
             if (!Config::$overridePaths) {
                 Config::$overridePaths = Application::getConfigOverridePaths();
             }
-            $config = new Config('database', $configName, self::$defaultConfig, FILE_PATH_CONFIG, true);
+            $config = Config::getInstance('database', $configName, self::$defaultConfig, FILE_PATH_CONFIG, true);
             if (!$config->loaded()) {
                 return false;
             }

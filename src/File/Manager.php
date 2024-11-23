@@ -119,7 +119,7 @@ class Manager implements Backend
                 continue;
             }
             $source = ake(pathinfo($file), 'filename');
-            $class = 'Hazaar\\File\\Backend\\'.$source;
+            $class = 'Hazaar\File\Backend\\'.$source;
             if (!class_exists($class)) {
                 continue;
             }
@@ -142,7 +142,7 @@ class Manager implements Backend
      */
     public static function select(string $name, ?array $options = null): false|Manager
     {
-        $config = new Application\Config('media');
+        $config = Application\Config::getInstance('media');
         if (!$config->has($name)) {
             return false;
         }

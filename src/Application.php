@@ -158,7 +158,7 @@ class Application
              * it will just be an empty object that will handle calls to
              * it silently.
              */
-            $config = new Config('application', $env, $this->getDefaultConfig(), FILE_PATH_CONFIG);
+            $config = Config::getInstance('application', $env, $this->getDefaultConfig(), FILE_PATH_CONFIG);
             // Check if we require SSL and don't have and if so, redirect here.
             if ($config['app']->has('require_ssl')
                 && boolify($_SERVER['HTTPS']) !== boolify($config['app']['require_ssl'])) {

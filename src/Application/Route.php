@@ -46,7 +46,7 @@ class Route
                     $this->callableParameters[$param->getName()] = $param;
                 }
             } catch (\ReflectionException $e) {
-                throw new Router\Exception\ControllerNotFound($this->callable[0], $this->path ?? '/');
+                // Do nothing
             }
         }
     }

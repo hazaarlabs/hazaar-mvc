@@ -16,7 +16,7 @@ class RouterTest extends TestCase
 
     public function setUp(): void
     {
-        $this->config = new Config('application', null, [
+        $this->config = Config::getInstance('application', null, [
             'router' => [
                 'controller' => 'index',
                 'action' => 'index',

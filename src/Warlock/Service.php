@@ -91,7 +91,7 @@ abstract class Service extends Process
                 'log' => $warlock['log'],
             ],
         ];
-        $config = new Application\Config('service', APPLICATION_ENV, $defaults);
+        $config = Application\Config::getInstance('service', APPLICATION_ENV, $defaults);
         if (!($this->config = ake($config, $this->name))) {
             throw new \Exception("Service '{$this->name}' is not configured!");
         }
