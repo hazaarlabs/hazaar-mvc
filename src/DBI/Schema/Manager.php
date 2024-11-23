@@ -2854,7 +2854,7 @@ class Manager
         if (!defined('HAZAAR_VERSION')) {
             return false;
         }
-        $config = new Config('media');
+        $config = Config::getInstance('media');
         foreach ($config as $name => $settings) {
             if ('DBI' !== $settings->get('type')) {
                 continue;

@@ -43,7 +43,7 @@ class Main
             return 1;
         }
         $options = $application->request->getOptions();
-        $appConfig = new Config('application', APPLICATION_ENV);
+        $appConfig = Config::getInstance('application', APPLICATION_ENV);
         if (!$appConfig->has('auth')) {
             $appConfig['auth'] = [];
         }
@@ -63,7 +63,7 @@ class Main
                 case 'config':
                     $configCommand = ake($commandArgs, 0, 'list');
                     $env = ake($options, 'env', APPLICATION_ENV);
-                    $config = new Config('application', $env);
+                    $config = Config::getInstance('application', $env);
                     $config->addOutputFilter(function ($value, $key) {
                         if (is_bool($value)) {
                             return strbool($value);

@@ -22,7 +22,7 @@ interface ImageRendererInterface
 
     public function read(): false|string;
 
-    public function quality(int $quality = null): false|int;
+    public function quality(?int $quality = null): false|int;
 
     public function width(): int;
 
@@ -31,20 +31,20 @@ interface ImageRendererInterface
     public function compress(int $quality): void;
 
     public function resize(
-        int $width = null,
-        int $height = null,
+        ?int $width = null,
+        ?int $height = null,
         bool $crop = false,
-        string $align = null,
+        ?string $align = null,
         bool $keep_aspect = true,
         bool $reduce_only = true,
-        float $ratio = null,
+        ?float $ratio = null,
         int $offsetTop = 0,
         int $offsetLeft = 0
     ): bool;
 
     public function expand(
-        int $xwidth = null,
-        int $xheight = null,
+        ?int $xwidth = null,
+        ?int $xheight = null,
         string $align = 'topleft',
         int $offsetTop = 0,
         int $offsetLeft = 0

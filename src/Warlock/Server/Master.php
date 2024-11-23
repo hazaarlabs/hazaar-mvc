@@ -224,7 +224,7 @@ class Master
         self::$config = new Config([], $env);
         if (!defined('RUNTIME_PATH')) {
             $path = APPLICATION_PATH.DIRECTORY_SEPARATOR.'.runtime';
-            $appConfig = new Application\Config('application', APPLICATION_ENV);
+            $appConfig = Application\Config::getInstance('application', APPLICATION_ENV);
             if ($appConfig->loaded() && $appConfig['app']->has('runtimePath')) {
                 $path = $appConfig['app']['runtimePath'];
             }
@@ -509,7 +509,7 @@ class Master
         }
         $this->streams[0] = $this->master;
         $this->running = true;
-        $services = new Application\Config('service', APPLICATION_ENV);
+        $services = Application\Config::getInstance('service', APPLICATION_ENV);
         if ($services->loaded()) {
             $this->log->write(W_INFO, 'Checking for enabled services');
             foreach ($services as $name => $options) {
