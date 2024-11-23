@@ -5,7 +5,7 @@
         <p>
             Congratulations! You have successfully installed the Hazaar MVC framework example
             application. You are currently running Hazaar MVC version
-            {$application->version()}.
+            {HAZAAR_VERSION}.
             This example application is a good starting point for building your own application with Hazaar MVC.
         </p>
         <p>

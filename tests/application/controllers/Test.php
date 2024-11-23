@@ -23,7 +23,7 @@ class Test extends Basic
     /**
      * @route('/foo/<string:word>', methods=['GET'])
      */
-    public function rest(?string $word = null): mixed
+    public function bar(?string $word = null): mixed
     {
         return 'bar: '.($word ?? '');
     }

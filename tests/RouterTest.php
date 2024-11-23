@@ -107,7 +107,7 @@ class RouterTest extends TestCase
     {
         $request = new HTTP([
             'REQUEST_METHOD' => 'GET',
-            'REQUEST_URI' => '/test/word',
+            'REQUEST_URI' => '/test/hellothere',
         ]);
         $this->config['type'] = 'file';
         $router = new Router($this->config);
@@ -115,7 +115,7 @@ class RouterTest extends TestCase
         $this->assertInstanceOf('Hazaar\Application\Route', $route = $router->getRoute());
         $this->assertInstanceOf('Application\Controllers\Test', $controller = $route->getController());
         $this->assertEquals('bar', $route->getAction());
-        $this->assertEquals(['word'], $route->getActionArgs());
+        $this->assertEquals(['word' => 'hellothere'], $route->getActionArgs());
         $this->assertInstanceOf('Hazaar\Controller\Response', $controller->run($route));
     }
 
