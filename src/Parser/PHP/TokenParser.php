@@ -8,6 +8,7 @@ class TokenParser
 {
     public ?ParserNamespace $namespace = null;
     public ?string $name = null;
+    public ?int $line = null;
 
     /**
      * @param array<Token> $tokens

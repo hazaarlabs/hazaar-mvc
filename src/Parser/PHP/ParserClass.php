@@ -12,7 +12,6 @@ class ParserClass extends TokenParser
     use DocBlockParser;
 
     public bool $abstract = false;
-    public int $line;
     public ?string $extends = null;
 
     /**

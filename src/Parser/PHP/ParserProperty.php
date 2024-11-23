@@ -11,7 +11,6 @@ class ParserProperty extends TokenParser
     use Traits\DocBlockParser;
     use Traits\TypedValueParser;
 
-    public int $line;
     public string $type;
     public string $access = 'public';
     public mixed $value;

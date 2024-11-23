@@ -11,8 +11,6 @@ class ParserConstant extends TokenParser
     use Traits\DocBlockParser;
     use Traits\TypedValueParser;
 
-    public int $line;
-
     public ?DocBlock $docBlock = null;
     public mixed $value;
 

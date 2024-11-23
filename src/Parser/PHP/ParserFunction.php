@@ -11,8 +11,6 @@ class ParserFunction extends TokenParser
 {
     use DocBlockParser;
 
-    public int $line;
-
     /**
      * Indicates if the function is static.
      */
