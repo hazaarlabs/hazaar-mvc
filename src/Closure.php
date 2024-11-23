@@ -24,7 +24,7 @@ class Closure implements \JsonSerializable
     protected \ReflectionFunction $reflection;
     private string $code;
 
-    public function __construct(\Closure|\stdClass $function = null)
+    public function __construct(null|\Closure|\stdClass $function = null)
     {
         if ($function instanceof \Closure) {
             $this->closure = $function;
