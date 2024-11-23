@@ -37,7 +37,7 @@ function sidebarGuide() {
     return [
         {
             text: 'Introduction',  
-            collapsable: true,
+            collapsible: true,
             children: [
                 { text: 'What is Hazaar MVC?', link: '/guide/what-is-hazaar-mvc' },
                 { text: 'Getting Started', link: '/guide/getting-started' },
@@ -49,7 +49,7 @@ function sidebarGuide() {
         },
         {
             text: 'The Basics',
-            collapsable: true,
+            collapsible: true,
             children: [
                 { text: 'Project Layout', link: '/guide/basics/layout' },
                 { text: 'Configuration', link: '/guide/basics/configuration' },
@@ -66,7 +66,7 @@ function sidebarGuide() {
         },
         {
             text: 'Databases',
-            collapsable: true,
+            collapsible: true,
             children: [
                 { text: 'Overview', link: '/guide/dbi/overview', },
                 { text: 'Configuration', link: '/guide/dbi/configure', },
@@ -79,7 +79,7 @@ function sidebarGuide() {
         },
         {
             text: 'Advanced',
-            collapsable: true,
+            collapsible: true,
             children: [
                 { text: 'Caching', link: '/guide/advanced/caching/overview' },
                 { text: 'PDF Generation', link: '/guide/advanced/pdf-generation' },
@@ -89,7 +89,7 @@ function sidebarGuide() {
         },
         {
             text: 'Warlock',
-            collapsable: true,
+            collapsible: true,
             children: [
                 { text: 'Overview', link: '/guide/warlock/overview' },
                 { text: 'Delayed Execution', link: '/guide/warlock/delayed-exec' },
@@ -101,7 +101,7 @@ function sidebarGuide() {
         },
         {
             text: 'Deploy',
-            collapsable: true,
+            collapsible: true,
             children: [
                 { text: 'Overview', link: '/guide/deploy/overview' },
                 { text: 'Apache', link: '/guide/deploy/apache' },
