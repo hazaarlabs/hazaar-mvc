@@ -47,26 +47,17 @@ class ParserNamespace extends TokenParser
     protected function parse(array &$tokens): bool
     {
         $token = current($tokens);
-        if (T_NAMESPACE == $token->type) {
-            $namespace = [
-                'name' => [],
-                'line' => $token->line,
-            ];
-            $this->docBlock = $this->checkDocComment($tokens);
-            while ($token = next($tokens)) {
-                if ($token instanceof Token) {
-                    if (T_NS_SEPARATOR == $token->type) {
-                        continue;
-                    }
-                    $namespace['name'][] = $token->value;
-                } elseif (';' == $token) {
-                    $this->name = implode('\\', $namespace['name']);
-
-                    return true;
-                }
-            }
+        if (T_NAMESPACE !== $token->type) {
+            return false;
         }
+        $this->line = $token->line;
+        $this->docBlock = $this->checkDocComment($tokens);
+        $token = next($tokens);
+        if (!$token instanceof Token) {
+            return false;
+        }
+        $this->name = $token->value;
 
-        return false;
+        return true;
     }
 }
