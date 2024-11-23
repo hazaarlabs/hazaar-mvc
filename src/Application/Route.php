@@ -37,11 +37,12 @@ class Route
         if (is_array($this->callable) && isset($this->callable[2]) && is_array($this->callable[2])) {
             $this->actionArgs = $this->callable[2];
         } else {
-            try{
-                $callableReflection = ($this->callable instanceof \Closure)
-                    ? new \ReflectionFunction($this->callable)
-                    : new \ReflectionMethod($this->callable[0], $this->callable[1]);
-
+            try {
+                $callableReflection = match(true){
+                    $this->callable instanceof \Closure => new \ReflectionFunction($this->callable),
+                    $this->callable instanceof \ReflectionMethod => $this->callable,
+                    default => new \ReflectionMethod($this->callable[0], $this->callable[1]),
+                };
                 foreach ($callableReflection->getParameters() as $param) {
                     $this->callableParameters[$param->getName()] = $param;
                 }
