@@ -41,7 +41,7 @@ class Main
             return 1;
         }
         $options = $application->request->getOptions();
-        $appConfig = new Config('application', APPLICATION_ENV);
+        $appConfig = Config::getInstance('application', APPLICATION_ENV);
         if (!$appConfig->has('auth')) {
             $appConfig['auth'] = [];
         }
@@ -61,7 +61,7 @@ class Main
                 case 'config':
                     $configCommand = ake($commandArgs, 0, 'list');
                     $env = ake($options, 'env', APPLICATION_ENV);
-                    $config = new Config('application', $env);
+                    $config = Config::getInstance('application', $env);
                     $config->addOutputFilter(function ($value, $key) {
                         if (is_bool($value)) {
                             return strbool($value);
@@ -112,10 +112,11 @@ class Main
                 case 'show':
                     $file = new File($application->loader->getFilePath(FILE_PATH_CONFIG, $commandArgs[0]));
                     if ($file->exists()) {
-                        echo json_encode($file->parseJSON(), JSON_PRETTY_PRINT)."\n"; //Output pretty JSON
+                        echo json_encode($file->parseJSON(), JSON_PRETTY_PRINT)."\n"; // Output pretty JSON
                     } else {
                         throw new \Exception('File not found', 1);
                     }
+
                     break;
 
                 case 'encrypt':

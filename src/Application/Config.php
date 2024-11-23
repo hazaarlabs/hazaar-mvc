@@ -32,6 +32,11 @@ class Config extends Map
      * @var array<string>
      */
     public static array $overridePaths = [];
+
+    /**
+     * @var array<Config>
+     */
+    private static array $instances = [];
     private string $env;
     private string $source;
     private ?string $sourceFile = null;
@@ -63,7 +68,7 @@ class Config extends Map
      * @param array<mixed> $defaults   initial defaut values
      * @param string       $pathType   the search path type to look for configuration files
      */
-    public function __construct(
+    protected function __construct(
         ?string $sourceFile = null,
         ?string $env = null,
         array $defaults = [],
@@ -135,6 +140,32 @@ class Config extends Map
     public function __toString(): string
     {
         return $this->tostring();
+    }
+
+    /**
+     * @detail      The application configuration constructor loads the settings from the configuration file specified
+     *              in the first parameter.  It will use the second parameter as the starting point and is intended to
+     *              allow different operating environments to be configured from a single configuration file.
+     *
+     * @param string       $sourceFile The absolute path to the config file
+     * @param string       $env        The application environment to read settings for.  Usually `development`
+     *                                 or `production`.
+     * @param array<mixed> $defaults   initial defaut values
+     * @param string       $pathType   the search path type to look for configuration files
+     */
+    public static function getInstance(
+        ?string $sourceFile = null,
+        ?string $env = null,
+        array $defaults = [],
+        string $pathType = FILE_PATH_CONFIG,
+        bool $overrideNamespaces = false
+    ): Config {
+        $sourceKey = $sourceFile.'_'.$env;
+        if (array_key_exists($sourceKey, self::$instances)) {
+            return self::$instances[$sourceKey];
+        }
+
+        return self::$instances[$sourceKey] = new Config($sourceFile, $env, $defaults, $pathType, $overrideNamespaces);
     }
 
     /**
