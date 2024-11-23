@@ -12,7 +12,7 @@ class Part implements \JsonSerializable
     /**
      * @param array<string> $headers
      */
-    public function __construct(string $content = null, string $content_type = null, array $headers = [])
+    public function __construct(?string $content = null, ?string $content_type = null, array $headers = [])
     {
         if ($content) {
             $this->setContent($content);
