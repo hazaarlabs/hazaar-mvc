@@ -160,7 +160,7 @@ class Config extends Map
         string $pathType = FILE_PATH_CONFIG,
         bool $overrideNamespaces = false
     ): Config {
-        $sourceKey = $sourceFile.'_'.$env;
+        $sourceKey = $sourceFile.'_'.($env ?? APPLICATION_ENV);
         if (array_key_exists($sourceKey, self::$instances)) {
             return self::$instances[$sourceKey];
         }
