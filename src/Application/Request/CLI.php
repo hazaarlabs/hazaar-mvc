@@ -37,7 +37,7 @@ class CLI extends Request
     {
         $this->params = $args;
 
-        return '/';
+        return '';
     }
 
     /**
