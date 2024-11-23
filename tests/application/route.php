@@ -1,8 +1,8 @@
 <?php
 
 use Application\Controllers\Test;
-use Hazaar\Application\Router\Custom as Router;
+use Hazaar\Application\Router;
 
 /** @var Router $route */
-$route->get('/test/{word}', [Test::class, 'bar']);
-$route->get('/test', [Test::class, 'foo']);
+Router::get('/test/{word}', [Test::class, 'bar']);
+Router::get('/test', [Test::class, 'foo']);
