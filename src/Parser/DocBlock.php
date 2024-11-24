@@ -155,7 +155,7 @@ class DocBlock
     /**
      * Return the brief comment if set.
      */
-    public function brief(): string
+    public function brief(): ?string
     {
         return $this->brief;
     }
@@ -163,7 +163,7 @@ class DocBlock
     /**
      * Return the detailed comment if set.
      */
-    public function detail(): string
+    public function detail(): ?string
     {
         return $this->detail;
     }
