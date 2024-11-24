@@ -13,36 +13,41 @@ trait TypedValueParser
     {
         $token = current($tokens);
         if (!$token instanceof Token) {
-            if ('[' !== $token) {
-                return null;
-            }
-            $value = [];
-            while ($token = next($tokens)) {
-                if (is_string($token)) {
-                    if (',' === $token) {
-                        continue;
-                    }
-                    if ('[' === $token) {
-                        $value[] = $this->getTypedValue($tokens);
-                    } elseif (']' === $token) {
-                        break;
-                    } else {
-                        $value[] = $token;
-                    }
-                } elseif ($token instanceof Token) {
-                    $key = $this->getTypedValue($tokens, false);
-                    $token = next($tokens);
-                    if ($token instanceof Token && T_DOUBLE_ARROW === $token->type) {
-                        next($tokens);
-                        $value[$key] = $this->getTypedValue($tokens, false);
-                    } else {
-                        prev($tokens);
-                        $value[] = $key;
+            if ('-' === $token) {
+                $token = next($tokens);
+                $token->value = '-'.$token->value;
+            } else {
+                if ('[' !== $token) {
+                    return null;
+                }
+                $value = [];
+                while ($token = next($tokens)) {
+                    if (is_string($token)) {
+                        if (',' === $token) {
+                            continue;
+                        }
+                        if ('[' === $token) {
+                            $value[] = $this->getTypedValue($tokens);
+                        } elseif (']' === $token) {
+                            break;
+                        } else {
+                            $value[] = $token;
+                        }
+                    } elseif ($token instanceof Token) {
+                        $key = $this->getTypedValue($tokens, false);
+                        $token = next($tokens);
+                        if ($token instanceof Token && T_DOUBLE_ARROW === $token->type) {
+                            next($tokens);
+                            $value[$key] = $this->getTypedValue($tokens, false);
+                        } else {
+                            prev($tokens);
+                            $value[] = $key;
+                        }
                     }
                 }
-            }
 
-            return $value;
+                return $value;
+            }
         }
         $value = null;
         if (T_CONSTANT_ENCAPSED_STRING == $token->type) {

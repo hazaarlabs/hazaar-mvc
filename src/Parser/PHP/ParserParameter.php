@@ -40,6 +40,9 @@ class ParserParameter extends TokenParser
                     case T_ARRAY:
                     case T_STRING:
                     case T_CALLABLE:
+                    case T_NAME_RELATIVE:
+                    case T_NAME_QUALIFIED:
+                    case T_NAME_FULLY_QUALIFIED:
                         $this->type = $token->value;
 
                         break;
@@ -66,15 +69,13 @@ class ParserParameter extends TokenParser
                 return true;
             } elseif ('=' === $token) {
                 $token = next($tokens);
-                if ($token instanceof Token) {
-                    $this->default = $this->getTypedValue($tokens);
-                    if (!$this->type) {
-                        $this->type = gettype($this->default);
-                        if ('integer' === $this->type) {
-                            $this->type = 'int';
-                        } elseif ('double' === $this->type) {
-                            $this->type = 'float';
-                        }
+                $this->default = $this->getTypedValue($tokens);
+                if (!$this->type) {
+                    $this->type = gettype($this->default);
+                    if ('integer' === $this->type) {
+                        $this->type = 'int';
+                    } elseif ('double' === $this->type) {
+                        $this->type = 'float';
                     }
                 }
             }
