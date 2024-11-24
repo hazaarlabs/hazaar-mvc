@@ -1,10 +1,10 @@
-{import "include/header.tpl"}
+{include "include/header.tpl"}
 
 # {$project.title}
 
 {$project.description}
 
-This is an automatically generated documentation for **{{project.title}}**.
+This is an automatically generated documentation for **{$project.title}**.
 
 ## Namespaces
 
@@ -22,4 +22,4 @@ This is an automatically generated documentation for **{{project.title}}**.
 {/foreach}
 
 
-{import "include/footer.tpl"}
+{include "include/footer.tpl"}

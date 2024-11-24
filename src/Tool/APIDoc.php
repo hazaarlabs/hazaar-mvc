@@ -16,10 +16,12 @@ class APIDoc
     public const DOC_OUTPUT_MARKDOWN = 2;
 
     private int $outputFormat;
+    private ?string $title;
 
-    public function __construct(int $outputFormat)
+    public function __construct(int $outputFormat, ?string $title = null)
     {
         $this->outputFormat = $outputFormat;
+        $this->title = $title;
     }
 
     public function generate(string $path, string $outputPath): bool
@@ -27,7 +29,6 @@ class APIDoc
         if (!file_exists($path)) {
             return false;
         }
-        $title = 'API Documentation';
         $path = realpath($path);
         $files = [];
         if (!is_dir($path)) {
@@ -38,7 +39,7 @@ class APIDoc
         $PHPParser = new PHP();
         $index = (object) [
             'project' => [
-                'title' => $title,
+                'title' => $this->title ?? 'API Documentation',
                 'description' => '',
             ],
             'namespaces' => [],

@@ -25,6 +25,7 @@ class Main
             'help' => ['h', 'help', null, 'Display this help message.'],
             'env' => ['e', 'env', 'string', 'Set the application environment.', 'config'],
             'scan' => ['s', 'scan', 'path', 'Scan the application for new classes.', 'doc'],
+            'title' => ['t', 'title', 'string', 'Set the title of the documentation.', 'doc'],
         ]);
         $application->request->setCommands([
             'create' => ['Create a new application object (view, controller or model).'],
@@ -187,7 +188,7 @@ class Main
                         throw new \Exception('No output path specified', 1);
                     }
                     $scanPath = ake($options, 'scan', '.');
-                    $doc = new APIDoc(APIDoc::DOC_OUTPUT_MARKDOWN);
+                    $doc = new APIDoc(APIDoc::DOC_OUTPUT_MARKDOWN, ake($options, 'title', 'API Documentation'));
                     $doc->generate($scanPath, $commandArgs[0]);
             }
         } catch (\Throwable $e) {
