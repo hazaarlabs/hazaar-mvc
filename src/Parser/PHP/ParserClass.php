@@ -53,7 +53,7 @@ class ParserClass extends TokenParser
         prev($tokens);
         while ($token = next($tokens)) {
             if (!$token instanceof Token) {
-                if ('}' == $token) {
+                if ('{' == $token) {
                     break;
                 }
             } else {
@@ -109,22 +109,33 @@ class ParserClass extends TokenParser
                         }
 
                         break;
+                }
+            }
+        }
 
+        // Parse the class properties and methods
+        while ($token = next($tokens)) {
+            if (!$token instanceof Token) {
+                if ('}' == $token) {
+                    break;
+                }
+            } else {
+                switch ($token->type) {
                     case T_VARIABLE:
                         $prop = new ParserProperty($tokens);
                         $this->properties[] = $prop;
 
                         break;
 
-                    case T_FUNCTION:
-                        $func = new ParserFunction($tokens);
-                        $this->methods[] = $func;
-
-                        break;
-
                     case T_CONST:
                         $const = new ParserConstant($tokens);
                         $this->constants[] = $const;
+
+                        break;
+
+                    case T_FUNCTION:
+                        $func = new ParserFunction($tokens);
+                        $this->methods[] = $func;
 
                         break;
                 }

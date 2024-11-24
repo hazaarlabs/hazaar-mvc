@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Hazaar\Parser\PHP;
 
 use Hazaar\Parser\DocBlock;
+use Hazaar\Parser\PHP\Traits\CodeBlock;
 use Hazaar\Parser\PHP\Traits\DocBlockParser;
 
 class ParserFunction extends TokenParser
 {
     use DocBlockParser;
+    use CodeBlock;
 
     /**
      * Indicates if the function is static.
@@ -20,6 +22,8 @@ class ParserFunction extends TokenParser
      * The return access modifier of the function.
      */
     public ?string $access = 'public';
+
+    public bool $byRef = false;
 
     /**
      * The return type of the function.
@@ -66,6 +70,10 @@ class ParserFunction extends TokenParser
         if (T_FUNCTION == $token->type) {
             $token = next($tokens);
         }
+        if (T_AMPERSAND_NOT_FOLLOWED_BY_VAR_OR_VARARG === $token->type) {
+            $this->byRef = true;
+            $token = next($tokens);
+        }
         if (T_STRING == $token->type) {
             $this->name = $token->value;
         }
@@ -101,24 +109,11 @@ class ParserFunction extends TokenParser
         if (';' === $token) {
             return true;
         }
-
-        /**
-         * Find the end of the function by searching for it's closing bracket.
-         */
-        $openBrackets = 1;
-        while ($token = next($tokens)) {
-            if (!is_string($token)) {
-                continue;
-            }
-            if ('{' === $token) {
-                ++$openBrackets;
-            } elseif ('}' === $token) {
-                --$openBrackets;
-            }
-            if (0 === $openBrackets) {
-                break;
-            }
+        // Find the end of the function by searching for it's closing bracket.
+        if (!$this->seekCodeBlockEnd($tokens, '{', '}')) {
+            return false;
         }
+
         /*
          * If the function has no parameters, but params are defined in the docblock, we now
          * assume that this is an old-style variadic function (ie: uses func_get_args())

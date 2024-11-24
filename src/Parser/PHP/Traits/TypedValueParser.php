@@ -87,6 +87,15 @@ trait TypedValueParser
                 'array' => [],
                 default => $token->value,
             };
+        } elseif (T_NAME_FULLY_QUALIFIED == $token->type) {
+            $value = $token->value;
+            $token = next($tokens);
+            if ($token instanceof Token && T_DOUBLE_COLON === $token->type) {
+                $token = next($tokens);
+                $value .= '::'.$token->value;
+            } else {
+                prev($tokens);
+            }
         } elseif ($prev_after) {
             prev($tokens);
         }

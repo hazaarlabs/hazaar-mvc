@@ -47,6 +47,9 @@ class ParserProperty extends TokenParser
         for ($i = 0; $i < $count; ++$i) {
             $token = next($tokens);
         }
+        if (!$token instanceof Token) {
+            echo '';
+        }
         if (T_VARIABLE == $token->type) {
             $this->name = ltrim($token->value, '$');
         }

@@ -37,7 +37,7 @@ class APIDoc
             $files = $this->getFiles($path);
         }
         $PHPParser = new PHP();
-        $index = [
+        $index = (object) [
             'project' => [
                 'title' => $title,
                 'description' => '',
@@ -49,19 +49,18 @@ class APIDoc
             'constants' => [],
         ];
         foreach ($files as $file) {
-            //try {
+            try {
                 $parsedFile = $PHPParser->parse($file);
                 if (null === $parsedFile) {
                     continue;
                 }
                 $this->updateIndex($index, $parsedFile);
-            // } catch (\Exception $e) {
-            //     echo "Error parsing file: {$file}\n";
+            } catch (\Exception $e) {
+                echo "Error parsing file: {$file}\n";
 
-            //     continue;
-            // }
+                continue;
+            }
         }
-        dump($index);
         // $output = $outputPath.'/home';
         // file_put_contents($output.'.md', $templates['index']->render($index));
 
@@ -93,17 +92,14 @@ class APIDoc
         return $templates;
     }
 
-    /**
-     * @param array<mixed> $index
-     */
-    private function updateIndex(array &$index, ParserFile $parsedFile): void
+    private function updateIndex(\stdClass &$index, ParserFile $parsedFile): void
     {
         if ($namespace = $parsedFile->getNamespace()) {
-            if (!(array_key_exists($namespace->name, $index['namespaces'])
-                && $index['namespaces'][$namespace->name] instanceof ParserNamespace)) {
-                $index['namespaces'][$namespace->name] = $namespace;
+            if (!(array_key_exists($namespace->name, $index->namespaces)
+                && $index->namespaces[$namespace->name] instanceof ParserNamespace)) {
+                $index->namespaces[$namespace->name] = $namespace;
             }
-            $updateIndex = &$index['namespaces'][$namespace->name];
+            $updateIndex = &$index->namespaces[$namespace->name];
         } else {
             $updateIndex = &$index;
         }

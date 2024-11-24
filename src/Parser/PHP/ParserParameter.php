@@ -25,20 +25,6 @@ class ParserParameter extends TokenParser
     {
         $token = current($tokens);
         do {
-            if (!$token instanceof Token
-                && match ($token) {
-                    ';', ',', ')', '{' => true,
-                    default => false
-                }) {
-                if (match ($token) {
-                    '{', ';' => true,
-                    default => false
-                }) {
-                    prev($tokens);
-                }
-
-                return true;
-            }
             if ($token instanceof Token) {
                 switch ($token->type) {
                     case T_ELLIPSIS:
@@ -53,6 +39,7 @@ class ParserParameter extends TokenParser
 
                     case T_ARRAY:
                     case T_STRING:
+                    case T_CALLABLE:
                         $this->type = $token->value;
 
                         break;
@@ -65,6 +52,18 @@ class ParserParameter extends TokenParser
                     default:
                         break 2;
                 }
+            } elseif (match ($token) {
+                ';', ',', ')', '{' => true,
+                default => false
+            }) {
+                if (match ($token) {
+                    '{', ';' => true,
+                    default => false
+                }) {
+                    prev($tokens);
+                }
+
+                return true;
             } elseif ('=' === $token) {
                 $token = next($tokens);
                 if ($token instanceof Token) {
