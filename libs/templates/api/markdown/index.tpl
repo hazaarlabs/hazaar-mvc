@@ -15,8 +15,7 @@ This is an automatically generated documentation for **{{project.title}}**.
 
 | Class | Description |
 |-------|-------------|
-{foreach $namespace.classes as $class}
-| {{ class.mdClassLink(class) }} | {{ class.summary|replace({'|': '&#124;'})|nl2br|replace({"\n": "", "\r": "", "\t": ""})|raw }}|
+{foreach $namespace->classes as $class}| [{$class->name}]({$class->fullName()}) | {$class->description()}|
 {/foreach}
 
 {/if}

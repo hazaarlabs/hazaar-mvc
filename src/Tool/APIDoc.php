@@ -27,7 +27,6 @@ class APIDoc
         if (!file_exists($path)) {
             return false;
         }
-        $templates = $this->loadTemplates(SUPPORT_PATH.'/templates/api');
         $title = 'API Documentation';
         $path = realpath($path);
         $files = [];
@@ -61,8 +60,28 @@ class APIDoc
                 continue;
             }
         }
-        // $output = $outputPath.'/home';
-        // file_put_contents($output.'.md', $templates['index']->render($index));
+
+        return $this->render($index, $outputPath);
+    }
+
+    private function render(\stdClass &$index, string $outputPath): bool
+    {
+        $templates = $this->loadTemplates(SUPPORT_PATH.'/templates/api');
+
+        if (!file_exists($outputPath)) {
+            mkdir($outputPath, 0777, true);
+        }
+
+        try {
+            // Render the index
+            $output = $outputPath.'/home';
+            file_put_contents($output.'.md', $templates['index']->render((array) $index));
+        } catch (\Throwable $e) {
+            ob_end_clean();
+            echo "\n\n".$e->getMessage()."\n\nFiles:\n";
+            echo ' * Template: '.$templates['index']->getTemplateFile()."\n";
+            echo ' * Output: '.$output.'.md'."\n\n";
+        }
 
         return true;
     }
