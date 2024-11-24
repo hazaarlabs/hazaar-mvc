@@ -26,7 +26,8 @@ class Smarty
 {
     public string $ldelim = '{';
     public string $rdelim = '}';
-    public bool $allow_globals = true;
+    public bool $allowGlobals = true;
+    public ?string $sourceFile = null;
     public ?string $cwd = null;
 
     /**
@@ -124,6 +125,7 @@ class Smarty
         if (!$file instanceof File) {
             $file = new File($file);
         }
+        $this->sourceFile = $file->fullpath();
         $this->cwd = $file->dirname();
         $this->loadFromString($file->getContents());
     }
@@ -141,6 +143,16 @@ class Smarty
     public function getTemplate(): string
     {
         return $this->__content;
+    }
+
+    /**
+     * Retrieves the template file path.
+     *
+     * @return null|string the path to the template file, or null if not set
+     */
+    public function getTemplateFile(): ?string
+    {
+        return $this->sourceFile;
     }
 
     /**
@@ -183,7 +195,7 @@ class Smarty
                 'rdelim' => $this->rdelim,
             ],
         ];
-        if ($this->allow_globals) {
+        if ($this->allowGlobals) {
             $default_params['_COOKIE'] = $_COOKIE;
             $default_params['_ENV'] = $_ENV;
             $default_params['_GET'] = $_GET;
@@ -227,13 +239,19 @@ class Smarty
         }";
         $errors = error_reporting();
         error_reporting(0);
-        eval($code);
-        $obj = new $id();
-        ob_start();
-        $obj->custom_handlers = $this->__custom_function_handlers;
-        $obj->render($params);
-        error_clear_last();
-        error_reporting($errors);
+
+        try {
+            eval($code);
+            $obj = new $id();
+            ob_start();
+            $obj->custom_handlers = $this->__custom_function_handlers;
+            $obj->render($params);
+        } catch (\Throwable $e) {
+            throw new Exceptions\SmartyTemplateError($e);
+        } finally {
+            error_clear_last();
+            error_reporting($errors);
+        }
 
         return ob_get_clean();
     }
