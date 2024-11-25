@@ -69,22 +69,62 @@ class APIDoc
     {
         $templates = $this->loadTemplates(SUPPORT_PATH.'/templates/api');
 
-        if (!file_exists($outputPath)) {
-            mkdir($outputPath, 0777, true);
-        }
-
         try {
+            if (!file_exists($outputPath)) {
+                mkdir($outputPath, 0777, true);
+            }
+            $subdirs = [
+                'classes' => 'class',
+                'functions' => 'function',
+                'interfaces' => 'interface',
+                'constants' => 'constant',
+            ];
+            foreach ($subdirs as &$subdir) {
+                $subdir = rtrim($outputPath, '/ ').'/'.ltrim($subdir, '/ ');
+                if (file_exists($subdir)) {
+                    continue;
+                }
+                mkdir($subdir, 0777, true);
+            }
+
             // Render the index
             $output = $outputPath.'/home';
             file_put_contents($output.'.md', $templates['index']->render((array) $index));
+            $this->renderNamespace($index, $subdirs, $templates);
+            foreach ($index->namespaces as $namespace) {
+                $this->renderNamespace($namespace, $subdirs, $templates);
+            }
         } catch (\Throwable $e) {
             ob_end_clean();
             echo "\n\n".$e->getMessage()."\n\nFiles:\n";
             echo ' * Template: '.$templates['index']->getTemplateFile()."\n";
-            echo ' * Output: '.$output.'.md'."\n\n";
+            echo isset($output) ? ' * Output: '.$output.'.md'."\n\n" : "\n";
         }
 
         return true;
+    }
+
+    /**
+     * @param array<string,Smarty> $template
+     * @param array<string>        $subdirs
+     */
+    private function renderNamespace(ParserNamespace|\stdClass $namespace, array $subdirs, array $template): void
+    {
+        foreach ($subdirs as $type => $subdir) {
+            foreach ($namespace->{$type} as $item) {
+                $output = $subdir.'/'.($namespace instanceof ParserNamespace
+                    ? str_replace('\\', '/', $namespace->name).'/'
+                    : '').$item->name;
+                $name = basename($subdir);
+                if (!array_key_exists($name, $template)) {
+                    continue;
+                }
+                if (!file_exists($dirname = dirname($output))) {
+                    mkdir($dirname, 0777, true);
+                }
+                file_put_contents($output.'.md', $template[$name]->render((array) $item));
+            }
+        }
     }
 
     /**
