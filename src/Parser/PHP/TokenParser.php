@@ -35,7 +35,7 @@ class TokenParser
         if (null === $tokens) {
             return;
         }
-        if (!@$this->parse($tokens)) {
+        if (!$this->parse($tokens)) {
             $parserType = strtolower(substr(basename(str_replace('\\', '/', get_class($this))), 6));
 
             throw new \Exception('Failed to parse PHP '.$parserType);

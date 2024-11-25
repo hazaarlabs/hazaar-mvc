@@ -10,8 +10,10 @@ class ParserProperty extends TokenParser
 {
     use Traits\DocBlockParser;
     use Traits\TypedValueParser;
+    use Traits\CodeBlock;
 
     public ?string $type = null;
+    public bool $nullable = false;
     public string $access = 'public';
     public mixed $value;
     public bool $static = false;
@@ -27,6 +29,9 @@ class ParserProperty extends TokenParser
         $count = 0;
         while ($token = prev($tokens)) {
             if (!$token instanceof Token) {
+                if($token === '?'){
+                    $this->nullable = true;
+                }
                 break;
             }
             if (T_PRIVATE == $token->type || T_PUBLIC == $token->type || T_PROTECTED == $token->type) {
@@ -52,9 +57,13 @@ class ParserProperty extends TokenParser
             $this->name = ltrim($token->value, '$');
         }
         $token = next($tokens);
-        if (is_string($token) && '=' === $token) {
-            next($tokens);
-            $this->value = $this->getTypedValue($tokens);
+        if (is_string($token) ){
+            if('=' === $token) {
+                next($tokens);
+                $this->value = $this->getTypedValue($tokens);
+            }elseif('{' === $token){
+                $this->seekCodeBlockEnd($tokens, '{', '}');
+            }
         }
 
         return true;
