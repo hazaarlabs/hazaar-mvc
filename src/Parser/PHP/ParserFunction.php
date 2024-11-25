@@ -35,13 +35,6 @@ class ParserFunction extends TokenParser
      */
     public array $params = [];
 
-    public ?DocBlock $docBlock = null;
-
-    public function description(): ?string
-    {
-        return $this->docBlock ? $this->docBlock->brief() : null;
-    }
-
     protected function parse(array &$tokens): bool
     {
         $token = current($tokens);

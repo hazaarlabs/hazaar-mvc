@@ -16,8 +16,6 @@ class ParserProperty extends TokenParser
     public mixed $value;
     public bool $static = false;
 
-    public ?DocBlock $docBlock = null;
-
     protected function parse(array &$tokens): bool
     {
         $token = current($tokens);

@@ -4,11 +4,27 @@ declare(strict_types=1);
 
 namespace Hazaar\Parser\PHP;
 
+use Hazaar\Parser\DocBlock;
+
 class TokenParser
 {
     public ?ParserNamespace $namespace = null;
     public ?string $name = null;
     public ?int $line = null;
+
+    public ?DocBlock $docBlock = null;
+
+    public ?string $brief {
+        get {
+            return $this->docBlock ? $this->docBlock->brief() : null;
+        }
+    }
+
+    public ?string $detail {
+        get {
+            return $this->docBlock ? $this->docBlock->detail() : null;
+        }
+    }
 
     /**
      * @param array<Token> $tokens

@@ -31,8 +31,6 @@ class ParserFile extends TokenParser
      */
     private array $classes = [];
 
-    private ?DocBlock $docBlock = null;
-
     public function __construct(string $filename)
     {
         $this->source = realpath($filename);

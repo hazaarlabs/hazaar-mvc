@@ -11,13 +11,7 @@ class ParserConstant extends TokenParser
     use Traits\DocBlockParser;
     use Traits\TypedValueParser;
 
-    public ?DocBlock $docBlock = null;
     public mixed $value;
-
-    public function description(): ?string
-    {
-        return $this->docBlock ? $this->docBlock->brief() : null;
-    }
 
     protected function parse(array &$tokens): bool
     {

@@ -13,11 +13,11 @@
 
 {foreach $properties as $property}
 ### [{$property->name}](#{$property->name})
-{if $property->brief} - {$property->brief}{/if}
+{if $property->brief}{$property->brief}{/if}
 ```php
 {$property->access} {$property->type} ${$property->name}
 ```
-{if $property->detail} - {$property->detail}{/if}
+{if $property->detail}{$property->detail}{/if}
 {/foreach}
 {else}
 No properties defined.
