@@ -247,7 +247,6 @@ class Smarty
         error_reporting(0);
 
         try {
-            file_put_contents('smarty.php', "<?\n".$code);
             eval($code);
             $obj = new $id();
             ob_start();
