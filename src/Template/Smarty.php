@@ -50,6 +50,7 @@ class Smarty
         // Hybrid Smarty 3.0 Bits
         'function',
         'call',
+        'php',
     ];
     protected string $__content = '';
     protected string $__compiled_content = '';
@@ -135,6 +136,11 @@ class Smarty
         if (is_object($object)) {
             $this->__custom_function_handlers[] = $object;
         }
+    }
+
+    public function registerPlugin(string $modifier, callable $callback): void
+    {
+        $this->__custom_functions[$modifier] = $callback;
     }
 
     /**
@@ -223,7 +229,7 @@ class Smarty
             private \$include_funcs = [];
             function __construct(){ \$this->modify = new \\Hazaar\\Template\\Smarty\\Modifier; }
             public function render(\$params){
-                extract(\$this->params = \$params);
+                extract(\$this->params = \$params, EXTR_REFS);
                 ?>{$this->__compiled_content}<?php
             }
             private function url(){
@@ -241,6 +247,7 @@ class Smarty
         error_reporting(0);
 
         try {
+            file_put_contents('smarty.php', "<?\n".$code);
             eval($code);
             $obj = new $id();
             ob_start();
@@ -310,6 +317,16 @@ class Smarty
 
             return $replacement;
         }, $compiled_content);
+    }
+
+    public function compilePHP(): string
+    {
+        return '<?php ';
+    }
+
+    public function compileENDPHP(): string
+    {
+        return '?>';
     }
 
     protected function setType(mixed $value, string $type = 'string', ?string $args = null): string
@@ -645,8 +662,14 @@ class Smarty
         }
         unset($params['name']);
         $this->__custom_functions[$name] = $params;
+        if (array_key_exists('params', $params)) {
+            $funcParams = eval('return '.$params['params'].';');
+            $compiledParams = implode(', ', array_map(function ($item) { return '&$'.$item; }, $funcParams));
+        } else {
+            $compiledParams = '';
+        }
 
-        return "<?php (\$this->functions['{$name}'] = function(\$params){ global \$smarty; extract(\$params); ?>";
+        return "<?php (\$this->functions['{$name}'] = function({$compiledParams}){ global \$smarty; ?>";
     }
 
     protected function compileENDFUNCTION(): string
@@ -660,13 +683,9 @@ class Smarty
             return '';
         }
         $code = "<?php \$this->functions['{$name}'](";
-        $params = array_merge($this->__custom_functions[$name], $this->parsePARAMS($params));
+        $params = $this->parsePARAMS($params);
         if (count($params) > 0) {
-            $parts = [];
-            foreach ($params as $key => $value) {
-                $parts[] = "'{$key}' => ".$this->compileVAR($value);
-            }
-            $code .= '['.implode(', ', $parts).']';
+            $code .= implode(', ', $params);
         }
         $code .= '); ?>';
 
@@ -721,7 +740,7 @@ class Smarty
         $file = trim($params['file'], '\'"');
         unset($params['file']);
         if ('/' !== $file[0] && !preg_match('/^\w+\:\/\//', $file)) {
-            $file = $this->cwd ? rtrim($this->cwd, ' /').'/' : getcwd().DIRECTORY_SEPARATOR.$file;
+            $file = ($this->cwd ? rtrim($this->cwd, ' /') : getcwd()).DIRECTORY_SEPARATOR.$file;
         }
         $info = pathinfo($file);
         if (!(array_key_exists('extension', $info) && $info['extension'])
@@ -732,9 +751,11 @@ class Smarty
         $output = '';
         if (!array_key_exists($hash, $this->__include_funcs)) {
             $this->__includes[] = $file;
-            $this->__include_funcs[$hash] = $include = new Smarty(file_get_contents($file));
+            $this->__include_funcs[$hash] = $include = new Smarty();
+            $include->loadFromFile($file);
             $include->__include_funcs = $this->__include_funcs;
             $output = $include->compile();
+            $this->__custom_functions = array_merge($this->__custom_functions, $include->__custom_functions);
             $this->__includes = array_unique(array_merge($this->__includes, $include->__includes));
             if (0 === count($params)) {
                 return $output;
