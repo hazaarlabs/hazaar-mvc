@@ -11,7 +11,7 @@ class ParserConstant extends TokenParser
     use Traits\DocBlockParser;
     use Traits\TypedValueParser;
 
-    public mixed $value;
+    public mixed $value = null;
 
     protected function parse(array &$tokens): bool
     {

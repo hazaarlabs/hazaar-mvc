@@ -122,7 +122,7 @@ class APIDoc
                 if (!file_exists($dirname = dirname($output))) {
                     mkdir($dirname, 0777, true);
                 }
-                file_put_contents($output.'.md', $template[$name]->render((array) $item));
+                file_put_contents($output.'.md', $template[$name]->render([$name => $item]));
             }
         }
     }

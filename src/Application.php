@@ -69,6 +69,10 @@ putenv('HOME='.APPLICATION_PATH);
 class Application
 {
     /**
+     * The current version of Hazaar MVC.
+     */
+    const VERSION = '3.0';
+    /**
      * The global variables container.
      *
      * This is a container for global variables that are available to all controllers and views.  This is
@@ -129,7 +133,7 @@ class Application
      *
      * @param string $env The application environment name. eg: 'development' or 'production'
      */
-    public function __construct($env)
+    public function __construct(string $env)
     {
         try {
             ob_start();

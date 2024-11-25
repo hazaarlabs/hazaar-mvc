@@ -2,16 +2,29 @@
 
 {include file="include/header.tpl"}
 
-# {$name}
+# {$class->name}
 
-{$description}
+{$class->brief}
 
-## Table of Contents
+{$class->detail}
 
-{if $properties}
+{if $class->constants}
+## Constants
+
+{foreach $class->constants as $constant}
+### [{$constant->name}](#{$constant->name})
+{if $constant->brief}{$constant->brief}{/if}
+```php
+{$constant->access} const {$constant->name} = {$constant->value}
+```
+{if $constant->detail}{$constant->detail}{/if}
+{/foreach}
+{/if}
+
+{if $class->properties}
 ## Properties
 
-{foreach $properties as $property}
+{foreach $class->properties as $property}
 ### [{$property->name}](#{$property->name})
 {if $property->brief}{$property->brief}{/if}
 ```php
@@ -19,33 +32,25 @@
 ```
 {if $property->detail}{$property->detail}{/if}
 {/foreach}
-{else}
-No properties defined.
 {/if}
 
-{if $methods}
-{osort $methods}
+{if $class->methods}
 ## Methods
 
-{foreach $methods as $method}> [{$method->name}](#{$method->name})
-{if $method->description} - {$method->description}{/if}
+{foreach $class->methods as $method}
+### [{$method->name}](#{$method->name})
+{if $method->brief}{$method->brief}{/if}
+```php
+{$method->access} {$method->return} {$method->name}({{$method->params}})
+```
+{if $method->detail}{$method->detail}{/if}
+{if $method->params}
+#### Parameters
+| Parameter | Type | Description |
+|-----------|------|-------------|
+{foreach $method->params as $param}| ```${$param->name}``` | {$param->type} | {$param->comment} |
 {/foreach}
-{else}
-No methods defined.
 {/if}
-
-{if $properties}
-### Properties
-{foreach $properties as $property}
-#### {$property->name}
-
-{$property->description}
-
-**Type:** {$property->type}
-
-{if $property->default}**Default:** {$property->default}{/if}
-
-{if $property->required}**Required:** Yes{/if}
 
 {/foreach}
 {/if}

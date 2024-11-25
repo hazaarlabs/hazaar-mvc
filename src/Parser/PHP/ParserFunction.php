@@ -135,6 +135,9 @@ class ParserFunction extends TokenParser
                     }));
                     if ($functionParam) {
                         $functionParam->comment = $param['desc'] ?? '';
+                        if(!$functionParam->type) {
+                            $functionParam->type = $param['type'] ?? 'mixed';
+                        }
                     }
                 }
             }
