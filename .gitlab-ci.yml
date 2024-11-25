@@ -37,6 +37,7 @@ variables:
     - echo "ENVIRONMENT - $CI_ENVIRONMENT_NAME"
     - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
     - apk add npm git
+    - export NODE_OPTIONS="--max-old-space-size=4096"
   script:
     - cd docs
     - npm install
@@ -113,31 +114,31 @@ Unit Testing:
     reports:
       junit: phpunit-test-results.xml
 
-# Build Testing Documentation:
-#   extends: .Build Docs
-#   environment: testing
-#   rules:
-#     - if: $CI_MERGE_REQUEST_ID
+Build Testing Documentation:
+  extends: .Build Docs
+  environment: testing
+  rules:
+    - if: $CI_MERGE_REQUEST_ID
 
 Build Testing Image:
   extends: .Build Image
   environment: testing
-  # needs: 
-  #   - Build Testing Documentation
+  needs: 
+    - Build Testing Documentation
   rules:
     - if: $CI_MERGE_REQUEST_ID
 
-# Build Production Documentation:
-#   extends: .Build Docs
-#   environment: production
-#   rules:
-#     - if: '$CI_COMMIT_BRANCH == "master"'
+Build Production Documentation:
+  extends: .Build Docs
+  environment: production
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
 
 Build Production Image:
   extends: .Build Image
   environment: production
-  # needs: 
-  #   - Build Production Documentation
+  needs: 
+    - Build Production Documentation
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
 
