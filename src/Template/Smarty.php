@@ -682,12 +682,21 @@ class Smarty
         if (!array_key_exists($name, $this->__custom_functions)) {
             return '';
         }
-        $code = "<?php \$this->functions['{$name}'](";
+        $code = "<?php\n";
         $params = $this->parsePARAMS($params);
-        if (count($params) > 0) {
-            $code .= implode(', ', $params);
+        foreach ($params as &$value) {
+            if ('$' === substr($value, 0, 1)) {
+                continue;
+            }
+            $key = '$var_'.uniqid();
+            $code .= "{$key} = {$value};\n";
+            $value = $key;
         }
-        $code .= '); ?>';
+        $compiledParams = match (true) {
+            (count($params) > 0) => implode(', ', $params),
+            default => ''
+        };
+        $code .= "\$this->functions['{$name}']({$compiledParams});\n?>";
 
         return $code;
     }
