@@ -9,7 +9,7 @@ use Hazaar\View as HazaarView;
 
 class View extends HTML
 {
-    private HazaarView $_view;
+    private ?HazaarView $_view = null;
     private string $_view_name;
 
     /**

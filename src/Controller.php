@@ -346,7 +346,7 @@ abstract class Controller implements Controller\Interfaces\Controller
      * @param string       $action     the action name
      * @param array<mixed> $actionArgs the action arguments
      * @param null|string  $cacheName  the cache name
-     * 
+     *
      * @param-out string $cacheName
      */
     private function getCacheKey(

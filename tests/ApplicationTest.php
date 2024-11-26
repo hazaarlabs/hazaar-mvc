@@ -27,6 +27,6 @@ class ApplicationTest extends TestCase
     {
         $url = new URL();
         $this->assertInstanceOf('\Hazaar\Application\Url', $url);
-        $this->assertIsString($url->toString());
+        $this->assertEquals("http://localhost/opt/hazaar/vendor/bin/", $url->toString());
     }
 }

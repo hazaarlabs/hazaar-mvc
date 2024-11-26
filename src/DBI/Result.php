@@ -28,7 +28,7 @@ class Result implements \Countable, \Iterator
     private ?Row $record = null;
 
     /**
-     * @var array<int, Row>
+     * @var array<mixed>
      */
     private ?array $records = null;
 
@@ -121,9 +121,7 @@ class Result implements \Countable, \Iterator
      */
     public function setSelectGroups(array $select_groups): void
     {
-        if (\is_array($select_groups)) {
-            $this->select_groups = $select_groups;
-        }
+        $this->select_groups = $select_groups;
     }
 
     public function hasSelectGroups(): bool
@@ -587,7 +585,6 @@ class Result implements \Countable, \Iterator
                     if (!isset($objs[$alias])) {
                         $objs[$alias] = [];
                     }
-                    // @phpstan-ignore-next-line
                     $objs[$alias][$name] = (is_array($value) && is_array($meta)) ? $value[$idx] : $value;
                     unset($record[$name]);
                 }

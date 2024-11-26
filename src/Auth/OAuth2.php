@@ -28,7 +28,7 @@ class OAuth2 extends Adapter
      * @var array<string>
      */
     protected array $scopes = [];
-    private \Closure $authenticateCallback;
+    private ?\Closure $authenticateCallback = null;
 
     public function __construct(
         string $clientID,
@@ -231,8 +231,12 @@ class OAuth2 extends Adapter
      *
      * @return bool True if the authentication was successful.  False otherwise.
      */
-    public function authenticate(?string $identity = null, ?string $credential = null, bool $autologin = false, bool $skip_auth_check = false): bool
-    {
+    public function authenticate(
+        ?string $identity = null,
+        ?string $credential = null,
+        bool $autologin = false,
+        bool $skip_auth_check = false
+    ): bool {
         if (true !== $skip_auth_check && $this->authenticated()) {
             if ($uri = $this->storage->get('redirect_uri')) {
                 header('Location: '.$uri);
@@ -522,7 +526,7 @@ class OAuth2 extends Adapter
         $request['grantType'] = $grantType;
         $request['clientID'] = $this->clientID;
         $request['clientSecret'] = $this->clientSecret;
-        if (null !== $identity) {
+        if ('' !== trim($identity)) {
             $request['username'] = $identity;
             $request['password'] = $credential;
             $this->httpClient->auth($identity, $credential);
@@ -628,9 +632,6 @@ class OAuth2 extends Adapter
             throw new \Exception('The current APPLICATION_BASE does not match the REQUEST_URI?  What the!?');
         }
         $action = $_SERVER['REQUEST_URI'];
-        if (APPLICATION_BASE !== '/') {
-            $action = trim(str_replace(addslashes(APPLICATION_BASE), '', $_SERVER['REQUEST_URI']), '/');
-        }
         $url = new URL($action);
 
         return (string) $url;

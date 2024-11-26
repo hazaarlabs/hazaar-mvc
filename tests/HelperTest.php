@@ -31,7 +31,6 @@ class HelperTest extends TestCase
             'root.child6.child7' => 'value',
         ];
         $result = array_from_dot_notation($dot_notation);
-        $this->assertIsArray($result);
         $this->assertArrayHasKey('root', $result);
         $this->assertIsArray($result['root']);
         $this->assertArrayHasKey('child1', $result['root']);
@@ -45,7 +44,6 @@ class HelperTest extends TestCase
         $this->assertTrue($map->has('key'));
         $this->assertEquals('value', $map->get('key'));
         $this->assertEquals('missing', $map->get('test', 'missing'));
-        $this->assertIsArray($map->toArray());
         $this->assertArrayHasKey('key', $map->toArray());
         $this->assertEquals('value', $map->toArray()['key']);
     }

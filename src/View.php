@@ -90,7 +90,18 @@ class View implements \ArrayAccess
         $this->remove($key);
     }
 
-    public static function getViewPath(string $view, string &$name): ?string
+    /**
+     * Returns the path to a view file.
+     *
+     * This method will search for a view file in the application view path and the support view path.
+     *
+     * @param string $view the name of the view to find
+     * @param string $name the name of the view that was found
+     * @param-out string $name the name of the view that was found
+     *
+     * @return string|null the path to the view file or null if the view was not found
+     */
+    public static function getViewPath(string $view, string &$name = ''): ?string
     {
         $viewfile = null;
         $parts = pathinfo($view);

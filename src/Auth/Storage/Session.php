@@ -73,7 +73,7 @@ class Session implements Storage
                 throw new SessionStartFailed();
             }
         }
-        if (!isset($_SESSION) || !is_array($_SESSION)) {
+        if (!isset($_SESSION)) {
             $_SESSION = [];
         }
         $this->session = &$_SESSION;

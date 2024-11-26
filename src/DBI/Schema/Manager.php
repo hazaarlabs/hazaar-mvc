@@ -132,7 +132,7 @@ class Manager
      */
     public function &getVersions(bool $returnFullPath = false, bool $appliedOnly = false): array
     {
-        if (!is_array($this->versions)) {
+        if (!count($this->versions) > 0) {
             $this->versions = [0 => [], 1 => []];
             // Get a list of all the available versions
             if (file_exists($this->migrateDir) && is_dir($this->migrateDir)) {
@@ -142,15 +142,13 @@ class Manager
                         continue;
                     }
                     $info = pathinfo($file);
-                    $matches = null;
+                    $matches = [];
                     if (!(isset($info['extension']) && 'json' === $info['extension'] && preg_match('/^(\d+)_(\w+)$/', $info['filename'], $matches))) {
                         continue;
                     }
-                    if (is_array($matches)) {
-                        $version = (int) str_pad($matches[1], 14, '0', STR_PAD_RIGHT);
-                        $this->versions[0][$version] = $this->migrateDir.DIRECTORY_SEPARATOR.$file;
-                        $this->versions[1][$version] = str_replace('_', ' ', $matches[2]);
-                    }
+                    $version = (int) str_pad($matches[1], 14, '0', STR_PAD_RIGHT);
+                    $this->versions[0][$version] = $this->migrateDir.DIRECTORY_SEPARATOR.$file;
+                    $this->versions[1][$version] = str_replace('_', ' ', $matches[2]);
                 }
                 ksort($this->versions[0]);
                 ksort($this->versions[1]);
@@ -843,12 +841,8 @@ class Manager
         if (count($indexes) > 0) {
             foreach ($indexes as $index_name => $index) {
                 // Check if the index is actually a constraint
-                if (array_key_exists('constraints', $currentSchema)
-                    && array_key_exists($index_name, $currentSchema['constraints'])) {
+                if (array_key_exists($index_name, $currentSchema['constraints'])) {
                     continue;
-                }
-                if (!array_key_exists('indexes', $currentSchema)) {
-                    $currentSchema['indexes'] = [];
                 }
                 $currentSchema['indexes'][$index_name] = $index;
             }
@@ -858,8 +852,7 @@ class Manager
             // Look for new indexes
             foreach ($indexes as $index_name => $index) {
                 // Check if the index is actually a constraint
-                if (array_key_exists('constraints', $currentSchema)
-                    && array_key_exists($index_name, $currentSchema['constraints'])) {
+                if (array_key_exists($index_name, $currentSchema['constraints'])) {
                     continue;
                 }
                 if (array_key_exists($index_name, $schema['indexes'])) {
@@ -889,8 +882,7 @@ class Manager
         } elseif (count($indexes) > 0) {
             foreach ($indexes as $index_name => $index) {
                 // Check if the index is actually a constraint
-                if (array_key_exists('constraints', $currentSchema)
-                    && array_key_exists($index_name, $currentSchema['constraints'])) {
+                if (array_key_exists($index_name, $currentSchema['constraints'])) {
                     continue;
                 }
                 $this->log("+ Added new index '{$index_name}'.");
@@ -1002,15 +994,11 @@ class Manager
             }
         }
         if (array_key_exists('functions', $schema)) {
-            if (!array_key_exists('functions', $currentSchema)) {
-                $currentSchema['functions'] = [];
-            }
             $missing = [];
             foreach ($schema['functions'] as $func_name => $func_instances) {
                 $missing_func = null;
                 foreach ($func_instances as $func) {
                     if (array_key_exists($func_name, $currentSchema['functions'])
-                        && is_array($currentSchema['functions'])
                         && count($currentSchema['functions']) > 0) {
                         $p1 = ake($func, 'parameters', []);
                         foreach ($currentSchema['functions'][$func_name] as $c_func) {
@@ -1159,6 +1147,8 @@ class Manager
     /**
      * @param array<int> $appliedVersions
      *
+     * @param-out array<int> $appliedVersions
+     *
      * @return array<int>
      */
     public function getMissingVersions(?int $version = null, ?array &$appliedVersions = null): array
@@ -1168,7 +1158,7 @@ class Manager
         }
         $appliedVersions = [];
         if ($this->dbi->table(self::$schemaInfoTable)->exists()) {
-            $appliedVersions = $this->dbi->table(self::$schemaInfoTable)->fetchAllColumn('version');
+            $appliedVersions = array_map('intval', $this->dbi->table(self::$schemaInfoTable)->fetchAllColumn('version'));
         }
         $versions = $this->getVersions();
 
@@ -1480,7 +1470,7 @@ class Manager
     /**
      * Undo a migration version.
      *
-     * @param array<string> $rollbacks
+     * @param array<int> $rollbacks
      */
     public function rollback(int $version, bool $test = false, array &$rollbacks = []): bool
     {
@@ -1806,7 +1796,7 @@ class Manager
         $this->currentVersion = null;  // Removed to force reload
         $this->appliedVersions = null; // Removed to force reload
         $this->dbi->beginTransaction();
-        $globalVars = [];
+        $globalVars = new \stdClass();
 
         try {
             $records = [];
@@ -1819,11 +1809,9 @@ class Manager
                 $this->dbi->commit();
             }
             $this->log('DBI Data sync completed successfully!');
-            if (method_exists($this->dbi->driver, 'repair')) {
-                $this->log('Running '.$this->dbi->driver.' repair process');
-                $result = $this->dbi->driver->repair();
-                $this->log('Repair '.($result ? 'completed successfully' : 'failed'));
-            }
+            $this->log('Running '.$this->dbi->driver.' repair process');
+            $result = $this->dbi->driver->repair();
+            $this->log('Repair '.($result ? 'completed successfully' : 'failed'));
         } catch (\Throwable $e) {
             $this->dbi->rollback();
             $this->log('DBI Data sync error: '.$e->getMessage());
@@ -1852,9 +1840,6 @@ class Manager
      */
     public function setLogCallback(\Closure $callback): bool
     {
-        if (!is_callable($callback)) {
-            return false;
-        }
         $this->__callback = $callback;
 
         return true;
@@ -2018,8 +2003,8 @@ class Manager
             .DIRECTORY_SEPARATOR.$type
             .DIRECTORY_SEPARATOR.(string) $version
             .DIRECTORY_SEPARATOR.$item['name'].'.sql';
-        if (file_exists($sourceFile)) {
-            $item['content'] = file_get_contents($sourceFile);
+        if (file_exists($sourceFile) && ($content = file_get_contents($sourceFile))) {
+            $item['content'] = $content;
         }
     }
 
@@ -2029,12 +2014,12 @@ class Manager
      * This should only be used internally by the migrate method to replay an individual schema migration file.
      *
      * @param array<mixed>  $schema     The JSON decoded schema to replay
-     * @param array<string> $globalVars
+     * @param \stdClass $globalVars
      */
     private function replay(
         array $schema,
         bool $test = false,
-        ?array &$globalVars = null,
+        ?\stdClass &$globalVars = null,
         ?int $version = null
     ): bool {
         foreach ($schema as $level1 => $data) {
@@ -2408,9 +2393,6 @@ class Manager
         ?\stdClass $vars = null
     ): \stdClass {
         $row_refs = [];
-        if (!$row instanceof \stdClass) {
-            $row = (object) $row;
-        }
         if ($refs instanceof \stdClass) {
             $row = (object) array_merge((array) $row, (array) $refs);
         }
@@ -2457,7 +2439,10 @@ class Manager
                             break;
                         }
                     } else { // Fallback SQL query
-                        if (($match = $this->dbi->table($ref_table)->limit(1)->find($ref_criteria, ['value' => $ref_column])->fetch()) !== false) {
+                        if (($match = $this->dbi->table($ref_table)
+                            ->limit(1)
+                            ->find($ref_criteria, ['value' => $ref_column])
+                            ->fetch()) !== false) {
                             $macro->found = true;
                             $macro->value = ake($match, 'value');
                         }

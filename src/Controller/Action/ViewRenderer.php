@@ -138,7 +138,7 @@ class ViewRenderer implements \ArrayAccess
      */
     public function hasView(string $view): bool
     {
-        return null !== View::getViewPath($view, $name);
+        return null !== View::getViewPath($view);
     }
 
     /**

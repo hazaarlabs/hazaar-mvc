@@ -90,12 +90,13 @@ class Message implements \JsonSerializable
      */
     public function findPart(array|string $content_type): bool|Part
     {
-        if (is_array($this->parts)) {
-            $types = is_array($content_type) ? $content_type : [$content_type];
-            foreach ($this->parts as $part) {
-                if (in_array($part->getContentType(), $types)) {
-                    return $part;
-                }
+        if (!count($this->parts) > 0) {
+            return false;
+        }
+        $types = is_array($content_type) ? $content_type : [$content_type];
+        foreach ($this->parts as $part) {
+            if (in_array($part->getContentType(), $types)) {
+                return $part;
             }
         }
 

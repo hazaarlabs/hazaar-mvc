@@ -58,7 +58,7 @@ use Hazaar\Map;
  *
  * @method false|string lastInsertId()
  * @method false|int    exec(string $sql)
- * @method false|int    delete(string $tableName, mixed $criteria = [], array $from = [])
+ * @method false|int    delete(string $tableName, mixed $criteria = [], array<string> $from = [])
  * @method string       getSchemaName()
  * @method false|string quote(string $string, int $parameterType = \PDO::PARAM_STR)
  * @method bool         setTimezone(string $timezone)
@@ -76,7 +76,7 @@ use Hazaar\Map;
  * @method bool         inTransaction()
  * @method mixed        getAttribute(int $attribute)
  * @method bool         setAttribute(int $attribute, mixed $value)
- * @method bool         createRole(string $roleName, ?string $password = null, array $privileges = [])
+ * @method bool         createRole(string $roleName, ?string $password = null, array<mixed> $privileges = [])
  * @method bool         dropRole(string $name, bool $ifExists = false)
  * @method array|false  listUsers()
  * @method array|false  listGroups()
@@ -95,7 +95,7 @@ use Hazaar\Map;
  * @method bool         addConstraint(string $constraintName, mixed $info)
  * @method bool         dropConstraint(string $constraintName, string $tableName, bool $cascade = false, bool $ifExists = false)
  * @method array|false  listIndexes(?string $tableName = null)
- * @method bool         createIndex(string $indexName, string $tableName, array $idxInfo = [])
+ * @method bool         createIndex(string $indexName, string $tableName, array<mixed> $idxInfo = [])
  * @method bool         dropIndex(string $indexName, bool $ifExists = false)
  * @method array|false  listViews()
  * @method bool         createView(string $viewName, mixed $content)
@@ -117,7 +117,7 @@ use Hazaar\Map;
 class Adapter
 {
     /**
-     * @var array<string, int|string>
+     * @var array<string, int|string|array{cipher:string,checkstring:string}>
      */
     public static array $defaultConfig = [
         'encrypt' => [
@@ -420,9 +420,6 @@ class Adapter
         if (!($statement = ake($this->statements, $name)) instanceof \PDOStatement) {
             return false;
         }
-        if (!is_array($inputParameters)) {
-            $inputParameters = [$inputParameters];
-        }
 
         return $statement->execute($inputParameters);
     }
@@ -513,7 +510,7 @@ class Adapter
         $result = $this->driver->update($tableName, $this->encrypt($tableName, $fields), $criteria, $from, $returning, $tables);
         if ($result instanceof \PDOStatement) {
             $result = new Result($this, $result);
-            if (is_array(BaseDriver::$selectGroups) && count(BaseDriver::$selectGroups) > 0) {
+            if (count(BaseDriver::$selectGroups) > 0) {
                 $result->setSelectGroups(BaseDriver::$selectGroups);
             }
             $fetchArg = $result->hasSelectGroups() ? \PDO::FETCH_NAMED : \PDO::FETCH_ASSOC;

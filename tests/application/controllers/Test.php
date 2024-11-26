@@ -20,9 +20,6 @@ class Test extends Basic
         return 'Uniqid: '.uniqid();
     }
 
-    /**
-     * @route('/foo/<string:word>', methods=['GET'])
-     */
     public function bar(?string $word = null): mixed
     {
         return 'bar: '.($word ?? '');

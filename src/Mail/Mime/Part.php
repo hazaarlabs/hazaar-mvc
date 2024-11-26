@@ -28,9 +28,6 @@ class Part implements \JsonSerializable
      */
     public function setHeaders(array $headers): bool
     {
-        if (!is_array($headers)) {
-            return false;
-        }
         foreach ($headers as $name => $content) {
             $this->setHeader($name, $content);
         }
