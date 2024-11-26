@@ -1212,7 +1212,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable
                         }
                     }
                 }
-                if (!is_array($fields) || 0 == count($fields) || in_array($key, $fields)) {
+                if (0 == count($fields) || in_array($key, $fields)) {
                     $sum += (float) $elem;
                 }
             }
@@ -1457,7 +1457,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable
      */
     private function execFilter(int|string $key, mixed $elem, string $direction): mixed
     {
-        if (is_array($this->filter) && array_key_exists($direction, $this->filter) && count($this->filter[$direction]) > 0) {
+        if (array_key_exists($direction, $this->filter) && count($this->filter[$direction]) > 0) {
             foreach ($this->filter[$direction] as $field => $filter) {
                 if (array_key_exists('field', $filter) && (null !== $filter['field'] && $key != $filter['field'])) {
                     continue;

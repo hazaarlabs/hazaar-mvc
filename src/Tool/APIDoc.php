@@ -154,7 +154,7 @@ class APIDoc
 
     private function updateIndex(\stdClass &$index, ParserFile $parsedFile): void
     {
-        if ($namespace = $parsedFile->getNamespace()) {
+        if ($namespace = $parsedFile->namespace) {
             if (!(array_key_exists($namespace->name, $index->namespaces)
                 && $index->namespaces[$namespace->name] instanceof ParserNamespace)) {
                 $index->namespaces[$namespace->name] = $namespace;
@@ -176,7 +176,7 @@ class APIDoc
     private function pushIndexItem(array &$array, array $items): void
     {
         foreach ($items as $item) {
-            $array[$item->fullName()] = $item;
+            $array[$item->fullName] = $item;
         }
     }
 

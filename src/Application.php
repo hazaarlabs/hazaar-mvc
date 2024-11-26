@@ -21,7 +21,6 @@ use Hazaar\Application\Router\Exception\RouteNotFound;
 use Hazaar\Application\URL;
 use Hazaar\Controller\Response;
 use Hazaar\Controller\Response\File;
-use Hazaar\Controller\Response\HTTP\NoContent;
 use Hazaar\File\Metric;
 use Hazaar\Logger\Frontend;
 
@@ -39,7 +38,7 @@ defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV'
  *
  * Essentially this is the name of the directory the application is stored in.
  */
-define('APPLICATION_NAME', array_values(array_slice(explode(DIRECTORY_SEPARATOR, realpath(APPLICATION_PATH.DIRECTORY_SEPARATOR.'..')), -1))[0]);
+define('APPLICATION_NAME', array_slice(explode(DIRECTORY_SEPARATOR, realpath(APPLICATION_PATH.DIRECTORY_SEPARATOR.'..')), -1));
 putenv('HOME='.APPLICATION_PATH);
 
 /**
@@ -71,7 +70,8 @@ class Application
     /**
      * The current version of Hazaar MVC.
      */
-    const VERSION = '3.0';
+    public const VERSION = '3.0';
+
     /**
      * The global variables container.
      *
@@ -558,9 +558,7 @@ class Application
                     $response = $controller->run($route);
                 }
             }
-            if (!$response instanceof Response) {
-                $response = new NoContent();
-            } elseif ($response instanceof File) {
+            if ($response instanceof File) {
                 if (!$response->fileExists()) {
                     throw new \Exception('File not found', 404);
                 }
@@ -652,9 +650,6 @@ class Application
         $basePath = $this->request->getPath();
         $requestParts = $basePath ? array_map('strtolower', array_map('trim', explode('/', $basePath))) : [];
         for ($i = 0; $i < count($parts); ++$i) {
-            if (!array_key_exists($i, $requestParts) && null !== $this->urlDefaultPart) {
-                $requestParts[$i] = $this->urlDefaultPart;
-            }
             if ($parts[$i] !== $requestParts[$i]) {
                 return false;
             }

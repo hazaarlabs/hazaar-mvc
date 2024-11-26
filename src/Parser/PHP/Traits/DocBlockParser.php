@@ -10,7 +10,7 @@ use Hazaar\Parser\PHP\Token;
 trait DocBlockParser
 {
     /**
-     * @param array<Token> $tokens the tokens to parse
+     * @param array<Token|string> $tokens the tokens to parse
      */
     protected function checkDocComment(array &$tokens, bool $doubleJump = false): ?DocBlock
     {

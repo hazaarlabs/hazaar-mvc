@@ -103,9 +103,9 @@ class DocBlock
      *
      * @return bool
      */
-    public function hasTag($tag)
+    public function hasTag(string $tag)
     {
-        return is_array($this->tags) && array_key_exists($tag, $this->tags);
+        return array_key_exists($tag, $this->tags);
     }
 
     /**

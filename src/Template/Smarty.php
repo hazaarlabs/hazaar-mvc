@@ -133,9 +133,7 @@ class Smarty
 
     public function registerFunctionHandler(object $object): void
     {
-        if (is_object($object)) {
-            $this->__custom_function_handlers[] = $object;
-        }
+        $this->__custom_function_handlers[] = $object;
     }
 
     public function registerPlugin(string $modifier, callable $callback): void
@@ -295,7 +293,7 @@ class Smarty
                 $replacement = $this->{$func}($matches[3]);
             } elseif (array_key_exists($matches[2], $this->__custom_functions)) {
                 $replacement = $this->compileCUSTOMFUNC($matches[2], $matches[3]);
-            } elseif (is_array($this->__custom_function_handlers)
+            } elseif (count($this->__custom_function_handlers) > 0
             && $custom_handler = current(array_filter($this->__custom_function_handlers, function ($item, $index) use ($matches) {
                 if (!method_exists($item, $matches[2])) {
                     return false;
@@ -711,10 +709,7 @@ class Smarty
             if (array_key_exists($name, $params) || array_key_exists($name = $p->getPosition(), $params)) {
                 $value = $this->compilePARAMS($params[$name]);
             } elseif ($p->isDefaultValueAvailable()) {
-                $defaultValue = null;
-                if (true === $p->isDefaultValueAvailable()) {
-                    $defaultValue = $p->getDefaultValue();
-                }
+                $defaultValue = $p->getDefaultValue();
                 $value = ake($params, $p->getName(), $defaultValue);
                 $value = $this->compilePARAMS($value);
             }

@@ -14,6 +14,12 @@ class TokenParser
 
     public ?DocBlock $docBlock = null;
 
+    public ?string $fullName {
+        get {
+            return $this->namespace ? $this->namespace->apply($this->name) : $this->name;
+        }
+    }
+
     public ?string $brief {
         get {
             return $this->docBlock ? $this->docBlock->brief() : null;
@@ -27,14 +33,12 @@ class TokenParser
     }
 
     /**
-     * @param array<Token> $tokens
+     * @param array<Token|string> $tokens
+     * @param-out array<Token|string> $tokens
      */
     public function __construct(?array &$tokens = null, ?ParserNamespace $namespace = null)
     {
         $this->namespace = $namespace;
-        if (null === $tokens) {
-            return;
-        }
         if (!$this->parse($tokens)) {
             $parserType = strtolower(substr(basename(str_replace('\\', '/', get_class($this))), 6));
 
@@ -42,18 +46,8 @@ class TokenParser
         }
     }
 
-    public function getNamespace(): ?ParserNamespace
-    {
-        return $this->namespace;
-    }
-
-    public function fullName(): string
-    {
-        return $this->namespace ? $this->namespace->apply($this->name) : $this->name;
-    }
-
     /**
-     * @param array<string|Token> $tokens the tokens to parse
+     * @param array<Token|string> $tokens the tokens to parse
      */
     protected function parse(array &$tokens): bool
     {

@@ -79,28 +79,27 @@ class ParserFunction extends TokenParser
         if ('(' != $token) {
             throw new \Exception('Expected "("');
         }
-        $depth = 0;
         while ($token = next($tokens)) {
             if ((is_string($token) && ('{' === $token || ';' === $token))
                 || ($token instanceof Token && T_CURLY_OPEN == $token->type)) {
                 break;
             }
-            $nullable = false;
+            $isNullable = false;
             if (':' === $token) {
                 $token = next($tokens);
                 if ('?' === $token) {
-                    $nullable = true;
+                    $isNullable = true;
                     $token = next($tokens);
                 }
                 if ($token instanceof Token && T_STRING == $token->type) {
-                    $this->returns = new ParserParameter($tokens, $nullable);
+                    $this->returns = new ParserParameter($tokens, $isNullable);
                 }
-            } elseif (0 === $depth && ')' !== $token) {
+            } elseif (')' !== $token) {
                 if ('?' === $token) {
-                    $nullable = true;
+                    $isNullable = true;
                     $token = next($tokens);
                 }
-                $this->params[] = new ParserParameter($tokens, $nullable);
+                $this->params[] = new ParserParameter($tokens, $isNullable);
             }
         }
         // If the next token is a semicolon, then this is a function prototype and we can stop here.
@@ -135,7 +134,7 @@ class ParserFunction extends TokenParser
                     }));
                     if ($functionParam) {
                         $functionParam->comment = $param['desc'] ?? '';
-                        if(!$functionParam->type) {
+                        if (!$functionParam->type) {
                             $functionParam->type = $param['type'] ?? 'mixed';
                         }
                     }

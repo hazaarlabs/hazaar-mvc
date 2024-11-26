@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Hazaar\Application;
 use Hazaar\Controller\Dump;
-use Hazaar\Controller\Error;
 use Response\Text;
 
 $dumpLog = [];
@@ -212,11 +211,9 @@ function strbool(mixed $value): string
  *
  * Checks for various representations of a boolean, including strings of 'true/false' and 'yes/no'.
  *
- * @param string $value The string representation of the boolean
- *
  * @return bool
  */
-function is_boolean($value)
+function is_boolean(mixed $value)
 {
     if (!is_string($value)) {
         return is_bool($value);
@@ -424,45 +421,42 @@ function array_build_html(array $array, bool $root = true): array
  *
  *      Converts/reduces a multidimensional array into a single dimensional array with keys in dot-notation.
  *
- * @param array<mixed> $array                    the array to convert
- * @param string       $separator                The separater to use between keys.  Defaults to '.', hence the name of the functions.
- * @param int          $depth                    Limit to the specified depth. Starting at 1, this is the number of levels to return.
- *                                               Essentially, this is the number of dots, plus one.
- * @param string       $numeric_array_separators This parameter is used to display numeric arrays. It defaults to '[]' which
- *                                               means that numeric arrays will appear as "item[index].key".  This argument must be at least two
- *                                               characters.  The first character is the left side and the second character is the right side.  Any
- *                                               non-string values or string values less than 2 characters long will be ignored and numeric arrays
- *                                               will not be used.  To disable numeric arrays and cause elements with a numeric key to be output
- *                                               the same as other string key elements, simply set this to NULL.
+ * @param array<mixed> $array                  the array to convert
+ * @param string       $separator              The separater to use between keys.  Defaults to '.', hence the name of the functions.
+ * @param int          $depth                  Limit to the specified depth. Starting at 1, this is the number of levels to return.
+ *                                             Essentially, this is the number of dots, plus one.
+ * @param string       $numericArraySeparators This parameter is used to display numeric arrays. It defaults to '[]' which
+ *                                             means that numeric arrays will appear as "item[index].key".  This argument must be at least two
+ *                                             characters.  The first character is the left side and the second character is the right side.  Any
+ *                                             non-string values or string values less than 2 characters long will be ignored and numeric arrays
+ *                                             will not be used.  To disable numeric arrays and cause elements with a numeric key to be output
+ *                                             the same as other string key elements, simply set this to NULL.
  *
- * @return array<string,string>|bool
+ * @return array<string,string>
  */
 function array_to_dot_notation(
     array $array,
     string $separator = '.',
     ?int $depth = null,
-    string $numeric_array_separators = '[]'
-): array|bool {
-    if (!is_array($array)) {
-        return false;
-    }
+    string $numericArraySeparators = '[]'
+): array {
     if (!(null === $depth || $depth > 1)) {
         return $array;
     }
     $rows = [];
-    $numeric_array = (is_string($numeric_array_separators) && strlen($numeric_array_separators) >= 2);
+    $numeric_array = (strlen($numericArraySeparators) >= 2);
     foreach ($array as $key => $value) {
         if (is_array($value)) {
-            $children = array_to_dot_notation($value, $separator, is_null($depth) ? $depth : ($depth - 1), $numeric_array_separators);
+            $children = array_to_dot_notation($value, $separator, is_null($depth) ? $depth : ($depth - 1), $numericArraySeparators);
             foreach ($children as $childkey => $child) {
                 if ($numeric_array && is_numeric($key)) {
-                    $new_key = $numeric_array_separators[0].$key.$numeric_array_separators[1];
+                    $new_key = $numericArraySeparators[0].$key.$numericArraySeparators[1];
                 } else {
                     $new_key = $key;
                 }
                 if ($numeric_array && is_numeric($childkey)) {
-                    $new_key .= $numeric_array_separators[0].$childkey.$numeric_array_separators[1];
-                } elseif ($numeric_array && $childkey[0] === $numeric_array_separators[0]) {
+                    $new_key .= $numericArraySeparators[0].$childkey.$numericArraySeparators[1];
+                } elseif ($numeric_array && $childkey[0] === $numericArraySeparators[0]) {
                     $new_key .= $childkey;
                 } else {
                     $new_key .= $separator.$childkey;
@@ -488,10 +482,6 @@ function array_to_dot_notation(
  */
 function array_from_dot_notation(array $array): array
 {
-    if (!is_array($array)) {
-        return [];
-    }
-
     /**
      * @var array<mixed> $new
      */
@@ -551,7 +541,7 @@ function base64url_decode(string $data): string
  */
 function array_seek(array &$array, int $count): void
 {
-    if (!is_array($array) || !$count > 0) {
+    if (!$count > 0) {
         return;
     }
     for ($i = 0; $i < $count; ++$i) {
@@ -598,7 +588,7 @@ function build_url(
     if ($path = trim($path)) {
         $url .= $path;
     }
-    if (is_array($query) && count($query) > 0) {
+    if (count($query) > 0) {
         $url .= '?'.http_build_query($query);
     }
     if ($fragment = trim($fragment)) {
@@ -870,18 +860,16 @@ function years(int $interval): float
  * This helper function will return the number of years between a specified date and now. Useful for
  * getting an age.
  *
- * @return bool|int number of years from the specified date to now, or FALSE on error
+ * @return int number of years from the specified date to now
  */
-function age(DateTime|int|string $date): bool|int
+function age(DateTime|int|string $date): int
 {
     if ($date instanceof DateTime) {
         $time = $date->getTimestamp();
     } elseif (is_string($date)) {
         $time = strtotime($date);
-    } elseif (is_int($date)) {
-        $time = $date;
     } else {
-        return false;
+        $time = $date;
     }
 
     return (int) floor(years(time() - $time));
@@ -1003,9 +991,6 @@ function http_response_text($code)
  */
 function hazaar_request_headers(): array
 {
-    if (!is_array($_SERVER)) {
-        return [];
-    }
     $headers = [];
     foreach ($_SERVER as $name => $value) {
         if ('HTTP_' == substr($name, 0, 5)) {
@@ -1109,10 +1094,7 @@ function preg_match_array(
     ?array &$matches = null,
     mixed $flags = '0',
     int $offset = 0
-): bool|int {
-    if (!is_array($patterns)) {
-        return false;
-    }
+): int {
     foreach ($patterns as $pattern) {
         if (preg_match($pattern, $subject, $matches, $flags, $offset)) {
             return 1;
@@ -1262,15 +1244,14 @@ if (!function_exists('str_putcsv')) {
  * or stdClass. When the value in item1 and item2 are both arrays or objects, replace_recursive() will replace
  * their respective value recursively.
  *
- * @param array<mixed> $items
+ * @param mixed $items
  */
-function replace_recursive(array ...$items): mixed
+function replace_recursive(mixed ...$items): mixed
 {
     if (!($target = array_shift($items))) {
         $target = new stdClass();
     }
 
-    /** @var array<mixed>|stdClass $item */
     foreach ($items as $item) {
         if (!((is_array($item) && count($item) > 0)
             || ($item instanceof stdClass && count(get_object_vars($item)) > 0))) {
@@ -1361,11 +1342,11 @@ function recursive_iterator_to_array(Traversable $it): array
  * Compares `array1` against `array2` and returns the difference. Unlike array_diff() the array keys are also used
  * in the comparison.  Also, unlike the PHP array_diff_assoc() function, this function recurse into child arrays.
  *
- * @param array<mixed> ...$arrays More arrays to compare against.
+ * @param mixed $arrays More arrays to compare against.
  *
  * @return array<mixed>
  */
-function array_diff_assoc_recursive(array ...$arrays): array
+function array_diff_assoc_recursive(mixed ...$arrays): array
 {
     $array1 = array_shift($arrays);
 
@@ -1584,11 +1565,11 @@ function deep_clone(mixed $object): mixed
  * This is the same as array_diff_key() except it will recurse into child arrays and return
  * them in the result if they contain any key differences.
  *
- * @param array<mixed> ...$arrays More arrays to compare against.
+ * @param mixed ...$arrays More arrays to compare against.
  *
  * @return array<mixed>
  */
-function array_diff_key_recursive(array ...$arrays): array
+function array_diff_key_recursive(mixed ...$arrays): array
 {
     $array1 = array_shift($arrays);
     $diff = [];
@@ -1600,18 +1581,17 @@ function array_diff_key_recursive(array ...$arrays): array
             $value = (array) $value;
         }
 
-        /** @var array<mixed>|stdClass $item_compare */
-        foreach ($arrays as $item_compare) {
-            if ($item_compare instanceof stdClass) {
-                $item_compare = (array) $item_compare;
-            } elseif (!is_array($item_compare)) {
+        foreach ($arrays as $itemCompare) {
+            if ($itemCompare instanceof stdClass) {
+                $itemCompare = (array) $itemCompare;
+            } elseif (!is_array($itemCompare)) {
                 continue;
             }
-            if (array_key_exists($key, $item_compare)) {
-                if (!(is_array($value) && is_array($item_compare[$key]))) {
+            if (array_key_exists($key, $itemCompare)) {
+                if (!(is_array($value) && is_array($itemCompare[$key]))) {
                     continue 2;
                 }
-                $value_diff = array_diff_key_recursive($value, $item_compare[$key]);
+                $value_diff = array_diff_key_recursive($value, $itemCompare[$key]);
                 if (0 === count($value_diff)) {
                     continue 2;
                 }

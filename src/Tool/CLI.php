@@ -4,8 +4,12 @@ use Hazaar\Application;
 use Hazaar\Tool\Main;
 
 // Define path to application directory
-defined('APPLICATION_PATH') || define('APPLICATION_PATH', ($path = getenv('APPLICATION_PATH'))
-    ? $path : realpath(dirname(__FILE__).'/../../../../../application'));
+defined('APPLICATION_PATH') || define(
+    'APPLICATION_PATH',
+    ($path = getenv('APPLICATION_PATH'))
+    ? $path
+    : realpath(__DIR__.'/../../../../../application')
+);
 
 // Define application environment
 defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV') ? getenv('APPLICATION_ENV') : 'development');
@@ -13,7 +17,11 @@ defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV'
 define('SERVER_PATH', realpath(dirname(__FILE__).DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'src'));
 
 // Composer autoloading
-include APPLICATION_PATH.'/../vendor/autoload.php';
+if (file_exists($autoload = __DIR__.'/../../vendor/autoload.php')) {
+    include $autoload;
+} else {
+    include APPLICATION_PATH.'/../vendor/autoload.php';
+}
 
 $reflector = new ReflectionClass('Hazaar\Loader');
 

@@ -90,7 +90,7 @@ class View implements \ArrayAccess
         $this->remove($key);
     }
 
-    public static function getViewPath(string $view, ?string &$name): ?string
+    public static function getViewPath(string $view, string &$name): ?string
     {
         $viewfile = null;
         $parts = pathinfo($view);
@@ -153,18 +153,18 @@ class View implements \ArrayAccess
      *
      * This will return a helper, if one exists with the name provided.  Otherwise it will return any view data stored with the name.
      *
-     * @param mixed $helper  the name of the helper or view data key
-     * @param mixed $default if neither a helper or view data is found this default value will be returned
+     * @param string $key     the name of the helper or view data key
+     * @param mixed  $default if neither a helper or view data is found this default value will be returned
      *
      * @return mixed
      */
-    public function get($helper, $default = null)
+    public function get(string $key, mixed $default = null)
     {
-        if (array_key_exists($helper, $this->helpers)) {
-            return $this->helpers[$helper];
+        if (array_key_exists($key, $this->helpers)) {
+            return $this->helpers[$key];
         }
-        if (array_key_exists($helper, $this->data)) {
-            return $this->data[$helper];
+        if (array_key_exists($key, $this->data)) {
+            return $this->data[$key];
         }
 
         return $default;
@@ -210,9 +210,6 @@ class View implements \ArrayAccess
      */
     public function populate(array $array): bool
     {
-        if (!is_array($array)) {
-            return false;
-        }
         $this->data = $array;
 
         return false;
@@ -223,11 +220,8 @@ class View implements \ArrayAccess
      *
      * @param array<mixed> $array
      */
-    public function extend($array): bool
+    public function extend(array $array): bool
     {
-        if (!is_array($array)) {
-            return false;
-        }
         $this->data = array_merge($this->data, $array);
 
         return true;
@@ -259,9 +253,6 @@ class View implements \ArrayAccess
                 self::addHelper($h, [], $alias);
             }
         } elseif (is_object($helper)) {
-            if (!$helper instanceof Helper) {
-                return false;
-            }
             if (null === $alias) {
                 $alias = strtolower($helper->getName());
             }
@@ -277,9 +268,8 @@ class View implements \ArrayAccess
                 $helper = new $class($this, $args);
                 $this->helpers[$alias] = $helper;
             } else {
-                if (($helper = $this->helpers[$alias]) instanceof Helper) {
-                    $helper->extendArgs($args);
-                }
+                $helper = $this->helpers[$alias];
+                $helper->extendArgs($args);
             }
         }
 
@@ -346,9 +336,6 @@ class View implements \ArrayAccess
     public function initHelpers(): void
     {
         foreach ($this->helpers as $helper) {
-            if (!$helper instanceof Helper) {
-                continue;
-            }
             $name = get_class($helper);
             if (in_array($name, $this->helpersInit)) {
                 continue;
@@ -366,9 +353,6 @@ class View implements \ArrayAccess
     public function runHelpers(): void
     {
         foreach ($this->helpers as $helper) {
-            if (!$helper instanceof Helper) {
-                continue;
-            }
             $helper->run($this);
         }
     }
@@ -486,7 +470,7 @@ class View implements \ArrayAccess
      *
      * @return string the rendered view output
      */
-    public function partialLoop($view, array $data): string
+    public function partialLoop(string $view, array $data): string
     {
         $output = '';
         foreach ($data as $d) {
@@ -540,12 +524,12 @@ class View implements \ArrayAccess
     /**
      * Return a formatted date as a string.
      *
-     * @param mixed $value  This can be practically any date type.  Either a \Hazaar\Date object, epoch int, or even a string.
-     * @param mixed $format Optionally specify the format to display the date.  Otherwise the current default is used.
+     * @param mixed  $value  This can be practically any date type.  Either a \Hazaar\Date object, epoch int, or even a string.
+     * @param string $format Optionally specify the format to display the date.  Otherwise the current default is used.
      *
      * @return string the nicely formatted datetime string
      */
-    public static function datetime($value, $format = null)
+    public static function datetime(mixed $value, ?string $format = null)
     {
         if (!$value instanceof Date) {
             $value = new Date($value);
@@ -567,7 +551,7 @@ class View implements \ArrayAccess
         return $this->data[$offset];
     }
 
-    public function offsetSet($offset, $value): void
+    public function offsetSet(mixed $offset, mixed $value): void
     {
         if (null === $offset) {
             $this->data[] = $value;
@@ -576,7 +560,7 @@ class View implements \ArrayAccess
         }
     }
 
-    public function offsetUnset($offset): void
+    public function offsetUnset(mixed $offset): void
     {
         unset($this->data[$offset]);
     }
