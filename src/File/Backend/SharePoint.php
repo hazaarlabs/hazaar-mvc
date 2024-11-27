@@ -234,7 +234,7 @@ class SharePoint extends Client implements Interfaces\Backend, Interfaces\Driver
             return false;
         }
 
-        return (int)ake($info, 'Length', 0);
+        return (int) ake($info, 'Length', 0);
     }
 
     public function fileperms(string $path): false|int
@@ -491,6 +491,16 @@ class SharePoint extends Client implements Interfaces\Backend, Interfaces\Driver
         return false;
     }
 
+    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array|false
+    {
+        return false;
+    }
+
+    public function fsck(bool $skip_root_reload = false): bool
+    {
+        return false;
+    }
+
     private function encodePath(string $value): string
     {
         return rawurlencode(basename(str_replace("'", "''", $value)));
@@ -515,9 +525,6 @@ class SharePoint extends Client implements Interfaces\Backend, Interfaces\Driver
         }
         $xml = new \DOMDocument();
         $xml->loadXML($response->body());
-        if (!$xml instanceof \DOMDocument) {
-            throw new Exception\SharePointError('Invalid response authenticating SharePoint access.', $response);
-        }
         $xpath = new \DOMXPath($xml);
         if ($xpath->query('//wsse:BinarySecurityToken')->length > 0) {
             $nodeToken = $xpath->query('//wsse:BinarySecurityToken')->item(0);
@@ -572,6 +579,8 @@ class SharePoint extends Client implements Interfaces\Backend, Interfaces\Driver
     /**
      * @param array<mixed>         $body
      * @param array<string,string> $extra_headers
+     *
+     * @param-out ?Response         $response
      */
     private function _query(
         string $url,

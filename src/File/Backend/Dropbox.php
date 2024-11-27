@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hazaar\File\Backend;
 
 use Hazaar\Cache;
-use Hazaar\Exception;
 use Hazaar\File\Backend\Exception\DropboxError;
 use Hazaar\File\Image;
 use Hazaar\File\Manager;
@@ -62,10 +61,8 @@ class Dropbox extends Client implements Interfaces\Backend, Interfaces\Driver
 
     public function __destruct()
     {
-        if ($this->cache instanceof Cache) {
-            $this->cache->set('meta', $this->meta);
-            $this->cache->set('cursor', $this->cursor);
-        }
+        $this->cache->set('meta', $this->meta);
+        $this->cache->set('cursor', $this->cursor);
     }
 
     public static function label(): string
@@ -584,7 +581,7 @@ class Dropbox extends Client implements Interfaces\Backend, Interfaces\Driver
      */
     public function previewURL(string $path, array $params = []): string
     {
-        $width = (int)ake($params, 'width', ake($params, 'height', 64));
+        $width = (int) ake($params, 'width', ake($params, 'height', 64));
         if ($width >= 1024) {
             $size = 'w1024h768';
         } elseif ($width >= 640) {
@@ -708,6 +705,16 @@ class Dropbox extends Client implements Interfaces\Backend, Interfaces\Driver
      * @param resource $stream
      */
     public function closeStream($stream): bool
+    {
+        return false;
+    }
+
+    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array|false
+    {
+        return false;
+    }
+
+    public function fsck(bool $skip_root_reload = false): bool
     {
         return false;
     }

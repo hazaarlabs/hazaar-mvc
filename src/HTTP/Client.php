@@ -130,7 +130,7 @@ class Client
      * @param int     $redirectLimit The number of allowed redirects.  To disable
      *                               automated redirects on this request, set to FALSE.
      */
-    public function send(Request $request, int $redirectLimit = 10): false|Response
+    public function send(Request $request, int $redirectLimit = 10): ?Response
     {
         $this->SetHeader('Connection', 'close');
         if (count($this->headers) > 0) {

@@ -576,6 +576,16 @@ class Hazaar implements Interfaces\Backend, Interfaces\Driver
         return false;
     }
 
+    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array|false
+    {
+        return false;
+    }
+
+    public function fsck(bool $skip_root_reload = false): bool
+    {
+        return false;
+    }
+
     /**
      * @param array<string, int|string> $params
      * @param array<mixed>              $mime_parts

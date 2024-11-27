@@ -313,7 +313,7 @@ class PDF extends File
         $cmd .= ($this->grayscale ? ' --grayscale' : '');
         // title
         $cmd .= (('' != $this->title) ? ' --title "'.$this->title.'"' : '');
-        if (is_array($this->margins)) {
+        if (count($this->margins) > 0) {
             foreach ($this->margins as $arg => $value) {
                 $cmd .= ' -'.$arg.' '.(is_int($value) ? $value.'mm' : $value);
             }
