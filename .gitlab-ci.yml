@@ -19,12 +19,12 @@ variables:
 
 .Build Docs:
   stage: build
-  image:
-    name: jamiecarl/phpdoc-markdown
-    entrypoint: [""]
+  image: $UNIT_TEST_IMAGE
+  before_script:
+    - composer install
   script:
-    - phpdoc -d src -t docs/src/api --template="/md/themes/markdown"
-    # - bin/hztool --scan src --title "Hazaar API Documentation" doc docs/src/api
+    # - phpdoc -d src -t docs/src/api --template="/md/themes/markdown"
+    - bin/hztool --scan src --title "Hazaar API Documentation" doc docs/src/api
   artifacts:
     paths:
       - docs/src/api
@@ -63,14 +63,14 @@ Build Test Image:
   stage: build_test
   image: docker:latest
   services:
-  - docker:dind
+    - docker:dind
   before_script:
-  - until docker info; do sleep 1; done
-  - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin
-    $CI_REGISTRY
+    - until docker info; do sleep 1; done
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin
+      $CI_REGISTRY
   script:
-  - docker build --network host --pull --rm -f "Dockerfile" -t $UNIT_TEST_IMAGE .
-  - docker push --all-tags $CI_REGISTRY_IMAGE
+    - docker build --network host --pull --rm -f "Dockerfile" -t $UNIT_TEST_IMAGE .
+    - docker push --all-tags $CI_REGISTRY_IMAGE
   only:
     refs:
     - master
@@ -84,9 +84,9 @@ Code Quality:
     INPUT_PATH: "./src"
     INPUT_OPTIONS: "-c .phplint.yml"
   before_script:
-  - composer install
+    - composer install
   script: 
-  - vendor/bin/phplint -c .phplint.yml
+    - vendor/bin/phplint -c .phplint.yml
   artifacts:
     when: always
     reports:
@@ -96,9 +96,9 @@ Static Analysis:
   stage: test
   image: $UNIT_TEST_IMAGE
   before_script:
-  - composer install
+    - composer install
   script:
-  - vendor/bin/phpstan analyse -vvv -c phpstan.neon --error-format=junit > phpstan-test-results.xml
+    - vendor/bin/phpstan analyse -vvv -c phpstan.neon --error-format=junit > phpstan-test-results.xml
   artifacts:
     when: always
     reports:
@@ -110,9 +110,9 @@ Unit Testing:
   variables:
     APPLICATION_PATH: tests/application
   before_script:
-  - composer install
+    - composer install
   script:
-  - vendor/bin/phpunit
+    - vendor/bin/phpunit
   artifacts:
     when: always
     reports:
