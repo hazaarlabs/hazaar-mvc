@@ -587,15 +587,15 @@ class Hazaar implements Interfaces\Backend, Interfaces\Driver
     }
 
     /**
-     * @param array<string, int|string> $params
-     * @param array<mixed>              $mime_parts
+     * @param array<mixed> $params
+     * @param array<mixed> $mime_parts
      *
      * @return array<mixed>|false
      */
     private function request(string $cmd, array $params = [], array $mime_parts = []): array|false
     {
         $request = new Request($this->options['url'], 'POST');
-        if (is_array($params) && count($params) > 0) {
+        if (count($params) > 0) {
             $request->populate($params);
         }
         $request['cmd'] = $cmd;

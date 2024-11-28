@@ -25,12 +25,12 @@ use Hazaar\XML\Element;
  * @property bool                              $backtrack Flag to enable or disable backtrace functionality.
  * @property array<array{time:int,data:mixed}> $log       Log entries containing time and data.
  *
- * @method void          toggleBacktrace(bool $value = true) Toggles the backtrace functionality.
- * @method void          addLogEntries(array $entries)       Adds log entries to the dump.
- * @method Response\JSON json(array $dump = [])              Returns a JSON response with the dump data.
- * @method Response\XML  xmlrpc(array $data = [])            Returns an XML response with the dump data.
- * @method Response\Text text(array $data = [])              Returns a text response with the dump data.
- * @method Response\HTML html(array $data = [])              Returns an HTML response with the dump data.
+ * @method void          toggleBacktrace(bool $value = true)  Toggles the backtrace functionality.
+ * @method void          addLogEntries(array<mixed> $entries) Adds log entries to the dump.
+ * @method Response\JSON json(array<mixed> $dump = [])        Returns a JSON response with the dump data.
+ * @method Response\XML  xmlrpc(array<mixed> $data = [])      Returns an XML response with the dump data.
+ * @method Response\Text text(array<mixed> $data = [])        Returns a text response with the dump data.
+ * @method Response\HTML html(array<mixed> $data = [])        Returns an HTML response with the dump data.
  *
  * @param mixed       $data        the data to be dumped
  * @param Application $application the application instance

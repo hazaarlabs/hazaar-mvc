@@ -2013,8 +2013,7 @@ class Manager
      *
      * This should only be used internally by the migrate method to replay an individual schema migration file.
      *
-     * @param array<mixed>  $schema     The JSON decoded schema to replay
-     * @param \stdClass $globalVars
+     * @param array<mixed> $schema The JSON decoded schema to replay
      */
     private function replay(
         array $schema,
@@ -2415,12 +2414,13 @@ class Manager
         }
         // Process any macros that have been defined in record fields
         foreach ($row_refs as $columnName => $ref) {
-            $macro = (object) ['found' => false, 'value' => null];
+            $found = false;
+            $value = null;
 
             switch ($ref[0]) {
                 case self::MACRO_VARIABLE:
-                    if ($macro->found = property_exists($vars, $ref[1])) {
-                        $macro->value = ake($vars, $ref[1]);
+                    if ($found = property_exists($vars, $ref[1])) {
+                        $value = ake($vars, $ref[1]);
                     }
 
                     break;
@@ -2433,28 +2433,29 @@ class Manager
                             if (count(\array_diff_assoc($ref_criteria, (array) $record)) > 0) {
                                 continue;
                             }
-                            $macro->value = ake($record, $ref_column);
-                            $macro->found = true;
+                            $value = ake($record, $ref_column);
+                            $found = true;
 
                             break;
                         }
                     } else { // Fallback SQL query
-                        if (($match = $this->dbi->table($ref_table)
+                        $match = $this->dbi->table($ref_table)
                             ->limit(1)
                             ->find($ref_criteria, ['value' => $ref_column])
-                            ->fetch()) !== false) {
-                            $macro->found = true;
-                            $macro->value = ake($match, 'value');
+                            ->fetch()
+                        ;
+                        if (false !== $match) {
+                            $found = true;
+                            $value = ake($match, 'value');
                         }
                     }
 
                     break;
             }
-            if (false === $macro->found) {
+            if (false === $found) {
                 throw new Datasync("Macro for column '{$columnName}' did not find a value.");
             }
-            // @phpstan-ignore-next-line
-            $row->{$columnName} = $macro->value;
+            $row->{$columnName} = $value;
         }
 
         return $row;
@@ -2743,13 +2744,10 @@ class Manager
                         throw new Datasync('Data sync copy command requires a target index column.');
                     }
                     $map = (array) ake($copy, 'map', []);
-                    if (!(is_array($map) && count($map) > 0)) {
+                    if (0 === count($map)) {
                         throw new Datasync('Data sync copy command requires a valid column map.');
                     }
                     $set = (array) ake($copy, 'set', []);
-                    if (!is_array($set)) {
-                        throw new Datasync('Invalid \'set\' propert on migration copy command.  Must be an object.');
-                    }
                     $source_sql = "SELECT * FROM \"{$source_table}\" AS \"source\"";
                     if ($where = ake($copy, 'where')) {
                         $source_sql .= ' WHERE '.trim($where);
@@ -2793,11 +2791,11 @@ class Manager
     /**
      * Quick closure function to fix up the row ready for insert/update.
      *
-     * @param array<mixed> $row
+     * @param array<mixed>|\stdClass $row
      *
      * @return array<mixed>
      */
-    private function fixRow(array &$row, mixed $tableDef): array
+    private function fixRow(array|\stdClass &$row, mixed $tableDef): array
     {
         $fixed_row = [];
         foreach ($row as $name => &$col) {

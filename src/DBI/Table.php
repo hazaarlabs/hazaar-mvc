@@ -75,7 +75,7 @@ class Table implements \Iterator
     protected array $joins = [];
 
     /**
-     * @var array<string|Table>
+     * @var array<mixed>
      */
     protected array $combine = [];
 
@@ -561,7 +561,7 @@ class Table implements \Iterator
         int $cursorOrientation = \PDO::FETCH_ORI_NEXT,
         int $offset = 0,
         bool $clobberDupNamedCols = false
-    ): ?array {
+    ): array|false {
         $result = $this->execute();
 
         return $result->fetch(true !== $clobberDupNamedCols && $result->hasSelectGroups() ? \PDO::FETCH_NAMED : \PDO::FETCH_ASSOC, $cursorOrientation, $offset);

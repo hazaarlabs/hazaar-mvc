@@ -46,15 +46,15 @@ namespace Hazaar;
  *
  * ### Using Filters
  *
- * Here is an example of using an input filter to convert a Date object into an array of MongoDate and a
+ * Here is an example of using an input filter to convert a Date object into an array of epoch and a
  * timezone field.
  *
  * ```php
  * $callback = function($value, $key){
  *     if(is_a('\Hazaar\Date', $value)){
  *         $value = new Map([
- *             'datetime' => new MongoDate($value),
- *             'timezone' => $value['timezone']
+ *             'datetime' => $value->timestamp(),
+ *             'timezone' => $value->timezone()
  *         ]);
  *     }
  *     return $value;

@@ -25,9 +25,6 @@ class Frontend
         if (!$backend) {
             $backend = 'file';
         }
-        if ('mongodb' == strtolower($backend)) {
-            $backend = 'MongoDB';
-        }
         if ('database' == strtolower($backend)) {
             $backend = 'Database';
         }

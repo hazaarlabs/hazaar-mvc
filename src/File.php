@@ -480,9 +480,7 @@ class File implements \JsonSerializable
                 $content = substr($content, $pos + 1);
             }
             $this->contents = ('base64' == $encoding) ? base64_decode($content) : $content;
-            if (null !== $contentType) {
-                $this->setMimeContentType($contentType);
-            }
+            $this->setMimeContentType($contentType);
             if (count($info) > 0) {
                 $attributes = array_unflatten($info);
                 if (array_key_exists('name', $attributes)) {

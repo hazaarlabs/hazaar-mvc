@@ -53,8 +53,7 @@ function ake(mixed $array, mixed $key, mixed $default = null, bool $non_empty = 
     if (is_string($key) || is_int($key)) {
         if ((is_array($array) || $array instanceof ArrayAccess)
             && isset($array[$key])
-            && null !== $array[$key]
-            && (false === $non_empty || (true === $non_empty && (is_string($array[$key]) ? trim($array[$key]) : $array[$key])))) {
+            && (false === $non_empty || (is_string($array[$key]) ? trim($array[$key]) : $array[$key]))) {
             return $array[$key];
         }
         if (is_object($array)) {
@@ -62,7 +61,7 @@ function ake(mixed $array, mixed $key, mixed $default = null, bool $non_empty = 
                 && (
                     false === $non_empty
                     || false === is_string($array->{$key})
-                    || (true === $non_empty && '' !== trim($array->{$key}))
+                    || '' !== trim($array->{$key})
                 )
             ) {
                 return $array->{$key};
@@ -1084,7 +1083,7 @@ function dump(mixed ...$data): void
  *
  * @param array<string>|string $patterns an array of patterns to search for, as a string
  * @param string               $subject  the input string
- * @param array<string>        $matches  If matches is provided, then it is filled with the results of search. $matches[0] will contain the text that matched the full pattern, $matches[1] will have the text that matched the first captured parenthesized subpattern, and so on.
+ * @param array<mixed>         $matches  If matches is provided, then it is filled with the results of search. $matches[0] will contain the text that matched the full pattern, $matches[1] will have the text that matched the first captured parenthesized subpattern, and so on.
  * @param mixed                $flags    For details on available flags, see the [preg_match()](http://php.net/manual/en/function.preg-match.php) documentation.
  * @param int                  $offset   Normally, the search starts from the beginning of the subject string. The optional parameter offset can be used to specify the alternate place from which to start the search (in bytes).
  */
@@ -1243,8 +1242,6 @@ if (!function_exists('str_putcsv')) {
  * When the value in item1 is scalar, it will be replaced by the value in item2, may it be scalar, array
  * or stdClass. When the value in item1 and item2 are both arrays or objects, replace_recursive() will replace
  * their respective value recursively.
- *
- * @param mixed $items
  */
 function replace_recursive(mixed ...$items): mixed
 {
@@ -1342,7 +1339,7 @@ function recursive_iterator_to_array(Traversable $it): array
  * Compares `array1` against `array2` and returns the difference. Unlike array_diff() the array keys are also used
  * in the comparison.  Also, unlike the PHP array_diff_assoc() function, this function recurse into child arrays.
  *
- * @param mixed $arrays More arrays to compare against.
+ * @param mixed $arrays more arrays to compare against
  *
  * @return array<mixed>
  */

@@ -227,13 +227,13 @@ class Result implements \Countable, \Iterator
     }
 
     /**
-     * @return null|array<mixed>
+     * @return false|array<mixed>
      */
     public function fetch(
         ?int $fetch_style = null,
         int $cursor_orientation = \PDO::FETCH_ORI_NEXT,
         int $cursor_offset = 0
-    ): ?array {
+    ): array|false {
         if (null === $fetch_style) {
             $fetch_style = $this->fetch_mode;
         }
@@ -244,7 +244,7 @@ class Result implements \Countable, \Iterator
             return $record;
         }
 
-        return null;
+        return false;
     }
 
     /**
