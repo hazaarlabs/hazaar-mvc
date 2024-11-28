@@ -1,4 +1,4 @@
-FROM composer:latest
+FROM composer:2.8.3
 RUN apk add --no-cache git g++ gcc libc-dev make zlib-dev \
     libpng-dev libzip-dev icu-dev libpq-dev php83-dev \
     libxml2-dev musl-locales linux-headers
