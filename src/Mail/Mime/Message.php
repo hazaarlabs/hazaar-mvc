@@ -6,10 +6,14 @@ class Message implements \JsonSerializable
 {
     protected string $crlf = "\r\n";
 
-    /** @var Part[] */
+    /** 
+     * @var Part[] 
+     */
     private array $parts;
 
-    /** @var array<string> */
+    /** 
+     * @var array<string> 
+     */
     private array $headers = [];
     private string $msgid;
     private string $boundary;

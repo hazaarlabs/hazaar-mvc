@@ -1347,10 +1347,14 @@ function array_diff_assoc_recursive(mixed ...$arrays): array
 {
     $array1 = array_shift($arrays);
 
-    /** @var array<mixed> $diff */
+    /** 
+     * @var array<mixed> $diff 
+     */
     $diff = [];
     foreach ($array1 as $key => $value) {
-        /** @var array<mixed>|stdClass $array_compare */
+        /** 
+         * @var array<mixed>|stdClass $array_compare 
+         */
         foreach ($arrays as $array_compare) {
             // Check if the value exists in the compare array and if not, check the next array
             if ((is_array($array_compare) && !array_key_exists($key, $array_compare))

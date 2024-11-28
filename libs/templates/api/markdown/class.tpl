@@ -48,7 +48,7 @@
 #### Parameters
 | Parameter | Type | Description |
 |-----------|------|-------------|
-{foreach $method->params as $param}| ```${$param->name}``` | {$param->type} | {$param->comment} |
+{foreach $method->params as $param}| ```${$param->name}``` | ```{$param->type}``` | {$param->comment} |
 {/foreach}
 {/if}
 

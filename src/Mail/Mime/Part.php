@@ -4,7 +4,9 @@ namespace Hazaar\Mail\Mime;
 
 class Part implements \JsonSerializable
 {
-    /** @var array<string> */
+    /** 
+     * @var array<string> 
+     */
     protected array $headers = [];
     protected string $content = '';
     protected string $crlf = "\r\n";

@@ -23,10 +23,13 @@ class File implements \JsonSerializable
     public static string $default_key = 'hazaar_secret_badass_key';
     protected Manager $manager;
 
-    /** @var array<mixed> */
+    /**
+     * @var array<mixed>
+     */
     protected array $info;
     protected ?string $mimeContentType = null;
-    /*
+
+    /**
      * Any overridden file contents.
      *
      * This is normally used when performing operations on the file in memory, such as resizing an image.
