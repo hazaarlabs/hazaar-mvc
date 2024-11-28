@@ -19,7 +19,7 @@ if (!defined('HAZAAR_VERSION')) {
 final class Row extends Model
 {
     private Adapter $adapter;
-    private \PDOStatement $statement;
+    private ?\PDOStatement $statement = null;
 
     /**
      * @var array<string>
@@ -144,9 +144,7 @@ final class Row extends Model
                 $conditions[] = ake($tables[$table], 'condition');
             } elseif ($tables[$table]['condition']) {
                 foreach ($tables as $fromTable => $data) {
-                    if (null !== $data['condition']) {
-                        $conditions[] = $data['condition'];
-                    }
+                    $conditions[] = $data['condition'];
                     if ($table !== $fromTable) {
                         $from[] = $fromTable.(array_key_exists('alias', $data) ? ' '.$data['alias'] : null);
                     }

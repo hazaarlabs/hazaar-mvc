@@ -9,7 +9,9 @@ class Html extends Part implements \JsonSerializable
     private string $boundary;
     private Template $html;
 
-    /** @var array<mixed> */
+    /** 
+     * @var array<mixed> 
+     */
     private array $params = [];
 
     /**

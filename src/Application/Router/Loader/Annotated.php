@@ -269,11 +269,8 @@ class Annotated extends Advanced
      *
      * @return array<mixed> the array of information about the endpoint
      */
-    private function describeEndpoint(array $endpoint, bool $describe_full = false, ?array &$api = null): array
+    private function describeEndpoint(array $endpoint, bool $describe_full = false, array &$api = []): array
     {
-        if (!$api) {
-            $api = [];
-        }
         foreach ($endpoint['routes'] as $route => $route_data) {
             foreach ($route_data['args']['methods'] as $methods) {
                 $info = [

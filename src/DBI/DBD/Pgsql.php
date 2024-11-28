@@ -21,8 +21,6 @@ class Pgsql extends BaseDriver
         'password',
     ];
 
-    private ?Connection $conn = null; // The connection resource for notifications
-
     /**
      * Constructor for the Pgsql class.
      *
@@ -512,72 +510,4 @@ class Pgsql extends BaseDriver
         return false !== $this->exec($sql);
     }
 
-    /**
-     * Listens for notifications on a specific channel.
-     *
-     * This method establishes a connection to the PostgreSQL database and listens for notifications on the specified channel.
-     *
-     * @param string $channel the name of the channel to listen for notifications on
-     *
-     * @return bool returns true if the listen operation was successful, false otherwise
-     */
-    public function listen($channel): bool
-    {
-        if (null === $this->conn) {
-            return false;
-        }
-
-        return false !== pg_exec($this->conn, "LISTEN {$channel};");
-    }
-
-    /**
-     * Unlistens from a PostgreSQL notification channel.
-     *
-     * This method establishes a connection to the PostgreSQL database and sends an UNLISTEN command to the specified channel.
-     *
-     * @param string $channel the name of the channel to unlisten from
-     *
-     * @return bool returns true if the unlisten command was successful, false otherwise
-     */
-    public function unlisten($channel): bool
-    {
-        if (null === $this->conn) {
-            return false;
-        }
-
-        return false !== pg_exec($this->conn, "UNLISTEN {$channel};");
-    }
-
-    /**
-     * Sends a notification to a specific channel in the PostgreSQL database.
-     *
-     * @param string $channel the name of the channel to send the notification to
-     * @param mixed  $payload (optional) The payload to include with the notification
-     *
-     * @return bool returns true if the notification was successfully sent, false otherwise
-     */
-    public function notify($channel, $payload = null): bool
-    {
-        if (null === $this->conn) {
-            return false;
-        }
-
-        return false !== pg_exec($this->conn, "NOTIFY {$channel}".($payload ? ', '.$this->quote($payload) : '').';');
-    }
-
-    /**
-     * Retrieves the next asynchronous notification from the PostgreSQL server.
-     *
-     * @param int $mode The result format. Defaults to PGSQL_ASSOC.
-     *
-     * @return array<string,int|string>|false an associative array containing the notification message, or false if no notification is available
-     */
-    public function getNotify($mode = PGSQL_ASSOC): array|false
-    {
-        if (null === $this->conn) {
-            return false;
-        }
-
-        return pg_get_notify($this->conn, $mode);
-    }
 }

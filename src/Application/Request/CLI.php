@@ -97,7 +97,7 @@ class CLI extends Request
     /**
      * Gets the command that was used on the command line if it exists.
      *
-     * @param array<string> $args an array of arguments that were specified after the command
+     * @param array<mixed> $args an array of arguments that were specified after the command
      *
      * @return string the name of the command
      */
@@ -158,7 +158,7 @@ class CLI extends Request
         if (count($this->options) > 0) {
             $msg .= ' [options]';
         }
-        if (is_array($this->commands) && count($this->commands) > 0) {
+        if (count($this->commands) > 0) {
             $msg .= ' [command]';
         }
         if (count($this->options) > 0) {

@@ -9,8 +9,7 @@ use Hazaar\View as HazaarView;
 
 class View extends HTML
 {
-    private HazaarView $_view;
-    private string $_view_name;
+    private ?HazaarView $_view = null;
 
     /**
      * @var array<string, mixed>
@@ -31,9 +30,6 @@ class View extends HTML
 
     protected function __prepare(Controller $controller): void
     {
-        if (!$this->_view instanceof HazaarView) {
-            $this->_view = new HazaarView($this->_view_name);
-        }
         $this->_view->populate($this->__data);
         $content = $this->_view->render();
         $this->setContent($content);
@@ -69,9 +65,7 @@ class View extends HTML
     {
         if ($view instanceof HazaarView) {
             $this->_view = $view;
-            $this->_view_name = $view->getName();
         } else {
-            $this->_view_name = $view;
             $this->_view = new HazaarView($view);
         }
     }

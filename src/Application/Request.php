@@ -230,15 +230,9 @@ abstract class Request implements Interfaces\Request
         }
         $params = $this->params;
         if ($filter_in) {
-            if (!is_array($filter_in)) {
-                $filter_in = [$filter_in];
-            }
             $params = array_intersect_key($params, array_flip($filter_in));
         }
         if ($filter_out) {
-            if (!is_array($filter_out)) {
-                $filter_out = [$filter_out];
-            }
             $params = array_diff_key($params, array_flip($filter_out));
         }
 

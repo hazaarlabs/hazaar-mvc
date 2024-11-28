@@ -15,7 +15,6 @@ class Client
     public static ?string $encryptionDefaultKey = null;
     public static string $encryptionDefaultCipher = 'AES-256-CBC';
     public static string $encryptionHeader = 'X-HAZAAR-COMKEY';
-    private ?string $lasterror = null;
     private int $bufferSize = 4096;
     private int $connectionTimeout = 5;
 
@@ -109,9 +108,7 @@ class Client
         if ($data) {
             $request->setBody($data);
         }
-        if (null !== $dataType) {
-            $request->setHeader('Content-Type', $dataType);
-        }
+        $request->setHeader('Content-Type', $dataType);
 
         return $this->send($request, $redirectLimit);
     }
@@ -133,13 +130,10 @@ class Client
      * @param int     $redirectLimit The number of allowed redirects.  To disable
      *                               automated redirects on this request, set to FALSE.
      */
-    public function send(Request $request, int $redirectLimit = 10): false|Response
+    public function send(Request $request, int $redirectLimit = 10): ?Response
     {
-        if (!$request instanceof Request) {
-            return false;
-        }
         $this->SetHeader('Connection', 'close');
-        if (is_array($this->headers) && count($this->headers) > 0) {
+        if (count($this->headers) > 0) {
             foreach ($this->headers as $header => $value) {
                 $request->setHeader($header, $value);
             }
@@ -181,7 +175,7 @@ class Client
             if (!$response->status > 0) {
                 throw new \Exception('Host returned no data', 503);
             }
-            if ($this->autoRedirect && false !== $redirectLimit && (301 == $response->status || 302 == $response->status)) {
+            if ($this->autoRedirect && (301 == $response->status || 302 == $response->status)) {
                 if (in_array($request->method, $this->redirectMethods)) {
                     if ($redirectLimit <= 0) {
                         throw new Exception\TooManyRedirects();
@@ -220,11 +214,6 @@ class Client
         }
 
         return $response;
-    }
-
-    public function getLastError(): string
-    {
-        return $this->lasterror;
     }
 
     /**
@@ -385,7 +374,7 @@ class Client
 
     private function applyCookies(Request $request): Request
     {
-        if (!(is_array($this->cookies) && count($this->cookies) > 0)) {
+        if (!(count($this->cookies) > 0)) {
             return $request;
         }
         $url = $request->url();

@@ -45,7 +45,7 @@ class Client extends \Hazaar\HTTP\Client
         if ($response = self::send($request)) {
             if (200 == $response->status
                 && ($result = xmlrpc_decode_request($response->body, $method))) {
-                if (is_array($result) && xmlrpc_is_fault($result)) {
+                if (xmlrpc_is_fault($result)) {
                     throw new ClientException($result);
                 }
             } else {

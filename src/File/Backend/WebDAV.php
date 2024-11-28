@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hazaar\File\Backend;
 
 use Hazaar\Cache;
-use Hazaar\Exception;
 use Hazaar\File\Image;
 use Hazaar\File\Manager;
 use Hazaar\HTTP\Request;
@@ -543,6 +542,16 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements Interfaces\Backend, Interfac
      * @param resource $stream
      */
     public function closeStream($stream): bool
+    {
+        return false;
+    }
+
+    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array|false
+    {
+        return false;
+    }
+
+    public function fsck(bool $skip_root_reload = false): bool
     {
         return false;
     }

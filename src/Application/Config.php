@@ -189,9 +189,6 @@ class Config extends Map
         $options = [];
         $sources = [['name' => $source, 'ns' => true]];
         if ($overridePaths) {
-            if (!is_array($overridePaths)) {
-                $overridePaths = [$overridePaths];
-            }
             foreach ($overridePaths as $override) {
                 $sources[] = ['name' => $override.DIRECTORY_SEPARATOR.$source, 'ns' => $overrideNamespaces];
             }
@@ -341,7 +338,7 @@ class Config extends Map
                 } else {
                     $value = defined($matches[1][$index]) ? constant($matches[1][$index]) : '';
                 }
-                $elem = preg_replace('/'.preg_quote($match).'/', $value, $elem, 1);
+                $elem = preg_replace('/'.preg_quote($match, '/').'/', $value, $elem, 1);
             }
         }
 
