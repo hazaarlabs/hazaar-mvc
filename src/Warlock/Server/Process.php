@@ -24,7 +24,7 @@ abstract class Process extends Model
     protected Logger $log;
 
     /**
-     * @var array<string,int|string>
+     * @var array<string,mixed>
      */
     protected array $procStatus = [
         'pid' => -1,

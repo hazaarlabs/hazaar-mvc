@@ -6,7 +6,6 @@ namespace Hazaar\Application\Router\Loader;
 
 use Hazaar\Application\Request;
 use Hazaar\Application\Router;
-use Hazaar\Application\Router\Exception\ProtocolNotSupported;
 use Hazaar\Application\Router\Loader;
 
 /**
@@ -37,7 +36,7 @@ class Basic extends Loader
             return true; // Return true if the path is empty.  Allows for default controller/action to be used.
         }
         $parts = explode('/', $path);
-        $controller = 'Application\Controllers\\'.((isset($parts[0]) && '' !== $parts[0]) ? ucfirst($parts[0]) : null);
+        $controller = 'Application\Controllers\\'.(('' !== $parts[0]) ? ucfirst($parts[0]) : null);
         $action = (isset($parts[1]) && '' !== $parts[1]) ? $parts[1] : null;
         $actionArgs = (count($parts) > 2) ? array_slice($parts, 2) : null;
         Router::set([$controller, $action, $actionArgs], $path);

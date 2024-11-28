@@ -26,7 +26,8 @@ class Smarty
 {
     public string $ldelim = '{';
     public string $rdelim = '}';
-    public bool $allow_globals = true;
+    public bool $allowGlobals = true;
+    public ?string $sourceFile = null;
     public ?string $cwd = null;
 
     /**
@@ -49,6 +50,7 @@ class Smarty
         // Hybrid Smarty 3.0 Bits
         'function',
         'call',
+        'php',
     ];
     protected string $__content = '';
     protected string $__compiled_content = '';
@@ -124,15 +126,19 @@ class Smarty
         if (!$file instanceof File) {
             $file = new File($file);
         }
+        $this->sourceFile = $file->fullpath();
         $this->cwd = $file->dirname();
         $this->loadFromString($file->getContents());
     }
 
     public function registerFunctionHandler(object $object): void
     {
-        if (is_object($object)) {
-            $this->__custom_function_handlers[] = $object;
-        }
+        $this->__custom_function_handlers[] = $object;
+    }
+
+    public function registerPlugin(string $modifier, callable $callback): void
+    {
+        $this->__custom_functions[$modifier] = $callback;
     }
 
     /**
@@ -141,6 +147,16 @@ class Smarty
     public function getTemplate(): string
     {
         return $this->__content;
+    }
+
+    /**
+     * Retrieves the template file path.
+     *
+     * @return null|string the path to the template file, or null if not set
+     */
+    public function getTemplateFile(): ?string
+    {
+        return $this->sourceFile;
     }
 
     /**
@@ -183,7 +199,7 @@ class Smarty
                 'rdelim' => $this->rdelim,
             ],
         ];
-        if ($this->allow_globals) {
+        if ($this->allowGlobals) {
             $default_params['_COOKIE'] = $_COOKIE;
             $default_params['_ENV'] = $_ENV;
             $default_params['_GET'] = $_GET;
@@ -211,7 +227,7 @@ class Smarty
             private \$include_funcs = [];
             function __construct(){ \$this->modify = new \\Hazaar\\Template\\Smarty\\Modifier; }
             public function render(\$params){
-                extract(\$this->params = \$params);
+                extract(\$this->params = \$params, EXTR_REFS);
                 ?>{$this->__compiled_content}<?php
             }
             private function url(){
@@ -227,13 +243,19 @@ class Smarty
         }";
         $errors = error_reporting();
         error_reporting(0);
-        eval($code);
-        $obj = new $id();
-        ob_start();
-        $obj->custom_handlers = $this->__custom_function_handlers;
-        $obj->render($params);
-        error_clear_last();
-        error_reporting($errors);
+
+        try {
+            eval($code);
+            $obj = new $id();
+            ob_start();
+            $obj->custom_handlers = $this->__custom_function_handlers;
+            $obj->render($params);
+        } catch (\Throwable $e) {
+            throw new Exceptions\SmartyTemplateError($e);
+        } finally {
+            error_clear_last();
+            error_reporting($errors);
+        }
 
         return ob_get_clean();
     }
@@ -271,7 +293,7 @@ class Smarty
                 $replacement = $this->{$func}($matches[3]);
             } elseif (array_key_exists($matches[2], $this->__custom_functions)) {
                 $replacement = $this->compileCUSTOMFUNC($matches[2], $matches[3]);
-            } elseif (is_array($this->__custom_function_handlers)
+            } elseif (count($this->__custom_function_handlers) > 0
             && $custom_handler = current(array_filter($this->__custom_function_handlers, function ($item, $index) use ($matches) {
                 if (!method_exists($item, $matches[2])) {
                     return false;
@@ -292,6 +314,16 @@ class Smarty
 
             return $replacement;
         }, $compiled_content);
+    }
+
+    public function compilePHP(): string
+    {
+        return '<?php ';
+    }
+
+    public function compileENDPHP(): string
+    {
+        return '?>';
     }
 
     protected function setType(mixed $value, string $type = 'string', ?string $args = null): string
@@ -627,8 +659,14 @@ class Smarty
         }
         unset($params['name']);
         $this->__custom_functions[$name] = $params;
+        if (array_key_exists('params', $params)) {
+            $funcParams = eval('return '.$params['params'].';');
+            $compiledParams = implode(', ', array_map(function ($item) { return '&$'.$item; }, $funcParams));
+        } else {
+            $compiledParams = '';
+        }
 
-        return "<?php (\$this->functions['{$name}'] = function(\$params){ global \$smarty; extract(\$params); ?>";
+        return "<?php (\$this->functions['{$name}'] = function({$compiledParams}){ global \$smarty; ?>";
     }
 
     protected function compileENDFUNCTION(): string
@@ -641,16 +679,21 @@ class Smarty
         if (!array_key_exists($name, $this->__custom_functions)) {
             return '';
         }
-        $code = "<?php \$this->functions['{$name}'](";
-        $params = array_merge($this->__custom_functions[$name], $this->parsePARAMS($params));
-        if (count($params) > 0) {
-            $parts = [];
-            foreach ($params as $key => $value) {
-                $parts[] = "'{$key}' => ".$this->compileVAR($value);
+        $code = "<?php\n";
+        $params = $this->parsePARAMS($params);
+        foreach ($params as &$value) {
+            if ('$' === substr($value, 0, 1)) {
+                continue;
             }
-            $code .= '['.implode(', ', $parts).']';
+            $key = '$var_'.uniqid();
+            $code .= "{$key} = {$value};\n";
+            $value = $key;
         }
-        $code .= '); ?>';
+        $compiledParams = match (true) {
+            (count($params) > 0) => implode(', ', $params),
+            default => ''
+        };
+        $code .= "\$this->functions['{$name}']({$compiledParams});\n?>";
 
         return $code;
     }
@@ -666,10 +709,7 @@ class Smarty
             if (array_key_exists($name, $params) || array_key_exists($name = $p->getPosition(), $params)) {
                 $value = $this->compilePARAMS($params[$name]);
             } elseif ($p->isDefaultValueAvailable()) {
-                $defaultValue = null;
-                if (true === $p->isDefaultValueAvailable()) {
-                    $defaultValue = $p->getDefaultValue();
-                }
+                $defaultValue = $p->getDefaultValue();
                 $value = ake($params, $p->getName(), $defaultValue);
                 $value = $this->compilePARAMS($value);
             }
@@ -703,7 +743,7 @@ class Smarty
         $file = trim($params['file'], '\'"');
         unset($params['file']);
         if ('/' !== $file[0] && !preg_match('/^\w+\:\/\//', $file)) {
-            $file = $this->cwd ? rtrim($this->cwd, ' /').'/' : getcwd().DIRECTORY_SEPARATOR.$file;
+            $file = ($this->cwd ? rtrim($this->cwd, ' /') : getcwd()).DIRECTORY_SEPARATOR.$file;
         }
         $info = pathinfo($file);
         if (!(array_key_exists('extension', $info) && $info['extension'])
@@ -714,9 +754,11 @@ class Smarty
         $output = '';
         if (!array_key_exists($hash, $this->__include_funcs)) {
             $this->__includes[] = $file;
-            $this->__include_funcs[$hash] = $include = new Smarty(file_get_contents($file));
+            $this->__include_funcs[$hash] = $include = new Smarty();
+            $include->loadFromFile($file);
             $include->__include_funcs = $this->__include_funcs;
             $output = $include->compile();
+            $this->__custom_functions = array_merge($this->__custom_functions, $include->__custom_functions);
             $this->__includes = array_unique(array_merge($this->__includes, $include->__includes));
             if (0 === count($params)) {
                 return $output;

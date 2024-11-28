@@ -6,7 +6,6 @@ namespace Hazaar\DBI\DBD;
 
 use Hazaar\Date;
 use Hazaar\DBI\Table;
-use Hazaar\Exception;
 
 class Mysql extends BaseDriver
 {
@@ -340,7 +339,7 @@ class Mysql extends BaseDriver
     }
 
     /**
-     * @return array<int, array<string>>|false
+     * @return array<int|string, array{table:string,column:string,type:string,references:array{table:string,column:string}}>|false
      */
     public function listConstraints(?string $table = null, ?string $type = null, bool $invertType = false): array|false
     {
@@ -378,14 +377,14 @@ class Mysql extends BaseDriver
         if ($result = $this->query($sql)) {
             while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
                 $constraint = [
-                    'table' => $row['table'],
-                    'column' => $row['column'],
-                    'type' => $row['type'],
+                    'table' => (string) $row['table'],
+                    'column' => (string) $row['column'],
+                    'type' => (string) $row['type'],
                 ];
                 if ($row['foreign_table']) {
                     $constraint['references'] = [
-                        'table' => $row['foreign_table'],
-                        'column' => $row['foreign_column'],
+                        'table' => (string) $row['foreign_table'],
+                        'column' => (string) $row['foreign_column'],
                     ];
                 }
                 $constraints[$row['name']] = $constraint;

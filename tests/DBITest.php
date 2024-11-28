@@ -30,7 +30,7 @@ class DBITest extends TestCase
     {
         $db = new Adapter($this->config);
         $this->assertEquals('dummy', $db->config['driver']);
-        $this->assertIsArray($db->listTables());
+        $this->assertEquals([], $db->listTables());
     }
 
     public function testSQLGeneratorSELECT(): void

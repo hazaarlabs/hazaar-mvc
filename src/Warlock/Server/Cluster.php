@@ -88,9 +88,6 @@ class Cluster
             return;
         }
         foreach ($this->peers as $peer) {
-            if (!$peer instanceof Peer) {
-                continue;
-            }
             $peer->process();
         }
     }

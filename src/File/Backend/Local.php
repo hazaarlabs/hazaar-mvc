@@ -425,7 +425,7 @@ class Local implements Interfaces\Backend, Interfaces\Driver
         $fullpath = $this->resolvePath($path);
         $db = $this->meta($fullpath);
         $meta = $db->get($fullpath);
-        if (is_array($meta) && is_array($values)) {
+        if (count($meta) > 0 && count($values) > 0) {
             $values = array_merge($meta, $values);
         }
         $db->set($fullpath, $values);
@@ -569,6 +569,16 @@ class Local implements Interfaces\Backend, Interfaces\Driver
     public function closeStream($stream): bool
     {
         return fclose($stream);
+    }
+
+    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array|false
+    {
+        return false;
+    }
+
+    public function fsck(bool $skip_root_reload = false): bool
+    {
+        return false;
     }
 
     private function meta(string $fullpath): BTree

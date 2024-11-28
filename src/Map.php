@@ -46,15 +46,15 @@ namespace Hazaar;
  *
  * ### Using Filters
  *
- * Here is an example of using an input filter to convert a Date object into an array of MongoDate and a
+ * Here is an example of using an input filter to convert a Date object into an array of epoch and a
  * timezone field.
  *
  * ```php
  * $callback = function($value, $key){
  *     if(is_a('\Hazaar\Date', $value)){
  *         $value = new Map([
- *             'datetime' => new MongoDate($value),
- *             'timezone' => $value['timezone']
+ *             'datetime' => $value->timestamp(),
+ *             'timezone' => $value->timezone()
  *         ]);
  *     }
  *     return $value;
@@ -1212,7 +1212,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable
                         }
                     }
                 }
-                if (!is_array($fields) || 0 == count($fields) || in_array($key, $fields)) {
+                if (0 == count($fields) || in_array($key, $fields)) {
                     $sum += (float) $elem;
                 }
             }
@@ -1457,7 +1457,7 @@ class Map implements \ArrayAccess, \Iterator, \Countable
      */
     private function execFilter(int|string $key, mixed $elem, string $direction): mixed
     {
-        if (is_array($this->filter) && array_key_exists($direction, $this->filter) && count($this->filter[$direction]) > 0) {
+        if (array_key_exists($direction, $this->filter) && count($this->filter[$direction]) > 0) {
             foreach ($this->filter[$direction] as $field => $filter) {
                 if (array_key_exists('field', $filter) && (null !== $filter['field'] && $key != $filter['field'])) {
                     continue;

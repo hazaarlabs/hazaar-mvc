@@ -17,7 +17,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
     private Adapter $db;
 
     /**
-     * @var array<string,int|string>
+     * @var array<mixed>
      */
     private array $rootObject;
 
@@ -576,7 +576,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
             return false;
         }
         $data = [
-            'modified_on' => new \MongoDate(),
+            'modified_on' => time(),
             'parent' => $dstParent['id'],
         ];
         if (!$this->db->table('hz_file')->update(['id' => $source['id']], $data)) {
@@ -636,9 +636,6 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
 
     public function chmod(string $path, int $mode): bool
     {
-        if (!is_int($mode)) {
-            return false;
-        }
         if ($target = &$this->info($path)) {
             $target['mode'] = $mode;
 
@@ -841,7 +838,9 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
     }
 
     /**
-     * @param array<string,int|string> $parent
+     * @param array<mixed> $parent
+     *
+     * @param-out array<mixed> $parent
      */
     private function loadObjects(?array &$parent = null): bool
     {

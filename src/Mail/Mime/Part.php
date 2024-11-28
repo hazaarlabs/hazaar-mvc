@@ -4,7 +4,9 @@ namespace Hazaar\Mail\Mime;
 
 class Part implements \JsonSerializable
 {
-    /** @var array<string> */
+    /** 
+     * @var array<string> 
+     */
     protected array $headers = [];
     protected string $content = '';
     protected string $crlf = "\r\n";
@@ -28,9 +30,6 @@ class Part implements \JsonSerializable
      */
     public function setHeaders(array $headers): bool
     {
-        if (!is_array($headers)) {
-            return false;
-        }
         foreach ($headers as $name => $content) {
             $this->setHeader($name, $content);
         }

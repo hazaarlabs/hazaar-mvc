@@ -267,9 +267,6 @@ abstract class Controller implements Controller\Interfaces\Controller
                 self::addHelper($h, [], $alias);
             }
         } elseif (is_object($helper)) {
-            if (!$helper instanceof Helper) {
-                return false;
-            }
             if (null === $alias) {
                 $alias = strtolower($helper->getName());
             }
@@ -349,9 +346,15 @@ abstract class Controller implements Controller\Interfaces\Controller
      * @param string       $action     the action name
      * @param array<mixed> $actionArgs the action arguments
      * @param null|string  $cacheName  the cache name
+     *
+     * @param-out string $cacheName
      */
-    private function getCacheKey(string $controller, string $action, ?array $actionArgs = null, ?string &$cacheName = null): false|string
-    {
+    private function getCacheKey(
+        string $controller,
+        string $action,
+        ?array $actionArgs = null,
+        ?string &$cacheName = null
+    ): false|string {
         $cacheName = $controller.'::'.$action;
         if (!array_key_exists($cacheName, $this->cachedActions)) {
             return false;

@@ -163,9 +163,6 @@ class Loader
      */
     public function addSearchPath(string $type, string $path): bool
     {
-        if (!is_string($path)) {
-            return false;
-        }
         if ($path = realpath($path)) {
             if (!array_key_exists($type, $this->paths) || !in_array($path, $this->paths[$type])) {
                 $this->paths[$type][] = $path;

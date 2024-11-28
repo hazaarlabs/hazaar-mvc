@@ -34,7 +34,7 @@ class TransportMessage
     public Mime\Message|string $content;
 
     /**
-     * @var array<string>
+     * @var array<mixed>
      */
     public array $headers = [];
 

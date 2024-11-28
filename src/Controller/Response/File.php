@@ -23,9 +23,9 @@ class File extends OK
         'public' => false,
         'max-age' => 300,
     ];
-    private ?FileObject $file;
+    private ?FileObject $file = null;
     private ?Manager $manager;
-    private ?Date $fmtime;
+    private ?Date $fmtime = null;
 
     /**
      * Byte-Order-Mark.
@@ -210,6 +210,9 @@ class File extends OK
         return preg_match($pattern, $this->getContent(), $matches, $flags, $offset);
     }
 
+    /**
+     * @param-out int $count
+     */
     public function replace(string $pattern, string $replacement, int $limit = -1, ?int &$count = null): void
     {
         $this->setContent(preg_replace($pattern, $replacement, $this->getContent(), $limit, $count));
