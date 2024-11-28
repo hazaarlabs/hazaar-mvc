@@ -1614,8 +1614,8 @@ class MatchReplaceException extends Exception {}
  *
  * So strings such as:
  *
- * * "Hello, {{entity}}" will replace {{entity}} with the value of `$data->entity`.
- * * "The quick brown {{animal.one}}, jumped over the lazy {{animal.two}}" will replace the tags with values in a multi-dimensional array.
+ * * ```Hello, {{entity}}``` will replace {{entity}} with the value of ```$data->entity```.
+ * * ```The quick brown {{animal.one}}, jumped over the lazy {{animal.two}}``` will replace the tags with values in a multi-dimensional array.
  *
  * @param string $string the string to perform the match/replace on
  * @param mixed  $data   the data to use for matching
