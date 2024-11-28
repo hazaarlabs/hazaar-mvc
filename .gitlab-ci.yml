@@ -79,11 +79,14 @@ Build Test Image:
 
 Code Quality:
   stage: test
-  image: overtrue/phplint:latest
+  image: $UNIT_TEST_IMAGE
   variables:
     INPUT_PATH: "./src"
     INPUT_OPTIONS: "-c .phplint.yml"
-  script: "/home/appuser/.composer/vendor/bin/phplint -c .phplint.yml"
+  before_script:
+  - composer install
+  script: 
+  - vendor/bin/phplint -c .phplint.yml
   artifacts:
     when: always
     reports:
@@ -91,11 +94,11 @@ Code Quality:
 
 Static Analysis:
   stage: test
-  image: composer
+  image: $UNIT_TEST_IMAGE
   before_script:
   - composer install
   script:
-  - vendor/bin/phpstan analyse -c phpstan.neon --error-format=junit > phpstan-test-results.xml
+  - vendor/bin/phpstan analyse -vvv -c phpstan.neon --error-format=junit > phpstan-test-results.xml
   artifacts:
     when: always
     reports:

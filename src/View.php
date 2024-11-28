@@ -21,8 +21,6 @@ use Hazaar\View\Helper;
  */
 class View implements \ArrayAccess
 {
-    public ?string $name = null;
-
     /**
      * @var array<mixed>
      */
@@ -136,19 +134,11 @@ class View implements \ArrayAccess
         if (Loader::isAbsolutePath($view)) {
             $this->viewFile = $view;
         } else {
-            $this->viewFile = View::getViewPath($view, $this->name);
+            $this->viewFile = View::getViewPath($view);
             if (!$this->viewFile) {
-                throw new \Exception("File not found or permission denied accessing view '{$this->name}'.");
+                throw new \Exception("File not found or permission denied accessing view '{$view}'.");
             }
         }
-    }
-
-    /**
-     * Returns the name of the view.
-     */
-    public function getName(): string
-    {
-        return $this->name;
     }
 
     /**
@@ -388,7 +378,7 @@ class View implements \ArrayAccess
         } else {
             ob_start();
             if (!($file = $this->getViewFile()) || !file_exists($file)) {
-                throw new \Exception("View does not exist ({$this->name})", 404);
+                throw new \Exception("View does not exist ({$file})", 404);
             }
 
             include $file;
