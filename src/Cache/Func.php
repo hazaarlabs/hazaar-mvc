@@ -13,12 +13,6 @@ use Hazaar\Map;
  *
  * This class extends the Cache class and provides functionality to cache function calls.
  *
- * @method __construct(?string $backend = null, array|Map $options = []) Initializes the Func object with optional backend and options.
- * @method mixed  call()                                                 Calls a function with caching mechanism.
- * @method string generateKey(array|string $function, array $paramArray) Generates a unique key for the function and its arguments.
- *
- * @property array $options Configuration options for caching.
- *
  * @throws NoFunction if no function is provided to call
  * @throws \Exception if an unsupported callback declaration is used
  */

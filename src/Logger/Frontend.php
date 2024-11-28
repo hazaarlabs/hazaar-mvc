@@ -25,9 +25,6 @@ class Frontend
         if (!$backend) {
             $backend = 'file';
         }
-        if ('mongodb' == strtolower($backend)) {
-            $backend = 'MongoDB';
-        }
         if ('database' == strtolower($backend)) {
             $backend = 'Database';
         }
@@ -42,7 +39,7 @@ class Frontend
             $this->level = E_ERROR;
         }
         $buf = Frontend::$message_buffer;
-        if (is_array($buf) && count($buf) > 0) {
+        if (count($buf) > 0) {
             foreach ($buf as $msg) {
                 $this->writeLog($msg[0], $msg[1]);
             }

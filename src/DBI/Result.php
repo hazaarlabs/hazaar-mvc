@@ -28,7 +28,7 @@ class Result implements \Countable, \Iterator
     private ?Row $record = null;
 
     /**
-     * @var array<int, Row>
+     * @var array<mixed>
      */
     private ?array $records = null;
 
@@ -121,9 +121,7 @@ class Result implements \Countable, \Iterator
      */
     public function setSelectGroups(array $select_groups): void
     {
-        if (\is_array($select_groups)) {
-            $this->select_groups = $select_groups;
-        }
+        $this->select_groups = $select_groups;
     }
 
     public function hasSelectGroups(): bool
@@ -229,13 +227,13 @@ class Result implements \Countable, \Iterator
     }
 
     /**
-     * @return null|array<mixed>
+     * @return false|array<mixed>
      */
     public function fetch(
         ?int $fetch_style = null,
         int $cursor_orientation = \PDO::FETCH_ORI_NEXT,
         int $cursor_offset = 0
-    ): ?array {
+    ): array|false {
         if (null === $fetch_style) {
             $fetch_style = $this->fetch_mode;
         }
@@ -246,7 +244,7 @@ class Result implements \Countable, \Iterator
             return $record;
         }
 
-        return null;
+        return false;
     }
 
     /**
@@ -587,7 +585,6 @@ class Result implements \Countable, \Iterator
                     if (!isset($objs[$alias])) {
                         $objs[$alias] = [];
                     }
-                    // @phpstan-ignore-next-line
                     $objs[$alias][$name] = (is_array($value) && is_array($meta)) ? $value[$idx] : $value;
                     unset($record[$name]);
                 }

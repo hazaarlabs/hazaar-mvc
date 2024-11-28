@@ -164,7 +164,7 @@ class Master
     private ?KVStore $kvStore = null;
 
     /**
-     * @var array<int,array<string,int|string>>
+     * @var array<int,array<string,mixed>>
      */
     private array $exitCodes = [
         1 => [
@@ -338,7 +338,7 @@ class Master
         string $errstr,
         ?string $errfile = null,
         ?int $errline = null,
-    ): ?bool {
+    ): bool {
         if (!(error_reporting() & $errno)) {
             // Error was suppressed with '@', so skip handling it
             return false;
@@ -1029,7 +1029,7 @@ class Master
             if (file_exists($proc_file)) {
                 $proc = file_get_contents($proc_file);
 
-                return '' !== $proc && preg_match('/^'.preg_quote((string) $pid).'\s+\(php\)/', $proc);
+                return '' !== $proc && preg_match('/^'.preg_quote((string) $pid, '/').'\s+\(php\)/', $proc);
             }
         }
 
@@ -1090,15 +1090,12 @@ class Master
 
     private function clientCheck(): void
     {
-        if (!(self::$config['client']['check'] > 0 && is_array($this->clients) && count($this->clients) > 0)) {
+        if (!(self::$config['client']['check'] > 0 && count($this->clients) > 0)) {
             return;
         }
         // Only ping if we havn't received data from the client for the configured number of seconds (default to 60).
         $when = time() - self::$config['client']['check'];
         foreach ($this->clients as $client) {
-            if (!$client instanceof Client) {
-                continue;
-            }
             if ($client->lastContact <= $when) {
                 $client->ping();
             }
@@ -1544,9 +1541,6 @@ class Master
 
     private function eventCleanup(): void
     {
-        if (!is_array($this->events)) {
-            $this->events = [];
-        }
         if (false === self::$config['sys']['cleanup']) {
             return;
         }

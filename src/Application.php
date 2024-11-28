@@ -21,8 +21,6 @@ use Hazaar\Application\Router\Exception\RouteNotFound;
 use Hazaar\Application\URL;
 use Hazaar\Controller\Response;
 use Hazaar\Controller\Response\File;
-use Hazaar\Controller\Response\HTTP\NoContent;
-use Hazaar\Controller\Response\HTTP\Redirect;
 use Hazaar\File\Metric;
 use Hazaar\Logger\Frontend;
 
@@ -40,7 +38,7 @@ defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV'
  *
  * Essentially this is the name of the directory the application is stored in.
  */
-define('APPLICATION_NAME', array_values(array_slice(explode(DIRECTORY_SEPARATOR, realpath(APPLICATION_PATH.DIRECTORY_SEPARATOR.'..')), -1))[0]);
+define('APPLICATION_NAME', array_slice(explode(DIRECTORY_SEPARATOR, realpath(APPLICATION_PATH.DIRECTORY_SEPARATOR.'..')), -1));
 putenv('HOME='.APPLICATION_PATH);
 
 /**
@@ -70,6 +68,11 @@ putenv('HOME='.APPLICATION_PATH);
 class Application
 {
     /**
+     * The current version of Hazaar MVC.
+     */
+    public const VERSION = '3.0';
+
+    /**
      * The global variables container.
      *
      * This is a container for global variables that are available to all controllers and views.  This is
@@ -96,14 +99,12 @@ class Application
         'base' => APPLICATION_BASE,
         'name' => APPLICATION_NAME,
     ];
-    public Request $request;
-    public Response $response;
-    public Config $config;
-    public Loader $loader;
-    public Router $router;
+    public ?Request $request = null;
+    public ?Config $config = null;
+    public ?Loader $loader = null;
+    public ?Router $router = null;
     public string $environment = 'development';
     public ?Timer $timer = null;
-    public mixed $bootstrap;
     protected string $urlDefaultPart;
     private static ?Application $instance = null;
     private static string $root;
@@ -132,7 +133,7 @@ class Application
      *
      * @param string $env The application environment name. eg: 'development' or 'production'
      */
-    public function __construct($env)
+    public function __construct(string $env)
     {
         try {
             ob_start();
@@ -186,41 +187,44 @@ class Application
      */
     public function shutdown(): void
     {
-        if ($this->config->loaded()) {
-            $shutdown = APPLICATION_PATH.DIRECTORY_SEPARATOR.ake($this->config['app']['files'], 'shutdown', 'shutdown.php');
-            if (file_exists($shutdown)) {
-                include $shutdown;
-            }
-            if (true === $this->config->get('app.metrics')) {
-                $metricFile = $this->getRuntimePath('metrics.dat');
-                if ((!file_exists($metricFile) && is_writable(dirname($metricFile))) || is_writable($metricFile)) {
-                    $metric = new Metric($metricFile);
-                    if (!$metric->exists()) {
-                        $metric->addDataSource('hits', 'COUNTER', null, null, 'Hit Counter');
-                        $metric->addDataSource('exec', 'GAUGEZ', null, null, 'Execution Timer');
-                        $metric->addDataSource('mem', 'GAUGE', null, null, 'Memory Usage');
-                        $metric->addArchive('count_1hour', 'COUNT', 6, 60, 'Count per minute for last hour');
-                        $metric->addArchive('avg_1hour', 'AVERAGE', 6, 60, 'Average per minute for last hour');
-                        $metric->addArchive('count_1day', 'COUNT', 360, 24, 'Count per hour for last day');
-                        $metric->addArchive('avg_1day', 'AVERAGE', 360, 24, 'Average per hour for last day');
-                        $metric->addArchive('count_1week', 'COUNT', 360, 168, 'Count per hour for last week');
-                        $metric->addArchive('avg_1week', 'AVERAGE', 360, 168, 'Average per hour for last week');
-                        $metric->addArchive('count_1year', 'COUNT', 8640, 365, 'Count per day for last year');
-                        $metric->addArchive('avg_1year', 'AVERAGE', 8640, 365, 'Average per day for last year');
-                        $metric->create(10);
-                    }
-                    $metric->setValue('hits', 1);
-                    $metric->setValue('exec', (microtime(true) - HAZAAR_START) * 1000);
-                    $metric->setValue('mem', memory_get_peak_usage());
+        if ($this->request) {
+            Frontend::i(
+                'CORE',
+                '"'.ake($_SERVER, 'REQUEST_METHOD').' /'.$this->request->getPath().'" '
+                .http_response_code()
+                .' "'.ake($_SERVER, 'HTTP_USER_AGENT').'"'
+            );
+        }
+        if (!($this->config && $this->config->loaded())) {
+            return;
+        }
+        $shutdown = APPLICATION_PATH.DIRECTORY_SEPARATOR.ake($this->config['app']['files'], 'shutdown', 'shutdown.php');
+        if (file_exists($shutdown)) {
+            include $shutdown;
+        }
+        if (true === $this->config->get('app.metrics')) {
+            $metricFile = $this->getRuntimePath('metrics.dat');
+            if ((!file_exists($metricFile) && is_writable(dirname($metricFile))) || is_writable($metricFile)) {
+                $metric = new Metric($metricFile);
+                if (!$metric->exists()) {
+                    $metric->addDataSource('hits', 'COUNTER', null, null, 'Hit Counter');
+                    $metric->addDataSource('exec', 'GAUGEZ', null, null, 'Execution Timer');
+                    $metric->addDataSource('mem', 'GAUGE', null, null, 'Memory Usage');
+                    $metric->addArchive('count_1hour', 'COUNT', 6, 60, 'Count per minute for last hour');
+                    $metric->addArchive('avg_1hour', 'AVERAGE', 6, 60, 'Average per minute for last hour');
+                    $metric->addArchive('count_1day', 'COUNT', 360, 24, 'Count per hour for last day');
+                    $metric->addArchive('avg_1day', 'AVERAGE', 360, 24, 'Average per hour for last day');
+                    $metric->addArchive('count_1week', 'COUNT', 360, 168, 'Count per hour for last week');
+                    $metric->addArchive('avg_1week', 'AVERAGE', 360, 168, 'Average per hour for last week');
+                    $metric->addArchive('count_1year', 'COUNT', 8640, 365, 'Count per day for last year');
+                    $metric->addArchive('avg_1year', 'AVERAGE', 8640, 365, 'Average per day for last year');
+                    $metric->create(10);
                 }
+                $metric->setValue('hits', 1);
+                $metric->setValue('exec', (microtime(true) - HAZAAR_START) * 1000);
+                $metric->setValue('mem', memory_get_peak_usage());
             }
         }
-        Frontend::i(
-            'CORE',
-            '"'.ake($_SERVER, 'REQUEST_METHOD').' /'.$this->request->getPath().'" '
-            .http_response_code()
-            .' "'.ake($_SERVER, 'HTTP_USER_AGENT').'"'
-        );
     }
 
     /**
@@ -498,8 +502,8 @@ class Application
         $bootstrap = APPLICATION_PATH.DIRECTORY_SEPARATOR
             .ake($this->config['app']['files'], 'bootstrap', 'bootstrap.php');
         if (file_exists($bootstrap)) {
-            $this->bootstrap = include $bootstrap;
-            if (false === $this->bootstrap) {
+            $bootstrap = include $bootstrap;
+            if (false === $bootstrap) {
                 throw new \Exception('The application failed to start!');
             }
         }
@@ -554,9 +558,7 @@ class Application
                     $response = $controller->run($route);
                 }
             }
-            if (!$response instanceof Response) {
-                $response = new NoContent();
-            } elseif ($response instanceof File) {
+            if ($response instanceof File) {
                 if (!$response->fileExists()) {
                     throw new \Exception('File not found', 404);
                 }
@@ -648,9 +650,6 @@ class Application
         $basePath = $this->request->getPath();
         $requestParts = $basePath ? array_map('strtolower', array_map('trim', explode('/', $basePath))) : [];
         for ($i = 0; $i < count($parts); ++$i) {
-            if (!array_key_exists($i, $requestParts) && null !== $this->urlDefaultPart) {
-                $requestParts[$i] = $this->urlDefaultPart;
-            }
             if ($parts[$i] !== $requestParts[$i]) {
                 return false;
             }

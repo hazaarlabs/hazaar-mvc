@@ -213,7 +213,7 @@ class URL implements \JsonSerializable
         } elseif ($this->path) {
             $params[Request\HTTP::$pathParam] = $this->path;
         }
-        if (is_array($this->params)) {
+        if (count($this->params) > 0) {
             $params = array_merge($this->params, $params);
         }
         if (URL::$baseURL) {

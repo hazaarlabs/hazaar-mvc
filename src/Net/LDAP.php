@@ -28,7 +28,7 @@ use LDAP\Connection;
  */
 class LDAP
 {
-    private ?Connection $conn;
+    private ?Connection $conn = null;
     private string $suffix;
 
     /**

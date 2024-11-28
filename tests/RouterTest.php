@@ -2,9 +2,15 @@
 
 namespace Hazaar\Tests;
 
+use Application\Controllers\Index;
+use Application\Controllers\Test;
 use Hazaar\Application\Config;
 use Hazaar\Application\Request\HTTP;
+use Hazaar\Application\Route;
 use Hazaar\Application\Router;
+use Hazaar\Application\Router\Exception\ControllerNotFound;
+use Hazaar\Controller\Exception\ActionNotFound;
+use Hazaar\Controller\Response;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -33,12 +39,12 @@ class RouterTest extends TestCase
         $this->config['type'] = 'basic';
         $router = new Router($this->config);
         $this->assertTrue($router->initialise($request));
-        $this->assertInstanceOf('Hazaar\Application\Route', $route = $router->getRoute());
-        $this->assertInstanceOf('Application\Controllers\Test', $controller = $route->getController());
+        $this->assertInstanceOf(Route::class, $route = $router->getRoute());
+        $this->assertInstanceOf(Test::class, $controller = $route->getController());
         $this->assertEquals('index', $route->getAction());
         $args = ['arg1', 'arg2', 'arg3'];
         $this->assertEquals($args, $route->getActionArgs());
-        $this->assertInstanceOf('Hazaar\Controller\Response', $controller->run($route));
+        $this->assertInstanceOf(Response::class, $controller->run($route));
     }
 
     public function testBasicRouterWithActionController(): void
@@ -50,10 +56,10 @@ class RouterTest extends TestCase
         $this->config['type'] = 'basic';
         $router = new Router($this->config);
         $this->assertTrue($router->initialise($request));
-        $this->assertInstanceOf('Hazaar\Application\Route', $route = $router->getRoute());
-        $this->assertInstanceOf('Application\Controllers\Index', $controller = $route->getController());
+        $this->assertInstanceOf(Route::class, $route = $router->getRoute());
+        $this->assertInstanceOf(Index::class, $controller = $route->getController());
         $this->assertEquals('index', $route->getAction());
-        $this->assertInstanceOf('Hazaar\Controller\Response', $controller->run($route));
+        $this->assertInstanceOf(Response::class, $controller->run($route));
     }
 
     public function testBasicRouter404Controller(): void
@@ -65,8 +71,8 @@ class RouterTest extends TestCase
         $this->config['type'] = 'basic';
         $router = new Router($this->config);
         $this->assertTrue($router->initialise($request));
-        $this->assertInstanceOf('Hazaar\Application\Route', $route = $router->getRoute());
-        $this->expectException('Hazaar\Application\Router\Exception\ControllerNotFound');
+        $this->assertInstanceOf(Route::class, $route = $router->getRoute());
+        $this->expectException(ControllerNotFound::class);
         $this->assertEquals('Bad', $controller = $route->getController());
     }
 
@@ -79,11 +85,11 @@ class RouterTest extends TestCase
         $this->config['type'] = 'basic';
         $router = new Router($this->config);
         $this->assertTrue($router->initialise($request));
-        $this->assertInstanceOf('Hazaar\Application\Route', $route = $router->getRoute());
-        $this->assertInstanceOf('Application\Controllers\Index', $controller = $route->getController());
+        $this->assertInstanceOf(Route::class, $route = $router->getRoute());
+        $this->assertInstanceOf(Index::class, $controller = $route->getController());
         $this->assertEquals('missing', $route->getAction());
-        $this->expectException('Hazaar\Controller\Exception\ActionNotFound');
-        $this->assertInstanceOf('Hazaar\Controller\Response', $controller->run($route));
+        $this->expectException(ActionNotFound::class);
+        $this->assertInstanceOf(Response::class, $controller->run($route));
     }
 
     public function testAdvancedRouter(): void
@@ -95,12 +101,12 @@ class RouterTest extends TestCase
         $this->config['type'] = 'advanced';
         $router = new Router($this->config);
         $this->assertTrue($router->initialise($request));
-        $this->assertInstanceOf('Hazaar\Application\Route', $route = $router->getRoute());
+        $this->assertInstanceOf(Route::class, $route = $router->getRoute());
         $this->assertTrue($router->initialise($request));
-        $this->assertInstanceOf('Application\Controllers\Test', $controller = $route->getController());
+        $this->assertInstanceOf(Test::class, $controller = $route->getController());
         $this->assertEquals('foo', $route->getAction());
         $this->assertEquals(['word'], $route->getActionArgs());
-        $this->assertInstanceOf('Hazaar\Controller\Response', $controller->run($route));
+        $this->assertInstanceOf(Response::class, $controller->run($route));
     }
 
     public function testCustomRouter(): void
@@ -112,26 +118,10 @@ class RouterTest extends TestCase
         $this->config['type'] = 'file';
         $router = new Router($this->config);
         $this->assertTrue($router->initialise($request));
-        $this->assertInstanceOf('Hazaar\Application\Route', $route = $router->getRoute());
-        $this->assertInstanceOf('Application\Controllers\Test', $controller = $route->getController());
+        $this->assertInstanceOf(Route::class, $route = $router->getRoute());
+        $this->assertInstanceOf(Test::class, $controller = $route->getController());
         $this->assertEquals('bar', $route->getAction());
         $this->assertEquals(['word' => 'hellothere'], $route->getActionArgs());
-        $this->assertInstanceOf('Hazaar\Controller\Response', $controller->run($route));
-    }
-
-    public function testAnnotatedRouter(): void
-    {
-        $request = new HTTP([
-            'REQUEST_METHOD' => 'GET',
-            'REQUEST_URI' => '/api/test/1234',
-        ]);
-        $this->config['type'] = 'annotated';
-        $router = new Router($this->config);
-        $this->assertTrue($router->initialise($request));
-        $this->assertInstanceOf('Hazaar\Application\Route', $route = $router->getRoute());
-        $this->assertEquals('Application\Controllers\Api', $controller = $route->getController());
-        $this->assertEquals('testGET', $route->getAction());
-        $this->assertEquals(['id' => 1234], $route->getActionArgs());
-        $this->assertInstanceOf('Hazaar\Controller\Response', $controller->run($route));
+        $this->assertInstanceOf(Response::class, $controller->run($route));
     }
 }

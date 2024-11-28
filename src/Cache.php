@@ -218,9 +218,6 @@ class Cache implements \ArrayAccess
      */
     public function extend(array $array, bool $recursive = false): bool
     {
-        if (!is_array($array)) {
-            return false;
-        }
         foreach ($array as $key => $value) {
             if (is_array($value) && $recursive) {
                 $c = $this->get($key);
@@ -355,9 +352,6 @@ class Cache implements \ArrayAccess
         if (($value = $this->get($key)) === null || !is_int($value)) {
             $value = 0;
         }
-        if (!is_int($amount)) {
-            $amount = 1;
-        }
         $this->set($key, $value += $amount);
 
         return $value;
@@ -378,9 +372,6 @@ class Cache implements \ArrayAccess
     {
         if (($value = $this->get($key)) === null || !is_int($value)) {
             $value = 0;
-        }
-        if (!is_int($amount)) {
-            $amount = 1;
         }
         $this->set($key, $value -= $amount);
 

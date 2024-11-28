@@ -365,9 +365,6 @@ class Adapter
         if (true !== $this->config['enable']) {
             throw new \Exception('Mail subsystem is disabled!');
         }
-        if (!$this->transport instanceof Transport) {
-            throw new \Exception('No mail transport set while trying to send mail');
-        }
         if (true === $this->config->get('testmode')) {
             return true;
         }

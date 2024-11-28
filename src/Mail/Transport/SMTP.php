@@ -48,6 +48,7 @@ class SMTP extends Transport
             throw new \Exception('Invalid response on connection: '.$result);
         }
         $this->write('EHLO '.gethostname());
+        $response = false;
         if (false === $this->read(250, 65535, $result, $response)) {
             throw new \Exception('Bad response on mail from: '.$result);
         }
@@ -204,14 +205,14 @@ class SMTP extends Transport
 
     private function write(string $msg): false|int
     {
-        if (!(is_resource($this->socket) && is_string($msg) && strlen($msg) > 0)) {
+        if (!(is_resource($this->socket) && strlen($msg) > 0)) {
             return false;
         }
 
         return fwrite($this->socket, $msg."\r\n", strlen($msg) + 2);
     }
 
-    private function read(int $code, int $len = 1024, ?string &$message = null, ?string &$response = null): bool
+    private function read(int $code, int $len = 1024, ?string &$message = null, false|string &$response = false): bool
     {
         if (!is_resource($this->socket)) {
             return false;
@@ -239,12 +240,7 @@ class SMTP extends Transport
         if (!preg_match('/^(\d+)\s+(.+)$/m', $buf, $matches)) {
             return false;
         }
-        if (!is_numeric($matches[1])) {
-            return false;
-        }
-        if (null !== $matches[2]) {
-            $message = $matches[2];
-        }
+        $message = $matches[2];
 
         return (int) $matches[1];
     }

@@ -201,9 +201,8 @@ class ModelTest extends TestCase
     public function testSerialise(): void
     {
         $model = new TestModel($this->data);
-        $this->assertIsArray($model->toArray());
         $string = serialize($model);
-        $this->assertIsString($string);
+        $this->assertEquals(424, strlen($string));
         $newModel = unserialize($string);
         $this->assertInstanceOf(TestModel::class, $newModel);
         $array = $newModel->toArray(true);

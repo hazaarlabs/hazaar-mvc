@@ -10,12 +10,6 @@ class Attachment extends Part
     public function __construct(File $file, ?string $name = null, bool $base64_encode = true)
     {
         parent::__construct();
-        if (!$file instanceof File) {
-            $file = new File($file);
-            if (!$file->exists()) {
-                throw new \Exception('Can not attach non-existent file!');
-            }
-        }
         parent::setContentType($file->mimeContentType());
         if (!$name) {
             $name = $file->basename();
