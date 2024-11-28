@@ -131,9 +131,7 @@ abstract class Service extends Process
             $this->lastCheckfile = time();
         }
         parent::__construct($application, $protocol);
-        if (method_exists($this, 'construct')) {
-            $this->construct($this->application);
-        }
+        $this->construct($this->application);
     }
 
     public function __destruct()
@@ -203,12 +201,11 @@ abstract class Service extends Process
 
     private function __processSchedule(): void
     {
-        if (!is_array($this->schedule) || !count($this->schedule) > 0) {
+        if (0 === count($this->schedule)) {
             return;
         }
-        if (($count = count($this->schedule)) > 0) {
-            $this->log(W_DEBUG, "Processing {$count} scheduled actions");
-        }
+        $count = count($this->schedule);
+        $this->log(W_DEBUG, "Processing {$count} scheduled actions");
         $this->next = null;
         foreach ($this->schedule as $id => &$exec) {
             if (time() >= $exec['when']) {
@@ -360,17 +357,12 @@ abstract class Service extends Process
             $this->log(W_LOCAL, "Log rotation is enabled. WHEN={$when} LOGFILES={$logfiles}");
             $this->cron($when, '__rotateLogFiles', [$logfiles]);
         }
-        $init = true;
-        if (method_exists($this, 'init')) {
-            $init = $this->init();
+        $init = $this->init();
+        $this->state = ((false === $init) ? HAZAAR_SERVICE_ERROR : HAZAAR_SERVICE_READY);
+        if (HAZAAR_SERVICE_READY !== $this->state) {
+            return 1;
         }
-        if (HAZAAR_SERVICE_INIT === $this->state) {
-            $this->state = ((false === $init) ? HAZAAR_SERVICE_ERROR : HAZAAR_SERVICE_READY);
-            if (HAZAAR_SERVICE_READY !== $this->state) {
-                return 1;
-            }
-            $this->state = HAZAAR_SERVICE_RUNNING;
-        }
+        $this->state = HAZAAR_SERVICE_RUNNING;
         if (true === $dynamic) {
             if (!method_exists($this, 'runOnce')) {
                 return 5;
@@ -399,6 +391,7 @@ abstract class Service extends Process
                 /*
                 * If sleep was not executed in the last call to run(), then execute it now.  This protects bad services
                 * from not sleeping as the sleep() call is where new signals are processed.
+                * @phpstan-ignore identical.alwaysTrue
                 */
                 if (false === $this->slept) {
                     $this->sleep(0);
@@ -460,9 +453,6 @@ abstract class Service extends Process
         callable|string $callback,
         ?Map $arguments = null
     ): bool|string {
-        if (!is_int($seconds)) {
-            return false;
-        }
         if (!is_callable($callback) && !method_exists($this, $callback)) {
             return false;
         }

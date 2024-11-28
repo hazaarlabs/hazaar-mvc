@@ -143,9 +143,6 @@ class Protocol
      */
     public function getTypeName(int $type): bool|string
     {
-        if (!is_int($type)) {
-            return $this->error('Bad packet type');
-        }
         if (!array_key_exists($type, Protocol::$typeCodes)) {
             return $this->error('Unknown packet type');
         }

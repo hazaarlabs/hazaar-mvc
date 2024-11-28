@@ -299,12 +299,12 @@ class Client
     /**
      * Initiates a connection to a remote host.
      *
-     * @param string $host the remote host to connect to specified as either a resolvable host name or an IP address
-     * @param int    $port the port to connect to on the remote host
+     * @param string     $host the remote host to connect to specified as either a resolvable host name or an IP address
+     * @param int|string $port the port to connect to on the remote host
      *
      * @return bool TRUE if the connnection is successful.  FALSE otherwise.
      */
-    public function connect(string $host, int $port): bool
+    public function connect(string $host, int|string $port): bool
     {
         if (!is_numeric($port)) {
             $port = getservbyname($port, (SOL_TCP == $this->protocol) ? 'tcp' : 'udp');
@@ -388,9 +388,6 @@ class Client
      */
     public function on(string $event, \Closure $callback): bool
     {
-        if (!is_callable($callback)) {
-            return false;
-        }
         $event = strtolower($event);
         if (!array_key_exists($event, $this->events)) {
             $this->events[$event] = [];

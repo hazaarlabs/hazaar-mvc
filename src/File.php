@@ -23,10 +23,13 @@ class File implements \JsonSerializable
     public static string $default_key = 'hazaar_secret_badass_key';
     protected Manager $manager;
 
-    /** @var array<mixed> */
+    /**
+     * @var array<mixed>
+     */
     protected array $info;
     protected ?string $mimeContentType = null;
-    /*
+
+    /**
      * Any overridden file contents.
      *
      * This is normally used when performing operations on the file in memory, such as resizing an image.
@@ -421,14 +424,14 @@ class File implements \JsonSerializable
      */
     public function putContents(string $data, bool $overwrite = true): ?int
     {
-        $content_type = $this->mimeContentType();
-        if (!$content_type) {
-            $content_type = 'text/text';
+        $contentType = $this->mimeContentType();
+        if (!$contentType) {
+            $contentType = 'text/text';
         }
         $this->filterOut($data);
         $this->contents = $data;
 
-        return $this->manager->write($this->source_file, $data, $content_type, $overwrite);
+        return $this->manager->write($this->source_file, $data, $contentType, $overwrite);
     }
 
     /**
@@ -460,7 +463,7 @@ class File implements \JsonSerializable
     public function setDecodedContents(string $bytes): bool
     {
         if ('data:' == substr($bytes, 0, 5)) {
-            $content_type = null;
+            $contentType = null;
             $encoding = null;
             // Check we have a correctly encoded data URI
             if (($pos = strpos($bytes, ',', 5)) === false) {
@@ -470,8 +473,8 @@ class File implements \JsonSerializable
             if (!(count($info) >= 2)) {
                 return false;
             }
-            list($header, $content_type) = explode(':', array_shift($info));
-            if (!('data' === $header && $content_type)) {
+            list($header, $contentType) = explode(':', array_shift($info));
+            if (!('data' === $header && $contentType)) {
                 return false;
             }
             $content = array_pop($info);
@@ -480,9 +483,7 @@ class File implements \JsonSerializable
                 $content = substr($content, $pos + 1);
             }
             $this->contents = ('base64' == $encoding) ? base64_decode($content) : $content;
-            if (null !== $content_type) {
-                $this->setMimeContentType($content_type);
-            }
+            $this->setMimeContentType($contentType);
             if (count($info) > 0) {
                 $attributes = array_unflatten($info);
                 if (array_key_exists('name', $attributes)) {

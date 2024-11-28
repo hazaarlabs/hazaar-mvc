@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hazaar\File\Backend;
 
 use Hazaar\Cache;
-use Hazaar\Exception;
 use Hazaar\File\Backend\Exception\GoogleDriveError;
 use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
@@ -81,10 +80,8 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
 
     public function __destruct()
     {
-        if ($this->cache instanceof Cache) {
-            $this->cache->set('meta', $this->meta);
-            $this->cache->set('cursor', $this->cursor);
-        }
+        $this->cache->set('meta', $this->meta);
+        $this->cache->set('cursor', $this->cursor);
     }
 
     public static function label(): string
@@ -179,7 +176,7 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
             $this->meta = [];
             $request = new Request('https://www.googleapis.com/drive/v2/changes', 'GET');
             $response = $this->sendRequest($request);
-            $this->cursor = (int)$response['largestChangeId'];
+            $this->cursor = (int) $response['largestChangeId'];
             $request = new Request('https://www.googleapis.com/drive/v2/files/root', 'GET');
             $response = $this->sendRequest($request);
             $this->meta[$response['id']] = array_intersect_key($response->toArray(), array_flip($this->meta_items));
@@ -722,6 +719,16 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
         return false;
     }
 
+    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array|false
+    {
+        return false;
+    }
+
+    public function fsck(bool $skip_root_reload = false): bool
+    {
+        return false;
+    }
+
     private function sendRequest(Request $request, bool $is_meta = true): Map|string
     {
         $count = 0;
@@ -750,7 +757,7 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
                     $code = $err->code;
                 } else {
                     $message = $response->body;
-                    $code = (int)$response->status;
+                    $code = (int) $response->status;
                 }
 
                 throw new \Exception($message, $code);

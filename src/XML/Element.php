@@ -173,7 +173,7 @@ class Element implements \ArrayAccess, \Iterator
      */
     public function __get($name): ?Element
     {
-        if (!is_array($this->__children_index)) {
+        if (0 === count($this->__children_index)) {
             return null;
         }
         if ($ns = $this->getDefaultNamespace()) {
@@ -212,13 +212,11 @@ class Element implements \ArrayAccess, \Iterator
     {
         $this->open_tag = $open_tag;
         $this->close_tag = $close_tag;
-        if (!is_array($this->__children)) {
+        if (0 === count($this->__children)) {
             return;
         }
         foreach ($this->__children as $element) {
-            if ($element instanceof Element) {
-                $element->setTagChars($open_tag, $close_tag);
-            }
+            $element->setTagChars($open_tag, $close_tag);
         }
     }
 
@@ -349,12 +347,6 @@ class Element implements \ArrayAccess, \Iterator
         if (!$this->__name && !$this->__parent) {
             $child->__namespaces = $this->__namespaces;
         }
-        if (!is_array($this->__children)) {
-            $this->__children = [];
-        }
-        if (!is_array($this->__children_index)) {
-            $this->__children_index = [];
-        }
         $this->__children[] = &$child;
         if (array_key_exists($name, $this->__children_index)) {
             if (!is_array($this->__children_index[$name])) {
@@ -412,7 +404,7 @@ class Element implements \ArrayAccess, \Iterator
         if ($ns = $this->getDefaultNamespace()) {
             $name = $ns.':'.$name;
         }
-        if (is_array($this->__children_index) && array_key_exists($name, $this->__children_index)) {
+        if (array_key_exists($name, $this->__children_index)) {
             $child = $this->__children_index[$name];
             if (!is_null($value)) {
                 $child->value($value);
@@ -439,10 +431,6 @@ class Element implements \ArrayAccess, \Iterator
      */
     public function count(): int
     {
-        if (!is_array($this->__children)) {
-            return 0;
-        }
-
         return count($this->__children);
     }
 
@@ -534,7 +522,7 @@ class Element implements \ArrayAccess, \Iterator
     public function getNamespaces(bool $recursive = false): array
     {
         $namespaces = $this->__namespaces;
-        if ($recursive && is_array($this->__children)) {
+        if ($recursive && count($this->__children) > 0) {
             foreach ($this->__children as $child) {
                 $namespaces = array_merge($namespaces, $child->getNamespaces($recursive));
             }
@@ -566,7 +554,7 @@ class Element implements \ArrayAccess, \Iterator
                 $xml .= ' xmlns:'.$prefix.'="'.$value.'"';
             }
         }
-        if (is_array($this->__children) && count($this->__children) > 0) {
+        if (count($this->__children) > 0) {
             if ($this->__name) {
                 $xml .= $this->close_tag;
             }
@@ -717,7 +705,7 @@ class Element implements \ArrayAccess, \Iterator
      */
     public function hasChild(string $name): bool
     {
-        return is_array($this->__children_index) && array_key_exists($name, $this->__children_index);
+        return array_key_exists($name, $this->__children_index);
     }
 
     /**
@@ -729,7 +717,7 @@ class Element implements \ArrayAccess, \Iterator
      */
     public function hasAttr($name)
     {
-        return is_array($this->__attributes) && array_key_exists($name, $this->__attributes);
+        return array_key_exists($name, $this->__attributes);
     }
 
     /**
@@ -799,7 +787,7 @@ class Element implements \ArrayAccess, \Iterator
      */
     public function offsetUnset(mixed $name): void
     {
-        if (is_array($this->__attributes) && array_key_exists($name, $this->__attributes)) {
+        if (array_key_exists($name, $this->__attributes)) {
             unset($this->__attributes[$name]);
         }
     }
@@ -809,7 +797,7 @@ class Element implements \ArrayAccess, \Iterator
      */
     public function current(): mixed
     {
-        if (!is_array($this->__children)) {
+        if (0 === count($this->__children)) {
             return $this->__reset ? $this : null;
         }
 
@@ -821,7 +809,7 @@ class Element implements \ArrayAccess, \Iterator
      */
     public function next(): void
     {
-        if (!is_array($this->__children)) {
+        if (0 === count($this->__children)) {
             $this->__reset = false;
         }
         next($this->__children);
@@ -832,7 +820,7 @@ class Element implements \ArrayAccess, \Iterator
      */
     public function key(): mixed
     {
-        if (!is_array($this->__children)) {
+        if (0 === count($this->__children)) {
             return $this->__reset ? $this->__name : null;
         }
 
@@ -844,11 +832,11 @@ class Element implements \ArrayAccess, \Iterator
      */
     public function valid(): bool
     {
-        if (!is_array($this->__children)) {
+        if (0 === count($this->__children)) {
             return $this->__reset;
         }
 
-        return current($this->__children) instanceof Element;
+        return true;
     }
 
     /**
@@ -856,7 +844,7 @@ class Element implements \ArrayAccess, \Iterator
      */
     public function rewind(): void
     {
-        if (!is_array($this->__children)) {
+        if (0 === count($this->__children)) {
             $this->__reset = true;
         }
         reset($this->__children);
@@ -869,7 +857,7 @@ class Element implements \ArrayAccess, \Iterator
      */
     public function removeIndex(int $index): void
     {
-        if (is_array($this->__children) && array_key_exists($index, $this->__children)) {
+        if (array_key_exists($index, $this->__children)) {
             unset($this->__children[$index]);
         }
     }

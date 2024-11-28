@@ -95,7 +95,7 @@ class SQL extends Table
             return;
         }
         reset($chunks);
-        while (null !== key($chunks)) {
+        do {
             $pos = null;
             $references = null;
             $alias = null;
@@ -122,9 +122,7 @@ class SQL extends Table
                     'alias' => $alias,
                 ];
             }
-
-            next($chunks);
-        }
+        } while (next($chunks));
     }
 
     public function processWHERE(string $line): void
@@ -182,14 +180,14 @@ class SQL extends Table
 
     public function processLIMIT(string $line): void
     {
-        $this->limit = 'ALL' === strtoupper($line) ? null : (int)$line;
+        $this->limit = 'ALL' === strtoupper($line) ? null : (int) $line;
     }
 
     public function processOFFSET(string $line): void
     {
         $parts = preg_split('/\s+/', $line, 2);
         if (array_key_exists(0, $parts)) {
-            $this->offset = (int)$parts[0];
+            $this->offset = (int) $parts[0];
         }
     }
 
@@ -201,7 +199,7 @@ class SQL extends Table
             $fetch_def['which'] = $parts[0];
         }
         if (array_key_exists(1, $parts) && is_numeric($parts[1])) {
-            $fetch_def['count'] = (int)$parts[1];
+            $fetch_def['count'] = (int) $parts[1];
         }
         if (count($fetch_def) > 0) {
             $this->fetch = $fetch_def;
@@ -239,7 +237,7 @@ class SQL extends Table
                 // Find the next position.  We intentionally do this instead of a sort so that SQL is processed in a known order.
                 foreach (array_values($chunks) as $values) {
                     foreach ($values as $value) {
-                        if (is_int($value) && ($value <= $pos || $value >= $next)) {
+                        if ($value <= $pos || $value >= $next) {
                             continue;
                         }
                         $next = $value;
@@ -295,7 +293,7 @@ class SQL extends Table
                             $value = substr($value, 1, -1);
                         } elseif (is_numeric($value)) {
                             if (false === strpos($value, '.')) {
-                                $value = (int)$value;
+                                $value = (int) $value;
                             } else {
                                 $value = floatval($value);
                             }

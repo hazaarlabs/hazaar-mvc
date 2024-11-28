@@ -106,12 +106,12 @@ class WebDAV extends Client
         $xml = new Element();
         $xml->addNamespace('d', 'DAV:');
         $propfind = $xml->add('d:propfind');
-        if (is_array($namespaces)) {
+        if (count($namespaces) > 0) {
             foreach ($namespaces as $name => $uri) {
                 $xml->addNamespace($name.':attr', $uri);
             }
         }
-        if (is_array($properties) && count($properties) > 0) {
+        if (count($properties) > 0) {
             $prop = $propfind->add('d:prop');
             foreach ($properties as $property) {
                 if (false === strpos($property, ':')) {

@@ -75,7 +75,7 @@ class Table implements \Iterator
     protected array $joins = [];
 
     /**
-     * @var array<string>
+     * @var array<mixed>
      */
     protected array $combine = [];
 
@@ -128,7 +128,7 @@ class Table implements \Iterator
         } elseif (!is_array($fields)) {
             $fields = [$fields];
         }
-        if (is_array($fields) && count($fields) > 0) {
+        if (count($fields) > 0) {
             $this->fields = $fields;
         }
 
@@ -161,7 +161,7 @@ class Table implements \Iterator
      * @param mixed                    $fields   a field definition array
      * @param array<string,int>|string $order    A valid order definition
      */
-    public function findOneRow(mixed $criteria = [], mixed $fields = [], $order = null): null|Row
+    public function findOneRow(mixed $criteria = [], mixed $fields = [], $order = null): ?Row
     {
         $table = $this->find($criteria, $fields);
         if ($order) {
@@ -204,7 +204,7 @@ class Table implements \Iterator
         } elseif (true === $this->distinct) {
             $sql .= ' DISTINCT';
         }
-        if (!is_array($this->fields) || 0 == count($this->fields)) {
+        if (0 == count($this->fields)) {
             $sql .= ' *';
         } else {
             $sql .= ' '.$this->adapter->driver->prepareFields($this->fields, [], $this->tables());
@@ -221,7 +221,7 @@ class Table implements \Iterator
             }
         }
         // WHERE
-        if (is_array($this->criteria) && count($this->criteria) > 0) {
+        if (count($this->criteria) > 0) {
             $sql .= ' WHERE '.$this->adapter->driver->prepareCriteria($this->criteria);
         }
         // GROUP BY
@@ -537,7 +537,7 @@ class Table implements \Iterator
         return $this->adapter->driver->deleteAll($this->tableName);
     }
 
-    public function row(int $offset = 0): null|Row
+    public function row(int $offset = 0): ?Row
     {
         $result = $this->execute();
 
@@ -561,7 +561,7 @@ class Table implements \Iterator
         int $cursorOrientation = \PDO::FETCH_ORI_NEXT,
         int $offset = 0,
         bool $clobberDupNamedCols = false
-    ): ?array {
+    ): array|false {
         $result = $this->execute();
 
         return $result->fetch(true !== $clobberDupNamedCols && $result->hasSelectGroups() ? \PDO::FETCH_NAMED : \PDO::FETCH_ASSOC, $cursorOrientation, $offset);
@@ -735,7 +735,7 @@ class Table implements \Iterator
     public function listUsedTables(): array
     {
         $tables = [$this->tableName];
-        if (is_array($this->joins)) {
+        if (count($this->joins) > 0) {
             foreach ($this->joins as $join) {
                 $tables[] = $join['ref'];
             }

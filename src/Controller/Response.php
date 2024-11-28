@@ -102,9 +102,6 @@ class Response implements Interfaces\Response
      */
     public function setHeaders(array $headers, bool $overwrite = true): bool
     {
-        if (!is_array($headers)) {
-            return false;
-        }
         foreach ($headers as $key => $value) {
             $this->setHeader($key, $value, $overwrite);
         }

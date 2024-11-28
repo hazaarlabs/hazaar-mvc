@@ -42,7 +42,6 @@ class Manager implements Backend
      */
     private static array $backend_aliases = [
         'googledrive' => 'GoogleDrive',
-        'mongodb' => 'MongoDB',
         'sharepoint' => 'SharePoint',
         'webdav' => 'WebDAV',
     ];
@@ -341,8 +340,9 @@ class Manager implements Backend
      */
     public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array
     {
-        if (method_exists($this->backend, 'find')) {
-            return $this->backend->find($search, $path, $case_insensitive);
+        $result = $this->backend->find($search, $path, $case_insensitive);
+        if (false !== $result) {
+            return $result;
         }
         $dir = $this->dir($path);
         $list = [];
@@ -519,13 +519,9 @@ class Manager implements Backend
     }
 
     // Advanced backend dependant features
-    public function fsck(): bool
+    public function fsck(bool $skipRootReload = false): bool
     {
-        if (method_exists($this->backend, 'fsck')) {
-            return $this->backend->fsck();
-        }
-
-        return true;
+        return $this->backend->fsck($skipRootReload);
     }
 
     /**

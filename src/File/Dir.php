@@ -99,11 +99,8 @@ class Dir
         if (null !== $path) {
             if ($path instanceof File) {
                 $path = $path->dirname();
-            }
-            if ($path instanceof Dir) {
+            } elseif ($path instanceof Dir) {
                 $path = $path->fullpath();
-            } elseif (!is_string($path)) {
-                return false;
             }
             $source_path = explode('/', trim(str_replace('\\', '/', dirname($this->path)), '/'));
             $path = explode('/', trim(str_replace('\\', '/', $path), '/'));

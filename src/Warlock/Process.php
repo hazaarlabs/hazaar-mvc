@@ -33,7 +33,7 @@ abstract class Process
     ];
 
     /**
-     * @var array<int,string>
+     * @var array<int,mixed>
      */
     private static array $opt = [];
 
@@ -127,6 +127,22 @@ abstract class Process
         }
 
         return $payload;
+    }
+
+    /**
+     * Constructor placeholder for child classes.
+     */
+    public function construct(Application $application): void
+    {
+        // do nothing
+    }
+
+    /**
+     * Initialisation placeholder for child classes.
+     */
+    public function init(): bool
+    {
+        return true;
     }
 
     public function send(string $command, mixed $payload = null): bool

@@ -6,7 +6,6 @@ namespace Hazaar\File;
 
 use Hazaar\Controller\Exception\BrowserRootNotFound;
 use Hazaar\Controller\Response\File as FileResponse;
-use Hazaar\Exception;
 use Hazaar\File;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
@@ -138,7 +137,7 @@ class BrowserConnector
                     ++$info['dirs'];
                 }
             }
-        } elseif ($file instanceof File && $file->isReadable() && preg_match_array($this->allowPreview, $info['mime'])) {
+        } elseif ($file->isReadable() && preg_match_array($this->allowPreview, $info['mime'])) {
             $info['previewLink'] = rtrim($this->url, '/').'/'.$source->name.rtrim($file->dirname(), '/').'/'.$file->basename().'?width={$w}&height={$h}&crop=true';
         }
 
@@ -218,9 +217,6 @@ class BrowserConnector
         $path = rtrim($source->fixPath($this->path($target)), '/').'/';
         $dir = $source->dir($path);
         while (($file = $dir->read()) !== false) {
-            if (!$file instanceof File) {
-                continue;
-            }
             if (!$file->isReadable()) {
                 continue;
             }
@@ -517,9 +513,6 @@ class BrowserConnector
         $source = $this->source($target);
         $path = $this->path($target);
         $list = $source->find($query, $path, true);
-        if (!is_array($list)) {
-            throw new \Exception('Search failed!');
-        }
         foreach ($list as &$item) {
             $item = $this->info($source, $source->get($item));
         }

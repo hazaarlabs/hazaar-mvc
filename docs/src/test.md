@@ -82,6 +82,15 @@ const name: string = 'VuePress'
 console.log(`Hello, ${name}!`)
 ```
 
+@tab PHP
+  
+```php
+<?php
+// @var array<mixed> $name
+$name = 'VuePress';
+?>
+```
+
 :::
 
 # Tabs

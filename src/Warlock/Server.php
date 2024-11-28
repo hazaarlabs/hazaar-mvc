@@ -28,7 +28,7 @@ $env = array_key_exists('env', $ops) ? $ops['env'] : (getenv('APPLICATION_ENV') 
 define('APPLICATION_ENV', $env);
 define('SERVER_PATH', realpath(dirname(__FILE__).DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'Warlock'));
 
-include APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'vendor'.DIRECTORY_SEPARATOR.'autoload.php';
+include APPLICATION_PATH.'/../vendor/autoload.php';
 if (!class_exists('Hazaar\Loader')) {
     throw new \Exception('A Hazaar loader could not be loaded!');
 }

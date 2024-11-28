@@ -56,68 +56,68 @@ use Hazaar\Map;
  * }
  * ```
  *
- * @method false|string lastInsertId()
- * @method false|int    exec(string $sql)
- * @method false|int    delete(string $tableName, mixed $criteria = [], array $from = [])
- * @method string       getSchemaName()
- * @method false|string quote(string $string, int $parameterType = \PDO::PARAM_STR)
- * @method bool         setTimezone(string $timezone)
- * @method bool         repair(?string $table = null)
- * @method array        errorInfo()
- * @method mixed        errorCode()
- * @method bool         truncate(string $tableName,bool $only = false,bool $restartIdentity = false,bool $cascade = false)
- * @method bool         createDatabase(string $name)
- * @method string       schemaName(string $table)
- * @method bool         schemaExists(string $schemaName)
- * @method bool         createSchema(string $schemaName)
- * @method bool         beginTransaction()
- * @method bool         commit()
- * @method bool         rollback()
- * @method bool         inTransaction()
- * @method mixed        getAttribute(int $attribute)
- * @method bool         setAttribute(int $attribute, mixed $value)
- * @method bool         createRole(string $roleName, ?string $password = null, array $privileges = [])
- * @method bool         dropRole(string $name, bool $ifExists = false)
- * @method array|false  listUsers()
- * @method array|false  listGroups()
- * @method array        listTables()
- * @method bool         tableExists(string $tableName)
- * @method bool         createTable(string $tableName, mixed $columns)
- * @method bool         renameTable(string $fromName, string $toName)
- * @method array|false  describeTable(string $tableName, ?string $sort = null)
- * @method bool         dropTable(string $table, bool $cascade = false, bool $ifExists = false)
- * @method bool         addColumn(string $tableName, mixed $columnSpec)
- * @method bool         alterColumn(string $tableName, string $column, mixed $columnSpec)
- * @method bool         dropColumn(string $tableName, string $column, bool $ifExists = false)
- * @method array|false  listPrimaryKeys(?string $table = null)
- * @method array|false  listForeignKeys(?string $table = null)
- * @method array|false  listConstraints(?string $table = null, ?string $type = null, bool $invertType = false)
- * @method bool         addConstraint(string $constraintName, mixed $info)
- * @method bool         dropConstraint(string $constraintName, string $tableName, bool $cascade = false, bool $ifExists = false)
- * @method array|false  listIndexes(?string $tableName = null)
- * @method bool         createIndex(string $indexName, string $tableName, array $idxInfo = [])
- * @method bool         dropIndex(string $indexName, bool $ifExists = false)
- * @method array|false  listViews()
- * @method bool         createView(string $viewName, mixed $content)
- * @method bool         viewExists(string $viewName)
- * @method array|false  describeView(string $viewName)
- * @method bool         dropView(string $viewName, bool $cascade = false, bool $ifExists = false)
- * @method array|false  listFunctions(?string $schema = null, bool $includeParameters = false)
- * @method bool         createFunction(string $functionName, mixed $content)
- * @method array|false  describeFunction(string $functionName)
- * @method bool         dropFunction(string $functionName, null|array|string $argTypes = null, bool $cascade = false, bool $ifExists = false)
- * @method array|false  listTriggers(?string $tableName = null, ?string $schema = null)
- * @method bool         createTrigger(string $functionName, string $tableName, mixed $content)
- * @method array|false  describeTrigger(string $functionName, ?string $schemaName = null)
- * @method bool         dropTrigger(string $functionName, null|array|string $argTypes = null, bool $cascade = false, bool $ifExists = false)
- * @method array|false  listExtensions()
- * @method bool         createExtension(string $name)
- * @method bool         dropExtension(string $name, bool $ifExists = false)
+ * @method false|string       lastInsertId()
+ * @method false|int          exec(string $sql)
+ * @method false|int          delete(string $tableName, mixed $criteria = [], array<string> $from = [])
+ * @method string             getSchemaName()
+ * @method false|string       quote(string $string, int $parameterType = \PDO::PARAM_STR)
+ * @method bool               setTimezone(string $timezone)
+ * @method bool               repair(?string $table = null)
+ * @method array<mixed>       errorInfo()
+ * @method mixed              errorCode()
+ * @method bool               truncate(string $tableName,bool $only = false,bool $restartIdentity = false,bool $cascade = false)
+ * @method bool               createDatabase(string $name)
+ * @method string             schemaName(string $table)
+ * @method bool               schemaExists(string $schemaName)
+ * @method bool               createSchema(string $schemaName)
+ * @method bool               beginTransaction()
+ * @method bool               commit()
+ * @method bool               rollback()
+ * @method bool               inTransaction()
+ * @method mixed              getAttribute(int $attribute)
+ * @method bool               setAttribute(int $attribute, mixed $value)
+ * @method bool               createRole(string $roleName, ?string $password = null, array<mixed> $privileges = [])
+ * @method bool               dropRole(string $name, bool $ifExists = false)
+ * @method array<mixed>|false listUsers()
+ * @method array<mixed>|false listGroups()
+ * @method array<mixed>|false listTables()
+ * @method bool               tableExists(string $tableName)
+ * @method bool               createTable(string $tableName, mixed $columns)
+ * @method bool               renameTable(string $fromName, string $toName)
+ * @method array<mixed>|false describeTable(string $tableName, ?string $sort = null)
+ * @method bool               dropTable(string $table, bool $cascade = false, bool $ifExists = false)
+ * @method bool               addColumn(string $tableName, mixed $columnSpec)
+ * @method bool               alterColumn(string $tableName, string $column, mixed $columnSpec)
+ * @method bool               dropColumn(string $tableName, string $column, bool $ifExists = false)
+ * @method array<mixed>|false listPrimaryKeys(?string $table = null)
+ * @method array<mixed>|false listForeignKeys(?string $table = null)
+ * @method array<mixed>|false listConstraints(?string $table = null, ?string $type = null, bool $invertType = false)
+ * @method bool               addConstraint(string $constraintName, mixed $info)
+ * @method bool               dropConstraint(string $constraintName, string $tableName, bool $cascade = false, bool $ifExists = false)
+ * @method array<mixed>|false listIndexes(?string $tableName = null)
+ * @method bool               createIndex(string $indexName, string $tableName, array<mixed> $idxInfo = [])
+ * @method bool               dropIndex(string $indexName, bool $ifExists = false)
+ * @method array<mixed>|false listViews()
+ * @method bool               createView(string $viewName, mixed $content)
+ * @method bool               viewExists(string $viewName)
+ * @method array<mixed>|false describeView(string $viewName)
+ * @method bool               dropView(string $viewName, bool $cascade = false, bool $ifExists = false)
+ * @method array<mixed>|false listFunctions(?string $schema = null, bool $includeParameters = false)
+ * @method bool               createFunction(string $functionName, mixed $content)
+ * @method array<mixed>|false describeFunction(string $functionName)
+ * @method bool               dropFunction(string $functionName, mixed $argTypes = null, bool $cascade = false, bool $ifExists = false)
+ * @method array<mixed>|false listTriggers(?string $tableName = null, ?string $schema = null)
+ * @method bool               createTrigger(string $functionName, string $tableName, mixed $content)
+ * @method array<mixed>|false describeTrigger(string $functionName, ?string $schemaName = null)
+ * @method bool               dropTrigger(string $functionName, mixed $argTypes = null, bool $cascade = false, bool $ifExists = false)
+ * @method array<mixed>|false listExtensions()
+ * @method bool               createExtension(string $name)
+ * @method bool               dropExtension(string $name, bool $ifExists = false)
  */
 class Adapter
 {
     /**
-     * @var array<string, int|string>
+     * @var array<string, array{cipher:string,checkstring:string}|int|string>
      */
     public static array $defaultConfig = [
         'encrypt' => [
@@ -420,9 +420,6 @@ class Adapter
         if (!($statement = ake($this->statements, $name)) instanceof \PDOStatement) {
             return false;
         }
-        if (!is_array($inputParameters)) {
-            $inputParameters = [$inputParameters];
-        }
 
         return $statement->execute($inputParameters);
     }
@@ -513,7 +510,7 @@ class Adapter
         $result = $this->driver->update($tableName, $this->encrypt($tableName, $fields), $criteria, $from, $returning, $tables);
         if ($result instanceof \PDOStatement) {
             $result = new Result($this, $result);
-            if (is_array(BaseDriver::$selectGroups) && count(BaseDriver::$selectGroups) > 0) {
+            if (count(BaseDriver::$selectGroups) > 0) {
                 $result->setSelectGroups(BaseDriver::$selectGroups);
             }
             $fetchArg = $result->hasSelectGroups() ? \PDO::FETCH_NAMED : \PDO::FETCH_ASSOC;
