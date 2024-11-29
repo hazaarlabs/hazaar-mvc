@@ -8,9 +8,7 @@ export default hopeTheme({
         '/guide/': sidebarGuide(),
         '/example/': sidebarExample(),
         '/reference/': sidebarReference(),
-        '/api/': [
-            { text: 'API Reference', link: '/api/Home' },
-        ],
+        '/api/': 'structure'
     },
     displayFooter: true,
     copyright: 'Copyright © 2012-present Hazaar Labs',
@@ -36,7 +34,7 @@ export default hopeTheme({
 function sidebarGuide() {
     return [
         {
-            text: 'Introduction',  
+            text: 'Introduction',
             collapsible: true,
             children: [
                 { text: 'What is Hazaar MVC?', link: '/guide/what-is-hazaar-mvc' },

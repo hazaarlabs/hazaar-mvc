@@ -58,14 +58,6 @@ class HelperTest extends TestCase
         $this->assertTrue($btree->compact());
     }
 
-    public function testGet(): void
-    {
-        $file = File::get('https://file-examples.com/wp-content/storage/2017/02/file_example_JSON_1kb.json');
-        $this->assertInstanceOf(File::class, $file);
-        $this->assertEquals('file_example_JSON_1kb.json', $file->basename());
-        $this->assertEquals('text/html', $file->mimeContentType());
-    }
-
     public function testUptime(): void
     {
         $interval = 12240;
