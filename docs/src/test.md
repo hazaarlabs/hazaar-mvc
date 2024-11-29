@@ -24,6 +24,12 @@ Hazaar MVC is not just another PHP MVC framework; it's a high-performance soluti
 
 Experience the power and flexibility of Hazaar MVC and take your web development to the next level.
 
+# Links
+
+- [Hazaar\Application](/api/class/Hazaar/Application)
+- [Hazaar\Application::run()](/api/class/Hazaar/Application#run)
+- [Hazaar\Application\Router](/api/class/Hazaar/Application/Router)
+
 # Badges
 
 - VuePress - <Badge type="tip" text="Tip" vertical="top" />
@@ -230,6 +236,7 @@ markmap:
 
 - <https://markmap.js.org/>
 - [GitHub](https://github.com/markmap/markmap)
+- [Hazaar\Application](/api/class/Hazaar/Application)
 
 ## Features
 

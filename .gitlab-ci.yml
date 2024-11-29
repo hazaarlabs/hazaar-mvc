@@ -24,7 +24,7 @@ variables:
     - composer install
   script:
     # - phpdoc -d src -t docs/src/api --template="/md/themes/markdown"
-    - bin/hztool --scan src --title "Hazaar API Documentation" doc docs/src/api
+    - bin/hztool --scan src --title "API Reference" doc docs/src/api
   artifacts:
     paths:
       - docs/src/api
