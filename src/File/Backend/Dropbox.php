@@ -10,14 +10,16 @@ use Hazaar\File\Image;
 use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
-use Hazaar\Map;
 
 class Dropbox extends Client implements Interfaces\Backend, Interfaces\Driver
 {
     public string $separator = '/';
     protected Manager $manager;
 
-    private Map $options;
+    /**
+     * @var array<mixed>
+     */
+    private array $options;
     private Cache $cache;
 
     /**
@@ -31,20 +33,20 @@ class Dropbox extends Client implements Interfaces\Backend, Interfaces\Driver
     private array $cursor;
 
     /**
-     * @param array<mixed>|Map $options
+     * @param array<mixed> $options
      */
-    public function __construct(array|Map $options, Manager $manager)
+    public function __construct(array $options, Manager $manager)
     {
         parent::__construct();
         $this->manager = $manager;
-        $this->options = new Map([
+        $this->options = array_merge_recursive([
             'oauth2_method' => 'POST',
             'oauth_version' => '2.0',
             'file_limit' => 1000,
             'cache_backend' => 'file',
             'oauth2' => ['access_token' => null],
         ], $options);
-        if (!($this->options->has('app_key') && $this->options->has('app_secret'))) {
+        if (!(isset($this->options['app_key'], $this->options['app_secret']))) {
             throw new DropboxError('Dropbox filesystem backend requires both app_key and app_secret.');
         }
         $this->cache = new Cache($this->options['cache_backend'], ['use_pragma' => false, 'namespace' => 'dropbox_'.$this->options['app_key']]);

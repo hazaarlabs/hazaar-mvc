@@ -15,14 +15,13 @@ use Hazaar\Application;
 use Hazaar\Application\Router\Exception\RouteNotFound;
 use Hazaar\Application\Router\Loader;
 use Hazaar\Controller\Error;
-use Hazaar\Map;
 
 class Router
 {
     /**
      * Default configuration.
      *
-     * @var array<string, mixed>
+     * @var array<mixed>
      */
     public static array $defaultConfig = [
         'controller' => 'index',
@@ -39,7 +38,10 @@ class Router
         'hazaar' => '\Hazaar\Controller\Internal',
     ];
 
-    public Map $config;
+    /**
+     * @var array< mixed>
+     */
+    public array $config;
     private static ?self $instance = null;
     private Loader $routeLoader;
 
@@ -49,12 +51,16 @@ class Router
     private array $routes = [];
     private ?Route $route = null;
 
-    final public function __construct(Map $config)
+    /**
+     * Creates a new Router object.
+     *
+     * @param array<mixed> $config the configuration settings
+     */
+    final public function __construct(array $config)
     {
         self::$instance = $this;
-        $this->config = $config;
-        $this->config->enhance(self::$defaultConfig);
-        $type = $this->config->get('type', 'file');
+        $this->config = array_merge_recursive(self::$defaultConfig, $config);
+        $type = $this->config['type'] ?? 'file';
         $loaderClass = '\Hazaar\Application\Router\Loader\\'.ucfirst($type);
         if (!class_exists($loaderClass)) {
             throw new Router\Exception\LoaderNotSupported($type);
@@ -92,11 +98,11 @@ class Router
         if (null === $this->route) {
             $this->route = $this->evaluateRequest($request);
         }
-        if (null === $this->route && !$request->getPath() && ($controller = $this->config->get('controller'))) {
+        if (null === $this->route && !$request->getPath() && ($controller = $this->config['controller'])) {
             $controllerClass = '\\' === substr($controller, 0, 1)
                 ? $controller
                 : 'Application\Controllers\\'.ucfirst($controller);
-            $this->setRoute(new Route([$controllerClass, $this->config->get('action')]));
+            $this->setRoute(new Route([$controllerClass, $this->config['action']]));
         }
         if (null === $this->route) {
             return false;
@@ -153,7 +159,7 @@ class Router
     public function getErrorController(): Error
     {
         $controller = null;
-        if ($errorController = $this->config->get('errorController')) {
+        if ($errorController = $this->config['errorController']) {
             $controllerClass = '\Application\Controllers\\'.ucfirst($errorController);
             if (class_exists($controllerClass) && is_subclass_of($controllerClass, Error::class)) {
                 $controller = new $controllerClass($this, $errorController);

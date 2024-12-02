@@ -19,7 +19,6 @@ use Hazaar\Application\Request;
 use Hazaar\Application\Router;
 use Hazaar\Application\Router\Exception\RouteNotFound;
 use Hazaar\Application\URL;
-use Hazaar\Controller\Response;
 use Hazaar\Controller\Response\File;
 use Hazaar\File\Metric;
 use Hazaar\Logger\Frontend;
@@ -137,9 +136,9 @@ class Application
     {
         try {
             ob_start();
-            set_error_handler('errorHandler', E_ERROR);
-            set_exception_handler('exceptionHandler');
-            register_shutdown_function('shutdownHandler');
+            set_error_handler([$this, 'errorHandler'], E_ERROR);
+            set_exception_handler([$this, 'exceptionHandler']);
+            register_shutdown_function([$this, 'shutdownHandler']);
             register_shutdown_function([$this, 'shutdown']);
             $this->GLOBALS['hazaar']['exec_start'] = HAZAAR_START;
             Application::$instance = $this;
@@ -159,20 +158,13 @@ class Application
              * it will just be an empty object that will handle calls to
              * it silently.
              */
-            $config = Config::getInstance('application', $env, $this->getDefaultConfig(), FILE_PATH_CONFIG);
-            // Check if we require SSL and don't have and if so, redirect here.
-            if ($config['app']->has('require_ssl')
-                && boolify($_SERVER['HTTPS']) !== boolify($config['app']['require_ssl'])) {
-                header('Location: https://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI']);
-
-                exit;
-            }
+            $config = Config::getInstance('application', $env, $this->getDefaultConfig());
             // Configure the application
             $this->configure($config);
             // Create the request object
             $this->request = Request\Loader::load();
             // Create a new router object for evaluating routes
-            $this->router = new Router($this->config->get('router'));
+            $this->router = new Router($this->config['router'] ?? 'file');
             $this->timer->stop('init');
         } catch (\Throwable $e) {
             dieDieDie($e);
@@ -195,14 +187,14 @@ class Application
                 .' "'.ake($_SERVER, 'HTTP_USER_AGENT').'"'
             );
         }
-        if (!($this->config && $this->config->loaded())) {
+        if (!$this->config) {
             return;
         }
         $shutdown = APPLICATION_PATH.DIRECTORY_SEPARATOR.ake($this->config['app']['files'], 'shutdown', 'shutdown.php');
         if (file_exists($shutdown)) {
             include $shutdown;
         }
-        if (true === $this->config->get('app.metrics')) {
+        if ($this->config['app']['metrics'] ?? false) {
             $metricFile = $this->getRuntimePath('metrics.dat');
             if ((!file_exists($metricFile) && is_writable(dirname($metricFile))) || is_writable($metricFile)) {
                 $metric = new Metric($metricFile);
@@ -289,34 +281,30 @@ class Application
 
     public function configure(Config $config): void
     {
-        if (!$config->has('app')) {
+        if (!isset($config['app'])) {
             throw new \Exception('Invalid application configuration!');
         }
         $this->config = $config;
-        if ($this->config['app']->has('alias')) {
+        if ($this->config['app']['alias'] ?? false) {
             URL::$aliases = $this->config['app']->getArray('alias');
         }
-        // Allow the root to be configured but the default absolutely has to be set so here we double
-        $this->config['app']->addInputFilter(function (mixed $value) {
-            Application::setRoot($value);
-        }, false, 'root');
-        Application::setRoot($this->config['app']['root']);
+        Application::setRoot($this->config['app']['root'] ?? '/');
         // PHP root elements can be set directly with the PHP ini_set function
-        if ($this->config->has('php')) {
-            $phpValues = $this->config['php']->toDotNotation()->toArray();
+        if (isset($this->config['php'])) {
+            $phpValues = array_to_dot_notation($this->config['php']);
             foreach ($phpValues as $directive => $phpValue) {
                 ini_set($directive, $phpValue);
             }
         }
         // Check the load average and protect ifneeded
-        if ($this->config['app']->has('maxload') && function_exists('sys_getloadavg')) {
+        if (isset($this->config['app']['maxload']) && function_exists('sys_getloadavg')) {
             $la = sys_getloadavg();
             if ($la[0] > $this->config['app']['maxload']) {
                 throw new Application\Exception\ServerBusy();
             }
         }
         // Use the config to add search paths to the loader
-        $this->loader->addSearchPaths($this->config->get('paths')->toArray());
+        $this->loader->addSearchPaths($this->config['paths']);
         /*
          * Initialise any configured modules
          *
@@ -328,9 +316,9 @@ class Application
             'log' => '\Hazaar\Logger\Frontend',
         ];
         foreach ($initialisers as $property => $class) {
-            if ($this->config->has($property) && class_exists($class)) {
-                $moduleConfig = $this->config->get($property);
-                if (!$moduleConfig instanceof Map) {
+            if (isset($this->config[$property]) && class_exists($class)) {
+                $moduleConfig = $this->config[$property];
+                if (!is_array($moduleConfig)) {
                     throw new \Exception('Invalid configuration module: '.$property);
                 }
                 $class::initialise($moduleConfig);
@@ -379,7 +367,7 @@ class Application
      */
     public function getRuntimePath($suffix = null, $createDir = false): string
     {
-        $path = $this->config['app']->get('runtimePath');
+        $path = $this->config['app']['runtimePath'] ?? '.runtime';
         if (!file_exists($path)) {
             $parent = dirname($path);
             if (!is_writable($parent)) {
@@ -480,17 +468,17 @@ class Application
      *
      * @return Application Returns a reference to itself to allow chaining
      */
-    public function bootstrap(): Application
+    public function bootstrap(bool $workerMode = false): Application
     {
         $this->timer->start('boot');
         $locale = null;
-        if ($this->config['app']->has('locale')) {
+        if (isset($this->config['app']['locale'])) {
             $locale = $this->config['app']['locale'];
         }
         if (false === setlocale(LC_ALL, $locale)) {
             throw new \Exception("Unable to set locale to {$locale}.  Make sure the {$locale} locale is enabled on your system.");
         }
-        $tz = $this->config['app']->has('timezone') ? $this->config['app']->timezone : 'UTC';
+        $tz = $this->config['app']['timezone'] ?? 'UTC';
         if (!date_default_timezone_set($tz)) {
             throw new Application\Exception\BadTimezone($tz);
         }
@@ -507,11 +495,10 @@ class Application
                 throw new \Exception('The application failed to start!');
             }
         }
-        if (false === $this->router->initialise($this->request)) {
-            throw new RouteNotFound($this->request->getPath());
-        }
-
         $this->timer->stop('boot');
+        if (true === $workerMode) {
+            $this->timer->reset();
+        }
 
         return $this;
     }
@@ -539,16 +526,19 @@ class Application
 
         try {
             $this->timer->start('exec');
-            $route = $this->router->getRoute();
             if ('cli' === php_sapi_name()) {
                 $this->request->setPath(ake($_SERVER, 'argv[1]'));
             }
             if (null !== $controller) {
                 $response = $controller->initialize($this->request);
                 if (null === $response) {
-                    $response = $controller->run($route);
+                    $response = $controller->run();
                 }
             } else {
+                if (false === $this->router->initialise($this->request)) {
+                    throw new RouteNotFound($this->request->getPath());
+                }
+                $route = $this->router->getRoute();
                 if (!$route) {
                     throw new \Exception('No route found');
                 }
@@ -556,11 +546,6 @@ class Application
                 $response = $controller->initialize($this->request);
                 if (null === $response) {
                     $response = $controller->run($route);
-                }
-            }
-            if ($response instanceof File) {
-                if (!$response->fileExists()) {
-                    throw new \Exception('File not found', 404);
                 }
             }
             if (count($this->outputFunctions) > 0) {
@@ -677,7 +662,7 @@ class Application
      */
     public function getResponseType(): ?string
     {
-        return $this->config['app']['responseType'];
+        return $this->config['app']['responseType'] ?? 'html';
     }
 
     /**
@@ -699,5 +684,63 @@ class Application
     public function registerOutputFunction(array|callable $function): void
     {
         $this->outputFunctions[] = $function;
+    }
+
+    /**
+     * Custom error handler function.
+     *
+     * This function is responsible for handling PHP errors and displaying appropriate error messages.
+     *
+     * @param int         $errno   the error number
+     * @param string      $errstr  the error message
+     * @param null|string $errfile the file where the error occurred
+     * @param null|int    $errline the line number where the error occurred
+     *
+     * @return bool returns true to prevent the default PHP error handler from being called
+     */
+    public function errorHandler(int $errno, string $errstr, ?string $errfile = null, ?int $errline = null): bool
+    {
+        if ($errno >= 500) {
+            Frontend::e('CORE', "Error #{$errno} on line {$errline} of file {$errfile}: {$errstr}");
+        }
+
+        errorAndDie($errno, $errstr, $errfile, $errline, debug_backtrace());
+
+        return true;
+    }
+
+    /**
+     * Shutdown handler function.
+     *
+     * This function is responsible for executing the shutdown tasks registered in the global variable $__shutdownTasks.
+     * It checks if the script is running in CLI mode or if headers have already been sent before executing the tasks.
+     */
+    public function shutdownHandler(): void
+    {
+        if (($error = error_get_last()) !== null) {
+            if (1 == ini_get('display_errors') && 'cli' !== php_sapi_name()) {
+                ob_clean();
+            }
+            match ($error['type']) {
+                E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR => errorAndDie($error, debug_backtrace()),
+                default => null
+            };
+        }
+    }
+
+    /**
+     * Exception handler function.
+     *
+     * This function is responsible for handling exceptions thrown in the application.
+     * If the exception code is greater than or equal to 500, it logs the error message
+     * along with the code, line number, and file name. Then it calls the `errorAndDie()`
+     * function to handle the error further.
+     */
+    public function exceptionHandler(\Throwable $e): void
+    {
+        if ($e->getCode() >= 500) {
+            Frontend::e('CORE', 'Error #'.$e->getCode().' on line '.$e->getLine().' of file '.$e->getFile().': '.$e->getMessage());
+        }
+        errorAndDie($e);
     }
 }

@@ -43,6 +43,6 @@ class Warlock extends Controller
     {
         $config = new Config();
 
-        return new Text($config->sys['id']);
+        return new Text($config->sys->id ?? '');
     }
 }
