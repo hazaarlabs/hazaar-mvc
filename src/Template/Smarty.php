@@ -510,7 +510,7 @@ class Smarty {
 
     protected function compilePARAMS($params){
 
-        if(is_array($params)){
+        if(is_iterable($params)){
 
             $out = [];
 
@@ -588,7 +588,7 @@ class Smarty {
 
         $count = '$__count_' . $name;
 
-        $code = "<?php \$smarty['section']['$name'] = []; if(is_array($var) && count($var)>0): ";
+        $code = "<?php \$smarty['section']['$name'] = []; if(is_iterable($var) && count($var)>0): ";
 
         $code .= "for($count=1, $index=" . ake($params, 'start', 0) . '; ';
 
@@ -664,9 +664,9 @@ class Smarty {
 
             $target = (($key = ake($params, 'key')) ? '$' . $key . ' => ' : '' ) . '$' . $item;
 
-            $code = "<?php \$smarty['foreach']['$name'] = ['index' => -1, 'total' => ((isset($var) && is_array($var))?count($var):0)]; ";
+            $code = "<?php \$smarty['foreach']['$name'] = ['index' => -1, 'total' => ((isset($var) && is_iterable($var))?count($var):0)]; ";
 
-            $code .= "if(isset($var) && is_array($var) && count($var) > 0): ";
+            $code .= "if(isset($var) && is_iterable($var) && count($var) > 0): ";
 
             $code .= "foreach($var as $target): \$smarty['foreach']['$name']['index']++; ?>";
 
@@ -680,9 +680,9 @@ class Smarty {
 
             $this->__foreach_stack[] = ['name' => $name, 'else' => false];
 
-            $code = "<?php \$smarty['foreach']['$name'] = ['index' => -1, 'total' => ((isset($var) && is_array($var))?count($var):0)]; ";
+            $code = "<?php \$smarty['foreach']['$name'] = ['index' => -1, 'total' => ((isset($var) && is_iterable($var))?count($var):0)]; ";
 
-            $code .= "if(isset($var) && is_array($var) && count($var) > 0): ";
+            $code .= "if(isset($var) && is_iterable($var) && count($var) > 0): ";
 
             $code .= "foreach($var as $target): \$smarty['foreach']['$name']['index']++; ?>";
 

@@ -10,7 +10,7 @@ namespace Hazaar\Model;
  * @version 1.0
  * @author jamie
  */
-class DataBinderValue implements \JsonSerializable {
+class DataBinderValue implements \JsonSerializable, \ArrayAccess {
 
     public $name;
 
@@ -166,6 +166,30 @@ class DataBinderValue implements \JsonSerializable {
         $this->other = $other;
 
         $this->orgValue = $orgValue;
+
+    }
+
+    public function offsetExists($offset){
+
+        return property_exists($this, $offset);
+
+    }
+
+    public function offsetGet($offset){
+
+        return $this->$offset;
+
+    }
+
+    public function offsetSet($offset, $value){
+
+        return;
+
+    }
+
+    public function offsetUnset($offset){
+
+        return;
 
     }
 
