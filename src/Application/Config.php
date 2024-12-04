@@ -25,7 +25,7 @@ use Hazaar\Map;
  * @detail      The config class loads settings from a configuration file and configures the system ready
  *              for the application to run.  By default the config file used is application.ini and is stored
  *              in the config folder of the application path.
- * 
+ *
  * @implements  \ArrayAccess<string, mixed>
  */
 class Config implements \ArrayAccess
@@ -189,16 +189,16 @@ class Config implements \ArrayAccess
             $options[] = (true === $sourceInfo['ns']) ? $sourceData : [$this->env => $sourceData];
         }
         if (!count($options) > 0) {
-            throw new \Exception('No configuration files found');
+            throw new \Exception('No valid configuration files found');
         }
-        $combined = [];
+        $this->global = [];
         foreach ($options as $o) {
-            if (true === ake($combined, 'final')) {
+            if (true === ake($this->global, 'final')) {
                 break;
             }
-            $combined = array_replace_recursive($combined, $o);
+            $this->global = array_replace_recursive($this->global, $o);
         }
-        if (!$this->loadConfigOptions($defaults, $combined, $env)) {
+        if (!$this->loadConfigOptions($defaults, $this->global, $env)) {
             throw new \Exception('Failed to load configuration options');
         }
 
@@ -312,6 +312,11 @@ class Config implements \ArrayAccess
         unset($this->options[$offset]);
     }
 
+    /**
+     * Converts the configuration object to an array.
+     *
+     * @return array<mixed> the configuration array
+     */
     public function toArray(): array
     {
         return $this->options;
@@ -399,7 +404,7 @@ class Config implements \ArrayAccess
         if (!array_key_exists($env, $options)) {
             return false;
         }
-        $this->global = array_merge($this->global, $options);
+
         foreach ($options[$env] as $key => $values) {
             if ('include' === $key) {
                 $this->includes = is_array($values) ? $values : [$values];
@@ -433,7 +438,15 @@ class Config implements \ArrayAccess
                     } while ($importFile = next($values));
                 }
             } else {
-                $config[$key] = $values;
+                if (!array_key_exists($key, $config)) {
+                    $config[$key] = $values;
+                } else {
+                    if (is_array($values)) {
+                        $config[$key] = array_merge($config[$key], $values);
+                    } else {
+                        $config[$key] = $values;
+                    }
+                }
             }
         }
 
