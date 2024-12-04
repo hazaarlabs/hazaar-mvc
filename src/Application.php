@@ -190,7 +190,7 @@ class Application
         if (!$this->config) {
             return;
         }
-        $shutdown = APPLICATION_PATH.DIRECTORY_SEPARATOR.ake($this->config['app']['files'], 'shutdown', 'shutdown.php');
+        $shutdown = APPLICATION_PATH.DIRECTORY_SEPARATOR.ake($this->config, 'app.files.shutdown', 'shutdown.php');
         if (file_exists($shutdown)) {
             include $shutdown;
         }
@@ -260,6 +260,7 @@ class Application
                 'runtimePath' => APPLICATION_PATH.DIRECTORY_SEPARATOR.'.runtime',
                 'metrics' => false,
                 'responseType' => 'html',
+                'layout' => 'application',
             ],
             'router' => [
                 'type' => 'basic',
@@ -487,8 +488,9 @@ class Application
             $this->GLOBALS['runtime'] = RUNTIME_PATH;
         }
         // Check for an application bootstrap file and execute it
-        $bootstrap = APPLICATION_PATH.DIRECTORY_SEPARATOR
-            .ake($this->config['app']['files'], 'bootstrap', 'bootstrap.php');
+        $bootstrap = APPLICATION_PATH
+            .DIRECTORY_SEPARATOR
+            .ake($this->config, 'app.files.bootstrap', 'bootstrap.php');
         if (file_exists($bootstrap)) {
             $bootstrap = include $bootstrap;
             if (false === $bootstrap) {
