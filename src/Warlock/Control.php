@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hazaar\Warlock;
 
 use Hazaar\Application;
-use Hazaar\Map;
 
 /**
  * @brief       Control class for Warlock
@@ -32,7 +31,7 @@ class Control extends Process
      */
     public function __construct(
         ?bool $autostart = null,
-        null|array|Map $serverConfig = null,
+        array $serverConfig = [],
         ?string $instance_key = null,
         bool $require_connect = true
     ) {
@@ -85,7 +84,7 @@ class Control extends Process
      */
     public static function getInstance(
         ?bool $autostart = null,
-        null|array|Map $config = null,
+        array $config = [],
         bool $require_connect = true
     ): Control {
         $instance_key = hash('crc32b', ake($config, 'client.server').ake($config, 'client.port'));

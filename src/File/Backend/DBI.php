@@ -103,7 +103,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
         // Remove headless chunks
         $select = $this->db->table('hz_file_chunk', 'fc')
             ->leftjoin('hz_file', ['f.start_chunk' => ['$ref' => 'fc.id']], 'f')
-            ->find(['f.id' => null, 'fc.parent' => null], 'fc.id')
+            ->find(['f.id' => null, 'fc.parent' => null], ['fc.id'])
         ;
         while ($row = $select->fetch()) {
             $this->cleanChunk($row['id']);

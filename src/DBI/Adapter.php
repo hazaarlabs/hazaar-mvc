@@ -227,11 +227,14 @@ class Adapter
         if (array_key_exists($configEnv, self::$managerInstances)) {
             return self::$managerInstances[$configEnv];
         }
-        if (!($config = self::getDefaultConfig($configEnv))) {
+
+        try {
+            $config = self::getDefaultConfig($configEnv);
+        } catch (\Exception $e) {
             throw new \Exception("DBI is not configured for APPLICATION_ENV '".APPLICATION_ENV."'");
         }
 
-        return new Manager($config, $logCallback);
+        return new Manager($config->toArray(), $logCallback);
     }
 
     public static function getDriverClass(string $driver): string
@@ -252,7 +255,13 @@ class Adapter
         return true;
     }
 
-    public static function getDefaultConfig(?string &$configName = null): false|Map
+    /**
+     * Get the default configuration for the DBI Adapter.
+     *
+     * This function will return the default configuration for the DBI Adapter.  If the configuration has not been
+     * loaded yet, it will be loaded from the configuration file.
+     */
+    public static function getDefaultConfig(?string &$configName = null): Config|false
     {
         if (!defined('HAZAAR_VERSION')) {
             return false;
@@ -265,10 +274,7 @@ class Adapter
             if (!Config::$overridePaths) {
                 Config::$overridePaths = Application::getConfigOverridePaths();
             }
-            $config = Config::getInstance('database', $configName, self::$defaultConfig, FILE_PATH_CONFIG, true);
-            if (!$config->loaded()) {
-                return false;
-            }
+            $config = Config::getInstance('database', $configName, self::$defaultConfig, true);
             self::$loadedConfigs[$configName] = $config;
         }
 
@@ -296,7 +302,7 @@ class Adapter
         if (!class_exists($DBD)) {
             throw new DriverNotFound($driver);
         }
-        $this->driver = new $DBD($this, Map::_(array_unflatten(substr($dsn, strpos($dsn, ':') + 1))));
+        $this->driver = new $DBD($this, array_unflatten(substr($dsn, strpos($dsn, ':') + 1)));
         if (!$driverOptions) {
             $driverOptions = [];
         }
@@ -307,7 +313,7 @@ class Adapter
         if (!$this->driver->connect($dsn, $username, $password, $driverOptions)) {
             return false;
         }
-        if ($this->config->has('timezone')) {
+        if (isset($this->config['timezone'])) {
             $this->setTimezone($this->config['timezone']);
         }
 
@@ -530,11 +536,11 @@ class Adapter
             || ($encryptedFields = ake(ake($this->config['encrypt'], 'table'), $table)) === null) {
             return $data;
         }
-        $cipher = $this->config->get('encrypt.cipher');
-        $key = $this->config->get('encrypt.key', '0000');
-        $checkstring = $this->config->get('encrypt.checkstring');
+        $cipher = $this->config['encrypt']['cipher'] ?? 'aes-256-ctr';
+        $key = $this->config['encrypt']['key'] ?? '0000';
+        $checkstring = $this->config['encrypt']['checkstring'] ?? '!!';
         foreach ($data as $column => &$value) {
-            if (!($encryptedFields instanceof Map && $encryptedFields->contains($column))
+            if (!in_array($column, $encryptedFields)
                 && true !== $encryptedFields) {
                 continue;
             }
@@ -592,9 +598,9 @@ class Adapter
 
     private function reconfigure(bool $reconnect = false): bool
     {
-        $user = ($this->config->has('user') ? $this->config['user'] : null);
-        $password = ($this->config->has('password') ? $this->config['password'] : null);
-        if ($this->config->has('dsn')) {
+        $user = $this->config['user'] ?? '';
+        $password = $this->config['password'] ?? '';
+        if (isset($this->config['dsn'])) {
             $this->dsn = $this->config['dsn'];
         } else {
             $DBD = Adapter::getDriverClass($this->config['driver']);
@@ -604,8 +610,8 @@ class Adapter
             $this->dsn = $DBD::mkdsn($this->config);
         }
         $driverOptions = [];
-        if ($this->config->has('options')) {
-            $driverOptions = $this->config['options']->toArray();
+        if (isset($this->config['options'])) {
+            $driverOptions = $this->config['options'];
             foreach ($driverOptions as $key => $value) {
                 if (($constKey = constant('\PDO::'.$key)) === null) {
                     continue;
@@ -618,7 +624,7 @@ class Adapter
         if (!array_key_exists($driver, Adapter::$connections)) {
             Adapter::$connections[$driver] = [];
         }
-        $hash = md5(serialize($this->config->toArray()));
+        $hash = md5(serialize($this->config));
         if (true !== $reconnect && array_key_exists($hash, Adapter::$connections)) {
             $this->driver = Adapter::$connections[$hash];
         } else {
@@ -626,12 +632,12 @@ class Adapter
                 throw new ConnectionFailed(ake($this->config, 'host', 'none'), $this->errorInfo());
             }
             Adapter::$connections[$hash] = $this->driver;
-            if ($this->config->has('schema')) {
-                $this->driver->setSchemaName($this->config->get('schema'));
+            if (isset($this->config['schema'])) {
+                $this->driver->setSchemaName($this->config['schema']);
             }
         }
-        if (defined('HAZAAR_VERSION') && ($this->config->has('encrypt.table') && !$this->config->has('encrypt.key'))) {
-            $keyfile = Loader::getFilePath(FILE_PATH_CONFIG, $this->config->get('encrypt.keyfile', '.db_key'));
+        if (defined('HAZAAR_VERSION') && (isset($this->config['encrypt']['table']) && !isset($this->config['encrypt']['key']))) {
+            $keyfile = Loader::getFilePath(FILE_PATH_CONFIG, $this->config['encrypt']['keyfile'] ?? '.db_key');
             if (null === $keyfile) {
                 throw new \Exception('DBI keyfile is missing.  Database encryption will not work!');
             }

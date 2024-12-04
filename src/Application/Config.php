@@ -27,8 +27,9 @@ use Hazaar\Map;
  *              in the config folder of the application path.
  *
  * @implements  \ArrayAccess<string, mixed>
+ * @implements  \Iterator<string, mixed>
  */
-class Config implements \ArrayAccess
+class Config implements \ArrayAccess, \Iterator
 {
     /**
      * @var array<string>
@@ -59,6 +60,8 @@ class Config implements \ArrayAccess
     private array $includes = [];
 
     /**
+     * The configuration options for the selected environment.
+     *
      * @var array<mixed>
      */
     private array $options = [];
@@ -321,6 +324,43 @@ class Config implements \ArrayAccess
     public function toArray(): array
     {
         return $this->options;
+    }
+
+    public function current(): mixed
+    {
+        return current($this->options);
+    }
+
+    public function next(): void
+    {
+        next($this->options);
+    }
+
+    public function key(): mixed
+    {
+        return key($this->options);
+    }
+
+    public function valid(): bool
+    {
+        return null !== key($this->options);
+    }
+
+    public function rewind(): void
+    {
+        reset($this->options);
+    }
+
+    /**
+     * Extends the configuration options with the given configuration array.
+     *
+     * This method merges the given configuration array with the existing configuration options.
+     *
+     * @param array<mixed> $config the configuration array to extend the existing configuration options
+     */
+    public function extend(array $config): void
+    {
+        $this->options = array_merge_recursive($this->options, $config);
     }
 
     /**

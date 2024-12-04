@@ -74,10 +74,16 @@ class Adapter
         }
         $this->transport = $this->getTransportObject($this->config['transport'], $this->config);
         if (isset($this->config['from'])) {
-            $this->message->from = self::encodeEmailAddress($this->config->decode('from'));
+            $this->message->from = self::encodeEmailAddress($this->config['from']);
         }
     }
 
+    /**
+     * Get the transport object for the specified transport backend.
+     *
+     * @param string       $transport The transport backend to use.  Options are local, or smtp.
+     * @param array<mixed> $config    The configuration settings for the transport backend
+     */
     public function getTransportObject(string $transport = 'local', array $config = []): Transport
     {
         $transportClass = '\Hazaar\Mail\Transport\\'.ucfirst($transport);
@@ -379,10 +385,10 @@ class Adapter
         $map_func = function ($item) {
             return is_array($item) ? Adapter::encodeEmailAddress($item[0], $item[1]) : $item;
         };
-        if ($override_to = $this->config->getArray('override.to')) {
+        if ($override_to = $this->config['override']['to']) {
             $to = [];
-            if ($this->config->has('noOverrideMatch')) {
-                foreach ($override_to as $rcpt) {
+            if (isset($this->config['noOverrideMatch'])) {
+                foreach ((array) $override_to as $rcpt) {
                     if (preg_match('/'.$this->config['noOverrideMatch'].'/', $rcpt[0])) {
                         $to[] = $rcpt;
                     }
@@ -393,10 +399,10 @@ class Adapter
             }
             $this->message->to = array_map($map_func, (array) $to);
         }
-        if ($cc = $this->config->getArray('override.cc')) {
+        if ($cc = $this->config['override']['cc']) {
             $this->message->cc = array_map($map_func, (array) $cc);
         }
-        if ($bcc = $this->config->getArray('override.bcc')) {
+        if ($bcc = $this->config['override']['bcc']) {
             $this->message->bcc = array_map($map_func, (array) $bcc);
         }
         $this->last_to = $this->message->to;

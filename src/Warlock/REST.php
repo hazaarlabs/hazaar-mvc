@@ -7,7 +7,6 @@ namespace Hazaar\Warlock;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 use Hazaar\HTTP\Response;
-use Hazaar\Map;
 
 class REST
 {
@@ -18,7 +17,7 @@ class REST
     /**
      * @param array<mixed> $serverConfig
      */
-    public function __construct(null|array|Map $serverConfig = null)
+    public function __construct(array $serverConfig = [])
     {
         $this->serverConfig = new Config($serverConfig);
         $this->client = new Client();

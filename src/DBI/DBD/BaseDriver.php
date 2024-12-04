@@ -11,7 +11,6 @@ namespace Hazaar\DBI\DBD;
 use Hazaar\Date;
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Table;
-use Hazaar\Map;
 use Hazaar\Model;
 
 /**
@@ -44,7 +43,10 @@ abstract class BaseDriver implements Interfaces\Driver
     protected ?\PDO $pdo = null;
     private ?\Throwable $__lastError = null;
 
-    public function __construct(Adapter $adapter, ?Map $config = null)
+    /**
+     * @param array<mixed> $config
+     */
+    public function __construct(Adapter $adapter, array $config = [])
     {
         $this->adapter = $adapter;
         $this->schemaName = ake($config, 'dbname', 'public');
@@ -65,16 +67,15 @@ abstract class BaseDriver implements Interfaces\Driver
         return BaseDriver::$execs;
     }
 
-    public static function mkdsn(Map $config): false|string
+    public static function mkdsn(array $options): false|string
     {
-        $options = $config->toArray();
-        $DBD = 'Hazaar\DBI\DBD\\'.ucfirst($config['driver']);
+        $DBD = 'Hazaar\DBI\DBD\\'.ucfirst($options['driver']);
         if (!class_exists($DBD)) {
             return false;
         }
         $options = array_intersect_key($options, array_combine($DBD::$dsnElements, $DBD::$dsnElements));
 
-        return $config['driver'].':'.array_flatten($options, '=', ';');
+        return $options['driver'].':'.array_flatten($options, '=', ';');
     }
 
     public function getSchemaName(): string
@@ -533,10 +534,10 @@ abstract class BaseDriver implements Interfaces\Driver
         ?Table $table = null
     ): false|int|\PDOStatement {
         $sql = 'INSERT INTO '.$this->schemaName($tableName);
-        if ($fields instanceof Map) {
-            $fields = $fields->toArray();
-        } elseif ($fields instanceof Model) {
+        if ($fields instanceof Model) {
             $fields = $fields->toArray(true);
+        } elseif (is_string($fields)) {
+            $fields = [$fields];
         }
         if ($fields instanceof \stdClass) {
             $fields = (array) $fields;
@@ -616,12 +617,12 @@ abstract class BaseDriver implements Interfaces\Driver
         null|array|bool|string $returning = null,
         array $tables = []
     ): false|int|\PDOStatement {
-        if ($fields instanceof Map) {
-            $fields = $fields->toArray();
-        } elseif ($fields instanceof Model) {
+        if ($fields instanceof Model) {
             $fields = $fields->toArray(true);
         } elseif ($fields instanceof \stdClass) {
             $fields = (array) $fields;
+        }elseif(is_string($fields)){
+            $fields = [$fields];
         }
         $fieldDef = [];
         foreach ($fields as $key => &$value) {
@@ -1172,8 +1173,8 @@ abstract class BaseDriver implements Interfaces\Driver
                     continue;
                 }
                 $item = [
-                    'name' => (string)$row['routine_name'],
-                    'return_type' => (string)$row['return_type'],
+                    'name' => (string) $row['routine_name'],
+                    'return_type' => (string) $row['return_type'],
                     'content' => trim($routineDefinition),
                 ];
                 $item['parameters'] = [];
@@ -1186,10 +1187,10 @@ abstract class BaseDriver implements Interfaces\Driver
                 continue;
             }
             $info[$row['specific_name']]['parameters'][] = [
-                'name' => (string)$row['parameter_name'],
-                'type' => (string)$row['data_type'],
-                'mode' => (string)$row['parameter_mode'],
-                'ordinal_position' => (int)$row['ordinal_position'],
+                'name' => (string) $row['parameter_name'],
+                'type' => (string) $row['data_type'],
+                'mode' => (string) $row['parameter_mode'],
+                'ordinal_position' => (int) $row['ordinal_position'],
             ];
         }
         usort($info, function ($a, $b) {
