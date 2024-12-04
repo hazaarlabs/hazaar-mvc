@@ -161,6 +161,7 @@ class Config implements \ArrayAccess
     ): array {
         $options = [];
         $sources = [['name' => $source, 'ns' => true]];
+        $this->env = $env;
         foreach (Config::$overridePaths as $override) {
             $sources[] = ['name' => $override.DIRECTORY_SEPARATOR.$source, 'ns' => $overrideNamespaces];
         }

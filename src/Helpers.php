@@ -522,6 +522,19 @@ function array_from_dot_notation(array $array): array
     return $new;
 }
 
+/**
+ * Merge two arrays together but only add elements that don't already exist in the target array.
+ *
+ * This function is similar to array_merge() but will only add elements that don't already exist in the target array.
+ *
+ * @param array<mixed> $targetArray The array to merge into
+ * @param array<mixed> $sourceArray The array to merge from
+ */
+function array_enhance(array $targetArray, array $sourceArray)
+{
+    return array_merge($targetArray, array_diff($sourceArray, $targetArray));
+}
+
 function base64url_encode(string $data): string
 {
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');

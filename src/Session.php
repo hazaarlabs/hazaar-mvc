@@ -27,7 +27,7 @@ class Session extends Cache
     /**
      * @param array<mixed>|Map $options
      */
-    public function __construct(array|Map $options = [], ?string $backend = null)
+    public function __construct(array $options = [], ?string $backend = null)
     {
         $options = new Map([
             'hash_algorithm' => 'ripemd128',

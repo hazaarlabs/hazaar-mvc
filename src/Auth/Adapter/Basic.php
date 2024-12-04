@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace Hazaar\Auth\Adapter;
 
 use Hazaar\Auth\Adapter;
-use Hazaar\Map;
 
 class Basic extends Adapter
 {
     /**
      * Construct the helper.
      */
-    public function __construct(?Map $config = null)
+    public function __construct(array $config = [])
     {
         parent::__construct($config);
     }

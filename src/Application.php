@@ -562,7 +562,7 @@ class Application
             ob_end_flush();
         } catch (Controller\Exception\HeadersSent $e) {
             dieDieDie('HEADERS SENT');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             /*
             * Here we check if the controller we tried to execute was already an error
             * if it is and we try and execute another error we could end up in an endless loop

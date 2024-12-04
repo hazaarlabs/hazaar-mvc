@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller;
 
+use Hazaar\Controller\Exception\HeadersSent;
 use Hazaar\HTTP\Client;
 
 class Response implements Interfaces\Response
@@ -40,7 +41,7 @@ class Response implements Interfaces\Response
      * 4. If the script is not running in CLI mode and headers have not been set, writes the headers.
      * 5. Outputs the content and flushes the output buffer.
      *
-     * @throws Exception\HeadersSent if headers have already been sent
+     * @throws HeadersSent if headers have already been sent
      */
     public function writeOutput(): void
     {
@@ -56,7 +57,7 @@ class Response implements Interfaces\Response
         }
         if ('cli' !== php_sapi_name() && true !== $this->headersSet) {
             if (headers_sent()) {
-                throw new Exception\HeadersSent();
+                throw new HeadersSent();
             }
             $this->writeHeaders(strlen($content));
         }
