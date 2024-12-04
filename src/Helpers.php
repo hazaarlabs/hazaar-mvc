@@ -1050,7 +1050,9 @@ function dump(mixed ...$data): void
             $response = $controller->run();
             $response->writeOutput();
         } else {
-            var_dump($data);
+            foreach ($data as $dataItem) {
+                var_dump($dataItem);
+            }
         }
     } else {
         $out = "HAZAAR DUMP\n\n";
@@ -1347,13 +1349,13 @@ function array_diff_assoc_recursive(mixed ...$arrays): array
 {
     $array1 = array_shift($arrays);
 
-    /** 
-     * @var array<mixed> $diff 
+    /**
+     * @var array<mixed> $diff
      */
     $diff = [];
     foreach ($array1 as $key => $value) {
-        /** 
-         * @var array<mixed>|stdClass $array_compare 
+        /**
+         * @var array<mixed>|stdClass $array_compare
          */
         foreach ($arrays as $array_compare) {
             // Check if the value exists in the compare array and if not, check the next array
