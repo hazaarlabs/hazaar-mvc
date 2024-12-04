@@ -45,7 +45,7 @@ class Main
         }
         $options = $application->request->getOptions();
         $appConfig = Config::getInstance('application', APPLICATION_ENV);
-        if (!$appConfig->has('auth')) {
+        if (!isset($appConfig['auth'])) {
             $appConfig['auth'] = [];
         }
         $appConfig['auth']['storage'] = 'session';
@@ -65,20 +65,13 @@ class Main
                     $configCommand = ake($commandArgs, 0, 'list');
                     $env = ake($options, 'env', APPLICATION_ENV);
                     $config = Config::getInstance('application', $env);
-                    $config->addOutputFilter(function ($value, $key) {
-                        if (is_bool($value)) {
-                            return strbool($value);
-                        }
-
-                        return $value;
-                    }, true);
 
                     switch ($configCommand) {
                         case 'get':
                             if (!($configArg = ake($commandArgs, 1))) {
                                 throw new \Exception('No configuration argument specified', 1);
                             }
-                            $value = $config->get($configArg);
+                            $value = $config[$configArg];
                             echo $configArg.'='.$value."\n";
 
                             break;
@@ -92,7 +85,7 @@ class Main
                                 throw new \Exception('No configuration value specified', 1);
                             }
                             foreach ($configUpdates as $key => $value) {
-                                $config->set($key, $value);
+                                $config[$key] = $value;
                             }
                             if (false === $config->save()) {
                                 throw new \Exception('Failed to save configuration', 1);
@@ -102,7 +95,7 @@ class Main
 
                         case 'list':
                             echo 'app.env = '.APPLICATION_ENV."\n";
-                            $list = $config->toDotNotation();
+                            $list = array_to_dot_notation($config->toArray());
                             foreach ($list as $key => $value) {
                                 echo $key.' = '.$value."\n";
                             }

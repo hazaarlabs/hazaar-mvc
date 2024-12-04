@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace Hazaar\HTTP;
 
 use Hazaar\File;
-use Hazaar\Map;
 use Hazaar\XML\Element;
 
 class WebDAV extends Client
 {
     private bool $authorised = false;
-    private Map $settings;
+
+    /**
+     * @var array<mixed>
+     */
+    private array $settings;
 
     /**
      * @var array<int,string>
@@ -26,18 +29,15 @@ class WebDAV extends Client
     /**
      * @param array<mixed> $settings
      */
-    public function __construct(array|Map $settings)
+    public function __construct(array $settings)
     {
         parent::__construct();
-        if (!$settings instanceof Map) {
-            $settings = new Map($settings);
-        }
         $this->settings = $settings;
-        if (!$this->settings->has('baseuri')) {
+        if (!isset($this->settings['baseuri'])) {
             throw new \Exception('WebDAV: No baseuri specified');
         }
         $this->settings['baseuri'] = rtrim($this->settings['baseuri'], '/');
-        if ($this->settings->has('username') && $this->settings->has('password')) {
+        if (isset($this->settings['username']) && isset($this->settings['password'])) {
             parent::auth($this->settings['username'], $this->settings['password']);
         }
         $options = $this->options('/');

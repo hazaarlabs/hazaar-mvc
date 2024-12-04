@@ -102,7 +102,7 @@ class Dropbox extends Client implements Interfaces\Backend, Interfaces\Driver
 
     public function authorised(): bool
     {
-        return $this->options->has('oauth2') && null !== $this->options['oauth2']['access_token'];
+        return isset($this->options['oauth2']) && null !== $this->options['oauth2']['access_token'];
     }
 
     public function buildAuthURL(?string $redirect_uri = null): string
@@ -427,7 +427,7 @@ class Dropbox extends Client implements Interfaces\Backend, Interfaces\Driver
         $request['path'] = $path;
         $response = $this->sendRequest($request);
         if (boolify($response['is_dir'])) {
-            $this->meta[strtolower($response['path'])] = $response->toArray();
+            $this->meta[strtolower($response['path'])] = $response;
 
             return true;
         }
@@ -472,7 +472,7 @@ class Dropbox extends Client implements Interfaces\Backend, Interfaces\Driver
         $request['from_path'] = $src;
         $request['to_path'] = $dst;
         $response = $this->sendRequest($request);
-        $this->meta[strtolower($response['path'])] = $response->toArray();
+        $this->meta[strtolower($response['path'])] = $response;
         $key = $this->options['app_key'].'::'.strtolower($src);
         if ($meta = $this->cache->get($key)) {
             $this->cache->set($this->options['app_key'].'::'.strtolower($response['path']), $meta);
@@ -500,7 +500,7 @@ class Dropbox extends Client implements Interfaces\Backend, Interfaces\Driver
         $request['from_path'] = $src;
         $request['to_path'] = $dst;
         $response = $this->sendRequest($request);
-        $this->meta[strtolower($response['path'])] = $response->toArray();
+        $this->meta[strtolower($response['path'])] = $response;
         $key = $this->options['app_key'].'::'.strtolower($src);
         if ($meta = $this->cache->get($key)) {
             $this->cache->set($this->options['app_key'].'::'.strtolower($response['path']), $meta);
@@ -534,7 +534,7 @@ class Dropbox extends Client implements Interfaces\Backend, Interfaces\Driver
         }
         $request['body'] = $data;
         $response = $this->sendRequest($request);
-        $this->meta[strtolower($response['path'])] = $response->toArray();
+        $this->meta[strtolower($response['path'])] = $response;
 
         return strlen($data);
     }
@@ -618,7 +618,7 @@ class Dropbox extends Client implements Interfaces\Backend, Interfaces\Driver
         $request = new Request('https://api.dropbox.com/1/media/auto'.$path, 'POST');
         $response = $this->sendRequest($request);
         if ($response['url']) {
-            $this->meta[strtolower($path)]['media'] = $response->toArray();
+            $this->meta[strtolower($path)]['media'] = $response;
 
             return $response['url'];
         }
@@ -721,13 +721,16 @@ class Dropbox extends Client implements Interfaces\Backend, Interfaces\Driver
         return false;
     }
 
-    private function sendRequest(Request $request, bool $is_meta = true): Map|string
+    /**
+     * @return array<mixed>|string
+     */
+    private function sendRequest(Request $request, bool $isMeta = true): array|string
     {
         $request->setHeader('Authorization', 'Bearer '.$this->options['oauth2']['access_token']);
         $response = $this->send($request);
         if (200 != $response->status) {
-            $meta = new Map($response->body);
-            if ($meta->has('error')) {
+            $meta = $response->body;
+            if (isset($meta['error'])) {
                 $err = $meta['error'];
             } else {
                 $err = 'Unknown error!';
@@ -735,9 +738,9 @@ class Dropbox extends Client implements Interfaces\Backend, Interfaces\Driver
 
             throw new DropboxError($err, $response->status);
         }
-        if (true == $is_meta) {
-            $meta = new Map($response->body);
-            if ($meta->has('error')) {
+        if (true == $isMeta) {
+            $meta = $response->body;
+            if (isset($meta['error'])) {
                 throw new DropboxError($meta['error']);
             }
         } else {

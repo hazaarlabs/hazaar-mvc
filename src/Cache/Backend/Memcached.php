@@ -12,7 +12,6 @@ declare(strict_types=1);
 namespace Hazaar\Cache\Backend;
 
 use Hazaar\Cache\Backend;
-use Hazaar\Map;
 
 /**
  * @brief The Memcached cache backend.
@@ -44,9 +43,9 @@ class Memcached extends Backend
             'use_compression' => false,
         ]);
         $this->addCapabilities('store_objects');
-        $this->memcached = new \Memcached($this->options->read('persistent_id', null));
+        $this->memcached = new \Memcached($this->options['persistent_id'] ?? '');
         $servers = $this->options['server'];
-        if (!$servers instanceof Map) {
+        if (!is_array($servers)) {
             $servers = [$servers];
         }
         foreach ($servers as $server) {

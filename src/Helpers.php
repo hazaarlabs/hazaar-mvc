@@ -529,8 +529,10 @@ function array_from_dot_notation(array $array): array
  *
  * @param array<mixed> $targetArray The array to merge into
  * @param array<mixed> $sourceArray The array to merge from
+ *
+ * @return array<mixed> The merged array
  */
-function array_enhance(array $targetArray, array $sourceArray)
+function array_enhance(array $targetArray, array $sourceArray): array
 {
     return array_merge($targetArray, array_diff($sourceArray, $targetArray));
 }

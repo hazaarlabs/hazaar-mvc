@@ -65,7 +65,7 @@ class Redis extends Backend
             'keeplocalcopy' => true,
         ]);
         $this->socket = $this->connect($this->options['server'], $this->options['port']);
-        if ($this->options->has('serverpass') && ($serverpass = $this->options['serverpass'])) {
+        if (isset($this->options['serverpass']) && ($serverpass = $this->options['serverpass'])) {
             $this->cmd(['AUTH', $serverpass]);
         }
         $cmds = [
@@ -96,7 +96,7 @@ class Redis extends Backend
                     $this->master = $this->socket;
                 } elseif ('slave' == $this->role[0]) {
                     $this->master = $this->connect($this->role[1], (int) $this->role[2]);
-                    if ($this->options->has('serverpass')) {
+                    if (isset($this->options['serverpass'])) {
                         $this->cmd(['AUTH', $this->options['serverpass']], true);
                     }
                     $index = (string) $this->options['dbIndex'];

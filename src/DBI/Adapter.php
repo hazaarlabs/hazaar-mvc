@@ -18,7 +18,6 @@ use Hazaar\DBI\Exception\NotConfigured;
 use Hazaar\DBI\Schema\Manager;
 use Hazaar\File\Dir;
 use Hazaar\Loader;
-use Hazaar\Map;
 
 /**
  * @brief Relational Database Interface
@@ -127,7 +126,10 @@ class Adapter
         'timezone' => 'UTC',
     ];
 
-    public Map $config;
+    /**
+     * @var array<mixed>
+     */
+    public array $config;
     public BaseDriver $driver;
 
     /**
@@ -161,18 +163,18 @@ class Adapter
     /**
      * Hazaar DBI Constructor.
      *
-     * @param array<mixed>|Map|string $config An array of configuration options to instantiate the DBI Adapter.  This can
-     *                                        also be a Hazaar MVC configuration environment if DBI is being used by an HMVC
-     *                                        application.
+     * @param array<mixed>|string $config An array of configuration options to instantiate the DBI Adapter.  This can
+     *                                    also be a Hazaar MVC configuration environment if DBI is being used by an HMVC
+     *                                    application.
      */
-    public function __construct(null|array|Map|string $config = null)
+    public function __construct(null|array|string $config = null)
     {
         $configName = null;
         if (defined('HAZAAR_VERSION') && (null === $config || is_string($config))) {
             $configName = $config;
             $config = $this->getDefaultConfig($configName);
         } elseif (!is_string($config)) {
-            $config = Map::_($config, self::$defaultConfig);
+            $config = array_merge(self::$defaultConfig, $config);
         } else {
             throw new NotConfigured();
         }

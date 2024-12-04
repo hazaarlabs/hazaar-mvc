@@ -4,7 +4,6 @@ namespace Hazaar\Mail;
 
 use Hazaar\Application;
 use Hazaar\File;
-use Hazaar\Map;
 
 /**
  * Common class for sending emails via different transport mechanisms.
@@ -42,42 +41,46 @@ class Adapter
      * @var array<mixed>
      */
     protected array $last_to = [];
-    protected Map $config;
+
+    /**
+     * @var array<mixed>
+     */
+    protected array $config;
 
     /**
      * The mail class constructor.
      *
      * If a transport is not provided then the [[Hazaar\Mail\Transport\Local]] transport will be used.
      *
-     * @param array<mixed>|Map $config the configuration settings for the mail adapter
+     * @param array<mixed> $config the configuration settings for the mail adapter
      */
-    public function __construct(null|array|Map $config = null)
+    public function __construct(?array $config = null)
     {
         $this->message = new TransportMessage();
         if (is_array($config)) {
-            $this->config = Map::_($config);
+            $this->config = $config;
         } else {
             if (!($app = Application::getInstance()) instanceof Application) {
                 throw new \Exception('No application instance found!');
             }
-            if (!$app->config->has('mail')) {
+            if (!isset($app->config['mail'])) {
                 throw new \Exception('No mail configuration found!');
             }
-            $this->config = new Map([
+            $this->config = array_merge([
                 'enable' => true,
                 'testmode' => false,
-                'transport' => null !== $config ? $config : self::$default_transport,
-            ], Application::getInstance()->config->get('mail'));
+                'transport' => self::$default_transport,
+            ], Application::getInstance()->config['mail']);
         }
         $this->transport = $this->getTransportObject($this->config['transport'], $this->config);
-        if ($this->config->has('from')) {
+        if (isset($this->config['from'])) {
             $this->message->from = self::encodeEmailAddress($this->config->decode('from'));
         }
     }
 
-    public function getTransportObject(string $transport = 'local', ?Map $config = null): Transport
+    public function getTransportObject(string $transport = 'local', array $config = []): Transport
     {
-        $transportClass = '\\Hazaar\\Mail\\Transport\\'.ucfirst($transport);
+        $transportClass = '\Hazaar\Mail\Transport\\'.ucfirst($transport);
         if (!class_exists($transportClass)) {
             throw new \Exception("The configured mail transport class '{$transport}' does not exist!");
         }
@@ -365,10 +368,10 @@ class Adapter
         if (true !== $this->config['enable']) {
             throw new \Exception('Mail subsystem is disabled!');
         }
-        if (true === $this->config->get('testmode')) {
+        if (true === $this->config['testmode']) {
             return true;
         }
-        if ($subjectPrefix = $this->config->get('subjectPrefix')) {
+        if ($subjectPrefix = $this->config['subjectPrefix']) {
             $this->subject->prepend($subjectPrefix);
         }
         $this->message->subject = $this->subject->render($params);

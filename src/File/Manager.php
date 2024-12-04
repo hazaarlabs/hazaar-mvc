@@ -145,7 +145,7 @@ class Manager implements Backend
     public static function select(string $name, ?array $options = null): false|Manager
     {
         $config = Application\Config::getInstance('media');
-        if (!$config->has($name)) {
+        if (!isset($config[$name])) {
             return false;
         }
         $source = array_merge_recursive(Manager::$default_config, $config->{$name});

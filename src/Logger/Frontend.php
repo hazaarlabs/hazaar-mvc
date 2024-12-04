@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Hazaar\Logger;
 
-use Hazaar\Map;
-
 class Frontend
 {
     private int $level = E_ERROR;
@@ -18,9 +16,9 @@ class Frontend
     private static array $message_buffer = [];
 
     /**
-     * @param array<mixed>|Map $backend_options
+     * @param array<mixed> $backend_options
      */
-    public function __construct(int|string $level, ?string $backend = null, array|Map $backend_options = [])
+    public function __construct(int|string $level, ?string $backend = null, array $backend_options = [])
     {
         if (!$backend) {
             $backend = 'file';
@@ -32,7 +30,7 @@ class Frontend
         if (!class_exists($backend_class)) {
             throw new Exception\NoBackend();
         }
-        $this->backend = new $backend_class(Map::_($backend_options));
+        $this->backend = new $backend_class($backend_options);
         if (is_numeric($level)) {
             $this->level = $level;
         } elseif (($this->level = $this->backend->getLogLevelId($level)) === false) {
@@ -47,12 +45,15 @@ class Frontend
         Frontend::$message_buffer = [];
     }
 
-    public static function initialise(Map $config): void
+    /**
+     * @param array<mixed> $config
+     */
+    public static function initialise(array $config): void
     {
         if (true !== $config['enable']) {
             return;
         }
-        Frontend::$logger = new Frontend($config->get('level'), $config->get('backend'), $config->get('options'));
+        Frontend::$logger = new Frontend($config['level'], $config['backend'], $config['options']);
         eval('class log extends \Hazaar\Logger\Frontend{};');
     }
 

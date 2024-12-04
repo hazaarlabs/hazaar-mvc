@@ -16,7 +16,7 @@ class Response
     /**
      * The actual body of the response.
      *
-     * @var array<string>|string
+     * @var array<mixed>|string
      */
     public array|string $body = '';
     // Public variables
