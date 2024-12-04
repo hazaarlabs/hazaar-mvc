@@ -77,6 +77,7 @@ class Router
      */
     final public function initialise(Request $request): bool
     {
+        $this->route = null;
         // Search for internal controllers
         if (($path = $request->getPath())
             && ($offset = strpos($path, '/', 1))) {
@@ -95,6 +96,7 @@ class Router
             return false;
         }
         // If the loader has not already set a route, evaluate the request
+        // @phpstan-ignore identical.alwaysTrue
         if (null === $this->route) {
             $this->route = $this->evaluateRequest($request);
         }
@@ -159,7 +161,8 @@ class Router
     public function getErrorController(): Error
     {
         $controller = null;
-        if ($errorController = $this->config['errorController']) {
+        if (isset($this->config['errorController'])
+            && ($errorController = $this->config['errorController'])) {
             $controllerClass = '\Application\Controllers\\'.ucfirst($errorController);
             if (class_exists($controllerClass) && is_subclass_of($controllerClass, Error::class)) {
                 $controller = new $controllerClass($this, $errorController);

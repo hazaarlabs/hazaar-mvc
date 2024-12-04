@@ -135,7 +135,6 @@ class Application
     public function __construct(string $env)
     {
         try {
-            ob_start();
             set_error_handler([$this, 'errorHandler'], E_ERROR);
             set_exception_handler([$this, 'exceptionHandler']);
             register_shutdown_function([$this, 'shutdownHandler']);
@@ -161,8 +160,6 @@ class Application
             $config = Config::getInstance('application', $env, $this->getDefaultConfig());
             // Configure the application
             $this->configure($config);
-            // Create the request object
-            $this->request = Request\Loader::load();
             // Create a new router object for evaluating routes
             $this->router = new Router($this->config['router'] ?? 'file');
             $this->timer->stop('init');
@@ -469,7 +466,7 @@ class Application
      *
      * @return Application Returns a reference to itself to allow chaining
      */
-    public function bootstrap(bool $workerMode = false): Application
+    public function bootstrap(): Application
     {
         $this->timer->start('boot');
         $locale = null;
@@ -498,9 +495,6 @@ class Application
             }
         }
         $this->timer->stop('boot');
-        if (true === $workerMode) {
-            $this->timer->reset();
-        }
 
         return $this;
     }
@@ -528,6 +522,9 @@ class Application
 
         try {
             $this->timer->start('exec');
+            ob_start();
+            // Create the request object
+            $this->request = Request\Loader::load();
             if ('cli' === php_sapi_name()) {
                 $this->request->setPath(ake($_SERVER, 'argv[1]'));
             }
@@ -562,6 +559,7 @@ class Application
             $controller->shutdown($response);
             $this->timer->stop('exec');
             $code = $response->getStatus();
+            ob_end_flush();
         } catch (Controller\Exception\HeadersSent $e) {
             dieDieDie('HEADERS SENT');
         } catch (\Exception $e) {
@@ -573,7 +571,7 @@ class Application
             if ($controller instanceof Controller\Error) {
                 dieDieDie($e->getMessage());
             } else {
-                throw $e;
+                $this->exceptionHandler($e);
             }
         }
 
