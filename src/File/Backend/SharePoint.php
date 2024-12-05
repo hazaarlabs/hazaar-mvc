@@ -16,7 +16,11 @@ class SharePoint extends Client implements Interfaces\Backend, Interfaces\Driver
     public string $separator = '/';
 
     protected Manager $manager;
-    private Map $options;
+
+    /**
+     * @var array<mixed>
+     */
+    private array $options;
     private Cache $cache;
     private static string $STSAuthURL = 'https://login.microsoftonline.com/extSTS.srf';
     private static string $signInURL = '/_forms/default.aspx?wa=wsignin1.0';
@@ -31,14 +35,14 @@ class SharePoint extends Client implements Interfaces\Backend, Interfaces\Driver
     /**
      * SharePoint constructor.
      *
-     * @param array<string,mixed>|Map $options
+     * @param array<string,mixed> $options
      */
-    public function __construct(array|Map $options, Manager $manager)
+    public function __construct(array $options, Manager $manager)
     {
         $this->manager = $manager;
         parent::__construct();
         $this->disableRedirect();
-        $this->options = new Map([
+        $this->options = array_merge([
             'webURL' => null,
             'username' => null,
             'password' => null,

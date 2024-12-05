@@ -58,7 +58,7 @@ abstract class Action extends Basic
             && false === $request->isXmlHttpRequest()
             && null !== $app
             && 'html' === $app->getResponseType()
-            && $app->config['app']->has('layout')) {
+            && isset($app->config['app']['layout'])) {
             $this->view->layout($app->config['app']['layout']);
         }
 

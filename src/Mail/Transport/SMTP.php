@@ -5,30 +5,38 @@ namespace Hazaar\Mail\Transport;
 use Hazaar\Mail\Mime\Message;
 use Hazaar\Mail\Transport;
 use Hazaar\Mail\TransportMessage;
-use Hazaar\Map;
 
 class SMTP extends Transport
 {
     private string $server;
     private int $port;
     private mixed $socket;
-    private int $read_timeout;
+    private int $readTimeout;
 
-    public function init(Map $settings): bool
+    /**
+     * Initialize the SMTP transport.
+     *
+     * The settings array must contain the following keys:
+     *
+     * - server: The SMTP server to connect to.
+     * - port: The port to connect to.  Default is 25.
+     * - timeout: The timeout in seconds to wait for a response from the server.  Default is 5.
+     */
+    public function init(array $settings): bool
     {
-        $config = new Map(
+        $config = array_merge(
             [
                 'port' => 25,
                 'timeout' => 5,
             ],
             $settings
         );
-        if (!$config->has('server')) {
+        if (!isset($config['server'])) {
             throw new \Exception('Cannot send mail.  No SMTP mail server is configured!');
         }
-        $this->server = $config->get('server');
-        $this->port = $config->get('port');
-        $this->read_timeout = $config->get('timeout');
+        $this->server = $config['server'];
+        $this->port = $config['port'];
+        $this->readTimeout = $config['timeout'];
 
         return true;
     }
@@ -59,19 +67,19 @@ class SMTP extends Transport
             }
         }
         // Always use STARTTLS unless it has been explicitly disabled.
-        if (in_array('STARTTLS', $modules) && false !== $this->options->get('starttls')) {
+        if (in_array('STARTTLS', $modules) && false !== $this->options['starttls']) {
             $this->write('STARTTLS');
             if (false === $this->read(220, 1024, $error)) {
                 throw new \Exception($error);
             }
-            if (false === $this->options->get('tlsVerify')) {
+            if (false === $this->options['tlsVerify']) {
                 stream_context_set_option($this->socket, 'ssl', 'verify_peer', false);
                 stream_context_set_option($this->socket, 'ssl', 'verify_peer_name', false);
             }
             if (!@stream_socket_enable_crypto($this->socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
                 throw new \Exception(ake(\error_get_last(), 'message'));
             }
-        } elseif (true === $this->options->get('starttls')) {
+        } elseif (true === $this->options['starttls']) {
             throw new \Exception('STARTTLS is required but server does not support it.');
         }
         $auth_methods = array_reduce($modules, function ($carry, $item) {
@@ -81,8 +89,8 @@ class SMTP extends Transport
 
             return $carry;
         }, []);
-        if ($username = $this->options->get('username')) {
-            if (!($auth_method = strtoupper($this->options->get('auth') ?? ''))) {
+        if ($username = $this->options['username']) {
+            if (!($auth_method = strtoupper($this->options['auth'] ?? ''))) {
                 if (in_array('CRAM-MD5', $auth_methods)) {
                     $auth_method = 'CRAM-MD5';
                 } elseif (in_array('LOGIN', $auth_methods)) {
@@ -100,7 +108,7 @@ class SMTP extends Transport
                     if (false === $this->read(334, 128, $result)) {
                         throw new \Exception('Server does not want to CRAM-MD5 authenticate. Reason: '.$result);
                     }
-                    $this->write(base64_encode($username.' '.hash_hmac('MD5', base64_decode($result), $this->options->get('password'))));
+                    $this->write(base64_encode($username.' '.hash_hmac('MD5', base64_decode($result), $this->options['password'])));
 
                     break;
 
@@ -117,7 +125,7 @@ class SMTP extends Transport
                     if (false === $this->read(334, 128, $result)) {
                         throw new \Exception('Server did not request password.  Reason: '.$result);
                     }
-                    $this->write(base64_encode($this->options->get('password')));
+                    $this->write(base64_encode($this->options['password']));
 
                     break;
 
@@ -126,7 +134,7 @@ class SMTP extends Transport
                     if (false === $this->read(334, 128, $result)) {
                         throw new \Exception('Server does not want to do PLAIN authentication. Reason: '.$result);
                     }
-                    $this->write(base64_encode("\0".$username."\0".$this->options->get('password')));
+                    $this->write(base64_encode("\0".$username."\0".$this->options['password']));
 
                     break;
 
@@ -184,7 +192,7 @@ class SMTP extends Transport
         if (isset($this->socket) && is_resource($this->socket)) {
             fclose($this->socket);
         }
-        $this->socket = @stream_socket_client($this->server.':'.$this->port, $errno, $errstr, $this->read_timeout);
+        $this->socket = @stream_socket_client($this->server.':'.$this->port, $errno, $errstr, $this->readTimeout);
         if (!$this->socket) {
             throw new \Exception('Unable to connect to '.$this->server.':'.$this->port.'. Reason: '.$errstr, $errno);
         }
@@ -222,7 +230,7 @@ class SMTP extends Transport
         ];
         $write = null;
         $exempt = null;
-        stream_select($read, $write, $exempt, $this->read_timeout, 0);
+        stream_select($read, $write, $exempt, $this->readTimeout, 0);
         // @phpstan-ignore-next-line
         if (!(count($read) > 0 && $read[0] == $this->socket)) {
             throw new \Exception('SMTP data receive timeout');

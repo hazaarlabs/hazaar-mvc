@@ -62,13 +62,16 @@ class File extends OK
         parent::__construct();
         $this->initialiseCacheControl();
         if (null !== $file) {
-            $this->load($file, $manager);
+            $loaded = $this->load($file, $manager);
+            if (!$loaded) {
+                throw new \Exception('File not found', 404);
+            }
         }
     }
 
     public function initialiseCacheControl(): bool
     {
-        $cacheConfig = Application::getInstance()->config->get('http.cacheControl', self::$__defaultCacheControlDirectives, true);
+        $cacheConfig = Application::getInstance()->config->http->cacheControl ?? self::$__defaultCacheControlDirectives;
         if ($cacheControlHeader = ake(apache_request_headers(), 'Cache-Control')) {
             $replyable = ['no-cache', 'no-store', 'no-transform'];
             $parts = explode(',', $cacheControlHeader);

@@ -20,7 +20,6 @@ use Hazaar\DBI\Result;
 use Hazaar\DBI\Schema\Exception\Datasync;
 use Hazaar\DBI\Schema\Exception\Schema;
 use Hazaar\File;
-use Hazaar\Map;
 
 /**
  * Relational Database Schema Manager.
@@ -31,7 +30,11 @@ class Manager
     public const MACRO_LOOKUP = 2;
     public static string $schemaInfoTable = 'schema_info';
     private Adapter $dbi;
-    private Map $dbiConfig;
+
+    /**
+     * @var array<mixed>
+     */
+    private array $dbiConfig;
     private string $dbDir;
     private string $migrateDir;
     private string $dataFile;
@@ -71,18 +74,16 @@ class Manager
         'trigger' => ['triggers', true, 'functions'],
     ];
 
-    public function __construct(Map $dbiConfig, ?\Closure $logCallback = null)
+    /**
+     * @param array<mixed> $dbiConfig
+     */
+    public function __construct(array $dbiConfig, ?\Closure $logCallback = null)
     {
         if ($logCallback) {
             $this->setLogCallback($logCallback);
         }
         $this->dbiConfig = $dbiConfig;
-        if ($managerConfig = $this->dbiConfig->get('manager')) {
-            $managerConfig->enhance($this->dbiConfig);
-        } else {
-            $managerConfig = $this->dbiConfig;
-        }
-        $managerConfig->commit();
+        $managerConfig = array_merge($this->dbiConfig, $this->dbiConfig['manager']);
         $this->ignoreTables[] = self::$schemaInfoTable;
 
         try {
@@ -93,14 +94,13 @@ class Manager
                 throw $e;
             }
             $this->log('Database does not exist.  Attempting to create it as requested.');
-            $managerConfig->dbname = $managerConfig->has('maintenanceDatabase')
-                ? $managerConfig->maintenanceDatabase
-                : $managerConfig->user;
+            $managerConfig['dbname'] = isset($managerConfig['maintenanceDatabase'])
+                ? $managerConfig['maintenanceDatabase']
+                : $managerConfig['user'];
             $this->log("Connecting to database '{$managerConfig['dbname']}' on host '{$managerConfig['host']}'");
             $maintDB = new Adapter($managerConfig);
-            $managerConfig->reset();
             $this->log("Creating database '{$managerConfig['dbname']}'");
-            $maintDB->createDatabase($managerConfig->dbname);
+            $maintDB->createDatabase($managerConfig['dbname']);
             $this->log("Retrying connection to database '{$managerConfig['dbname']}' on host '{$managerConfig['host']}'");
             $this->dbi = new Adapter($managerConfig);
         }
@@ -1237,7 +1237,7 @@ class Manager
             if (!$this->dbi->schemaExists($schemaName)) {
                 $this->log('Database does not exist.  Creating...');
                 $this->dbi->createSchema($schemaName);
-                if (($dbiUser = $this->dbiConfig->get('user')) && $this->dbi->config->get('user') !== $dbiUser) {
+                if (($dbiUser = $this->dbiConfig['user']) && $this->dbi->config['user'] !== $dbiUser) {
                     $this->dbi->query("GRANT USAGE ON SCHEMA {$schemaName} TO {$dbiUser};");
                 }
             }
@@ -1258,15 +1258,15 @@ class Manager
             }
         }
         $roles = [];
-        if (true === $this->dbi->config->get('createRole') && $this->dbiConfig->has('user')) {
+        if (true === $this->dbi->config['createRole'] && isset($this->dbiConfig['user'])) {
             $roles[] = [
-                'name' => $this->dbiConfig->get('user'),
-                'password' => $this->dbiConfig->get('password'),
+                'name' => $this->dbiConfig['user'],
+                'password' => $this->dbiConfig['password'] ?? '',
                 'privileges' => ['LOGIN'],
             ];
         }
-        if ($this->dbi->config->has('roles')) {
-            $roles = array_merge($roles, $this->dbi->config['roles']->toArray());
+        if (isset($this->dbi->config['roles'])) {
+            $roles = array_merge($roles, $this->dbi->config['roles']);
         }
         if (count($roles) > 0) {
             $this->createRoleIfNotExists($roles);
@@ -1623,7 +1623,7 @@ class Manager
                     if (!$ret || $this->dbi->errorCode() > 0) {
                         throw new Schema('Error creating table '.$table.': '.$this->dbi->errorInfo()[2]);
                     }
-                    if (($dbi_user = $this->dbiConfig->get('user')) && $this->dbi->config->get('user') !== $dbi_user) {
+                    if (($dbi_user = $this->dbiConfig['user']) && $this->dbi->config['user'] !== $dbi_user) {
                         $this->dbi->grant($table, $dbi_user, ['INSERT', 'SELECT', 'UPDATE', 'DELETE']);
                     }
                 }
@@ -1696,7 +1696,7 @@ class Manager
                     if (!$ret || $this->dbi->errorCode() > 0) {
                         throw new Schema('Error creating view '.$view.': '.$this->dbi->errorInfo()[2]);
                     }
-                    if (($dbi_user = $this->dbiConfig->get('user')) && $this->dbi->config->get('user') !== $dbi_user) {
+                    if (($dbi_user = $this->dbiConfig['user']) && $this->dbi->config['user'] !== $dbi_user) {
                         $this->dbi->grant($view, $dbi_user, ['SELECT']);
                     }
                 }
@@ -2112,7 +2112,7 @@ class Manager
                             break;
                         }
                         $this->dbi->createTable($item['name'], $item['cols']);
-                        if (($dbi_user = $this->dbiConfig->get('user')) && $dbi_user != $this->dbi->config->get('user')) {
+                        if (($dbi_user = $this->dbiConfig['user']) && $dbi_user != $this->dbi->config['user']) {
                             $this->dbi->grant($item['name'], $dbi_user, ['INSERT', 'SELECT', 'UPDATE', 'DELETE']);
                         }
                     } elseif ('index' === $type) {
@@ -2141,7 +2141,7 @@ class Manager
                         }
                         $this->processContent($version, 'views', $item);
                         $this->dbi->createView($item['name'], $item['content']);
-                        if (($dbi_user = $this->dbiConfig->get('user')) && $dbi_user != $this->dbi->config->get('user')) {
+                        if (($dbi_user = $this->dbiConfig['user']) && $dbi_user != $this->dbi->config['user']) {
                             $this->dbi->grant($item['name'], $dbi_user, ['SELECT']);
                         }
                     } elseif ('function' === $type) {
@@ -2158,8 +2158,8 @@ class Manager
                         $this->processContent($version, 'functions', $item);
                         $this->dbi->createFunction($item['name'], $item);
                         if (true === ake($items, 'grant')
-                            && ($dbi_user = $this->dbiConfig->get('user'))
-                            && $dbi_user != $this->dbi->config->get('user')) {
+                            && ($dbi_user = $this->dbiConfig['user'])
+                            && $dbi_user != $this->dbi->config['user']) {
                             $this->dbi->grant('FUNCTION '.$item['name'], $dbi_user, ['EXECUTE']);
                         }
                     } elseif ('trigger' === $type) {
@@ -2170,8 +2170,8 @@ class Manager
                         $this->processContent($version, 'functions', $item);
                         $this->dbi->createTrigger($item['name'], $item['table'], $item);
                         if (true === ake($items, 'grant')
-                            && ($dbi_user = $this->dbiConfig->get('user'))
-                            && $dbi_user != $this->dbi->config->get('user')) {
+                            && ($dbi_user = $this->dbiConfig['user'])
+                            && $dbi_user != $this->dbi->config['user']) {
                             $this->dbi->grant('FUNCTION '.$item['name'], $dbi_user, ['EXECUTE']);
                         }
                     } else {
@@ -2264,7 +2264,7 @@ class Manager
                                 }
                             }
                         }
-                        if (($dbi_user = $this->dbiConfig->get('user')) && $dbi_user != $this->dbi->config->get('user')) {
+                        if (($dbi_user = $this->dbiConfig['user']) && $dbi_user != $this->dbi->config['user']) {
                             $this->dbi->grant($item_name, $dbi_user, ['INSERT', 'SELECT', 'UPDATE', 'DELETE']);
                         }
                     } elseif ('view' === $type) {
@@ -2557,7 +2557,7 @@ class Manager
                             && ($config = ake($source, 'config'))
                             && is_string($config)) {
                             $config = Adapter::getDefaultConfig($config);
-                            $source->syncKey = $config->get('syncKey');
+                            $source->syncKey = $config['syncKey'];
                         }
                         $context = stream_context_create([
                             'http' => [

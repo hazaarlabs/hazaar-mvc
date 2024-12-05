@@ -10,7 +10,6 @@ use Hazaar\File\Backend\Exception\Offline;
 use Hazaar\File\Backend\Interfaces\Backend;
 use Hazaar\HTTP\URL;
 use Hazaar\Loader;
-use Hazaar\Map;
 
 class Manager implements Backend
 {
@@ -46,7 +45,11 @@ class Manager implements Backend
         'webdav' => 'WebDAV',
     ];
     private static string $default_backend = 'local';
-    private static ?Map $default_backend_options = null;
+
+    /**
+     * @var array<mixed>
+     */
+    private static array $default_backend_options = [];
     private Backend $backend;
     private string $backend_name;
 
@@ -60,14 +63,14 @@ class Manager implements Backend
     /**
      * Manager constructor.
      *
-     * @param array<mixed>|Map $backend_options
+     * @param array<mixed> $backend_options
      */
-    public function __construct(?string $backend = null, array|Map $backend_options = [], ?string $name = null)
+    public function __construct(?string $backend = null, array $backend_options = [], ?string $name = null)
     {
         if (!$backend) {
             if (Manager::$default_backend) {
                 $backend = Manager::$default_backend;
-                $backend_options = Manager::$default_backend_options ? Manager::$default_backend_options : new Map();
+                $backend_options = Manager::$default_backend_options ? Manager::$default_backend_options : [];
             } else {
                 $backend = 'local';
                 $backend_options = ['root' => '/'];
@@ -142,14 +145,14 @@ class Manager implements Backend
     public static function select(string $name, ?array $options = null): false|Manager
     {
         $config = Application\Config::getInstance('media');
-        if (!$config->has($name)) {
+        if (!isset($config[$name])) {
             return false;
         }
-        $source = new Map(Manager::$default_config, $config->get($name));
+        $source = array_merge_recursive(Manager::$default_config, $config->{$name});
         if (null !== $options) {
             $source['options']->extend($options);
         }
-        $manager = new Manager($source['type'], $source->get('options'), $name);
+        $manager = new Manager($source['type'], $source['options'], $name);
         if (true === $source['failover'] || true === $config['global']['failover']) {
             $manager->activateFailover();
         }
@@ -165,11 +168,8 @@ class Manager implements Backend
     /**
      * @param array<mixed> $options
      */
-    public static function configure(string $backend, array|Map $options): void
+    public static function configure(string $backend, array $options): void
     {
-        if (!$options instanceof Map) {
-            $options = new Map($options);
-        }
         Manager::$default_backend = $backend;
         Manager::$default_backend_options = $options;
     }

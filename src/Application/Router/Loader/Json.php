@@ -68,12 +68,12 @@ class Json extends Loader
      */
     public function exec(Request $request): bool
     {
-        $jsonRouterFile = $this->config->get('file', 'routes.json');
+        $jsonRouterFile = $this->config['file'] ?? 'routes.json';
         $routeFile = Config::getInstance('routes.json');
-        if (!$routeFile->has('routes')) {
+        if (!isset($routeFile['routes'])) {
             throw new \Exception('Invalid JSON route file.  Missing "routes" key.');
         }
-        $routes = $routeFile->get('routes');
+        $routes = $routeFile['routes'];
         foreach ($routes as $route) {
             $controller = $route->get('controller');
             if (null !== $controller) {

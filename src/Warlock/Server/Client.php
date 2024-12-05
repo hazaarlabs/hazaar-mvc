@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Server;
 
-use Hazaar\Map;
 use Hazaar\Warlock\Protocol;
 use Hazaar\Warlock\Protocol\WebSockets;
 
@@ -65,16 +64,17 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
     protected int $start;
 
     /**
-     * @param resource $stream
+     * @param resource     $stream
+     * @param array<mixed> $options
      */
-    public function __construct(mixed $stream = null, ?Map $options = null)
+    public function __construct(mixed $stream = null, ?array $options = null)
     {
         parent::__construct(['warlock']);
         $this->log = new Logger();
         $this->stream = $stream;
         $this->name = 'SOCKET#'.(int) $stream;
         $this->id = uniqid();
-        $this->applicationName = $options['applicationName'];
+        $this->applicationName = $options['applicationName'] ?? 'warlock';
         $this->since = time();
         if (is_resource($this->stream)) {
             if ($peer = stream_socket_get_name($this->stream, true)) {

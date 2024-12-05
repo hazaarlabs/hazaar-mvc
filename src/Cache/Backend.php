@@ -6,7 +6,12 @@ use Hazaar\Map;
 
 abstract class Backend implements Interfaces\Backend
 {
-    public Map $options;
+    /**
+     * The backend options.
+     *
+     * @var array<mixed>
+     */
+    public array $options;
     protected int $weight = 10;
     protected ?string $namespace;
 
@@ -28,11 +33,11 @@ abstract class Backend implements Interfaces\Backend
     /**
      * Backend constructor.
      *
-     * @param array<mixed>|Map $options
+     * @param array<mixed> $options
      */
-    final public function __construct(array|Map $options, string $namespace)
+    final public function __construct(array $options, string $namespace)
     {
-        $this->options = Map::_($options);
+        $this->options = $options;
         // Initialise the frontend.  This allows the frontend to return some default options.
         $this->namespace = $namespace;
         $this->init($namespace);
@@ -60,7 +65,7 @@ abstract class Backend implements Interfaces\Backend
 
     public function setOption(string $key, mixed $value): void
     {
-        $this->options->set($key, $value);
+        $this->options[$key] = $value;
     }
 
     public function lock(string $key): bool
@@ -83,10 +88,10 @@ abstract class Backend implements Interfaces\Backend
     }
 
     /**
-     * @param array<mixed>|Map $options
+     * @param array<mixed> $options
      */
-    protected function configure(array|Map $options): void
+    protected function configure(array $options): void
     {
-        $this->options->enhance($options);
+        $this->options = array_enhance($this->options, $options);
     }
 }

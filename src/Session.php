@@ -25,22 +25,22 @@ class Session extends Cache
     private bool $session_init = false;
 
     /**
-     * @param array<mixed>|Map $options
+     * @param array<mixed> $options
      */
-    public function __construct(array|Map $options = [], ?string $backend = null)
+    public function __construct(array $options = [], ?string $backend = null)
     {
-        $options = new Map([
+        $options = array_merge([
             'hash_algorithm' => 'ripemd128',
             'session_name' => 'hazaar-session',
         ], $options);
-        if ($options->has('session_name')) {
-            $this->session_name = $options->get('session_name');
+        if (isset($options['session_name'])) {
+            $this->session_name = $options['session_name'];
         }
-        if ($options->has('session_id')) {
-            $this->session_id = $options->get('session_id');
+        if (isset($options['session_id'])) {
+            $this->session_id = $options['session_id'];
         }
         if (!($this->session_id || ($this->session_id = ake($_COOKIE, $this->session_name)))) {
-            $this->session_id = $options->has('session_id') ? $options->get('session_id') : hash($options->get('hash_algorithm'), uniqid());
+            $this->session_id = null !== $options['session_id'] ? $options['session_id'] : hash($options['hash_algorithm'], uniqid());
         } else {
             $this->session_init = true;
         }

@@ -11,7 +11,7 @@ class File extends Loader
 {
     public function exec(Request $request): bool
     {
-        $filename = $this->config->get('file', 'route.php');
+        $filename = $this->config['file'] ?? 'route.php';
         $file = APPLICATION_PATH.DIRECTORY_SEPARATOR.$filename;
         if (false === file_exists($file)) {
             throw new Exception\MissingRouteFile($filename);

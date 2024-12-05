@@ -6,7 +6,6 @@ namespace Hazaar\Auth\Adapter;
 
 use Hazaar\Auth\Adapter;
 use Hazaar\Auth\Adapter\Exception\HTPasswdFileMissing;
-use Hazaar\Map;
 
 class HTPasswd extends Adapter
 {
@@ -16,11 +15,11 @@ class HTPasswd extends Adapter
     /**
      * Construct the new authentication object with the field names.
      */
-    public function __construct(null|array|Map $config = [])
+    public function __construct(array $config = [])
     {
         parent::__construct($config);
-        if ($this->options->has('passwdFile')) {
-            $this->passwd = $this->options->get('passwdFile');
+        if (isset($this->options['passwdFile'])) {
+            $this->passwd = $this->options['passwdFile'];
         } else {
             $this->passwd = CONFIG_PATH.DIRECTORY_SEPARATOR.'.passwd';
         }

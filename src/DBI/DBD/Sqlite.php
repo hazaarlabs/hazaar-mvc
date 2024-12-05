@@ -7,7 +7,6 @@ namespace Hazaar\DBI\DBD;
 use Hazaar\Application;
 use Hazaar\Date;
 use Hazaar\DBI\Table;
-use Hazaar\Map;
 
 class Sqlite extends BaseDriver
 {
@@ -148,9 +147,14 @@ class Sqlite extends BaseDriver
         return false;
     }
 
-    public static function mkdsn(Map $config): string
+    /**
+     * Create a DSN string from a configuration array.
+     *
+     * @param array<mixed> $config The configuration array
+     */
+    public static function mkdsn(array $config): string
     {
-        $filename = $config->get('filename', 'database.sqlite');
+        $filename = $config['filename'] ?? 'database.sqlite';
         if (!('/' === substr($filename, 0, 1) || ':' === substr($filename, 1, 1))) {
             $filename = Application::getInstance()->getRuntimePath($filename);
         }

@@ -65,15 +65,15 @@ class Session extends Backend
              * it now for this application. Otherwise just use the default name
              * specified in the PHP configuration. ie: PHPSESSID
              */
-            if ($app->config->has('session')
+            if (isset($app->config['session'])
                 && $app->config['session']->has('name')
                 && $name = $app->config['session']['name']) {
                 session_name($name);
             }
             // Check if we need to configure a session cache expire time.
-            if ($this->options->has('lifetime')) {
+            if (isset($this->options['lifetime'])) {
                 $this->timeout = $this->options['lifetime'];
-            } elseif ($app->config->has('session') && $app->config['session']->has('timeout')) {
+            } elseif (isset($app->config['session'], $app->config['session']['timeout'])) {
                 $this->timeout = (int) $app->config['session']['timeout'];
             }
         }

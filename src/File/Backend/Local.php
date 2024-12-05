@@ -7,13 +7,16 @@ namespace Hazaar\File\Backend;
 use Hazaar\File\BTree;
 use Hazaar\File\Manager;
 use Hazaar\Loader;
-use Hazaar\Map;
 
 class Local implements Interfaces\Backend, Interfaces\Driver
 {
     public string $separator = DIRECTORY_SEPARATOR;
     protected Manager $manager;
-    private Map $options;
+
+    /**
+     * @var array<mixed>
+     */
+    private array $options;
 
     /**
      * @var array<mixed>
@@ -21,12 +24,12 @@ class Local implements Interfaces\Backend, Interfaces\Driver
     private array $meta = [];
 
     /**
-     * @param array<mixed>|Map $options
+     * @param array<mixed> $options
      */
-    public function __construct(array|Map $options, Manager $manager)
+    public function __construct(array $options, Manager $manager)
     {
         $this->manager = $manager;
-        $this->options = Map::_(['display_hidden' => false, 'root' => DIRECTORY_SEPARATOR], $options);
+        $this->options = array_merge_recursive(['display_hidden' => false, 'root' => DIRECTORY_SEPARATOR], $options);
     }
 
     public static function label(): string
@@ -42,7 +45,7 @@ class Local implements Interfaces\Backend, Interfaces\Driver
     public function resolvePath(string $path, ?string $file = null): string
     {
         $path = Loader::fixDirectorySeparator($path);
-        $base = $this->options->get('root', DIRECTORY_SEPARATOR);
+        $base = $this->options['root'] ?? DIRECTORY_SEPARATOR;
         if (DIRECTORY_SEPARATOR == $path) {
             $path = $base;
         } elseif (':' !== substr($path, 1, 1)) { // Not an absolute Windows path

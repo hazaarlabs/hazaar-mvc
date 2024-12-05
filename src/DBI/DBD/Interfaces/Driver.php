@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace Hazaar\DBI\DBD\Interfaces;
 
 use Hazaar\DBI\Table;
-use Hazaar\Map;
 
 /**
  * @brief Relational Database Driver Interface
  */
 interface Driver
 {
-    public static function mkdsn(Map $config): false|string;
+    /**
+     * @param array<string, mixed> $config
+     */
+    public static function mkdsn(array $config): false|string;
 
     /**
      * @param array<int, bool> $driverOptions

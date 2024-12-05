@@ -4,11 +4,13 @@ namespace Hazaar\Mail\Transport;
 
 use Hazaar\Mail\Transport;
 use Hazaar\Mail\TransportMessage;
-use Hazaar\Map;
 
 class Local extends Transport
 {
-    public function init(Map $options): bool
+    /**
+     * @param array<mixed> $options
+     */
+    public function init(array $options): bool
     {
         if (!exec('which sendmail')) {
             throw new Exception\NoSendmail();

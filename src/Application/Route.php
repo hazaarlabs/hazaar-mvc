@@ -198,7 +198,7 @@ class Route
             return $this->callable->getName();
         }
 
-        return isset($this->callable[1]) ? $this->callable[1] : $this->router->config->get('action');
+        return isset($this->callable[1]) ? $this->callable[1] : $this->router->config['action'] ?? 'index';
     }
 
     /**

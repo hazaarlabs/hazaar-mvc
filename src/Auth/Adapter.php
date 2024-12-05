@@ -19,7 +19,6 @@ use Hazaar\Application\Request;
 use Hazaar\Application\Request\HTTP;
 use Hazaar\Auth\Adapter\Exception\Unauthorised;
 use Hazaar\Auth\Adapter\Exception\UnknownStorageAdapter;
-use Hazaar\Map;
 
 /**
  * Abstract authentication adapter.
@@ -80,7 +79,12 @@ use Hazaar\Map;
  */
 abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
 {
-    protected Map $options;
+    /**
+     * The configuration options.
+     *
+     * @var array<mixed>
+     */
+    protected array $options;
     protected Interfaces\Storage $storage;
     protected ?string $identity = null;
     protected ?string $credential = null;
@@ -97,9 +101,9 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
     /**
      * Construct the adapter.
      *
-     * @param array<mixed>|Map $config The configuration options
+     * @param array<mixed> $config The configuration options
      */
-    public function __construct(null|array|Map $config = [])
+    public function __construct(array $config = [])
     {
         $defaults = [
             'storage' => 'session',
@@ -116,11 +120,11 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
             ],
             'timeout' => 3600,
         ];
-        $this->options = Map::_($defaults, Application::getInstance()->config['auth'], $config);
-        $storage = $this->options->get('storage', 'session');
-        $this->setStorageAdapter($storage, $this->options->get($storage, []));
-        if ($this->options->has('data_fields')) {
-            $this->setDataFields($this->options['data_fields']->toArray());
+        $this->options = array_merge($defaults, Application::getInstance()->config['auth'] ?? [], $config);
+        $storage = $this->options['storage'] ?? 'session';
+        $this->setStorageAdapter($storage, $this->options[$storage] ?? []);
+        if (isset($this->options['data_fields'])) {
+            $this->setDataFields($this->options['data_fields']);
         }
     }
 
@@ -176,11 +180,9 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         if (true === $this->options['encryption']['useIdentity']) {
             $credential = $this->identity.':'.$credential;
         }
-        $count = $this->options['encryption']['count'];
-        $algos = $this->options['encryption']['hash'];
-        if ($algos instanceof Map) {
-            $algos = $algos->toArray();
-        } elseif (!is_array($algos)) {
+        $count = $this->options['encryption']['count'] ?? 1;
+        $algos = $this->options['encryption']['hash'] ?? [];
+        if (!is_array($algos)) {
             $algos = [$algos];
         }
         $salt = $this->options['encryption']['salt'];
@@ -221,7 +223,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
         if (!($identity = $this->getIdentity())) {
             return false;
         }
-        $auth = $this->queryAuth($identity, $this->options->get('extra', [], true)->values());
+        $auth = $this->queryAuth($identity, array_values($this->options['extra'] ?? []));
         if (is_array($auth)
             && array_key_exists('identity', $auth)
             && array_key_exists('credential', $auth)
@@ -312,7 +314,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
     public function check(string $credential): bool
     {
         if ($identity = $this->getIdentity()) {
-            $auth = $this->queryAuth($identity, $this->options->get('extra', [])->toArray());
+            $auth = $this->queryAuth($identity, $this->options['extra'] ?? []);
             if (false === $auth || !(is_array($auth)
                 && array_key_exists('identity', $auth)
                 && array_key_exists('credential', $auth))) {
@@ -451,20 +453,20 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
     /**
      * Sets the storage adapter for authentication.
      *
-     * @param string                  $storage the name of the storage adapter to use
-     * @param array<string,mixed>|Map $options optional configuration options for the storage adapter
+     * @param string              $storage the name of the storage adapter to use
+     * @param array<string,mixed> $options optional configuration options for the storage adapter
      *
      * @return bool returns true if the storage adapter was successfully set
      *
      * @throws UnknownStorageAdapter if the specified storage adapter class does not exist
      */
-    public function setStorageAdapter(string $storage, array|Map $options = []): bool
+    public function setStorageAdapter(string $storage, array $options = []): bool
     {
         $class = '\Hazaar\Auth\Storage\\'.ucfirst($storage);
         if (!class_exists($class)) {
             throw new UnknownStorageAdapter($storage);
         }
-        $this->storage = new $class(Map::_($options));
+        $this->storage = new $class($options);
         if (!$this->storage->isEmpty()) {
             $this->identity = $this->storage->get('identity');
         }
