@@ -98,7 +98,6 @@ class Application
         'base' => APPLICATION_BASE,
         'name' => APPLICATION_NAME,
     ];
-    public ?Request $request = null;
     public ?Config $config = null;
     public ?Loader $loader = null;
     public ?Router $router = null;
@@ -176,14 +175,6 @@ class Application
      */
     public function shutdown(): void
     {
-        if ($this->request) {
-            Frontend::i(
-                'CORE',
-                '"'.ake($_SERVER, 'REQUEST_METHOD').' /'.$this->request->getPath().'" '
-                .http_response_code()
-                .' "'.ake($_SERVER, 'HTTP_USER_AGENT').'"'
-            );
-        }
         if (!$this->config) {
             return;
         }
@@ -524,25 +515,25 @@ class Application
             $this->timer->start('exec');
             ob_start();
             // Create the request object
-            $this->request = Request\Loader::load();
+            $request = Request\Loader::load();
             if ('cli' === php_sapi_name()) {
-                $this->request->setPath(ake($_SERVER, 'argv[1]'));
+                $request->setPath(ake($_SERVER, 'argv[1]'));
             }
             if (null !== $controller) {
-                $response = $controller->initialize($this->request);
+                $response = $controller->initialize($request);
                 if (null === $response) {
                     $response = $controller->run();
                 }
             } else {
-                if (false === $this->router->initialise($this->request)) {
-                    throw new RouteNotFound($this->request->getPath());
+                if (false === $this->router->initialise($request)) {
+                    throw new RouteNotFound($request->getPath());
                 }
                 $route = $this->router->getRoute();
                 if (!$route) {
                     throw new \Exception('No route found');
                 }
                 $controller = $route->getController();
-                $response = $controller->initialize($this->request);
+                $response = $controller->initialize($request);
                 if (null === $response) {
                     $response = $controller->run($route);
                 }
@@ -605,42 +596,6 @@ class Application
         call_user_func_array([$url, '__construct'], func_get_args());
 
         return $url;
-    }
-
-    /**
-     * Test if a URL is active, relative to the application base URL.
-     *
-     * Parameters are simply a list of URL 'parts' that will be combined to test against the current URL to see if it is active.  Essentially
-     * the argument list is the same as `Hazaar\Application::url()` except that parameter arrays are not supported.
-     *
-     * Unlike `Hazaar\Controller::active()` this method tests if the path is active relative to the application base path.  If you
-     * want to test if a particular controller is active, then it has to be the first argument.
-     *
-     * * Example
-     * ```php
-     * $application->active('mycontroller');
-     * ```
-     *
-     * @return bool true if the supplied URL is active as the current URL
-     */
-    public function isActive(): bool
-    {
-        $parts = [];
-        foreach (func_get_args() as $part) {
-            $partParts = strpos($part, '/') ? array_map('strtolower', array_map('trim', explode('/', $part))) : [$part];
-            foreach ($partParts as $partPart) {
-                $parts[] = strtolower(trim($partPart ?? ''));
-            }
-        }
-        $basePath = $this->request->getPath();
-        $requestParts = $basePath ? array_map('strtolower', array_map('trim', explode('/', $basePath))) : [];
-        for ($i = 0; $i < count($parts); ++$i) {
-            if ($parts[$i] !== $requestParts[$i]) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /**

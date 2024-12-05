@@ -16,18 +16,15 @@ use Hazaar\Loader;
 
 class Main
 {
-    public static function run(Application $application): int
+    public static function run(Application $application, CLI $request): int
     {
-        if (!$application->request instanceof CLI) {
-            return 255;
-        }
-        $application->request->setOptions([
+        $request->setOptions([
             'help' => ['h', 'help', null, 'Display this help message.'],
             'env' => ['e', 'env', 'string', 'Set the application environment.', 'config'],
             'scan' => ['s', 'scan', 'path', 'Scan the application for new classes.', 'doc'],
             'title' => ['t', 'title', 'string', 'Set the title of the documentation.', 'doc'],
         ]);
-        $application->request->setCommands([
+        $request->setCommands([
             'create' => ['Create a new application object (view, controller or model).'],
             'config' => ['Manage application configuration.'],
             'show' => ['Show the contents of a configuration file, decrypting if neccessary.'],
@@ -38,12 +35,12 @@ class Main
             'passwd' => ['Change a user password.'],
             'doc' => ['Generate documentation for the application.'],
         ]);
-        if (!($command = $application->request->getCommand($commandArgs))) {
-            $application->request->showHelp();
+        if (!($command = $request->getCommand($commandArgs))) {
+            $request->showHelp();
 
             return 1;
         }
-        $options = $application->request->getOptions();
+        $options = $request->getOptions();
         $appConfig = Config::getInstance('application', APPLICATION_ENV);
         if (!isset($appConfig['auth'])) {
             $appConfig['auth'] = [];

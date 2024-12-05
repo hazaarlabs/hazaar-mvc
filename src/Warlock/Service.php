@@ -6,6 +6,7 @@ namespace Hazaar\Warlock;
 
 use Hazaar\Application;
 use Hazaar\Application\Request\HTTP;
+use Hazaar\Application\Request\Loader;
 use Hazaar\Cron;
 use Hazaar\Date;
 use Hazaar\Warlock\Connection\Pipe;
@@ -120,7 +121,8 @@ abstract class Service extends Process
             $this->__log = fopen($this->__logFile, 'a');
         }
         $this->log(W_LOCAL, "Service '{$this->name}' starting up");
-        if (!$application->request instanceof HTTP) {
+        $request = Loader::load();
+        if (!$request instanceof HTTP) {
             $this->setErrorHandler('__errorHandler');
             $this->setExceptionHandler('__exceptionHandler');
         }

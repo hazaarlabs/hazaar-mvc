@@ -613,7 +613,7 @@ class Result implements \Countable, \Iterator
      */
     private function decrypt(array &$data): void
     {
-        if (0 === count($this->encrypt)
+        if (!isset($this->encrypt['table'])
             || 0 === count($data)) {
             return;
         }

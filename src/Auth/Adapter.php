@@ -120,7 +120,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
             ],
             'timeout' => 3600,
         ];
-        $this->options = array_merge_recursive($defaults, Application::getInstance()->config['auth'], $config);
+        $this->options = array_merge($defaults, Application::getInstance()->config['auth'] ?? [], $config);
         $storage = $this->options['storage'] ?? 'session';
         $this->setStorageAdapter($storage, $this->options[$storage] ?? []);
         if (isset($this->options['data_fields'])) {
@@ -453,7 +453,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
     /**
      * Sets the storage adapter for authentication.
      *
-     * @param string                  $storage the name of the storage adapter to use
+     * @param string              $storage the name of the storage adapter to use
      * @param array<string,mixed> $options optional configuration options for the storage adapter
      *
      * @return bool returns true if the storage adapter was successfully set

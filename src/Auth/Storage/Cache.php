@@ -72,15 +72,14 @@ class Cache implements Storage
      */
     public function __construct(array $config)
     {
-        $this->config = $config;
-        array_enhance($this->config, [
+        $this->config = array_enhance($config, [
             'backend' => 'file',
             'usePragma' => false,
             'lifetime' => 3600, // 1 hour
             'name' => 'hazaar-auth',
         ]);
-        if (array_key_exists($config['name'], $_COOKIE)) {
-            $this->initSession($_COOKIE[$config['name']]);
+        if (array_key_exists($this->config['name'], $_COOKIE)) {
+            $this->initSession($_COOKIE[$this->config['name']]);
             $this->data = $this->session->get('data', []);
         }
     }

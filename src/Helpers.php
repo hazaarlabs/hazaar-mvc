@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use Hazaar\Application;
+use Hazaar\Application\Request\Loader;
 use Hazaar\Controller\Dump;
-use Response\Text;
 
 $dumpLog = [];
 
@@ -534,7 +534,7 @@ function array_from_dot_notation(array $array): array
  */
 function array_enhance(array $targetArray, array $sourceArray): array
 {
-    return array_merge($targetArray, array_diff($sourceArray, $targetArray));
+    return array_merge($targetArray, array_diff_key($sourceArray, $targetArray));
 }
 
 function base64url_encode(string $data): string
@@ -1060,7 +1060,8 @@ function dump(mixed ...$data): void
             if (is_array($dumpLog)) {
                 $controller->addLogEntries($dumpLog);
             }
-            $controller->initialize($app->request);
+            $request = Loader::load();
+            $controller->initialize($request);
             $controller->setCaller($caller);
             $response = $controller->run();
             $response->writeOutput();

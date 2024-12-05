@@ -146,7 +146,9 @@ class Session implements Storage
     {
         unset($this->session[$this->sessionKey]);
         session_unset();
-        session_destroy();
+        if (session_id()) {
+            session_destroy();
+        }
     }
 
     public function getToken(): ?array

@@ -68,7 +68,9 @@ class Apc extends Backend
     public function get(string $key): mixed
     {
         $result = \apcu_fetch($this->key($key));
-        if ($result && $this->options['keepalive'] && $this->options['lifetime'] > 0) {
+        if ($result
+            && ake($this->options, 'keepalive', false)
+            && ake($this->options, 'lifetime', 0) > 0) {
             $this->refresh[$key] = $result;
         }
 

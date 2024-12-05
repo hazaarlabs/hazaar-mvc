@@ -279,10 +279,10 @@ class JWT implements Storage
     private function buildRefreshTokenKey(string $passphrase): string
     {
         $fingerprint = $_SERVER['HTTP_USER_AGENT'];
+        $request = Application\Request\Loader::load();
         if (isset($this->config['fingerprintIP'])
             && true === $this->config['fingerprintIP']
-            && ($app = Application::getInstance())
-            && ($request = $app->request) instanceof HTTP
+            && $request instanceof HTTP
             && ($clientIP = $request->getRemoteAddr())) {
             $fingerprint .= ':'.$clientIP;
         }

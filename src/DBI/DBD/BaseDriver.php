@@ -67,15 +67,16 @@ abstract class BaseDriver implements Interfaces\Driver
         return BaseDriver::$execs;
     }
 
-    public static function mkdsn(array $options): false|string
+    public static function mkdsn(array $config): false|string
     {
-        $DBD = 'Hazaar\DBI\DBD\\'.ucfirst($options['driver']);
+        $options = $config;
+        $DBD = 'Hazaar\DBI\DBD\\'.ucfirst($config['driver']);
         if (!class_exists($DBD)) {
             return false;
         }
         $options = array_intersect_key($options, array_combine($DBD::$dsnElements, $DBD::$dsnElements));
 
-        return $options['driver'].':'.array_flatten($options, '=', ';');
+        return $config['driver'].':'.array_flatten($options, '=', ';');
     }
 
     public function getSchemaName(): string
@@ -621,7 +622,7 @@ abstract class BaseDriver implements Interfaces\Driver
             $fields = $fields->toArray(true);
         } elseif ($fields instanceof \stdClass) {
             $fields = (array) $fields;
-        }elseif(is_string($fields)){
+        } elseif (is_string($fields)) {
             $fields = [$fields];
         }
         $fieldDef = [];
