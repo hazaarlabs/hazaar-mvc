@@ -10,7 +10,6 @@ use Hazaar\Auth\Adapter;
 use Hazaar\Controller\Response\HTML;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
-use Hazaar\Map;
 
 class OAuth2 extends Adapter
 {
@@ -34,7 +33,7 @@ class OAuth2 extends Adapter
         string $clientID,
         string $clientSecret,
         string $grantType = 'code',
-        array|Map $config = []
+        array $config = []
     ) {
         parent::__construct($config);
         $this->httpClient = new Client();

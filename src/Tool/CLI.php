@@ -1,6 +1,7 @@
 <?php
 
 use Hazaar\Application;
+use Hazaar\Application\Request\CLI;
 use Hazaar\Tool\Main;
 
 // Define path to application directory
@@ -35,5 +36,6 @@ $reflector = null;
 
 // Create application, bootstrap, and run
 $application = new Application('tool');
+$request = new CLI($argv);
 
-exit(Main::run($application));
+exit(Main::run($application, $request));

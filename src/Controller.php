@@ -316,6 +316,42 @@ abstract class Controller implements Controller\Interfaces\Controller
     }
 
     /**
+     * Test if a URL is active, relative to the application base URL.
+     *
+     * Parameters are simply a list of URL 'parts' that will be combined to test against the current URL to see if it is active.  Essentially
+     * the argument list is the same as `Hazaar\Application::url()` except that parameter arrays are not supported.
+     *
+     * Unlike `Hazaar\Controller::active()` this method tests if the path is active relative to the application base path.  If you
+     * want to test if a particular controller is active, then it has to be the first argument.
+     *
+     * * Example
+     * ```php
+     * $application->active('mycontroller');
+     * ```
+     *
+     * @return bool true if the supplied URL is active as the current URL
+     */
+    public function isActive(): bool
+    {
+        $parts = [];
+        foreach (func_get_args() as $part) {
+            $partParts = strpos($part, '/') ? array_map('strtolower', array_map('trim', explode('/', $part))) : [$part];
+            foreach ($partParts as $partPart) {
+                $parts[] = strtolower(trim($partPart ?? ''));
+            }
+        }
+        $basePath = $this->request->getPath();
+        $requestParts = $basePath ? array_map('strtolower', array_map('trim', explode('/', $basePath))) : [];
+        for ($i = 0; $i < count($parts); ++$i) {
+            if ($parts[$i] !== $requestParts[$i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Find a helper class by name.
      *
      * This method searches for view helper classes based on the given name. The search order is important because it allows apps to override built-in helpers.

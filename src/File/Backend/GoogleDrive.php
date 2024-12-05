@@ -9,7 +9,6 @@ use Hazaar\File\Backend\Exception\GoogleDriveError;
 use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
-use Hazaar\Map;
 
 class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Driver
 {
@@ -23,7 +22,11 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
     private array $scope = [
         'https://www.googleapis.com/auth/drive',
     ];
-    private Map $options;
+
+    /**
+     * @var array<mixed>
+     */
+    private array $options;
     private Cache $cache;
 
     /**
@@ -55,18 +58,18 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
     private int $cursor;
     private string $oauth2ID;
 
-    public function __construct(array|Map $options, Manager $manager)
+    public function __construct(array $options, Manager $manager)
     {
         parent::__construct();
         $this->manager = $manager;
-        $this->options = new Map([
+        $this->options = array_merge([
             'cache_backend' => 'file',
             'oauth2' => ['access_token' => null],
             'refresh_attempts' => 5,
             'maxResults' => 100,
             'root' => '/',
         ], $options);
-        if (!($this->options->has('client_id') && $this->options->has('client_secret'))) {
+        if (!isset($this->options['client_id'], $this->options['client_secret'])) {
             throw new GoogleDriveError('Google Drive filesystem backend requires both client_id and client_secret.');
         }
         $cacheOps = [
@@ -150,7 +153,9 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
 
     public function authorised(): bool
     {
-        return $this->options->has('oauth2') && null !== $this->options['oauth2']['access_token'];
+        return isset($this->options['oauth2'])
+            && isset($this->options['oauth2']['access_token'])
+            && null != $this->options['oauth2']['access_token'];
     }
 
     public function buildAuthURL(?string $redirect_uri = null): string
@@ -179,9 +184,9 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
             $this->cursor = (int) $response['largestChangeId'];
             $request = new Request('https://www.googleapis.com/drive/v2/files/root', 'GET');
             $response = $this->sendRequest($request);
-            $this->meta[$response['id']] = array_intersect_key($response->toArray(), array_flip($this->meta_items));
+            $this->meta[$response['id']] = array_intersect_key($response, array_flip($this->meta_items));
             $request = new Request('https://www.googleapis.com/drive/v2/files', 'GET');
-            if ($this->options->has('maxResults')) {
+            if (isset($this->options['maxResults'])) {
                 $request['maxResults'] = $this->options['maxResults'];
             }
             while (true) {
@@ -192,7 +197,7 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
                 foreach ($response['items']->toArray() as $item) {
                     $this->meta[$item['id']] = array_intersect_key($item, array_flip($this->meta_items));
                 }
-                if (!$response->has('nextPageToken')) {
+                if (!isset($response['nextPageToken'])) {
                     break;
                 }
                 $request['pageToken'] = $response['nextPageToken'];
@@ -437,7 +442,7 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
         $request['mimeType'] = 'application/vnd.google-apps.folder';
         $response = $this->sendRequest($request);
         if ($response) {
-            $this->meta[$response['id']] = $response->toArray();
+            $this->meta[$response['id']] = $response;
 
             return true;
         }
@@ -483,7 +488,7 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
         $request['parents'] = [['id' => $parent['id']]];
         $response = $this->sendRequest($request);
         if ($response) {
-            $this->meta[$response['id']] = $response->toArray();
+            $this->meta[$response['id']] = $response;
 
             return true;
         }
@@ -567,7 +572,7 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
         $request->addMultipart($data, $content_type);
         $response = $this->sendRequest($request);
         if ($response) {
-            $this->meta[$response['id']] = $response->toArray();
+            $this->meta[$response['id']] = $response;
 
             return strlen($data);
         }
@@ -729,7 +734,10 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
         return false;
     }
 
-    private function sendRequest(Request $request, bool $is_meta = true): Map|string
+    /**
+     * @return array<mixed>|string
+     */
+    private function sendRequest(Request $request, bool $isMeta = true): array|string
     {
         $count = 0;
         while (++$count) {
@@ -747,8 +755,8 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
                 }
             } else {
                 if ('application/json' == $response->getHeader('content-type')) {
-                    $meta = new Map($response->body);
-                    if ($meta->has('error')) {
+                    $meta = $response->body;
+                    if (isset($meta['error'])) {
                         $err = $meta['error'];
                     } else {
                         $err = 'Unknown error!';
@@ -763,9 +771,9 @@ class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Drive
                 throw new \Exception($message, $code);
             }
         }
-        if (true == $is_meta) {
-            $meta = new Map($response->body);
-            if ($meta->has('error')) {
+        if (true == $isMeta) {
+            $meta = $response->body;
+            if (isset($meta['error'])) {
                 throw new \Exception($meta['error']);
             }
         } else {

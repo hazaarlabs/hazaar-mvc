@@ -4,19 +4,26 @@ declare(strict_types=1);
 
 namespace Hazaar\Mail;
 
-use Hazaar\Map;
-
 abstract class Transport implements Interfaces\Transport
 {
-    protected Map $options;
+    /**
+     * @var array<mixed>
+     */
+    protected array $options;
 
-    final public function __construct(Map $options)
+    /**
+     * @param array<mixed> $options
+     */
+    final public function __construct(array $options)
     {
         $this->options = $options;
         $this->init($options);
     }
 
-    protected function init(Map $options): bool
+    /**
+     * @param array<mixed> $options
+     */
+    protected function init(array $options): bool
     {
         return true;
     }

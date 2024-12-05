@@ -26,11 +26,11 @@ class Advanced extends Loader
         if (empty($path) || '/' === $path) {
             return true;
         }
-        if ($this->config->has('aliases')) {
-            $path = $this->evaluateAliases($path, $this->config['aliases']->toArray());
+        if (isset($this->config['aliases'])) {
+            $path = $this->evaluateAliases($path, $this->config['aliases']);
         }
         $parts = [];
-        $this->controller = trim($this->findController($path, $parts)??'', '\\');
+        $this->controller = trim($this->findController($path, $parts) ?? '', '\\');
         if ('' === $this->controller) {
             return false;
         }

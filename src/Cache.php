@@ -22,7 +22,10 @@ use Hazaar\Cache\Backend;
  */
 class Cache implements \ArrayAccess
 {
-    protected Map $options;
+    /**
+     * @var array<mixed> The cache options
+     */
+    protected array $options;
     protected bool $useCache = true;
     protected Backend $backend;
 
@@ -32,22 +35,24 @@ class Cache implements \ArrayAccess
      * @param array<string>|string $backend       The name of the backend to use. Currently 'apc', 'file', 'memcached', 'session' and
      *                                            'sqlite' are supported.
      * @param string               $namespace     The namespace to use for grouping stored data
-     * @param array<mixed>|Map     $configOptions
+     * @param array<mixed>         $configOptions
      */
     public function __construct(
         null|array|string $backend = null,
-        array|Map $configOptions = [],
+        array $configOptions = [],
         string $namespace = 'default'
     ) {
-        $this->options = Map::_($configOptions);
+        $this->options = $configOptions;
         if (!$backend) {
             // Set up a default backend chain
             $backend = ['shm', 'session'];
             // Grab the application context so we can load any cache settings
             if (($app = Application::getInstance())
-                && $app->config->has('cache.backend')) {
-                $backend = $app->config->get('cache.backend');
-                $this->options->extend($app->config->get('cache.options'));
+                && isset($app->config['cache']['backend'])) {
+                $backend = $app->config['cache']['backend'];
+                if (isset($app->config['cache']['options'])) {
+                    $this->options = array_merge($this->options, $app->config['cache']['options']);
+                }
             }
         }
         $this->configure([
@@ -114,11 +119,11 @@ class Cache implements \ArrayAccess
     }
 
     /**
-     * @param array<mixed>|Map $options
+     * @param array<mixed> $options
      */
-    public function configure(array|Map $options): void
+    public function configure(array $options): void
     {
-        $this->options->enhance($options);
+        $this->options = array_enhance($this->options, $options);
     }
 
     public function getBackend(): Backend
@@ -128,7 +133,7 @@ class Cache implements \ArrayAccess
 
     public function setBackendOption(string $key, mixed $value): void
     {
-        $this->backend->options->extend([$key => $value]);
+        $this->backend->options = array_merge($this->backend->options, [$key => $value]);
     }
 
     public function lock(string $key): bool

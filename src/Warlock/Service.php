@@ -6,9 +6,9 @@ namespace Hazaar\Warlock;
 
 use Hazaar\Application;
 use Hazaar\Application\Request\HTTP;
+use Hazaar\Application\Request\Loader;
 use Hazaar\Cron;
 use Hazaar\Date;
-use Hazaar\Map;
 use Hazaar\Warlock\Connection\Pipe;
 use Hazaar\Warlock\Connection\Socket;
 use Hazaar\Warlock\Interfaces\Connection;
@@ -35,7 +35,11 @@ define('W_LOCAL', -1);
 abstract class Service extends Process
 {
     protected string $name;
-    protected Map $config;
+
+    /**
+     * @var array<mixed>
+     */
+    protected array $config;
 
     /**
      * @var array<int, mixed>
@@ -84,7 +88,7 @@ abstract class Service extends Process
                 'server' => [
                     'host' => '127.0.0.1',
                     'port' => $warlock['server']['port'],
-                    'access_key' => $warlock->get('admin.key'),
+                    'access_key' => $warlock['admin']['key'] ?? '',
                 ],
                 'silent' => false,
                 'applicationName' => $warlock['sys']['applicationName'],
@@ -117,7 +121,8 @@ abstract class Service extends Process
             $this->__log = fopen($this->__logFile, 'a');
         }
         $this->log(W_LOCAL, "Service '{$this->name}' starting up");
-        if (!$application->request instanceof HTTP) {
+        $request = Loader::load();
+        if (!$request instanceof HTTP) {
             $this->setErrorHandler('__errorHandler');
             $this->setExceptionHandler('__exceptionHandler');
         }
@@ -448,10 +453,13 @@ abstract class Service extends Process
         return $this->state;
     }
 
+    /**
+     * @param array<mixed> $arguments
+     */
     final public function delay(
         int $seconds,
         callable|string $callback,
-        ?Map $arguments = null
+        array $arguments = []
     ): bool|string {
         if (!is_callable($callback) && !method_exists($this, $callback)) {
             return false;
@@ -464,7 +472,7 @@ abstract class Service extends Process
             'label' => $label,
             'when' => $when,
             'callback' => $callback,
-            'args' => $arguments->toArray(),
+            'args' => $arguments,
         ];
         if (null === $this->next || $when < $this->next) {
             $this->next = $when;
@@ -477,7 +485,7 @@ abstract class Service extends Process
     final public function interval(
         int $seconds,
         callable|string $callback,
-        ?Map $params = null,
+        array $params = [],
         ?string $tag = null,
         bool $overwrite = false
     ): false|string {
@@ -512,7 +520,7 @@ abstract class Service extends Process
     final public function schedule(
         Date $date,
         callable|string $callback,
-        ?Map $params = null,
+        array $params = [],
         ?string $tag = null,
         bool $overwrite = false
     ): false|string {
@@ -622,7 +630,7 @@ abstract class Service extends Process
     protected function connect(Protocol $protocol, ?string $guid = null): Connection|false
     {
         if (true === $this->__remote) {
-            if (!$this->config->has('server')) {
+            if (!isset($this->config['server'])) {
                 exit("Warlock server required to run in remote service mode.\n");
             }
             $headers = [];
@@ -709,8 +717,8 @@ abstract class Service extends Process
     // CONTROL METHODS
     private function start(): bool
     {
-        $events = $this->config->get('subscribe');
-        if (null !== $events) {
+        $events = $this->config['subscribe'] ?? [];
+        if (is_array($events)) {
             foreach ($events as $event_name => $event) {
                 if (is_array($event)) {
                     if (!($action = ake($event, 'action'))) {
@@ -722,19 +730,19 @@ abstract class Service extends Process
                 }
             }
         }
-        $schedule = $this->config->get('schedule');
-        if (null !== $schedule) {
+        $schedule = $this->config['schedule'] ?? [];
+        if (is_array($schedule)) {
             foreach ($schedule as $item) {
-                if (!($item instanceof Map && $item->has('action'))) {
+                if (!(is_array($item) && isset($item['action']))) {
                     continue;
                 }
-                if ($item->has('interval')) {
+                if (isset($item['interval'])) {
                     $this->interval(ake($item, 'interval'), ake($item, 'action'), ake($item, 'args'));
                 }
-                if ($item->has('delay')) {
+                if (isset($item['delay'])) {
                     $this->delay(ake($item, 'delay'), ake($item, 'action'), ake($item, 'args'));
                 }
-                if ($item->has('when')) {
+                if (isset($item['when'])) {
                     $this->cron(ake($item, 'when'), ake($item, 'action'), ake($item, 'args'));
                 }
             }

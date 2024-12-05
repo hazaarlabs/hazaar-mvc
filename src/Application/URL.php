@@ -12,7 +12,6 @@ declare(strict_types=1);
 namespace Hazaar\Application;
 
 use Hazaar\Application;
-use Hazaar\Map;
 
 /**
  * @brief       Generate a URL relative to the application
@@ -90,12 +89,12 @@ class URL implements \JsonSerializable
     /**
      * Initializes the URL class with the provided configuration.
      *
-     * @param Map $config the configuration object containing the base URL, rewrite URL, and default controller
+     * @param array<mixed> $config the configuration object containing the base URL, rewrite URL, and default controller
      */
-    public static function initialise(Map $config): void
+    public static function initialise(array $config): void
     {
-        self::$baseURL = $config->get('base');
-        self::$rewriteURL = $config->get('rewrite');
+        self::$baseURL = $config['base'] ?? '/';
+        self::$rewriteURL = $config['rewrite'] ?? '/';
     }
 
     /**
