@@ -15,7 +15,6 @@ use Hazaar\Auth\Storage\Exception\NoJWTPassphrase;
 use Hazaar\Auth\Storage\Exception\NoJWTPrivateKey;
 use Hazaar\Auth\Storage\Exception\UnsupportedJWTAlgorithm;
 use Hazaar\Loader;
-use Hazaar\Map;
 
 /**
  * JWT Authentication Adapter.
@@ -32,7 +31,10 @@ class JWT implements Storage
      */
     protected ?array $token = null;
 
-    private Map $config;
+    /**
+     * @var array<string,mixed>
+     */
+    private array $config;
 
     /**
      * @var array<string,mixed>
@@ -41,31 +43,31 @@ class JWT implements Storage
     private bool $writeCookie = false;
     private bool $clearCookie = false;
 
-    public function __construct(?Map $config = null)
+    public function __construct(array $config = [])
     {
         if (!($app = Application::getInstance())) {
             throw new NoApplication('JWT');
         }
         $app->registerOutputFunction([$this, 'writeToken']);
         $this->config = $config;
-        $this->config->enhance([
+        array_enhance($this->config, [
             'alg' => 'HS256',
             'issuer' => 'hazaar-auth',
             'timeout' => 3600,
             'refresh' => 86400,
             'fingerprintIP' => true,
         ]);
-        if ($this->config->has('passphrase')) {
-            $this->passphrase = $this->config->get('passphrase');
+        if (isset($this->config['passphrase'])) {
+            $this->passphrase = $this->config['passphrase'];
         }
-        if ($this->config->has('privateKey')) {
-            $this->privateKey = $this->config->get('privateKey');
-        } elseif ($this->config->has('privateKeyFile')) {
-            $privateKeyFile = Loader::getFilePath(FILE_PATH_CONFIG, $this->config->get('privateKeyFile', 'private_key.pem'));
+        if (isset($this->config['privateKey'])) {
+            $this->privateKey = $this->config['privateKey'];
+        } elseif (isset($this->config['privateKeyFile'])) {
+            $privateKeyFile = Loader::getFilePath(FILE_PATH_CONFIG, $this->config['privateKeyFile']);
             if ($privateKeyFile && is_readable($privateKeyFile) && is_file($privateKeyFile)) {
                 $this->privateKey = @file_get_contents($privateKeyFile);
             } else {
-                throw new JWTPrivateKeyFileNotFound($this->config->get('privateKeyFile'));
+                throw new JWTPrivateKeyFileNotFound($this->config['privateKeyFile']);
             }
         }
         $this->checkToken();
@@ -142,16 +144,16 @@ class JWT implements Storage
         $JWTBody = $this->data['data'] = array_merge(
             $this->data['data'],
             [
-                'iss' => $this->config->get('issuer'),
+                'iss' => $this->config['issuer'],
                 'iat' => time(),
-                'exp' => time() + $this->config->get('timeout'),
+                'exp' => time() + $this->config['timeout'],
                 'sub' => $this->data['identity'],
             ]
         );
         $out['token'] = $this->buildToken($JWTBody);
-        if ($this->config->get('refresh')) {
+        if ($this->config['refresh']) {
             $out['refresh'] = $this->buildToken(array_merge($JWTBody, [
-                'exp' => $JWTBody['iat'] + $this->config->get('refresh'),
+                'exp' => $JWTBody['iat'] + $this->config['refresh'],
             ]), $this->buildRefreshTokenKey($this->passphrase));
         }
         $this->writeCookie = false;
@@ -166,9 +168,9 @@ class JWT implements Storage
             setcookie('hazaar-auth-refresh', '', time() - 3600, '/', $_SERVER['HTTP_HOST'], true, true);
         } elseif (true === $this->writeCookie) {
             $tokens = $this->getToken();
-            setcookie('hazaar-auth-token', $tokens['token'], time() + $this->config->get('timeout'), '/', $_SERVER['HTTP_HOST'], true, true);
+            setcookie('hazaar-auth-token', $tokens['token'], time() + $this->config['timeout'], '/', $_SERVER['HTTP_HOST'], true, true);
             if (isset($tokens['refresh'])) {
-                setcookie('hazaar-auth-refresh', $tokens['refresh'], time() + $this->config->get('refresh'), '/', $_SERVER['HTTP_HOST'], true, true);
+                setcookie('hazaar-auth-refresh', $tokens['refresh'], time() + $this->config['refresh'], '/', $_SERVER['HTTP_HOST'], true, true);
             }
         }
     }
@@ -180,7 +182,7 @@ class JWT implements Storage
      */
     private function refresh(string $refreshToken, ?array &$JWTRefreshBody = null): bool
     {
-        if (!$this->config->get('refresh')) {
+        if (!$this->config['refresh']) {
             return false;
         }
         if (!$this->validateToken($refreshToken, $JWTRefreshBody, $this->buildRefreshTokenKey($this->passphrase))) {
@@ -215,7 +217,7 @@ class JWT implements Storage
         if ($tokenSignature !== $this->sign($JWTHeader, $JWTBody, $passphrase)) {
             return false;
         }
-        if (!($JWTBody['iss'] === $this->config->get('issuer')
+        if (!($JWTBody['iss'] === $this->config['issuer']
             && $JWTBody['exp'] > time())) {
             return false;
         }
@@ -265,7 +267,7 @@ class JWT implements Storage
     private function buildToken(array $JWTBody, ?string $passphrase = null): string
     {
         $JWTHeader = [
-            'alg' => $this->config->get('alg'),
+            'alg' => $this->config['alg'],
             'typ' => 'JWT',
         ];
 
@@ -277,9 +279,10 @@ class JWT implements Storage
     private function buildRefreshTokenKey(string $passphrase): string
     {
         $fingerprint = $_SERVER['HTTP_USER_AGENT'];
-        if ($this->config->get('fingerprintIP')
-            && ($app = Application::getInstance())
-            && ($request = $app->request) instanceof HTTP
+        $request = Application\Request\Loader::load();
+        if (isset($this->config['fingerprintIP'])
+            && true === $this->config['fingerprintIP']
+            && $request instanceof HTTP
             && ($clientIP = $request->getRemoteAddr())) {
             $fingerprint .= ':'.$clientIP;
         }

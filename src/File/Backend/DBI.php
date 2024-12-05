@@ -7,13 +7,16 @@ namespace Hazaar\File\Backend;
 use Hazaar\Date;
 use Hazaar\DBI\Adapter;
 use Hazaar\File\Manager;
-use Hazaar\Map;
 
 class DBI implements Interfaces\Backend, Interfaces\Driver
 {
     public string $separator = '/';
     protected Manager $manager;
-    private Map $options;
+
+    /**
+     * @var array<mixed>
+     */
+    private array $options;
     private Adapter $db;
 
     /**
@@ -22,9 +25,9 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
     private array $rootObject;
 
     /**
-     * @param array<mixed>|Map $options
+     * @param array<mixed> $options
      */
-    public function __construct(array|Map $options, Manager $manager)
+    public function __construct(array $options, Manager $manager)
     {
         $this->manager = $manager;
         $defaults = [
@@ -32,12 +35,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
             'initialise' => true,
             'chunkSize' => 4194304,
         ];
-        if ($options instanceof Map) {
-            $options->enhance($defaults);
-        } else {
-            $options = new Map($defaults, $options);
-        }
-        $this->options = $options;
+        $this->options = array_merge_recursive($defaults, $options);
         if (is_string($this->options['chunkSize'])) {
             $this->options['chunkSize'] = (int) bytes_str($this->options['chunkSize']);
         }
@@ -105,7 +103,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
         // Remove headless chunks
         $select = $this->db->table('hz_file_chunk', 'fc')
             ->leftjoin('hz_file', ['f.start_chunk' => ['$ref' => 'fc.id']], 'f')
-            ->find(['f.id' => null, 'fc.parent' => null], 'fc.id')
+            ->find(['f.id' => null, 'fc.parent' => null], ['fc.id'])
         ;
         while ($row = $select->fetch()) {
             $this->cleanChunk($row['id']);

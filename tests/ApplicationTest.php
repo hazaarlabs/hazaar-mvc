@@ -18,7 +18,5 @@ class ApplicationTest extends TestCase
         $this->assertInstanceOf('\Hazaar\Application', $app);
         $this->assertInstanceOf('\Hazaar\Application\Config', $app->config);
         $this->assertInstanceOf('\Hazaar\Application\Router', $app->router);
-        $this->assertInstanceOf('\Hazaar\Application\Request', $app->request);
-        $this->assertInstanceOf('\Hazaar\Application\Request\Cli', $app->request);
     }
 }

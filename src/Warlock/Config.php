@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hazaar\Warlock;
 
 use Hazaar\Application;
-use Hazaar\Map;
 
 class Config extends Application\Config
 {
@@ -110,21 +109,24 @@ class Config extends Application\Config
     ];
 
     /**
-     * @param null|array<mixed>|Map $config
+     * @param array<mixed> $config
      */
-    public function __construct(null|array|Map $config = null, ?string $env = APPLICATION_ENV)
+    public function __construct(array $config = [], ?string $env = APPLICATION_ENV)
     {
         $defaultConfig = self::$defaultConfig;
         // @phpstan-ignore constant.notFound
         $defaultConfig['sys']['applicationName'] = APPLICATION_NAME;
-        parent::__construct('warlock', $env, $defaultConfig);
-        if (!$this->sys['id']) {
-            $this->sys['id'] = $this->loadSystemID();
-        }
-        if (!$this->loaded()) {
+
+        try {
+            parent::__construct('warlock', $env, $defaultConfig);
+        } catch (\Exception $e) {
             throw new \Exception('There is no warlock configuration file.  Warlock is disabled!');
         }
-        if (null !== $config) {
+        
+        if (!isset($this['sys']['id'])) {
+            $this['sys']['id'] = $this->loadSystemID();
+        }
+        if (count($config) > 0) {
             $this->extend($config);
         }
     }
@@ -139,7 +141,7 @@ class Config extends Application\Config
             }
         }
         $systemID = md5(implode('', $hashes));
-        $systemIDFile = $this->sys['runtimePath'].'/'.$this->sys['IDFile'];
+        $systemIDFile = $this['sys']['runtimePath'].'/'.$this['sys']['IDFile'];
         file_put_contents($systemIDFile, $systemID);
 
         return $systemID;
@@ -147,7 +149,7 @@ class Config extends Application\Config
 
     private function loadSystemID(): string
     {
-        $systemIDFile = $this->sys['runtimePath'].'/'.$this->sys['IDFile'];
+        $systemIDFile = $this['sys']['runtimePath'].'/'.$this['sys']['IDFile'];
         if (file_exists($systemIDFile)) {
             return file_get_contents($systemIDFile);
         }

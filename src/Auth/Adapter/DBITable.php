@@ -7,7 +7,6 @@ namespace Hazaar\Auth\Adapter;
 use Hazaar\Auth\Adapter;
 use Hazaar\DBI\Adapter as DBIAdapter;
 use Hazaar\DBI\Table;
-use Hazaar\Map;
 
 class DBITable extends Adapter implements \Hazaar\Auth\Interfaces\Adapter
 {
@@ -19,17 +18,17 @@ class DBITable extends Adapter implements \Hazaar\Auth\Interfaces\Adapter
      */
     public function __construct(
         DBIAdapter $dbi,
-        array|Map $config = []
+        array $config = []
     ) {
         parent::__construct($config);
-        $this->options->enhance([
+        array_enhance($this->options, [
             'table' => null,
             'fields' => [
                 'identity' => 'identity',
                 'credential' => 'credential',
             ],
         ]);
-        $this->table = $dbi->table($this->options->get('table', 'users'));
+        $this->table = $dbi->table($this->options['table'] ?? 'users');
     }
 
     /*
@@ -44,7 +43,7 @@ class DBITable extends Adapter implements \Hazaar\Auth\Interfaces\Adapter
      */
     public function queryAuth(string $identity, array $extra = []): array|bool
     {
-        $fields = array_merge($this->options->get('fields')->values(), $extra);
+        $fields = array_merge(array_values($this->options['fields']), $extra);
         $criteria = [
             $this->options['fields']['identity'] => $identity,
         ];

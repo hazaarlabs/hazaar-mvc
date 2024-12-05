@@ -19,7 +19,6 @@ use Hazaar\Application\Request\HTTP;
 use Hazaar\Auth\Adapter;
 use Hazaar\Auth\Interfaces\Storage;
 use Hazaar\Cache as HazaarCache;
-use Hazaar\Map;
 
 /**
  * @brief       Session based authentication adapter
@@ -54,7 +53,11 @@ class Cache implements Storage
      * @var array<string,mixed>
      */
     private array $data = [];
-    private Map $config;
+
+    /**
+     * @var array<string,mixed>
+     */
+    private array $config;
     private ?string $sessionID = null;
 
     /**
@@ -64,17 +67,19 @@ class Cache implements Storage
         'apc',
     ];
 
-    public function __construct(Map $config)
+    /**
+     * @param array<string,mixed> $config
+     */
+    public function __construct(array $config)
     {
-        $this->config = $config;
-        $this->config->enhance([
+        $this->config = array_enhance($config, [
             'backend' => 'file',
             'usePragma' => false,
             'lifetime' => 3600, // 1 hour
             'name' => 'hazaar-auth',
         ]);
-        if (array_key_exists($config['name'], $_COOKIE)) {
-            $this->initSession($_COOKIE[$config['name']]);
+        if (array_key_exists($this->config['name'], $_COOKIE)) {
+            $this->initSession($_COOKIE[$this->config['name']]);
             $this->data = $this->session->get('data', []);
         }
     }

@@ -11,8 +11,6 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI;
 
-use Hazaar\Map;
-
 /**
  * @brief Relational Database Interface - Table Class
  *
@@ -112,22 +110,12 @@ class Table implements \Iterator
     /**
      * Search for records on a table with the provided search criteria.
      *
-     * @param mixed $criteria the search criteria to find records for
-     * @param mixed $fields   a field definition
+     * @param array<mixed> $criteria the search criteria to find records for
+     * @param array<mixed> $fields   a field definition
      */
-    public function find(mixed $criteria = [], mixed $fields = []): Table
+    public function find(array $criteria = [], array $fields = []): Table
     {
-        if ($criteria instanceof Map) {
-            $criteria = $criteria->toArray();
-        } elseif (!is_array($criteria)) {
-            $criteria = [$criteria];
-        }
         $this->criteria = $criteria;
-        if ($fields instanceof Map) {
-            $fields = $fields->toArray();
-        } elseif (!is_array($fields)) {
-            $fields = [$fields];
-        }
         if (count($fields) > 0) {
             $this->fields = $fields;
         }

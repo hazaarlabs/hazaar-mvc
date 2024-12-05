@@ -14,7 +14,11 @@ class Hazaar implements Interfaces\Backend, Interfaces\Driver
 {
     public string $separator = '/';
     protected Manager $manager;
-    private Map $options;
+
+    /**
+     * @var array<string, mixed>
+     */
+    private array $options;
 
     /**
      * @var array<string, mixed>
@@ -31,10 +35,10 @@ class Hazaar implements Interfaces\Backend, Interfaces\Driver
     /**
      * @param array<string, mixed> $options
      */
-    public function __construct(array|Map $options, Manager $manager)
+    public function __construct(array $options, Manager $manager)
     {
         $this->manager = $manager;
-        $this->options = new Map([
+        $this->options = array_merge([
             'url' => null,
         ], $options);
         $this->client = new Client();

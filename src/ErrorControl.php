@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Hazaar\Application;
 use Hazaar\Controller\Response\Stream;
-use Hazaar\Logger\Frontend;
 
 /**
  * This function handles errors and terminates the script execution.
@@ -113,66 +112,6 @@ function dieDieDie(string|Throwable $err): void
     }
 
     exit($msg);
-}
-
-/**
- * Custom error handler function.
- *
- * This function is responsible for handling PHP errors and displaying appropriate error messages.
- *
- * @param int         $errno   the error number
- * @param string      $errstr  the error message
- * @param null|string $errfile the file where the error occurred
- * @param null|int    $errline the line number where the error occurred
- *
- * @return bool returns true to prevent the default PHP error handler from being called
- */
-function errorHandler(int $errno, string $errstr, ?string $errfile = null, ?int $errline = null): bool
-{
-    if ($errno >= 500) {
-        Frontend::e('CORE', "Error #{$errno} on line {$errline} of file {$errfile}: {$errstr}");
-    }
-
-    errorAndDie($errno, $errstr, $errfile, $errline, debug_backtrace());
-
-    return true;
-}
-
-/**
- * Exception handler function.
- *
- * This function is responsible for handling exceptions thrown in the application.
- * If the exception code is greater than or equal to 500, it logs the error message
- * along with the code, line number, and file name. Then it calls the `errorAndDie()`
- * function to handle the error further.
- *
- * @param Throwable $e the exception object
- */
-function exceptionHandler(Throwable $e): void
-{
-    if ($e->getCode() >= 500) {
-        Frontend::e('CORE', 'Error #'.$e->getCode().' on line '.$e->getLine().' of file '.$e->getFile().': '.$e->getMessage());
-    }
-    errorAndDie($e);
-}
-
-/**
- * Shutdown handler function.
- *
- * This function is responsible for executing the shutdown tasks registered in the global variable $__shutdownTasks.
- * It checks if the script is running in CLI mode or if headers have already been sent before executing the tasks.
- */
-function shutdownHandler(): void
-{
-    if (($error = error_get_last()) !== null) {
-        if (1 == ini_get('display_errors') && 'cli' !== php_sapi_name()) {
-            ob_clean();
-        }
-        match ($error['type']) {
-            E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR => errorAndDie($error, debug_backtrace()),
-            default => null
-        };
-    }
 }
 
 /**

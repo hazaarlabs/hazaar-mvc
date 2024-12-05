@@ -6,8 +6,6 @@ namespace Hazaar\Tests;
 
 use Hazaar\Application;
 use Hazaar\File\BTree;
-use Hazaar\File;
-use Hazaar\Map;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -36,16 +34,6 @@ class HelperTest extends TestCase
         $this->assertArrayHasKey('child1', $result['root']);
         $this->assertIsArray($result['root']['child1']);
         $this->assertArrayHasKey('child7', $result['root']['child6']);
-    }
-
-    public function testMapClass(): void
-    {
-        $map = new Map(['key' => 'value']);
-        $this->assertTrue($map->has('key'));
-        $this->assertEquals('value', $map->get('key'));
-        $this->assertEquals('missing', $map->get('test', 'missing'));
-        $this->assertArrayHasKey('key', $map->toArray());
-        $this->assertEquals('value', $map->toArray()['key']);
     }
 
     public function testBTreeFile(): void

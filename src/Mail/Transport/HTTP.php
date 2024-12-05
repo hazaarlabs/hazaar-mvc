@@ -2,7 +2,6 @@
 
 namespace Hazaar\Mail\Transport;
 
-use Hazaar\Exception;
 use Hazaar\Mail\Transport;
 use Hazaar\Mail\TransportMessage;
 
@@ -35,7 +34,7 @@ class HTTP extends Transport
 
     public function send(TransportMessage $message): mixed
     {
-        $url = $this->options->get('url');
+        $url = $this->options['url'] ?? '';
         $data = [];
         foreach ($this->schema as $key => $value) {
             if ('$' === substr($value, 0, 1)) {

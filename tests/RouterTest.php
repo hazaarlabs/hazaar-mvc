@@ -18,7 +18,10 @@ use PHPUnit\Framework\TestCase;
  */
 class RouterTest extends TestCase
 {
-    private Config $config;
+    /**
+     * @var array<mixed>
+     */
+    private array $config;
 
     public function setUp(): void
     {
@@ -27,7 +30,7 @@ class RouterTest extends TestCase
                 'controller' => 'index',
                 'action' => 'index',
             ],
-        ]);
+        ])->toArray();
     }
 
     public function testBasicRouterWithBasicController(): void
