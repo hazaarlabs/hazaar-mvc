@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hazaar\DBI\DBD;
 
 use Hazaar\DBI\Adapter;
-use Hazaar\Map;
 use PgSql\Connection;
 
 class Pgsql extends BaseDriver
@@ -24,9 +23,9 @@ class Pgsql extends BaseDriver
     /**
      * Constructor for the Pgsql class.
      *
-     * @param Map $config the configuration settings for the Pgsql class
+     * @param array<mixed> $config the configuration settings for the Pgsql class
      */
-    public function __construct(Adapter $adapter, ?Map $config = null)
+    public function __construct(Adapter $adapter, array $config = [])
     {
         parent::__construct($adapter, $config);
         $this->schemaName = 'public';
@@ -509,5 +508,4 @@ class Pgsql extends BaseDriver
 
         return false !== $this->exec($sql);
     }
-
 }

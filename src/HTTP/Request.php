@@ -5,13 +5,22 @@ declare(strict_types=1);
 namespace Hazaar\HTTP;
 
 use Hazaar\Auth\Adapter;
-use Hazaar\Exception;
 use Hazaar\HTTP\Exception\CertificateNotFound;
 use Hazaar\HTTP\Exception\HostNotFound;
-use Hazaar\Map;
 use Hazaar\XML\Element;
 
-class Request extends Map
+/**
+ * HTTP Request class.
+ *
+ * This class is used to create and manage HTTP requests.  It is used by the `Client` class to create and send requests to
+ * remote servers.  The `Request` class is used to create the request and the `Client` class is used to send the request and
+ * receive the response.
+ *
+ * The `Request` class is used to create the request and the `Client` class is used to send the request and receive the response.
+ *
+ * @implements \ArrayAccess<string,mixed>
+ */
+class Request implements \ArrayAccess
 {
     public string $method = 'GET';
 
@@ -36,6 +45,11 @@ class Request extends Map
     private bool $dontEncodeURL = false;
     private int $jsonEncodeFlags = 0;
     private int $jsonEncodeDepth = 512;
+
+    /**
+     * @var array<mixed>
+     */
+    private array $data = [];
 
     /**
      * HTTP request constructor.
@@ -347,7 +361,7 @@ class Request extends Map
                 case 'application/json' :
                 case 'application/javascript' :
                 case 'application/x-javascript' :
-                    $body = $this->toJSON(false, $this->jsonEncodeFlags, $this->jsonEncodeDepth);
+                    $body = $this->toJSON($this->jsonEncodeFlags, $this->jsonEncodeDepth);
 
                     break;
 
@@ -517,5 +531,51 @@ class Request extends Map
     {
         $this->jsonEncodeFlags = $flags;
         $this->jsonEncodeDepth = $depth;
+    }
+
+    public function toJSON(int $flags = 0, int $depth = 512): string
+    {
+        return json_encode($this->toArray(), $flags, $depth);
+    }
+
+    public function offsetExists(mixed $offset): bool
+    {
+        return array_key_exists($offset, $this->data);
+    }
+
+    public function offsetGet(mixed $offset): mixed
+    {
+        return ake($this->data, $offset);
+    }
+
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        $this->data[$offset] = $value;
+    }
+
+    public function offsetUnset(mixed $offset): void
+    {
+        unset($this->data[$offset]);
+    }
+
+    public function count(): int
+    {
+        return count($this->data);
+    }
+
+    /**
+     * @return array<string,string>
+     */
+    public function toArray(): array
+    {
+        return $this->data;
+    }
+
+    /**
+     * @param array<string,string> $data
+     */
+    public function populate(array $data): void
+    {
+        $this->data = $data;
     }
 }

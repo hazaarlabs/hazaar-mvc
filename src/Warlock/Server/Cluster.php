@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Server;
 
-use Hazaar\Map;
 use Hazaar\Warlock\Server\Client\Peer;
 
 class Cluster
@@ -14,9 +13,16 @@ class Cluster
      */
     public array $peers = [];
     private Logger $log;
-    private Map $config;
 
-    public function __construct(Logger $log, Map $config)
+    /**
+     * @var array<mixed>
+     */
+    private array $config;
+
+    /**
+     * @param array<mixed> $config
+     */
+    public function __construct(Logger $log, array $config)
     {
         $this->log = $log;
         $this->config = $config;
@@ -28,9 +34,14 @@ class Cluster
             return;
         }
         $this->log->write(W_INFO, 'Starting Cluster Manager');
-        if ($this->config->has('peers')) {
-            Peer::$reconnectTimeout = $this->config->get('peerReconnect', 30);
-            $peers = $this->config->get('peers');
+        if (isset($this->config['peers'])) {
+            Peer::$reconnectTimeout = $this->config['peerReconnect'] ?? 30;
+            $peers = $this->config['peers'];
+            if (is_array($peers) && 0 === count($peers)) {
+                $this->log->write(W_INFO, 'No peers defined in cluster configuration');
+
+                return;
+            }
             foreach ($peers as $peerConfig) {
                 if (false === strpos(':', $peerConfig)) {
                     $peerConfig .= ':8000';

@@ -185,4 +185,10 @@ class Timer
 
         return $results;
     }
+
+    public function reset(): void
+    {
+        $this->timers = [];
+        $this->start('total');
+    }
 }

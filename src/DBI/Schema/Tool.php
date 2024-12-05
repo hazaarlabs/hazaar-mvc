@@ -4,18 +4,14 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\Schema;
 
-use Hazaar\Application;
 use Hazaar\Application\Request\CLI;
 use Hazaar\DBI\Adapter;
 
 class Tool
 {
-    public static function run(Application $application): int
+    public static function run(CLI $request): int
     {
-        if (!$application->request instanceof CLI) {
-            return 255;
-        }
-        $application->request->setOptions([
+        $request->setOptions([
             'help' => ['h', 'help', null, 'Display this help message.'],
             'test' => ['t', 'test', null, 'Enable test mode.  Any write actions will be simulated but not applied to the database.'],
             'force_sync' => ['f', 'force-sync', null, 'Force the data sync after migration completes, even if no changes are made.', 'migrate'],
@@ -23,7 +19,7 @@ class Tool
             'force_init' => [null, 'force-reinitialise', null, 'Force reinitialise the database.', 'migrate'],
             'applied' => ['a', 'applied', null, 'Only list versions applied to the current schema.', 'list'],
         ]);
-        $application->request->setCommands([
+        $request->setCommands([
             'list' => ['List the available schema versions.'],
             'current' => ['Display the current schema version.'],
             'migrate' => ['Migrate the database to a specific version (default: latest).', 'version'],
@@ -34,12 +30,12 @@ class Tool
             'schema' => ['Display the current database schema.'],
             'checkpoint' => ['Checkpoint database migrations.  Creates a new migration file with consolidated changed.'],
         ]);
-        if (!($command = $application->request->getCommand($commandArgs))) {
-            $application->request->showHelp();
+        if (!($command = $request->getCommand($commandArgs))) {
+            $request->showHelp();
 
             return 1;
         }
-        $options = $application->request->getOptions();
+        $options = $request->getOptions();
         $code = 1;
 
         try {

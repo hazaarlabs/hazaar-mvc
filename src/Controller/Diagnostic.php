@@ -37,11 +37,11 @@ class Diagnostic extends Action
      * This method overrides the parent initialize method to set the response type based on
      * various conditions such as environment variables, the PHP SAPI, and request headers.
      *
-     * @param null|Request $request the request object, or null if not available
+     * @param Request $request the request object, or null if not available
      *
      * @return null|Response the response object, or null if not available
      */
-    public function initialize(?Request $request = null): ?Response
+    public function initialize(Request $request): ?Response
     {
         $response = parent::initialize($request);
         if (getenv('HAZAAR_SID')) {

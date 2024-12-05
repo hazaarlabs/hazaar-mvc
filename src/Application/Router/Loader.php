@@ -5,13 +5,20 @@ declare(strict_types=1);
 namespace Hazaar\Application\Router;
 
 use Hazaar\Application\Request;
-use Hazaar\Map;
 
 abstract class Loader
 {
-    protected Map $config;
+    /**
+     * @var array<mixed>
+     */
+    protected array $config;
 
-    public function __construct(Map $config)
+    /**
+     * Loader constructor.
+     *
+     * @param array<mixed> $config
+     */
+    public function __construct(array $config)
     {
         $this->config = $config;
     }

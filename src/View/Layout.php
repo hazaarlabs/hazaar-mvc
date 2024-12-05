@@ -81,7 +81,7 @@ class Layout extends View
      */
     public function render(?array $data = []): string
     {
-        if (true === $this->application->config['view']['prepare']) {
+        if ($this->application->config['view']['prepare'] ?? false) {
             $this->prepare();
         }
 

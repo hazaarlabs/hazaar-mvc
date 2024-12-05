@@ -25,8 +25,11 @@ use Hazaar\Map;
  * @detail      The config class loads settings from a configuration file and configures the system ready
  *              for the application to run.  By default the config file used is application.ini and is stored
  *              in the config folder of the application path.
+ *
+ * @implements  \ArrayAccess<string, mixed>
+ * @implements  \Iterator<string, mixed>
  */
-class Config extends Map
+class Config implements \ArrayAccess, \Iterator
 {
     /**
      * @var array<string>
@@ -45,7 +48,6 @@ class Config extends Map
      * @var array<mixed>
      */
     private array $global = [];
-    private bool $loaded = false;
 
     /**
      * @var array<string>
@@ -58,6 +60,13 @@ class Config extends Map
     private array $includes = [];
 
     /**
+     * The configuration options for the selected environment.
+     *
+     * @var array<mixed>
+     */
+    private array $options = [];
+
+    /**
      * @detail      The application configuration constructor loads the settings from the configuration file specified
      *              in the first parameter.  It will use the second parameter as the starting point and is intended to
      *              allow different operating environments to be configured from a single configuration file.
@@ -66,49 +75,20 @@ class Config extends Map
      * @param string       $env        The application environment to read settings for.  Usually `development`
      *                                 or `production`.
      * @param array<mixed> $defaults   initial defaut values
-     * @param string       $pathType   the search path type to look for configuration files
      */
     protected function __construct(
         ?string $sourceFile = null,
         ?string $env = null,
         array $defaults = [],
-        string $pathType = FILE_PATH_CONFIG,
         bool $overrideNamespaces = false
     ) {
-        $config = null;
         if (!$env) {
             $env = APPLICATION_ENV;
         }
-        $this->env = $env;
-        if (null !== $sourceFile && ($this->source = trim($sourceFile))) {
-            if ($config = $this->load($this->source, $defaults, $pathType, Config::$overridePaths, $overrideNamespaces)) {
-                $this->loaded = ($config->count() > 0);
-            } else {
-                $config = $defaults;
-            }
+        if (null === $sourceFile || !($this->source = trim($sourceFile))) {
+            throw new \Exception('No configuration file specified');
         }
-        $filters = [
-            'out' => [
-                [
-                    'callback' => [$this, 'parseString'],
-                ],
-            ],
-            'in' => [
-                [
-                    'callback' => function ($value) {
-                        if ('true' === $value) {
-                            return true;
-                        }
-                        if ('false' === $value) {
-                            return false;
-                        }
-
-                        return $value;
-                    },
-                ],
-            ],
-        ];
-        parent::__construct($config, null, $filters);
+        $this->options = $this->load($this->source, $env, $defaults, $overrideNamespaces);
     }
 
     /**
@@ -151,13 +131,11 @@ class Config extends Map
      * @param string       $env        The application environment to read settings for.  Usually `development`
      *                                 or `production`.
      * @param array<mixed> $defaults   initial defaut values
-     * @param string       $pathType   the search path type to look for configuration files
      */
     public static function getInstance(
         ?string $sourceFile = null,
         ?string $env = null,
         array $defaults = [],
-        string $pathType = FILE_PATH_CONFIG,
         bool $overrideNamespaces = false
     ): Config {
         $sourceKey = $sourceFile.'_'.($env ?? APPLICATION_ENV);
@@ -165,44 +143,41 @@ class Config extends Map
             return self::$instances[$sourceKey];
         }
 
-        return self::$instances[$sourceKey] = new Config($sourceFile, $env, $defaults, $pathType, $overrideNamespaces);
+        return self::$instances[$sourceKey] = new Config($sourceFile, $env, $defaults, $overrideNamespaces);
     }
 
     /**
      * Loads a configuration file and returns the configuration options.
      *
-     * @param string        $source             the name of the configuration file to load
-     * @param array<mixed>  $defaults           (optional) The default configuration options
-     * @param string        $pathType           (optional) The type of path to use for loading the file
-     * @param array<string> $overridePaths      (optional) An array of override paths to search for the file
-     * @param bool          $overrideNamespaces (optional) Whether to override namespaces when searching for the file
+     * @param string       $source             the name of the configuration file to load
+     * @param string       $env                (optional) The environment to load the configuration for. If null, the default environment will be used.
+     * @param array<mixed> $defaults           (optional) The default configuration options
+     * @param bool         $overrideNamespaces (optional) Whether to override namespaces when searching for the file
      *
-     * @return bool|Map returns a Map object containing the configuration options, or false if the file could not be loaded
+     * @return array<mixed> the configuration options
      */
     public function load(
         string $source,
+        string $env = APPLICATION_ENV,
         array $defaults = [],
-        string $pathType = FILE_PATH_CONFIG,
-        array $overridePaths = [],
         bool $overrideNamespaces = false
-    ): bool|Map {
+    ): array {
         $options = [];
         $sources = [['name' => $source, 'ns' => true]];
-        if ($overridePaths) {
-            foreach ($overridePaths as $override) {
-                $sources[] = ['name' => $override.DIRECTORY_SEPARATOR.$source, 'ns' => $overrideNamespaces];
-            }
+        $this->env = $env;
+        foreach (Config::$overridePaths as $override) {
+            $sources[] = ['name' => $override.DIRECTORY_SEPARATOR.$source, 'ns' => $overrideNamespaces];
         }
         foreach ($sources as &$sourceInfo) {
             $sourceFile = null;
             // If we have an extension, just use that file.
             if (false !== ake(pathinfo($sourceInfo['name']), 'extension', false)) {
-                $sourceFile = Loader::getFilePath($pathType, $sourceInfo['name']);
+                $sourceFile = Loader::getFilePath(FILE_PATH_CONFIG, $sourceInfo['name']);
             } else { // Otherwise, search for files with supported extensions
                 $extensions = ['json', 'ini']; // Ordered by preference
                 foreach ($extensions as $ext) {
                     $filename = $sourceInfo['name'].'.'.$ext;
-                    if ($sourceFile = Loader::getFilePath($pathType, $filename)) {
+                    if ($sourceFile = Loader::getFilePath(FILE_PATH_CONFIG, $filename)) {
                         break;
                     }
                 }
@@ -218,29 +193,20 @@ class Config extends Map
             $options[] = (true === $sourceInfo['ns']) ? $sourceData : [$this->env => $sourceData];
         }
         if (!count($options) > 0) {
-            return false;
+            throw new \Exception('No valid configuration files found');
         }
-        $combined = [];
+        $this->global = [];
         foreach ($options as $o) {
-            if (true === ake($combined, 'final')) {
+            if (true === ake($this->global, 'final')) {
                 break;
             }
-            $combined = array_replace_recursive($combined, $o);
+            $this->global = array_replace_recursive($this->global, $o);
         }
-        $config = new Map($defaults);
-        if (!$this->loadConfigOptions($combined, $config)) {
-            return false;
+        if (!$this->loadConfigOptions($defaults, $this->global, $env)) {
+            throw new \Exception('Failed to load configuration options');
         }
 
-        return $config;
-    }
-
-    /**
-     * Check whether the config was loaded from the source file.
-     */
-    public function loaded(): bool
-    {
-        return $this->loaded;
+        return $defaults;
     }
 
     /**
@@ -287,7 +253,7 @@ class Config extends Map
      */
     public function toString(): string
     {
-        $config = $this->toDotNotation();
+        $config = array_to_dot_notation($this->options);
         $output = "[{$this->env}]\n";
         foreach ($config as $key => $value) {
             $output .= "{$key}={$value}\n";
@@ -297,64 +263,13 @@ class Config extends Map
     }
 
     /**
-     * Parses a string by replacing placeholders with their corresponding values.
-     *
-     * @param mixed  $elem the string to be parsed
-     * @param string $key  the key used for parsing the string
-     *
-     * @return mixed the parsed string
-     */
-    public function parseString(mixed $elem, string $key): mixed
-    {
-        $allowedValues = [
-            'GLOBALS' => $GLOBALS,
-            '_SERVER' => &$_SERVER,
-            '_GET' => &$_GET,
-            '_POST' => &$_POST,
-            '_FILES' => &$_FILES,
-            '_COOKIE' => &$_COOKIE,
-            '_SESSION' => &$_SESSION,
-            '_REQUEST' => &$_REQUEST,
-            '_ENV' => &$_ENV,
-        ];
-        if ($app = Application::getInstance()) {
-            $allowedValues['_APP'] = &$app->GLOBALS;
-        }
-        if (is_string($elem) && preg_match_all('/%([\w\[\]]*)%/', $elem, $matches)) {
-            foreach ($matches[0] as $index => $match) {
-                if (false !== strpos($matches[1][$index], '[')) {
-                    parse_str($matches[1][$index], $result);
-                    $parts = explode('.', key(array_to_dot_notation($result)));
-                    if (!array_key_exists($parts[0], $allowedValues)) {
-                        return '';
-                    }
-                    $value = &$allowedValues;
-                    foreach ($parts as $part) {
-                        if (!($value && array_key_exists($part, $value))) {
-                            return '';
-                        }
-                        $value = &$value[$part];
-                    }
-                } else {
-                    $value = defined($matches[1][$index]) ? constant($matches[1][$index]) : '';
-                }
-                $elem = preg_replace('/'.preg_quote($match, '/').'/', $value, $elem, 1);
-            }
-        }
-
-        return $elem;
-    }
-
-    /**
      * Converts the configuration object to a secure array by removing the secure keys.
      *
      * @return array<mixed> the configuration array without the secure keys
      */
     public function toSecureArray(): array
     {
-        $config = parent::toArray(false);
-
-        return array_diff_key($config, array_flip($this->secureKeys));
+        return array_diff_key($this->options, array_flip($this->secureKeys));
     }
 
     public function save(): bool
@@ -366,8 +281,7 @@ class Config extends Map
         if (!array_key_exists($this->env, $currentData)) {
             return false;
         }
-        $configData = $this->toArray(false, false);
-        $data = array_intersect_key(array_merge(array_combine(array_fill(0, count($this->includes), 'include'), $this->includes), $configData), $currentData[$this->env]);
+        $data = array_intersect_key(array_merge(array_combine(array_fill(0, count($this->includes), 'include'), $this->includes), $this->options), $currentData[$this->env]);
         if (array_key_exists('include', $data)) {
             $includes = is_array($data['include']) ? $data['include'] : [$data['include']];
 
@@ -375,11 +289,78 @@ class Config extends Map
              * This magic line will return anything that does not already exist in the current data or any
              * of the included config environments.
              */
-            $data = array_merge($data, call_user_func_array('array_diff_key', array_values(array_merge([$configData], $currentData))));
+            $data = array_merge($data, call_user_func_array('array_diff_key', array_values(array_merge([$this->options], $currentData))));
         }
         $currentData[$this->env] = array_merge($currentData[$this->env], $data);
 
         return file_put_contents($this->sourceFile, json_encode($currentData, JSON_PRETTY_PRINT)) > 0;
+    }
+
+    public function offsetExists(mixed $offset): bool
+    {
+        return array_key_exists($offset, $this->options);
+    }
+
+    public function offsetGet(mixed $offset): mixed
+    {
+        return ake($this->options, $offset);
+    }
+
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        $this->options[$offset] = $value;
+    }
+
+    public function offsetUnset(mixed $offset): void
+    {
+        unset($this->options[$offset]);
+    }
+
+    /**
+     * Converts the configuration object to an array.
+     *
+     * @return array<mixed> the configuration array
+     */
+    public function toArray(): array
+    {
+        return $this->options;
+    }
+
+    public function current(): mixed
+    {
+        return current($this->options);
+    }
+
+    public function next(): void
+    {
+        next($this->options);
+    }
+
+    public function key(): mixed
+    {
+        return key($this->options);
+    }
+
+    public function valid(): bool
+    {
+        return null !== key($this->options);
+    }
+
+    public function rewind(): void
+    {
+        reset($this->options);
+    }
+
+    /**
+     * Extends the configuration options with the given configuration array.
+     *
+     * This method merges the given configuration array with the existing configuration options.
+     *
+     * @param array<mixed> $config the configuration array to extend the existing configuration options
+     */
+    public function extend(array $config): void
+    {
+        $this->options = array_merge_recursive($this->options, $config);
     }
 
     /**
@@ -453,26 +434,23 @@ class Config extends Map
     /**
      * Loads the configuration options into the provided Map object based on the given options array and environment.
      *
+     * @param array<mixed> $config  the config to store the configuration options
      * @param array<mixed> $options the array of configuration options
-     * @param Map          $config  the Map object to store the configuration options
      * @param null|string  $env     The environment to load the configuration for. If null, the default environment will be used.
      *
      * @return bool returns true if the configuration options were loaded successfully, false otherwise
      */
-    private function loadConfigOptions(array $options, Map $config, ?string $env = null): bool|Map
+    private function loadConfigOptions(array &$config, array $options, ?string $env): bool
     {
-        if (!$env) {
-            $env = $this->env;
-        }
         if (!array_key_exists($env, $options)) {
             return false;
         }
-        $this->global = array_merge($this->global, $options);
+
         foreach ($options[$env] as $key => $values) {
             if ('include' === $key) {
                 $this->includes = is_array($values) ? $values : [$values];
                 foreach ($this->includes as $includeEnvironment) {
-                    $this->loadConfigOptions($options, $config, $includeEnvironment);
+                    $this->loadConfigOptions($config, $options, $includeEnvironment);
                 }
             } elseif ('import' === $key) {
                 if (!is_array($values)) {
@@ -496,15 +474,23 @@ class Config extends Map
                             continue;
                         }
                         if ($options = $this->loadSourceFile($file)) {
-                            $config->extend($options);
+                            $config = array_merge_recursive($config, $options);
                         }
                     } while ($importFile = next($values));
                 }
             } else {
-                $config->set($key, $values, true);
+                if (!array_key_exists($key, $config)) {
+                    $config[$key] = $values;
+                } else {
+                    if (is_array($values)) {
+                        $config[$key] = array_merge($config[$key], $values);
+                    } else {
+                        $config[$key] = $values;
+                    }
+                }
             }
         }
 
-        return $config;
+        return true;
     }
 }

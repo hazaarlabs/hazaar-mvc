@@ -6,7 +6,6 @@ namespace Hazaar\Cache;
 
 use Hazaar\Cache;
 use Hazaar\Cache\Exception\NoFunction;
-use Hazaar\Map;
 
 /**
  * Class Func.
@@ -19,9 +18,9 @@ use Hazaar\Map;
 class Func extends Cache
 {
     /**
-     * @param array<mixed>|Map $options
+     * @param array<mixed> $options
      */
-    public function __construct(?string $backend = null, array|Map $options = [])
+    public function __construct(?string $backend = null, array $options = [])
     {
         parent::__construct($backend, $options);
         $this->configure([

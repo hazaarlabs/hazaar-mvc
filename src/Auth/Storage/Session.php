@@ -19,7 +19,6 @@ use Hazaar\Auth\Adapter;
 use Hazaar\Auth\Interfaces\Storage;
 use Hazaar\Auth\Storage\Exception\SessionStartFailed;
 use Hazaar\Cache;
-use Hazaar\Map;
 
 /**
  * @brief       Session based authentication adapter
@@ -55,16 +54,19 @@ class Session implements Storage
      */
     private array $session;
 
-    public function __construct(Map $config)
+    /**
+     * @param array<mixed> $config
+     */
+    public function __construct(array $config)
     {
-        if ($config->has('name')) {
+        if (isset($config['name'])) {
             session_name($config['name']);
         }
         if (!(session_id() || (headers_sent() && PHP_SAPI === 'cli'))) {
             ini_set('session.cookie_secure', '1');
             ini_set('session.cookie_httponly', '1');
             ini_set('session.cookie_samesite', 'Strict');
-            if ($config->has('timeout')) {
+            if (isset($config['timeout'])) {
                 $timeout = $config['timeout'];
                 ini_set('session.gc_maxlifetime', $timeout * 2);
                 ini_set('session.cookie_maxlifetime', $timeout * 2);
@@ -144,7 +146,9 @@ class Session implements Storage
     {
         unset($this->session[$this->sessionKey]);
         session_unset();
-        session_destroy();
+        if (session_id()) {
+            session_destroy();
+        }
     }
 
     public function getToken(): ?array

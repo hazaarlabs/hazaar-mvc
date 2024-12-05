@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hazaar\Tests;
 
 use Hazaar\Auth\Adapter\Basic;
-use Hazaar\Map;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -19,7 +18,7 @@ class AuthTest extends TestCase
     public function setUp(): void
     {
         $this->authMock = $this->getMockBuilder(Basic::class)
-            ->setConstructorArgs([Map::_(['storage' => 'session'])])
+            ->setConstructorArgs([['storage' => 'session']])
             ->onlyMethods(['queryAuth'])
             ->getMock()
         ;

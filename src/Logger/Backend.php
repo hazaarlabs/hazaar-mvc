@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Hazaar\Logger;
 
-use Hazaar\Map;
-
 abstract class Backend implements Interfaces\Backend
 {
     protected const LOG_LEVEL_PREFIX = 'LOG_';
@@ -15,7 +13,10 @@ abstract class Backend implements Interfaces\Backend
      */
     protected array $levels;
 
-    private Map $options;
+    /**
+     * @var array<mixed>
+     */
+    private array $options;
 
     /**
      * @var array<string>
@@ -23,18 +24,15 @@ abstract class Backend implements Interfaces\Backend
     private array $capabilities = [];
 
     /**
-     * @param array<mixed>|Map $options
+     * @param array<mixed> $options
      */
-    public function __construct(array|Map $options)
+    public function __construct(array $options)
     {
         $this->levels = array_filter(get_defined_constants(), function ($value) {
             return self::LOG_LEVEL_PREFIX === substr($value, 0, strlen(self::LOG_LEVEL_PREFIX));
         }, ARRAY_FILTER_USE_KEY);
         // Set the options we were given which will overwrite any defaults
-        if (!is_array($options)) {
-            $options = [];
-        }
-        $this->options = Map::_($options);
+        $this->options = $options;
         $this->init();
     }
 
@@ -47,7 +45,7 @@ abstract class Backend implements Interfaces\Backend
 
     public function setDefaultOption(string $key, mixed $value): void
     {
-        if (!$this->options->has($key)) {
+        if (!isset($this->options[$key])) {
             $this->setOption($key, $value);
         }
     }
@@ -59,7 +57,7 @@ abstract class Backend implements Interfaces\Backend
 
     public function getOption(string $key): mixed
     {
-        if (!$this->options->has($key)) {
+        if (!isset($this->options[$key])) {
             return null;
         }
 
@@ -68,7 +66,7 @@ abstract class Backend implements Interfaces\Backend
 
     public function hasOption(string $key): bool
     {
-        return $this->options->has($key);
+        return isset($this->options[$key]);
     }
 
     public function getLogLevelId(string $level): int

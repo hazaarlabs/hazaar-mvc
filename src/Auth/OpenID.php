@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hazaar\Auth\Adapter;
 
 use Hazaar\HTTP\URL;
-use Hazaar\Map;
 
 /**
  * OAuth short summary.
@@ -22,7 +21,7 @@ class OpenID extends OAuth2
         string $clientID,
         string $clientSecret,
         string $grantType = 'code',
-        ?Map $config = null,
+        array $config = [],
     ) {
         parent::__construct($clientID, $clientSecret, $grantType, $config);
         $this->addScope('openid');

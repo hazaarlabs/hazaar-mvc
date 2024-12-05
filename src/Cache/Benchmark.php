@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hazaar\Cache;
 
 use Hazaar\Cache;
-use Hazaar\Map;
 
 class Benchmark
 {
@@ -13,13 +12,17 @@ class Benchmark
      * @var array<string>
      */
     private array $backends;
-    private Map $configs;
+
+    /**
+     * @var array<mixed>
+     */
+    private array $configs;
 
     /**
      * @param array<string>|string $backends
-     * @param array<mixed>|Map     $configs
+     * @param array<mixed>         $config
      */
-    public function __construct(array|string $backends = [], array|Map $configs = [])
+    public function __construct(array|string $backends = [], array $config = [])
     {
         if ($backends && !is_array($backends)) {
             $backends = [$backends];
@@ -28,7 +31,7 @@ class Benchmark
             $backends = $this->getAvailableBackends();
         }
         $this->backends = $backends;
-        $this->configs = Map::_($configs);
+        $this->configs = $config;
     }
 
     /**

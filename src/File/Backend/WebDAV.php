@@ -9,13 +9,16 @@ use Hazaar\File\Image;
 use Hazaar\File\Manager;
 use Hazaar\HTTP\Request;
 use Hazaar\HTTP\Response;
-use Hazaar\Map;
 
 class WebDAV extends \Hazaar\HTTP\WebDAV implements Interfaces\Backend, Interfaces\Driver
 {
     public string $separator = '/';
     protected Manager $manager;
-    private Map $options;
+
+    /**
+     * @var array<mixed>
+     */
+    private array $options;
     private Cache $cache;
 
     /**
@@ -26,33 +29,33 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements Interfaces\Backend, Interfac
     /**
      * WebDAV constructor.
      *
-     * @param array<mixed>|Map $options
+     * @param array<mixed> $options
      */
-    public function __construct(array|Map $options, Manager $manager)
+    public function __construct(array $options, Manager $manager)
     {
         $this->manager = $manager;
-        $this->options = new Map([
+        $this->options = array_merge([
             'cache_backend' => 'file',
             'cache_meta' => true,
         ], $options);
-        if (!$this->options->has('baseuri')) {
+        if (!isset($this->options['baseuri'])) {
             throw new \Exception('WebDAV file browser backend requires a URL!');
         }
-        if ($this->options->has('cookies')) {
+        if (isset($this->options['cookies'])) {
             $this->setCookie($this->options['cookies']);
         }
         $this->cache = new Cache($this->options['cache_backend'], ['use_pragma' => false, 'namespace' => 'webdav_'.$this->options['baseuri'].'_'.$this->options['username']]);
-        if ($this->options->get('cache_meta', false)) {
+        if ($this->options['cache_meta'] ?? false) {
             if (($meta = $this->cache->get('meta')) !== false) {
                 $this->meta = $meta;
             }
         }
-        parent::__construct($this->options->toArray());
+        parent::__construct($this->options);
     }
 
     public function __destruct()
     {
-        if ($this->options->get('cache_meta', false)) {
+        if ($this->options['cache_meta'] ?? false) {
             $this->cache->set('meta', $this->meta);
         }
     }

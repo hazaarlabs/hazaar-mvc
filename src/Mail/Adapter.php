@@ -4,7 +4,6 @@ namespace Hazaar\Mail;
 
 use Hazaar\Application;
 use Hazaar\File;
-use Hazaar\Map;
 
 /**
  * Common class for sending emails via different transport mechanisms.
@@ -42,42 +41,52 @@ class Adapter
      * @var array<mixed>
      */
     protected array $last_to = [];
-    protected Map $config;
+
+    /**
+     * @var array<mixed>
+     */
+    protected array $config;
 
     /**
      * The mail class constructor.
      *
      * If a transport is not provided then the [[Hazaar\Mail\Transport\Local]] transport will be used.
      *
-     * @param array<mixed>|Map $config the configuration settings for the mail adapter
+     * @param array<mixed> $config the configuration settings for the mail adapter
      */
-    public function __construct(null|array|Map $config = null)
+    public function __construct(?array $config = null)
     {
         $this->message = new TransportMessage();
         if (is_array($config)) {
-            $this->config = Map::_($config);
+            $this->config = $config;
         } else {
             if (!($app = Application::getInstance()) instanceof Application) {
                 throw new \Exception('No application instance found!');
             }
-            if (!$app->config->has('mail')) {
+            if (!isset($app->config['mail'])) {
                 throw new \Exception('No mail configuration found!');
             }
-            $this->config = new Map([
+            $this->config = array_merge([
                 'enable' => true,
                 'testmode' => false,
-                'transport' => null !== $config ? $config : self::$default_transport,
-            ], Application::getInstance()->config->get('mail'));
+                'transport' => self::$default_transport,
+            ], Application::getInstance()->config['mail']);
         }
         $this->transport = $this->getTransportObject($this->config['transport'], $this->config);
-        if ($this->config->has('from')) {
-            $this->message->from = self::encodeEmailAddress($this->config->decode('from'));
+        if (isset($this->config['from'])) {
+            $this->message->from = self::encodeEmailAddress($this->config['from']);
         }
     }
 
-    public function getTransportObject(string $transport = 'local', ?Map $config = null): Transport
+    /**
+     * Get the transport object for the specified transport backend.
+     *
+     * @param string       $transport The transport backend to use.  Options are local, or smtp.
+     * @param array<mixed> $config    The configuration settings for the transport backend
+     */
+    public function getTransportObject(string $transport = 'local', array $config = []): Transport
     {
-        $transportClass = '\\Hazaar\\Mail\\Transport\\'.ucfirst($transport);
+        $transportClass = '\Hazaar\Mail\Transport\\'.ucfirst($transport);
         if (!class_exists($transportClass)) {
             throw new \Exception("The configured mail transport class '{$transport}' does not exist!");
         }
@@ -365,10 +374,10 @@ class Adapter
         if (true !== $this->config['enable']) {
             throw new \Exception('Mail subsystem is disabled!');
         }
-        if (true === $this->config->get('testmode')) {
+        if (true === $this->config['testmode']) {
             return true;
         }
-        if ($subjectPrefix = $this->config->get('subjectPrefix')) {
+        if ($subjectPrefix = $this->config['subjectPrefix']) {
             $this->subject->prepend($subjectPrefix);
         }
         $this->message->subject = $this->subject->render($params);
@@ -376,10 +385,10 @@ class Adapter
         $map_func = function ($item) {
             return is_array($item) ? Adapter::encodeEmailAddress($item[0], $item[1]) : $item;
         };
-        if ($override_to = $this->config->getArray('override.to')) {
+        if ($override_to = $this->config['override']['to']) {
             $to = [];
-            if ($this->config->has('noOverrideMatch')) {
-                foreach ($override_to as $rcpt) {
+            if (isset($this->config['noOverrideMatch'])) {
+                foreach ((array) $override_to as $rcpt) {
                     if (preg_match('/'.$this->config['noOverrideMatch'].'/', $rcpt[0])) {
                         $to[] = $rcpt;
                     }
@@ -390,10 +399,10 @@ class Adapter
             }
             $this->message->to = array_map($map_func, (array) $to);
         }
-        if ($cc = $this->config->getArray('override.cc')) {
+        if ($cc = $this->config['override']['cc']) {
             $this->message->cc = array_map($map_func, (array) $cc);
         }
-        if ($bcc = $this->config->getArray('override.bcc')) {
+        if ($bcc = $this->config['override']['bcc']) {
             $this->message->bcc = array_map($map_func, (array) $bcc);
         }
         $this->last_to = $this->message->to;

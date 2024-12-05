@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace Hazaar\Auth\Interfaces;
 
-use Hazaar\Map;
-
 interface Storage
 {
     /**
      * Construct the storage.
      *
-     * @param Map $config The configuration
+     * @param array<mixed> $config The configuration
      */
-    public function __construct(Map $config);
+    public function __construct(array $config);
 
     /**
      * Returns true if and only if storage is empty.
