@@ -301,9 +301,9 @@ class Config implements \ArrayAccess, \Iterator
         return array_key_exists($offset, $this->options);
     }
 
-    public function offsetGet(mixed $offset): mixed
+    public function &offsetGet(mixed $offset): mixed
     {
-        return ake($this->options, $offset);
+        return $this->options[$offset];
     }
 
     public function offsetSet(mixed $offset, mixed $value): void
