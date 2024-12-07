@@ -9,6 +9,7 @@ use Hazaar\Application\Route;
 use Hazaar\Controller;
 use Hazaar\Controller\Response;
 use Hazaar\Controller\Response\XML;
+use Hazaar\XML\Element;
 use Hazaar\XML\RPC\Exception\InvalidRequest;
 use Hazaar\XML\RPC\Exception\MethodNotFound;
 
@@ -60,8 +61,10 @@ abstract class Server extends Controller
             throw new MethodNotFound($method);
         }
         $response = call_user_func_array($this->registered_methods[$method], $result);
+        $xml = new Element();
+        $xml->loadXML(\xmlrpc_encode_request($method, $response));
 
-        return new XML(xmlrpc_encode_request($method, $response));
+        return new XML($xml);
     }
 
     public function registerMethod(object $object, string $method): void

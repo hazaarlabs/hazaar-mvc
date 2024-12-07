@@ -14,6 +14,7 @@ use Hazaar\Controller\Response\Text;
 use Hazaar\Controller\Response\View;
 use Hazaar\Controller\Response\XML;
 use Hazaar\File\Manager;
+use Hazaar\XML\Element;
 
 class Response extends Helper
 {
@@ -58,7 +59,7 @@ class Response extends Helper
         return new View($name);
     }
 
-    public function xml(string $content, int $status = 200): XML
+    public function xml(Element $content, int $status = 200): XML
     {
         return new XML($content, $status);
     }
