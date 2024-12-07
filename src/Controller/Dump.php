@@ -108,7 +108,7 @@ class Dump extends Diagnostic
      *
      * @param array<mixed> $data The data to be displayed in the dump
      */
-    public function xmlrpc(array $data = []): Response\XML
+    public function xml(array $data = []): Response\XML
     {
         $application = Application::getInstance();
         $xml = new Element('xml');

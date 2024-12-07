@@ -50,7 +50,6 @@ class Error extends Diagnostic
      */
     protected int $code = 500;
     protected string $status = 'Internal Error';
-    protected string $responseType = 'html';
 
     /**
      * @var array<int,string>
@@ -103,6 +102,7 @@ class Error extends Diagnostic
             $this->errline = $e->getLine();
             $this->errclass = get_class($e);
             $this->callstack = $e->getTrace();
+            $this->responseType = $args[1] ?? Response::TYPE_HTML;
             $code = $e->getCode();
             if (is_int($code)) {
                 $this->code = $code;
@@ -265,15 +265,15 @@ class Error extends Diagnostic
     }
 
     /**
-     * Generates an XML-RPC fault response.
+     * Generates an XML fault response.
      *
-     * This method constructs an XML structure representing an XML-RPC fault response.
+     * This method constructs an XML structure representing an XML fault response.
      * The response includes details about the error class, error code, status, error
      * message, file, and line number where the error occurred.
      *
-     * @return XML the XML-RPC fault response
+     * @return XML the XML fault response
      */
-    public function xmlrpc(): XML
+    public function xml(): XML
     {
         $xml = new Element('xml');
         $struct = $xml->add('fault')->add('value')->add('struct');

@@ -563,7 +563,7 @@ class Application
             if ($controller instanceof Controller\Error) {
                 dieDieDie($e->getMessage());
             } else {
-                $this->exceptionHandler($e);
+                $this->exceptionHandler($e, isset($route) ? $route->getResponseType() : null);
             }
         }
 
@@ -605,20 +605,6 @@ class Application
     public function getVersion(): string
     {
         return HAZAAR_VERSION;
-    }
-
-    /**
-     * Returns the requested response type.
-     *
-     * The requested response type can be set in the request itself.  If it is not set, then the default will be 'html'
-     * or the X-Requested-With header will be checked to determine the response type.
-     *
-     * This method is used internally to determine the response type to send when one has not been explicitly used.  Normally
-     * the response type is determined by the Controller\Response object type returned by a controller action.
-     */
-    public function getResponseType(): ?string
-    {
-        return $this->config['app']['responseType'] ?? 'html';
     }
 
     /**
@@ -692,11 +678,11 @@ class Application
      * along with the code, line number, and file name. Then it calls the `errorAndDie()`
      * function to handle the error further.
      */
-    public function exceptionHandler(\Throwable $e): void
+    public function exceptionHandler(\Throwable $e, ?int $responseType = null): void
     {
         if ($e->getCode() >= 500) {
             Frontend::e('CORE', 'Error #'.$e->getCode().' on line '.$e->getLine().' of file '.$e->getFile().': '.$e->getMessage());
         }
-        errorAndDie($e);
+        errorAndDie($e, $responseType);
     }
 }
