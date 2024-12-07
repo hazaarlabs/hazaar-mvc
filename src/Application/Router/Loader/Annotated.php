@@ -43,12 +43,12 @@ use Hazaar\Date;
  *
  * ```php
  * class ApiController extends \Hazaar\Controller\Basic {
- *    * @route('/v1/dothething/<int:thingstodo>', methods=['GET'])
+ *    * @route('/v1/dothething/{int:thingstodo}', methods={"GET"})
  *    **\/
  *   protected function do_the_thing($thingstodo){
  *     return ['things' => 'Array of things'];
  *   }
- *    * @route('/v2/dothething/<date:when>/<int:thingstodo>', methods=['GET'])
+ *    * @route('/v2/dothething/{date:when}/{int:thingstodo}', methods={"GET"})
  *    **\/
  *   protected function do_the_thing_v2($thingstodo, $when){
  *     if($when->year() >= 2023){
@@ -69,8 +69,8 @@ use Hazaar\Date;
  * Such as:
  *
  * ```php
- *   * @route('/v1/dothething/<date:when>/<int:thingstodo>', methodsGET'])
- *   * @route('/v2/dothething/<date:when>/<int:thingstodo>', methods=['GET'])
+ *   * @route('/v1/dothething/{date:when}/{int:thingstodo}', methods={"GET"})
+ *   * @route('/v2/dothething/{date:when}/{int:thingstodo}', methods={"GET"})
  *   **\/
  * ```
  *
@@ -118,28 +118,38 @@ class Annotated extends Advanced
         return $api;
     }
 
-    public function exec(Request $request): bool
+    /**
+     * Initialises the basic router.
+     *
+     * @return bool returns true if the initialisation is successful, false otherwise
+     */
+    public function initialise(Router $router): bool
     {
-        parent::exec($request);
-        Router::reset();
-        if (!$this->controller) {
-            return true;
+        return true;
+    }
+
+    public function evaluateRequest(Request $request): ?Route
+    {
+        $route = parent::evaluateRequest($request);
+        if (!$route) {
+            return null;
         }
-        $this->controllerEndpoints = $this->loadEndpoints($this->controllerClass);
-        if (0 === count($this->controllerEndpoints)) {
-            throw new ControllerHasNoRoutes($this->controller);
+        $controller = $route->getControllerName();
+        $controllerEndpoints = $this->loadEndpoints($route->getControllerClass());
+        if (0 === count($controllerEndpoints)) {
+            throw new ControllerHasNoRoutes($controller);
         }
-        foreach ($this->controllerEndpoints as $endpoint) {
+        foreach ($controllerEndpoints as $endpoint) {
             if (!array_key_exists('routes', $endpoint)) {
                 continue;
             }
             foreach ($endpoint['routes'] as $path => $route) {
-                $path = '/'.strtolower($this->controller).'/'.ltrim($path, '/');
+                $path = '/'.strtolower($controller).'/'.ltrim($path, '/');
                 Router::match($route['args']['methods'], $path, $route['func']);
             }
         }
 
-        return true;
+        return null;
     }
 
     /**
@@ -220,7 +230,7 @@ class Annotated extends Advanced
                     continue;
                 }
                 if (!preg_match(
-                    '/\([\'\"]([\w\.\-\<\>\:\/]+)[\'\"]\s*,?\s*(.+)*\)/',
+                    '/\([\'\"]([\w\.\-\{\}\:\/]+)[\'\"]\s*,?\s*(.+)*\)/',
                     $methodMatches[1][$index],
                     $routeMatches
                 )) {
@@ -234,7 +244,7 @@ class Annotated extends Advanced
                         // If there is no equals sign, skip this one.
                         if (strpos($part, '=') > 0) {
                             list($key, $value) = explode('=', $part, 2);
-                            if (($value = json_decode(str_replace("'", '"', $value), true)) === null) {
+                            if (($value = json_decode(str_replace(["'", '{', '}'], ['"', '[', ']'], $value), true)) === null) {
                                 throw new \Exception('Invalid JSON parameter for: '.$key);
                             }
                             $args[$key] = $value;

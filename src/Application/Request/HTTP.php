@@ -126,7 +126,7 @@ class HTTP extends Request
             }
         }
 
-        return substr($requestURI, 1);
+        return $requestURI;
     }
 
     /**

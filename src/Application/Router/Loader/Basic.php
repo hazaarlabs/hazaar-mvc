@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Application\Router\Loader;
 
 use Hazaar\Application\Request;
+use Hazaar\Application\Route;
 use Hazaar\Application\Router;
 use Hazaar\Application\Router\Loader;
 
@@ -23,24 +24,36 @@ use Hazaar\Application\Router\Loader;
 class Basic extends Loader
 {
     /**
+     * Initialises the basic router.
+     *
+     * @return bool returns true if the initialisation is successful, false otherwise
+     */
+    public function initialise(Router $router): bool
+    {
+        return true;
+    }
+
+    /**
      * Evaluates the request and sets the controller, action, and arguments based on the request path.
      *
      * @param Request $request the request object
      *
-     * @return bool returns true if the evaluation is successful, false otherwise
+     * @return Route returns the route object if the evaluation is successful, null otherwise
      */
-    public function exec(Request $request): bool
+    public function evaluateRequest(Request $request): ?Route
     {
         $path = trim($request->getPath());
-        if (0 === strlen($path)) {
-            return true; // Return true if the path is empty.  Allows for default controller/action to be used.
+        if ('/' === $path) {
+            return null; // Return true if the path is empty.  Allows for default controller/action to be used.
         }
-        $parts = explode('/', $path);
-        $controller = 'Application\Controllers\\'.(('' !== $parts[0]) ? ucfirst($parts[0]) : null);
+        $parts = explode('/', ltrim($path, '/'));
+        $controller = 'Application\Controller\\'.(('' !== $parts[0]) ? ucfirst($parts[0]) : null);
+        if (!class_exists($controller)) {
+            return null;
+        }
         $action = (isset($parts[1]) && '' !== $parts[1]) ? $parts[1] : null;
         $actionArgs = (count($parts) > 2) ? array_slice($parts, 2) : null;
-        Router::set([$controller, $action, $actionArgs], $path);
 
-        return true;
+        return new Route([$controller, $action, $actionArgs], $path);
     }
 }

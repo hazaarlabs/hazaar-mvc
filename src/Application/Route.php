@@ -10,6 +10,7 @@ class Route
     public Router $router;
     private mixed $callable;
     private ?string $path = null;
+    private int $responseType = Router::RESPONSE_HTML;
 
     /**
      * @var array<string>
@@ -29,16 +30,17 @@ class Route
     /**
      * @param array<string> $methods
      */
-    public function __construct(mixed $callable, ?string $path = null, array $methods = [])
+    public function __construct(mixed $callable, ?string $path = null, array $methods = [], int $responseType = Router::RESPONSE_HTML)
     {
         $this->callable = $callable;
         $this->path = $path;
         $this->methods = array_map('strtoupper', $methods);
+        $this->responseType = $responseType;
         if (is_array($this->callable) && isset($this->callable[2]) && is_array($this->callable[2])) {
             $this->actionArgs = $this->callable[2];
         } else {
             try {
-                $callableReflection = match(true){
+                $callableReflection = match (true) {
                     $this->callable instanceof \Closure => new \ReflectionFunction($this->callable),
                     $this->callable instanceof \ReflectionMethod => $this->callable,
                     default => new \ReflectionMethod($this->callable[0], $this->callable[1]),
@@ -96,7 +98,7 @@ class Route
 
             return false;
         }
-        $path = explode('/', $path);
+        $path = explode('/', ltrim($path, '/'));
         $routePath = explode('/', trim($this->path, '/'));
         if (count($routePath) !== count($path)) {
             return false;
@@ -142,6 +144,16 @@ class Route
         }
 
         return true;
+    }
+
+    public function getControllerClass(): string
+    {
+        return is_array($this->callable) ? $this->callable[0] : '';
+    }
+
+    public function getControllerName(): string
+    {
+        return strtolower(basename(str_replace('\\', '/', $this->getControllerClass())));
     }
 
     /**
