@@ -18,6 +18,12 @@ use Hazaar\Controller\Error;
 
 class Router
 {
+    public const RESPONSE_HTML = 1;
+    public const RESPONSE_JSON = 2;
+    public const RESPONSE_XML = 3;
+    public const RESPONSE_TEXT = 4;
+    public const RESPONSE_BINARY = 5;
+
     /**
      * Default configuration.
      *
@@ -49,7 +55,8 @@ class Router
      * @var array<Route>
      */
     private array $routes = [];
-    private ?Route $route = null;
+
+    private static int $defaultResponseType = self::RESPONSE_HTML;
 
     /**
      * Creates a new Router object.
@@ -59,7 +66,7 @@ class Router
     final public function __construct(array $config)
     {
         self::$instance = $this;
-        $this->config = array_merge_recursive(self::$defaultConfig, $config);
+        $this->config = array_merge(self::$defaultConfig, $config);
         $type = $this->config['type'] ?? 'file';
         $loaderClass = '\Hazaar\Application\Router\Loader\\'.ucfirst($type);
         if (!class_exists($loaderClass)) {
@@ -71,53 +78,59 @@ class Router
     /**
      * Initializes the Router object and evaluates the request.
      *
-     * @param Request $request the request object
-     *
      * @throws RouteNotFound
      */
-    final public function initialise(Request $request): bool
+    final public function initialise(): bool
     {
-        $this->route = null;
-        // Search for internal controllers
-        if (($path = $request->getPath())
-            && ($offset = strpos($path, '/', 1))) {
-            $route = substr($path, 0, $offset);
-            if (array_key_exists($route, self::$internal)) {
-                $controller = self::$internal[$route];
-                $action = substr($path, $offset + 1);
-                $route = new Route([$controller, $action], substr($path, $offset + 1));
-                $this->setRoute($route);
-
-                return true;
-            }
-        }
         self::$instance = $this; // Set the instance to this object so that static methods will use this instance
-        if (false === $this->routeLoader->exec($request)) {
-            return false;
-        }
-        // If the loader has not already set a route, evaluate the request
-        // @phpstan-ignore identical.alwaysTrue
-        if (null === $this->route) {
-            $this->route = $this->evaluateRequest($request);
-        }
-        if (null === $this->route && !$request->getPath() && ($controller = $this->config['controller'])) {
-            $controllerClass = '\\' === substr($controller, 0, 1)
-                ? $controller
-                : 'Application\Controllers\\'.ucfirst($controller);
-            $this->setRoute(new Route([$controllerClass, $this->config['action']]));
-        }
-        if (null === $this->route) {
+        if (false === $this->routeLoader->initialise($this)) {
             return false;
         }
 
         return true;
     }
 
-    public static function reset(): void
+    /**
+     * Evaluates the given request and matches it against the defined routes.
+     *
+     * @param Request $request the request to evaluate
+     *
+     * @return null|Route the matched route or null if no route matches
+     */
+    public function evaluateRequest(Request $request): ?Route
     {
-        if (self::$instance) {
-            self::$instance->route = null;
+        $matchedRoute = null;
+        $path = $request->getPath();
+        // Search for internal controllers
+        if ($offset = strpos($path, '/', 1)) {
+            $route = substr($path, 0, $offset);
+            if (array_key_exists($route, self::$internal)) {
+                $controller = self::$internal[$route];
+                $action = substr($path, $offset + 1);
+
+                return new Route([$controller, $action], substr($path, $offset + 1));
+            }
         }
+        $matchedRoute = $this->routeLoader->evaluateRequest($request);
+        if ($matchedRoute instanceof Route) {
+            return $matchedRoute;
+        }
+        $method = $request->getMethod();
+        foreach ($this->routes as $route) {
+            if ($route->match($method, $path)) {
+                return $matchedRoute = $route;
+            }
+        }
+        // If no route is found, and the path is '/', use the default controller
+        if (!('/' === $request->getPath() && ($controller = $this->config['controller']))) {
+            return null;
+        }
+
+        $controllerClass = '\\' === substr($controller, 0, 1)
+            ? $controller
+            : 'Application\Controller\\'.ucfirst($controller);
+
+        return new Route([$controllerClass, $this->config['action']]);
     }
 
     /**
@@ -132,30 +145,6 @@ class Router
     {
         $route->setRouter($this);
         $this->routes[] = $route;
-    }
-
-    /**
-     * Sets the current route for the router.
-     *
-     * This method assigns the provided route to the router and sets the router
-     * instance within the route.
-     *
-     * @param Route $route the route to be set
-     */
-    public function setRoute(Route $route): void
-    {
-        $route->setRouter($this);
-        $this->route = $route;
-    }
-
-    /**
-     * Retrieves the current route.
-     *
-     * @return null|Route the current route, or null if no route is set
-     */
-    public function getRoute(): ?Route
-    {
-        return $this->route;
     }
 
     public function getErrorController(): Error
@@ -178,106 +167,98 @@ class Router
     /**
      * Registers a route that responds to HTTP GET requests.
      *
-     * @param string $path     the URL path for the route
-     * @param mixed  $callable the callback or controller action to handle the request
+     * @param string $path         the URL path for the route
+     * @param mixed  $callable     the callback or controller action to handle the request
+     * @param int    $responseType The expected response type for this route
      */
-    public static function get(string $path, mixed $callable): void
+    public static function get(string $path, mixed $callable, ?int $responseType = null): void
     {
-        self::match(['GET'], $path, $callable);
+        self::match(['GET'], $path, $callable, $responseType);
     }
 
     /**
      * Registers a route that responds to HTTP POST requests.
      *
-     * @param string $path     the URL path for the route
-     * @param mixed  $callable the callback or controller method to handle the request
+     * @param string $path         the URL path for the route
+     * @param mixed  $callable     the callback or controller method to handle the request
+     * @param int    $responseType The expected response type for this route
      */
-    public static function post(string $path, mixed $callable): void
+    public static function post(string $path, mixed $callable, ?int $responseType = null): void
     {
-        self::match(['POST'], $path, $callable);
+        self::match(['POST'], $path, $callable, $responseType);
     }
 
     /**
      * Registers a route that responds to HTTP PUT requests.
      *
-     * @param string $path     the URI path that the route will respond to
-     * @param mixed  $callable the handler for the route, which can be a callable or other valid route handler
+     * @param string $path         the URI path that the route will respond to
+     * @param mixed  $callable     the handler for the route, which can be a callable or other valid route handler
+     * @param int    $responseType The expected response type for this route
      */
-    public static function put(string $path, mixed $callable): void
+    public static function put(string $path, mixed $callable, ?int $responseType = null): void
     {
-        self::match(['PUT'], $path, $callable);
+        self::match(['PUT'], $path, $callable, $responseType);
     }
 
     /**
      * Registers a route that responds to HTTP DELETE requests.
      *
-     * @param string $path     the URL path that the route should match
-     * @param mixed  $callable the callback or controller action to be executed when the route is matched
+     * @param string $path         the URL path that the route should match
+     * @param mixed  $callable     the callback or controller action to be executed when the route is matched
+     * @param int    $responseType The expected response type for this route
      */
-    public static function delete(string $path, mixed $callable): void
+    public static function delete(string $path, mixed $callable, ?int $responseType = null): void
     {
-        self::match(['DELETE'], $path, $callable);
+        self::match(['DELETE'], $path, $callable, $responseType);
     }
 
     /**
      * Registers a route that responds to HTTP PATCH requests.
      *
-     * @param string $path     the URI path that the route will match
-     * @param mixed  $callable the callback or controller action to be executed when the route is matched
+     * @param string $path         the URI path that the route will match
+     * @param mixed  $callable     the callback or controller action to be executed when the route is matched
+     * @param int    $responseType The expected response type for this route
      */
-    public static function patch(string $path, mixed $callable): void
+    public static function patch(string $path, mixed $callable, ?int $responseType = null): void
     {
-        self::match(['PATCH'], $path, $callable);
+        self::match(['PATCH'], $path, $callable, $responseType);
     }
 
     /**
      * Registers a route that responds to HTTP OPTIONS requests.
      *
-     * @param string $path     the URL path to match
-     * @param mixed  $callable the callback or controller action to handle the request
+     * @param string $path         the URL path to match
+     * @param mixed  $callable     the callback or controller action to handle the request
+     * @param int    $responseType The expected response type for this route
      */
-    public static function options(string $path, mixed $callable): void
+    public static function options(string $path, mixed $callable, ?int $responseType = null): void
     {
-        self::match(['OPTIONS'], $path, $callable);
+        self::match(['OPTIONS'], $path, $callable, $responseType);
     }
 
     /**
      * Registers a route that responds to any HTTP method.
      *
-     * @param string $path     the path pattern to match
-     * @param mixed  $callable the callback to execute when the route is matched
+     * @param string $path         the path pattern to match
+     * @param mixed  $callable     the callback to execute when the route is matched
+     * @param int    $responseType The expected response type for this route
      */
-    public static function any(string $path, mixed $callable): void
+    public static function any(string $path, mixed $callable, ?int $responseType = null): void
     {
-        self::match(['ANY'], $path, $callable);
-    }
-
-    /**
-     * Sets a new route for the application.
-     *
-     * This method sets a new route by accepting a callable and creating a new Route instance with it.
-     * If the Router instance is not initialized, the method will return without setting the route.
-     *
-     * @param mixed $callable the callable to be used for the new route
-     */
-    public static function set(mixed $callable, ?string $path = null): void
-    {
-        if (!self::$instance) {
-            return;
-        }
-        self::$instance->setRoute(new Route($callable, $path, []));
+        self::match(['ANY'], $path, $callable, $responseType);
     }
 
     /**
      * Matches a route with the given HTTP methods, path, and callable.
      *
-     * @param null|array<string>|string $methods  The HTTP methods to match (e.g., ['GET', 'POST']).
-     * @param string                    $path     The path to match (e.g., '/user/{id}').
-     * @param mixed                     $callable The callable to execute when the route is matched.
-     *                                            It can be a string in the format 'Class::method',
-     *                                            an array with the class and method, or a Closure.
+     * @param null|array<string>|string $methods      The HTTP methods to match (e.g., ['GET', 'POST']).
+     * @param string                    $path         The path to match (e.g., '/user/{id}').
+     * @param mixed                     $callable     The callable to execute when the route is matched.
+     *                                                It can be a string in the format 'Class::method',
+     *                                                an array with the class and method, or a Closure.
+     * @param int                       $responseType The expected response type for this route
      */
-    public static function match(null|array|string $methods, string $path, mixed $callable): void
+    public static function match(null|array|string $methods, string $path, mixed $callable, ?int $responseType = null): void
     {
         if (!self::$instance) {
             return;
@@ -285,26 +266,56 @@ class Router
         if (is_string($callable)) {
             $callable = explode('::', $callable);
         }
-        self::$instance->addRoute(new Route($callable, $path, $methods));
+        self::$instance->addRoute(new Route($callable, $path, $methods, $responseType ?? self::$defaultResponseType));
     }
 
     /**
-     * Evaluates the given request and matches it against the defined routes.
+     * Sets the default response type for the application.
      *
-     * @param Request $request the request to evaluate
-     *
-     * @return null|Route the matched route or null if no route matches
+     * @param int $type the response type to be set
      */
-    private function evaluateRequest(Request $request): ?Route
+    public static function setResponseType(int $type): void
     {
-        $method = $request->getMethod();
-        $path = $request->getPath();
-        foreach ($this->routes as $route) {
-            if ($route->match($method, $path)) {
-                return $this->route = $route;
-            }
-        }
+        self::$defaultResponseType = $type;
+    }
 
-        return null;
+    /**
+     * Sets the response type for the application to HTML.
+     */
+    public static function html(): void
+    {
+        self::$instance->setResponseType(self::RESPONSE_HTML);
+    }
+
+    /**
+     * Sets the response type for the application to JSON.
+     */
+    public static function json(): void
+    {
+        self::$instance->setResponseType(self::RESPONSE_JSON);
+    }
+
+    /**
+     * Sets the response type for the application to XML.
+     */
+    public static function xml(): void
+    {
+        self::$instance->setResponseType(self::RESPONSE_XML);
+    }
+
+    /**
+     * Sets the response type for the application to text.
+     */
+    public static function text(): void
+    {
+        self::$instance->setResponseType(self::RESPONSE_TEXT);
+    }
+
+    /**
+     * Sets the response type for the application to binary.
+     */
+    public static function binary(): void
+    {
+        self::$instance->setResponseType(self::RESPONSE_BINARY);
     }
 }

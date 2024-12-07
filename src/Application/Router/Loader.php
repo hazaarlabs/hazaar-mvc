@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Hazaar\Application\Router;
 
 use Hazaar\Application\Request;
+use Hazaar\Application\Route;
+use Hazaar\Application\Router;
 
 abstract class Loader
 {
@@ -23,5 +25,22 @@ abstract class Loader
         $this->config = $config;
     }
 
-    abstract public function exec(Request $request): bool;
+    /**
+     * Initialises the basic router.
+     *
+     * @return bool returns true if the initialisation is successful, false otherwise
+     */
+    abstract public function initialise(Router $router): bool;
+
+    /**
+     * Evaluates the request and sets the controller, action, and arguments based on the request path.
+     *
+     * @param Request $request the request object
+     *
+     * @return Route returns the route object if the evaluation is successful, null otherwise
+     */
+    public function evaluateRequest(Request $request): ?Route
+    {
+        return null;
+    }
 }

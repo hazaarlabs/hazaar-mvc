@@ -18,6 +18,7 @@ use Hazaar\Application\Config;
 use Hazaar\Application\Request;
 use Hazaar\Application\Router;
 use Hazaar\Application\Router\Exception\RouteNotFound;
+use Hazaar\Application\Router\Exception\RouterInitialisationFailed;
 use Hazaar\Application\URL;
 use Hazaar\Controller\Response\File;
 use Hazaar\File\Metric;
@@ -485,6 +486,9 @@ class Application
                 throw new \Exception('The application failed to start!');
             }
         }
+        if (false === $this->router->initialise()) {
+            throw new RouterInitialisationFailed('Router returned false');
+        }
         $this->timer->stop('boot');
 
         return $this;
@@ -525,12 +529,9 @@ class Application
                     $response = $controller->run();
                 }
             } else {
-                if (false === $this->router->initialise($request)) {
-                    throw new RouteNotFound($request->getPath());
-                }
-                $route = $this->router->getRoute();
+                $route = $this->router->evaluateRequest($request);
                 if (!$route) {
-                    throw new \Exception('No route found');
+                    throw new RouteNotFound($request->getPath());
                 }
                 $controller = $route->getController();
                 $response = $controller->initialize($request);

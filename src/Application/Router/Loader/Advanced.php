@@ -5,41 +5,54 @@ declare(strict_types=1);
 namespace Hazaar\Application\Router\Loader;
 
 use Hazaar\Application\Request;
+use Hazaar\Application\Route;
 use Hazaar\Application\Router;
 use Hazaar\Application\Router\Loader;
 use Hazaar\Controller;
 
 class Advanced extends Loader
 {
-    protected ?string $controller = null;
-    protected ?string $controllerClass = null;
-    protected ?string $action = null;
-
     /**
      * @var array<mixed>
      */
     protected array $actionArgs;
 
-    public function exec(Request $request): bool
+    /**
+     * Initialises the advanced router.
+     *
+     * @return bool returns true if the initialisation is successful, false otherwise
+     */
+    public function initialise(Router $router): bool
+    {
+        return true;
+    }
+
+    /**
+     * Evaluates the request and sets the controller, action, and arguments based on the request path.
+     *
+     * @param Request $request the request object
+     *
+     * @return Route returns the route object if the evaluation is successful, null otherwise
+     */
+    public function evaluateRequest(Request $request): ?Route
     {
         $path = $request->getPath();
-        if (empty($path) || '/' === $path) {
-            return true;
+        if ('/' === $path) {
+            return null;
         }
         if (isset($this->config['aliases'])) {
             $path = $this->evaluateAliases($path, $this->config['aliases']);
         }
         $parts = [];
-        $this->controller = trim($this->findController($path, $parts) ?? '', '\\');
-        if ('' === $this->controller) {
-            return false;
+        $controller = trim($this->findController($path, $parts) ?? '', '\\');
+        if ('' === $controller) {
+            return null;
         }
-        $this->controllerClass = 'Application\Controllers\\'.$this->controller;
-        $this->action = (count($parts) > 0) ? array_shift($parts) : null;
-        $this->actionArgs = $parts;
-        Router::set([$this->controllerClass, $this->action, $this->actionArgs], $path);
+        $controllerClass = 'Application\Controller\\'.$controller;
+        $action = (count($parts) > 0) ? array_shift($parts) : null;
+        $actionArgs = $parts;
 
-        return true;
+        return new Route([$controllerClass, $action, $actionArgs], $path);
     }
 
     /**
@@ -52,6 +65,7 @@ class Advanced extends Loader
      */
     private function evaluateAliases(string $route, array $aliases): string
     {
+        $route = ltrim($route, '/');
         foreach ($aliases as $match => $alias) {
             if (substr($route, 0, strlen($match)) !== $match) {
                 continue;
@@ -73,7 +87,7 @@ class Advanced extends Loader
      */
     private function findController(string $path, array &$controllerParts): ?string
     {
-        $controllerParts = explode('/', $path);
+        $controllerParts = explode('/', ltrim($path, '/'));
         $controller = null;
         $controllerRoot = \Hazaar\Loader::getFilePath(FILE_PATH_CONTROLLER);
         $controllerPath = DIRECTORY_SEPARATOR;
