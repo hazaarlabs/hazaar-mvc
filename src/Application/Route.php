@@ -4,13 +4,14 @@ namespace Hazaar\Application;
 
 use Hazaar\Controller;
 use Hazaar\Controller\Closure;
+use Hazaar\Controller\Response;
 
 class Route
 {
     public Router $router;
     private mixed $callable;
     private ?string $path = null;
-    private int $responseType = Router::RESPONSE_HTML;
+    private int $responseType = Response::TYPE_HTML;
 
     /**
      * @var array<string>
@@ -30,8 +31,12 @@ class Route
     /**
      * @param array<string> $methods
      */
-    public function __construct(mixed $callable, ?string $path = null, array $methods = [], int $responseType = Router::RESPONSE_HTML)
-    {
+    public function __construct(
+        mixed $callable,
+        ?string $path = null,
+        array $methods = [],
+        int $responseType = Response::TYPE_HTML
+    ) {
         $this->callable = $callable;
         $this->path = $path;
         $this->methods = array_map('strtoupper', $methods);
@@ -223,5 +228,13 @@ class Route
     public function getActionArgs(): array
     {
         return $this->actionArgs;
+    }
+
+    /**
+     * Retrieves the response type of the route.
+     */
+    public function getResponseType(): int
+    {
+        return $this->responseType;
     }
 }

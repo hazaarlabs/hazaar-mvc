@@ -15,15 +15,10 @@ use Hazaar\Application;
 use Hazaar\Application\Router\Exception\RouteNotFound;
 use Hazaar\Application\Router\Loader;
 use Hazaar\Controller\Error;
+use Hazaar\Controller\Response;
 
 class Router
 {
-    public const RESPONSE_HTML = 1;
-    public const RESPONSE_JSON = 2;
-    public const RESPONSE_XML = 3;
-    public const RESPONSE_TEXT = 4;
-    public const RESPONSE_BINARY = 5;
-
     /**
      * Default configuration.
      *
@@ -56,7 +51,7 @@ class Router
      */
     private array $routes = [];
 
-    private static int $defaultResponseType = self::RESPONSE_HTML;
+    private static int $defaultResponseType = Response::TYPE_HTML;
 
     /**
      * Creates a new Router object.
@@ -284,7 +279,7 @@ class Router
      */
     public static function html(): void
     {
-        self::$instance->setResponseType(self::RESPONSE_HTML);
+        self::$instance->setResponseType(Response::TYPE_HTML);
     }
 
     /**
@@ -292,7 +287,7 @@ class Router
      */
     public static function json(): void
     {
-        self::$instance->setResponseType(self::RESPONSE_JSON);
+        self::$instance->setResponseType(Response::TYPE_JSON);
     }
 
     /**
@@ -300,7 +295,7 @@ class Router
      */
     public static function xml(): void
     {
-        self::$instance->setResponseType(self::RESPONSE_XML);
+        self::$instance->setResponseType(Response::TYPE_XML);
     }
 
     /**
@@ -308,7 +303,7 @@ class Router
      */
     public static function text(): void
     {
-        self::$instance->setResponseType(self::RESPONSE_TEXT);
+        self::$instance->setResponseType(Response::TYPE_TEXT);
     }
 
     /**
@@ -316,6 +311,6 @@ class Router
      */
     public static function binary(): void
     {
-        self::$instance->setResponseType(self::RESPONSE_BINARY);
+        self::$instance->setResponseType(Response::TYPE_BINARY);
     }
 }

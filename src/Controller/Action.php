@@ -57,7 +57,6 @@ abstract class Action extends Basic
         if ($request instanceof HTTP
             && false === $request->isXmlHttpRequest()
             && null !== $app
-            && 'html' === $app->getResponseType()
             && isset($app->config['app']['layout'])) {
             $this->view->layout($app->config['app']['layout']);
         }

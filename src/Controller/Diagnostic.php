@@ -11,10 +11,10 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller;
 
-use Hazaar\Application;
 use Hazaar\Application\Request;
 use Hazaar\Application\Request\HTTP;
 use Hazaar\Application\Route;
+use Hazaar\XML\Element;
 
 /**
  * @brief Basic controller class
@@ -24,7 +24,7 @@ use Hazaar\Application\Route;
 class Diagnostic extends Action
 {
     protected int $code = 204;
-    protected string $responseType = 'html';
+    protected int $responseType = Response::TYPE_HTML;
 
     /**
      * @var array<mixed>
@@ -45,27 +45,25 @@ class Diagnostic extends Action
     {
         $response = parent::initialize($request);
         if (getenv('HAZAAR_SID')) {
-            $this->responseType = 'hazaar';
+            $this->responseType = Response::TYPE_HAZAAR;
         } elseif (PHP_SAPI == 'cli') {
-            $this->responseType = 'text';
+            $this->responseType = Response::TYPE_TEXT;
         } elseif ($request instanceof HTTP) {
             if ($x_requested_with = $request->getHeader('X-Requested-With')) {
                 switch ($x_requested_with) {
                     case 'XMLHttpRequest':
-                        $this->responseType = 'json';
+                        $this->responseType = Response::TYPE_JSON;
 
                         break;
 
                     case 'XMLRPCRequest':
-                        $this->responseType = 'xmlrpc';
+                        $this->responseType = Response::TYPE_XML;
 
                         break;
                 }
-            } elseif (($app = Application::getInstance()) && ($responseType = $app->getResponseType())) {
-                $this->responseType = $responseType;
             }
         } else {
-            $this->responseType = 'text';
+            $this->responseType = Response::TYPE_TEXT;
         }
 
         return $response;
@@ -92,8 +90,8 @@ class Diagnostic extends Action
      */
     final public function run(?Route $route = null): Response
     {
-        if ($this->responseType && method_exists($this, $this->responseType)) {
-            $response = call_user_func([$this, $this->responseType], $this->caller);
+        if ($this->responseType && method_exists($this, $method = Response::getResponseTypeName($this->responseType))) {
+            $response = call_user_func([$this, $method], $this->caller);
         } else {
             $response = $this->html();
         }
@@ -132,10 +130,10 @@ class Diagnostic extends Action
      *
      * @return Response\XML the XML response object containing the generated XML structure
      */
-    public function xmlrpc(): Response\XML
+    public function xml(): Response\XML
     {
-        $xml = new \SimpleXMLElement('<xml/>');
-        $xml->addChild('data', 'NO CONTENT');
+        $xml = new Element();
+        $xml->add('data', 'NO CONTENT');
 
         return new Response\XML($xml, $this->code);
     }

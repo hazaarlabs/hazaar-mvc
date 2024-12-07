@@ -9,6 +9,13 @@ use Hazaar\HTTP\Client;
 
 class Response implements Interfaces\Response
 {
+    public const TYPE_HTML = 1;
+    public const TYPE_JSON = 2;
+    public const TYPE_XML = 3;
+    public const TYPE_TEXT = 4;
+    public const TYPE_BINARY = 5;
+    public const TYPE_HAZAAR = 6;
+
     public static ?string $encryptionKey = null;
 
     // Use text/html as the default type as it is the most widely accepted.
@@ -29,6 +36,19 @@ class Response implements Interfaces\Response
     public function __sleep()
     {
         return ['content', 'contentType', 'headers', 'statusCode'];
+    }
+
+    public static function getResponseTypeName(int $type): string
+    {
+        return match ($type) {
+            self::TYPE_HTML => 'html',
+            self::TYPE_JSON => 'json',
+            self::TYPE_XML => 'xml',
+            self::TYPE_TEXT => 'text',
+            self::TYPE_BINARY => 'binary',
+            self::TYPE_HAZAAR => 'hazaar',
+            default => 'none',
+        };
     }
 
     /**
