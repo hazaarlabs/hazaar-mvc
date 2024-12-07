@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Application\Controllers;
+namespace Application\Controller;
 
 use Hazaar\Controller\Action;
 
