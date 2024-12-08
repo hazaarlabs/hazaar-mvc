@@ -102,8 +102,10 @@ class Router
             if (array_key_exists($route, self::$internal)) {
                 $controller = self::$internal[$route];
                 $action = substr($path, $offset + 1);
+                $route = new Route(substr($path, $offset + 1));
+                $route->setCallable([$controller, $action]);
 
-                return new Route([$controller, $action], substr($path, $offset + 1));
+                return $route;
             }
         }
         $matchedRoute = $this->routeLoader->evaluateRequest($request);
@@ -112,7 +114,7 @@ class Router
         }
         $method = $request->getMethod();
         foreach ($this->routes as $route) {
-            if ($route->match($method, $path)) {
+            if ($route->match($method, $request->getPath())) {
                 return $matchedRoute = $route;
             }
         }
@@ -120,12 +122,13 @@ class Router
         if (!('/' === $request->getPath() && ($controller = $this->config['controller']))) {
             return null;
         }
-
         $controllerClass = '\\' === substr($controller, 0, 1)
             ? $controller
             : 'Application\Controller\\'.ucfirst($controller);
+        $route = new Route();
+        $route->setCallable([$controllerClass, $this->config['action']]);
 
-        return new Route([$controllerClass, $this->config['action']]);
+        return $route;
     }
 
     /**
@@ -261,7 +264,17 @@ class Router
         if (is_string($callable)) {
             $callable = explode('::', $callable);
         }
-        self::$instance->addRoute(new Route($callable, $path, $methods, $responseType ?? self::$defaultResponseType));
+        $route = new Route($path, $methods, $responseType ?? self::$defaultResponseType);
+        $route->setCallable($callable);
+        self::$instance->addRoute($route);
+    }
+
+    public static function add(Route $route): void
+    {
+        if (!self::$instance) {
+            return;
+        }
+        self::$instance->addRoute($route);
     }
 
     /**
