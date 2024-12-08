@@ -97,28 +97,6 @@ class Annotated extends Advanced
     ];
 
     /**
-     * @var array<string, array<mixed>>
-     */
-    private array $controllerEndpoints = [];
-
-    private bool $describeFull = true;
-
-    /**
-     * Private method to describe the REST API.
-     *
-     * @return array<mixed> returns an array containing the description of the REST API
-     */
-    public function describeAPI(): array
-    {
-        $api = [];
-        foreach ($this->controllerEndpoints as $endpoint) {
-            $this->describeEndpoint($endpoint, $this->describeFull, $api);
-        }
-
-        return $api;
-    }
-
-    /**
      * Initialises the basic router.
      *
      * @return bool returns true if the initialisation is successful, false otherwise
@@ -150,37 +128,6 @@ class Annotated extends Advanced
         }
 
         return null;
-    }
-
-    /**
-     * Get the tags for a given endpoint name.
-     *
-     * @param string $name the name of the endpoint
-     *
-     * @return array<string>|false the tags for the endpoint or false if not found
-     */
-    protected function getEndpointTags(string $name): array|false
-    {
-        foreach ($this->controllerEndpoints as $endpoint) {
-            foreach ($endpoint['routes'] as $route) {
-                if ($route['func']->name === $name) {
-                    if (!array_key_exists('tags', $route)) {
-                        $route['tags'] = [];
-                        preg_match_all('/\*\s*@((\w+).*)/', $endpoint['comment'], $matches);
-                        foreach ($matches[1] as $annotation) {
-                            if (!preg_match('/^(\w+)(\W.*)$/', $annotation, $parts)) {
-                                continue;
-                            }
-                            $route['tags'][$parts[1]] = trim($parts[2]);
-                        }
-                    }
-
-                    return $route['tags'];
-                }
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -268,43 +215,5 @@ class Annotated extends Advanced
         }
 
         return $endpoints;
-    }
-
-    /**
-     * Describes an endpoint by generating an array of information about the endpoint.
-     *
-     * @param array<mixed> $endpoint      the endpoint to describe
-     * @param bool         $describe_full whether to include full description or not
-     * @param array<mixed> $api           the array to append the endpoint information to
-     *
-     * @return array<mixed> the array of information about the endpoint
-     */
-    private function describeEndpoint(array $endpoint, bool $describe_full = false, array &$api = []): array
-    {
-        foreach ($endpoint['routes'] as $route => $route_data) {
-            foreach ($route_data['args']['methods'] as $methods) {
-                $info = [
-                    // 'url' => (string) $this->url($route),
-                    'httpMethods' => $methods,
-                ];
-                if ($describe_full && ($doc = ake($endpoint, 'doc'))) {
-                    if ($doc->hasTag('param')) {
-                        $info['parameters'] = [];
-                        foreach ($doc->tag('param') as $name => $param) {
-                            if (!preg_match('/<(\w+:)*'.substr($name, 1).'>/', $route)) {
-                                continue;
-                            }
-                            $info['parameters'][$name] = $param['desc'];
-                        }
-                    }
-                    if ($brief = $doc->brief()) {
-                        $info['description'] = $brief;
-                    }
-                }
-                $api[] = $info;
-            }
-        }
-
-        return $api;
     }
 }
