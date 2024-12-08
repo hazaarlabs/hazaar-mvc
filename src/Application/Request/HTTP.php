@@ -126,7 +126,7 @@ class HTTP extends Request
             }
         }
 
-        return $requestURI;
+        return strlen($requestURI) > 1 ? rtrim($requestURI, '/') : $requestURI;
     }
 
     /**
