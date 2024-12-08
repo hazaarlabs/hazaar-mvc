@@ -297,31 +297,15 @@ class Loader
     }
 
     /**
-     * Loads a class from a source file.
-     * This is the main class loader used by the __autoload()PHP
-     * trigger. It is responsible for loading the files that hold class source definitions by determining
-     * the correct file to load based on the class name.
+     * Loads a class file based on the provided class name.
      *
-     * First check if the class name is a single word that ends with 'Controller', designating it as a
-     * controller class. If that matches then the class is loaded from the controller path.
+     * This method splits the class name into parts using non-word characters and underscores as delimiters.
+     * It then checks if the first part of the class name is 'Application', which acts as a namespace key
+     * to restrict the loadable path to that of the application itself.
+     * If the prefix is 'Application', it constructs the file path from the class name parts and attempts
+     * to load the file.
      *
-     * Otherwise we check if the class starts with Application and load from the application path.
-     *
-     * Lastly we do a 2 stage search of the library paths. Stage 1 looks for a correlating path while
-     * stage
-     * 2 looks for the class in a sub-directory of the module name.
-     *
-     * We do 2 stage class path checking.
-     *
-     * * _Stage 1:_ Look for the class in a correlating path. eg:[[Hazaar\Application]] in path
-     * Hazaar/Application.php
-     * * _Stage 2:_ If stage 1 fails, look in a module sub-directory. eg:[[Hazaar\Application]] in path
-     * Hazaar/Application/Application.php
-     *
-     * If they both fail, the class is not found and we throw a pretty exception.
-     *
-     * @param string $className
-     *                          The name of the class to load
+     * @param string $className the fully qualified name of the class to load
      */
     public static function loadClassFromFile($className): void
     {

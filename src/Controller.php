@@ -25,6 +25,8 @@ use Hazaar\Controller\Response\HTTP\Redirect;
  * All controller classes extend this class.  Normally this class would only be extended by the controller classes
  * provided by Hazaar MVC, as how a controller actually behaves and the functionality it provides is actually defined
  * by the controller itself.  This controller does nothing, but will still initialise and run, but will output nothing.
+ *
+ * @property Helper\Response $response
  */
 abstract class Controller implements Controller\Interfaces\Controller
 {
