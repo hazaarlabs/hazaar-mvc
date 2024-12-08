@@ -6,6 +6,15 @@ use Hazaar\Controller;
 use Hazaar\Controller\Closure;
 use Hazaar\Controller\Response;
 
+/**
+ * The route class.
+ *
+ * This class is used to define a route in the application. It contains the callable
+ * property, which is the action to be executed
+ * when the route is matched. It also contains the path, methods, and responseType
+ * properties, which are used to match the route against the request path and method.
+ */
+#[\Attribute]
 class Route
 {
     public Router $router;
@@ -32,15 +41,18 @@ class Route
      * @param array<string> $methods
      */
     public function __construct(
-        mixed $callable,
         ?string $path = null,
         array $methods = [],
         int $responseType = Response::TYPE_HTML
     ) {
-        $this->callable = $callable;
         $this->path = $path;
         $this->methods = array_map('strtoupper', $methods);
         $this->responseType = $responseType;
+    }
+
+    public function setCallable(mixed $callable): void
+    {
+        $this->callable = $callable;
         if (is_array($this->callable) && isset($this->callable[2]) && is_array($this->callable[2])) {
             $this->actionArgs = $this->callable[2];
         } else {
@@ -236,5 +248,15 @@ class Route
     public function getResponseType(): int
     {
         return $this->responseType;
+    }
+
+    /**
+     * Prefixes the path of the route with the given path.
+     *
+     * @param string $path the path to be prefixed
+     */
+    public function prefixPath(string $path): void
+    {
+        $this->path = '/'.ltrim($path, '/').$this->path;
     }
 }

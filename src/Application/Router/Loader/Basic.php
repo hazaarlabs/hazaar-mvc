@@ -53,7 +53,9 @@ class Basic extends Loader
         }
         $action = (isset($parts[1]) && '' !== $parts[1]) ? $parts[1] : null;
         $actionArgs = (count($parts) > 2) ? array_slice($parts, 2) : null;
+        $route = new Route($path);
+        $route->setCallable([$controller, $action, $actionArgs]);
 
-        return new Route([$controller, $action, $actionArgs], $path);
+        return $route;
     }
 }

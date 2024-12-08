@@ -42,6 +42,7 @@ class Advanced extends Loader
         }
         if (isset($this->config['aliases'])) {
             $path = $this->evaluateAliases($path, $this->config['aliases']);
+            $request->setPath($path);
         }
         $parts = [];
         $controller = trim($this->findController($path, $parts) ?? '', '\\');
@@ -51,8 +52,10 @@ class Advanced extends Loader
         $controllerClass = 'Application\Controller\\'.$controller;
         $action = (count($parts) > 0) ? array_shift($parts) : null;
         $actionArgs = $parts;
+        $route = new Route($path);
+        $route->setCallable([$controllerClass, $action, $actionArgs]);
 
-        return new Route([$controllerClass, $action, $actionArgs], $path);
+        return $route;
     }
 
     /**
