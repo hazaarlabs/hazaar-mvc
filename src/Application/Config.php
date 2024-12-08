@@ -192,18 +192,15 @@ class Config implements \ArrayAccess, \Iterator
             }
             $options[] = (true === $sourceInfo['ns']) ? $sourceData : [$this->env => $sourceData];
         }
-        if (!count($options) > 0) {
-            throw new \Exception('No valid configuration files found');
-        }
-        $this->global = [];
-        foreach ($options as $o) {
-            if (true === ake($this->global, 'final')) {
-                break;
+        if (count($options) > 0) {
+            $this->global = [];
+            foreach ($options as $o) {
+                if (true === ake($this->global, 'final')) {
+                    break;
+                }
+                $this->global = array_replace_recursive($this->global, $o);
             }
-            $this->global = array_replace_recursive($this->global, $o);
-        }
-        if (!$this->loadConfigOptions($defaults, $this->global, $env)) {
-            throw new \Exception('Failed to load configuration options');
+            $this->loadConfigOptions($defaults, $this->global, $env);
         }
 
         return $defaults;
@@ -437,15 +434,12 @@ class Config implements \ArrayAccess, \Iterator
      * @param array<mixed> $config  the config to store the configuration options
      * @param array<mixed> $options the array of configuration options
      * @param null|string  $env     The environment to load the configuration for. If null, the default environment will be used.
-     *
-     * @return bool returns true if the configuration options were loaded successfully, false otherwise
      */
-    private function loadConfigOptions(array &$config, array $options, ?string $env): bool
+    private function loadConfigOptions(array &$config, array $options, ?string $env): void
     {
         if (!array_key_exists($env, $options)) {
-            return false;
+            return;
         }
-
         foreach ($options[$env] as $key => $values) {
             if ('include' === $key) {
                 $this->includes = is_array($values) ? $values : [$values];
@@ -490,7 +484,5 @@ class Config implements \ArrayAccess, \Iterator
                 }
             }
         }
-
-        return true;
     }
 }
