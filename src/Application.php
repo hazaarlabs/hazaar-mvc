@@ -660,7 +660,7 @@ class Application
     public function shutdownHandler(): void
     {
         if (($error = error_get_last()) !== null) {
-            if (1 == ini_get('display_errors') && 'cli' !== php_sapi_name()) {
+            if (ob_get_length() && 1 == ini_get('display_errors') && 'cli' !== php_sapi_name()) {
                 ob_clean();
             }
             match ($error['type']) {
