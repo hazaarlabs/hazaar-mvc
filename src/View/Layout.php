@@ -28,7 +28,7 @@ class Layout extends View
         if (!$view) {
             $view = 'application';
         }
-        parent::__construct($view, ['hazaar']);
+        parent::__construct($view);
     }
 
     /**

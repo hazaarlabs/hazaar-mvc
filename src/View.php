@@ -54,18 +54,15 @@ class View implements \ArrayAccess
      */
     private $requiresParam = [];
 
-    /**
-     * @param array<string> $inithelpers
-     */
-    public function __construct(string|View $view, array $inithelpers = [])
+    public function __construct(string|View $view)
     {
         $this->load($view);
         $this->application = Application::getInstance();
-        if (count($inithelpers) > 0) {
-            foreach ($inithelpers as $helper) {
-                $this->addHelper($helper);
-            }
-        }
+        // if (count($inithelpers) > 0) {
+        //     foreach ($inithelpers as $helper) {
+        //         $this->addHelper($helper);
+        //     }
+        // }
     }
 
     public function __get(string $helper): mixed
@@ -95,9 +92,10 @@ class View implements \ArrayAccess
      *
      * @param string $view the name of the view to find
      * @param string $name the name of the view that was found
+     *
      * @param-out string $name the name of the view that was found
      *
-     * @return string|null the path to the view file or null if the view was not found
+     * @return null|string the path to the view file or null if the view was not found
      */
     public static function getViewPath(string $view, string &$name = ''): ?string
     {
