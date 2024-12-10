@@ -92,6 +92,10 @@ public function getProduct(int $id) {
 }
 ```
 
+::: warning
+The target controller method must be non-`static` and `public` and not start with an underscore (`_`).
+:::
+
 ### Route Response Types
 
 Specifying a response type ensures errors or exceptions are returned in the correct format. Available response types include:
@@ -171,10 +175,6 @@ class Product extends Basic {
 }
 ```
 
-::: warning
-The target controller method must be non-`static` and `public` and not start with an underscore (`_`).
-:::
-
 ## Advanced Routes
 
 The advanced router supports nested controllers in subdirectories, enabling a more organized structure. Controllers are mapped to URLs based on their directory structure.
@@ -197,7 +197,7 @@ appropriate controller in the directory structure and can be multiple levels dee
 :::
 
 ::: note
-The advanced router does not support custom routes. For more advanced routing, consider the [annotated router](#annotated-routes),  [attribute router](#attribute-routes) or [File router](#file-routes).
+The advanced router does not support custom routes. For more advanced routing, consider the [attribute router](#attribute-routes) or [file router](#file-routes).
 :::
 
 ### Checking the Request Method
@@ -207,9 +207,11 @@ current request type and provides a number of ways to do this.
 
 The request object is accessible on the controller using `$this->request` and provides methods such as:
 
-- isGet() - Returns true if the request uses the `GET` method.
-- isPost() - Returns true if the request uses the `POST` method.
-- getMethod() - Returns the name of the request method for this request.  
+- [isGet()](/api/class/Hazaar/Application/Request/HTTP#isget) - Returns true if the request uses the `GET` method.
+- [isPut()](/api/class/Hazaar/Application/Request/HTTP#isput) - Returns true if the request uses the `PUT` method.
+- [isPost()](/api/class/Hazaar/Application/Request/HTTP#ispost) - Returns true if the request uses the `POST` method.
+- [isDelete()](/api/class/Hazaar/Application/Request/HTTP#isdelete) - Returns true if the request uses the `DELETE` method.
+- [getMethod()](/api/class/Hazaar/Application/Request#getmethod) - Returns the name of the request method for this request.  
 
 ::: tip
 `Hazaar\Application\Request::getMethod()` is available in CLI requests as well, but will always be `GET`.

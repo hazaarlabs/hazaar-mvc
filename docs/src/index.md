@@ -15,7 +15,7 @@ actions:
     type: default
 
   - text: API Documentation
-    link: /api/Home
+    link: /api/home
     type: default
 
 features:
