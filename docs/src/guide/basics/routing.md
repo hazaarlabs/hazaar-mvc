@@ -6,7 +6,7 @@ Unlike other frameworks, Hazaar MVC provides multiple methods for configuring ro
 
 ## Methods for Defining Routes
 
-- **[File](#file-routes)**: Define routes in a file, ideal for routes not directly tied to a controller.
+- **[File](#file-routes)**: Define routes in a `route.php` file, ideal for routes not directly tied to a controller.
 - **[Basic](#basic-routes)**: The simplest method, requiring no configuration. Controllers and their actions are automatically available as routes.
 - **[Advanced](#advanced-routes)**: Similar to the basic method but supports nesting controllers in subdirectories.
 - **[Annotated](#annotated-routes)**: Use annotations in controller classes to define routes, extending the advanced router.
@@ -32,10 +32,11 @@ The `type` key determines the router type. Available types include:
 - `advanced`: Supports nesting controllers in subdirectories.
 - `annotated`: Define routes using annotations in controller classes.
 - `attribute`: Define routes using attributes in controller classes.
+- `json`: Define routes in a JSON configuration file.
 
 ## File Routes
 
-File routes are specified in a `routes.php` file in the root directory. This file contains calls to the `Router` class, which provides methods such as:
+File routes are specified in a `routes.php` file in the root directory. This file contains calls to the `Hazaar\Application\Router` class, which provides methods such as:
 
 - `get`: Responds to `GET` requests.
 - `post`: Responds to `POST` requests.
@@ -108,13 +109,13 @@ Router::get('/product/{int:id}', [API::class, 'getProduct'], Response::TYPE_JSON
 
 ### Loading File Routes
 
-To load the file routes, add the following configuration to the `application.json` file:
+To load the file routes from a file other than the default `route.php` file, add the `file` key to the `router` configuration in the `application.json` file:
 
 ```json
 {
     "router": {
         "type": "file",
-        "file": "routes.php"
+        "file": "myCustomRouteFile.php"
     }
 }
 ```
@@ -124,13 +125,14 @@ The `file` key specifies the path to the PHP file containing the route definitio
 ## Basic Routes
 
 The basic router uses the request URL to determine the controller and action, along with any arguments. No configuration is required, as controllers and actions are automatically mapped to URLs.
+This router is the simplest and fastest way to perform routing in Hazaar MVC as there is minimal processing required.
 
 ::: tip
-The basic router is ideal for simple applications with a flat controller structure.
+The basic router is ideal for simple applications with a flat controller structure that require the most efficient routing possible.
 :::
 
-::: note
-The basic router does not support nested controllers or custom routes.  For more advanced routing, consider the [advanced router](#advanced-routes).
+::: warning
+The basic router does not support nested controllers or routing aliases.  For more advanced routing, look at the [advanced router](#advanced-routes).
 :::
 
 A typical route format is:
@@ -142,28 +144,35 @@ A typical route format is:
 Example:
 
 ```
-/auth/login/myusername/mypassword
+/product/get/1234
 ```
 
-This URL loads the `AuthController` and executes its `login` method with `myusername` and `mypassword` as arguments. The corresponding controller in `application/controllers/Auth.php`:
+This URL loads the `Application\Controller\Product` controller and executes its `get` method with `1234` as an argument. The corresponding controller in `application/controllers/Product.php`:
 
 ```php
 namespace Application\Controller;
 
-class Auth extends \Hazaar\Controller\Action {
+use Hazaar\Controller\Basic;
+use Hazaar\Controller\Response\Json;
+use Hazaar\DBI\Adapter;
 
-    public function init() {
+class Product extends Basic {
+
+    public function init(): void
+    {
         // Initialization code
     }
 
-    public function login($username, $password) {
-        // Handle login
+    public function get(int $productId): Json
+    {
+        $db = Adapter::getInstance();
+        return new Json($db->table('product')->find(['id' => $productId]));
     }
 }
 ```
 
 ::: warning
-The target controller method must be public and not start with an underscore (`_`).
+The target controller method must be non-`static` and `public` and not start with an underscore (`_`).
 :::
 
 ## Advanced Routes
@@ -180,6 +189,8 @@ A typical route format is:
 /subdir/subdir/controller/action/arg1/arg2/argx
 ```
 
+Here, `controller` is the name of the controller class stored in the `application/controllers/subdir/subdir/controller.php` file, and `action` is the public method on the controller that will receive the request.
+
 ::: info
 The advanced router has a smart controller loader that automatically loads the controller based on the URL by finding the most
 appropriate controller in the directory structure and can be multiple levels deep.
@@ -189,25 +200,69 @@ appropriate controller in the directory structure and can be multiple levels dee
 The advanced router does not support custom routes. For more advanced routing, consider the [annotated router](#annotated-routes),  [attribute router](#attribute-routes) or [File router](#file-routes).
 :::
 
-Example:
+### Checking the Request Method
+
+If the controller method should only process a particular type of request, then the [`Hazaar\Application\Request\HTTP`](/api/class/Hazaar/Application/Request/HTTP) object needs to be used to check the 
+current request type and provides a number of ways to do this.  
+
+The request object is accessible on the controller using `$this->request` and provides methods such as:
+
+- isGet() - Returns true if the request uses the `GET` method.
+- isPost() - Returns true if the request uses the `POST` method.
+- getMethod() - Returns the name of the request method for this request.  
+
+::: tip
+`Hazaar\Application\Request::getMethod()` is available in CLI requests as well, but will always be `GET`.
+:::
+
+```php
+public function action(): Response
+{
+    if($this->request->isPOST()){
+        // Store the update and return status
+    }elseif($this->request->isGET()){
+        // Return the product
+    }
+    
+    return BadRequest;
+}
+```
+
+### Example
+
+In this example our controller has a `get` method that returns a product formatted as JSON.  The URL would be:
 
 ```
-/api/v1/product/list
+/api/v1/product/get/1234
 ```
 
 This URL loads `Application\Controller\Product` and executes its `list` method. The corresponding controller is located in `application/controllers/api/v1/product.php`:
 
-```php  
+```php
 namespace Application\Controller\Api\V1;
 
-use Hazaar\Controller\Action;
+use Hazaar\Controller\Basic;
+use Hazaar\Controller\Response;
+use Hazaar\Controller\Response\Json;
+use Hazaar\Controller\Response\HTTP\BadRequest;
+use Hazaar\DBI\Adapter;
 
-class Product extends Action {
+class Product extends Basic {
 
-    public function list() {
-        // List products
+    public function init(): void
+    {
+        // Initialization code
     }
 
+    public function get(int $productId): Response
+    {
+        if(!$this->request->isGET()){
+            return new BadRequest;
+        }
+        $db = Adapter::getInstance();
+
+        return new Json($db->table('product')->find(['id' => $productId]));
+    }
 }
 ```
 
@@ -217,7 +272,10 @@ The attribute router uses attributes in controller classes to define routes. Thi
 
 ### Defining Routes
 
-To define a route, add the `#[\Hazaar\Application\Route]` attribute to the controller class or method. The attribute accepts the following parameters:
+To define a route, add the `#[\Hazaar\Application\Route]` attribute to the controller class or method to define the actions available on this controller.  Routing to the 
+controller itself is handled by the [Advanced Router](#advanced-routes) to limit the number of controller files processed.
+
+The attribute accepts the following parameters:
 
 - `$route`: The URL pattern.
 - `$method` (optional): The HTTP method (GET, POST, PUT, DELETE).
@@ -226,18 +284,10 @@ To define a route, add the `#[\Hazaar\Application\Route]` attribute to the contr
 Example:
 
 ```php
-namespace Application\Controller;
-
-use Hazaar\Controller\Action;
-use Hazaar\Application\Route;
-
-class Product extends Action {
-
-    #[Route('/list', methods: ['GET'])]
-    public function list() {
-        // List products
-    }
-
+#[Route('/', methods: ['GET'])]
+public function listProducts(): Json
+{
+    // List products
 }
 ```
 
@@ -249,8 +299,48 @@ Example:
 
 ```php
 #[Route('/{int:id}', methods: ['GET'])]
-public function getProduct(int $id) {
+public function getProduct(int $id): Json
+{
     // Retrieve the product with the specified ID
+}
+```
+
+### Full Example
+
+In this example we have defined 3 routes on the `Application\Controller\Product` controller.  They are:
+
+- `GET` request to `/product`.  This can be used to retrive a list of products.
+- `GET` request to `/product/1234`.  This can be used to retrieve a single product with the ID `1234`.
+- `POST` request to `/product/1234`.  This can be used to update a single product with the ID `1234`.
+
+```php
+namespace Application\Controller;
+
+use Hazaar\Application\Route;
+use Hazaar\Controller\Basic;
+use Hazaar\Controller\Response\Json;
+use Hazaar\DBI\Adapter;
+
+class Product extends Basic {
+
+    #[Route('/', methods: ['GET'])]
+    public function listProducts(): Json
+    {
+        // List products
+    }
+
+    #[Route('/{int:id}', methods: ['GET'])]
+    public function getProduct(int $id): Json
+    {
+        $db = Adapter::getInstance();
+        return new Json($db->table('product')->find(['id' => $productId]));
+    }
+
+    #[Route('/{int:id}', methods: ['POST'])]
+    public function updateProduct() {
+        // Update product
+    }
+
 }
 ```
 
