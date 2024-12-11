@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Hazaar\File;
 
-use Hazaar\Application;
+use Dompdf\Dompdf;
 use Hazaar\File;
-use Hazaar\HTTP\Client;
-use Hazaar\HTTP\Request;
 
 /**
  * PDF File class for generating PDFs from HTML.
@@ -24,28 +22,16 @@ class PDF extends File
     /**
      * PDF generated as landscape (vertical).
      */
-    public const PDF_PORTRAIT = 'Portrait';
+    public const PDF_PORTRAIT = 'portrait';
 
     /**
      * PDF generated as landscape (horizontal).
      */
-    public const PDF_LANDSCAPE = 'Landscape';
-    private ?string $sourceURL;
-    private ?Temp $tmp = null;
+    public const PDF_LANDSCAPE = 'landscape';
+    private ?string $sourceURL = null;
     private string $status = '';
-    private string $orient = 'Portrait';
+    private string $orient = self::PDF_PORTRAIT;
     private string $size = 'A4';
-    private bool $toc = false;
-    private int $copies = 1;
-    private bool $grayscale = false;
-    private string $title = 'PDF Document';
-
-    /**
-     * @var array<string,int|string>
-     */
-    private array $margins;
-
-    private string $lastError;
 
     /**
      * Hazaar\File\PDF constructor.
@@ -59,17 +45,9 @@ class PDF extends File
      */
     public function __construct(?string $file = null, ?Manager $manager = null, ?string $relative_path = null)
     {
-        $cmd = $this->getCommand();
-        if (!file_exists($cmd)) {
-            // Attempt to install the required file
-            if (!$this->install()) {
-                throw new Exception\WKPDF\InstallFailed($cmd, $this->lastError);
-            }
+        if (!class_exists('Dompdf\Dompdf')) {
+            throw new \Exception('The DomPdf library is required to generate PDF files.  Please install the library using composer.');
         }
-        if (!is_executable($cmd)) {
-            throw new Exception\WKPDF\NotExecutable($cmd);
-        }
-        $this->tmp = new Temp(mt_rand().'.html');
         parent::__construct($file, $manager, $relative_path);
         parent::registerFilter(FILE_FILTER_SET, 'render');
     }
@@ -99,52 +77,6 @@ class PDF extends File
     }
 
     /**
-     * Whether to automatically generate a TOC (table of contents) or not.
-     *
-     * By default TOC is disabled.
-     *
-     * @param bool $enabled true use TOC, false disable TOC
-     */
-    public function setTOC(bool $enabled): void
-    {
-        $this->toc = $enabled;
-    }
-
-    /**
-     * Set the number of copies to be printed.
-     *
-     * By default it is one.
-     *
-     * @param int $count number of page copies
-     */
-    public function setCopies(int $count): void
-    {
-        $this->copies = $count;
-    }
-
-    /**
-     * Whether to print in grayscale or not.
-     *
-     * By default it is OFF.
-     *
-     * @param bool $mode true to print in grayscale, false in full color
-     */
-    public function setGrayscale(bool $mode): void
-    {
-        $this->grayscale = $mode;
-    }
-
-    /**
-     * Set PDF title. If empty, HTML &lt;title&gt; of first document is used.
-     *
-     * By default it is empty.
-     */
-    public function setTitle(string $text): void
-    {
-        $this->title = $text;
-    }
-
-    /**
      * Set the HTML content of the new PDF file.
      *
      * This content should be HTML format and will be converted into a PDF immediately and stored in memory.  set_content()
@@ -154,8 +86,6 @@ class PDF extends File
      */
     public function setContents(?string $content = null): ?int
     {
-        $this->sourceURL = null;
-
         return parent::setContents($content);
     }
 
@@ -166,8 +96,8 @@ class PDF extends File
      */
     public function setSource(string $url): void
     {
-        $this->setContents();
         $this->sourceURL = $url;
+        $this->setContents();
     }
 
     /**
@@ -180,103 +110,6 @@ class PDF extends File
         return $this->status;
     }
 
-    public function install(): bool
-    {
-        try {
-            $required_programs = ['ar' => 'ar -V', 'tar' => 'tar --version'];
-            foreach ($required_programs as $prog => $test) {
-                $result = shell_exec($test);
-                if (null === $result || false === $result) {
-                    throw new \Exception("The program '{$prog}' is required for automated installation of wkhtmltopdf.");
-                }
-            }
-            $cmd = $this->getCommand();
-            $target = Application::getInstance()->getRuntimePath('bin', true);
-            if (!is_writable($target)) {
-                throw new \Exception('The runtime binary directory is not writable!');
-            }
-            $tmp_path = new TempDir();
-            $asset_suffix = '.bullseye_'.(('x86_64' == php_uname('m')) ? 'amd64' : 'i386').'.deb';
-            $client = new Client();
-            $request = new Request('https://api.github.com/repos/wkhtmltopdf/packaging/releases');
-            if (!($response = $client->send($request))) {
-                throw new \Exception('No response returned from Github API call!');
-            }
-            if (200 != $response->status) {
-                throw new \Exception('Got '.$response->status.' from Github API call!');
-            }
-            $releases = $response->body();
-            $sourceURL = null;
-            foreach ($releases as $info) {
-                if (!(($info instanceof \stdClass) && ($assets = ake($info, 'assets')))) {
-                    continue;
-                }
-                foreach ($assets as $index => $asset) {
-                    if (26 === $index) {
-                        echo '';
-                    }
-                    if (substr($asset->name, -strlen($asset_suffix), strlen($asset_suffix)) != $asset_suffix) {
-                        continue;
-                    }
-                    $sourceURL = ake($asset, 'browser_download_url');
-
-                    break 2;
-                }
-            }
-            if (!$sourceURL) {
-                throw new \Exception('Unable to automatically install WKHTMLTOPDF.  I was unable to determine the latest release execute source!');
-            }
-            $tmp_file = $tmp_path.DIRECTORY_SEPARATOR.basename($sourceURL);
-            if (!file_exists($tmp_file)) {
-                copy($sourceURL, $tmp_file);
-                if (!file_exists($tmp_file)) {
-                    throw new \Exception('Failed to download installation file!');
-                }
-            }
-            $cwd = getcwd();
-            chdir((string) $tmp_path);
-            shell_exec('ar x '.$tmp_file.' data.tar.xz');
-            shell_exec('tar -xf data.tar.xz ./usr/local/bin/wkhtmltopdf');
-            $bin_file = '.'.DIRECTORY_SEPARATOR.'usr'
-                .DIRECTORY_SEPARATOR.'local'
-                .DIRECTORY_SEPARATOR.'bin'
-                .DIRECTORY_SEPARATOR.'wkhtmltopdf';
-            if (!file_exists($bin_file)) {
-                throw new \Exception('Unable to find executable in release file!');
-            }
-            copy($bin_file, $cmd);
-            @chmod($cmd, 0755);
-            chdir($cwd);
-            if (!file_exists($cmd)) {
-                throw new \Exception('Executable not found after installation!');
-            }
-
-            return true;
-        } catch (\Exception $e) {
-            $this->lastError = $e->getMessage();
-        }
-
-        return false;
-    }
-
-    public function setMargin(
-        int|string $top,
-        null|int|string $right = null,
-        null|int|string $bottom = null,
-        null|int|string $left = null
-    ): void {
-        if (null === $right) {
-            $right = $top;
-        }
-        if (null === $bottom) {
-            $bottom = $top;
-        }
-        if (null === $left) {
-            $left = $right;
-        }
-        $this->margins = ['T' => $top, 'R' => $right, 'B' => $bottom, 'L' => $left];
-    }
-
     public function mimeContentType(): string
     {
         return 'application/pdf';
@@ -287,105 +120,27 @@ class PDF extends File
      *
      * This is the guts of it really.  This is the method that converts the HTML content being set into a PDF.
      */
-    protected function render(string &$bytes): bool
+    protected function render(?string &$bytes): bool
     {
         if ($this->sourceURL) {
-            $web = $this->sourceURL;
+            $sourceHTML = file_get_contents($this->sourceURL);
+            if (false === $sourceHTML) {
+                throw new \Exception('Failed to load source URL: '.$this->sourceURL);
+            }
+            $bytes = $sourceHTML;
+        } elseif (null === $bytes) {
+            return false;
         } else {
             if ('%PDF-' === substr($bytes, 0, 5)) {
                 return false;
             }
-            $this->tmp->putContents($bytes);
-            $web = $this->tmp;
         }
-        if (!file_exists($cmd = $this->getCommand())) {
-            throw new \Exception('PDF converter executable not found!');
-        }
-        // number of copies
-        $cmd .= (($this->copies > 1) ? ' --copies '.$this->copies : '');
-        // orientation
-        $cmd .= ' --orientation '.$this->orient;
-        // page size
-        $cmd .= ' --page-size '.$this->size;
-        // table of contents
-        $cmd .= ($this->toc ? ' --toc' : '');
-        // grayscale
-        $cmd .= ($this->grayscale ? ' --grayscale' : '');
-        // title
-        $cmd .= (('' != $this->title) ? ' --title "'.$this->title.'"' : '');
-        if (count($this->margins) > 0) {
-            foreach ($this->margins as $arg => $value) {
-                $cmd .= ' -'.$arg.' '.(is_int($value) ? $value.'mm' : $value);
-            }
-        }
-        // URL and optional to write to STDOUT (with quiet)
-        $cmd .= ' -q -l "'.$web.'" -';
-        $pipes = self::_pipeExec($cmd);
-        if (false !== strpos(strtolower($pipes['stderr']), 'error')) {
-            throw new Exception\WKPDF\SystemError($pipes['stderr']);
-        }
-        if ('' == $pipes['stdout']) {
-            throw new Exception\WKPDF\NoData($pipes['stderr']);
-        }
-        if (((int) $pipes['return']) > 1) {
-            throw new Exception\WKPDF\ExecError((int) $pipes['return']);
-        }
-        $this->status = $pipes['stderr'];
-        $bytes = $pipes['stdout'];
-        if ($this->tmp->exists()) {
-            $this->tmp->unlink();
-        }
+        $dompdf = new Dompdf();
+        $dompdf->loadHtml($bytes);
+        $dompdf->setPaper($this->size, $this->orient);
+        $dompdf->render();
+        $bytes = $dompdf->output() ?? '';
 
         return true;
-    }
-
-    private function getCommand(): string
-    {
-        if ($cmd = trim(shell_exec('which wkhtmltopdf'))) {
-            return $cmd;
-        }
-        $path = Application::getInstance()->getRuntimePath('bin');
-        $cmd = 'wkhtmltox';
-
-        return $path.DIRECTORY_SEPARATOR.$cmd;
-    }
-
-    /**
-     * Advanced execution routine.
-     *
-     * @param string $cmd   the command to execute
-     * @param string $input any input not in arguments
-     *
-     * @return array<mixed> an array of execution data; stdout, stderr and return "error" code
-     */
-    private static function _pipeExec(string $cmd, string $input = ''): array
-    {
-        $proc = proc_open($cmd, [
-            0 => [
-                'pipe',
-                'r',
-            ],
-            1 => [
-                'pipe',
-                'w',
-            ],
-            2 => [
-                'pipe',
-                'w',
-            ],
-        ], $pipes);
-        fwrite($pipes[0], $input);
-        fclose($pipes[0]);
-        $stdout = stream_get_contents($pipes[1]);
-        fclose($pipes[1]);
-        $stderr = stream_get_contents($pipes[2]);
-        fclose($pipes[2]);
-        $rtn = proc_close($proc);
-
-        return [
-            'stdout' => $stdout,
-            'stderr' => $stderr,
-            'return' => $rtn,
-        ];
     }
 }
