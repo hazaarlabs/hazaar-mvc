@@ -8,6 +8,13 @@ export default defineUserConfig({
     description: 'A lightweight, high performance MVC framework for PHP',
     head: [
         [
+            'link',
+            {
+                rel: 'icon',
+                href: '/hazaar.png'
+            }
+        ],
+        [
             'script',
             {},
             `
