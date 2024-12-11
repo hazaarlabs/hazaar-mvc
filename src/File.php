@@ -46,7 +46,7 @@ class File implements \JsonSerializable
      */
     protected mixed $resource = null;
 
-    protected string $relative_path;
+    protected ?string $relative_path = null;
     private mixed $stream = null;
     private bool $encrypted = false;
     private ?URL $__media_url = null;
@@ -449,9 +449,9 @@ class File implements \JsonSerializable
                 call_user_func_array($filter, [&$bytes]);
             }
         }
-        $this->contents = $bytes;
+        $this->contents = $bytes ?? '';
 
-        return strlen($bytes);
+        return strlen($this->contents);
     }
 
     /**
