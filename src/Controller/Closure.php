@@ -39,7 +39,8 @@ class Closure extends Controller
      */
     public function run(?Route $route = null): Response
     {
-        $response = call_user_func_array($this->closure, $route->getActionArgs());
+        $boundClosure = $this->closure->bindTo($this, self::class);
+        $response = call_user_func_array($boundClosure, $route->getActionArgs());
         if ($response instanceof Response) {
             return $response;
         }
