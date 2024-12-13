@@ -130,7 +130,7 @@ class ModelTest extends TestCase
         $model->counter = 100;
         $this->assertEquals(11, $model->counter);
         $model->age->dob = strtotime('1978-12-13');
-        $this->assertEquals(45, $model->age->years);
+        $this->assertEquals(46, $model->age->years);
     }
 
     public function testMinMaxRules(): void

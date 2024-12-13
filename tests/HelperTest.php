@@ -54,6 +54,6 @@ class HelperTest extends TestCase
 
     public function testAge(): void
     {
-        $this->assertEquals(45, age('1978-12-13'));
+        $this->assertEquals(46, age('1978-12-13'));
     }
 }
