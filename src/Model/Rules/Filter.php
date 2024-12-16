@@ -2,16 +2,13 @@
 
 namespace Hazaar\Model\Rules;
 
-use Hazaar\Model\Exception\PropertyValidationException;
 use Hazaar\Model\Interfaces\AttributeRule;
 
 /**
- * The Filter rule is used to apply a filter to a value.
+ * The Filter rule is used to apply a filter to a property.
  *
  * @param int              $type    The filter type to apply.  See FILTER_VALIDATE_* constants at https://www.php.net/manual/en/filter.filters.validate.php
  * @param array<mixed>|int $options Additional options for the filter.  See https://www.php.net/manual/en/filter.filters.validate.php
- *
- * @throws PropertyValidationException
  *
  * @example
  *
@@ -44,11 +41,11 @@ class Filter implements AttributeRule
         $this->options = $options;
     }
 
-    public function evaluate(mixed &$value, \ReflectionProperty &$property): bool
+    public function evaluate(mixed &$propertyValue, \ReflectionProperty &$property): bool
     {
-        if (!(null === $this->type || empty($value))) {
-            $value = filter_var($value, $this->type, $this->options);
-            if (false === $value) {
+        if (!(null === $this->type || empty($propertyValue))) {
+            $propertyValue = filter_var($propertyValue, $this->type, $this->options);
+            if (false === $propertyValue) {
                 return false;
             }
         }

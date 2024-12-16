@@ -20,8 +20,8 @@ use Hazaar\Model\Interfaces\AttributeRule;
 #[\Attribute]
 class Required implements AttributeRule
 {
-    public function evaluate(mixed &$value, \ReflectionProperty &$property): bool
+    public function evaluate(mixed &$propertyValue, \ReflectionProperty &$property): bool
     {
-        return !empty($value);
+        return !empty($propertyValue);
     }
 }

@@ -29,11 +29,9 @@ class Min implements AttributeRule
         $this->value = $value;
     }
 
-    public function evaluate(mixed &$value, \ReflectionProperty &$property): bool
+    public function evaluate(mixed &$propertyValue, \ReflectionProperty &$property): bool
     {
-        if ($value < $this->value) {
-            $value = $this->value;
-        }
+        $propertyValue = max($propertyValue, $this->value);
 
         return true;
     }

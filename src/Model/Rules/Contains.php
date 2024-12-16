@@ -14,13 +14,13 @@ class Contains implements AttributeRule
         $this->value = $value;
     }
 
-    public function evaluate(mixed &$value, \ReflectionProperty &$property): bool
+    public function evaluate(mixed &$propertyValue, \ReflectionProperty &$property): bool
     {
-        if (is_array($value)) {
-            if (!in_array($this->value, $value)) {
+        if (is_array($propertyValue)) {
+            if (!in_array($this->value, $propertyValue)) {
                 return false;
             }
-        } elseif (!empty($value) && false === strpos($value, $this->value)) {
+        } elseif (!empty($propertyValue) && false === strpos($propertyValue, $this->value)) {
             return false;
         }
 
