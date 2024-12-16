@@ -6,8 +6,17 @@ namespace Hazaar\Tests;
 
 use Hazaar\Model;
 use Hazaar\Model\Email;
-use Hazaar\Model\Exception\PropertyValidationException;
 use Hazaar\Model\Exception\UnsetPropertyException;
+use Hazaar\Model\Rules\Contains;
+use Hazaar\Model\Rules\Filter;
+use Hazaar\Model\Rules\Format;
+use Hazaar\Model\Rules\Max;
+use Hazaar\Model\Rules\MaxLength;
+use Hazaar\Model\Rules\Min;
+use Hazaar\Model\Rules\MinLength;
+use Hazaar\Model\Rules\Pad;
+use Hazaar\Model\Rules\Required;
+use Hazaar\Model\Rules\Trim;
 use PHPUnit\Framework\TestCase;
 
 class AgeModel extends Model
@@ -24,20 +33,36 @@ class AgeModel extends Model
 }
 class TestModel extends Model
 {
+    #[Required]
     protected int $id;
+    #[Required]
+    #[Trim()]
     protected string $name;
+    #[Filter(FILTER_VALIDATE_EMAIL)]
     protected ?string $email = null;
+    #[Contains('ID')]
+    #[Pad(8)]
     protected ?string $description = null;
-    protected int $counter = 0;
+    #[Min(1)]
+    #[Max(10)]
+    protected int $counter = 1;
     protected TestModel $child;
     protected AgeModel $age;
     protected bool $isActive = false;
 
+    #[MinLength(10)]
+    #[MaxLength(20)]
+    protected string $brief;
+
     /**
      * @var array<int,string>
      */
+    #[Contains('id')]
     protected array $categories = [];
     protected string $date;
+
+    #[Format('Monkey: %b')]
+    protected string $phrase;
 
     public function construct(array &$data): void
     {
@@ -47,13 +72,6 @@ class TestModel extends Model
         $this->defineEventHook('write', 'id', function ($value) {
             return (int) $value;
         });
-        $this->defineRule('min', 'counter', 1);
-        $this->defineRule('max', 'counter', 10);
-        $this->defineRule('required', ['id', 'name']);
-        $this->defineRule('filter', 'email', FILTER_VALIDATE_EMAIL);
-        $this->defineRule('pad', 'description', 8);
-        $this->defineRule('contains', 'categories', 'id');
-        // $this->defineRule('format', 'phrase', 'The %2$s contains %1$d monkeys');
     }
 }
 class DynamicModel extends Model
@@ -78,9 +96,10 @@ class ModelTest extends TestCase
     private array $data = [
         'id' => 1234,
         'name' => 'John Doe',
-        'email' => null,
-        'counter' => 0,
-        'child' => ['name' => 'George Doe'],
+        'email' => '',
+        'description' => 'ID:1234',
+        'counter' => 1,
+        'child' => ['name' => 'George Doe', 'id' => 1235],
         'age' => ['dob' => 0],
         'isActive' => true,
     ];
@@ -108,7 +127,7 @@ class ModelTest extends TestCase
         $model = new TestModel($this->data);
         $this->assertIsInt($model->id);
         $this->assertIsString($model->name);
-        $this->assertNull($model->email);
+        $this->assertIsString($model->email);
         $model->id = '1234';
         $this->assertIsInt($model->id);
         $model->id = 123.4;
@@ -126,7 +145,7 @@ class ModelTest extends TestCase
         $model->defineEventHook('write', 'counter', function ($value) {
             return $value + 1;
         });
-        $this->assertEquals(0, $model->counter);
+        $this->assertEquals(1, $model->counter);
         $model->counter = 100;
         $this->assertEquals(11, $model->counter);
         $model->age->dob = strtotime('1978-12-13');
@@ -145,8 +164,8 @@ class ModelTest extends TestCase
     public function testRequiredRule(): void
     {
         $model = new TestModel($this->data);
-        $this->expectException(PropertyValidationException::class);
-        $model->name = null;
+        $model->name = '';
+        $this->assertEquals('John Doe!!!', $model->name);
     }
 
     public function testEmailRule(): void
@@ -154,8 +173,8 @@ class ModelTest extends TestCase
         $model = new TestModel($this->data);
         $model->email = 'jonny@doe.com';
         $this->assertEquals('jonny@doe.com', $model->email);
-        $this->expectException(PropertyValidationException::class);
         $model->email = 'john@doe';
+        $this->assertEquals('jonny@doe.com', $model->email);
     }
 
     public function testEmailModel(): void
@@ -171,8 +190,8 @@ class ModelTest extends TestCase
     {
         $model = new TestModel($this->data);
         $model->description = '1234';
-        $this->assertNotEquals(strlen($model->description), 4);
-        $this->assertEquals(strlen($model->description), 8);
+        $this->assertNotEquals(4, strlen($model->description));
+        $this->assertEquals(8, strlen($model->description));
     }
 
     public function testArrayContains(): void
@@ -180,8 +199,8 @@ class ModelTest extends TestCase
         $model = new TestModel($this->data);
         $model->categories = ['id', 'name', 'description'];
         $this->assertEquals(3, count($model->categories));
-        $this->expectException(PropertyValidationException::class);
         $model->categories = ['name', 'description'];
+        $this->assertEquals(3, count($model->categories));
     }
 
     public function testPropertiesMissing(): void
@@ -202,7 +221,7 @@ class ModelTest extends TestCase
     {
         $model = new TestModel($this->data);
         $string = serialize($model);
-        $this->assertEquals(424, strlen($string));
+        $this->assertEquals(568, strlen($string));
         $newModel = unserialize($string);
         $this->assertInstanceOf(TestModel::class, $newModel);
         $array = $newModel->toArray(true);
@@ -228,5 +247,30 @@ class ModelTest extends TestCase
         unset($model->name);
         $this->assertFalse(isset($model->name));
         $this->assertEquals(1313, $model->number);
+    }
+
+    public function testPropertyLengthRules(): void
+    {
+        $model = new TestModel($this->data);
+        $model->brief = str_repeat('x', 15);
+        $this->assertGreaterThanOrEqual(15, strlen($model->brief));
+        $model->brief = str_repeat('x', 5); // Too short for MinLength rule so will not be set
+        $this->assertGreaterThanOrEqual(15, strlen($model->brief));
+        $model->brief = str_repeat('x', 25); // Too long for MaxLength rule so will be truncated
+        $this->assertLessThanOrEqual(20, strlen($model->brief));
+    }
+
+    public function testPropertyFormat(): void
+    {
+        $model = new TestModel($this->data);
+        $model->phrase = 123;
+        $this->assertEquals('Monkey: 1111011', $model->phrase);
+    }
+
+    public function testPropertyTrim(): void
+    {
+        $model = new TestModel($this->data);
+        $model->name = '  John Doe  ';
+        $this->assertEquals('John Doe!!!', $model->name);
     }
 }

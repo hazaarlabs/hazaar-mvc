@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Hazaar;
 
 use Hazaar\Model\Exception\DefineEventHookException;
+use Hazaar\Model\Exception\PropertyAttributeException;
 use Hazaar\Model\Exception\PropertyException;
-use Hazaar\Model\Exception\PropertyValidationException;
 use Hazaar\Model\Exception\UnsetPropertyException;
+use Hazaar\Model\Interfaces\AttributeRule;
 
 /**
  * This is an abstract class that implements the \jsonSerializable interface.
@@ -18,12 +19,14 @@ use Hazaar\Model\Exception\UnsetPropertyException;
 abstract class Model implements \jsonSerializable, \Iterator
 {
     /**
+     * Legacy property rules that can be replaced with PHP 8.4+ style property hooks.
+     *
      * @var array<callable>
      */
     private array $eventHooks = [];
 
     /**
-     * @var array<mixed>
+     * @var array<string,array<AttributeRule>>
      */
     private array $propertyRules = [];
 
@@ -70,42 +73,12 @@ abstract class Model implements \jsonSerializable, \Iterator
      */
     final public function __construct(array|\stdClass $data = [], mixed ...$args)
     {
-        if ($data instanceof \stdClass) {
-            $data = get_object_vars($data);
-        }
-        $this->construct($data, ...$args);
-        $protectedProperties = (new \ReflectionClass(static::class))->getProperties(\ReflectionProperty::IS_PROTECTED);
-        foreach ($protectedProperties as $reflectionProperty) {
-            $propertyName = $reflectionProperty->getName();
-            $propertyValue = $data[$propertyName] ?? null;
-            if (null !== $propertyValue) {
-                try {
-                    $this->convertPropertyValueDataType($reflectionProperty, $propertyValue);
-                } catch (\Exception $e) {
-                    throw new \Exception("Error initialising property '{$propertyName}' in class '".static::class."': ".$e->getMessage());
-                }
-                $reflectionProperty->setValue($this, $propertyValue);
-            }
-            if ($reflectionProperty->isInitialized($this) && isset($this->propertyRules[$propertyName])) {
-                $this->execPropertyRules($propertyName, $propertyValue, $this->propertyRules[$propertyName]);
-            }
-            $this->propertyNames[] = $propertyName;
-        }
-        foreach ($this->userProperties as $propertyName => $propertyData) {
-            if (!array_key_exists($propertyName, $data)) {
-                continue;
-            }
-            $this->setUserProperty($propertyName, $data[$propertyName]);
-        }
-        $this->constructed($data, ...$args);
-        sort($this->propertyNames);
+        $this->initialize($data, ...$args);
     }
 
     final public function __destruct()
     {
-        if (method_exists($this, 'destruct')) {
-            $this->destruct();
-        }
+        $this->destruct();
     }
 
     public function __get(string $propertyName): mixed
@@ -148,245 +121,6 @@ abstract class Model implements \jsonSerializable, \Iterator
         }
     }
 
-    /**
-     * Applies the minimum value rule to a property.
-     *
-     * @param string   $propertyName  the name of the property
-     * @param null|int $propertyValue the value of the property
-     * @param int      $minValue      the minimum allowed value
-     *
-     * @return mixed the property value after applying the minimum value rule
-     *
-     * @phpstan-ignore-next-line
-     */
-    private function __propertyRule__min(string $propertyName, ?int $propertyValue, int $minValue): mixed
-    {
-        return max($propertyValue, $minValue);
-    }
-
-    /**
-     * Applies a maximum value rule to a property.
-     *
-     * @param string   $propertyName  the name of the property
-     * @param null|int $propertyValue the value of the property
-     * @param int      $maxValue      the maximum allowed value
-     *
-     * @return mixed the property value limited to the maximum value
-     *
-     * @phpstan-ignore-next-line
-     */
-    private function __propertyRule__max(string $propertyName, ?int $propertyValue, int $maxValue): mixed
-    {
-        return min($propertyValue, $maxValue);
-    }
-
-    /**
-     * Applies a range validation rule to a property value.
-     *
-     * @param string   $propertyName  the name of the property
-     * @param null|int $propertyValue the value of the property
-     * @param int      $minValue      the minimum allowed value
-     * @param int      $maxValue      the maximum allowed value
-     *
-     * @return mixed the validated property value within the specified range
-     *
-     * @phpstan-ignore-next-line
-     */
-    private function __propertyRule__range(string $propertyName, ?int $propertyValue, int $minValue, int $maxValue): mixed
-    {
-        return min(max($propertyValue, $minValue), $maxValue);
-    }
-
-    /**
-     * Validates if a property is required and throws an exception if it is empty.
-     *
-     * @param string $propertyName  the name of the property being validated
-     * @param mixed  $propertyValue the value of the property being validated
-     *
-     * @return mixed the validated property value
-     *
-     * @throws PropertyValidationException if the property value is empty
-     *
-     * @phpstan-ignore-next-line
-     */
-    private function __propertyRule__required(string $propertyName, mixed $propertyValue): mixed
-    {
-        if (empty($propertyValue)) {
-            throw new PropertyValidationException($propertyName, 'required');
-        }
-
-        return $propertyValue;
-    }
-
-    /**
-     * Validates the minimum length of a property value.
-     *
-     * @param string      $propertyName  the name of the property being validated
-     * @param null|string $propertyValue the value of the property being validated
-     * @param int         $minLength     the minimum length required for the property value
-     *
-     * @return null|string the validated property value
-     *
-     * @throws PropertyValidationException if the property value is shorter than the minimum length
-     *
-     * @phpstan-ignore-next-line
-     */
-    private function __propertyRule__minlength(string $propertyName, ?string $propertyValue, int $minLength): ?string
-    {
-        if (null !== $propertyValue && strlen($propertyValue) < $minLength) {
-            throw new PropertyValidationException($propertyName, 'minlength');
-        }
-
-        return $propertyValue;
-    }
-
-    /**
-     * Validates the maximum length of a property value.
-     *
-     * @param string      $propertyName  the name of the property being validated
-     * @param null|string $propertyValue the value of the property being validated
-     * @param int         $maxLength     the maximum length allowed for the property value
-     *
-     * @return null|string the validated property value
-     *
-     * @throws PropertyValidationException if the property value exceeds the maximum length
-     *
-     * @phpstan-ignore-next-line
-     */
-    private function __propertyRule__maxlength(string $propertyName, ?string $propertyValue, int $maxLength): ?string
-    {
-        if (null !== $propertyValue && strlen($propertyValue) > $maxLength) {
-            throw new PropertyValidationException($propertyName, 'maxlength');
-        }
-
-        return $propertyValue;
-    }
-
-    /**
-     * Pads a string property value with spaces to a specified length.
-     *
-     * @param string      $propertyName  the name of the property
-     * @param null|string $propertyValue the value of the property
-     * @param int         $padLength     the desired length of the padded string
-     *
-     * @return null|string the padded string value or null if the property value is null
-     *
-     * @phpstan-ignore-next-line
-     */
-    private function __propertyRule__pad(string $propertyName, ?string $propertyValue, int $padLength): ?string
-    {
-        if (null !== $propertyValue) {
-            $propertyValue = str_pad($propertyValue, $padLength);
-        }
-
-        return $propertyValue;
-    }
-
-    /**
-     * Applies a filter to a property value based on the specified filter type.
-     *
-     * @param string      $propertyName  the name of the property
-     * @param null|string $propertyValue the value of the property
-     * @param int         $filterType    the filter type to apply
-     *
-     * @return null|string the filtered property value
-     *
-     * @throws PropertyValidationException if the property value fails the filter
-     *
-     * @see https://www.php.net/manual/en/function.filter-var.php The PHP filter_var() function.
-     *
-     * @phpstan-ignore-next-line
-     */
-    private function __propertyRule__filter(string $propertyName, ?string $propertyValue, int $filterType): ?string
-    {
-        if (null !== $propertyValue && false === filter_var($propertyValue, $filterType)) {
-            throw new PropertyValidationException($propertyName, 'email');
-        }
-
-        return $propertyValue;
-    }
-
-    /**
-     * Checks if the given property value contains the specified value.
-     *
-     * @param string     $propertyName  the name of the property being validated
-     * @param null|array $propertyValue the value of the property being validated
-     * @param mixed      $contains      the value to check if it is contained in the property value
-     *
-     * @return null|array the validated property value
-     *
-     * @throws PropertyValidationException if the property value does not contain the specified value
-     *
-     * @phpstan-ignore-next-line
-     */
-    private function __propertyRule__contains(string $propertyName, ?array $propertyValue, mixed $contains): ?array
-    {
-        if (null !== $propertyValue && !in_array($contains, $propertyValue, true)) {
-            throw new PropertyValidationException($propertyName, 'contains');
-        }
-
-        return $propertyValue;
-    }
-
-    /**
-     * Formats the given property value according to the specified format.
-     *
-     * @param string      $propertyName  the name of the property
-     * @param null|string $propertyValue the value of the property
-     * @param string      $format        the format string to apply to the property value
-     *
-     * @return null|string the formatted property value, or null if the original value was null
-     *
-     * @phpstan-ignore-next-line
-     */
-    private function __propertyRule__format(string $propertyName, ?string $propertyValue, string $format): ?string
-    {
-        if (null !== $propertyValue) {
-            $propertyValue = sprintf($format, $propertyValue);
-        }
-
-        return $propertyValue;
-    }
-
-    /**
-     * Applies a custom property rule to the given property.
-     *
-     * @param string   $propertyName  the name of the property
-     * @param mixed    $propertyValue the value of the property
-     * @param callable $callback      the callback function to apply the custom rule
-     *
-     * @return mixed the result of the callback function
-     *
-     * @throws PropertyValidationException if the custom rule returns false
-     *
-     * @phpstan-ignore-next-line
-     */
-    private function __propertyRule__custom(string $propertyName, mixed $propertyValue, callable $callback): mixed
-    {
-        $result = $callback($propertyName, $propertyValue);
-        if (false === $result) {
-            throw new PropertyValidationException($propertyName, 'custom');
-        }
-
-        return true;
-    }
-
-    /**
-     * Trims the specified character from the given property value.
-     *
-     * @param string $propertyName  the name of the property
-     * @param mixed  $propertyValue the value of the property
-     * @param string $char          the character to be trimmed (default is ' ')
-     *
-     * @return string the trimmed property value
-     *
-     * @phpstan-ignore-next-line
-     */
-    private function __propertyRule__trim(string $propertyName, mixed $propertyValue, string $char = ' '): string
-    {
-        return trim($propertyValue, $char);
-    }
-
     public function __serialize(): array
     {
         return $this->toArray();
@@ -397,9 +131,7 @@ abstract class Model implements \jsonSerializable, \Iterator
      */
     public function __unserialize(array $data): void
     {
-        foreach ($data as $propertyName => $propertyValue) {
-            $this->__set($propertyName, $propertyValue);
-        }
+        $this->initialize($data);
     }
 
     /**
@@ -444,7 +176,7 @@ abstract class Model implements \jsonSerializable, \Iterator
         if (isset($this->eventHooks['read'][$propertyName])) {
             $propertyValue = $this->eventHooks['read'][$propertyName]($propertyValue);
             if (isset($this->propertyRules[$propertyName])) {
-                $this->execPropertyRules($propertyName, $propertyValue, $this->propertyRules[$propertyName]);
+                $this->execPropertyRules($propertyValue, new \ReflectionProperty($this, $propertyName), $this->propertyRules[$propertyName]);
             }
         }
         if (isset($this->eventHooks['read'][true])) {
@@ -477,8 +209,11 @@ abstract class Model implements \jsonSerializable, \Iterator
                 return;
             }
         }
-        if (isset($this->propertyRules[$propertyName])) {
-            $this->execPropertyRules($propertyName, $propertyValue, $this->propertyRules[$propertyName]);
+        if (isset($this->propertyRules[$propertyName]) && count($this->propertyRules[$propertyName]) > 0) {
+            $result = $this->execPropertyRules($propertyValue, new \ReflectionProperty($this, $propertyName), $this->propertyRules[$propertyName]);
+            if (false === $result) {
+                return;
+            }
         }
         if (isset($this->eventHooks['write'][$propertyName])) {
             $propertyValue = $this->eventHooks['write'][$propertyName]($propertyValue);
@@ -577,7 +312,7 @@ abstract class Model implements \jsonSerializable, \Iterator
      *
      * @return array<string,mixed> the array representation of the object
      */
-    public function toArray(bool $ignoreNullPropertyValues = false): array
+    public function toArray(bool $ignoreEmptyPropertyValues = false): array
     {
         $array = [];
         if (isset($this->eventHooks['serialize'])) {
@@ -593,7 +328,7 @@ abstract class Model implements \jsonSerializable, \Iterator
                 }
                 $propertyValue = $reflectionProperty->getValue($this);
             }
-            if (true === $ignoreNullPropertyValues && null === $propertyValue) {
+            if (true === $ignoreEmptyPropertyValues && empty($propertyValue)) {
                 continue;
             }
             if (isset($this->eventHooks['read'][$propertyName])) {
@@ -693,6 +428,33 @@ abstract class Model implements \jsonSerializable, \Iterator
     }
 
     /**
+     * Defines a rule for a property in the model.
+     *
+     * @param string        $rule          the name of the rule
+     * @param array<string> $propertyNames the name of one or more properties
+     * @param mixed         ...$args       Additional arguments for the rule.
+     *
+     * @throws \Exception if the specified rule does not exist
+     */
+    public function defineRule(string $rule, array|string $propertyNames, mixed ...$args): void
+    {
+        $ruleName = '__propertyRule__'.$rule;
+        if (!method_exists($this, $ruleName)) {
+            throw new \Exception("Rule '{$rule}' does not exist");
+        }
+        if (!is_array($propertyNames)) {
+            $propertyNames = [$propertyNames];
+        }
+        foreach ($propertyNames as $propertyName) {
+            if (!array_key_exists($propertyName, $this->propertyRules)) {
+                $this->propertyRules[$propertyName] = [];
+            }
+            $attributeRuleClass = 'Hazaar\Model\Rules\\'.ucfirst($rule);
+            $this->propertyRules[$propertyName][] = new $attributeRuleClass(...$args);
+        }
+    }
+
+    /**
      * Defines an event hook for the model.
      *
      * @param string $hookName the name of the hook
@@ -721,38 +483,11 @@ abstract class Model implements \jsonSerializable, \Iterator
     }
 
     /**
-     * Defines a rule for a property in the model.
-     *
-     * @param string        $rule          the name of the rule
-     * @param array<string> $propertyNames the name of one or more properties
-     * @param mixed         ...$args       Additional arguments for the rule.
-     *
-     * @throws \Exception if the specified rule does not exist
-     */
-    public function defineRule(string $rule, array|string $propertyNames, mixed ...$args): void
-    {
-        $ruleName = '__propertyRule__'.$rule;
-        if (!method_exists($this, $ruleName)) {
-            throw new \Exception("Rule '{$rule}' does not exist");
-        }
-        if (!is_array($propertyNames)) {
-            $propertyNames = [$propertyNames];
-        }
-        foreach ($propertyNames as $propertyName) {
-            if (!array_key_exists($propertyName, $this->propertyRules)) {
-                $this->propertyRules[$propertyName] = [];
-            }
-            $this->propertyRules[$propertyName][$rule] = [
-                $ruleName,
-                $args,
-            ];
-        }
-    }
-
-    /**
      * @param array<string,mixed> $data
      */
     protected function construct(array &$data): void {}
+
+    protected function destruct(): void {}
 
     /**
      * @param array<string,mixed> $data
@@ -778,8 +513,8 @@ abstract class Model implements \jsonSerializable, \Iterator
      */
     private function convertPropertyValueDataType(\ReflectionProperty $reflectionProperty, mixed &$propertyValue): void
     {
-        /** 
-         * @var ?\ReflectionNamedType $propertyType 
+        /**
+         * @var ?\ReflectionNamedType $propertyType
          */
         $propertyType = $reflectionProperty->getType();
         if (null === $propertyType) {
@@ -834,14 +569,70 @@ abstract class Model implements \jsonSerializable, \Iterator
     /**
      * Executes the property rules for a given property.
      *
-     * @param string                     $propertyName   the name of the property
-     * @param mixed                      &$propertyValue The value of the property
-     * @param array<int,callable|string> $rules          the array of rules to be applied
+     * @param array<AttributeRule> $rules the array of rules to be applied
      */
-    private function execPropertyRules(string $propertyName, mixed &$propertyValue, array $rules): void
+    private function execPropertyRules(mixed &$value, \ReflectionProperty $property, array $rules): bool
     {
-        foreach ($rules as $rule => $ruleData) {
-            $propertyValue = call_user_func_array([$this, $ruleData[0]], array_merge([$propertyName, $propertyValue], $ruleData[1]));
+        foreach ($rules as $rule) {
+            if (!$rule->evaluate($value, $property)) {
+                return false;
+            }
         }
+
+        return true;
+    }
+
+    /**
+     * Model initializer.
+     *
+     * @param array<mixed> $data the data to initialize the model with
+     */
+    private function initialize(array|\stdClass $data, mixed ...$args): void
+    {
+        if ($data instanceof \stdClass) {
+            $data = get_object_vars($data);
+        }
+        $this->construct($data, ...$args);
+        $publicProperties = (new \ReflectionClass(static::class))->getProperties(\ReflectionProperty::IS_PROTECTED | \ReflectionProperty::IS_PUBLIC);
+        foreach ($publicProperties as $reflectionProperty) {
+            $propertyName = $reflectionProperty->getName();
+            $propertyValue = $data[$propertyName] ?? null;
+            $this->propertyNames[] = $propertyName;
+            if (null !== $propertyValue) {
+                try {
+                    $this->convertPropertyValueDataType($reflectionProperty, $propertyValue);
+                } catch (\Exception $e) {
+                    throw new \Exception("Error initialising property '{$propertyName}' in class '".static::class."': ".$e->getMessage());
+                }
+            }
+            if (count($reflectionAttributes = $reflectionProperty->getAttributes()) > 0) {
+                if ($reflectionProperty->isPublic()) {
+                    throw new PropertyAttributeException(static::class, $propertyName, 'is public.  Only protected properties can have attributes');
+                }
+                if (!isset($this->propertyRules[$propertyName])) {
+                    $this->propertyRules[$propertyName] = [];
+                }
+                foreach ($reflectionAttributes as $reflectionAttribute) {
+                    $reflectionAttributeClass = new \ReflectionClass($reflectionAttribute->getName());
+                    if (!$reflectionAttributeClass->isSubclassOf('Hazaar\Model\Interfaces\AttributeRule')) {
+                        continue;
+                    }
+                    $modelRule = $reflectionAttribute->newInstance();
+                    $modelRule->evaluate($propertyValue, $reflectionProperty);
+                    $this->propertyRules[$propertyName][] = $modelRule;
+                }
+            }
+            if (null !== $propertyValue) {
+                $reflectionProperty->setValue($this, $propertyValue);
+            }
+        }
+        foreach ($this->userProperties as $propertyName => $propertyData) {
+            if (!array_key_exists($propertyName, $data)) {
+                continue;
+            }
+            $this->setUserProperty($propertyName, $data[$propertyName]);
+        }
+        $this->constructed($data, ...$args);
+        sort($this->propertyNames);
     }
 }
