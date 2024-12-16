@@ -26,7 +26,7 @@ class AgeModel extends Model
 
     public function construct(array &$data): void
     {
-        $this->defineEventHook('read', 'years', function ($value) {
+        $this->defineEventHook('get', 'years', function ($value) {
             return age($this->dob);
         });
     }
@@ -66,10 +66,10 @@ class TestModel extends Model
 
     public function construct(array &$data): void
     {
-        $this->defineEventHook('read', 'name', function ($value) {
+        $this->defineEventHook('get', 'name', function ($value) {
             return $value.'!!!';
         });
-        $this->defineEventHook('write', 'id', function ($value) {
+        $this->defineEventHook('set', 'id', function ($value) {
             return (int) $value;
         });
     }
@@ -98,7 +98,7 @@ class ModelTest extends TestCase
         'name' => 'John Doe',
         'email' => '',
         'description' => 'ID:1234',
-        'counter' => 1,
+        'counter' => 0,
         'child' => ['name' => 'George Doe', 'id' => 1235],
         'age' => ['dob' => 0],
         'isActive' => true,
@@ -142,12 +142,12 @@ class ModelTest extends TestCase
     public function testEventHooks(): void
     {
         $model = $model = new TestModel($this->data);
-        $model->defineEventHook('write', 'counter', function ($value) {
+        $model->defineEventHook('get', 'counter', function ($value) {
             return $value + 1;
         });
-        $this->assertEquals(1, $model->counter);
+        $this->assertEquals(2, $model->counter);
         $model->counter = 100;
-        $this->assertEquals(11, $model->counter);
+        $this->assertEquals(10, $model->counter);
         $model->age->dob = strtotime('1978-12-13');
         $this->assertEquals(46, $model->age->years);
     }
@@ -221,7 +221,7 @@ class ModelTest extends TestCase
     {
         $model = new TestModel($this->data);
         $string = serialize($model);
-        $this->assertEquals(568, strlen($string));
+        $this->assertEquals(513, strlen($string));
         $newModel = unserialize($string);
         $this->assertInstanceOf(TestModel::class, $newModel);
         $array = $newModel->toArray(true);
