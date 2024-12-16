@@ -2,12 +2,25 @@
 
 namespace Hazaar\Model\Rules;
 
-use Hazaar\Model;
 use Hazaar\Model\Exception\PropertyValidationException;
-use Hazaar\Model\Rule;
+use Hazaar\Model\Interfaces\AttributeRule;
 
+/**
+ * The Max rule is used to ensure that a value is less than a specified value.
+ *
+ * @param int $value the maximum value that the property can be
+ *
+ * @throws PropertyValidationException
+ *
+ * @example
+ *
+ * ```php
+ * #[Max(10)]
+ * public $my_property;
+ * ```
+ */
 #[\Attribute]
-class Max extends Rule
+class Max implements AttributeRule
 {
     private int $value = 0;
 
@@ -16,10 +29,12 @@ class Max extends Rule
         $this->value = $value;
     }
 
-    public function evaluate(mixed $value, Model $model, \ReflectionProperty &$property): void
+    public function evaluate(mixed &$value, \ReflectionProperty &$property): bool
     {
-        if ($value >= $this->value) {
-            throw new PropertyValidationException($property->getName(), 'Max');
+        if ($value > $this->value) {
+            $value = $this->value;
         }
+
+        return true;
     }
 }

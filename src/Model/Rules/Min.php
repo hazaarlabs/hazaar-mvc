@@ -2,12 +2,25 @@
 
 namespace Hazaar\Model\Rules;
 
-use Hazaar\Model;
 use Hazaar\Model\Exception\PropertyValidationException;
-use Hazaar\Model\Rule;
+use Hazaar\Model\Interfaces\AttributeRule;
 
+/**
+ * The Min rule is used to ensure that a value is greater than a specified value.
+ *
+ * @param int $value the minimum value that the property can be
+ *
+ * @throws PropertyValidationException
+ *
+ * @example
+ *
+ * ```php
+ * #[Min(10)]
+ * public $my_property;
+ * ```
+ */
 #[\Attribute]
-class Min extends Rule
+class Min implements AttributeRule
 {
     private int $value = 0;
 
@@ -16,10 +29,12 @@ class Min extends Rule
         $this->value = $value;
     }
 
-    public function evaluate(mixed $value, Model $model, \ReflectionProperty &$property): void
+    public function evaluate(mixed &$value, \ReflectionProperty &$property): bool
     {
-        if ($value <= $this->value) {
-            throw new PropertyValidationException($property->getName(), 'Min');
+        if ($value < $this->value) {
+            $value = $this->value;
         }
+
+        return true;
     }
 }

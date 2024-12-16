@@ -2,17 +2,26 @@
 
 namespace Hazaar\Model\Rules;
 
-use Hazaar\Model;
 use Hazaar\Model\Exception\PropertyValidationException;
-use Hazaar\Model\Rule;
+use Hazaar\Model\Interfaces\AttributeRule;
 
+/**
+ * The Required rule is used to ensure that a value is not empty.
+ *
+ * @throws PropertyValidationException
+ *
+ * @example
+ *
+ * ```php
+ * #[Required]
+ * public $my_property;
+ * ```
+ */
 #[\Attribute]
-class Required extends Rule
+class Required implements AttributeRule
 {
-    public function evaluate(mixed $value, Model $model, \ReflectionProperty &$property): void
+    public function evaluate(mixed &$value, \ReflectionProperty &$property): bool
     {
-        if (empty($value)) {
-            throw new PropertyValidationException($property->getName(), 'required');
-        }
+        return !empty($value);
     }
 }

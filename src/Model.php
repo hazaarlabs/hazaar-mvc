@@ -9,7 +9,7 @@ use Hazaar\Model\Exception\PropertyAttributeException;
 use Hazaar\Model\Exception\PropertyException;
 use Hazaar\Model\Exception\PropertyValidationException;
 use Hazaar\Model\Exception\UnsetPropertyException;
-use Hazaar\Model\Rule;
+use Hazaar\Model\Interfaces\AttributeRule;
 
 /**
  * This is an abstract class that implements the \jsonSerializable interface.
@@ -87,7 +87,6 @@ abstract class Model implements \jsonSerializable, \Iterator
                 } catch (\Exception $e) {
                     throw new \Exception("Error initialising property '{$propertyName}' in class '".static::class."': ".$e->getMessage());
                 }
-                $reflectionProperty->setValue($this, $propertyValue);
             }
             if (count($reflectionAttributes = $reflectionProperty->getAttributes()) > 0) {
                 if ($reflectionProperty->isPublic()) {
@@ -96,13 +95,16 @@ abstract class Model implements \jsonSerializable, \Iterator
                 $this->propertyRules[$propertyName] = [];
                 foreach ($reflectionAttributes as $reflectionAttribute) {
                     $reflectionAttributeClass = new \ReflectionClass($reflectionAttribute->getName());
-                    if (!$reflectionAttributeClass->isSubclassOf('Hazaar\Model\Rule')) {
+                    if (!$reflectionAttributeClass->isSubclassOf('Hazaar\Model\Interfaces\AttributeRule')) {
                         continue;
                     }
                     $modelRule = $reflectionAttribute->newInstance();
-                    $modelRule->evaluate($propertyValue, $this, $reflectionProperty);
+                    $modelRule->evaluate($propertyValue, $reflectionProperty);
                     $this->propertyRules[$propertyName][] = $modelRule;
                 }
+            }
+            if (null !== $propertyValue) {
+                $reflectionProperty->setValue($this, $propertyValue);
             }
         }
         foreach ($this->userProperties as $propertyName => $propertyData) {
@@ -456,7 +458,7 @@ abstract class Model implements \jsonSerializable, \Iterator
         if (isset($this->eventHooks['read'][$propertyName])) {
             $propertyValue = $this->eventHooks['read'][$propertyName]($propertyValue);
             if (isset($this->propertyRules[$propertyName])) {
-                $this->execPropertyRules($propertyName, $propertyValue, $this->propertyRules[$propertyName]);
+                $this->execPropertyRules($propertyValue, new \ReflectionProperty($this, $propertyName), $this->propertyRules[$propertyName]);
             }
         }
         if (isset($this->eventHooks['read'][true])) {
@@ -490,7 +492,10 @@ abstract class Model implements \jsonSerializable, \Iterator
             }
         }
         if (isset($this->propertyRules[$propertyName])) {
-            $this->execPropertyRules($propertyValue, new \ReflectionProperty($this, $propertyName), $this->propertyRules[$propertyName]);
+            $result = $this->execPropertyRules($propertyValue, new \ReflectionProperty($this, $propertyName), $this->propertyRules[$propertyName]);
+            if (false === $result) {
+                return;
+            }
         }
         if (isset($this->eventHooks['write'][$propertyName])) {
             $propertyValue = $this->eventHooks['write'][$propertyName]($propertyValue);
@@ -819,12 +824,16 @@ abstract class Model implements \jsonSerializable, \Iterator
     /**
      * Executes the property rules for a given property.
      *
-     * @param array<Rule> $rules the array of rules to be applied
+     * @param array<AttributeRule> $rules the array of rules to be applied
      */
-    private function execPropertyRules(mixed $value, \ReflectionProperty $property, array $rules): void
+    private function execPropertyRules(mixed &$value, \ReflectionProperty $property, array $rules): bool
     {
         foreach ($rules as $rule) {
-            $rule->evaluate($value, $this, $property);
+            if (!$rule->evaluate($value, $property)) {
+                return false;
+            }
         }
+
+        return true;
     }
 }
