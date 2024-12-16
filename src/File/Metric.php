@@ -29,7 +29,7 @@ class Metric
     private mixed $handle = null;
 
     /**
-     * @var array<string, array<float|int>>
+     * @var array<string, array{name:string,desc:string,type:int,ticks:int,min:?int,max:?int,last:int}>
      */
     private array $dataSources = [];
 
@@ -201,9 +201,6 @@ class Metric
     public function setValue(string $dsname, float $value): bool
     {
         if (!array_key_exists($dsname, $this->dataSources)) {
-            return false;
-        }
-        if (!is_numeric($value)) {
             return false;
         }
         $tick = $this->getTick();
@@ -722,7 +719,7 @@ class Metric
         switch ($cf) {
             case 0x01: // AVERAGE
                 $value = 0;
-                if (is_array($dataPoints) && count($dataPoints) > 0) {
+                if (count($dataPoints) > 0) {
                     foreach ($dataPoints as $dp) {
                         $value += $dp;
                     }

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hazaar\File\Backend\Interfaces;
 
 use Hazaar\File\Manager;
-use Hazaar\Map;
 
 interface Backend
 {
@@ -94,6 +93,13 @@ interface Backend
     public function write(string $path, string $bytes, ?string $content_type = null, bool $overwrite = false): ?int;
 
     /**
+     * @return array<string>|false
+     */
+    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array|false;
+
+    public function fsck(bool $skip_root_reload = false): bool;
+
+    /**
      * Upload a file that was uploaded with a POST.
      *
      * @param array<string> $file
@@ -139,7 +145,7 @@ interface Backend
 
     public function seekStream(mixed $stream, int $offset, int $whence = SEEK_SET): int;
 
-    public function tellStream(mixed $stream): int|false;
+    public function tellStream(mixed $stream): false|int;
 
     public function eofStream(mixed $stream): bool;
 
@@ -159,5 +165,5 @@ interface Manageable
     /**
      * @param array<mixed> $options
      */
-    public function __construct(array|Map $options, Manager $manager);
+    public function __construct(array $options, Manager $manager);
 }

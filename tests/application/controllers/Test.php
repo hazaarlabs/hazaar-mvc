@@ -1,6 +1,6 @@
 <?php
 
-namespace Application\Controllers;
+namespace Application\Controller;
 
 use Hazaar\Application\Request;
 use Hazaar\Controller\Basic;
@@ -20,10 +20,7 @@ class Test extends Basic
         return 'Uniqid: '.uniqid();
     }
 
-    /**
-     * @route('/foo/<string:word>', methods=['GET'])
-     */
-    public function rest(?string $word = null): mixed
+    public function bar(?string $word = null): mixed
     {
         return 'bar: '.($word ?? '');
     }

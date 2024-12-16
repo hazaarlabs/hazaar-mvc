@@ -14,6 +14,7 @@ namespace Hazaar\Controller;
 use Hazaar\Application\Request;
 use Hazaar\Application\Request\HTTP;
 use Hazaar\Application\Route;
+use Hazaar\XML\Element;
 
 /**
  * @brief Basic controller class
@@ -23,7 +24,7 @@ use Hazaar\Application\Route;
 class Diagnostic extends Action
 {
     protected int $code = 204;
-    protected string $responseType = 'html';
+    protected int $responseType = Response::TYPE_HTML;
 
     /**
      * @var array<mixed>
@@ -36,35 +37,33 @@ class Diagnostic extends Action
      * This method overrides the parent initialize method to set the response type based on
      * various conditions such as environment variables, the PHP SAPI, and request headers.
      *
-     * @param null|Request $request the request object, or null if not available
+     * @param Request $request the request object, or null if not available
      *
      * @return null|Response the response object, or null if not available
      */
-    public function initialize(?Request $request = null): ?Response
+    public function initialize(Request $request): ?Response
     {
         $response = parent::initialize($request);
         if (getenv('HAZAAR_SID')) {
-            $this->responseType = 'hazaar';
+            $this->responseType = Response::TYPE_HAZAAR;
         } elseif (PHP_SAPI == 'cli') {
-            $this->responseType = 'text';
+            $this->responseType = Response::TYPE_TEXT;
         } elseif ($request instanceof HTTP) {
             if ($x_requested_with = $request->getHeader('X-Requested-With')) {
                 switch ($x_requested_with) {
                     case 'XMLHttpRequest':
-                        $this->responseType = 'json';
+                        $this->responseType = Response::TYPE_JSON;
 
                         break;
 
                     case 'XMLRPCRequest':
-                        $this->responseType = 'xmlrpc';
+                        $this->responseType = Response::TYPE_XML;
 
                         break;
                 }
-            } elseif ($responseType = $this->application->getResponseType()) {
-                $this->responseType = $responseType;
             }
         } else {
-            $this->responseType = 'text';
+            $this->responseType = Response::TYPE_TEXT;
         }
 
         return $response;
@@ -91,10 +90,8 @@ class Diagnostic extends Action
      */
     final public function run(?Route $route = null): Response
     {
-        if ($this->responseType && method_exists($this, $this->responseType)) {
-            $response = call_user_func([$this, $this->responseType]);
-        } elseif (method_exists($this, 'run')) {
-            $response = $this->run($route);
+        if ($this->responseType && method_exists($this, $method = Response::getResponseTypeName($this->responseType))) {
+            $response = call_user_func([$this, $method], $this->caller);
         } else {
             $response = $this->html();
         }
@@ -128,15 +125,15 @@ class Diagnostic extends Action
     /**
      * Generates an XML-RPC response.
      *
-     * This method creates a SimpleXMLElement with a root element <xml> and adds a child element <data> with the content 'NO CONTENT'.
+     * This method creates a SimpleXMLElement with a root element `xml` and adds a child element `data` with the content 'NO CONTENT'.
      * It then returns this XML structure wrapped in a Response\XML object.
      *
      * @return Response\XML the XML response object containing the generated XML structure
      */
-    public function xmlrpc(): Response\XML
+    public function xml(): Response\XML
     {
-        $xml = new \SimpleXMLElement('<xml/>');
-        $xml->addChild('data', 'NO CONTENT');
+        $xml = new Element();
+        $xml->add('data', 'NO CONTENT');
 
         return new Response\XML($xml, $this->code);
     }

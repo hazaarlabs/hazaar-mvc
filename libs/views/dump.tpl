@@ -19,7 +19,7 @@
             --dump-radius: 1rem;
             --bg-color: #212A37;
             --fg-color: #c6d3e4;
-            --fm-color: #a21c1c;
+            --fm-color: #cd3636;
             --mt-color: #999999;
             --shadow-color: #1a212a;
             color-scheme: dark;
@@ -122,31 +122,39 @@
                 }
             }
 
+            .dumpcaller {
+                font-size: small;
+                text-align: center;
+                padding: var(--elem-padding);
+
+                em {
+                    color: var(--fm-color);
+                }
+            }
+
             .dumpmain {
                 display: flex;
                 flex-direction: row;
-                padding: var(--elem-padding);
+
                 overflow: auto;
             }
 
             .dumpdata,
             .dumplog {
-                margin: var(--elem-margin);
+                margin: 0 var(--elem-margin);
                 line-height: 1.4;
                 font-family: 'Montserrat', sans-serif;
                 flex-grow: 1;
 
                 .hdr {
-                    font-size: .7rem;
+                    font-size: small;
                     font-weight: 100;
+                    text-transform: uppercase;
                     color: var(--mt-color);
-                    text-align: right;
                     margin: 0 var(--dump-radius);
+                    font-style: normal;
+                    color: var(--fm-color);
 
-                    em {
-                        font-style: normal;
-                        color: var(--fm-color);
-                    }
                 }
 
                 .data {
@@ -159,6 +167,10 @@
                     border-radius: var(--dump-radius);
                     white-space: pre-wrap;
                     flex-grow: 1;
+                }
+
+                .data:not(:last-child) {
+                    margin-bottom: var(--elem-margin);
                 }
 
                 .log {
@@ -203,13 +215,15 @@
                 {/foreach}
             </table>
         </div>
+        <div class="dumpcaller">
+            Called from <em>{$class}::{$function}</em> on line <em>#{$line}</em> of file <em>{$file}</em>
+        </div>
         <div class="dumpmain">
-            {if $data !== null}<div class="dumpdata">
-                    <div class="hdr">
-                        Dumping <em>{$data|type}</em> data from
-                        <em>{$class}::{$function}</em> on line <em>#{$line}</em> of file <em>{$file}</em>
-                    </div>
-                    <div class="data">{$data|print}</div>
+            {if $data !== null}
+                <div class="dumpdata">
+                    {foreach from=$data item=entry}
+                        <div class="data">{$entry|dump}</div>
+                    {/foreach}
                 </div>
             {/if}
             {if $log} <div class="dumplog">

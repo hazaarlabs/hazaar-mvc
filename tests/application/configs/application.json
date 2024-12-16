@@ -1,8 +1,8 @@
 {
   "production": {
     "app": {
-      "name": "Example Application",
-      "version": "0.0.1",
+      "name": "PHPUnit - Test Application",
+      "version": "1.0.0",
       "locale": "en_AU.UTF-8",
       "layout": "application",
       "theme": {

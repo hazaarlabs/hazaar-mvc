@@ -6,7 +6,6 @@ namespace Hazaar\Warlock;
 
 use Hazaar\Application;
 use Hazaar\Date;
-use Hazaar\Map;
 use Hazaar\Warlock\Interfaces\Connection;
 
 abstract class Process
@@ -33,7 +32,7 @@ abstract class Process
     ];
 
     /**
-     * @var array<int,string>
+     * @var array<int,mixed>
      */
     private static array $opt = [];
 
@@ -129,6 +128,22 @@ abstract class Process
         return $payload;
     }
 
+    /**
+     * Constructor placeholder for child classes.
+     */
+    public function construct(Application $application): void
+    {
+        // do nothing
+    }
+
+    /**
+     * Initialisation placeholder for child classes.
+     */
+    public function init(): bool
+    {
+        return true;
+    }
+
     public function send(string $command, mixed $payload = null): bool
     {
         return $this->conn->send($command, $payload);
@@ -221,30 +236,39 @@ abstract class Process
         return false;
     }
 
+    /**
+     * @param array<mixed> $params
+     */
     public function runDelay(
         int $delay,
         callable $callable,
-        ?Map $params = null,
+        array $params = [],
         ?string $tag = null,
         bool $overwrite = false
     ): bool|string {
         return $this->sendExec('delay', ['value' => $delay], $callable, $params, $tag, $overwrite);
     }
 
+    /**
+     * @param array<mixed> $params
+     */
     public function interval(
         int $seconds,
         string $callable,
-        ?Map $params = null,
+        array $params = [],
         ?string $tag = null,
         bool $overwrite = false
     ): bool|string {
         return $this->sendExec('interval', ['value' => $seconds], $callable, $params, $tag, $overwrite);
     }
 
+    /**
+     * @param array<mixed> $params
+     */
     public function schedule(
         Date $when,
         string $callable,
-        ?Map $params = null,
+        array $params = [],
         ?string $tag = null,
         bool $overwrite = false
     ): bool|string {
@@ -488,7 +512,7 @@ abstract class Process
                     }
                     // Synchronise the timezone with the server
                     if ($tz = ake($payload, 'timezone')) {
-                        date_default_timezone_set($tz);
+                        \date_default_timezone_set($tz);
                     }
                     if ($config = ake($payload, 'config')) {
                         $application->config->extend($config);
@@ -668,11 +692,14 @@ abstract class Process
         return ['callable' => $callable];
     }
 
+    /**
+     * @param array<mixed> $params
+     */
     private function sendExec(
         string $command,
         mixed $data,
         callable $callable,
-        ?Map $params = null,
+        ?array $params = null,
         ?string $tag = null,
         bool $overwrite = false
     ): false|string {

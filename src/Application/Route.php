@@ -4,12 +4,23 @@ namespace Hazaar\Application;
 
 use Hazaar\Controller;
 use Hazaar\Controller\Closure;
+use Hazaar\Controller\Response;
 
+/**
+ * The route class.
+ *
+ * This class is used to define a route in the application. It contains the callable
+ * property, which is the action to be executed
+ * when the route is matched. It also contains the path, methods, and responseType
+ * properties, which are used to match the route against the request path and method.
+ */
+#[\Attribute]
 class Route
 {
     public Router $router;
     private mixed $callable;
     private ?string $path = null;
+    private int $responseType = Response::TYPE_HTML;
 
     /**
      * @var array<string>
@@ -20,19 +31,43 @@ class Route
      * @var array<mixed>
      */
     private array $actionArgs = [];
-    private bool $namedActionArgs = false;
+
+    /**
+     * @var array<string,\ReflectionParameter>
+     */
+    private array $callableParameters = [];
 
     /**
      * @param array<string> $methods
      */
-    public function __construct(mixed $callable, ?string $path = null, array $methods = [], bool $namedActionArgs = false)
-    {
-        $this->callable = $callable;
+    public function __construct(
+        ?string $path = null,
+        array $methods = [],
+        int $responseType = Response::TYPE_HTML
+    ) {
         $this->path = $path;
         $this->methods = array_map('strtoupper', $methods);
-        $this->namedActionArgs = $namedActionArgs;
+        $this->responseType = $responseType;
+    }
+
+    public function setCallable(mixed $callable): void
+    {
+        $this->callable = $callable;
         if (is_array($this->callable) && isset($this->callable[2]) && is_array($this->callable[2])) {
             $this->actionArgs = $this->callable[2];
+        } else {
+            try {
+                $callableReflection = match (true) {
+                    $this->callable instanceof \Closure => new \ReflectionFunction($this->callable),
+                    $this->callable instanceof \ReflectionMethod => $this->callable,
+                    default => new \ReflectionMethod($this->callable[0], $this->callable[1]),
+                };
+                foreach ($callableReflection->getParameters() as $param) {
+                    $this->callableParameters[$param->getName()] = $param;
+                }
+            } catch (\ReflectionException $e) {
+                // Do nothing
+            }
         }
     }
 
@@ -80,45 +115,62 @@ class Route
 
             return false;
         }
-        $path = explode('/', $path);
+        $path = explode('/', ltrim($path, '/'));
         $routePath = explode('/', trim($this->path, '/'));
         if (count($routePath) !== count($path)) {
             return false;
         }
-        foreach ($routePath as $i => &$routePart) {
-            if ($routePart === $path[$i]) {
+        foreach ($routePath as $routePartID => &$routePart) {
+            if ($routePart === $path[$routePartID]) {
                 continue;
             }
-            if (('{' === substr($routePart, 0, 1) && '}' === substr($routePart, -1))
-                || '<' === substr($routePart, 0, 1) && '>' === substr($routePart, -1)) {
-                if (false !== strpos($routePart, ':')) {
-                    list($type, $key) = explode(':', substr($routePart, 1, -1));
-                    if (('int' === $type || 'integer' === $type
-                        || 'float' === $type || 'double' === $type)
-                        && !is_numeric($path[$i])) {
-                        return false;
-                    }
-                    if ('bool' === $type || 'boolean' === $type) {
-                        $path[$i] = boolify($path[$i]);
-                    } elseif ('array' === $type) {
-                        $path[$i] = explode(',', $path[$i]);
-                    } elseif ('json' === $type) {
-                        $path[$i] = json_decode($path[$i], true);
-                    } else {
-                        settype($path[$i], $type);
-                    }
-                    $this->actionArgs[$key] = $path[$i];
+            if (!(('{' === substr($routePart, 0, 1) && '}' === substr($routePart, -1))
+                || '<' === substr($routePart, 0, 1) && '>' === substr($routePart, -1))) {
+                return false;
+            }
+            if (false !== strpos($routePart, ':')) {
+                list($routeType, $actionArgName) = explode(':', substr($routePart, 1, -1));
+            } else {
+                $actionArgName = substr($routePart, 1, -1);
+                if (isset($this->callableParameters[$actionArgName])
+                    && $this->callableParameters[$actionArgName]->hasType()) {
+                    // @phpstan-ignore method.notFound
+                    $routeType = $this->callableParameters[$actionArgName]->getType()->getName();
                 } else {
-                    $this->actionArgs[] = $path[$i];
+                    $routeType = 'mixed';
                 }
-
-                continue;
             }
-
-            return false;
+            if (!isset($this->callableParameters[$actionArgName])) {
+                return false;
+            }
+            if (('int' === $routeType || 'integer' === $routeType
+                || 'float' === $routeType || 'double' === $routeType)
+                && !is_numeric($path[$routePartID])) {
+                return false;
+            }
+            if ('bool' === $routeType || 'boolean' === $routeType) {
+                $path[$routePartID] = boolify($path[$routePartID]);
+            } elseif ('array' === $routeType) {
+                $path[$routePartID] = explode(',', $path[$routePartID]);
+            } elseif ('json' === $routeType) {
+                $path[$routePartID] = json_decode($path[$routePartID], true);
+            } elseif ('mixed' !== $routeType) {
+                settype($path[$routePartID], $routeType);
+            }
+            $this->actionArgs[$actionArgName] = $path[$routePartID];
         }
 
         return true;
+    }
+
+    public function getControllerClass(): string
+    {
+        return is_array($this->callable) ? $this->callable[0] : '';
+    }
+
+    public function getControllerName(): string
+    {
+        return strtolower(basename(str_replace('\\', '/', $this->getControllerClass())));
     }
 
     /**
@@ -136,7 +188,7 @@ class Route
     public function getController(): ?Controller
     {
         if ($this->callable instanceof \Closure) {
-            return new Closure($this->router->application, $this->callable);
+            return new Closure($this->callable);
         }
         if ($this->callable instanceof \ReflectionMethod) {
             $controllerReflection = $this->callable->getDeclaringClass();
@@ -144,7 +196,7 @@ class Route
                 throw new Router\Exception\ControllerNotFound($controllerReflection->getName(), $this->path ?? '/');
             }
 
-            return $controllerReflection->newInstance($this->router->application);
+            return $controllerReflection->newInstance();
         }
         if (is_array($this->callable)) {
             $controllerClass = $this->callable[0];
@@ -154,7 +206,7 @@ class Route
                 throw new Router\Exception\ControllerNotFound($controllerClass, $this->path ?? '/');
             }
 
-            return new $controllerClass($this->router->application, $controllerClassName);
+            return new $controllerClass($controllerClassName);
         }
 
         return null;
@@ -175,7 +227,7 @@ class Route
             return $this->callable->getName();
         }
 
-        return isset($this->callable[1]) ? $this->callable[1] : $this->router->config->get('action');
+        return isset($this->callable[1]) ? $this->callable[1] : $this->router->config['action'] ?? 'index';
     }
 
     /**
@@ -191,15 +243,20 @@ class Route
     }
 
     /**
-     * Retrieves the named action arguments flag.
-     *
-     * This method returns the namedActionArgs property, which is used to determine
-     * whether the action arguments are named.
-     *
-     * @return bool the namedActionArgs flag
+     * Retrieves the response type of the route.
      */
-    public function hasNamedActionArgs(): bool
+    public function getResponseType(): int
     {
-        return $this->namedActionArgs;
+        return $this->responseType;
+    }
+
+    /**
+     * Prefixes the path of the route with the given path.
+     *
+     * @param string $path the path to be prefixed
+     */
+    public function prefixPath(string $path): void
+    {
+        $this->path = '/'.ltrim($path, '/').$this->path;
     }
 }

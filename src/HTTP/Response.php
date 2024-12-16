@@ -16,7 +16,7 @@ class Response
     /**
      * The actual body of the response.
      *
-     * @var array<string>|string
+     * @var array<mixed>|string
      */
     public array|string $body = '';
     // Public variables
@@ -269,7 +269,7 @@ class Response
      *
      * This method will return the content type of the response and optionally return any arguments that were
      *
-     * @param array<string,string> $args The arguments of the content type header will be returned in this array
+     * @param array<mixed> $args The arguments of the content type header will be returned in this array
      */
     public function getContentType(array &$args = []): string
     {

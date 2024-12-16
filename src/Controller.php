@@ -17,6 +17,7 @@ use Hazaar\Application\URL;
 use Hazaar\Controller\Exception\NoAction;
 use Hazaar\Controller\Helper;
 use Hazaar\Controller\Response;
+use Hazaar\Controller\Response\HTTP\Redirect;
 
 /**
  * Base Controller class.
@@ -24,10 +25,11 @@ use Hazaar\Controller\Response;
  * All controller classes extend this class.  Normally this class would only be extended by the controller classes
  * provided by Hazaar MVC, as how a controller actually behaves and the functionality it provides is actually defined
  * by the controller itself.  This controller does nothing, but will still initialise and run, but will output nothing.
+ *
+ * @property Helper\Response $response
  */
 abstract class Controller implements Controller\Interfaces\Controller
 {
-    protected Application $application;
     protected string $name;
     protected Request $request;
     protected int $statusCode = 0;
@@ -47,17 +49,16 @@ abstract class Controller implements Controller\Interfaces\Controller
      * @var array<Response>
      */
     private array $cachedResponses = [];
-
     private ?Cache $responseCache = null;
+    private static string $redirectCookieName = 'hazaar-redirect-token';
 
     /**
      * Base controller constructor.
      *
      * @param string $name The name of the controller.  This is the name used when generating URLs.
      */
-    public function __construct(Application $application, ?string $name = null)
+    public function __construct(?string $name = null)
     {
-        $this->application = $application;
         $this->name = strtolower(null !== $name ? $name : get_class($this));
         $this->addHelper('response');
     }
@@ -74,8 +75,6 @@ abstract class Controller implements Controller\Interfaces\Controller
      * Get the specified helper object.
      *
      * @param string $helper the name of the helper
-     *
-     * @return null|Helper the helper object if found, null otherwise
      */
     public function __get(string $helper): ?Helper
     {
@@ -106,7 +105,7 @@ abstract class Controller implements Controller\Interfaces\Controller
             return $response;
         }
         // Execute the controller action
-        $response = $this->runAction($route->getAction(), $route->getActionArgs(), $route->hasNamedActionArgs());
+        $response = $this->runAction($route->getAction(), $route->getActionArgs());
         if (false === $response) {
             throw new NoAction($this->name);
         }
@@ -115,7 +114,7 @@ abstract class Controller implements Controller\Interfaces\Controller
         return $response;
     }
 
-    public function runAction(string $actionName, array $actionArgs = [], bool $namedActionArgs = false): false|Response
+    public function runAction(string $actionName, array $actionArgs = []): false|Response
     {
         return false;
     }
@@ -132,8 +131,6 @@ abstract class Controller implements Controller\Interfaces\Controller
 
     /**
      * Get the name of the controller.
-     *
-     * @return string the name of the controller
      */
     public function getName(): string
     {
@@ -142,18 +139,14 @@ abstract class Controller implements Controller\Interfaces\Controller
 
     /**
      * Set the default return status code.
-     *
-     * @param int $code the default status code that will used on responses
      */
-    public function setStatus($code = null): void
+    public function setStatus(?int $code = null): void
     {
         $this->statusCode = $code;
     }
 
     /**
      * Get the status code of the controller.
-     *
-     * @return int the status code
      */
     public function getStatus(): int
     {
@@ -162,8 +155,6 @@ abstract class Controller implements Controller\Interfaces\Controller
 
     /**
      * Get the base path of the controller.
-     *
-     * @return string the base path of the controller
      */
     public function getBasePath(): string
     {
@@ -172,8 +163,6 @@ abstract class Controller implements Controller\Interfaces\Controller
 
     /**
      * Set the base path for the controller.
-     *
-     * @param string $path the base path to set
      */
     public function setBasePath(string $path): void
     {
@@ -181,24 +170,68 @@ abstract class Controller implements Controller\Interfaces\Controller
     }
 
     /**
-     * Initiate a redirect response to the client.
+     * Generate a redirect response to redirect the browser.
+     *
+     * It's quite common to redirect the user to an alternative URL. This may be to forward the request
+     * to another website, forward them to an authentication page or even just remove processed request
+     * parameters from the URL to neaten the URL up.
+     *
+     * @param string $location The URI you want to redirect to
+     * @param bool   $saveURI  Optionally save the URI so we can redirect back. See: `Hazaar\Application::redirectBack()`
      */
-    public function redirect(string|URL $location, bool $saveURI = false): Response
+    public function redirect(string $location, bool $saveURI = false): Redirect
     {
-        return $this->application->redirect((string) $location, $saveURI);
+        $headers = apache_request_headers();
+        if (array_key_exists('X-Requested-With', $headers) && 'XMLHttpRequest' === $headers['X-Requested-With']) {
+            echo "<script>document.location = '{$location}';</script>";
+        } else {
+            if ($saveURI) {
+                $data = [
+                    'URI' => $_SERVER['REQUEST_URI'],
+                    'METHOD' => $_SERVER['REQUEST_METHOD'],
+                ];
+                if ('POST' === $_SERVER['REQUEST_METHOD']) {
+                    $data['POST'] = $_POST;
+                }
+                setcookie(self::$redirectCookieName, base64_encode(serialize($data)), time() + 3600, '/');
+            }
+        }
+
+        return new Redirect($location);
     }
 
     /**
-     * Redirect back to a URL saved during redirection.
+     * Redirect back to a URI saved during redirection.
      *
-     * This mechanism is used with the $saveURI parameter of `Hazaar\Application::redirect()` so save the current URL into the session
-     * so that once we're done processing the request somewhere else we can come back to where we were. This is useful for when
-     * a user requests a page but isn't authenticated, we can redirect them to a login page and then that page can call this
-     * `Hazaar\Controller::redirectBack()` method to redirect the user back to the page they were originally looking for.
+     * This mechanism is used with the $saveURI parameter of `Hazaar\Application::redirect()` so save the current
+     * URI into the session so that once we're done processing the request somewhere else we can come back
+     * to where we were. This is useful for when a user requests a page but isn't authenticated, we can
+     * redirect them to a login page and then that page can call this `Hazaar\Application::redirectBack()` method to redirect the
+     * user back to the page they were originally looking for.
      */
-    public function redirectBack(null|string|URL $altURL = null): Response
+    public function redirectBack(?string $altURL = null): false|Redirect
     {
-        return $this->application->redirectBack($altURL);
+        if (array_key_exists(self::$redirectCookieName, $_COOKIE)) {
+            $data = unserialize(base64_decode($_COOKIE[self::$redirectCookieName]));
+            if ($uri = ake($data, 'URI')) {
+                if ('POST' === ake($data, 'METHOD')) {
+                    if ('?' !== substr($uri, -1, 1)) {
+                        $uri .= '?';
+                    } else {
+                        $uri .= '&';
+                    }
+                    $uri .= http_build_query(ake($data, 'POST'));
+                }
+            }
+            setcookie(self::$redirectCookieName, '', time() - 3600, '/');
+        } else {
+            $uri = $altURL;
+        }
+        if ($uri) {
+            return new Redirect($uri);
+        }
+
+        return false;
     }
 
     /**
@@ -223,38 +256,11 @@ abstract class Controller implements Controller\Interfaces\Controller
     }
 
     /**
-     * Test if a URL is active, relative to this controller.
-     *
-     * Parameters are simply a list of URL 'parts' that will be combined to test against the current URL to see if it is active.  Essentially
-     * the argument list is the same as `Hazaar\Controller::url()` except that parameter arrays are not supported.
-     *
-     * * Example
-     * ```php
-     * if($controller->active('index')){
-     * ```
-     *
-     * If the current URL has more parts than the function argument list, this will mean that only a portion of the URL is tested
-     * against.  This allows an action to be tested without looking at it's argument list URL parts.  This also means that it is
-     * possible to call the `active()` method without any arguments to test if the controller itself is active, which if you are
-     * calling it from within the controller, should always return `TRUE`.
-     *
-     * @return bool true if the supplied URL is active as the current URL
-     */
-    public function isActive(): bool
-    {
-        $parts = func_get_args();
-
-        return call_user_func_array([$this->application, 'active'], array_merge([$this->name], $parts));
-    }
-
-    /**
      * Add a helper to the controller.
      *
      * @param array<Helper|string>|Helper|string $helper The helper to add to the controller.  This can be a helper object, a helper class name or an array of helpers.
      * @param array<mixed>                       $args   an array of arguments to pass to the helper constructor
      * @param string                             $alias  The alias to use for the helper.  If not provided, the helper name will be used.
-     *
-     * @return bool returns true if the helper was added successfully
      */
     public function addHelper(array|Helper|string $helper, array $args = [], ?string $alias = null): bool
     {
@@ -263,9 +269,6 @@ abstract class Controller implements Controller\Interfaces\Controller
                 self::addHelper($h, [], $alias);
             }
         } elseif (is_object($helper)) {
-            if (!$helper instanceof Helper) {
-                return false;
-            }
             if (null === $alias) {
                 $alias = strtolower($helper->getName());
             }
@@ -294,8 +297,6 @@ abstract class Controller implements Controller\Interfaces\Controller
      * Checks if a helper exists.
      *
      * @param string $helper the name of the helper to check
-     *
-     * @return bool returns true if the helper exists, false otherwise
      */
     public function hasHelper($helper): bool
     {
@@ -316,14 +317,48 @@ abstract class Controller implements Controller\Interfaces\Controller
         return true;
     }
 
-    /*s
+    /**
+     * Test if a URL is active, relative to the application base URL.
+     *
+     * Parameters are simply a list of URL 'parts' that will be combined to test against the current URL to see if it is active.  Essentially
+     * the argument list is the same as `Hazaar\Application::url()` except that parameter arrays are not supported.
+     *
+     * Unlike `Hazaar\Controller::active()` this method tests if the path is active relative to the application base path.  If you
+     * want to test if a particular controller is active, then it has to be the first argument.
+     *
+     * * Example
+     * ```php
+     * $application->active('mycontroller');
+     * ```
+     *
+     * @return bool true if the supplied URL is active as the current URL
+     */
+    public function isActive(): bool
+    {
+        $parts = [];
+        foreach (func_get_args() as $part) {
+            $partParts = strpos($part, '/') ? array_map('strtolower', array_map('trim', explode('/', $part))) : [$part];
+            foreach ($partParts as $partPart) {
+                $parts[] = strtolower(trim($partPart ?? ''));
+            }
+        }
+        $basePath = $this->request->getPath();
+        $requestParts = $basePath ? array_map('strtolower', array_map('trim', explode('/', $basePath))) : [];
+        for ($i = 0; $i < count($parts); ++$i) {
+            if ($parts[$i] !== $requestParts[$i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * Find a helper class by name.
      *
      * This method searches for view helper classes based on the given name. The search order is important because it allows apps to override built-in helpers.
      *
      * @param string $name the name of the helper class to find
-     *
-     * @return null|string the fully qualified class name of the helper, or null if not found
      */
     private function findHelper(string $name): ?string
     {
@@ -350,10 +385,14 @@ abstract class Controller implements Controller\Interfaces\Controller
      * @param array<mixed> $actionArgs the action arguments
      * @param null|string  $cacheName  the cache name
      *
-     * @return false|string the cache key, or false if the action is not cached
+     * @param-out string $cacheName
      */
-    private function getCacheKey(string $controller, string $action, ?array $actionArgs = null, ?string &$cacheName = null): false|string
-    {
+    private function getCacheKey(
+        string $controller,
+        string $action,
+        ?array $actionArgs = null,
+        ?string &$cacheName = null
+    ): false|string {
         $cacheName = $controller.'::'.$action;
         if (!array_key_exists($cacheName, $this->cachedActions)) {
             return false;

@@ -11,7 +11,6 @@ namespace Hazaar\DBI\DBD;
 use Hazaar\Date;
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Table;
-use Hazaar\Map;
 use Hazaar\Model;
 
 /**
@@ -44,7 +43,10 @@ abstract class BaseDriver implements Interfaces\Driver
     protected ?\PDO $pdo = null;
     private ?\Throwable $__lastError = null;
 
-    public function __construct(Adapter $adapter, ?Map $config = null)
+    /**
+     * @param array<mixed> $config
+     */
+    public function __construct(Adapter $adapter, array $config = [])
     {
         $this->adapter = $adapter;
         $this->schemaName = ake($config, 'dbname', 'public');
@@ -65,9 +67,9 @@ abstract class BaseDriver implements Interfaces\Driver
         return BaseDriver::$execs;
     }
 
-    public static function mkdsn(Map $config): false|string
+    public static function mkdsn(array $config): false|string
     {
-        $options = $config->toArray();
+        $options = $config;
         $DBD = 'Hazaar\DBI\DBD\\'.ucfirst($config['driver']);
         if (!class_exists($DBD)) {
             return false;
@@ -256,10 +258,10 @@ abstract class BaseDriver implements Interfaces\Driver
     /**
      * @param array<string> $info
      */
-    public function type(array $info): false|string
+    public function type(array $info): ?string
     {
         if (!($type = ake($info, 'data_type'))) {
-            return false;
+            return null;
         }
         if ($array = ('[]' === substr($type, -2))) {
             $type = substr($type, 0, -2);
@@ -446,9 +448,6 @@ abstract class BaseDriver implements Interfaces\Driver
         if (!is_array($fields)) {
             return $this->field($fields);
         }
-        if (!is_array($exclude)) {
-            $exclude = [];
-        }
         $fieldDef = [];
         foreach ($fields as $key => $value) {
             if ($value instanceof Table) {
@@ -536,10 +535,10 @@ abstract class BaseDriver implements Interfaces\Driver
         ?Table $table = null
     ): false|int|\PDOStatement {
         $sql = 'INSERT INTO '.$this->schemaName($tableName);
-        if ($fields instanceof Map) {
-            $fields = $fields->toArray();
-        } elseif ($fields instanceof Model) {
+        if ($fields instanceof Model) {
             $fields = $fields->toArray(true);
+        } elseif (is_string($fields)) {
+            $fields = [$fields];
         }
         if ($fields instanceof \stdClass) {
             $fields = (array) $fields;
@@ -619,12 +618,12 @@ abstract class BaseDriver implements Interfaces\Driver
         null|array|bool|string $returning = null,
         array $tables = []
     ): false|int|\PDOStatement {
-        if ($fields instanceof Map) {
-            $fields = $fields->toArray();
-        } elseif ($fields instanceof Model) {
+        if ($fields instanceof Model) {
             $fields = $fields->toArray(true);
         } elseif ($fields instanceof \stdClass) {
             $fields = (array) $fields;
+        } elseif (is_string($fields)) {
+            $fields = [$fields];
         }
         $fieldDef = [];
         foreach ($fields as $key => &$value) {
@@ -634,10 +633,10 @@ abstract class BaseDriver implements Interfaces\Driver
             throw new Exception\NoUpdate();
         }
         $sql = 'UPDATE '.$this->schemaName($tableName).' SET '.implode(', ', $fieldDef);
-        if (is_array($from) && count($from) > 0) {
+        if (count($from) > 0) {
             $sql .= ' FROM '.implode(', ', $from);
         }
-        if (is_array($criteria) && count($criteria) > 0) {
+        if (count($criteria) > 0) {
             $sql .= ' WHERE '.$this->prepareCriteria($criteria);
         }
         $returnValue = false;
@@ -750,9 +749,9 @@ abstract class BaseDriver implements Interfaces\Driver
     }
 
     /**
-     * @return array<int, array<string>>|false
+     * @return array<array{name:mixed,default:mixed,not_null:bool,data_type:?string,length:int,sequence:string}>
      */
-    public function describeTable(string $tableName, ?string $sort = null): array|false
+    public function describeTable(string $tableName, ?string $sort = null): array
     {
         if (!$sort) {
             $sort = 'ordinal_position';
@@ -1141,7 +1140,7 @@ abstract class BaseDriver implements Interfaces\Driver
     }
 
     /**
-     * @return array<int, array<string>>|false
+     * @return array<array{name:string,return_type:string,content:string,parameters:array<array{name:string,type:string,mode:string,ordinal_position:int}>,lang:string}>|false
      */
     public function describeFunction(string $name, ?string $schemaName = null): array|false
     {
@@ -1175,8 +1174,8 @@ abstract class BaseDriver implements Interfaces\Driver
                     continue;
                 }
                 $item = [
-                    'name' => $row['routine_name'],
-                    'return_type' => $row['return_type'],
+                    'name' => (string) $row['routine_name'],
+                    'return_type' => (string) $row['return_type'],
                     'content' => trim($routineDefinition),
                 ];
                 $item['parameters'] = [];
@@ -1189,10 +1188,10 @@ abstract class BaseDriver implements Interfaces\Driver
                 continue;
             }
             $info[$row['specific_name']]['parameters'][] = [
-                'name' => $row['parameter_name'],
-                'type' => $row['data_type'],
-                'mode' => $row['parameter_mode'],
-                'ordinal_position' => $row['ordinal_position'],
+                'name' => (string) $row['parameter_name'],
+                'type' => (string) $row['data_type'],
+                'mode' => (string) $row['parameter_mode'],
+                'ordinal_position' => (int) $row['ordinal_position'],
             ];
         }
         usort($info, function ($a, $b) {

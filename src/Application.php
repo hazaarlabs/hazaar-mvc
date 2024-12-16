@@ -18,11 +18,9 @@ use Hazaar\Application\Config;
 use Hazaar\Application\Request;
 use Hazaar\Application\Router;
 use Hazaar\Application\Router\Exception\RouteNotFound;
+use Hazaar\Application\Router\Exception\RouterInitialisationFailed;
 use Hazaar\Application\URL;
-use Hazaar\Controller\Response;
 use Hazaar\Controller\Response\File;
-use Hazaar\Controller\Response\HTTP\NoContent;
-use Hazaar\Controller\Response\HTTP\Redirect;
 use Hazaar\File\Metric;
 use Hazaar\Logger\Frontend;
 
@@ -40,10 +38,8 @@ defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV'
  *
  * Essentially this is the name of the directory the application is stored in.
  */
-define('APPLICATION_NAME', array_values(array_slice(explode(DIRECTORY_SEPARATOR, realpath(APPLICATION_PATH.DIRECTORY_SEPARATOR.'..')), -1))[0]);
+define('APPLICATION_NAME', array_slice(explode(DIRECTORY_SEPARATOR, realpath(APPLICATION_PATH.DIRECTORY_SEPARATOR.'..')), -1));
 putenv('HOME='.APPLICATION_PATH);
-// Change the current working directory to the application path so that all paths are relative to it.
-chdir(APPLICATION_PATH);
 
 /**
  * The Application.
@@ -72,6 +68,11 @@ chdir(APPLICATION_PATH);
 class Application
 {
     /**
+     * The current version of Hazaar MVC.
+     */
+    public const VERSION = '3.0';
+
+    /**
      * The global variables container.
      *
      * This is a container for global variables that are available to all controllers and views.  This is
@@ -98,18 +99,14 @@ class Application
         'base' => APPLICATION_BASE,
         'name' => APPLICATION_NAME,
     ];
-    public Request $request;
-    public Response $response;
-    public Config $config;
-    public Loader $loader;
-    public Router $router;
+    public ?Config $config = null;
+    public ?Loader $loader = null;
+    public ?Router $router = null;
     public string $environment = 'development';
     public ?Timer $timer = null;
-    public mixed $bootstrap;
     protected string $urlDefaultPart;
     private static ?Application $instance = null;
     private static string $root;
-    private static string $redirectCookieName = 'hazaar-redirect-token';
 
     /**
      * @var array<callable>
@@ -135,13 +132,12 @@ class Application
      *
      * @param string $env The application environment name. eg: 'development' or 'production'
      */
-    public function __construct($env)
+    public function __construct(string $env)
     {
         try {
-            ob_start();
-            set_error_handler('errorHandler', E_ERROR);
-            set_exception_handler('exceptionHandler');
-            register_shutdown_function('shutdownHandler');
+            set_error_handler([$this, 'errorHandler'], E_ERROR);
+            set_exception_handler([$this, 'exceptionHandler']);
+            register_shutdown_function([$this, 'shutdownHandler']);
             register_shutdown_function([$this, 'shutdown']);
             $this->GLOBALS['hazaar']['exec_start'] = HAZAAR_START;
             Application::$instance = $this;
@@ -161,20 +157,11 @@ class Application
              * it will just be an empty object that will handle calls to
              * it silently.
              */
-            $config = new Config('application', $env, $this->getDefaultConfig(), FILE_PATH_CONFIG);
-            // Check if we require SSL and don't have and if so, redirect here.
-            if ($config['app']->has('require_ssl')
-                && boolify($_SERVER['HTTPS']) !== boolify($config['app']['require_ssl'])) {
-                header('Location: https://'.$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI']);
-
-                exit;
-            }
+            $config = Config::getInstance('application', $env, $this->getDefaultConfig());
             // Configure the application
             $this->configure($config);
-            // Create the request object
-            $this->request = Request\Loader::load();
             // Create a new router object for evaluating routes
-            $this->router = new Router($this, $this->config->get('router'));
+            $this->router = new Router($this->config['router'] ?? 'file');
             $this->timer->stop('init');
         } catch (\Throwable $e) {
             dieDieDie($e);
@@ -189,41 +176,36 @@ class Application
      */
     public function shutdown(): void
     {
-        if ($this->config->loaded()) {
-            $shutdown = APPLICATION_PATH.DIRECTORY_SEPARATOR.ake($this->config['app']['files'], 'shutdown', 'shutdown.php');
-            if (file_exists($shutdown)) {
-                include $shutdown;
-            }
-            if (true === $this->config->get('app.metrics')) {
-                $metricFile = $this->getRuntimePath('metrics.dat');
-                if ((!file_exists($metricFile) && is_writable(dirname($metricFile))) || is_writable($metricFile)) {
-                    $metric = new Metric($metricFile);
-                    if (!$metric->exists()) {
-                        $metric->addDataSource('hits', 'COUNTER', null, null, 'Hit Counter');
-                        $metric->addDataSource('exec', 'GAUGEZ', null, null, 'Execution Timer');
-                        $metric->addDataSource('mem', 'GAUGE', null, null, 'Memory Usage');
-                        $metric->addArchive('count_1hour', 'COUNT', 6, 60, 'Count per minute for last hour');
-                        $metric->addArchive('avg_1hour', 'AVERAGE', 6, 60, 'Average per minute for last hour');
-                        $metric->addArchive('count_1day', 'COUNT', 360, 24, 'Count per hour for last day');
-                        $metric->addArchive('avg_1day', 'AVERAGE', 360, 24, 'Average per hour for last day');
-                        $metric->addArchive('count_1week', 'COUNT', 360, 168, 'Count per hour for last week');
-                        $metric->addArchive('avg_1week', 'AVERAGE', 360, 168, 'Average per hour for last week');
-                        $metric->addArchive('count_1year', 'COUNT', 8640, 365, 'Count per day for last year');
-                        $metric->addArchive('avg_1year', 'AVERAGE', 8640, 365, 'Average per day for last year');
-                        $metric->create(10);
-                    }
-                    $metric->setValue('hits', 1);
-                    $metric->setValue('exec', (microtime(true) - HAZAAR_START) * 1000);
-                    $metric->setValue('mem', memory_get_peak_usage());
+        if (!$this->config) {
+            return;
+        }
+        $shutdown = APPLICATION_PATH.DIRECTORY_SEPARATOR.ake($this->config, 'app.files.shutdown', 'shutdown.php');
+        if (file_exists($shutdown)) {
+            include $shutdown;
+        }
+        if ($this->config['app']['metrics'] ?? false) {
+            $metricFile = $this->getRuntimePath('metrics.dat');
+            if ((!file_exists($metricFile) && is_writable(dirname($metricFile))) || is_writable($metricFile)) {
+                $metric = new Metric($metricFile);
+                if (!$metric->exists()) {
+                    $metric->addDataSource('hits', 'COUNTER', null, null, 'Hit Counter');
+                    $metric->addDataSource('exec', 'GAUGEZ', null, null, 'Execution Timer');
+                    $metric->addDataSource('mem', 'GAUGE', null, null, 'Memory Usage');
+                    $metric->addArchive('count_1hour', 'COUNT', 6, 60, 'Count per minute for last hour');
+                    $metric->addArchive('avg_1hour', 'AVERAGE', 6, 60, 'Average per minute for last hour');
+                    $metric->addArchive('count_1day', 'COUNT', 360, 24, 'Count per hour for last day');
+                    $metric->addArchive('avg_1day', 'AVERAGE', 360, 24, 'Average per hour for last day');
+                    $metric->addArchive('count_1week', 'COUNT', 360, 168, 'Count per hour for last week');
+                    $metric->addArchive('avg_1week', 'AVERAGE', 360, 168, 'Average per hour for last week');
+                    $metric->addArchive('count_1year', 'COUNT', 8640, 365, 'Count per day for last year');
+                    $metric->addArchive('avg_1year', 'AVERAGE', 8640, 365, 'Average per day for last year');
+                    $metric->create(10);
                 }
+                $metric->setValue('hits', 1);
+                $metric->setValue('exec', (microtime(true) - HAZAAR_START) * 1000);
+                $metric->setValue('mem', memory_get_peak_usage());
             }
         }
-        Frontend::i(
-            'CORE',
-            '"'.ake($_SERVER, 'REQUEST_METHOD').' /'.$this->request->getPath().'" '
-            .http_response_code()
-            .' "'.ake($_SERVER, 'HTTP_USER_AGENT').'"'
-        );
     }
 
     /**
@@ -267,9 +249,10 @@ class Application
                 'runtimePath' => APPLICATION_PATH.DIRECTORY_SEPARATOR.'.runtime',
                 'metrics' => false,
                 'responseType' => 'html',
+                'layout' => 'application',
             ],
             'router' => [
-                'type' => null,
+                'type' => 'basic',
                 'controller' => 'index',
                 'action' => 'index',
             ],
@@ -288,34 +271,30 @@ class Application
 
     public function configure(Config $config): void
     {
-        if (!$config->has('app')) {
+        if (!isset($config['app'])) {
             throw new \Exception('Invalid application configuration!');
         }
         $this->config = $config;
-        if ($this->config['app']->has('alias')) {
+        if ($this->config['app']['alias'] ?? false) {
             URL::$aliases = $this->config['app']->getArray('alias');
         }
-        // Allow the root to be configured but the default absolutely has to be set so here we double
-        $this->config['app']->addInputFilter(function (mixed $value) {
-            Application::setRoot($value);
-        }, false, 'root');
-        Application::setRoot($this->config['app']['root']);
+        Application::setRoot($this->config['app']['root'] ?? '/');
         // PHP root elements can be set directly with the PHP ini_set function
-        if ($this->config->has('php')) {
-            $phpValues = $this->config['php']->toDotNotation()->toArray();
+        if (isset($this->config['php'])) {
+            $phpValues = array_to_dot_notation($this->config['php']);
             foreach ($phpValues as $directive => $phpValue) {
                 ini_set($directive, $phpValue);
             }
         }
         // Check the load average and protect ifneeded
-        if ($this->config['app']->has('maxload') && function_exists('sys_getloadavg')) {
+        if (isset($this->config['app']['maxload']) && function_exists('sys_getloadavg')) {
             $la = sys_getloadavg();
             if ($la[0] > $this->config['app']['maxload']) {
                 throw new Application\Exception\ServerBusy();
             }
         }
         // Use the config to add search paths to the loader
-        $this->loader->addSearchPaths($this->config->get('paths')->toArray());
+        $this->loader->addSearchPaths($this->config['paths']);
         /*
          * Initialise any configured modules
          *
@@ -327,9 +306,9 @@ class Application
             'log' => '\Hazaar\Logger\Frontend',
         ];
         foreach ($initialisers as $property => $class) {
-            if ($this->config->has($property) && class_exists($class)) {
-                $moduleConfig = $this->config->get($property);
-                if (!$moduleConfig instanceof Map) {
+            if (isset($this->config[$property]) && class_exists($class)) {
+                $moduleConfig = $this->config[$property];
+                if (!is_array($moduleConfig)) {
                     throw new \Exception('Invalid configuration module: '.$property);
                 }
                 $class::initialise($moduleConfig);
@@ -378,7 +357,7 @@ class Application
      */
     public function getRuntimePath($suffix = null, $createDir = false): string
     {
-        $path = $this->config['app']->get('runtimePath');
+        $path = $this->config['app']['runtimePath'] ?? '.runtime';
         if (!file_exists($path)) {
             $parent = dirname($path);
             if (!is_writable($parent)) {
@@ -483,13 +462,13 @@ class Application
     {
         $this->timer->start('boot');
         $locale = null;
-        if ($this->config['app']->has('locale')) {
+        if (isset($this->config['app']['locale'])) {
             $locale = $this->config['app']['locale'];
         }
         if (false === setlocale(LC_ALL, $locale)) {
             throw new \Exception("Unable to set locale to {$locale}.  Make sure the {$locale} locale is enabled on your system.");
         }
-        $tz = $this->config['app']->has('timezone') ? $this->config['app']->timezone : 'UTC';
+        $tz = $this->config['app']['timezone'] ?? 'UTC';
         if (!date_default_timezone_set($tz)) {
             throw new Application\Exception\BadTimezone($tz);
         }
@@ -498,18 +477,18 @@ class Application
             $this->GLOBALS['runtime'] = RUNTIME_PATH;
         }
         // Check for an application bootstrap file and execute it
-        $bootstrap = APPLICATION_PATH.DIRECTORY_SEPARATOR
-            .ake($this->config['app']['files'], 'bootstrap', 'bootstrap.php');
+        $bootstrap = APPLICATION_PATH
+            .DIRECTORY_SEPARATOR
+            .ake($this->config, 'app.files.bootstrap', 'bootstrap.php');
         if (file_exists($bootstrap)) {
-            $this->bootstrap = include $bootstrap;
-            if (false === $this->bootstrap) {
+            $bootstrap = include $bootstrap;
+            if (false === $bootstrap) {
                 throw new \Exception('The application failed to start!');
             }
         }
-        if (false === $this->router->initialise($this->request)) {
-            throw new RouteNotFound($this->request->getPath());
+        if (false === $this->router->initialise()) {
+            throw new RouterInitialisationFailed('Router returned false');
         }
-
         $this->timer->stop('boot');
 
         return $this;
@@ -538,30 +517,26 @@ class Application
 
         try {
             $this->timer->start('exec');
-            $route = $this->router->getRoute();
+            ob_start();
+            // Create the request object
+            $request = Request\Loader::load();
             if ('cli' === php_sapi_name()) {
-                $this->request->setPath(ake($_SERVER, 'argv[1]'));
+                $request->setPath(ake($_SERVER, 'argv[1]'));
             }
             if (null !== $controller) {
-                $response = $controller->initialize($this->request);
+                $response = $controller->initialize($request);
                 if (null === $response) {
-                    $response = $controller->run($route);
+                    $response = $controller->run();
                 }
             } else {
+                $route = $this->router->evaluateRequest($request);
                 if (!$route) {
-                    throw new \Exception('No route found');
+                    throw new RouteNotFound($request->getPath());
                 }
                 $controller = $route->getController();
-                $response = $controller->initialize($this->request);
+                $response = $controller->initialize($request);
                 if (null === $response) {
                     $response = $controller->run($route);
-                }
-            }
-            if (!$response instanceof Response) {
-                $response = new NoContent();
-            } elseif ($response instanceof File) {
-                if (!$response->fileExists()) {
-                    throw new \Exception('File not found', 404);
                 }
             }
             if (count($this->outputFunctions) > 0) {
@@ -576,9 +551,10 @@ class Application
             $controller->shutdown($response);
             $this->timer->stop('exec');
             $code = $response->getStatus();
+            ob_end_flush();
         } catch (Controller\Exception\HeadersSent $e) {
             dieDieDie('HEADERS SENT');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             /*
             * Here we check if the controller we tried to execute was already an error
             * if it is and we try and execute another error we could end up in an endless loop
@@ -587,7 +563,7 @@ class Application
             if ($controller instanceof Controller\Error) {
                 dieDieDie($e->getMessage());
             } else {
-                throw $e;
+                $this->exceptionHandler($e, isset($route) ? $route->getResponseType() : null);
             }
         }
 
@@ -624,129 +600,11 @@ class Application
     }
 
     /**
-     * Test if a URL is active, relative to the application base URL.
-     *
-     * Parameters are simply a list of URL 'parts' that will be combined to test against the current URL to see if it is active.  Essentially
-     * the argument list is the same as `Hazaar\Application::url()` except that parameter arrays are not supported.
-     *
-     * Unlike `Hazaar\Controller::active()` this method tests if the path is active relative to the application base path.  If you
-     * want to test if a particular controller is active, then it has to be the first argument.
-     *
-     * * Example
-     * ```php
-     * $application->active('mycontroller');
-     * ```
-     *
-     * @return bool true if the supplied URL is active as the current URL
-     */
-    public function isActive(): bool
-    {
-        $parts = [];
-        foreach (func_get_args() as $part) {
-            $partParts = strpos($part, '/') ? array_map('strtolower', array_map('trim', explode('/', $part))) : [$part];
-            foreach ($partParts as $partPart) {
-                $parts[] = strtolower(trim($partPart ?? ''));
-            }
-        }
-        $basePath = $this->request->getPath();
-        $requestParts = $basePath ? array_map('strtolower', array_map('trim', explode('/', $basePath))) : [];
-        for ($i = 0; $i < count($parts); ++$i) {
-            if (!array_key_exists($i, $requestParts) && null !== $this->urlDefaultPart) {
-                $requestParts[$i] = $this->urlDefaultPart;
-            }
-            if ($parts[$i] !== $requestParts[$i]) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Generate a redirect response to redirect the browser.
-     *
-     * It's quite common to redirect the user to an alternative URL. This may be to forward the request
-     * to another website, forward them to an authentication page or even just remove processed request
-     * parameters from the URL to neaten the URL up.
-     *
-     * @param string $location The URI you want to redirect to
-     * @param bool   $saveURI  Optionally save the URI so we can redirect back. See: `Hazaar\Application::redirectBack()`
-     */
-    public function redirect(string $location, bool $saveURI = false): false|Redirect
-    {
-        $headers = apache_request_headers();
-        if (array_key_exists('X-Requested-With', $headers) && 'XMLHttpRequest' === $headers['X-Requested-With']) {
-            echo "<script>document.location = '{$location}';</script>";
-        } else {
-            if ($saveURI) {
-                $data = [
-                    'URI' => $_SERVER['REQUEST_URI'],
-                    'METHOD' => $_SERVER['REQUEST_METHOD'],
-                ];
-                if ('POST' === $_SERVER['REQUEST_METHOD']) {
-                    $data['POST'] = $_POST;
-                }
-                setcookie(self::$redirectCookieName, base64_encode(serialize($data)), time() + 3600, '/');
-            }
-        }
-
-        return new Redirect($location);
-    }
-
-    /**
-     * Redirect back to a URI saved during redirection.
-     *
-     * This mechanism is used with the $saveURI parameter of `Hazaar\Application::redirect()` so save the current
-     * URI into the session so that once we're done processing the request somewhere else we can come back
-     * to where we were. This is useful for when a user requests a page but isn't authenticated, we can
-     * redirect them to a login page and then that page can call this `Hazaar\Application::redirectBack()` method to redirect the
-     * user back to the page they were originally looking for.
-     */
-    public function redirectBack(?string $altURL = null): false|Redirect
-    {
-        if (array_key_exists(self::$redirectCookieName, $_COOKIE)) {
-            $data = unserialize(base64_decode($_COOKIE[self::$redirectCookieName]));
-            if ($uri = ake($data, 'URI')) {
-                if ('POST' === ake($data, 'METHOD')) {
-                    if ('?' !== substr($uri, -1, 1)) {
-                        $uri .= '?';
-                    } else {
-                        $uri .= '&';
-                    }
-                    $uri .= http_build_query(ake($data, 'POST'));
-                }
-            }
-            setcookie(self::$redirectCookieName, '', time() - 3600, '/');
-        } else {
-            $uri = $altURL;
-        }
-        if ($uri) {
-            return new Redirect($uri);
-        }
-
-        return false;
-    }
-
-    /**
      * Return the current Hazaar MVC framework version.
      */
     public function getVersion(): string
     {
         return HAZAAR_VERSION;
-    }
-
-    /**
-     * Returns the requested response type.
-     *
-     * The requested response type can be set in the request itself.  If it is not set, then the default will be 'html'
-     * or the X-Requested-With header will be checked to determine the response type.
-     *
-     * This method is used internally to determine the response type to send when one has not been explicitly used.  Normally
-     * the response type is determined by the Controller\Response object type returned by a controller action.
-     */
-    public function getResponseType(): ?string
-    {
-        return $this->config['app']['responseType'];
     }
 
     /**
@@ -768,5 +626,63 @@ class Application
     public function registerOutputFunction(array|callable $function): void
     {
         $this->outputFunctions[] = $function;
+    }
+
+    /**
+     * Custom error handler function.
+     *
+     * This function is responsible for handling PHP errors and displaying appropriate error messages.
+     *
+     * @param int         $errno   the error number
+     * @param string      $errstr  the error message
+     * @param null|string $errfile the file where the error occurred
+     * @param null|int    $errline the line number where the error occurred
+     *
+     * @return bool returns true to prevent the default PHP error handler from being called
+     */
+    public function errorHandler(int $errno, string $errstr, ?string $errfile = null, ?int $errline = null): bool
+    {
+        if ($errno >= 500) {
+            Frontend::e('CORE', "Error #{$errno} on line {$errline} of file {$errfile}: {$errstr}");
+        }
+
+        errorAndDie($errno, $errstr, $errfile, $errline, debug_backtrace());
+
+        return true;
+    }
+
+    /**
+     * Shutdown handler function.
+     *
+     * This function is responsible for executing the shutdown tasks registered in the global variable $__shutdownTasks.
+     * It checks if the script is running in CLI mode or if headers have already been sent before executing the tasks.
+     */
+    public function shutdownHandler(): void
+    {
+        if (($error = error_get_last()) !== null) {
+            if (ob_get_length() && 1 == ini_get('display_errors') && 'cli' !== php_sapi_name()) {
+                ob_clean();
+            }
+            match ($error['type']) {
+                E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR => errorAndDie($error, debug_backtrace()),
+                default => null
+            };
+        }
+    }
+
+    /**
+     * Exception handler function.
+     *
+     * This function is responsible for handling exceptions thrown in the application.
+     * If the exception code is greater than or equal to 500, it logs the error message
+     * along with the code, line number, and file name. Then it calls the `errorAndDie()`
+     * function to handle the error further.
+     */
+    public function exceptionHandler(\Throwable $e, ?int $responseType = null): void
+    {
+        if ($e->getCode() >= 500) {
+            Frontend::e('CORE', 'Error #'.$e->getCode().' on line '.$e->getLine().' of file '.$e->getFile().': '.$e->getMessage());
+        }
+        errorAndDie($e, $responseType);
     }
 }

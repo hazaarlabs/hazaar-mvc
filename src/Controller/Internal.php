@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller;
 
+use Hazaar\Application;
 use Hazaar\Application\Route;
 use Hazaar\Controller;
 use Hazaar\Controller\Response\File;
@@ -32,7 +33,8 @@ class Internal extends Controller
             return $response;
         }
         $filename = $route->getPath();
-        $file = $this->application->loader->getFilePath(FILE_PATH_SUPPORT, $filename);
+        $app = Application::getInstance();
+        $file = $app->loader->getFilePath(FILE_PATH_SUPPORT, $filename);
         if (null === $file) {
             throw new \Exception("Hazaar support file '{$filename}' not found!", 404);
         }
@@ -61,7 +63,7 @@ class Internal extends Controller
         if (!class_exists($internalClassName)) {
             return false;
         }
-        $controller = new $internalClassName($this->application, $route);
+        $controller = new $internalClassName($route);
         $response = $controller->runAction(substr($actionName, $offset + 1), $actionArgs, $namedActionArgs);
         if (!$response) {
             throw new \Exception("Internal controller action '{$actionName}' not found!", 404);

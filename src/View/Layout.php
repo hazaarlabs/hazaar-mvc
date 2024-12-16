@@ -28,7 +28,7 @@ class Layout extends View
         if (!$view) {
             $view = 'application';
         }
-        parent::__construct($view, ['hazaar']);
+        parent::__construct($view);
     }
 
     /**
@@ -81,7 +81,7 @@ class Layout extends View
      */
     public function render(?array $data = []): string
     {
-        if (true === $this->application->config['view']['prepare']) {
+        if ($this->application->config['view']['prepare'] ?? false) {
             $this->prepare();
         }
 

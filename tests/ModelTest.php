@@ -130,7 +130,7 @@ class ModelTest extends TestCase
         $model->counter = 100;
         $this->assertEquals(11, $model->counter);
         $model->age->dob = strtotime('1978-12-13');
-        $this->assertEquals(45, $model->age->years);
+        $this->assertEquals(46, $model->age->years);
     }
 
     public function testMinMaxRules(): void
@@ -201,9 +201,8 @@ class ModelTest extends TestCase
     public function testSerialise(): void
     {
         $model = new TestModel($this->data);
-        $this->assertIsArray($model->toArray());
         $string = serialize($model);
-        $this->assertIsString($string);
+        $this->assertEquals(424, strlen($string));
         $newModel = unserialize($string);
         $this->assertInstanceOf(TestModel::class, $newModel);
         $array = $newModel->toArray(true);

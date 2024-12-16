@@ -4,11 +4,13 @@ namespace Hazaar\Mail\Transport;
 
 use Hazaar\Mail\Transport;
 use Hazaar\Mail\TransportMessage;
-use Hazaar\Map;
 
 class Local extends Transport
 {
-    public function init(Map $options): bool
+    /**
+     * @param array<mixed> $options
+     */
+    public function init(array $options): bool
     {
         if (!exec('which sendmail')) {
             throw new Exception\NoSendmail();
@@ -45,7 +47,7 @@ class Local extends Transport
         if ($sendmail_from) {
             $params['-f'] = $sendmail_from;
         }
-        if (is_array($message->dsn) && count($message->dsn) > 0) {
+        if (count($message->dsn) > 0) {
             $params['-N'] = '"'.implode(',', array_map('strtolower', $message->dsn)).'"';
         }
         // The @ sign causes errors not to be thrown and allows things to continue.  the mail() command

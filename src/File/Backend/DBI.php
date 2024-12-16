@@ -7,24 +7,27 @@ namespace Hazaar\File\Backend;
 use Hazaar\Date;
 use Hazaar\DBI\Adapter;
 use Hazaar\File\Manager;
-use Hazaar\Map;
 
 class DBI implements Interfaces\Backend, Interfaces\Driver
 {
     public string $separator = '/';
     protected Manager $manager;
-    private Map $options;
+
+    /**
+     * @var array<mixed>
+     */
+    private array $options;
     private Adapter $db;
 
     /**
-     * @var array<string,int|string>
+     * @var array<mixed>
      */
     private array $rootObject;
 
     /**
-     * @param array<mixed>|Map $options
+     * @param array<mixed> $options
      */
-    public function __construct(array|Map $options, Manager $manager)
+    public function __construct(array $options, Manager $manager)
     {
         $this->manager = $manager;
         $defaults = [
@@ -32,12 +35,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
             'initialise' => true,
             'chunkSize' => 4194304,
         ];
-        if ($options instanceof Map) {
-            $options->enhance($defaults);
-        } else {
-            $options = new Map($defaults, $options);
-        }
-        $this->options = $options;
+        $this->options = array_merge_recursive($defaults, $options);
         if (is_string($this->options['chunkSize'])) {
             $this->options['chunkSize'] = (int) bytes_str($this->options['chunkSize']);
         }
@@ -105,7 +103,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
         // Remove headless chunks
         $select = $this->db->table('hz_file_chunk', 'fc')
             ->leftjoin('hz_file', ['f.start_chunk' => ['$ref' => 'fc.id']], 'f')
-            ->find(['f.id' => null, 'fc.parent' => null], 'fc.id')
+            ->find(['f.id' => null, 'fc.parent' => null], ['fc.id'])
         ;
         while ($row = $select->fetch()) {
             $this->cleanChunk($row['id']);
@@ -576,7 +574,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
             return false;
         }
         $data = [
-            'modified_on' => new \MongoDate(),
+            'modified_on' => time(),
             'parent' => $dstParent['id'],
         ];
         if (!$this->db->table('hz_file')->update(['id' => $source['id']], $data)) {
@@ -636,9 +634,6 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
 
     public function chmod(string $path, int $mode): bool
     {
-        if (!is_int($mode)) {
-            return false;
-        }
         if ($target = &$this->info($path)) {
             $target['mode'] = $mode;
 
@@ -841,7 +836,9 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
     }
 
     /**
-     * @param array<string,int|string> $parent
+     * @param array<mixed> $parent
+     *
+     * @param-out array<mixed> $parent
      */
     private function loadObjects(?array &$parent = null): bool
     {

@@ -143,9 +143,6 @@ class Protocol
      */
     public function getTypeName(int $type): bool|string
     {
-        if (!is_int($type)) {
-            return $this->error('Bad packet type');
-        }
         if (!array_key_exists($type, Protocol::$typeCodes)) {
             return $this->error('Unknown packet type');
         }
@@ -188,7 +185,7 @@ class Protocol
      *
      * @return bool|string the type name of the decoded packet
      */
-    public function decode(string $packet, mixed &$payload = null, int &$time = null): bool|string
+    public function decode(string $packet, mixed &$payload = null, ?int &$time = null): bool|string
     {
         $payload = null;
         if (!($packet = json_decode($this->encoded ? base64_decode($packet) : $packet))) {
@@ -217,8 +214,9 @@ class Protocol
     /**
      * Sets the last error message and returns false.
      *
-     * @param string $msg The error message to be set.
-     * @return bool Always returns false.
+     * @param string $msg the error message to be set
+     *
+     * @return bool always returns false
      */
     private function error(string $msg): bool
     {

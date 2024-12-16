@@ -18,7 +18,6 @@ use Hazaar\DBI\Exception\NotConfigured;
 use Hazaar\DBI\Schema\Manager;
 use Hazaar\File\Dir;
 use Hazaar\Loader;
-use Hazaar\Map;
 
 /**
  * @brief Relational Database Interface
@@ -56,68 +55,68 @@ use Hazaar\Map;
  * }
  * ```
  *
- * @method false|string lastInsertId()
- * @method false|int    exec(string $sql)
- * @method false|int    delete(string $tableName, mixed $criteria = [], array $from = [])
- * @method string       getSchemaName()
- * @method false|string quote(string $string, int $parameterType = \PDO::PARAM_STR)
- * @method bool         setTimezone(string $timezone)
- * @method bool         repair(?string $table = null)
- * @method array        errorInfo()
- * @method mixed        errorCode()
- * @method bool         truncate(string $tableName,bool $only = false,bool $restartIdentity = false,bool $cascade = false)
- * @method bool         createDatabase(string $name)
- * @method string       schemaName(string $table)
- * @method bool         schemaExists(string $schemaName)
- * @method bool         createSchema(string $schemaName)
- * @method bool         beginTransaction()
- * @method bool         commit()
- * @method bool         rollback()
- * @method bool         inTransaction()
- * @method mixed        getAttribute(int $attribute)
- * @method bool         setAttribute(int $attribute, mixed $value)
- * @method bool         createRole(string $roleName, ?string $password = null, array $privileges = [])
- * @method bool         dropRole(string $name, bool $ifExists = false)
- * @method array|false  listUsers()
- * @method array|false  listGroups()
- * @method array        listTables()
- * @method bool         tableExists(string $tableName)
- * @method bool         createTable(string $tableName, mixed $columns)
- * @method bool         renameTable(string $fromName, string $toName)
- * @method array|false  describeTable(string $tableName, ?string $sort = null)
- * @method bool         dropTable(string $table, bool $cascade = false, bool $ifExists = false)
- * @method bool         addColumn(string $tableName, mixed $columnSpec)
- * @method bool         alterColumn(string $tableName, string $column, mixed $columnSpec)
- * @method bool         dropColumn(string $tableName, string $column, bool $ifExists = false)
- * @method array|false  listPrimaryKeys(?string $table = null)
- * @method array|false  listForeignKeys(?string $table = null)
- * @method array|false  listConstraints(?string $table = null, ?string $type = null, bool $invertType = false)
- * @method bool         addConstraint(string $constraintName, mixed $info)
- * @method bool         dropConstraint(string $constraintName, string $tableName, bool $cascade = false, bool $ifExists = false)
- * @method array|false  listIndexes(?string $tableName = null)
- * @method bool         createIndex(string $indexName, string $tableName, array $idxInfo = [])
- * @method bool         dropIndex(string $indexName, bool $ifExists = false)
- * @method array|false  listViews()
- * @method bool         createView(string $viewName, mixed $content)
- * @method bool         viewExists(string $viewName)
- * @method array|false  describeView(string $viewName)
- * @method bool         dropView(string $viewName, bool $cascade = false, bool $ifExists = false)
- * @method array|false  listFunctions(?string $schema = null, bool $includeParameters = false)
- * @method bool         createFunction(string $functionName, mixed $content)
- * @method array|false  describeFunction(string $functionName)
- * @method bool         dropFunction(string $functionName, null|array|string $argTypes = null, bool $cascade = false, bool $ifExists = false)
- * @method array|false  listTriggers(?string $tableName = null, ?string $schema = null)
- * @method bool         createTrigger(string $functionName, string $tableName, mixed $content)
- * @method array|false  describeTrigger(string $functionName, ?string $schemaName = null)
- * @method bool         dropTrigger(string $functionName, null|array|string $argTypes = null, bool $cascade = false, bool $ifExists = false)
- * @method array|false  listExtensions()
- * @method bool         createExtension(string $name)
- * @method bool         dropExtension(string $name, bool $ifExists = false)
+ * @method false|string       lastInsertId()
+ * @method false|int          exec(string $sql)
+ * @method false|int          delete(string $tableName, mixed $criteria = [], array<string> $from = [])
+ * @method string             getSchemaName()
+ * @method false|string       quote(string $string, int $parameterType = \PDO::PARAM_STR)
+ * @method bool               setTimezone(string $timezone)
+ * @method bool               repair(?string $table = null)
+ * @method array<mixed>       errorInfo()
+ * @method mixed              errorCode()
+ * @method bool               truncate(string $tableName,bool $only = false,bool $restartIdentity = false,bool $cascade = false)
+ * @method bool               createDatabase(string $name)
+ * @method string             schemaName(string $table)
+ * @method bool               schemaExists(string $schemaName)
+ * @method bool               createSchema(string $schemaName)
+ * @method bool               beginTransaction()
+ * @method bool               commit()
+ * @method bool               rollback()
+ * @method bool               inTransaction()
+ * @method mixed              getAttribute(int $attribute)
+ * @method bool               setAttribute(int $attribute, mixed $value)
+ * @method bool               createRole(string $roleName, ?string $password = null, array<mixed> $privileges = [])
+ * @method bool               dropRole(string $name, bool $ifExists = false)
+ * @method array<mixed>|false listUsers()
+ * @method array<mixed>|false listGroups()
+ * @method array<mixed>|false listTables()
+ * @method bool               tableExists(string $tableName)
+ * @method bool               createTable(string $tableName, mixed $columns)
+ * @method bool               renameTable(string $fromName, string $toName)
+ * @method array<mixed>|false describeTable(string $tableName, ?string $sort = null)
+ * @method bool               dropTable(string $table, bool $cascade = false, bool $ifExists = false)
+ * @method bool               addColumn(string $tableName, mixed $columnSpec)
+ * @method bool               alterColumn(string $tableName, string $column, mixed $columnSpec)
+ * @method bool               dropColumn(string $tableName, string $column, bool $ifExists = false)
+ * @method array<mixed>|false listPrimaryKeys(?string $table = null)
+ * @method array<mixed>|false listForeignKeys(?string $table = null)
+ * @method array<mixed>|false listConstraints(?string $table = null, ?string $type = null, bool $invertType = false)
+ * @method bool               addConstraint(string $constraintName, mixed $info)
+ * @method bool               dropConstraint(string $constraintName, string $tableName, bool $cascade = false, bool $ifExists = false)
+ * @method array<mixed>|false listIndexes(?string $tableName = null)
+ * @method bool               createIndex(string $indexName, string $tableName, array<mixed> $idxInfo = [])
+ * @method bool               dropIndex(string $indexName, bool $ifExists = false)
+ * @method array<mixed>|false listViews()
+ * @method bool               createView(string $viewName, mixed $content)
+ * @method bool               viewExists(string $viewName)
+ * @method array<mixed>|false describeView(string $viewName)
+ * @method bool               dropView(string $viewName, bool $cascade = false, bool $ifExists = false)
+ * @method array<mixed>|false listFunctions(?string $schema = null, bool $includeParameters = false)
+ * @method bool               createFunction(string $functionName, mixed $content)
+ * @method array<mixed>|false describeFunction(string $functionName)
+ * @method bool               dropFunction(string $functionName, mixed $argTypes = null, bool $cascade = false, bool $ifExists = false)
+ * @method array<mixed>|false listTriggers(?string $tableName = null, ?string $schema = null)
+ * @method bool               createTrigger(string $functionName, string $tableName, mixed $content)
+ * @method array<mixed>|false describeTrigger(string $functionName, ?string $schemaName = null)
+ * @method bool               dropTrigger(string $functionName, mixed $argTypes = null, bool $cascade = false, bool $ifExists = false)
+ * @method array<mixed>|false listExtensions()
+ * @method bool               createExtension(string $name)
+ * @method bool               dropExtension(string $name, bool $ifExists = false)
  */
 class Adapter
 {
     /**
-     * @var array<string, int|string>
+     * @var array<string, array{cipher:string,checkstring:string}|int|string>
      */
     public static array $defaultConfig = [
         'encrypt' => [
@@ -127,7 +126,10 @@ class Adapter
         'timezone' => 'UTC',
     ];
 
-    public Map $config;
+    /**
+     * @var array<mixed>
+     */
+    public array $config;
     public BaseDriver $driver;
 
     /**
@@ -161,18 +163,18 @@ class Adapter
     /**
      * Hazaar DBI Constructor.
      *
-     * @param array<mixed>|Map|string $config An array of configuration options to instantiate the DBI Adapter.  This can
-     *                                        also be a Hazaar MVC configuration environment if DBI is being used by an HMVC
-     *                                        application.
+     * @param array<mixed>|string $config An array of configuration options to instantiate the DBI Adapter.  This can
+     *                                    also be a Hazaar MVC configuration environment if DBI is being used by an HMVC
+     *                                    application.
      */
-    public function __construct(null|array|Map|string $config = null)
+    public function __construct(null|array|string $config = null)
     {
         $configName = null;
         if (defined('HAZAAR_VERSION') && (null === $config || is_string($config))) {
             $configName = $config;
             $config = $this->getDefaultConfig($configName);
         } elseif (!is_string($config)) {
-            $config = Map::_($config, self::$defaultConfig);
+            $config = array_merge(self::$defaultConfig, $config);
         } else {
             throw new NotConfigured();
         }
@@ -225,11 +227,14 @@ class Adapter
         if (array_key_exists($configEnv, self::$managerInstances)) {
             return self::$managerInstances[$configEnv];
         }
-        if (!($config = self::getDefaultConfig($configEnv))) {
+
+        try {
+            $config = self::getDefaultConfig($configEnv);
+        } catch (\Exception $e) {
             throw new \Exception("DBI is not configured for APPLICATION_ENV '".APPLICATION_ENV."'");
         }
 
-        return new Manager($config, $logCallback);
+        return new Manager($config->toArray(), $logCallback);
     }
 
     public static function getDriverClass(string $driver): string
@@ -250,7 +255,13 @@ class Adapter
         return true;
     }
 
-    public static function getDefaultConfig(?string &$configName = null): false|Map
+    /**
+     * Get the default configuration for the DBI Adapter.
+     *
+     * This function will return the default configuration for the DBI Adapter.  If the configuration has not been
+     * loaded yet, it will be loaded from the configuration file.
+     */
+    public static function getDefaultConfig(?string &$configName = null): Config|false
     {
         if (!defined('HAZAAR_VERSION')) {
             return false;
@@ -263,10 +274,7 @@ class Adapter
             if (!Config::$overridePaths) {
                 Config::$overridePaths = Application::getConfigOverridePaths();
             }
-            $config = new Config('database', $configName, self::$defaultConfig, FILE_PATH_CONFIG, true);
-            if (!$config->loaded()) {
-                return false;
-            }
+            $config = Config::getInstance('database', $configName, self::$defaultConfig, true);
             self::$loadedConfigs[$configName] = $config;
         }
 
@@ -294,7 +302,7 @@ class Adapter
         if (!class_exists($DBD)) {
             throw new DriverNotFound($driver);
         }
-        $this->driver = new $DBD($this, Map::_(array_unflatten(substr($dsn, strpos($dsn, ':') + 1))));
+        $this->driver = new $DBD($this, array_unflatten(substr($dsn, strpos($dsn, ':') + 1)));
         if (!$driverOptions) {
             $driverOptions = [];
         }
@@ -305,7 +313,7 @@ class Adapter
         if (!$this->driver->connect($dsn, $username, $password, $driverOptions)) {
             return false;
         }
-        if ($this->config->has('timezone')) {
+        if (isset($this->config['timezone'])) {
             $this->setTimezone($this->config['timezone']);
         }
 
@@ -420,9 +428,6 @@ class Adapter
         if (!($statement = ake($this->statements, $name)) instanceof \PDOStatement) {
             return false;
         }
-        if (!is_array($inputParameters)) {
-            $inputParameters = [$inputParameters];
-        }
 
         return $statement->execute($inputParameters);
     }
@@ -513,7 +518,7 @@ class Adapter
         $result = $this->driver->update($tableName, $this->encrypt($tableName, $fields), $criteria, $from, $returning, $tables);
         if ($result instanceof \PDOStatement) {
             $result = new Result($this, $result);
-            if (is_array(BaseDriver::$selectGroups) && count(BaseDriver::$selectGroups) > 0) {
+            if (count(BaseDriver::$selectGroups) > 0) {
                 $result->setSelectGroups(BaseDriver::$selectGroups);
             }
             $fetchArg = $result->hasSelectGroups() ? \PDO::FETCH_NAMED : \PDO::FETCH_ASSOC;
@@ -531,11 +536,11 @@ class Adapter
             || ($encryptedFields = ake(ake($this->config['encrypt'], 'table'), $table)) === null) {
             return $data;
         }
-        $cipher = $this->config->get('encrypt.cipher');
-        $key = $this->config->get('encrypt.key', '0000');
-        $checkstring = $this->config->get('encrypt.checkstring');
+        $cipher = $this->config['encrypt']['cipher'] ?? 'aes-256-ctr';
+        $key = $this->config['encrypt']['key'] ?? '0000';
+        $checkstring = $this->config['encrypt']['checkstring'] ?? '!!';
         foreach ($data as $column => &$value) {
-            if (!($encryptedFields instanceof Map && $encryptedFields->contains($column))
+            if (!in_array($column, $encryptedFields)
                 && true !== $encryptedFields) {
                 continue;
             }
@@ -593,9 +598,9 @@ class Adapter
 
     private function reconfigure(bool $reconnect = false): bool
     {
-        $user = ($this->config->has('user') ? $this->config['user'] : null);
-        $password = ($this->config->has('password') ? $this->config['password'] : null);
-        if ($this->config->has('dsn')) {
+        $user = $this->config['user'] ?? '';
+        $password = $this->config['password'] ?? '';
+        if (isset($this->config['dsn'])) {
             $this->dsn = $this->config['dsn'];
         } else {
             $DBD = Adapter::getDriverClass($this->config['driver']);
@@ -605,8 +610,8 @@ class Adapter
             $this->dsn = $DBD::mkdsn($this->config);
         }
         $driverOptions = [];
-        if ($this->config->has('options')) {
-            $driverOptions = $this->config['options']->toArray();
+        if (isset($this->config['options'])) {
+            $driverOptions = $this->config['options'];
             foreach ($driverOptions as $key => $value) {
                 if (($constKey = constant('\PDO::'.$key)) === null) {
                     continue;
@@ -619,7 +624,7 @@ class Adapter
         if (!array_key_exists($driver, Adapter::$connections)) {
             Adapter::$connections[$driver] = [];
         }
-        $hash = md5(serialize($this->config->toArray()));
+        $hash = md5(serialize($this->config));
         if (true !== $reconnect && array_key_exists($hash, Adapter::$connections)) {
             $this->driver = Adapter::$connections[$hash];
         } else {
@@ -627,12 +632,12 @@ class Adapter
                 throw new ConnectionFailed(ake($this->config, 'host', 'none'), $this->errorInfo());
             }
             Adapter::$connections[$hash] = $this->driver;
-            if ($this->config->has('schema')) {
-                $this->driver->setSchemaName($this->config->get('schema'));
+            if (isset($this->config['schema'])) {
+                $this->driver->setSchemaName($this->config['schema']);
             }
         }
-        if (defined('HAZAAR_VERSION') && ($this->config->has('encrypt.table') && !$this->config->has('encrypt.key'))) {
-            $keyfile = Loader::getFilePath(FILE_PATH_CONFIG, $this->config->get('encrypt.keyfile', '.db_key'));
+        if (defined('HAZAAR_VERSION') && (isset($this->config['encrypt']['table']) && !isset($this->config['encrypt']['key']))) {
+            $keyfile = Loader::getFilePath(FILE_PATH_CONFIG, $this->config['encrypt']['keyfile'] ?? '.db_key');
             if (null === $keyfile) {
                 throw new \Exception('DBI keyfile is missing.  Database encryption will not work!');
             }

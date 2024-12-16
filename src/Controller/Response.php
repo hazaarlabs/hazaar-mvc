@@ -4,10 +4,18 @@ declare(strict_types=1);
 
 namespace Hazaar\Controller;
 
+use Hazaar\Controller\Exception\HeadersSent;
 use Hazaar\HTTP\Client;
 
 class Response implements Interfaces\Response
 {
+    public const TYPE_HTML = 1;
+    public const TYPE_JSON = 2;
+    public const TYPE_XML = 3;
+    public const TYPE_TEXT = 4;
+    public const TYPE_BINARY = 5;
+    public const TYPE_HAZAAR = 6;
+
     public static ?string $encryptionKey = null;
 
     // Use text/html as the default type as it is the most widely accepted.
@@ -30,6 +38,19 @@ class Response implements Interfaces\Response
         return ['content', 'contentType', 'headers', 'statusCode'];
     }
 
+    public static function getResponseTypeName(int $type): string
+    {
+        return match ($type) {
+            self::TYPE_HTML => 'html',
+            self::TYPE_JSON => 'json',
+            self::TYPE_XML => 'xml',
+            self::TYPE_TEXT => 'text',
+            self::TYPE_BINARY => 'binary',
+            self::TYPE_HAZAAR => 'hazaar',
+            default => 'none',
+        };
+    }
+
     /**
      * Writes the output content to the response.
      *
@@ -40,7 +61,7 @@ class Response implements Interfaces\Response
      * 4. If the script is not running in CLI mode and headers have not been set, writes the headers.
      * 5. Outputs the content and flushes the output buffer.
      *
-     * @throws Exception\HeadersSent if headers have already been sent
+     * @throws HeadersSent if headers have already been sent
      */
     public function writeOutput(): void
     {
@@ -56,7 +77,7 @@ class Response implements Interfaces\Response
         }
         if ('cli' !== php_sapi_name() && true !== $this->headersSet) {
             if (headers_sent()) {
-                throw new Exception\HeadersSent();
+                throw new HeadersSent();
             }
             $this->writeHeaders(strlen($content));
         }
@@ -102,9 +123,6 @@ class Response implements Interfaces\Response
      */
     public function setHeaders(array $headers, bool $overwrite = true): bool
     {
-        if (!is_array($headers)) {
-            return false;
-        }
         foreach ($headers as $key => $value) {
             $this->setHeader($key, $value, $overwrite);
         }

@@ -43,12 +43,12 @@ use Hazaar\Date;
  *
  * ```php
  * class ApiController extends \Hazaar\Controller\Basic {
- *    * @route('/v1/dothething/<int:thingstodo>', methods=['GET'])
+ *    * @route('/v1/dothething/{int:thingstodo}', methods={"GET"})
  *    **\/
  *   protected function do_the_thing($thingstodo){
  *     return ['things' => 'Array of things'];
  *   }
- *    * @route('/v2/dothething/<date:when>/<int:thingstodo>', methods=['GET'])
+ *    * @route('/v2/dothething/{date:when}/{int:thingstodo}', methods={"GET"})
  *    **\/
  *   protected function do_the_thing_v2($thingstodo, $when){
  *     if($when->year() >= 2023){
@@ -69,8 +69,8 @@ use Hazaar\Date;
  * Such as:
  *
  * ```php
- *   * @route('/v1/dothething/<date:when>/<int:thingstodo>', methodsGET'])
- *   * @route('/v2/dothething/<date:when>/<int:thingstodo>', methods=['GET'])
+ *   * @route('/v1/dothething/{date:when}/{int:thingstodo}', methods={"GET"})
+ *   * @route('/v2/dothething/{date:when}/{int:thingstodo}', methods={"GET"})
  *   **\/
  * ```
  *
@@ -97,80 +97,37 @@ class Annotated extends Advanced
     ];
 
     /**
-     * @var array<string, array<mixed>>
-     */
-    private array $controllerEndpoints = [];
-
-    private bool $describeFull = true;
-
-    /**
-     * Private method to describe the REST API.
+     * Initialises the basic router.
      *
-     * @return array<mixed> returns an array containing the description of the REST API
+     * @return bool returns true if the initialisation is successful, false otherwise
      */
-    public function describeAPI(): array
+    public function initialise(Router $router): bool
     {
-        $api = [];
-        foreach ($this->controllerEndpoints as $endpoint) {
-            $this->describeEndpoint($endpoint, $this->describeFull, $api);
-        }
-
-        return $api;
+        return true;
     }
 
-    public function exec(Request $request): bool
+    public function evaluateRequest(Request $request): ?Route
     {
-        parent::exec($request);
-        Router::reset();
-        if (!$this->controller) {
-            return true;
+        $route = parent::evaluateRequest($request);
+        if (!$route) {
+            return null;
         }
-        $this->controllerEndpoints = $this->loadEndpoints($this->controllerClass);
-        if (0 === count($this->controllerEndpoints)) {
-            throw new ControllerHasNoRoutes($this->controller);
+        $controller = $route->getControllerName();
+        $controllerEndpoints = $this->loadEndpoints($route->getControllerClass());
+        if (0 === count($controllerEndpoints)) {
+            throw new ControllerHasNoRoutes($controller);
         }
-        foreach ($this->controllerEndpoints as $endpoint) {
+        foreach ($controllerEndpoints as $endpoint) {
             if (!array_key_exists('routes', $endpoint)) {
                 continue;
             }
             foreach ($endpoint['routes'] as $path => $route) {
-                $path = '/'.strtolower($this->controller).'/'.ltrim($path, '/');
+                $path = '/'.strtolower($controller).'/'.ltrim($path, '/');
                 Router::match($route['args']['methods'], $path, $route['func']);
             }
         }
 
-        return true;
-    }
-
-    /**
-     * Get the tags for a given endpoint name.
-     *
-     * @param string $name the name of the endpoint
-     *
-     * @return array<string>|false the tags for the endpoint or false if not found
-     */
-    protected function getEndpointTags(string $name): array|false
-    {
-        foreach ($this->controllerEndpoints as $endpoint) {
-            foreach ($endpoint['routes'] as $route) {
-                if ($route['func']->name === $name) {
-                    if (!array_key_exists('tags', $route)) {
-                        $route['tags'] = [];
-                        preg_match_all('/\*\s*@((\w+).*)/', $endpoint['comment'], $matches);
-                        foreach ($matches[1] as $annotation) {
-                            if (!preg_match('/^(\w+)(\W.*)$/', $annotation, $parts)) {
-                                continue;
-                            }
-                            $route['tags'][$parts[1]] = trim($parts[2]);
-                        }
-                    }
-
-                    return $route['tags'];
-                }
-            }
-        }
-
-        return false;
+        return null;
     }
 
     /**
@@ -220,7 +177,7 @@ class Annotated extends Advanced
                     continue;
                 }
                 if (!preg_match(
-                    '/\([\'\"]([\w\.\-\<\>\:\/]+)[\'\"]\s*,?\s*(.+)*\)/',
+                    '/\([\'\"]([\w\.\-\{\}\:\/]+)[\'\"]\s*,?\s*(.+)*\)/',
                     $methodMatches[1][$index],
                     $routeMatches
                 )) {
@@ -234,7 +191,7 @@ class Annotated extends Advanced
                         // If there is no equals sign, skip this one.
                         if (strpos($part, '=') > 0) {
                             list($key, $value) = explode('=', $part, 2);
-                            if (($value = json_decode(str_replace("'", '"', $value), true)) === null) {
+                            if (($value = json_decode(str_replace(["'", '{', '}'], ['"', '[', ']'], $value), true)) === null) {
                                 throw new \Exception('Invalid JSON parameter for: '.$key);
                             }
                             $args[$key] = $value;
@@ -258,46 +215,5 @@ class Annotated extends Advanced
         }
 
         return $endpoints;
-    }
-
-    /**
-     * Describes an endpoint by generating an array of information about the endpoint.
-     *
-     * @param array<mixed> $endpoint      the endpoint to describe
-     * @param bool         $describe_full whether to include full description or not
-     * @param array<mixed> $api           the array to append the endpoint information to
-     *
-     * @return array<mixed> the array of information about the endpoint
-     */
-    private function describeEndpoint(array $endpoint, bool $describe_full = false, ?array &$api = null): array
-    {
-        if (!$api) {
-            $api = [];
-        }
-        foreach ($endpoint['routes'] as $route => $route_data) {
-            foreach ($route_data['args']['methods'] as $methods) {
-                $info = [
-                    // 'url' => (string) $this->url($route),
-                    'httpMethods' => $methods,
-                ];
-                if ($describe_full && ($doc = ake($endpoint, 'doc'))) {
-                    if ($doc->hasTag('param')) {
-                        $info['parameters'] = [];
-                        foreach ($doc->tag('param') as $name => $param) {
-                            if (!preg_match('/<(\w+:)*'.substr($name, 1).'>/', $route)) {
-                                continue;
-                            }
-                            $info['parameters'][$name] = $param['desc'];
-                        }
-                    }
-                    if ($brief = $doc->brief()) {
-                        $info['description'] = $brief;
-                    }
-                }
-                $api[] = $info;
-            }
-        }
-
-        return $api;
     }
 }

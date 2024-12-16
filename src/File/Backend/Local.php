@@ -7,13 +7,16 @@ namespace Hazaar\File\Backend;
 use Hazaar\File\BTree;
 use Hazaar\File\Manager;
 use Hazaar\Loader;
-use Hazaar\Map;
 
 class Local implements Interfaces\Backend, Interfaces\Driver
 {
     public string $separator = DIRECTORY_SEPARATOR;
     protected Manager $manager;
-    private Map $options;
+
+    /**
+     * @var array<mixed>
+     */
+    private array $options;
 
     /**
      * @var array<mixed>
@@ -21,12 +24,12 @@ class Local implements Interfaces\Backend, Interfaces\Driver
     private array $meta = [];
 
     /**
-     * @param array<mixed>|Map $options
+     * @param array<mixed> $options
      */
-    public function __construct(array|Map $options, Manager $manager)
+    public function __construct(array $options, Manager $manager)
     {
         $this->manager = $manager;
-        $this->options = Map::_(['display_hidden' => false, 'root' => DIRECTORY_SEPARATOR], $options);
+        $this->options = array_merge_recursive(['display_hidden' => false, 'root' => DIRECTORY_SEPARATOR], $options);
     }
 
     public static function label(): string
@@ -42,7 +45,7 @@ class Local implements Interfaces\Backend, Interfaces\Driver
     public function resolvePath(string $path, ?string $file = null): string
     {
         $path = Loader::fixDirectorySeparator($path);
-        $base = $this->options->get('root', DIRECTORY_SEPARATOR);
+        $base = $this->options['root'] ?? DIRECTORY_SEPARATOR;
         if (DIRECTORY_SEPARATOR == $path) {
             $path = $base;
         } elseif (':' !== substr($path, 1, 1)) { // Not an absolute Windows path
@@ -425,7 +428,7 @@ class Local implements Interfaces\Backend, Interfaces\Driver
         $fullpath = $this->resolvePath($path);
         $db = $this->meta($fullpath);
         $meta = $db->get($fullpath);
-        if (is_array($meta) && is_array($values)) {
+        if (count($meta) > 0 && count($values) > 0) {
             $values = array_merge($meta, $values);
         }
         $db->set($fullpath, $values);
@@ -569,6 +572,16 @@ class Local implements Interfaces\Backend, Interfaces\Driver
     public function closeStream($stream): bool
     {
         return fclose($stream);
+    }
+
+    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array|false
+    {
+        return false;
+    }
+
+    public function fsck(bool $skip_root_reload = false): bool
+    {
+        return false;
     }
 
     private function meta(string $fullpath): BTree

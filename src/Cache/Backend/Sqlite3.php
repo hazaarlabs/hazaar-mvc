@@ -43,7 +43,7 @@ class Sqlite3 extends Backend
             'cache_table' => 'cache_'.$namespace,
             'cache_db' => Application::getInstance()->getRuntimePath('cache', true).'/sqlite.db',
         ]);
-        if (!trim($this->options->cache_db ?? '')) {
+        if (!trim($this->options['cache_db'] ?? '')) {
             throw new Exception\NoSQLite3DBPath();
         }
         $this->db = new \SQLite3($this->options['cache_db'], SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE, $this->options['key']);

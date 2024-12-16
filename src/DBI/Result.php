@@ -15,7 +15,6 @@ declare(strict_types=1);
 namespace Hazaar\DBI;
 
 use Hazaar\Date;
-use Hazaar\Map;
 
 /**
  * @brief Relational Database Interface - Result Class
@@ -28,7 +27,7 @@ class Result implements \Countable, \Iterator
     private ?Row $record = null;
 
     /**
-     * @var array<int, Row>
+     * @var array<mixed>
      */
     private ?array $records = null;
 
@@ -60,7 +59,10 @@ class Result implements \Countable, \Iterator
     private array $meta;
     private Adapter $adapter;
 
-    private ?Map $encrypt = null;
+    /**
+     * @var array<string,string>
+     */
+    private array $encrypt = [];
 
     /**
      * Flag to remember if we need to reset the statement when using array access methods.
@@ -85,7 +87,7 @@ class Result implements \Countable, \Iterator
     {
         $this->adapter = $adapter;
         $this->statement = $statement;
-        $this->encrypt = $adapter->config->get('encrypt');
+        $this->encrypt = $adapter->config['encrypt'] ?? [];
         $this->processStatement($statement);
     }
 
@@ -121,9 +123,7 @@ class Result implements \Countable, \Iterator
      */
     public function setSelectGroups(array $select_groups): void
     {
-        if (\is_array($select_groups)) {
-            $this->select_groups = $select_groups;
-        }
+        $this->select_groups = $select_groups;
     }
 
     public function hasSelectGroups(): bool
@@ -229,13 +229,13 @@ class Result implements \Countable, \Iterator
     }
 
     /**
-     * @return null|array<mixed>
+     * @return array<mixed>|false
      */
     public function fetch(
         ?int $fetch_style = null,
         int $cursor_orientation = \PDO::FETCH_ORI_NEXT,
         int $cursor_offset = 0
-    ): ?array {
+    ): array|false {
         if (null === $fetch_style) {
             $fetch_style = $this->fetch_mode;
         }
@@ -246,7 +246,7 @@ class Result implements \Countable, \Iterator
             return $record;
         }
 
-        return null;
+        return false;
     }
 
     /**
@@ -587,7 +587,6 @@ class Result implements \Countable, \Iterator
                     if (!isset($objs[$alias])) {
                         $objs[$alias] = [];
                     }
-                    // @phpstan-ignore-next-line
                     $objs[$alias][$name] = (is_array($value) && is_array($meta)) ? $value[$idx] : $value;
                     unset($record[$name]);
                 }
@@ -614,24 +613,24 @@ class Result implements \Countable, \Iterator
      */
     private function decrypt(array &$data): void
     {
-        if (null === $this->encrypt
-            || !(count($data) > 0)) {
+        if (!isset($this->encrypt['table'])
+            || 0 === count($data)) {
             return;
         }
-        $cipher = $this->encrypt->get('cipher');
-        $key = $this->encrypt->get('key', '0000');
-        $checkstring = $this->encrypt->get('checkstring');
-        $encrypted_fields = [];
+        $cipher = $this->encrypt['cipher'];
+        $key = $this->encrypt['key'] ?? '0000';
+        $checkstring = $this->encrypt['checkstring'];
+        $encryptedFields = [];
         foreach ($data as $column => &$value) {
             if (!array_key_exists($column, $this->meta)) {
                 continue;
             }
             $table = ake($this->meta[$column], 'table');
-            if (!array_key_exists($table, $encrypted_fields)) {
-                $encrypted_fields[$table] = ake($this->encrypt['table'], $table, []);
+            if (!array_key_exists($table, $encryptedFields)) {
+                $encryptedFields[$table] = ake($this->encrypt['table'], $table, []);
             }
-            if ((!($encrypted_fields[$table] instanceof Map && $encrypted_fields[$table]->contains($column))
-                && true !== $encrypted_fields[$table])
+            if ((!(isset($encryptedFields[$table]) && in_array($column, $encryptedFields[$table]))
+                && true !== $encryptedFields[$table])
                 || 'string' !== ake($this->meta[$column], 'type')) {
                 continue;
             }

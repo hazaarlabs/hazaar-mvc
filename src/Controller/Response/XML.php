@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace Hazaar\Controller\Response;
 
 use Hazaar\Controller\Response;
+use Hazaar\XML\Element;
 
 class XML extends Response
 {
-    private string $content = '';
+    private ?Element $content = null;
 
-    public function __construct(mixed $content = null, int $status = 200)
+    public function __construct(?Element $content = null, int $status = 200)
     {
         parent::__construct('text/xml', $status);
         $this->setContent($content);
@@ -18,11 +19,14 @@ class XML extends Response
 
     public function setContent(mixed $content): void
     {
-        $this->content = (string) $content;
+        if (!$content instanceof Element) {
+            throw new \Exception('XML content must be an instance of Hazaar\XML\Element');
+        }
+        $this->content = $content;
     }
 
     public function getContent(): string
     {
-        return $this->content;
+        return $this->content->toXML();
     }
 }

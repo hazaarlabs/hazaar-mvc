@@ -103,9 +103,7 @@ final class Socket extends WebSockets implements Connection
                 @socket_write($this->socket, $frame, strlen($frame));
                 $this->recv($payload);
             }
-            if (false !== $this->socket) {
-                socket_close($this->socket);
-            }
+            socket_close($this->socket);
             $this->socket = false;
 
             return true;

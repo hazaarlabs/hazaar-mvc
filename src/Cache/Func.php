@@ -6,18 +6,11 @@ namespace Hazaar\Cache;
 
 use Hazaar\Cache;
 use Hazaar\Cache\Exception\NoFunction;
-use Hazaar\Map;
 
 /**
  * Class Func.
  *
  * This class extends the Cache class and provides functionality to cache function calls.
- *
- * @method __construct(?string $backend = null, array|Map $options = []) Initializes the Func object with optional backend and options.
- * @method mixed  call()                                                 Calls a function with caching mechanism.
- * @method string generateKey(array|string $function, array $paramArray) Generates a unique key for the function and its arguments.
- *
- * @property array $options Configuration options for caching.
  *
  * @throws NoFunction if no function is provided to call
  * @throws \Exception if an unsupported callback declaration is used
@@ -25,9 +18,9 @@ use Hazaar\Map;
 class Func extends Cache
 {
     /**
-     * @param array<mixed>|Map $options
+     * @param array<mixed> $options
      */
-    public function __construct(?string $backend = null, array|Map $options = [])
+    public function __construct(?string $backend = null, array $options = [])
     {
         parent::__construct($backend, $options);
         $this->configure([

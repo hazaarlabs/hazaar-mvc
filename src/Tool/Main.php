@@ -16,16 +16,15 @@ use Hazaar\Loader;
 
 class Main
 {
-    public static function run(Application $application): int
+    public static function run(Application $application, CLI $request): int
     {
-        if (!$application->request instanceof CLI) {
-            return 255;
-        }
-        $application->request->setOptions([
+        $request->setOptions([
             'help' => ['h', 'help', null, 'Display this help message.'],
             'env' => ['e', 'env', 'string', 'Set the application environment.', 'config'],
+            'scan' => ['s', 'scan', 'path', 'Scan the application for new classes.', 'doc'],
+            'title' => ['t', 'title', 'string', 'Set the title of the documentation.', 'doc'],
         ]);
-        $application->request->setCommands([
+        $request->setCommands([
             'create' => ['Create a new application object (view, controller or model).'],
             'config' => ['Manage application configuration.'],
             'show' => ['Show the contents of a configuration file, decrypting if neccessary.'],
@@ -34,15 +33,16 @@ class Main
             'adduser' => ['Add a new user to the application.'],
             'deluser' => ['Delete a user from the application.'],
             'passwd' => ['Change a user password.'],
+            'doc' => ['Generate documentation for the application.'],
         ]);
-        if (!($command = $application->request->getCommand($commandArgs))) {
-            $application->request->showHelp();
+        if (!($command = $request->getCommand($commandArgs))) {
+            $request->showHelp();
 
             return 1;
         }
-        $options = $application->request->getOptions();
-        $appConfig = new Config('application', APPLICATION_ENV);
-        if (!$appConfig->has('auth')) {
+        $options = $request->getOptions();
+        $appConfig = Config::getInstance('application', APPLICATION_ENV);
+        if (!isset($appConfig['auth'])) {
             $appConfig['auth'] = [];
         }
         $appConfig['auth']['storage'] = 'session';
@@ -61,21 +61,14 @@ class Main
                 case 'config':
                     $configCommand = ake($commandArgs, 0, 'list');
                     $env = ake($options, 'env', APPLICATION_ENV);
-                    $config = new Config('application', $env);
-                    $config->addOutputFilter(function ($value, $key) {
-                        if (is_bool($value)) {
-                            return strbool($value);
-                        }
-
-                        return $value;
-                    }, true);
+                    $config = Config::getInstance('application', $env);
 
                     switch ($configCommand) {
                         case 'get':
                             if (!($configArg = ake($commandArgs, 1))) {
                                 throw new \Exception('No configuration argument specified', 1);
                             }
-                            $value = $config->get($configArg);
+                            $value = $config[$configArg];
                             echo $configArg.'='.$value."\n";
 
                             break;
@@ -89,7 +82,7 @@ class Main
                                 throw new \Exception('No configuration value specified', 1);
                             }
                             foreach ($configUpdates as $key => $value) {
-                                $config->set($key, $value);
+                                $config[$key] = $value;
                             }
                             if (false === $config->save()) {
                                 throw new \Exception('Failed to save configuration', 1);
@@ -99,7 +92,7 @@ class Main
 
                         case 'list':
                             echo 'app.env = '.APPLICATION_ENV."\n";
-                            $list = $config->toDotNotation();
+                            $list = array_to_dot_notation($config->toArray());
                             foreach ($list as $key => $value) {
                                 echo $key.' = '.$value."\n";
                             }
@@ -112,10 +105,11 @@ class Main
                 case 'show':
                     $file = new File($application->loader->getFilePath(FILE_PATH_CONFIG, $commandArgs[0]));
                     if ($file->exists()) {
-                        echo json_encode($file->parseJSON(), JSON_PRETTY_PRINT)."\n"; //Output pretty JSON
+                        echo json_encode($file->parseJSON(), JSON_PRETTY_PRINT)."\n"; // Output pretty JSON
                     } else {
                         throw new \Exception('File not found', 1);
                     }
+
                     break;
 
                 case 'encrypt':
@@ -177,6 +171,15 @@ class Main
                     } else {
                         throw new \Exception('Failed to update password', 1);
                     }
+
+                    // no break
+                case 'doc':
+                    if (!isset($commandArgs[0])) {
+                        throw new \Exception('No output path specified', 1);
+                    }
+                    $scanPath = ake($options, 'scan', '.');
+                    $doc = new APIDoc(APIDoc::DOC_OUTPUT_MARKDOWN, ake($options, 'title', 'API Documentation'));
+                    $doc->generate($scanPath, $commandArgs[0]);
             }
         } catch (\Throwable $e) {
             echo $e->getMessage()."\n";

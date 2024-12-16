@@ -6,8 +6,6 @@ namespace Hazaar\Tests;
 
 use Hazaar\Application;
 use Hazaar\File\BTree;
-use Hazaar\File;
-use Hazaar\Map;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -31,23 +29,11 @@ class HelperTest extends TestCase
             'root.child6.child7' => 'value',
         ];
         $result = array_from_dot_notation($dot_notation);
-        $this->assertIsArray($result);
         $this->assertArrayHasKey('root', $result);
         $this->assertIsArray($result['root']);
         $this->assertArrayHasKey('child1', $result['root']);
         $this->assertIsArray($result['root']['child1']);
         $this->assertArrayHasKey('child7', $result['root']['child6']);
-    }
-
-    public function testMapClass(): void
-    {
-        $map = new Map(['key' => 'value']);
-        $this->assertTrue($map->has('key'));
-        $this->assertEquals('value', $map->get('key'));
-        $this->assertEquals('missing', $map->get('test', 'missing'));
-        $this->assertIsArray($map->toArray());
-        $this->assertArrayHasKey('key', $map->toArray());
-        $this->assertEquals('value', $map->toArray()['key']);
     }
 
     public function testBTreeFile(): void
@@ -60,14 +46,6 @@ class HelperTest extends TestCase
         $this->assertTrue($btree->compact());
     }
 
-    public function testGet(): void
-    {
-        $file = File::get('https://file-examples.com/wp-content/storage/2017/02/file_example_JSON_1kb.json');
-        $this->assertInstanceOf(File::class, $file);
-        $this->assertEquals('file_example_JSON_1kb.json', $file->basename());
-        $this->assertEquals('text/html', $file->mimeContentType());
-    }
-
     public function testUptime(): void
     {
         $interval = 12240;
@@ -76,6 +54,6 @@ class HelperTest extends TestCase
 
     public function testAge(): void
     {
-        $this->assertEquals(45, age('1978-12-13'));
+        $this->assertEquals(46, age('1978-12-13'));
     }
 }

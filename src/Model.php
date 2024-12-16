@@ -755,7 +755,9 @@ abstract class Model implements \jsonSerializable, \Iterator
      */
     private function convertPropertyValueDataType(\ReflectionProperty $reflectionProperty, mixed &$propertyValue): void
     {
-        /** @var ?\ReflectionNamedType $propertyType */
+        /** 
+         * @var ?\ReflectionNamedType $propertyType 
+         */
         $propertyType = $reflectionProperty->getType();
         if (null === $propertyType) {
             return;

@@ -10,7 +10,6 @@ use Hazaar\File\Backend\Exception\Offline;
 use Hazaar\File\Backend\Interfaces\Backend;
 use Hazaar\HTTP\URL;
 use Hazaar\Loader;
-use Hazaar\Map;
 
 class Manager implements Backend
 {
@@ -42,12 +41,15 @@ class Manager implements Backend
      */
     private static array $backend_aliases = [
         'googledrive' => 'GoogleDrive',
-        'mongodb' => 'MongoDB',
         'sharepoint' => 'SharePoint',
         'webdav' => 'WebDAV',
     ];
     private static string $default_backend = 'local';
-    private static ?Map $default_backend_options = null;
+
+    /**
+     * @var array<mixed>
+     */
+    private static array $default_backend_options = [];
     private Backend $backend;
     private string $backend_name;
 
@@ -61,14 +63,14 @@ class Manager implements Backend
     /**
      * Manager constructor.
      *
-     * @param array<mixed>|Map $backend_options
+     * @param array<mixed> $backend_options
      */
-    public function __construct(?string $backend = null, array|Map $backend_options = [], ?string $name = null)
+    public function __construct(?string $backend = null, array $backend_options = [], ?string $name = null)
     {
         if (!$backend) {
             if (Manager::$default_backend) {
                 $backend = Manager::$default_backend;
-                $backend_options = Manager::$default_backend_options ? Manager::$default_backend_options : new Map();
+                $backend_options = Manager::$default_backend_options ? Manager::$default_backend_options : [];
             } else {
                 $backend = 'local';
                 $backend_options = ['root' => '/'];
@@ -119,7 +121,7 @@ class Manager implements Backend
                 continue;
             }
             $source = ake(pathinfo($file), 'filename');
-            $class = 'Hazaar\\File\\Backend\\'.$source;
+            $class = 'Hazaar\File\Backend\\'.$source;
             if (!class_exists($class)) {
                 continue;
             }
@@ -142,15 +144,15 @@ class Manager implements Backend
      */
     public static function select(string $name, ?array $options = null): false|Manager
     {
-        $config = new Application\Config('media');
-        if (!$config->has($name)) {
+        $config = Application\Config::getInstance('media');
+        if (!isset($config[$name])) {
             return false;
         }
-        $source = new Map(Manager::$default_config, $config->get($name));
+        $source = array_merge_recursive(Manager::$default_config, $config->{$name});
         if (null !== $options) {
             $source['options']->extend($options);
         }
-        $manager = new Manager($source['type'], $source->get('options'), $name);
+        $manager = new Manager($source['type'], $source['options'], $name);
         if (true === $source['failover'] || true === $config['global']['failover']) {
             $manager->activateFailover();
         }
@@ -166,11 +168,8 @@ class Manager implements Backend
     /**
      * @param array<mixed> $options
      */
-    public static function configure(string $backend, array|Map $options): void
+    public static function configure(string $backend, array $options): void
     {
-        if (!$options instanceof Map) {
-            $options = new Map($options);
-        }
         Manager::$default_backend = $backend;
         Manager::$default_backend_options = $options;
     }
@@ -341,8 +340,9 @@ class Manager implements Backend
      */
     public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array
     {
-        if (method_exists($this->backend, 'find')) {
-            return $this->backend->find($search, $path, $case_insensitive);
+        $result = $this->backend->find($search, $path, $case_insensitive);
+        if (false !== $result) {
+            return $result;
         }
         $dir = $this->dir($path);
         $list = [];
@@ -519,13 +519,9 @@ class Manager implements Backend
     }
 
     // Advanced backend dependant features
-    public function fsck(): bool
+    public function fsck(bool $skipRootReload = false): bool
     {
-        if (method_exists($this->backend, 'fsck')) {
-            return $this->backend->fsck();
-        }
-
-        return true;
+        return $this->backend->fsck($skipRootReload);
     }
 
     /**

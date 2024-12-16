@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hazaar\Warlock;
 
 use Hazaar\Application;
-use Hazaar\Map;
 
 /**
  * @brief       Control class for Warlock
@@ -32,7 +31,7 @@ class Control extends Process
      */
     public function __construct(
         ?bool $autostart = null,
-        null|array|Map $serverConfig = null,
+        array $serverConfig = [],
         ?string $instance_key = null,
         bool $require_connect = true
     ) {
@@ -85,11 +84,11 @@ class Control extends Process
      */
     public static function getInstance(
         ?bool $autostart = null,
-        null|array|Map $config = null,
+        array $config = [],
         bool $require_connect = true
     ): Control {
         $instance_key = hash('crc32b', ake($config, 'client.server').ake($config, 'client.port'));
-        if (!(array_key_exists($instance_key, Control::$instance) && Control::$instance[$instance_key] instanceof Control)) {
+        if (!array_key_exists($instance_key, Control::$instance)) {
             Control::$instance[$instance_key] = new Control($autostart, $config, $instance_key, $require_connect);
         }
 
@@ -113,7 +112,7 @@ class Control extends Process
         }
         $proc = file_get_contents($proc_file);
 
-        return '' !== $proc && preg_match('/^'.preg_quote((string) $pid).'\s+\(php\)/', $proc);
+        return '' !== $proc && preg_match('/^'.preg_quote((string) $pid, '/').'\s+\(php\)/', $proc);
     }
 
     public function start(?int $timeout = null): bool
@@ -131,7 +130,7 @@ class Control extends Process
             'WARLOCK_EXEC' => 1,
         ];
         $php_options = [];
-        if (function_exists('xdebug_is_debugger_active') && xdebug_is_debugger_active()) {
+        if (function_exists('xdebug_is_debugger_active') && \xdebug_is_debugger_active()) {
             $env['XDEBUG_CONFIG'] = 'remote_enable='.ini_get('xdebug.remote_enable')
                 .' remote_handler='.ini_get('xdebug.remote_handler')
                 .' remote_mode='.ini_get('xdebug.remote_mode')

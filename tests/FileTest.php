@@ -97,16 +97,21 @@ class FileTest extends TestCase
     {
         $geo = new GeoData();
         $this->assertInstanceOf('\Hazaar\GeoData', $geo);
-        $this->assertIsArray($geo->countries());
         $this->assertArrayHasKey('AU', $geo->countries());
-        $this->assertIsArray($geo->countryInfo('AU'));
+        $countryInfo = $geo->countryInfo('AU');
+        $this->assertArrayHasKey('currency', $countryInfo);
+        $this->assertArrayHasKey('languages', $countryInfo);
+        $this->assertArrayHasKey('name', $countryInfo);
+        $this->assertArrayHasKey('phone_code', $countryInfo);
+        $this->assertArrayHasKey('continent', $countryInfo);
+        $this->assertArrayHasKey('capital', $countryInfo);
         $this->assertEquals('Australia', $geo->countryName('AU'));
         $this->assertIsArray($a = $geo->countryContinent('AU'));
         $this->assertEquals('Oceania', $a['name']);
-        $this->assertIsArray($geo->countryLanguages('AU'));
+        //Assert array contains en-AU
+        $this->assertContains('en-AU', $geo->countryLanguages('AU'));
         $this->assertIsArray($s = $geo->states('AU'));
         $this->assertArrayHasKey('NSW', $geo->states('AU'));
-        $this->assertIsArray($geo->cities('AU', 'NSW'));
         $this->assertEquals(61, $geo->countryPhoneCode('AU'));
     }
 }

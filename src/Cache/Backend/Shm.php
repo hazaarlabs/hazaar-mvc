@@ -63,7 +63,7 @@ class Shm extends Backend
         if (-1 === $addrIndex) {
             throw new \Exception('ftok() failed.');
         }
-        $shmNSIndex = shm_attach($addrIndex, $this->options->get('ns_index.size', 10000), $this->options->get('ns_index.permissions', 0666));
+        $shmNSIndex = shm_attach($addrIndex, $this->options['ns_index']['size'] ?? 10000, $this->options['ns_index']['permissions'] ?? 0666);
         if (!$shmNSIndex instanceof \SysvSharedMemory) {
             throw new \Exception('shm_attach() failed.  did not return \SysvSharedMemory.');
         }
@@ -99,7 +99,7 @@ class Shm extends Backend
             throw new \Exception('sem_get() failed.');
         }
         // Attach to the shared memory segment
-        $this->shm = shm_attach($shmAddr, $this->options->get('size', 1000000), $this->options->get('permissions', 0666));
+        $this->shm = shm_attach($shmAddr, $this->options['size'] ?? 1000000, $this->options['permissions'] ?? 0666);
         if (!$this->shm instanceof \SysvSharedMemory) {
             throw new \Exception('shm_attach() failed.  did not return \SysvSharedMemory.');
         }
@@ -119,7 +119,7 @@ class Shm extends Backend
         $index = $this->getIndex();
         if (!(array_key_exists(self::GC_KEY, $index)
             && $index[self::GC_KEY] > 0
-            && (time() - $this->options->get('gc_interval', 10)) < $index[self::GC_KEY])) {
+            && (time() - $this->options['gc_interval']) < $index[self::GC_KEY])) {
             $now = time();
             foreach ($index as $key => $i) {
                 if (self::GC_KEY === $key) {

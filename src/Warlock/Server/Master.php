@@ -164,7 +164,7 @@ class Master
     private ?KVStore $kvStore = null;
 
     /**
-     * @var array<int,array<string,int|string>>
+     * @var array<int,array<string,mixed>>
      */
     private array $exitCodes = [
         1 => [
@@ -224,9 +224,14 @@ class Master
         self::$config = new Config([], $env);
         if (!defined('RUNTIME_PATH')) {
             $path = APPLICATION_PATH.DIRECTORY_SEPARATOR.'.runtime';
-            $appConfig = new Application\Config('application', APPLICATION_ENV);
-            if ($appConfig->loaded() && $appConfig['app']->has('runtimePath')) {
-                $path = $appConfig['app']['runtimePath'];
+
+            try {
+                $appConfig = Application\Config::getInstance('application', APPLICATION_ENV);
+                if (isset($appConfig['app']['runtimePath'])) {
+                    $path = $appConfig['app']['runtimePath'];
+                }
+            } catch (\Exception $e) {
+                // Do nothing
             }
             define('RUNTIME_PATH', $path);
         }
@@ -338,7 +343,7 @@ class Master
         string $errstr,
         ?string $errfile = null,
         ?int $errline = null,
-    ): ?bool {
+    ): bool {
         if (!(error_reporting() & $errno)) {
             // Error was suppressed with '@', so skip handling it
             return false;
@@ -396,9 +401,13 @@ class Master
 
     public function loadConfig(): Config|false
     {
-        $this->log->write(W_NOTICE, (self::$config->loaded() ? 'Re-l' : 'L').'oading configuration');
-        $config = new Config();
-        if (!$config->loaded()) {
+        $this->log->write(W_NOTICE, 'Re-loading configuration');
+
+        try {
+            $config = new Config();
+        } catch (\Exception $e) {
+            $this->log->write(W_ERR, 'Error loading configuration: '.$e->getMessage());
+
             return false;
         }
 
@@ -509,8 +518,10 @@ class Master
         }
         $this->streams[0] = $this->master;
         $this->running = true;
-        $services = new Application\Config('service', APPLICATION_ENV);
-        if ($services->loaded()) {
+
+        try {
+            $this->log->write(W_NOTICE, 'Initialising services');
+            $services = Application\Config::getInstance('service', APPLICATION_ENV);
             $this->log->write(W_INFO, 'Checking for enabled services');
             foreach ($services as $name => $options) {
                 $this->log->write(W_NOTICE, "Found service: {$name}");
@@ -521,8 +532,11 @@ class Master
                     $this->serviceEnable($name);
                 }
             }
+        } catch (\Exception $e) {
+            $this->log->write(W_ERR, 'No services found!');
         }
-        if (self::$config->has('schedule')) {
+
+        if (isset(self::$config['schedule'])) {
             $this->log->write(W_NOTICE, 'Scheduling '.self::$config['schedule']->count().' tasks');
             foreach (self::$config['schedule'] as $task) {
                 if (!$task->has('action')) {
@@ -550,7 +564,7 @@ class Master
                 $this->scheduleRunner($when, $exec, $application, ake($task, 'tag', uniqid()), ake($task, 'overwrite', false));
             }
         }
-        if (self::$config->has('subscribe')) {
+        if (isset(self::$config['subscribe'])) {
             $this->log->write(W_NOTICE, 'Found '.self::$config['subscribe']->count().' global events');
             foreach (self::$config['subscribe'] as $eventName => $eventFunc) {
                 if (!($callable = $this->callable($eventFunc))) {
@@ -1029,7 +1043,7 @@ class Master
             if (file_exists($proc_file)) {
                 $proc = file_get_contents($proc_file);
 
-                return '' !== $proc && preg_match('/^'.preg_quote((string) $pid).'\s+\(php\)/', $proc);
+                return '' !== $proc && preg_match('/^'.preg_quote((string) $pid, '/').'\s+\(php\)/', $proc);
             }
         }
 
@@ -1090,15 +1104,12 @@ class Master
 
     private function clientCheck(): void
     {
-        if (!(self::$config['client']['check'] > 0 && is_array($this->clients) && count($this->clients) > 0)) {
+        if (!(self::$config['client']['check'] > 0 && count($this->clients) > 0)) {
             return;
         }
         // Only ping if we havn't received data from the client for the configured number of seconds (default to 60).
         $when = time() - self::$config['client']['check'];
         foreach ($this->clients as $client) {
-            if (!$client instanceof Client) {
-                continue;
-            }
             if ($client->lastContact <= $when) {
                 $client->ping();
             }
@@ -1544,9 +1555,6 @@ class Master
 
     private function eventCleanup(): void
     {
-        if (!is_array($this->events)) {
-            $this->events = [];
-        }
         if (false === self::$config['sys']['cleanup']) {
             return;
         }
@@ -1794,9 +1802,6 @@ class Master
      */
     private function callable(mixed $value): ?array
     {
-        if ($value instanceof Map) {
-            $value = $value->toArray();
-        }
         if (is_array($value)) {
             return $value;
         }

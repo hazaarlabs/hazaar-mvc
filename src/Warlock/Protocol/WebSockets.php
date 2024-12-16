@@ -22,9 +22,6 @@ abstract class WebSockets
      */
     public function __construct(array $allowed_protocols = [])
     {
-        if (!is_array($allowed_protocols)) {
-            $allowed_protocols = explode(' ', $allowed_protocols);
-        }
         $this->allowed_protocols = $allowed_protocols;
     }
 
@@ -91,12 +88,12 @@ abstract class WebSockets
     }
 
     /**
-     * @param array<string> $headers
-     * @param array<string> $responseHeaders
-     * @param array<string> $results
+     * @param array<string>|string $headers
+     * @param array<string>        $responseHeaders
+     * @param array<mixed>         $results
      */
     protected function acceptHandshake(
-        array $headers,
+        array|string $headers,
         array &$responseHeaders = [],
         ?string $key = null,
         array &$results = []
@@ -124,7 +121,7 @@ abstract class WebSockets
                     return 400;
                 }
                 if (!array_key_exists('sec-websocket-version', $headers) || 13 != (int) $headers['sec-websocket-version']) {
-                    $responseHeaders['Sec-WebSocket-Version'] = 13;
+                    $responseHeaders['Sec-WebSocket-Version'] = '13';
 
                     return 426;
                 }
@@ -144,7 +141,7 @@ abstract class WebSockets
                 return 101;
             }
         } elseif (array_key_exists('sec-websocket-accept', $headers)) {
-            if (!array_key_exists('sec-websocket-accept', $headers) || base64_decode($headers['sec-websocket-accept']) != sha1($key.$this->magicGUID, true)) {
+            if (base64_decode($headers['sec-websocket-accept']) != sha1($key.$this->magicGUID, true)) {
                 return false;
             }
             if (!array_key_exists('sec-websocket-protocol', $headers) || 0 == count($this->checkProtocol($headers['sec-websocket-protocol']))) {
@@ -378,7 +375,7 @@ abstract class WebSockets
     /**
      * @param array<string> $headers
      */
-    private function applyMask(array $headers, string $payload): false|string
+    private function applyMask(array $headers, string $payload): ?string
     {
         $effectiveMask = '';
         if (ord($headers['hasmask']) > 0) {
@@ -387,7 +384,7 @@ abstract class WebSockets
             return $payload;
         }
         if (0 == strlen($mask)) {
-            return false;
+            return null;
         }
         while (strlen($effectiveMask) < strlen($payload)) {
             $effectiveMask .= $mask;

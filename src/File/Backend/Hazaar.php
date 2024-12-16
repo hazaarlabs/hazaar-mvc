@@ -14,7 +14,11 @@ class Hazaar implements Interfaces\Backend, Interfaces\Driver
 {
     public string $separator = '/';
     protected Manager $manager;
-    private Map $options;
+
+    /**
+     * @var array<string, mixed>
+     */
+    private array $options;
 
     /**
      * @var array<string, mixed>
@@ -31,10 +35,10 @@ class Hazaar implements Interfaces\Backend, Interfaces\Driver
     /**
      * @param array<string, mixed> $options
      */
-    public function __construct(array|Map $options, Manager $manager)
+    public function __construct(array $options, Manager $manager)
     {
         $this->manager = $manager;
-        $this->options = new Map([
+        $this->options = array_merge([
             'url' => null,
         ], $options);
         $this->client = new Client();
@@ -576,16 +580,26 @@ class Hazaar implements Interfaces\Backend, Interfaces\Driver
         return false;
     }
 
+    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array|false
+    {
+        return false;
+    }
+
+    public function fsck(bool $skip_root_reload = false): bool
+    {
+        return false;
+    }
+
     /**
-     * @param array<string, int|string> $params
-     * @param array<mixed>              $mime_parts
+     * @param array<mixed> $params
+     * @param array<mixed> $mime_parts
      *
      * @return array<mixed>|false
      */
     private function request(string $cmd, array $params = [], array $mime_parts = []): array|false
     {
         $request = new Request($this->options['url'], 'POST');
-        if (is_array($params) && count($params) > 0) {
+        if (count($params) > 0) {
             $request->populate($params);
         }
         $request['cmd'] = $cmd;

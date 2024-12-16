@@ -59,36 +59,34 @@ use Hazaar\Application\Router\Loader;
  */
 class Json extends Loader
 {
+    public function initialise(Router $router): bool
+    {
+        return true;
+    }
+
     /**
      * Evaluates the request and sets the controller, action, and arguments based on the request path.
      *
-     * @param Request $request the request object
-     *
-     * @return bool returns true if the evaluation is successful, false otherwise
+     * @return Route the route object or null if no route was matched
      */
-    public function exec(Request $request): bool
+    public function evaluateRequest(Request $request): ?Route
     {
-        $jsonRouterFile = $this->config->get('file', 'routes.json');
-        $routeFile = new Config('routes.json');
-        if (!$routeFile->has('routes')) {
+        $jsonRouterFile = $this->config['file'] ?? 'route.json';
+        $routeFile = Config::getInstance($jsonRouterFile);
+        if (!isset($routeFile['routes'])) {
             throw new \Exception('Invalid JSON route file.  Missing "routes" key.');
         }
-        $routes = $routeFile->get('routes');
+        $routes = $routeFile['routes'];
         foreach ($routes as $route) {
-            $controller = $route->get('controller');
-            if (null !== $controller) {
-                $controller = 'Application\Controllers\\'.ucfirst($controller);
+            if (!isset($route['route'])) {
+                continue;
             }
-            $action = $route->get('action');
-            $namedActionArgs = false;
-            $args = null;
-            if ($route->has('args')) {
-                $namedActionArgs = true;
-                $args = $route->get('args')->toArray();
-            }
-            Router::match($route->get('methods', []), $route->get('route', ''), [$controller, $action, $args], $namedActionArgs);
+            $controller = 'Application\Controller\\'.ucfirst($route['controller'] ?? $this->config['controller'] ?? 'index');
+            $action = $route['action'] ?? $this->config['action'] ?? 'index';
+            $args = $route['args'] ?? [];
+            Router::match($route['methods'] ?? ['GET'], $route['route'], [$controller, $action, $args]);
         }
 
-        return true;
+        return null;
     }
 }

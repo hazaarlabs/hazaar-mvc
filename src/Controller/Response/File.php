@@ -23,9 +23,9 @@ class File extends OK
         'public' => false,
         'max-age' => 300,
     ];
-    private ?FileObject $file;
+    private ?FileObject $file = null;
     private ?Manager $manager;
-    private ?Date $fmtime;
+    private ?Date $fmtime = null;
 
     /**
      * Byte-Order-Mark.
@@ -62,13 +62,16 @@ class File extends OK
         parent::__construct();
         $this->initialiseCacheControl();
         if (null !== $file) {
-            $this->load($file, $manager);
+            $loaded = $this->load($file, $manager);
+            if (!$loaded) {
+                throw new \Exception('File not found', 404);
+            }
         }
     }
 
     public function initialiseCacheControl(): bool
     {
-        $cacheConfig = Application::getInstance()->config->get('http.cacheControl', self::$__defaultCacheControlDirectives, true);
+        $cacheConfig = Application::getInstance()->config->http->cacheControl ?? self::$__defaultCacheControlDirectives;
         if ($cacheControlHeader = ake(apache_request_headers(), 'Cache-Control')) {
             $replyable = ['no-cache', 'no-store', 'no-transform'];
             $parts = explode(',', $cacheControlHeader);
@@ -210,6 +213,9 @@ class File extends OK
         return preg_match($pattern, $this->getContent(), $matches, $flags, $offset);
     }
 
+    /**
+     * @param-out int $count
+     */
     public function replace(string $pattern, string $replacement, int $limit = -1, ?int &$count = null): void
     {
         $this->setContent(preg_replace($pattern, $replacement, $this->getContent(), $limit, $count));
