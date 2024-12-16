@@ -173,14 +173,14 @@ abstract class Model implements \jsonSerializable, \Iterator
          * @param string $propertyName  the name of the property
          * @param mixed  $propertyValue the current value of the property
          */
-        if (isset($this->eventHooks['read'][$propertyName])) {
-            $propertyValue = $this->eventHooks['read'][$propertyName]($propertyValue);
+        if (isset($this->eventHooks['get'][$propertyName])) {
+            $propertyValue = $this->eventHooks['get'][$propertyName]($propertyValue);
             if (isset($this->propertyRules[$propertyName])) {
                 $this->execPropertyRules($propertyValue, new \ReflectionProperty($this, $propertyName), $this->propertyRules[$propertyName]);
             }
         }
-        if (isset($this->eventHooks['read'][true])) {
-            $propertyValue = $this->eventHooks['read'][true]($propertyValue);
+        if (isset($this->eventHooks['get'][true])) {
+            $propertyValue = $this->eventHooks['get'][true]($propertyValue);
             if (isset($this->propertyRules[$propertyName])) {
                 $this->execPropertyRules($propertyName, $propertyValue, $this->propertyRules[$propertyName]);
             }
@@ -215,16 +215,16 @@ abstract class Model implements \jsonSerializable, \Iterator
                 return;
             }
         }
-        if (isset($this->eventHooks['write'][$propertyName])) {
-            $propertyValue = $this->eventHooks['write'][$propertyName]($propertyValue);
+        if (isset($this->eventHooks['set'][$propertyName])) {
+            $propertyValue = $this->eventHooks['set'][$propertyName]($propertyValue);
         }
-        if (isset($this->eventHooks['write'][true])) {
-            $propertyValue = $this->eventHooks['write'][true]($propertyValue);
+        if (isset($this->eventHooks['set'][true])) {
+            $propertyValue = $this->eventHooks['set'][true]($propertyValue);
         }
         if (property_exists($this, $propertyName)) {
             $reflectionProperty = new \ReflectionProperty(static::class, $propertyName);
             if ($reflectionProperty->isPrivate()) {
-                trigger_error('Cannot write to private property: '.static::class.'::$'.$propertyName, E_USER_NOTICE);
+                trigger_error('Cannot set private property: '.static::class.'::$'.$propertyName, E_USER_NOTICE);
 
                 return;
             }
@@ -242,11 +242,11 @@ abstract class Model implements \jsonSerializable, \Iterator
             }
             $reflectionProperty->setValue($this, $propertyValue);
         }
-        if (isset($this->eventHooks['written'][$propertyName])) {
-            $propertyValue = $this->eventHooks['written'][$propertyName]($propertyValue);
+        if (isset($this->eventHooks['update'][$propertyName])) {
+            $propertyValue = $this->eventHooks['update'][$propertyName]($propertyValue);
         }
-        if (isset($this->eventHooks['written'][true])) {
-            $propertyValue = $this->eventHooks['write'][true]($propertyValue);
+        if (isset($this->eventHooks['update'][true])) {
+            $propertyValue = $this->eventHooks['update'][true]($propertyValue);
         }
     }
 
@@ -331,8 +331,19 @@ abstract class Model implements \jsonSerializable, \Iterator
             if (true === $ignoreEmptyPropertyValues && empty($propertyValue)) {
                 continue;
             }
-            if (isset($this->eventHooks['read'][$propertyName])) {
-                $propertyValue = $this->eventHooks['read'][$propertyName]($propertyValue);
+            if (isset($this->eventHooks['get'][$propertyName])) {
+                $propertyValue = $this->eventHooks['get'][$propertyName]($propertyValue);
+            }
+            if ($propertyValue instanceof Model) {
+                $propertyValue = $propertyValue->toArray($ignoreEmptyPropertyValues);
+            } elseif (is_array($propertyValue)) {
+                $propertyValue = array_map(function ($value) use ($ignoreEmptyPropertyValues) {
+                    if ($value instanceof Model) {
+                        return $value->toArray($ignoreEmptyPropertyValues);
+                    }
+
+                    return $value;
+                }, $propertyValue);
             }
             $array[$propertyName] = $propertyValue;
         }
@@ -416,6 +427,15 @@ abstract class Model implements \jsonSerializable, \Iterator
         return $propertyExists;
     }
 
+    /**
+     * Defines a new user property for the model.
+     *
+     * @param string $propertyType  the type of the property
+     * @param string $propertyName  the name of the property
+     * @param mixed  $propertyValue The value of the property. Default is null.
+     *
+     * @return bool returns true if the property was successfully defined, false if the property already exists
+     */
     public function defineProperty(string $propertyType, string $propertyName, mixed $propertyValue = null): bool
     {
         if (property_exists($this, $propertyName) || array_key_exists($propertyName, $this->userProperties)) {
@@ -483,17 +503,38 @@ abstract class Model implements \jsonSerializable, \Iterator
     }
 
     /**
+     * Constroctor placeholder method.
+     *
+     * This method is called before the model has been constructed and the data has been populated.
+     *
      * @param array<string,mixed> $data
      */
     protected function construct(array &$data): void {}
 
+    /**
+     * Destructor placeholder method.
+     *
+     * This method is called when the model is being destructed.
+     */
     protected function destruct(): void {}
 
     /**
+     * Constructed placeholder method.
+     *
+     * This method is called after the model has been constructed and the data has been populated.
+     *
      * @param array<string,mixed> $data
      */
     protected function constructed(array &$data): void {}
 
+    /**
+     * Sets the value of a user-defined property.
+     *
+     * @param string $propertyName  the name of the property to set
+     * @param mixed  $propertyValue the value to set for the property
+     *
+     * @throws PropertyException if the property is not a user-defined property
+     */
     private function setUserProperty(string $propertyName, mixed $propertyValue): void
     {
         if (!array_key_exists($propertyName, $this->userProperties)) {
@@ -544,6 +585,14 @@ abstract class Model implements \jsonSerializable, \Iterator
         }
     }
 
+    /**
+     * Converts the value of a property to the specified data type.
+     *
+     * @param string $propertyType  the type to which the property value should be converted
+     * @param mixed  $propertyValue The value of the property to be converted. This value is passed by reference.
+     *
+     * @throws \Exception if the conversion type is unsupported or if the type is not a subclass of 'Hazaar\Model'
+     */
     private function convertValueDataType(string $propertyType, mixed &$propertyValue): void
     {
         if (in_array($propertyType, self::$allowTypes, true)) {
