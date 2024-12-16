@@ -15,7 +15,7 @@ class File extends Backend
      */
     private array $index = [];
     private ?int $created = null;
-    private int $compactInterval = 3600;
+    private int $compactInterval = 30;
 
     /**
      * File rate limiter constructor.
@@ -47,7 +47,7 @@ class File extends Backend
             foreach ($this->db->toArray() as $identifier => $info) {
                 if (is_array($info) 
                     && array_key_exists('last', $info)
-                    && $info['last'] < time() - $this->windowLength) {
+                    && $info['last'] < time() - ($info['window'] ?? $this->windowLength)) {
                     $this->db->remove($identifier);
                 }
             }
@@ -83,6 +83,7 @@ class File extends Backend
         if (0 === count($diff)) {
             return;
         }
+        $info['window'] = $this->windowLength;
         $this->index[$identifier] = $info;
     }
 
