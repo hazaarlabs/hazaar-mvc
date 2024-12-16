@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Hazaar;
 
 use Hazaar\Model\Exception\DefineEventHookException;
+use Hazaar\Model\Exception\PropertyAttributeException;
 use Hazaar\Model\Exception\PropertyException;
 use Hazaar\Model\Exception\PropertyValidationException;
 use Hazaar\Model\Exception\UnsetPropertyException;
+use Hazaar\Model\Rule;
 
 /**
  * This is an abstract class that implements the \jsonSerializable interface.
@@ -74,10 +76,11 @@ abstract class Model implements \jsonSerializable, \Iterator
             $data = get_object_vars($data);
         }
         $this->construct($data, ...$args);
-        $protectedProperties = (new \ReflectionClass(static::class))->getProperties(\ReflectionProperty::IS_PROTECTED);
-        foreach ($protectedProperties as $reflectionProperty) {
+        $publicProperties = (new \ReflectionClass(static::class))->getProperties(\ReflectionProperty::IS_PROTECTED | \ReflectionProperty::IS_PUBLIC);
+        foreach ($publicProperties as $reflectionProperty) {
             $propertyName = $reflectionProperty->getName();
             $propertyValue = $data[$propertyName] ?? null;
+            $this->propertyNames[] = $propertyName;
             if (null !== $propertyValue) {
                 try {
                     $this->convertPropertyValueDataType($reflectionProperty, $propertyValue);
@@ -87,15 +90,20 @@ abstract class Model implements \jsonSerializable, \Iterator
                 $reflectionProperty->setValue($this, $propertyValue);
             }
             if (count($reflectionAttributes = $reflectionProperty->getAttributes()) > 0) {
+                if ($reflectionProperty->isPublic()) {
+                    throw new PropertyAttributeException(static::class, $propertyName, 'is public.  Only protected properties can have attributes');
+                }
+                $this->propertyRules[$propertyName] = [];
                 foreach ($reflectionAttributes as $reflectionAttribute) {
                     $reflectionAttributeClass = new \ReflectionClass($reflectionAttribute->getName());
-                    if (!$reflectionAttributeClass->implementsInterface('Hazaar\Model\Interfaces\Attribute')) {
+                    if (!$reflectionAttributeClass->isSubclassOf('Hazaar\Model\Rule')) {
                         continue;
                     }
-                    $reflectionAttribute->newInstance()->check($this, $reflectionProperty);
+                    $modelRule = $reflectionAttribute->newInstance();
+                    $modelRule->evaluate($propertyValue, $this, $reflectionProperty);
+                    $this->propertyRules[$propertyName][] = $modelRule;
                 }
             }
-            $this->propertyNames[] = $propertyName;
         }
         foreach ($this->userProperties as $propertyName => $propertyData) {
             if (!array_key_exists($propertyName, $data)) {
@@ -482,7 +490,7 @@ abstract class Model implements \jsonSerializable, \Iterator
             }
         }
         if (isset($this->propertyRules[$propertyName])) {
-            $this->execPropertyRules($propertyName, $propertyValue, $this->propertyRules[$propertyName]);
+            $this->execPropertyRules($propertyValue, new \ReflectionProperty($this, $propertyName), $this->propertyRules[$propertyName]);
         }
         if (isset($this->eventHooks['write'][$propertyName])) {
             $propertyValue = $this->eventHooks['write'][$propertyName]($propertyValue);
@@ -755,8 +763,8 @@ abstract class Model implements \jsonSerializable, \Iterator
      */
     private function convertPropertyValueDataType(\ReflectionProperty $reflectionProperty, mixed &$propertyValue): void
     {
-        /** 
-         * @var ?\ReflectionNamedType $propertyType 
+        /**
+         * @var ?\ReflectionNamedType $propertyType
          */
         $propertyType = $reflectionProperty->getType();
         if (null === $propertyType) {
@@ -811,21 +819,12 @@ abstract class Model implements \jsonSerializable, \Iterator
     /**
      * Executes the property rules for a given property.
      *
-     * @param string                     $propertyName   the name of the property
-     * @param mixed                      &$propertyValue The value of the property
-     * @param array<int,callable|string> $rules          the array of rules to be applied
+     * @param array<Rule> $rules the array of rules to be applied
      */
-    private function execPropertyRules(string $propertyName, mixed &$propertyValue, array $rules): void
+    private function execPropertyRules(mixed $value, \ReflectionProperty $property, array $rules): void
     {
-        $classReflection = new \ReflectionClass($this);
-        $properties = $classReflection->getProperties();
-
-        foreach ($properties as $property) {
-            var_dump([$property->getName(), $property->getAttributes()]);
-        }
-
-        foreach ($rules as $rule => $ruleData) {
-            $propertyValue = call_user_func_array([$this, $ruleData[0]], array_merge([$propertyName, $propertyValue], $ruleData[1]));
+        foreach ($rules as $rule) {
+            $rule->evaluate($value, $this, $property);
         }
     }
 }

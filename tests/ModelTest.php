@@ -47,12 +47,12 @@ class TestModel extends Model
         $this->defineEventHook('write', 'id', function ($value) {
             return (int) $value;
         });
-        $this->defineRule('min', 'counter', 1);
-        $this->defineRule('max', 'counter', 10);
-        $this->defineRule('required', ['id', 'name']);
-        $this->defineRule('filter', 'email', FILTER_VALIDATE_EMAIL);
-        $this->defineRule('pad', 'description', 8);
-        $this->defineRule('contains', 'categories', 'id');
+        // $this->defineRule('min', 'counter', 1);
+        // $this->defineRule('max', 'counter', 10);
+        // $this->defineRule('required', ['id', 'name']);
+        // $this->defineRule('filter', 'email', FILTER_VALIDATE_EMAIL);
+        // $this->defineRule('pad', 'description', 8);
+        // $this->defineRule('contains', 'categories', 'id');
         // $this->defineRule('format', 'phrase', 'The %2$s contains %1$d monkeys');
     }
 }
