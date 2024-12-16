@@ -20,12 +20,14 @@ use Hazaar\Model\Interfaces\AttributeRule;
 abstract class Model implements \jsonSerializable, \Iterator
 {
     /**
+     * Legacy property rules that can be replaced with PHP 8.4+ style property hooks.
+     *
      * @var array<callable>
      */
     private array $eventHooks = [];
 
     /**
-     * @var array<mixed>
+     * @var array<string,array<AttributeRule>>
      */
     private array $propertyRules = [];
 
@@ -92,7 +94,9 @@ abstract class Model implements \jsonSerializable, \Iterator
                 if ($reflectionProperty->isPublic()) {
                     throw new PropertyAttributeException(static::class, $propertyName, 'is public.  Only protected properties can have attributes');
                 }
-                $this->propertyRules[$propertyName] = [];
+                if (!isset($this->propertyRules[$propertyName])) {
+                    $this->propertyRules[$propertyName] = [];
+                }
                 foreach ($reflectionAttributes as $reflectionAttribute) {
                     $reflectionAttributeClass = new \ReflectionClass($reflectionAttribute->getName());
                     if (!$reflectionAttributeClass->isSubclassOf('Hazaar\Model\Interfaces\AttributeRule')) {
@@ -491,7 +495,7 @@ abstract class Model implements \jsonSerializable, \Iterator
                 return;
             }
         }
-        if (isset($this->propertyRules[$propertyName])) {
+        if (isset($this->propertyRules[$propertyName]) && count($this->propertyRules[$propertyName]) > 0) {
             $result = $this->execPropertyRules($propertyValue, new \ReflectionProperty($this, $propertyName), $this->propertyRules[$propertyName]);
             if (false === $result) {
                 return;
@@ -707,6 +711,33 @@ abstract class Model implements \jsonSerializable, \Iterator
         $this->propertyNames[] = $propertyName;
 
         return true;
+    }
+
+    /**
+     * Defines a rule for a property in the model.
+     *
+     * @param string        $rule          the name of the rule
+     * @param array<string> $propertyNames the name of one or more properties
+     * @param mixed         ...$args       Additional arguments for the rule.
+     *
+     * @throws \Exception if the specified rule does not exist
+     */
+    public function defineRule(string $rule, array|string $propertyNames, mixed ...$args): void
+    {
+        $ruleName = '__propertyRule__'.$rule;
+        if (!method_exists($this, $ruleName)) {
+            throw new \Exception("Rule '{$rule}' does not exist");
+        }
+        if (!is_array($propertyNames)) {
+            $propertyNames = [$propertyNames];
+        }
+        foreach ($propertyNames as $propertyName) {
+            if (!array_key_exists($propertyName, $this->propertyRules)) {
+                $this->propertyRules[$propertyName] = [];
+            }
+            $attributeRuleClass = 'Hazaar\Model\Rules\\'.ucfirst($rule);
+            $this->propertyRules[$propertyName][] = new $attributeRuleClass(...$args);
+        }
     }
 
     /**
