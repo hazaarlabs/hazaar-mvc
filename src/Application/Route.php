@@ -52,22 +52,23 @@ class Route
 
     public function setCallable(mixed $callable): void
     {
+        if (is_array($callable) && count($callable) > 2) {
+            $this->actionArgs = array_slice($callable, 2);
+            $callable = array_slice($callable, 0, 2);
+        }
         $this->callable = $callable;
-        if (is_array($this->callable) && isset($this->callable[2]) && is_array($this->callable[2])) {
-            $this->actionArgs = $this->callable[2];
-        } else {
-            try {
-                $callableReflection = match (true) {
-                    $this->callable instanceof \Closure => new \ReflectionFunction($this->callable),
-                    $this->callable instanceof \ReflectionMethod => $this->callable,
-                    default => new \ReflectionMethod($this->callable[0], $this->callable[1]),
-                };
-                foreach ($callableReflection->getParameters() as $param) {
-                    $this->callableParameters[$param->getName()] = $param;
-                }
-            } catch (\ReflectionException $e) {
-                // Do nothing
+
+        try {
+            $callableReflection = match (true) {
+                $this->callable instanceof \Closure => new \ReflectionFunction($this->callable),
+                $this->callable instanceof \ReflectionMethod => $this->callable,
+                default => new \ReflectionMethod($this->callable[0], $this->callable[1]),
+            };
+            foreach ($callableReflection->getParameters() as $param) {
+                $this->callableParameters[$param->getName()] = $param;
             }
+        } catch (\ReflectionException $e) {
+            // Do nothing
         }
     }
 
