@@ -2,16 +2,23 @@
 
 Hazaar MVC offers a robust and flexible routing system that enables seamless mapping of URLs to controllers and actions. This feature facilitates the creation of clean, intuitive URLs for your application.
 
-Unlike other frameworks, Hazaar MVC provides multiple methods for configuring routes, ensuring flexibility and ease of use.
+Unlike other frameworks, Hazaar MVC provides multiple methods for configuring routes, ensuring flexibility and ease of use. The router can be configured using the `application.json` file, with options to define routes in a PHP file, JSON file, or using attributes in controller classes. Hazaar MVC also provides multiple automatic routing options, including basic and advanced routing methods.
 
-## Methods for Defining Routes
+By providing a variety of routing options, Hazaar MVC allows developers to choose the most suitable method based on their application requirements and preferences.
+
+## Router Modules
 
 - **[File](#file-routes)**: Define routes in a `route.php` file, ideal for routes not directly tied to a controller.
 - **[Basic](#basic-routes)**: The simplest method, requiring no configuration. Controllers and their actions are automatically available as routes.
 - **[Advanced](#advanced-routes)**: Similar to the basic method but supports nesting controllers in subdirectories.
-- **[Annotated](#annotated-routes)**: Use annotations in controller classes to define routes, extending the advanced router.
 - **[Attribute](#attribute-routes)**: Use attributes in controller classes to define routes, also extending the advanced router.
+- **[Annotated](#annotated-routes)**: Use annotations in controller classes to define routes, extending the advanced router.
 - **[JSON](#json-routes)**: Define routes in a JSON file, useful for dynamic route definitions from external configurations.
+
+::: warning
+While the **annotated** router is still available and fully functional, it's use is discouraged in favor of the attribute router that provides a more efficient and structured way to define routes using PHP 8 attributes.  Annotated routes use PHPDoc comments which 
+require additional parsing and are less efficient.
+:::
 
 ## Configuring the Router
 
@@ -20,7 +27,9 @@ The router configuration is specified in the `application.json` file under the `
 ```json
 {
     "router": {
-        "type": "basic"
+        "type": "basic",
+        "controller": "main",
+        "action": "index"
     }
 }
 ```
@@ -30,13 +39,150 @@ The `type` key determines the router type. Available types include:
 - `file`: Define routes in a `route.php` file.
 - `basic`: Automatically maps controllers to URLs with no configuration.
 - `advanced`: Supports nesting controllers in subdirectories.
-- `annotated`: Define routes using annotations in controller classes.
 - `attribute`: Define routes using attributes in controller classes.
+- `annotated`: Define routes using annotations in controller classes.
 - `json`: Define routes in a JSON configuration file.
 
-## File Routes
+The `controller` and `action` keys specify the default controller and action to use when no route is matched.  Or if the controller is matched but no action is specified then the method defined in the `action` key will be executed.
 
-File routes are specified in a `routes.php` file in the root directory. This file contains calls to the `Hazaar\Application\Router` class, which provides methods such as:
+## Callables
+
+A callable is a PHP callback that can be used to execute a function or method. A callable can be a string (class name), an array (class and method with optional arguments), or a closure. 
+
+The target controller and method must return a [`Hazaar\Controller\Response`](/api/class/Hazaar/Controller/Response) object.
+
+### Class Method
+
+A class method callable is defined as an array containing the class name and method name:
+
+```php
+[ControllerClass::class, 'actionMethod']
+```
+
+::: warning
+The target controller method must be non-`static` and `public` and not start with an underscore (`_`).
+:::
+
+### Class Method with Arguments
+
+A class method callable with arguments is defined as an array containing the class name, method name, and arguments:
+
+```php
+[ControllerClass::class, 'actionMethod', 'arg1', 'arg2']
+```
+
+This callable executes the `actionMethod` method in the `ControllerClass` class with `arg1` and `arg2` as arguments.  This is useful for passing additional data to the controller method or supplying default values that can be overridden by the URL.
+
+### Closure
+
+A closure callable is defined as an anonymous function:
+
+```php
+function() {
+    return new Hazaar\Controller\Response\Json(['message' => 'Hello, World!']);
+}
+```
+
+## Response Types
+
+The response type is determined by the return value of the controller method and is useful for ensuring that the error or exception response is returned in the correct format.  Avoid using `mixed` return types as this can will result in an error if the response type cannot be determined and will default to `HTML`.
+
+Available response types include:
+
+- `Hazaar\Controller\Response::TYPE_HTML`: HTML response.  This is the default response type if no other type can be determined.
+- `Hazaar\Controller\Response::TYPE_JSON`: JSON response.
+- `Hazaar\Controller\Response::TYPE_XML`: XML response.
+- `Hazaar\Controller\Response::TYPE_TEXT`: Plain text response.
+- `Hazaar\Controller\Response::TYPE_BINARY`: Binary response.  Used if the response is a file download or other binary data such as a PDF.
+
+## Route Parameters
+
+Define route parameters in the URL pattern using curly braces `{}`. The parameter type can be specified using a colon (`:`) followed by the type.  Such as `{int:id}` or `{string:name}`.  This is not supported by the basic or advanced routers as they do not support custom routes.
+
+Available types include:
+
+- `int`: Integer.
+- `float`: Floating-point number.
+- `string`: String.
+- `path`: Path (including slashes).
+
+::: important
+Values are passed as arguments to the controller method by name.  So a route of `/product/{int:id}` would pass the `id` value to the controller method's `$id` argument.
+:::
+
+Example:
+
+::: code-tabs
+
+@tab File
+
+```php
+Router::get('/product/{int:id}', [API::class, 'getProduct']);
+```
+
+@tab JSON
+
+```json
+[
+    {
+        "route": "/product/{int:id}",
+        "controller": "Application\\Controller\\Product",
+        "action": "getProduct",
+        "method": "GET"
+    }
+]
+```
+
+@tab Attribute
+
+```php
+#[Route('/product/{int:id}', methods: ['GET'])]
+public function getProduct(int $id) {
+    // Retrieve the product with the specified ID
+}
+```
+
+@tab Annotated
+
+```php
+/**
+ * @route("/product/{int:id}", methods={"GET"})
+ */
+public function getProduct(int $id) {
+    // Retrieve the product with the specified ID
+}
+```
+
+:::
+
+### Default Values
+
+Default values can be specified for route parameters by providing a default value in the callable.  This is useful for providing default values when the parameter is not provided in the URL.  The array of default values is passed as the third argument to the callable and can 
+be either a numeric array or an associative array.
+
+If the default values are numeric, they are passed to the controller method in the order they are defined.  If the default values are associative, they are passed to the controller method by name.
+
+#### Numeric Array
+
+```php
+Router::get('/product/{int:id}', [API::class, 'getProduct', [1234]]);
+```
+
+#### Associative Array
+
+```php
+Router::get('/product/{int:id}', [API::class, 'getProduct', ['id' => 1234]]);
+```
+
+## Router Modules
+
+Developers can choose from multiple routing methods based on their application requirements and preferences. The router configuration is specified in the `application.json` file under the `router` section and determines the routing method to use.  
+
+The available routing methods are described here.
+
+### File Routes
+
+File routes are specified in a `routes.php` file in the root directory. This file contains calls to the [`Hazaar\Application\Router`](/api/class/Hazaar/Application/Router) class, which provides methods such as:
 
 - `get`: Responds to `GET` requests.
 - `post`: Responds to `POST` requests.
@@ -48,8 +194,6 @@ Each method accepts two arguments, with an optional third for the response type:
 1. `$route`: The URL pattern.
 2. `$callable`: The callable to execute when the route is matched.
 3. `$responseType` (optional): Specifies the expected response type.
-
-A callable can be a string (class name), an array (class and method), or a closure. The target controller and method must return a `Hazaar\Controller\Response` object.
 
 Example `routes.php` file:
 
@@ -69,49 +213,9 @@ Router::get('/api/v1/product', [API::class, 'listProducts']);
 Router::post('/api/v1/product', [API::class, 'createProduct']);
 ```
 
-### Route Parameters
+Here, the root URL (`/`) loads the `Index` controller and executes its `index` method. The `/about` URL returns a view directly from a closure, and the `/api/v1/product` URL loads the `API` controller and executes its `listProducts` method if a `GET` request is received.  If a `POST` request is received, the `createProduct` method is executed.
 
-Define route parameters in the URL pattern using curly braces. The parameter type can be specified using a colon (`:`) followed by the type. Available types include:
-
-- `int`: Integer.
-- `float`: Floating-point number.
-- `string`: String.
-- `path`: Path (including slashes).
-
-Example:
-
-```php
-Router::get('/product/{int:id}', [API::class, 'getProduct']);
-```
-
-The `getProduct` method in the `API` controller:
-
-```php
-public function getProduct(int $id) {
-    // Retrieve the product with the specified ID
-}
-```
-
-::: warning
-The target controller method must be non-`static` and `public` and not start with an underscore (`_`).
-:::
-
-### Route Response Types
-
-Specifying a response type ensures errors or exceptions are returned in the correct format. Available response types include:
-
-- `Hazaar\Controller\Response::TYPE_HTML`: HTML response.
-- `Hazaar\Controller\Response::TYPE_JSON`: JSON response.
-- `Hazaar\Controller\Response::TYPE_XML`: XML response.
-- `Hazaar\Controller\Response::TYPE_TEXT`: Plain text response.
-
-Example:
-
-```php
-Router::get('/product/{int:id}', [API::class, 'getProduct'], Response::TYPE_JSON);
-```
-
-### Loading File Routes
+#### Loading File Routes
 
 To load the file routes from a file other than the default `route.php` file, add the `file` key to the `router` configuration in the `application.json` file:
 
@@ -126,17 +230,14 @@ To load the file routes from a file other than the default `route.php` file, add
 
 The `file` key specifies the path to the PHP file containing the route definitions.
 
-## Basic Routes
+### Basic Routes
 
 The basic router uses the request URL to determine the controller and action, along with any arguments. No configuration is required, as controllers and actions are automatically mapped to URLs.
-This router is the simplest and fastest way to perform routing in Hazaar MVC as there is minimal processing required.
+
+This router is the simplest and fastest way to perform routing in Hazaar MVC as there is minimal processing required.  However, it is limited in it's ability to handle complex routing scenarios such as nested controllers, custom routes, or route aliases.
 
 ::: tip
 The basic router is ideal for simple applications with a flat controller structure that require the most efficient routing possible.
-:::
-
-::: warning
-The basic router does not support nested controllers or routing aliases.  For more advanced routing, look at the [advanced router](#advanced-routes).
 :::
 
 A typical route format is:
@@ -175,12 +276,12 @@ class Product extends Basic {
 }
 ```
 
-## Advanced Routes
+### Advanced Routes
 
 The advanced router supports nested controllers in subdirectories, enabling a more organized structure. Controllers are mapped to URLs based on their directory structure.
 
 ::: tip
-The advanced router is ideal for applications with a complex controller hierarchy.
+The advanced router is ideal for applications with a complex controller hierarchy, have a large number of controllers, require a more organized structure, or require the use of route aliases.
 :::
 
 A typical route format is:
@@ -200,79 +301,33 @@ appropriate controller in the directory structure and can be multiple levels dee
 The advanced router does not support custom routes. For more advanced routing, consider the [attribute router](#attribute-routes) or [file router](#file-routes).
 :::
 
-### Checking the Request Method
+#### Aliases
 
-If the controller method should only process a particular type of request, then the [`Hazaar\Application\Request\HTTP`](/api/class/Hazaar/Application/Request/HTTP) object needs to be used to check the 
-current request type and provides a number of ways to do this.  
+The advanced router supports aliases, allowing you to define custom URLs for controllers. Aliases are defined in the `aliases` section of the `application.json` file:
 
-The request object is accessible on the controller using `$this->request` and provides methods such as:
+```json
+{
+    "router": {
+        "type": "advanced",
+        "aliases": {
+            "product": "product/get"
+        }
+    }
+}
+```
 
-- [isGet()](/api/class/Hazaar/Application/Request/HTTP#isget) - Returns true if the request uses the `GET` method.
-- [isPut()](/api/class/Hazaar/Application/Request/HTTP#isput) - Returns true if the request uses the `PUT` method.
-- [isPost()](/api/class/Hazaar/Application/Request/HTTP#ispost) - Returns true if the request uses the `POST` method.
-- [isDelete()](/api/class/Hazaar/Application/Request/HTTP#isdelete) - Returns true if the request uses the `DELETE` method.
-- [getMethod()](/api/class/Hazaar/Application/Request#getmethod) - Returns the name of the request method for this request.  
+Here, the `/product` URL is aliased to `/product/get`.  Once the URL has been translated to it's aliased form, the advanced router will then attempt to load the controller and execute the action as normal.
 
 ::: tip
-`Hazaar\Application\Request::getMethod()` is available in CLI requests as well, but will always be `GET`.
+Aliases can be used to inject additional arguments into the URL, such as the alias `/example` which can point to `/product/get/1234`.
+The advanced router will then load the `Product` controller and execute the `get` method with `1234` as an argument.
 :::
 
-```php
-public function action(): Response
-{
-    if($this->request->isPOST()){
-        // Store the update and return status
-    }elseif($this->request->isGET()){
-        // Return the product
-    }
-    
-    return BadRequest;
-}
-```
-
-### Example
-
-In this example our controller has a `get` method that returns a product formatted as JSON.  The URL would be:
-
-```
-/api/v1/product/get/1234
-```
-
-This URL loads `Application\Controller\Product` and executes its `list` method. The corresponding controller is located in `application/controllers/api/v1/product.php`:
-
-```php
-namespace Application\Controller\Api\V1;
-
-use Hazaar\Controller\Basic;
-use Hazaar\Controller\Response;
-use Hazaar\Controller\Response\Json;
-use Hazaar\Controller\Response\HTTP\BadRequest;
-use Hazaar\DBI\Adapter;
-
-class Product extends Basic {
-
-    public function init(): void
-    {
-        // Initialization code
-    }
-
-    public function get(int $productId): Response
-    {
-        if(!$this->request->isGET()){
-            return new BadRequest;
-        }
-        $db = Adapter::getInstance();
-
-        return new Json($db->table('product')->find(['id' => $productId]));
-    }
-}
-```
-
-## Attribute Routes
+### Attribute Routes
 
 The attribute router uses attributes in controller classes to define routes. This method extends the advanced router, providing a more structured and organized approach to routing.
 
-### Defining Routes
+#### Defining Routes
 
 To define a route, add the `#[\Hazaar\Application\Route]` attribute to the controller class or method to define the actions available on this controller.  Routing to the 
 controller itself is handled by the [Advanced Router](#advanced-routes) to limit the number of controller files processed.
@@ -286,34 +341,34 @@ The attribute accepts the following parameters:
 Example:
 
 ```php
-#[Route('/', methods: ['GET'])]
-public function listProducts(): Json
-{
-    // List products
+namespace Application\Controller\Api\V1;
+
+use Hazaar\Application\Route;
+
+class Product extends Basic {
+
+    #[Route('/list', methods: ['GET'])]
+    public function listProducts(): Json
+    {
+        // List products
+    }
+
+    #[Route('/{int:id}', methods: ['GET'])]
+    public function getProduct(int $id): Json
+    {
+        // Retrieve the product with the specified ID
+    }
+
 }
 ```
 
-### Route Parameters
+Here, the `listProducts` method is accessible via a `GET` request to `/api/v1/product/list`, and the `getProduct` method is accessible via a `GET` request to `/api/v1/product/{id}`.
+
+#### Route Parameters
 
 Define route parameters in the URL pattern using curly braces. 
 
 Example:
-
-```php
-#[Route('/{int:id}', methods: ['GET'])]
-public function getProduct(int $id): Json
-{
-    // Retrieve the product with the specified ID
-}
-```
-
-### Full Example
-
-In this example we have defined 3 routes on the `Application\Controller\Product` controller.  They are:
-
-- `GET` request to `/product`.  This can be used to retrive a list of products.
-- `GET` request to `/product/1234`.  This can be used to retrieve a single product with the ID `1234`.
-- `POST` request to `/product/1234`.  This can be used to update a single product with the ID `1234`.
 
 ```php
 namespace Application\Controller;
@@ -346,11 +401,17 @@ class Product extends Basic {
 }
 ```
 
-## JSON Routes
+In this example we have defined 3 routes on the `Application\Controller\Product` controller.  They are:
+
+- `GET` request to `/product`.  This can be used to retrive a list of products.
+- `GET` request to `/product/1234`.  This can be used to retrieve a single product with the ID `1234`.
+- `POST` request to `/product/1234`.  This can be used to update a single product with the ID `1234`.
+
+### JSON Routes
 
 The JSON router allows you to define routes in a JSON file, providing a flexible and dynamic way to configure routes. This method is useful for applications requiring dynamic route definitions from external configurations.
 
-### Configuration
+#### Configuration
 
 Define routes in a `routes.json` file in the application config directory. The file contains an array of route objects, each specifying the following properties:
 
@@ -379,7 +440,7 @@ Example `routes.json` file:
 ]
 ```
 
-### Loading Routes
+#### Loading Routes
 
 To load the JSON routes, add the following configuration to the `application.json` file:
 
@@ -398,7 +459,7 @@ The `file` key specifies the path to the JSON file containing the route definiti
 The JSON router supports route parameters and response types, similar to the [file router](#file-routes).
 :::
 
-## Annotated Routes 
+### Annotated Routes 
 
 ::: danger
 The annotated router is deprecated and will be removed in a future release. Use the [attribute router](#attribute-routes) instead.
@@ -407,7 +468,7 @@ The annotated router is deprecated and will be removed in a future release. Use 
 The annotated router uses annotations in controller classes to define routes. This method extends the advanced router, providing a more structured and organized approach to routing.
 
 
-### Defining Routes
+#### Defining Routes
 
 To define a route, add the `@route` annotation to the controller class or method. The annotation accepts the following parameters:
 
@@ -433,7 +494,7 @@ class Product extends Action {
 }
 ```
 
-### Route Parameters
+#### Route Parameters
 
 Define route parameters in the URL pattern using curly braces.
 
