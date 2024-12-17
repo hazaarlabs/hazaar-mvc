@@ -16,8 +16,7 @@ By providing a variety of routing options, Hazaar MVC allows developers to choos
 - **[JSON](#json-routes)**: Define routes in a JSON file, useful for dynamic route definitions from external configurations.
 
 ::: warning
-While the **annotated** router is still available and fully functional, it's use is discouraged in favor of the attribute router that provides a more efficient and structured way to define routes using PHP 8 attributes.  Annotated routes use PHPDoc comments which 
-require additional parsing and are less efficient.
+While the **annotated** router is still available and fully functional, it's use is discouraged in favor of the attribute router that provides a more efficient and structured way to define routes using PHP 8 attributes.  Annotated routes use PHPDoc comments which require additional parsing and are less efficient.
 :::
 
 ## Configuring the Router
@@ -49,7 +48,7 @@ The `controller` and `action` keys specify the default controller and action to 
 
 A callable is a PHP callback that can be used to execute a function or method. A callable can be a string (class name), an array (class and method with optional arguments), or a closure. 
 
-The target controller and method must return a [`Hazaar\Controller\Response`](/api/class/Hazaar/Controller/Response) object.
+The target controller and method must return a [`Hazaar\Controller\Response`](/api/class/Hazaar/Controller/Response) based object, such as [`Hazaar\Controller\Response\Json`](/api/class/Hazaar/Controller/Response/Json) or [`Hazaar\Controller\Response\View`](/api/class/Hazaar/Controller/Response/View).
 
 ### Class Method
 
@@ -83,9 +82,33 @@ function() {
 }
 ```
 
+### Class Strings
+
+A class string callable is defined as a string containing the class name:
+
+```php
+'ControllerClass'
+```
+
+This callable executes the default method in the `ControllerClass` class.
+
+```php
+'ControllerClass::actionMethod'
+```
+
+This callable executes the `actionMethod` method in the `ControllerClass` class.
+
+```php
+'ControllerClass::actionMethod(arg1, arg2)'
+```
+
 ## Response Types
 
-The response type is determined by the return value of the controller method and is useful for ensuring that the error or exception response is returned in the correct format.  Avoid using `mixed` return types as this can will result in an error if the response type cannot be determined and will default to `HTML`.
+The response type is determined automatically by the return value of the controller method and is useful for ensuring that the error or exception response is returned in the correct format.
+
+::: danger
+Avoid using `mixed` return types as the router will not be able to determine the actual response type and will default to `HTML`.
+:::
 
 Available response types include:
 
@@ -104,10 +127,18 @@ Available types include:
 - `int`: Integer.
 - `float`: Floating-point number.
 - `string`: String.
-- `path`: Path (including slashes).
+- `bool`: Boolean.
+
+Values are matched based on the type specified. For example, `{int:id}` will only match integer values. If the value does not match the specified type, the route will not be matched.  The value is then passed to the controller method as an argument of the converted type using the name specified in the URL.
 
 ::: important
 Values are passed as arguments to the controller method by name.  So a route of `/product/{int:id}` would pass the `id` value to the controller method's `$id` argument.
+
+```php
+public function getProduct(int $id) {
+    // Retrieve the product with the specified ID
+}
+```
 :::
 
 Example:
@@ -164,11 +195,15 @@ If the default values are numeric, they are passed to the controller method in t
 
 #### Numeric Array
 
+Numeric arrays are passed to the controller method in the order they are defined.
+
 ```php
 Router::get('/product/{int:id}', [API::class, 'getProduct', [1234]]);
 ```
 
 #### Associative Array
+
+Associative arrays are passed to the controller method by name.
 
 ```php
 Router::get('/product/{int:id}', [API::class, 'getProduct', ['id' => 1234]]);
@@ -181,6 +216,8 @@ Developers can choose from multiple routing methods based on their application r
 The available routing methods are described here.
 
 ### File Routes
+
+File routes allow you to define routes in a PHP file, providing a flexible and dynamic way to configure routes. This method allows you to define routes that are not directly tied to a controller.  It also allows programmatic route definition, such as loading routes from a database or other external source.
 
 File routes are specified in a `routes.php` file in the root directory. This file contains calls to the [`Hazaar\Application\Router`](/api/class/Hazaar/Application/Router) class, which provides methods such as:
 
@@ -229,6 +266,23 @@ To load the file routes from a file other than the default `route.php` file, add
 ```
 
 The `file` key specifies the path to the PHP file containing the route definitions.
+
+#### Loading Routes Programmatically
+
+Routes can also be loaded programmatically using the `Router` class. This is useful for dynamic route definitions from external sources such as a database.
+
+Example:
+
+```php
+use Hazaar\Application\Router;
+use Hazaar\DBI\Adapter;
+
+$routes = Adapter::getInstance()->table('routes')->find();
+
+foreach($routes as $route) {
+    Router::get($route['url'], [$route['controller'], $route['action']]);
+}
+```
 
 ### Basic Routes
 
