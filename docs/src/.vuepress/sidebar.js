@@ -27,6 +27,7 @@ function sidebarGuide() {
                 { text: 'Configuration', link: '/guide/basics/configuration' },
                 { text: 'Bootstrap', link: '/guide/basics/bootstrap' },
                 { text: 'Routing', link: '/guide/basics/routing' },
+                { text: 'Requests', link: '/guide/basics/requests' },
                 { text: 'Controllers', link: '/guide/basics/controllers' },
                 { text: 'Views', link: '/guide/basics/views' },
                 { text: 'Models', link: '/guide/basics/models' },
