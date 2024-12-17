@@ -42,19 +42,29 @@ class Route
      */
     public function __construct(
         ?string $path = null,
-        array $methods = [],
-        int $responseType = Response::TYPE_HTML
+        array $methods = []
     ) {
         $this->path = $path;
         $this->methods = array_map('strtoupper', $methods);
-        $this->responseType = $responseType;
     }
 
+    /**
+     * Sets the callable for the route and processes its reflection.
+     *
+     * @param mixed $callable The callable to be set. It can be a closure, an array with a class and method, or a reflection method.
+     *
+     * @throws \ReflectionException If the callable cannot be reflected.
+     *
+     * The method performs the following actions:
+     * - If the callable is an array and has a third element, it sets the action arguments.
+     * - Sets the callable property.
+     * - Uses reflection to determine the return type of the callable and sets the response type accordingly.
+     * - Extracts and stores the parameters of the callable.
+     */
     public function setCallable(mixed $callable): void
     {
-        if (is_array($callable) && count($callable) > 2) {
-            $this->actionArgs = array_slice($callable, 2);
-            $callable = array_slice($callable, 0, 2);
+        if (is_array($callable) && isset($callable[2])) {
+            $this->actionArgs = is_array($callable[2]) ? $callable[2] : [$callable[2]];
         }
         $this->callable = $callable;
 
@@ -64,6 +74,18 @@ class Route
                 $this->callable instanceof \ReflectionMethod => $this->callable,
                 default => new \ReflectionMethod($this->callable[0], $this->callable[1]),
             };
+            if ($callableReflection->hasReturnType()) {
+                // @phpstan-ignore method.notFound
+                $this->responseType = match ($callableReflection->getReturnType()->getName()) {
+                    'Hazaar\Controller\Response\View' => Response::TYPE_HTML,
+                    'Hazaar\Controller\Response\HTML' => Response::TYPE_HTML,
+                    'Hazaar\Controller\Response\Text' => Response::TYPE_TEXT,
+                    'Hazaar\Controller\Response\XML' => Response::TYPE_XML,
+                    'Hazaar\Controller\Response\JSON' => Response::TYPE_JSON,
+                    'Hazaar\Controller\Response\PDF' => Response::TYPE_BINARY,
+                    default => Response::TYPE_HTML,
+                };
+            }
             foreach ($callableReflection->getParameters() as $param) {
                 $this->callableParameters[$param->getName()] = $param;
             }
