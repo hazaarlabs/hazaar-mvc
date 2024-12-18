@@ -113,11 +113,12 @@ abstract class Action extends Basic
     /**
      * Loads a view.
      *
-     * @param string $view the name of the view to load
+     * @param string       $view the name of the view to load
+     * @param array<mixed> $data the data to pass to the view
      */
-    protected function view(string $view): void
+    protected function view(string $view, array $data = []): void
     {
-        $this->view->view($view);
+        $this->view->view($view, $data);
     }
 
     /**

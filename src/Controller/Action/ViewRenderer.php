@@ -176,9 +176,10 @@ class ViewRenderer implements \ArrayAccess
     /**
      * Renders a view.
      *
-     * @param string|View $view The view to render. It can be either a string representing the view file path or an instance of the View class.
+     * @param string|View  $view The view to render. It can be either a string representing the view file path or an instance of the View class.
+     * @param array<mixed> $data The data to pass to the view
      */
-    public function view(string|View $view): void
+    public function view(string|View $view, array $data = []): void
     {
         if (!$view instanceof View) {
             $view = new View($view);
@@ -188,6 +189,7 @@ class ViewRenderer implements \ArrayAccess
         } else {
             $this->view = $view;
         }
+        $this->populate($data);
     }
 
     /*
