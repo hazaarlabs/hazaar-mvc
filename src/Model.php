@@ -567,9 +567,9 @@ abstract class Model implements \jsonSerializable, \Iterator
                 if (null !== $propertyValue && !$propertyValue instanceof $propertyTypeName) {
                     $propertyValue = new $propertyTypeName($propertyValue);
                 }
-            } elseif ('Hazaar\Date' === $propertyTypeName) {
-                if (null !== $propertyValue && !$propertyValue instanceof Date) {
-                    $propertyValue = new Date($propertyValue);
+            } elseif ('Hazaar\DateTime' === $propertyTypeName) {
+                if (null !== $propertyValue && !$propertyValue instanceof DateTime) {
+                    $propertyValue = new DateTime($propertyValue);
                 }
             } elseif (!(is_object($propertyValue)
                 && ($propertyTypeName === get_class($propertyValue) || is_subclass_of($propertyTypeName, get_class($propertyValue))))) {
@@ -605,9 +605,9 @@ abstract class Model implements \jsonSerializable, \Iterator
             if (null !== $propertyValue && !$propertyValue instanceof $propertyType) {
                 $propertyValue = new $propertyType($propertyValue);
             }
-        } elseif ('Hazaar\Date' === $propertyType) {
-            if (null !== $propertyValue && !$propertyValue instanceof Date) {
-                $propertyValue = new Date($propertyValue);
+        } elseif ('Hazaar\DateTime' === $propertyType) {
+            if (null !== $propertyValue && !$propertyValue instanceof DateTime) {
+                $propertyValue = new DateTime($propertyValue);
             }
         } elseif (!(is_object($propertyValue)
             && ($propertyType === get_class($propertyValue) || is_subclass_of($propertyType, get_class($propertyValue))))) {

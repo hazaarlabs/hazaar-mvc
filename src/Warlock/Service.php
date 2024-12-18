@@ -8,7 +8,7 @@ use Hazaar\Application;
 use Hazaar\Application\Request\HTTP;
 use Hazaar\Application\Request\Loader;
 use Hazaar\Cron;
-use Hazaar\Date;
+use Hazaar\DateTime;
 use Hazaar\Warlock\Connection\Pipe;
 use Hazaar\Warlock\Connection\Socket;
 use Hazaar\Warlock\Interfaces\Connection;
@@ -518,7 +518,7 @@ abstract class Service extends Process
     }
 
     final public function schedule(
-        Date $date,
+        DateTime $date,
         callable|string $callback,
         array $params = [],
         ?string $tag = null,

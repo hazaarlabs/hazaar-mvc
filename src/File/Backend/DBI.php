@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\File\Backend;
 
-use Hazaar\Date;
+use Hazaar\DateTime;
 use Hazaar\DBI\Adapter;
 use Hazaar\File\Manager;
 
@@ -60,7 +60,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
                 'kind' => 'dir',
                 'parent' => null,
                 'filename' => 'ROOT',
-                'created_on' => new Date(),
+                'created_on' => new DateTime(),
                 'modified_on' => null,
                 'length' => 0,
                 'mime_type' => 'directory',
@@ -78,11 +78,11 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
              */
             $this->fsck(true);
         }
-        if (!$this->rootObject['created_on'] instanceof Date) {
-            $this->rootObject['created_on'] = new Date($this->rootObject['created_on']);
+        if (!$this->rootObject['created_on'] instanceof DateTime) {
+            $this->rootObject['created_on'] = new DateTime($this->rootObject['created_on']);
         }
-        if ($this->rootObject['modified_on'] && !$this->rootObject['modified_on'] instanceof Date) {
-            $this->rootObject['modified_on'] = new Date($this->rootObject['modified_on']);
+        if ($this->rootObject['modified_on'] && !$this->rootObject['modified_on'] instanceof DateTime) {
+            $this->rootObject['modified_on'] = new DateTime($this->rootObject['modified_on']);
         }
 
         return is_array($this->rootObject);
@@ -269,7 +269,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
             return false;
         }
         $data = [
-            'modified_on' => new Date(),
+            'modified_on' => new DateTime(),
         ];
         if (!$this->db->table('hz_file')->update(['id' => $info['id']], $data)) {
             return false;
@@ -341,7 +341,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
             'parent' => $parent['id'],
             'filename' => basename($path),
             'length' => 0,
-            'created_on' => new Date(),
+            'created_on' => new DateTime(),
             'modified_on' => null,
         ];
         if (!($id = $this->db->table('hz_file')->insert($info, 'id')) > 0) {
@@ -469,7 +469,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
             $data = [
                 'start_chunk' => $fileInfo['start_chunk'] = $chunk_id,
                 'md5' => $fileInfo['md5'] = $md5,
-                'modified_on' => $fileInfo['modified_on'] = new Date(),
+                'modified_on' => $fileInfo['modified_on'] = new DateTime(),
                 'length' => $size,
                 'mime_type' => $content_type,
             ];
@@ -483,8 +483,8 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
                 'parent' => $parent['id'],
                 'start_chunk' => $chunk_id,
                 'filename' => basename($path),
-                'created_on' => new Date(),
-                'modified_on' => new Date(),
+                'created_on' => new DateTime(),
+                'modified_on' => new DateTime(),
                 'length' => $size,
                 'mime_type' => $content_type,
                 'md5' => $md5,
@@ -525,7 +525,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
         }
         $target = $source;
         $target['filename'] = basename($dst);
-        $target['modified_on'] = new Date();
+        $target['modified_on'] = new DateTime();
         $target['parent'] = $dstParent['id'];
         unset($target['id']);
         if ($existing = &$this->info($dst)) {
@@ -600,7 +600,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
             throw new \Exception('Unable to determine parent of path: '.$src);
         }
         $data = [
-            'modified_on' => new Date(),
+            'modified_on' => new DateTime(),
         ];
         if (!($dstParent = &$this->info($this->dirname($dst)))) {
             throw new \Exception('Unable to determine parent of path: '.$dst);

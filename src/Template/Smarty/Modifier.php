@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Template\Smarty;
 
-use Hazaar\Date;
+use Hazaar\DateTime;
 
 class Modifier
 {
@@ -99,8 +99,8 @@ class Modifier
      */
     public function date_format(mixed $item, ?string $format = null): string
     {
-        if (!$item instanceof Date) {
-            $item = new Date($item);
+        if (!$item instanceof DateTime) {
+            $item = new DateTime($item);
         }
         if (!$format) {
             $format = '%c';

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Logger\Backend;
 
-use Hazaar\Date;
+use Hazaar\DateTime;
 use Hazaar\DBI\Adapter;
 use Hazaar\Logger\Backend;
 
@@ -52,7 +52,7 @@ class Database extends Backend
                 $row['remote'] = $remote;
             }
             if ($this->getOption('write_timestamp')) {
-                $row['timestamp'] = new Date();
+                $row['timestamp'] = new DateTime();
             }
             if ($this->getOption('write_uri')) {
                 $row['uri'] = $_SERVER['REQUEST_URI'];

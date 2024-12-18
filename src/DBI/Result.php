@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI;
 
-use Hazaar\Date;
+use Hazaar\DateTime;
 
 /**
  * @brief Relational Database Interface - Result Class
@@ -541,7 +541,7 @@ class Result implements \Countable, \Iterator
                         } elseif ('bool' == $type) {
                             $element = boolify($element);
                         } elseif ('timestamp' == $type || 'date' == $type || 'time' == $type) {
-                            $element = new Date(trim($element, '"'));
+                            $element = new DateTime(trim($element, '"'));
                         } elseif ('json' == $type) {
                             $element = json_decode($element);
                         }

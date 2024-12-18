@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Warlock;
 
 use Hazaar\Application;
-use Hazaar\Date;
+use Hazaar\DateTime;
 use Hazaar\Warlock\Interfaces\Connection;
 
 abstract class Process
@@ -266,7 +266,7 @@ abstract class Process
      * @param array<mixed> $params
      */
     public function schedule(
-        Date $when,
+        DateTime $when,
         string $callable,
         array $params = [],
         ?string $tag = null,
