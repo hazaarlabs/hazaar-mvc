@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\DBD;
 
-use Hazaar\Date;
+use Hazaar\DateTime;
 use Hazaar\DBI\Table;
 
 class Mysql extends BaseDriver
@@ -297,7 +297,7 @@ class Mysql extends BaseDriver
 
     public function quote(mixed $string, int $type = \PDO::PARAM_STR): string
     {
-        if ($string instanceof Date) {
+        if ($string instanceof DateTime) {
             $string = $string->timestamp();
         }
         if (!is_numeric($string)) {

@@ -6,7 +6,7 @@ namespace Hazaar\Controller\Response;
 
 use Hazaar\Application;
 use Hazaar\Controller\Response\HTTP\OK;
-use Hazaar\Date;
+use Hazaar\DateTime;
 use Hazaar\File as FileObject;
 use Hazaar\File\Manager;
 
@@ -25,7 +25,7 @@ class File extends OK
     ];
     private ?FileObject $file = null;
     private ?Manager $manager;
-    private ?Date $fmtime = null;
+    private ?DateTime $fmtime = null;
 
     /**
      * Byte-Order-Mark.
@@ -177,7 +177,7 @@ class File extends OK
         return false;
     }
 
-    public function setUnmodified(Date $ifModifiedSince): bool
+    public function setUnmodified(DateTime $ifModifiedSince): bool
     {
         if (!$this->file) {
             return false;
@@ -190,10 +190,10 @@ class File extends OK
         return true;
     }
 
-    public function setLastModified(Date|int $fmtime): void
+    public function setLastModified(DateTime|int $fmtime): void
     {
-        if (!$fmtime instanceof Date) {
-            $fmtime = new Date($fmtime, 'UTC');
+        if (!$fmtime instanceof DateTime) {
+            $fmtime = new DateTime($fmtime, 'UTC');
         }
         $this->fmtime = $fmtime;
         $this->setHeader('Last-Modified', gmdate('r', $this->fmtime->sec()));

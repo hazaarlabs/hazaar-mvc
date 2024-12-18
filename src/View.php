@@ -497,10 +497,10 @@ class View implements \ArrayAccess
     /**
      * Returns a date string formatted to the current set date format.
      */
-    public function date(Date|string $date): string
+    public function date(DateTime|string $date): string
     {
-        if (!$date instanceof Date) {
-            $date = new Date($date);
+        if (!$date instanceof DateTime) {
+            $date = new DateTime($date);
         }
 
         return $date->date();
@@ -511,10 +511,10 @@ class View implements \ArrayAccess
      *
      * This is for making it quick and easy to output consistent timestamp strings.
      */
-    public static function timestamp(Date|string $value): string
+    public static function timestamp(DateTime|string $value): string
     {
-        if (!$value instanceof Date) {
-            $value = new Date($value);
+        if (!$value instanceof DateTime) {
+            $value = new DateTime($value);
         }
 
         return $value->timestamp();
@@ -523,15 +523,15 @@ class View implements \ArrayAccess
     /**
      * Return a formatted date as a string.
      *
-     * @param mixed  $value  This can be practically any date type.  Either a \Hazaar\Date object, epoch int, or even a string.
+     * @param mixed  $value  This can be practically any date type.  Either a \Hazaar\DateTime object, epoch int, or even a string.
      * @param string $format Optionally specify the format to display the date.  Otherwise the current default is used.
      *
      * @return string the nicely formatted datetime string
      */
-    public static function datetime(mixed $value, ?string $format = null)
+    public static function datetime(mixed $value, ?string $format = null): string
     {
-        if (!$value instanceof Date) {
-            $value = new Date($value);
+        if (!$value instanceof DateTime) {
+            $value = new DateTime($value);
         }
         if ($format) {
             return $value->format($format);

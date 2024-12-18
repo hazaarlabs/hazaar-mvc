@@ -6,7 +6,7 @@ namespace Hazaar\HTTP;
 
 use Hazaar\Auth\Adapter;
 use Hazaar\Cache;
-use Hazaar\Date;
+use Hazaar\DateTime;
 use Hazaar\HTTP\Exception\RedirectNotAllowed;
 use Hazaar\Loader;
 
@@ -298,9 +298,9 @@ class Client
                 list($arg_k, $arg_v) = explode('=', $part);
                 $arg_k = strtolower(trim($arg_k));
                 if ('expires' === $arg_k) {
-                    $arg_v = new Date($arg_v);
+                    $arg_v = new DateTime($arg_v);
                 } elseif ('max-age' === $arg_k) {
-                    $arg_v = (new Date())->add('PT'.$arg_v.'S');
+                    $arg_v = (new DateTime())->add('PT'.$arg_v.'S');
                 }
                 $data[$arg_k] = $arg_v;
             } else {
@@ -322,7 +322,7 @@ class Client
         } else {
             $cachable = [];
             foreach ($this->cookies as $key => $cookie) {
-                if (($cookie['expires'] instanceof Date
+                if (($cookie['expires'] instanceof DateTime
                     && $cookie['expires']->getTimestamp() > time())
                     || null === $cookie['expires']) {
                     $cachable[$key] = $cookie;

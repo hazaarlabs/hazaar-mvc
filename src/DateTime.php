@@ -16,14 +16,14 @@ if (!ini_get('date.timezone')) {
 }
 
 /**
- * @brief The date/time class
+ * The date/time class.
  *
- * @detail This class can be used to manage date and time values and perform date arithmetic.
+ * This class can be used to manage date and time values and perform date arithmetic.
  *
  * ### Example
  *
  * ```php
- * $date = new Hazaar\Date('next tuesday');
+ * $date = new Hazaar\DateTime('next tuesday');
  * echo $date; //Echo's a timestamp such as '2013-01-15 11:00:00.0'
  * ```
  *
@@ -41,7 +41,7 @@ if (!ini_get('date.timezone')) {
  * as a last ditch effort the Date class will default to UTC. This is because not having an ini setting in
  * date.timzone will cause a PHP runtime error.
  */
-class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
+class DateTime extends \DateTime implements \JsonSerializable, \DateTimeInterface
 {
     public int $usec;
 
@@ -85,7 +85,7 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
                     $ndatetime .= '.'.$datetime['usec'];
                 }
                 $datetime = $ndatetime;
-            } elseif (array_key_exists('usec', $datetime) && array_key_exists('date', $datetime)) { // Array version of Hazaar\Date
+            } elseif (array_key_exists('usec', $datetime) && array_key_exists('date', $datetime)) { // Array version of Hazaar\DateTime
                 if (!$timezone && array_key_exists('timezone', $datetime)) {
                     $timezone = $datetime['timezone'];
                 }
@@ -93,7 +93,7 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
             } else {
                 $datetime = null;
             }
-        } elseif ($datetime instanceof Date) {
+        } elseif ($datetime instanceof DateTime) {
             $datetime = '@'.$datetime->getTimestamp();
         } elseif (is_object($datetime)) {
             $datetime = (string) $datetime;
@@ -151,7 +151,7 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
      */
     public function __toString()
     {
-        return $this->format($this->instanceFormat ? $this->instanceFormat : Date::$defaultFormat);
+        return $this->format($this->instanceFormat ? $this->instanceFormat : self::$defaultFormat);
     }
 
     public function __export(): int
@@ -176,7 +176,7 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
      *                                       of the timezone returned by timezone_identifiers_list(). If it is left null, then
      *                                       the default system timezone is used.
      */
-    public function setTimezone(null|\DateTimeZone|string $timezone = null): Date
+    public function setTimezone(null|\DateTimeZone|string $timezone = null): DateTime
     {
         if (null === $timezone) {
             $timezone = date_default_timezone_get();
@@ -261,7 +261,7 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
      */
     public function date()
     {
-        $format = Date::$dateFormat;
+        $format = self::$dateFormat;
 
         return parent::format($format);
     }
@@ -273,7 +273,7 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
      */
     public function time()
     {
-        $format = Date::$timeFormat;
+        $format = self::$timeFormat;
 
         return parent::format($format);
     }
@@ -287,7 +287,7 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
      */
     public function datetime()
     {
-        $format = Date::$dateFormat.' '.Date::$timeFormat;
+        $format = self::$dateFormat.' '.self::$timeFormat;
 
         return parent::format($format);
     }
@@ -323,7 +323,7 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
      * this functionality has been extended with the $returnSeconds parameter which will instead return an integer
      * value indicating the difference in whole seconds.
      *
-     * @param Date $timestamp The timestamp to compare the current date/time to
+     * @param \DateTimeInterface $timestamp The timestamp to compare the current date/time to
      */
     public function diffSeconds(\DateTimeInterface $timestamp): int
     {
@@ -402,10 +402,10 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
      * See the PHP documentation on how to use the [DateInterval](http://au2.php.net/manual/en/class.dateinterval.php)
      * object.
      *
-     * @param \DateInterval|string $interval   Can be either a \DateInterval object or a string representing an
-     *                                         interval, such as P1H to specify 1 hour
-     * @param bool                 $returnNew Doesn't update the current \Hazaar\Date object and instead returns
-     *                                         a new object with the interval applied
+     * @param \DateInterval|string $interval  Can be either a \DateInterval object or a string representing an
+     *                                        interval, such as P1H to specify 1 hour
+     * @param bool                 $returnNew Doesn't update the current \Hazaar\DateTime object and instead returns
+     *                                        a new object with the interval applied
      */
     public function add(\DateInterval|string $interval, $returnNew = false): static
     {
@@ -413,7 +413,7 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
             $interval = new \DateInterval($interval);
         }
         if ($returnNew) {
-            $new = new Date($this, $this->getTimezone());
+            $new = new DateTime($this, $this->getTimezone());
 
             // @phpstan-ignore-next-line
             return $new->add($interval);
@@ -428,8 +428,8 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
      *
      * See the PHP documentation on how to use the [DateInterval](http://au2.php.net/manual/en/class.dateinterval.php) object.
      *
-     * @param \DateInterval|string $interval   can be either a \DateInterval object or a string representing an interval, such as P1H to specify 1 hour
-     * @param bool                 $returnNew doesn't update the current \Hazaar\Date object and instead returns a new object with the interval applied
+     * @param \DateInterval|string $interval  can be either a \DateInterval object or a string representing an interval, such as P1H to specify 1 hour
+     * @param bool                 $returnNew doesn't update the current \Hazaar\DateTime object and instead returns a new object with the interval applied
      */
     public function sub(\DateInterval|string $interval, bool $returnNew = false): static
     {
@@ -437,7 +437,7 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
             $interval = new \DateInterval($interval);
         }
         if ($returnNew) {
-            $new = new Date($this, $this->getTimezone());
+            $new = new DateTime($this, $this->getTimezone());
 
             // @phpstan-ignore-next-line
             return $new->sub($interval);
@@ -453,8 +453,8 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
     public function compare(mixed $date, bool $includeTime = false): bool
     {
         $format = 'Y-m-d'.($includeTime ? ' H:i:s' : null);
-        if (!$date instanceof Date) {
-            $date = new Date($date, $this->getTimezone());
+        if (!$date instanceof DateTime) {
+            $date = new DateTime($date, $this->getTimezone());
         }
 
         return $this->format($format) == $date->format($format);
@@ -463,23 +463,23 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
     /**
      * Returns the start time of the current date as a Date object.
      */
-    public function start(): Date
+    public function start(): DateTime
     {
-        return new Date($this->format('Y-m-d 00:00:00'), $this->getTimezone());
+        return new DateTime($this->format('Y-m-d 00:00:00'), $this->getTimezone());
     }
 
     /**
      * Returns the end time of the current date as a Date object.
      */
-    public function end(): Date
+    public function end(): DateTime
     {
-        return new Date($this->format('Y-m-d 23:59:59'), $this->getTimezone());
+        return new DateTime($this->format('Y-m-d 23:59:59'), $this->getTimezone());
     }
 
     /**
      * Returns the first day of the current week as a Date object.
      */
-    public function firstOfWeek(): Date
+    public function firstOfWeek(): DateTime
     {
         return $this->sub('P'.($this->format('N') - 1).'D', true)->setTime(0, 0, 0);
     }
@@ -487,7 +487,7 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
     /**
      * Returns the last day of the current week as a Date object.
      */
-    public function lastOfWeek(): Date
+    public function lastOfWeek(): DateTime
     {
         return $this->add('P'.(7 - $this->format('N')).'D', true)->setTime(23, 59, 59);
     }
@@ -495,40 +495,40 @@ class Date extends \DateTime implements \JsonSerializable, \DateTimeInterface
     /**
      * Returns the first day of the current month as a Date object.
      */
-    public function firstOfMonth(): Date
+    public function firstOfMonth(): DateTime
     {
-        return new Date($this->format('Y-m-01 00:00:00'), $this->getTimezone());
+        return new DateTime($this->format('Y-m-01 00:00:00'), $this->getTimezone());
     }
 
     /**
      * Returns the first day of the current year as a Date object.
      */
-    public function firstOfYear(): Date
+    public function firstOfYear(): DateTime
     {
-        return new Date($this->format('Y-01-01 00:00:00'), $this->getTimezone());
+        return new DateTime($this->format('Y-01-01 00:00:00'), $this->getTimezone());
     }
 
     /**
      * Returns the last day of the current year as a Date object.
      */
-    public function lastOfYear(): Date
+    public function lastOfYear(): DateTime
     {
-        return new Date($this->format('Y-12-31 23:59:59'), $this->getTimezone());
+        return new DateTime($this->format('Y-12-31 23:59:59'), $this->getTimezone());
     }
 
     /**
      * Return a fuzzy diff between the current time and the Date value.
      *
-     * @param bool $precise             Boolean indicating if precise mode should be used.  This generally adds the time
-     *                                  to day-based results.
+     * @param bool $precise           Boolean indicating if precise mode should be used.  This generally adds the time
+     *                                to day-based results.
      * @param int  $dateThresholdDays A threshold in days after which the full date will be returned.  Avoids
-     *                                  situations like "3213 days ago" which is silly.
+     *                                situations like "3213 days ago" which is silly.
      *
      * @return string returns a nice fuzzy interval like "yesterday at xx:xx" or "4 days ago"
      */
     public function getFuzzyDiff(bool $precise = false, int $dateThresholdDays = 30): string
     {
-        $diff = $this->diff(new Date(null, $this->getTimezone()));
+        $diff = $this->diff(new DateTime(null, $this->getTimezone()));
         if ($diff->days > $dateThresholdDays) {
             return $this->format('F jS'.($precise ? ' \a\t g:ia' : ''));
         }

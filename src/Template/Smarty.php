@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Template;
 
 use Hazaar\Application;
-use Hazaar\Date;
+use Hazaar\DateTime;
 use Hazaar\File;
 
 /**
@@ -187,7 +187,7 @@ class Smarty
             'hazaar' => ['version' => HAZAAR_VERSION],
             'application' => $app ?? null,
             'smarty' => [
-                'now' => new Date(),
+                'now' => new DateTime(),
                 'const' => get_defined_constants(),
                 'capture' => [],
                 'config' => $app ? $app->config->toArray() : [],
@@ -330,8 +330,8 @@ class Smarty
     {
         switch ($type) {
             case 'date':
-                if (!$value instanceof Date) {
-                    $value = new Date($value);
+                if (!$value instanceof DateTime) {
+                    $value = new DateTime($value);
                 }
                 $value = ($args ? $value->format($args) : (string) $value);
 

@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\DBD;
 
-use Hazaar\Date;
+use Hazaar\DateTime;
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Table;
 use Hazaar\Model;
@@ -511,7 +511,7 @@ abstract class BaseDriver implements Interfaces\Driver
     {
         if (is_array($value) && count($value) > 0) {
             $value = $this->prepareCriteria($value, null, null, null, $key);
-        } elseif ($value instanceof Date) {
+        } elseif ($value instanceof DateTime) {
             $value = $this->quote($value->format('Y-m-d H:i:s'));
         } elseif (is_null($value) || (is_array($value) && 0 === count($value))) {
             $value = 'NULL';
