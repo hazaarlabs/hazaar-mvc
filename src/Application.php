@@ -546,12 +546,17 @@ class Application
             }
             // Finally, write the response to the output buffer.
             $response->writeOutput();
+            $this->timer->stop('exec');
             // Shutdown the controller
             $this->timer->start('shutdown');
             $controller->shutdown($response);
-            $this->timer->stop('exec');
             $code = $response->getStatus();
             ob_end_flush();
+            if (file_exists($completeFile = APPLICATION_PATH.'/complete.php')) {
+                ob_start();
+                include $completeFile;
+                ob_end_clean();
+            }
         } catch (Controller\Exception\HeadersSent $e) {
             dieDieDie('HEADERS SENT');
         } catch (\Throwable $e) {
