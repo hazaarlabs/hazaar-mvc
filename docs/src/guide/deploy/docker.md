@@ -1,3 +1,0 @@
-# Deploying with Docker
-
-Yet to be written...
