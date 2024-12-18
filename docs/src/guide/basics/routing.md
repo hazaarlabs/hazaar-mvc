@@ -283,6 +283,13 @@ foreach($routes as $route) {
     Router::get($route['url'], [$route['controller'], $route['action']]);
 }
 ```
+::: tip
+When loading routes programmatically from a database or other external source, routes are loaded during the bootstrapping process and can impact performance. Consider caching routes to improve performance.
+
+Alternatively for the the best performance, it is possible to use PHP in **worker mode** to pre-load the routes during the bootstrap process.  This can provide the best performance as the routes are pre-loaded and do not need to be reloaded on each request.  FrankenPHP provides this functionality out of the box and is 100% supported by Hazaar MVC.  
+
+See the [FrankenPHP documentation](https://frankenphp.dev/docs/worker/) for more information.
+:::
 
 ### Basic Routes
 
