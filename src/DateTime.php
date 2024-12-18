@@ -151,7 +151,7 @@ class DateTime extends \DateTime implements \JsonSerializable, \DateTimeInterfac
      */
     public function __toString()
     {
-        return $this->format($this->instanceFormat ? $this->instanceFormat : self::$defaultFormat);
+        return $this->format(isset($this->instanceFormat) ? $this->instanceFormat : self::$defaultFormat);
     }
 
     public function __export(): int
@@ -607,6 +607,6 @@ class DateTime extends \DateTime implements \JsonSerializable, \DateTimeInterfac
      */
     public function jsonSerialize(): mixed
     {
-        return $this->instanceFormat ? parent::format($this->instanceFormat) : $this->timestamp();
+        return isset($this->instanceFormat) ? parent::format($this->instanceFormat) : $this->timestamp();
     }
 }
