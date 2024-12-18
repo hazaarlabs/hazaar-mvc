@@ -1,5 +1,0 @@
-# Security
-
-## Introduction
-
-Placeholder...

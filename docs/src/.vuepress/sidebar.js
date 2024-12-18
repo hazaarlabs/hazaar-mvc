@@ -1,103 +1,130 @@
 export default {
-    '/guide/': sidebarGuide(),
-    '/example/': sidebarExample(),
-    '/reference/': sidebarReference(),
+    '/docs/': sidebarGuide(),
+    '/examples/': 'structure',
     '/api/': 'structure'
 }
 
 function sidebarGuide() {
     return [
         {
-            text: 'Introduction',
+            text: 'Getting Started',
             collapsible: true,
             children: [
-                { text: 'What is Hazaar MVC?', link: '/guide/what-is-hazaar-mvc' },
-                { text: 'Getting Started', link: '/guide/getting-started' },
-                { text: 'Manual Setup', link: '/guide/manual-setup' },
-                { text: 'Tooling', link: '/guide/tooling' },
-                { text: 'What is MVC?', link: '/guide/what-is-mvc' },
-                { text: 'Licence', link: '/guide/licence' }
+                { text: 'Installation', link: '/docs/start/installation' },
+                { text: 'Configuration', link: '/docs/start/configuration' },
+                { text: 'Directory Structure', link: '/docs/start/structure' },
+                {
+                    text: 'Deployment',
+                    collapsible: true,
+                    children: [
+                        { text: 'Overview', link: '/docs/deploy/overview' },
+                        { text: 'Apache', link: '/docs/deploy/apache' },
+                        { text: 'Nginx', link: '/docs/deploy/nginx' },
+                        { text: 'Docker', link: '/docs/deploy/docker' },
+                        { text: 'FrankenPHP', link: '/docs/deploy/frankenphp' }
+                    ]
+                }
+            ]
+        },
+        {
+            text: 'Concepts',
+            collapsible: true,
+            children: [
+                { text: 'Request Lifecycle', link: '/docs/concepts/lifecycle' },
+                { text: 'The Application', link: '/docs/concepts/application' },
+                { text: 'Performance', link: '/docs/concepts/performance' },
+                { text: 'What is MVC?', link: '/docs/concepts/what-is-mvc' },
+
             ]
         },
         {
             text: 'The Basics',
             collapsible: true,
             children: [
-                { text: 'Project Layout', link: '/guide/basics/layout' },
-                { text: 'Configuration', link: '/guide/basics/configuration' },
-                { text: 'Bootstrap', link: '/guide/basics/bootstrap' },
-                { text: 'Routing', link: '/guide/basics/routing' },
-                { text: 'Requests', link: '/guide/basics/requests' },
-                { text: 'Controllers', link: '/guide/basics/controllers' },
-                { text: 'Views', link: '/guide/basics/views' },
-                { text: 'Models', link: '/guide/basics/models' },
-                { text: 'Security', link: '/guide/basics/security' },
-                { text: 'Generating URLs', link: '/guide/basics/urls' },
-                { text: 'View Helpers', link: '/guide/basics/view-helpers', },
-                { text: 'Helpers', link: '/guide/basics/helper-functions' }
+                { text: 'Routing', link: '/docs/basics/routing' },
+                { text: 'Requests', link: '/docs/basics/requests' },
+                { text: 'Controllers', link: '/docs/basics/controllers' },
+                { text: 'Models', link: '/docs/basics/models' },
+                {
+                    text: 'Views',
+                    collapsible: true,
+                    children: [
+                        { text: 'Overview', link: '/docs/basics/views/overview' },
+                        { text: 'Helpers', link: '/docs/basics/views/helpers' }
+                    ]
+                },
+                { text: 'Security', link: '/docs/basics/security' },
+                { text: 'Generating URLs', link: '/docs/basics/urls' },
+                { text: 'Helper Functions', link: '/docs/basics/helpers' },
             ]
         },
         {
             text: 'Databases',
             collapsible: true,
             children: [
-                { text: 'Overview', link: '/guide/dbi/overview', },
-                { text: 'Configuration', link: '/guide/dbi/configure', },
-                { text: 'Schema Manager', link: '/guide/dbi/schema-manager', },
-                { text: 'Data Sync', link: '/guide/dbi/data-sync', },
-                { text: 'Encryption', link: '/guide/dbi/encryption', },
-                { text: 'Filesystem', link: '/guide/dbi/filesystem', },
-                { text: 'Parser', link: '/guide/dbi/parser', }
+                { text: 'Overview', link: '/docs/dbi/overview', },
+                { text: 'Configuration', link: '/docs/dbi/configure', },
+                { text: 'Schema Manager', link: '/docs/dbi/schema-manager', },
+                { text: 'Data Sync', link: '/docs/dbi/data-sync', },
+                { text: 'Encryption', link: '/docs/dbi/encryption', },
+                { text: 'Filesystem', link: '/docs/dbi/filesystem', },
+                { text: 'Parser', link: '/docs/dbi/parser', }
             ]
         },
         {
-            text: 'Advanced',
+            text: 'Advanced Stuff',
             collapsible: true,
             children: [
-                { text: 'Caching', link: '/guide/advanced/caching/overview' },
-                { text: 'Working with PDFs', link: '/guide/advanced/pdf' },
-                { text: 'Strict Models', link: '/guide/advanced/strict-models' },
-                { text: 'XML-RPC', link: '/guide/advanced/xml-rpc' }
+                {
+                    text: 'Caching',
+                    collapsible: true,
+                    children: [
+                        { text: 'Overview', link: '/docs/advanced/caching/overview' },
+                        { text: 'Frontends', link: '/docs/advanced/caching/frontends' },
+                        { text: 'Backends', link: '/docs/advanced/caching/backends' }
+                    ]
+                },
+                { text: 'Strict Models', link: '/docs/advanced/strict-models' },
+                { text: 'Generating PDFs', link: '/docs/advanced/pdf' },
+                { text: 'XML-RPC', link: '/docs/advanced/xml-rpc' },
+                { text: 'Streaming', link: '/docs/advanced/streams' },
+                { text: 'Money', link: '/docs/advanced/money' },
+                { text: 'Multiple Class Inheritance', link: '/docs/advanced/multiple-class-inheritance' },
+                { text: 'Logging', link: '/docs/advanced/logging' },
+                { text: 'WebDAV & CalDAV', link: '/docs/advanced/dav' },
+                { text: 'Filesystem Browser', link: '/docs/advanced/filesystem-browser' },
             ]
         },
         {
-            text: 'Warlock',
+            text: 'Components',
             collapsible: true,
             children: [
-                { text: 'Overview', link: '/guide/warlock/overview' },
-                { text: 'Delayed Execution', link: '/guide/warlock/delayed-exec' },
-                { text: 'Realtime Signals', link: '/guide/warlock/realtime-signalling' },
-                { text: 'Services', link: '/guide/warlock/services' },
-                { text: 'Key/Value Storage', link: '/guide/warlock/kvstore' },
-                { text: 'Global Events', link: '/guide/warlock/global-events' }
+                {
+                    text: 'Warlock',
+                    collapsible: true,
+                    children: [
+                        { text: 'Overview', link: '/docs/components/warlock/overview' },
+                        { text: 'Delayed Execution', link: '/docs/components/warlock/delayed-exec' },
+                        { text: 'Realtime Signals', link: '/docs/components/warlock/realtime-signalling' },
+                        { text: 'Services', link: '/docs/components/warlock/services' },
+                        { text: 'Key/Value Storage', link: '/docs/components/warlock/kvstore' },
+                        { text: 'Global Events', link: '/docs/components/warlock/global-events' }
+                    ]
+                }
             ]
         },
         {
-            text: 'Deploy',
+            text: 'Reference',
             collapsible: true,
             children: [
-                { text: 'Overview', link: '/guide/deploy/overview' },
-                { text: 'Apache', link: '/guide/deploy/apache' },
-                { text: 'Nginx', link: '/guide/deploy/nginx' },
-                { text: 'Docker', link: '/guide/deploy/docker' }
+                { text: 'Constants', link: '/docs/reference/constants' },
+                { text: 'CLI Tools', link: '/docs/reference/cli-tools' },
+                { text: 'Error Codes', link: '/docs/reference/error-codes' },
+                { text: 'HTTP Status Codes', link: '/docs/reference/http-status-codes' }
             ]
-        }
+        },
+        { text: "API Documentation", link: "/api/" },
+        { text: 'Licence', link: '/docs/licence' }
     ]
 }
 
-function sidebarExample() {
-    return [
-        { text: 'Your First App', link: '/example/your-first-app' },
-        { text: 'Controller Responses', link: '/example/responses' },
-        { text: 'A useful example', link: '/example/something-useful' }
-    ]
-}
-
-function sidebarReference() {
-    return [
-        { text: 'Constants', link: '/reference/constants' },
-        { text: 'The Hazaar Tool', link: '/reference/hazaar-tool' },
-        { text: 'Error Codes', link: '/reference/error-codes' },
-        { text: 'HTTP Status Codes', link: '/reference/http-status-codes' }
-    ]
-}

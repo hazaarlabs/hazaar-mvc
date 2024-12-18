@@ -7,12 +7,8 @@ bgImageStyle: bg-image-blurred
 heroFullScreen: true
 actions:
   - text: Get Started
-    link: /guide/getting-started
+    link: /docs/start/installation
     type: primary
-
-  - text: Introduction
-    link: /guide/what-is-hazaar-mvc
-    type: default
 
   - text: API Documentation
     link: /api/home
