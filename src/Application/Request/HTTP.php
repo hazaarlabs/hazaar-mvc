@@ -293,8 +293,8 @@ class HTTP extends Request
             getenv('HTTP_FORWARDED_FOR') ?:
             getenv('HTTP_FORWARDED');
         if (!$forwarded_ip) {
-            return getenv('HTTP_CLIENT_IP') ?:
-                getenv('REMOTE_ADDR') ?: null;
+            return isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] :
+                (getenv('REMOTE_ADDR') ?: getenv('HTTP_CLIENT_IP') ?: null);
         }
         $forwarded = explode(',', $forwarded_ip);
 

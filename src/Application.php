@@ -241,6 +241,8 @@ class Application
                 'rewrite' => true,
                 'files' => [
                     'bootstrap' => 'bootstrap.php',
+                    'request' => 'request.php',
+                    'complete' => 'complete.php',
                     'shutdown' => 'shutdown.php',
                     'route' => 'route.php',
                     'media' => 'media.php',
@@ -476,18 +478,20 @@ class Application
             define('RUNTIME_PATH', $this->getRuntimePath(null, true));
             $this->GLOBALS['runtime'] = RUNTIME_PATH;
         }
-        // Check for an application bootstrap file and execute it
-        $bootstrap = APPLICATION_PATH
-            .DIRECTORY_SEPARATOR
-            .ake($this->config, 'app.files.bootstrap', 'bootstrap.php');
-        if (file_exists($bootstrap)) {
-            $bootstrap = include $bootstrap;
-            if (false === $bootstrap) {
-                throw new \Exception('The application failed to start!');
-            }
-        }
         if (false === $this->router->initialise()) {
             throw new RouterInitialisationFailed('Router returned false');
+        }
+        // Check for an application bootstrap file and execute it
+        $bootstrapFile = APPLICATION_PATH
+            .DIRECTORY_SEPARATOR
+            .ake($this->config, 'app.files.bootstrap', 'bootstrap.php');
+        if (file_exists($bootstrapFile)) {
+            $config = $this->config;
+            $router = $this->router;
+            // @phpstan-ignore-next-line
+            (function () use ($bootstrapFile, $config, $router) {
+                include $bootstrapFile;
+            })();
         }
         $this->timer->stop('boot');
 
@@ -523,6 +527,17 @@ class Application
             if ('cli' === php_sapi_name()) {
                 $request->setPath(ake($_SERVER, 'argv[1]'));
             }
+            $requestFile = APPLICATION_PATH
+                .DIRECTORY_SEPARATOR
+                .ake($this->config, 'app.files.request', 'request.php');
+            if (file_exists($requestFile)) {
+                ob_start();
+                // @phpstan-ignore-next-line
+                (function () use ($requestFile, $request) {
+                    include $requestFile;
+                })();
+                ob_end_clean();
+            }
             if (null !== $controller) {
                 $response = $controller->initialize($request);
                 if (null === $response) {
@@ -546,12 +561,24 @@ class Application
             }
             // Finally, write the response to the output buffer.
             $response->writeOutput();
+            $this->timer->stop('exec');
             // Shutdown the controller
             $this->timer->start('shutdown');
             $controller->shutdown($response);
-            $this->timer->stop('exec');
             $code = $response->getStatus();
             ob_end_flush();
+            $completeFile = APPLICATION_PATH
+                .DIRECTORY_SEPARATOR
+                .ake($this->config, 'app.files.complete', 'complete.php');
+            if (file_exists($completeFile)) {
+                ob_start();
+                $timer = $this->timer;
+                // @phpstan-ignore-next-line
+                (function () use ($completeFile, $request, $response, $controller, $timer) {
+                    include $completeFile;
+                })();
+                ob_end_clean();
+            }
         } catch (Controller\Exception\HeadersSent $e) {
             dieDieDie('HEADERS SENT');
         } catch (\Throwable $e) {
