@@ -1,8 +1,8 @@
-Hazaar MVC Unit Testing
+Hazaar Unit Testing
 =======================
 
 The /tests directory contains scripts that are designed to be executed
-by the PHPUnit library to test the Hazaar MVC framework for errors.
+by the PHPUnit library to test the Hazaar framework for errors.
 
 To execute all tests:
 

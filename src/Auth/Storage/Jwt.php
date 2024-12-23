@@ -19,7 +19,7 @@ use Hazaar\Loader;
 /**
  * JWT Authentication Adapter.
  *
- * This class provides a JWT authentication adapter for the Hazaar MVC framework.
+ * This class provides a JWT authentication adapter for the Hazaar framework.
  */
 class JWT implements Storage
 {

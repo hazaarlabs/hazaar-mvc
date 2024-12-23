@@ -1,11 +1,11 @@
 <template>
     <div :class="`vp-doc ${$style.promo}`">
-      <h1 :class="$style.hed">Build fast, scalable real-time applications with Hazaar MVC</h1>
+      <h1 :class="$style.hed">Build fast, scalable real-time applications with Hazaar</h1>
       <div :class="$style.subhed">A modern framework designed to transform web development. </div>
       <div :class="$style.columns">
         <div :class="$style.column">
           <span :class="$style['column-header']">Efficient Code Organization</span>
-          <span :class="$style['column-body']">Hazaar MVC provides a structured and efficient way to organize your code allowing you to achieve clean, modular code that is easier to maintain and collaborate on.</span>
+          <span :class="$style['column-body']">Hazaar provides a structured and efficient way to organize your code allowing you to achieve clean, modular code that is easier to maintain and collaborate on.</span>
         </div>
         <div :class="$style.column">
           <span :class="$style['column-header']">Seamless Database Integration</span>
@@ -16,7 +16,7 @@
           <span :class="$style['column-body']">Build highly interactive applications that deliver real-time updates to users using the built-in WebSocket server that enables seamless, bidirectional communication between the client and the server.</span>
         </div>
       </div>
-      <a :class="$style.button" href="/guide/getting-started">Get started with Hazaar MVC →</a>
+      <a :class="$style.button" href="/guide/getting-started">Get started with Hazaar →</a>
     </div>
   </template>
   

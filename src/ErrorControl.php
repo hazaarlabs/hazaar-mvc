@@ -53,7 +53,7 @@ function errorAndDie(): void
                 ];
             }
             if ('cli' === php_sapi_name()) {
-                $die = "##############################\n# Hazaar MVC - Console Error #\n##############################\n\n";
+                $die = "##############################\n# Hazaar - Console Error #\n##############################\n\n";
                 $die .= "{$error['message']}\n\n";
                 if (!is_array($error['trace'])) {
                     $error['trace'] = debug_backtrace();
@@ -104,7 +104,7 @@ function dieDieDie(string|Throwable $err): void
     } else {
         http_response_code($code);
         $msg = '<h1>'.http_response_text(http_response_code())."</h1><pre>{$errString}</pre>"
-            .'<hr/><i>Hazaar MVC/'.HAZAAR_VERSION
+            .'<hr/><i>Hazaar/'.HAZAAR_VERSION
             .' ('.php_uname('s').')';
         if (array_key_exists('SERVER_NAME', $_SERVER)) {
             $msg .= ' Server at '.$_SERVER['SERVER_NAME'].' Port '.$_SERVER['SERVER_PORT'].'</i>';

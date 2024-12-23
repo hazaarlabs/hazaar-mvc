@@ -5,11 +5,11 @@ This page is tagged as a draft and is a work in progress.  It is not yet complet
 :::
 
 ::: danger
-We are committed to the principle of _release early, release often_. As a result, this documentation is a work in progress. The original **Hazaar MVC** documentation served primarily as an internal reference, containing a collection of assorted information. Consequently, some sections may seem incomplete or unclear without prior knowledge.
+We are committed to the principle of _release early, release often_. As a result, this documentation is a work in progress. The original **Hazaar** documentation served primarily as an internal reference, containing a collection of assorted information. Consequently, some sections may seem incomplete or unclear without prior knowledge.
 
 Additionally, some links may be broken as we continue to update and reorganize the content. 
 
-Rest assured, we are actively working on organizing and rewriting the documentation to better serve your needs. Thank you for your patience as we improve the documentation for the latest version of **Hazaar MVC**.
+Rest assured, we are actively working on organizing and rewriting the documentation to better serve your needs. Thank you for your patience as we improve the documentation for the latest version of **Hazaar**.
 :::
 
 ## Installation
@@ -23,10 +23,10 @@ Rest assured, we are actively working on organizing and rewriting the documentat
 * [devContainers plugin for VSCode](https://code.visualstudio.com/docs/devcontainers/containers).  
 
 ::: tip
-For help with setting up Visual Studio Code for Hazaar MVC development, see [Tooling](/guide/tooling).
+For help with setting up Visual Studio Code for Hazaar development, see [Tooling](/guide/tooling).
 :::
 
-To get started with Hazaar MVC, you need to create an application using composer.  This is a simple process that will create a new directory containing your application and all the required dependencies.
+To get started with Hazaar, you need to create an application using composer.  This is a simple process that will create a new directory containing your application and all the required dependencies.
 
 ### The Example Application
 

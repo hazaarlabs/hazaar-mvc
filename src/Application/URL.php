@@ -23,7 +23,7 @@ use Hazaar\Application;
  *              Parameters are dynamic and depend on what you are trying to generate.
  *
  *              For examples see [Generating URLs](/guide/basics/urls.md) in the
- *              Hazaar MVC support documentation.
+ *              Hazaar support documentation.
  */
 class URL implements \JsonSerializable
 {
@@ -197,7 +197,7 @@ class URL implements \JsonSerializable
      * Write the URL as a string.
      *
      * @param array<mixed> $params override the default params with parameters in this array
-     * @param bool         $encode encode the URL as a Hazaar MVC encoded query string URL
+     * @param bool         $encode encode the URL as a Hazaar encoded query string URL
      *
      * @return string the resulting URL based on the constructor arguments
      */

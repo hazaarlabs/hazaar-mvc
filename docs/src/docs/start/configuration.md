@@ -192,7 +192,7 @@ This timer is used by the application to track performace during various stages 
 created by the application during execution.  Any timers that are prefixed with an underscore (_) are pre-stage timers, meaning they hold the execution
 time between the global start time and the start of the timer stage.
 
-* **global** - The global timer is available in all Hazaar\Timer objects and is the time between when the Hazaar MVC application.php file is loaded (known as
+* **global** - The global timer is available in all Hazaar\Timer objects and is the time between when the Hazaar application.php file is loaded (known as
 the global start time) and now.
 * **init** - The time taken to initialise the Hazaar\Application object.  This includes everything that occurs in the Hazaar\Application constructor, such as
 initialising the class loader, loading the configuration and setting up the application environment.
@@ -356,14 +356,14 @@ For example, to refernce the APPLICATION_ENV constant, your config can contain t
 
 Any globally available constant defined can be referenced using this method.
 
-Some of global constants supplied by Hazaar MVC include:
+Some of global constants supplied by Hazaar include:
 
 * `APPLICATION_ENV` - The current application environment.
 * `APPLICATION_PATH` - The path on disk in which the application directory exists.
 * `APPLICATION_BASE` - The server relative URL path on the web host.
 * `APPLICATION_NAME` - The name of the application.  This is simply the base directory name that the application files are in.
 * `HAZAAR_EXEC_START` - Timestamp when the current request started.
-* `HAZAAR_VERSION` - The current version of Hazaar MVC.
+* `HAZAAR_VERSION` - The current version of Hazaar.
 
 ::: info
 These tags are resolved at runtime, so the constant does not have to exist before the configuration file is loaded.  It only needs to exist at the time the value is referenced.

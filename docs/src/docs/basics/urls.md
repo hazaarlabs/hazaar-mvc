@@ -4,7 +4,7 @@
 This page is tagged as a draft and is a work in progress.  It is not yet complete and may contain errors or inaccuracies.
 :::
 
-There are two methods for generating URLs within Hazaar MVC. One is relative to the controller and the other is relative to the application. Both are methods of the corresponding object.
+There are two methods for generating URLs within Hazaar. One is relative to the controller and the other is relative to the application. Both are methods of the corresponding object.
 
 So from within your controller, to generate an application relative URL you would call:
 

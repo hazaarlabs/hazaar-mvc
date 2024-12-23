@@ -14,7 +14,7 @@ namespace Hazaar\DBI;
 use Hazaar\Model;
 
 if (!defined('HAZAAR_VERSION')) {
-    exit('Hazaar\DBI\Row requires Hazaar MVC to be installed!');
+    exit('Hazaar\DBI\Row requires Hazaar to be installed!');
 }
 final class Row extends Model
 {

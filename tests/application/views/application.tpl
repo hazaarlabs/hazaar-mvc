@@ -43,7 +43,7 @@
                             data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Help</a>
                         <div class="dropdown-menu" aria-labelledby="dropdown01">
                             <h6 class="dropdown-header">Documentation</h6>
-                            <a href="http://mvc.hazaar.io" class="dropdown-item" target="_blank">Hazaar MVC Website</a>
+                            <a href="http://mvc.hazaar.io" class="dropdown-item" target="_blank">Hazaar Website</a>
                             <a href="http://scroly.io/hazaarmvc" class="dropdown-item" target="_blank">Online
                                 Documentation</a>
                             <a href="http://scroly.io/hazaarmvc/latest/api" class="dropdown-item" target="_blank">API

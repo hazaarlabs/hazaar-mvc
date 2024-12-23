@@ -4,7 +4,7 @@
 This page is tagged as a draft and is a work in progress.  It is not yet complete and may contain errors or inaccuracies.
 :::
 
-Streaming data via HTTP is certainly not a new concept, but having it built into the framework definitely makes creating dynamic, fast response websites so much easier.  Normally you mess around with headers and output buffer settings to get this to work.  Then on the client side you have to figure out some way of manging the chunks of data when they are received.  Doing this is in Hazaar MVC is a cinch!
+Streaming data via HTTP is certainly not a new concept, but having it built into the framework definitely makes creating dynamic, fast response websites so much easier.  Normally you mess around with headers and output buffer settings to get this to work.  Then on the client side you have to figure out some way of manging the chunks of data when they are received.  Doing this is in Hazaar is a cinch!
 
 There are two parts to making this work:
 
@@ -15,7 +15,7 @@ That's it!  The framework has taken care of everything else required to make str
 
 ## Client Side
 
-The client side is where most of the magic happens.  Streaming HTTP data itself is not that complicated but by using the Hazaar MVC built-int jQuery plugin called $.stream(), we have provided a robust, reliable method of managing your chunks of data.  Basically when you call $controller->stream() on the server side, it pops out in the $.stream().progress() call back on the client.
+The client side is where most of the magic happens.  Streaming HTTP data itself is not that complicated but by using the Hazaar built-int jQuery plugin called $.stream(), we have provided a robust, reliable method of managing your chunks of data.  Basically when you call $controller->stream() on the server side, it pops out in the $.stream().progress() call back on the client.
 
 ```html
 <script>

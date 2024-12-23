@@ -2,13 +2,13 @@
 
 ## Introduction
 
-The entry point for all requests in Hazaar MVC is the `index.php` file.  This file is responsible for instantiating, bootstrapping
+The entry point for all requests in Hazaar is the `index.php` file.  This file is responsible for instantiating, bootstrapping
 and executing the application.  The request lifecycle is the process that a request goes through from the time it is received by
 the application to the time the response is sent back to the client.
 
 ## Lifecycle Scripts
 
-Hazaar MVC provides a number of lifecycle scripts that are executed at various points in the request lifecycle.  These scripts are executed in the order they are listed below.
+Hazaar provides a number of lifecycle scripts that are executed at various points in the request lifecycle.  These scripts are executed in the order they are listed below.
 
 1. `bootstrap.php` - This script is executed when the application is started and being bootstrapped.
 2. `request.php` - This script is executed after the request has been parsed but before the router is executed.
@@ -17,7 +17,7 @@ Hazaar MVC provides a number of lifecycle scripts that are executed at various p
 
 ## Standard Request Lifecycle
 
-Below is a diagram of the standard request lifecycle in Hazaar MVC.  This diagram shows the various stages of the request lifecycle and demonstrates the linear flow of the request through the application. 
+Below is a diagram of the standard request lifecycle in Hazaar.  This diagram shows the various stages of the request lifecycle and demonstrates the linear flow of the request through the application. 
 
 ```mermaid
 ---

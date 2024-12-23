@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
 
-    <title>Hazaar MVC Info</title>
+    <title>Hazaar Info</title>
 
     <!-- Google font -->
     <link href="https://fonts.googleapis.com/css?family=Montserrat:300,700,900" rel="stylesheet">
@@ -125,7 +125,7 @@
         <div class="errorpage">
             <div class="status status-200">
                 <h1>{$version}</h1>
-                <h2>Hazaar MVC</h2>
+                <h2>Hazaar</h2>
             </div>
             {if $application->config['php']['display_errors'] == true}
                 <div class="errormessage">

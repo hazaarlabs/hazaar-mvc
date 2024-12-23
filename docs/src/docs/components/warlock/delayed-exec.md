@@ -113,7 +113,7 @@ It's not suggested that a developer ever do this, but during testing it is somet
 
 To run Warlock from the command line do the following:
 
-* *cd* into your Hazaar MVC application path
+* *cd* into your Hazaar application path
 * Run the following command:
 ```shell
 # sudo -u www-data php vendor/hazaarlabs/hazaar-warlock/src/Server.php

@@ -13,12 +13,12 @@ It is of course possible to develop applications without using docker.  This is 
 * PHP 7.0 or greater
 * Composer
 * Terminal for accessing the [Hazaar Tool](/reference/hazaar-tool) via it's Command Line Interface (CLI).
-* Text Editor or IDE.  We recommend [Visual Studio Code](https://code.visualstudio.com/) with the devContainers plugin.  For help with setting up Visual Studio Code for Hazaar MVC development, see [Tooling](/guide/tooling).
+* Text Editor or IDE.  We recommend [Visual Studio Code](https://code.visualstudio.com/) with the devContainers plugin.  For help with setting up Visual Studio Code for Hazaar development, see [Tooling](/guide/tooling).
 * A web server.  See [Deploying to a Web Server](/guide/deploy/overview) for more information.  Setting up a development web server is beyond the scope of this documentation but it is similar to setting up a production web server.
 
 ## Let's Go!
 
-To get started with Hazaar MVC, you need to create an application using composer.  This is a simple process that will create a new directory containing your application and all the required dependencies.
+To get started with Hazaar, you need to create an application using composer.  This is a simple process that will create a new directory containing your application and all the required dependencies.
 
 ### The Example Application
 
@@ -38,7 +38,7 @@ This will create a new directory called `myapp` in your current working director
 
 ## File Structure
 
-The file structure of a Hazaar MVC application is fairly straighforward.  There are only a few directories that you need to be aware of and looks something like this:
+The file structure of a Hazaar application is fairly straighforward.  There are only a few directories that you need to be aware of and looks something like this:
 
 ```
 .
@@ -83,4 +83,4 @@ The views directory is where you will put your application views.  These are PHT
 
 ## What's Next?
 
-Now that you have a basic application, you can start developing your application.  See the [Your First Applications](/example/your-first-app) example for more information on how to get started with Hazaar MVC.
+Now that you have a basic application, you can start developing your application.  See the [Your First Applications](/example/your-first-app) example for more information on how to get started with Hazaar.

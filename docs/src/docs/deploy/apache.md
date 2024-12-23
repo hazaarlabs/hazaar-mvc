@@ -4,13 +4,13 @@
 This page is tagged as a draft and is a work in progress.  It is not yet complete and may contain errors or inaccuracies.
 :::
 
-Hazaar MVC is designed to run with Apache 2.x.
+Hazaar is designed to run with Apache 2.x.
 
-It also works with Nginx (see Configure Nginx) and it may work with other web servers but they are not tested and so are outside the scope of this document. If you have success getting Hazaar MVC working on another web server, please feel free to Contact Us.
+It also works with Nginx (see Configure Nginx) and it may work with other web servers but they are not tested and so are outside the scope of this document. If you have success getting Hazaar working on another web server, please feel free to Contact Us.
 
 ## Document Root
 
-If your Hazaar MVC application is going to be the only thing running on your web server, then installation is incredibly easy. Your DocumentRoot is probably already set to/var/wwwso all you need to do is replace the directory /var/www/ with a symlink to your application public directory.
+If your Hazaar application is going to be the only thing running on your web server, then installation is incredibly easy. Your DocumentRoot is probably already set to/var/wwwso all you need to do is replace the directory /var/www/ with a symlink to your application public directory.
 
 You will need to make sure that your default Apache configuration allows for overrides by making sure that
 

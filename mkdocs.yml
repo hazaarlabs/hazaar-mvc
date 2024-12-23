@@ -55,7 +55,7 @@ pages:
     - HTTP Status Codes: reference/http-status-codes.md
   - A Simple Tutorial: 
     - What do you need?: tutorial/what-do-you-need.md
-    - Your First Hazaar MVC App: tutorial/your-first-app.md
+    - Your First Hazaar App: tutorial/your-first-app.md
     - Something Useful: tutorial/something-useful.md
     - Creating Responses: tutorial/responses.md
     - What's Next: tutorial/next.md

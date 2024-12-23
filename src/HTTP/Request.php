@@ -507,7 +507,7 @@ class Request implements \ArrayAccess
      * urls.  However there may occasionally be special circumstances where the encoding may need to be disabled.  Usually this
      * is becuase the encoding is already being done by the calling function/class.
      *
-     * A prime example of this is Hazaar MVC's SharePoint filesystem backend driver.  SharePoint is very finicky about the
+     * A prime example of this is Hazaar's SharePoint filesystem backend driver.  SharePoint is very finicky about the
      * format of the urls and wants some characters left alone (ie: brackets and quotes) as they make up the function/path
      * reference being accessed.  These functions/references will then have their contents only encoded and this is handled
      * by the driver itself so encoding again in the `Request` class will screw things up.

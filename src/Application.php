@@ -68,7 +68,7 @@ putenv('HOME='.APPLICATION_PATH);
 class Application
 {
     /**
-     * The current version of Hazaar MVC.
+     * The current version of Hazaar.
      */
     public const VERSION = '3.0';
 
@@ -116,7 +116,7 @@ class Application
     /**
      * The main application constructor.
      *
-     * The application is basically the center of the Hazaar MVC universe. Everything hangs off of it
+     * The application is basically the center of the Hazaar universe. Everything hangs off of it
      * and controllers are executed within the context of the application. The main constructor prepares
      * the application to begin processing and is the first piece of code executed within the HazaarMVC
      * environment.
@@ -627,7 +627,7 @@ class Application
     }
 
     /**
-     * Return the current Hazaar MVC framework version.
+     * Return the current Hazaar framework version.
      */
     public function getVersion(): string
     {
