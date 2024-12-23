@@ -4,7 +4,7 @@ import theme from './theme.js'
 
 export default defineUserConfig({
     lang: 'en-US',
-    title: 'Hazaar MVC',
+    title: 'Hazaar',
     description: 'A lightweight, high performance MVC framework for PHP',
     head: [
         [

@@ -164,7 +164,7 @@ class Adapter
      * Hazaar DBI Constructor.
      *
      * @param array<mixed>|string $config An array of configuration options to instantiate the DBI Adapter.  This can
-     *                                    also be a Hazaar MVC configuration environment if DBI is being used by an HMVC
+     *                                    also be a Hazaar configuration environment if DBI is being used by an HMVC
      *                                    application.
      */
     public function __construct(null|array|string $config = null)

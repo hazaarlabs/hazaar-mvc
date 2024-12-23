@@ -491,7 +491,7 @@ In this example we create a variable that references the *main_type* table and g
 
 ## Remote Data Sync
 
-It is possible to use a remote data source to sync data from.  This can be either an external database server directly, or another web host that runs Hazaar MVC/DBI and has been configured with a secure data sync key.
+It is possible to use a remote data source to sync data from.  This can be either an external database server directly, or another web host that runs Hazaar/DBI and has been configured with a secure data sync key.
 
 ### Direct Database Sync
 
@@ -522,7 +522,7 @@ To use direct database sync you can either define the DBI configuration in the s
 
 ### DBI Database Sync
 
-It is possible to route the data sync via another Hazaar MVC/DBI application.  This is because it is not always possible or safe to make a database server directly accessible.
+It is possible to route the data sync via another Hazaar/DBI application.  This is because it is not always possible or safe to make a database server directly accessible.
 
 > **Notice**
 > A syncKey **MUST** be configured in the source application DBI configuration for this to be enabled.
@@ -537,7 +537,7 @@ It is possible to route the data sync via another Hazaar MVC/DBI application.  T
     {
         "table": "local_table",                    //Local target table
         "source": {
-            "hostURL": "http://remote.server.com", //Remote host URL.  This MUST be a Hazaar MVC/DBI application base path.
+            "hostURL": "http://remote.server.com", //Remote host URL.  This MUST be a Hazaar/DBI application base path.
             "config": "remote_database",           //A named configuration directive that must exist on both sides and contain a syncKey.
             "table": "remote_table",               //Source table on remote
             "criteria": {                          //Query criteria

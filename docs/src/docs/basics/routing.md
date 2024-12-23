@@ -1,10 +1,10 @@
 # Overview of Routing
 
-Hazaar MVC offers a robust and flexible routing system that enables seamless mapping of URLs to controllers and actions. This feature facilitates the creation of clean, intuitive URLs for your application.
+Hazaar offers a robust and flexible routing system that enables seamless mapping of URLs to controllers and actions. This feature facilitates the creation of clean, intuitive URLs for your application.
 
-Unlike other frameworks, Hazaar MVC provides multiple methods for configuring routes, ensuring flexibility and ease of use. The router can be configured using the `application.json` file, with options to define routes in a PHP file, JSON file, or using attributes in controller classes. Hazaar MVC also provides multiple automatic routing options, including basic and advanced routing methods.
+Unlike other frameworks, Hazaar provides multiple methods for configuring routes, ensuring flexibility and ease of use. The router can be configured using the `application.json` file, with options to define routes in a PHP file, JSON file, or using attributes in controller classes. Hazaar also provides multiple automatic routing options, including basic and advanced routing methods.
 
-By providing a variety of routing options, Hazaar MVC allows developers to choose the most suitable method based on their application requirements and preferences.
+By providing a variety of routing options, Hazaar allows developers to choose the most suitable method based on their application requirements and preferences.
 
 ## Router Modules
 
@@ -286,7 +286,7 @@ foreach($routes as $route) {
 ::: tip
 When loading routes programmatically from a database or other external source, routes are loaded during the bootstrapping process and can impact performance. Consider caching routes to improve performance.
 
-Alternatively for the the best performance, it is possible to use PHP in **worker mode** to pre-load the routes during the bootstrap process.  This can provide the best performance as the routes are pre-loaded and do not need to be reloaded on each request.  FrankenPHP provides this functionality out of the box and is 100% supported by Hazaar MVC.  
+Alternatively for the the best performance, it is possible to use PHP in **worker mode** to pre-load the routes during the bootstrap process.  This can provide the best performance as the routes are pre-loaded and do not need to be reloaded on each request.  FrankenPHP provides this functionality out of the box and is 100% supported by Hazaar.  
 
 See the [FrankenPHP documentation](https://frankenphp.dev/docs/worker/) for more information.
 :::
@@ -295,7 +295,7 @@ See the [FrankenPHP documentation](https://frankenphp.dev/docs/worker/) for more
 
 The basic router uses the request URL to determine the controller and action, along with any arguments. No configuration is required, as controllers and actions are automatically mapped to URLs.
 
-This router is the simplest and fastest way to perform routing in Hazaar MVC as there is minimal processing required.  However, it is limited in it's ability to handle complex routing scenarios such as nested controllers, custom routes, or route aliases.
+This router is the simplest and fastest way to perform routing in Hazaar as there is minimal processing required.  However, it is limited in it's ability to handle complex routing scenarios such as nested controllers, custom routes, or route aliases.
 
 ::: tip
 The basic router is ideal for simple applications with a flat controller structure that require the most efficient routing possible.

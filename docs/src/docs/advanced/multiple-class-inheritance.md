@@ -7,11 +7,11 @@ This page is tagged as a draft and is a work in progress.  It is not yet complet
 Among the current limitations of PHP, one of the most annoying is you can't have a class extend more than one class. To palliate this limitation and to make the framework truly extendible, Hazaar introduces a class called [[Hazaar\Extender]]. The [[Hazaar\Extender]] class is a special class that allows you to extend your classes using multiple child classes.
 
 ::: warning
-Hazaar MVC implements a more tradition form of multiple class inheritance over the PHP 5.4 'Trait' feature which implements similar functionality.
+Hazaar implements a more tradition form of multiple class inheritance over the PHP 5.4 'Trait' feature which implements similar functionality.
 :::
 
 ::: warning
-Traits do not as accurately honour the private/protected/public member declaration but the Hazaar MVCExtender class does. The Extender class also allows you to extend from multiple classes without the need to explicitly define them as traits which makes them much more flexible.
+Traits do not as accurately honour the private/protected/public member declaration but the HazaarExtender class does. The Extender class also allows you to extend from multiple classes without the need to explicitly define them as traits which makes them much more flexible.
 :::
 
 ## Understanding Multiple Inheritance

@@ -16,9 +16,9 @@ actions:
 
 features:
   - title: High Performance
-    details: Hazaar MVC is designed to be fast and efficient by using streamlined code.
+    details: Hazaar is designed to be fast and efficient by using streamlined code.
   - title: Database ORM
-    details: Hazaar MVC provides a simple and easy to use database ORM that supports multiple database types.
+    details: Hazaar provides a simple and easy to use database ORM that supports multiple database types.
   - title: Realtime
-    details: Hazaar MVC provides a realtime WebSockets server that allows you to push data to the browser in realtime.
+    details: Hazaar provides a realtime WebSockets server that allows you to push data to the browser in realtime.
 ---

@@ -42,15 +42,15 @@ The View provides different ways to present the data received from the model. Th
 
 A web application is usually composed of a set of controllers, models and views. The controller may be structured as a main controller that receives all requests and calls specific controllers that handles actions for each case.
 
-# What is Hazaar MVC?
+# What is Hazaar?
 
-Hazaar MVC is a lightweight Model-View-Controller (MVC) framework written in PHP.  It was started in 2012 by Jamie Carl. It aims to provide a simple and efficient way to develop web applications using the [MVC architectural pattern](/guide/what-is-mvc). The framework focuses on simplicity, performance, and ease of use.
+Hazaar is a lightweight Model-View-Controller (MVC) framework written in PHP.  It was started in 2012 by Jamie Carl. It aims to provide a simple and efficient way to develop web applications using the [MVC architectural pattern](/guide/what-is-mvc). The framework focuses on simplicity, performance, and ease of use.
 
-Hazaar MVC follows the traditional MVC principles, where the Model represents the data and business logic, the View handles the presentation and user interface, and the Controller manages the communication between the Model and the View.  To get a better understanding of MVC, see: [What is MVC?](/guide/what-is-mvc).
+Hazaar follows the traditional MVC principles, where the Model represents the data and business logic, the View handles the presentation and user interface, and the Controller manages the communication between the Model and the View.  To get a better understanding of MVC, see: [What is MVC?](/guide/what-is-mvc).
 
 ```mermaid
 ---
-title: Hazaar MVC Architecture
+title: Hazaar Architecture
 ---
 flowchart TB
     User-->Routing
@@ -63,7 +63,7 @@ flowchart TB
     Model<-->Database
 ```
 
-Hazaar MVC also includes a number of other features that make it easy to build web applications.  These include:
+Hazaar also includes a number of other features that make it easy to build web applications.  These include:
 
 * Support for RESTful APIs
 * Built-in WebSockets server
@@ -71,4 +71,4 @@ Hazaar MVC also includes a number of other features that make it easy to build w
 
 ## Philisosphy
 
-Hazaar MVC is designed to be simple and easy to use.  It is not designed to be a full featured framework like Laravel or Symfony.  It is designed to be a simple and lightweight framework that can be used to build simple web applications quickly and easily.
+Hazaar is designed to be simple and easy to use.  It is not designed to be a full featured framework like Laravel or Symfony.  It is designed to be a simple and lightweight framework that can be used to build simple web applications quickly and easily.

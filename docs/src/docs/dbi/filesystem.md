@@ -4,7 +4,7 @@
 This page is tagged as a draft and is a work in progress.  It is not yet complete and may contain errors or inaccuracies.
 :::
 
-The Hazaar DBI library provides a DBI filesystem backend for Hazaar MVC's filesystem abstraction.  This backend can be used to
+The Hazaar DBI library provides a DBI filesystem backend for Hazaar's filesystem abstraction.  This backend can be used to
 store all files and directories in any relational database supported by PDO and the Hazaar DBI library.
 
 ## Preparing the database
@@ -61,7 +61,7 @@ CREATE INDEX hz_file_parent_idx
 
 ## Media Configuration
 
-The Hazaar MVC *media.json* configuration file is used to configure media sources and needs to be configured with a new media source
+The Hazaar *media.json* configuration file is used to configure media sources and needs to be configured with a new media source
 that uses the `dbi` driver.
 
 ```json

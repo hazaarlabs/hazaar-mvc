@@ -35,7 +35,7 @@ class GetPDFController extends Hazaar\Controller\Action {
 
 ## Rendering from a template
 
-Now that you have gotten this far, you are bored with generating static PDFs and want to easily embed some data into your documents.  This is actually pretty easy using Hazaar MVCs built in SMARTy template engine.
+Now that you have gotten this far, you are bored with generating static PDFs and want to easily embed some data into your documents.  This is actually pretty easy using Hazaars built in SMARTy template engine.
 
 Here, we just load the template from a view file into a new SMARTy template object and render the output.
 

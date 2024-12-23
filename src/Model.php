@@ -12,7 +12,7 @@ use Hazaar\Model\Interfaces\AttributeRule;
 
 /**
  * This is an abstract class that implements the \jsonSerializable interface.
- * It serves as a base class for models in the Hazaar MVC framework.
+ * It serves as a base class for models in the Hazaar framework.
  *
  * @implements \Iterator<string,mixed>
  */

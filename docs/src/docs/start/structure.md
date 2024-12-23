@@ -4,7 +4,7 @@
 This page is tagged as a draft and is a work in progress.  It is not yet complete and may contain errors or inaccuracies.
 :::
 
-Before you start developing your first application, you need to understand the layout of the Hazaar MVC application directory. You will have a project root, which will usually be the name of your project (if you used the The Config Tool to create it. Inside that directory you will have application, library and public directories which define the core structure of a HazaarMVC application.
+Before you start developing your first application, you need to understand the layout of the Hazaar application directory. You will have a project root, which will usually be the name of your project (if you used the The Config Tool to create it. Inside that directory you will have application, library and public directories which define the core structure of a HazaarMVC application.
 
 HazaarMVC has a project layout like most other MVC frameworks. The project root must look like this to work correctly:
 

@@ -6,7 +6,7 @@ This page is tagged as a draft and is a work in progress.  It is not yet complet
 
 View helpers provide a way to programatically generate views and layouts using PHP.  A helper can be created that provides one or more functions that returns a displayable object such as a `Hazaar\Html\Div`, `Hazaar\Html\Span` or any other object derrived from the `Hazaar\Html\Element` class.
 
-There are a number of view helpers built into Hazaar MVC, such as:
+There are a number of view helpers built into Hazaar, such as:
 
 * `html` for easily generating HTML objects programatically, simplifying the interaction between PHP code, variables and the final HTML output.
 * `jquery` which easily configures jQuery for use in a view by automatically linking the JavaScript library required and adding custom JavaScript code.

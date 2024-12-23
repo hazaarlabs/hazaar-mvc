@@ -4,12 +4,12 @@ Getting up and running with HazaarMVC is really easy and is done in only a few b
 steps, depending on the operating system you are working with.  I suggest Ubuntu Linux
 as Hazaar has been developed on Ubuntu so it will work with it.  I have made some effort
 to ensure that Hazaar is cross-platform compatible, particularly with Windows support, and
-I am now developing under Windows daily so Hazaar MVC has become quite stable under Windows.
+I am now developing under Windows daily so Hazaar has become quite stable under Windows.
 
 If you hit any problems, please feel free to create a support issue so they can be fixed
 at https://git.hazaar.io/hazaar/hazaar-mvc/issues.
 
-Hazaar MVC is installed with [Composer](http://getcomposer.org) and available via
+Hazaar is installed with [Composer](http://getcomposer.org) and available via
 [Packagist](http://packagist.org). 
 
 ## Installing with Composer
@@ -62,7 +62,7 @@ This means Composer was succesfully installed on your system.
 
 ## Install the Example Application
 
-Because Hazaar MVC is a library, you need to create a project that depends on it for composer
+Because Hazaar is a library, you need to create a project that depends on it for composer
 to download it.  The easiest way to do this is to install the example skeleton application.  This will
 also give you a starting point for development.
 
@@ -72,7 +72,7 @@ You can do this with one command using composer:
 $ composer create-project hazaarlabs/example path/to/install
 ```
 
-That's it.  You should now have the example application and Hazaar MVC downloaded and ready
+That's it.  You should now have the example application and Hazaar downloaded and ready
 to go. Now all you need to do is set up your web server and you're good to go.  
 
 You can now have a read of our [Online Documentation](https://scroly.io/hazaarmvc) for tips
@@ -94,10 +94,10 @@ http://localhost:8080.
 
 # Getting Started with Development
 
-A great place to get up to speed quickly on Hazaar MVC is by reading the
-[Hazaar MVC Getting Started Guide](https://scroly.io/hazaarmvc/latest/getting_started/requirements.md).
+A great place to get up to speed quickly on Hazaar is by reading the
+[Hazaar Getting Started Guide](https://scroly.io/hazaarmvc/latest/getting_started/requirements.md).
 
-The QuickStart covers some of the most commonly used components of Hazaar MVC.
+The QuickStart covers some of the most commonly used components of Hazaar.
 
 # Contributing
 

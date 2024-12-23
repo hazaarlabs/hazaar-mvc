@@ -1,16 +1,16 @@
-# Hazaar MVC Constants
+# Hazaar Constants
 
 ::: danger
 This page is tagged as a draft and is a work in progress.  It is not yet complete and may contain errors or inaccuracies.
 :::
 
-Hazaar MVC provides a number of global constants that can be used in applications.
+Hazaar provides a number of global constants that can be used in applications.
 
 ## General
 
 ### ROOT_PATH
 
-Constant containing the absolute filesystem path that contains the entire Hazaar MVC project.
+Constant containing the absolute filesystem path that contains the entire Hazaar project.
 
 ### PUBLIC_PATH
 

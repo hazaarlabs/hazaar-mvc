@@ -15,7 +15,7 @@ use Hazaar\Application\URL;
 use Hazaar\View\Helper;
 
 /**
- * The View class is used to render views in the Hazaar MVC framework.
+ * The View class is used to render views in the Hazaar framework.
  *
  * @implements \ArrayAccess<string, mixed>
  */
