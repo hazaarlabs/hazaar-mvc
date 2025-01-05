@@ -210,7 +210,7 @@ class URL implements \JsonSerializable
         if (URL::$rewriteURL && true !== $encode) {
             $path .= $this->path;
         } elseif ($this->path) {
-            $params[Request\HTTP::$pathParam] = $this->path;
+            $params[Request::$pathParam] = $this->path;
         }
         if (count($this->params) > 0) {
             $params = array_merge($this->params, $params);
@@ -232,7 +232,7 @@ class URL implements \JsonSerializable
         if (count($params) > 0) {
             $params = http_build_query($params);
             if ($encode) {
-                $params = Request\HTTP::$queryParam.'='.base64_encode($params);
+                $params = Request::$queryParam.'='.base64_encode($params);
             }
             $url .= '?'.$params;
         }

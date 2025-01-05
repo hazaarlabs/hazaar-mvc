@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Auth\Storage;
 
-use Hazaar\Application\Request\HTTP;
+use Hazaar\Application\Request;
 use Hazaar\Auth\Adapter;
 use Hazaar\Auth\Interfaces\Storage;
 use Hazaar\Auth\Storage\Exception\SessionStartFailed;
@@ -86,7 +86,7 @@ class Session implements Storage
         if (false === isset($this->session[$this->sessionKey])
             || 0 === count($this->session[$this->sessionKey])
             || ($_SERVER['HTTP_USER_AGENT'] ?? null) !== $this->get('user-agent')
-            || HTTP::getRemoteAddr() !== $this->get('ip-address')) {
+            || Request::getRemoteAddr() !== $this->get('ip-address')) {
             return true;
         }
 
@@ -106,7 +106,7 @@ class Session implements Storage
         }
         if (isset($_SERVER['HTTP_USER_AGENT'])) {
             $this->session[$this->sessionKey]['data']['user-agent'] = $_SERVER['HTTP_USER_AGENT'];
-            $this->session[$this->sessionKey]['data']['ip-address'] = HTTP::getRemoteAddr();
+            $this->session[$this->sessionKey]['data']['ip-address'] = Request::getRemoteAddr();
         }
     }
 

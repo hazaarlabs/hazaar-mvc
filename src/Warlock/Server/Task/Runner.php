@@ -12,16 +12,16 @@ class Runner extends Task
 {
     public string $type = 'runner';
 
-    protected ?Cron $when = null;
-    protected int $timeout = 60;
-    protected mixed $exec;
-    protected bool $event = false;
-    protected string $info;
+    public ?Cron $when = null;
+    public int $timeout = 60;
+    public mixed $exec;
+    public bool $event = false;
+    public string $info;
 
     /**
      * @var array<mixed>
      */
-    protected array $params = [];
+    public array $params = [];
 
     public function construct(array &$data): void
     {

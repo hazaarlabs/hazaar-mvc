@@ -256,9 +256,6 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
      */
     public function authenticateRequest(Request $request): bool
     {
-        if (!$request instanceof HTTP) {
-            return false;
-        }
         $auth = $request->getHeader('Authorization');
         if (!$auth) {
             return false;

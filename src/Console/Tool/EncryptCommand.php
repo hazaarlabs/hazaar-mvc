@@ -1,0 +1,34 @@
+<?php
+
+namespace Hazaar\Console\Tool;
+
+use Hazaar\Console\Command;
+use Hazaar\Console\Input;
+use Hazaar\Console\Output;
+use Hazaar\File;
+
+class EncryptCommand extends Command
+{
+    protected function configure(): void
+    {
+        $this->setName('encrypt')
+            ->setDescription('Encrypt a file using the Hazaar encryption system')
+            ->addArgument('file', 'The file to encrypt')
+        ;
+    }
+
+    protected function execute(Input $input, Output $output): int
+    {
+        $targetFile = $input->getArgument('file');
+        $file = new File($targetFile);
+        if ($file->exists()) {
+            if ($file->isEncrypted()) {
+                throw new \Exception('File is already encrypted', 1);
+            }
+            $file->encrypt();
+            $output->write('Encrypted '.$targetFile.PHP_EOL);
+        }
+
+        return 0;
+    }
+}

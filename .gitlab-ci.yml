@@ -59,7 +59,7 @@ variables:
     - kubectl apply -f docs/deploy/k8s/hazaar-docs-$CI_ENVIRONMENT_NAME.yaml
     - kubectl set image $K8_DEPLOYMENT_NAME $K8_CONTAINER_NAME=$CI_REGISTRY_IMAGE:docs-$APP_VERSION
 
-Build Test Image:
+Build Unit Test Image:
   stage: build_test
   image: docker:latest
   services:
@@ -117,20 +117,6 @@ Unit Testing:
     when: always
     reports:
       junit: phpunit-test-results.xml
-
-Build Testing Documentation:
-  extends: .Build Docs
-  environment: testing
-  rules:
-    - if: $CI_MERGE_REQUEST_ID
-
-Build Testing Image:
-  extends: .Build Image
-  environment: testing
-  needs: 
-    - Build Testing Documentation
-  rules:
-    - if: $CI_MERGE_REQUEST_ID
 
 Build Production Documentation:
   extends: .Build Docs

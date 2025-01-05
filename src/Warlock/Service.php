@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Hazaar\Warlock;
 
 use Hazaar\Application;
-use Hazaar\Application\Request\HTTP;
-use Hazaar\Application\Request\Loader;
 use Hazaar\Cron;
 use Hazaar\DateTime;
 use Hazaar\Warlock\Connection\Pipe;
@@ -121,11 +119,8 @@ abstract class Service extends Process
             $this->__log = fopen($this->__logFile, 'a');
         }
         $this->log(W_LOCAL, "Service '{$this->name}' starting up");
-        $request = Loader::load();
-        if (!$request instanceof HTTP) {
-            $this->setErrorHandler('__errorHandler');
-            $this->setExceptionHandler('__exceptionHandler');
-        }
+        $this->setErrorHandler('__errorHandler');
+        $this->setExceptionHandler('__exceptionHandler');
         if ($tz = $this->config->get('timezone')) {
             date_default_timezone_set($tz);
         }

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hazaar\Controller;
 
 use Hazaar\Application\Request;
-use Hazaar\Application\Request\HTTP;
 use Hazaar\Controller\Response\HTTP\OK;
 use Hazaar\Controller\Response\XML;
 use Hazaar\File;
@@ -15,9 +14,6 @@ use Hazaar\XML\Element;
 
 abstract class WebDAV extends Basic
 {
-    /**
-     * @var HTTP
-     */
     protected Request $request;
     protected Manager $manager;
     private string $__propset = '<http://apache.org/dav/propset/fs/1>';

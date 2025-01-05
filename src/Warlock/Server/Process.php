@@ -16,6 +16,8 @@ abstract class Process extends Model
     public Struct\Application $application;
     protected int $pid = -1;
     protected int $exitcode = -1;
+    public string $id;
+    public ?string $tag = null;
 
     /**
      * @var array<resource>
@@ -26,7 +28,7 @@ abstract class Process extends Model
     /**
      * @var array<string,mixed>
      */
-    protected array $procStatus = [
+    public array $procStatus = [
         'pid' => -1,
         'running' => false,
     ];
@@ -34,7 +36,7 @@ abstract class Process extends Model
     /**
      * @var ?resource
      */
-    private mixed $process = null;
+    protected mixed $process = null;
 
     /**
      * @var array<string>
@@ -149,8 +151,8 @@ abstract class Process extends Model
         ];
         $config = Master::$config;
         $env = array_filter(array_merge($_SERVER, [
-            'APPLICATION_PATH' => $this->application->path,
-            'APPLICATION_ENV' => $this->application->env,
+            'APPLICATION_PATH' => $this->application['path'],
+            'APPLICATION_ENV' => $this->application['env'],
             'HAZAAR_SID' => $config['sys']['id'],
             'HAZAAR_ADMIN_KEY' => $config['admin']['key'],
             'USERNAME' => (array_key_exists('USERNAME', $_SERVER) ? $_SERVER['USERNAME'] : null),

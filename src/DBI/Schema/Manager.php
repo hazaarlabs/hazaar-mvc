@@ -83,7 +83,7 @@ class Manager
             $this->setLogCallback($logCallback);
         }
         $this->dbiConfig = $dbiConfig;
-        $managerConfig = array_merge($this->dbiConfig, $this->dbiConfig['manager']);
+        $managerConfig = array_merge($this->dbiConfig, $this->dbiConfig['manager'] ?? []);
         $this->ignoreTables[] = self::$schemaInfoTable;
 
         try {

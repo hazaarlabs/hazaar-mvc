@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Hazaar\Application;
-use Hazaar\Application\Request\Loader;
+use Hazaar\Application\Request;
 use Hazaar\Controller\Dump;
 
 $dumpLog = [];
@@ -1060,7 +1060,7 @@ function dump(mixed ...$data): void
             if (is_array($dumpLog)) {
                 $controller->addLogEntries($dumpLog);
             }
-            $request = Loader::load();
+            $request = new Request();
             $controller->initialize($request);
             $controller->setCaller($caller);
             $response = $controller->run();
@@ -1077,17 +1077,18 @@ function dump(mixed ...$data): void
             $out .= "Exec time: {$exec_time}\n";
         }
         $out .= 'Endtime: '.date('c')."\n\n";
-        $out .= print_r($data, true);
+        foreach ($data as $item) {
+            $out .= print_r($item, true)."\n\n";
+        }
         if (is_array($dumpLog) && count($dumpLog) > 0) {
             $out .= "\n\nLOG\n\n";
             $out .= print_r($dumpLog, true);
         }
-        $out .= "\n\nBACKTRACE\n\n";
+        $out .= "BACKTRACE\n\n";
         $e = new Exception('Backtrace');
-        $out .= print_r(str_replace('/path/to/code/', '', $e->getTraceAsString()), true);
+        $out .= print_r(str_replace('/path/to/code/', '', $e->getTraceAsString()), true)."\n";
 
         echo $out;
-        ob_flush();
     }
 
     exit;
