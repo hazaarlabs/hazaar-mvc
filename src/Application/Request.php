@@ -60,9 +60,15 @@ class Request implements Interfaces\Request
      */
     private array $headers = [];
 
-    public function __construct(mixed ...$args)
+    /**
+     * @detail      The HTTP request object constructor.
+     *
+     * @param array<mixed> $server  Optional reference to $_SERVER
+     * @param array<mixed> $request Optional reference to $_REQUEST
+     */
+    public function __construct(?array $request = null, ?array $server = null, bool $processRequestBody = false)
     {
-        $this->path = $this->init(...$args);
+        $this->path = $this->init($request, $server, $processRequestBody);
     }
 
     /**
@@ -100,8 +106,10 @@ class Request implements Interfaces\Request
      * @param array<mixed> $server  Optional reference to $_SERVER
      * @param array<mixed> $request Optional reference to $_REQUEST
      */
-    public function init(?array $server, ?array $request = null, bool $processRequestBody = false): string
+    public function init(?array $request = null, ?array $server = null, bool $processRequestBody = false): string
     {
+        $request = $request ?: $_REQUEST;
+        $server = $server ?: $_SERVER;
         $this->method = ake($server, 'REQUEST_METHOD', 'GET');
         if (function_exists('getallheaders')) {
             $this->headers = getallheaders();
@@ -148,7 +156,7 @@ class Request implements Interfaces\Request
                     break;
             }
         }
-        if (is_array($request) && count($request) > 0) {
+        if (count($request) > 0) {
             $this->setParams($request);
         }
         if (array_key_exists(self::$queryParam, $this->params)) {

@@ -523,7 +523,7 @@ class Application
             $this->timer->start('exec');
             ob_start();
             // Create the request object
-            $request = new Request($_SERVER, $_REQUEST);
+            $request = new Request($_REQUEST, $_SERVER);
             $requestFile = APPLICATION_PATH
                 .DIRECTORY_SEPARATOR
                 .ake($this->config, 'app.files.request', 'request.php');
