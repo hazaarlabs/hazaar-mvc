@@ -251,6 +251,9 @@ class Loader
     public static function getFilePath(string $type, ?string $search_file = null, ?string $base_path = null, bool $case_insensitive = false): ?string
     {
         if (!$base_path) {
+            if (!defined('APPLICATION_PATH')) {
+                define('APPLICATION_PATH', getApplicationPath());
+            }
             $base_path = APPLICATION_PATH;
         }
         $loader = Loader::getInstance();
@@ -368,5 +371,5 @@ function getApplicationPath(?string $search_path = null): false|string
         }
     } while ($search_path = dirname($search_path));
 
-    exit('Unable to determine application path: search_path='.$search_path);
+    return false;
 }

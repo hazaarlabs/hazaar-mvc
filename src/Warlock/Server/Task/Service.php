@@ -10,20 +10,18 @@ use Hazaar\Warlock\Server\Task;
 class Service extends Task
 {
     public string $type = 'service';
-    protected bool $enabled = false;
+    public string $name = 'Unnamed Service';
 
-    protected string $name = 'Unnamed Service';
-
-    // public bool $enabled = true;
-    // public bool $dynamic = false;
-    // public bool $detach = false;
+    public bool $enabled = false;
+    public bool $dynamic = false;
+    public bool $detach = false;
 
     /**
      * @var array<mixed>
      */
-    protected array $info;
-    protected int $delay = 0;
-    protected int $loglevel = W_WARN;
+    public array $info;
+    public int $delay = 0;
+    public int $loglevel = W_WARN;
 
     public function construct(array &$data): void
     {

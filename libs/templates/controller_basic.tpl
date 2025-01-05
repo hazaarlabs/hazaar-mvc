@@ -17,3 +17,4 @@ class {$controllerName} extends Basic
         $this->message = 'Hello World!';
     }
 }
+

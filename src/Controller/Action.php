@@ -54,8 +54,7 @@ abstract class Action extends Basic
     public function initialize(Request $request): ?Response
     {
         $app = Application::getInstance();
-        if ($request instanceof HTTP
-            && false === $request->isXmlHttpRequest()
+        if (false === $request->isXmlHttpRequest()
             && null !== $app
             && isset($app->config['app']['layout'])) {
             $this->view->layout($app->config['app']['layout']);

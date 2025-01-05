@@ -15,7 +15,7 @@ declare(strict_types=1);
 namespace Hazaar\Auth\Storage;
 
 use Hazaar\Application;
-use Hazaar\Application\Request\HTTP;
+use Hazaar\Application\Request;
 use Hazaar\Auth\Adapter;
 use Hazaar\Auth\Interfaces\Storage;
 use Hazaar\Cache as HazaarCache;
@@ -97,7 +97,7 @@ class Cache implements Storage
             || false === isset($this->session)
             || 0 === $this->session->count()
             || ($_SERVER['HTTP_USER_AGENT'] ?? null) !== $this->get('user-agent')
-            || HTTP::getRemoteAddr() !== $this->get('ip-address')) {
+            || Request::getRemoteAddr() !== $this->get('ip-address')) {
             return true;
         }
 
@@ -123,7 +123,7 @@ class Cache implements Storage
         }
         if (isset($_SERVER['HTTP_USER_AGENT'])) {
             $data['data']['user-agent'] = $_SERVER['HTTP_USER_AGENT'];
-            $data['data']['ip-address'] = HTTP::getRemoteAddr();
+            $data['data']['ip-address'] = Request::getRemoteAddr();
         }
 
         $this->session->populate($data);

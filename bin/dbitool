@@ -1,4 +1,32 @@
-#!/bin/sh
-BASEDIR="$(dirname "$(realpath "$0")")/../"
-export CLI_COMMAND=$0
-php $BASEDIR/src/DBI/CLI.php $@
+#!/usr/bin/env php
+<?php
+
+use Hazaar\Console\Application;
+use Hazaar\Console\DBI\CheckpointCommand;
+use Hazaar\Console\DBI\CurrentCommand;
+use Hazaar\Console\DBI\ListCommand;
+use Hazaar\Console\DBI\MigrateCommand;
+use Hazaar\Console\DBI\ReplayCommand;
+use Hazaar\Console\DBI\RollbackCommand;
+use Hazaar\Console\DBI\SchemaCommand;
+use Hazaar\Console\DBI\SnapshotCommand;
+use Hazaar\Console\DBI\SyncCommand;
+
+if (file_exists(__DIR__.'/../../../autoload.php')) {
+    require __DIR__.'/../../../autoload.php';
+} else {
+    require __DIR__.'/../vendor/autoload.php';
+}
+
+$app = new Application('Hazaar DBI Tool', '1.0.0');
+$app->add(new ListCommand());
+$app->add(new CurrentCommand());
+$app->add(new MigrateCommand());
+$app->add(new ReplayCommand());
+$app->add(new RollbackCommand());
+$app->add(new SnapshotCommand());
+$app->add(new SyncCommand());
+$app->add(new SchemaCommand());
+$app->add(new CheckpointCommand());
+
+$app->run();

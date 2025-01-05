@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file        Hazaar/DBI/DBI.php
  *
@@ -261,14 +262,9 @@ class Adapter
      * This function will return the default configuration for the DBI Adapter.  If the configuration has not been
      * loaded yet, it will be loaded from the configuration file.
      */
-    public static function getDefaultConfig(?string &$configName = null): Config|false
+    public static function getDefaultConfig(?string $configName = null): Config|false
     {
-        if (!defined('HAZAAR_VERSION')) {
-            return false;
-        }
-        if (!$configName) {
-            $configName = APPLICATION_ENV;
-        }
+        $configName ??= APPLICATION_ENV;
         if (!array_key_exists($configName, Adapter::$loadedConfigs)) {
             self::$defaultConfig['timezone'] = date_default_timezone_get();
             if (!Config::$overridePaths) {

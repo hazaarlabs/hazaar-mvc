@@ -523,10 +523,7 @@ class Application
             $this->timer->start('exec');
             ob_start();
             // Create the request object
-            $request = Request\Loader::load();
-            if ('cli' === php_sapi_name()) {
-                $request->setPath(ake($_SERVER, 'argv[1]'));
-            }
+            $request = new Request($_SERVER, $_REQUEST);
             $requestFile = APPLICATION_PATH
                 .DIRECTORY_SEPARATOR
                 .ake($this->config, 'app.files.request', 'request.php');

@@ -5,7 +5,7 @@ namespace Hazaar\Tests;
 use Application\Controller\Index;
 use Application\Controller\Test;
 use Hazaar\Application\Config;
-use Hazaar\Application\Request\HTTP;
+use Hazaar\Application\Request;
 use Hazaar\Application\Route;
 use Hazaar\Application\Router;
 use Hazaar\Controller\Exception\ActionNotFound;
@@ -34,7 +34,7 @@ class RouterTest extends TestCase
 
     public function testBasicRouterWithBasicController(): void
     {
-        $request = new HTTP([
+        $request = new Request([
             'REQUEST_METHOD' => 'GET',
             'REQUEST_URI' => '/test/index/arg1/arg2/arg3',
         ]);
@@ -51,7 +51,7 @@ class RouterTest extends TestCase
 
     public function testBasicRouterWithActionController(): void
     {
-        $request = new HTTP([
+        $request = new Request([
             'REQUEST_METHOD' => 'GET',
             'REQUEST_URI' => '/',
         ]);
@@ -66,7 +66,7 @@ class RouterTest extends TestCase
 
     public function testBasicRouter404Controller(): void
     {
-        $request = new HTTP([
+        $request = new Request([
             'REQUEST_METHOD' => 'GET',
             'REQUEST_URI' => '/bad/missing',
         ]);
@@ -78,7 +78,7 @@ class RouterTest extends TestCase
 
     public function testBasicRouter404Action(): void
     {
-        $request = new HTTP([
+        $request = new Request([
             'REQUEST_METHOD' => 'GET',
             'REQUEST_URI' => '/index/missing',
         ]);
@@ -94,7 +94,7 @@ class RouterTest extends TestCase
 
     public function testAdvancedRouter(): void
     {
-        $request = new HTTP([
+        $request = new Request([
             'REQUEST_METHOD' => 'GET',
             'REQUEST_URI' => '/test/foo/word',
         ]);
@@ -111,7 +111,7 @@ class RouterTest extends TestCase
 
     public function testCustomRouter(): void
     {
-        $request = new HTTP([
+        $request = new Request([
             'REQUEST_METHOD' => 'GET',
             'REQUEST_URI' => '/test/hellothere',
         ]);

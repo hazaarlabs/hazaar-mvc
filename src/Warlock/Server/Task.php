@@ -19,24 +19,21 @@ define('TASK_WAIT', 9);
 abstract class Task extends Process implements \Hazaar\Warlock\Interfaces\Task
 {
     public ?Client $client = null;
+    public string $type = 'task';
+    public string $name;
+    public int $status = TASK_INIT;
+    public int $start = 0;
 
-    protected string $name;
-    protected int $status = TASK_INIT;
+    public int $retries = 0;
+    public int $expire = 0;
+    public int $timeout = 0;
+    public bool $respawn = false;
+    public int $respawn_delay = 0;
 
-    protected string $id;
-    protected ?string $tag = null;
-    protected int $start = 0;
-
-    protected int $retries = 0;
-    protected int $expire = 0;
-    protected int $timeout = 0;
-    protected bool $respawn = false;
-    protected int $respawn_delay = 0;
-
-    protected string $accessKey = '';
-    protected int $lastHeartbeat = 0;
-    protected int $heartbeats = 0;
-    protected int $restarts = 0;
+    public string $accessKey = '';
+    public int $lastHeartbeat = 0;
+    public int $heartbeats = 0;
+    public int $restarts = 0;
 
     /**
      * @var array<string>

@@ -1283,7 +1283,7 @@ class Master
         ]);
         $this->log->write(W_DEBUG, "TASK: ID={$task->id}");
         $this->log->write(W_DEBUG, 'WHEN: '.date(self::$config['sys']['dateFormat'], $task->start), $task->id);
-        $this->log->write(W_DEBUG, 'APPLICATION_ENV: '.$application->env, $task->id);
+        $this->log->write(W_DEBUG, 'APPLICATION_ENV: '.$application['env'], $task->id);
         if ($tag) {
             $this->log->write(W_DEBUG, 'TAG: '.$tag, $task->id);
             $this->tags[$tag] = $task;
@@ -1424,9 +1424,6 @@ class Master
     {
         // $this->log->write(W_DEBUG, 'PROCESS->RUNNING: PID='.$task->pid.' ID='.$task->id);
         $status = $task->procStatus;
-        if (false === $status) {
-            return;
-        }
         if (true === $status['running']) {
             try {
                 // Receive any error from STDERR
@@ -1513,9 +1510,7 @@ class Master
                 $this->log->write(W_NOTICE, 'Process exited with return code: '.$status['exitcode'], $task->id);
                 if ($status['exitcode'] > 0) {
                     $this->log->write(W_WARN, 'Execution completed with error.', $task->id);
-                    if (true === $task->event) {
-                        $task->status = TASK_ERROR;
-                    } elseif ($task->retries >= self::$config['task']['retries']) {
+                    if ($task->retries >= self::$config['task']['retries']) {
                         $this->log->write(W_ERR, 'Cancelling task due to too many retries.', $task->id);
                         $task->status = TASK_ERROR;
                         ++$this->stats['failed'];
@@ -1548,8 +1543,8 @@ class Master
         $this->log->write(W_DEBUG, 'TASK->QUEUE: START='
             .date(self::$config['sys']['dateFormat'], $task->start)
             .($task->tag ? " TAG={$task->tag}" : ''), $task->id);
-        $this->log->write(W_DEBUG, 'APPLICATION_PATH: '.$task->application->path, $task->id);
-        $this->log->write(W_DEBUG, 'APPLICATION_ENV:  '.$task->application->env, $task->id);
+        $this->log->write(W_DEBUG, 'APPLICATION_PATH: '.$task->application['path'], $task->id);
+        $this->log->write(W_DEBUG, 'APPLICATION_ENV:  '.$task->application['env'], $task->id);
         $task->status = TASK_QUEUED;
     }
 

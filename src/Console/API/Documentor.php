@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Tool;
+namespace Hazaar\Console\API;
 
 use Hazaar\Parser\PHP;
 use Hazaar\Parser\PHP\ParserFile;
@@ -10,7 +10,7 @@ use Hazaar\Parser\PHP\ParserNamespace;
 use Hazaar\Parser\PHP\TokenParser;
 use Hazaar\Template\Smarty;
 
-class APIDoc
+class Documentor
 {
     public const DOC_OUTPUT_HTML = 1;
     public const DOC_OUTPUT_MARKDOWN = 2;
