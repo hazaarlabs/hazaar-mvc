@@ -18,12 +18,15 @@ class Hazaar extends \Hazaar\View\Helper {
 
         $view->requires($this->application->url('hazaar/file/js/hazaar.js'));
 
+        $auth = new \Hazaar\Auth\Adapter\Basic();
+
         $options = [
             'url' => (string)$url,
             'data' => ($this->data ? $this->data : null),
             'rewrite' => boolify($this->application->config->app->get('rewrite')),
             'pathParam' => \Hazaar\Application\Request\Http::$pathParam,
-            'queryParam' => \Hazaar\Application\Request\Http::$queryParam
+            'queryParam' => \Hazaar\Application\Request\Http::$queryParam,
+            'auth' => $auth->authenticated() ? $auth->getAuthData() : null,
         ];
 
         $script = 'var hazaar = new HazaarJSHelper(' . json_encode($options) . ');';

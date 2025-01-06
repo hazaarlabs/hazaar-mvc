@@ -1,4 +1,13 @@
 ﻿function HazaarJSHelper(options) {
+    this.authenticated = function () {
+        return this.__options.auth instanceof Object;
+    };
+    this.getIdentity = function () {
+        return this.__options.auth.identity;
+    };
+    this.getAuthData = function () {
+        return this.__options.auth.data;
+    };
     this.extend = function () {
         var target = arguments[0];
         for (var x = 1; x < arguments.length; x++) {
