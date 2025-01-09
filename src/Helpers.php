@@ -1731,19 +1731,14 @@ function str_ftime(string $format, ?int $timestamp = null): string
         'F' => 'Y-m-d',	// Same as "%Y-%m-%d" (commonly used in database datestamps)	Example: 2009-02-05 for February 5, 2009
         's' => 'U',	    // Unix Epoch Time timestamp (same as the time() function)	Example: 305815200 for September 10, 1979 08:40:00 AM
         // 'x' => 'r',	    //Preferred date representation based on locale, without the time	Example: 02/05/09 for February 5, 2009
+        // 'x' is removed because there is no way to equivalent in the date() function
         // Miscellaneous	---	---
         'n' => "\n",	// A newline character ("\n")	---
         't' => "\t",	// A Tab character ("\t")	---
         '%' => '%',      // A literal percentage character ("%")
     ];
     $mapped_format = preg_replace_callback('/\%(\w)/', function ($match) use ($map) {
-        if ('x' !== $match[1]) {
-            return isset($map[$match[1]]) ? $map[$match[1]] : '';
-        }
-        $weird_locales = ['AS', 'CA', 'KY', 'FM', 'GH', 'GL', 'GU', 'KE', 'MH', 'MP', 'PA', 'PH', 'PR', 'TG', 'UM', 'US', 'VI'];
-        $cc = Locale::getRegion(Locale::getDefault());
-
-        return in_array($cc, $weird_locales) ? 'm/d/y' : 'd/m/y';
+        return isset($map[$match[1]]) ? $map[$match[1]] : '';
     }, $format);
 
     return date($mapped_format, $timestamp);

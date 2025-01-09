@@ -109,15 +109,6 @@ class DateTime extends \DateTime implements \JsonSerializable, \DateTimeInterfac
         if (preg_match('/@(\d+)\.(\d+)/', $datetime, $matches)) {
             $this->usec = (int) $matches[2];
             $datetime = '@'.$matches[1];
-        } else {
-            $this->usec = 0;
-            $year = 2000;
-            $month = 5;
-            $day = 4;
-            $time = date_parse(str_ftime('%x', mktime(0, 0, 0, $month, $day, $year)));
-            if ($time['month'] !== $month && preg_match('/\d+\/\d+\/\d+/', $datetime)) {
-                $datetime = str_replace('/', '-', $datetime);
-            }
         }
         if ('@' == substr($datetime, 0, 1)) {
             if (!$timezone) {
