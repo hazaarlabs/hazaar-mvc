@@ -147,7 +147,7 @@ class Config extends \Hazaar\Map {
 
         $config = new \Hazaar\Map($defaults);
 
-        if(!$this->loadConfigOptions($combined, $config))
+        if(!$this->loadConfigOptions($combined, $config, $this->env))
             return false;
 
         return $config;
@@ -242,9 +242,6 @@ class Config extends \Hazaar\Map {
 
     private function loadConfigOptions($options, \Hazaar\Map $config, $env = null){
 
-        if(!$env)
-            $env = $this->env;
-
         if(!(\Hazaar\Map::is_array($options) && array_key_exists($env, $options)))
             return false;
 
@@ -272,6 +269,13 @@ class Config extends \Hazaar\Map {
 
                     do {
 
+                        $import_env = null;
+
+                        $import_file = $this->parseString($import_file);
+
+                        if(strpos($import_file, ':') !== false)
+                            list($import_file, $import_env) = explode(':', $import_file, 2);
+
                         if(!($file = \Hazaar\Loader::getFilePath(FILE_PATH_CONFIG, $import_file)))
                             continue;
 
@@ -286,7 +290,7 @@ class Config extends \Hazaar\Map {
                                 if(substr($import_file->getFileName(), 0, 1) === '.')
                                     continue;
 
-                                array_push($values, $import_file->getRealPath());
+                                array_push($values, $import_file->getRealPath() . ($import_env ? ':' . $import_env : ''));
 
                             }
 
@@ -294,9 +298,13 @@ class Config extends \Hazaar\Map {
 
                         }
 
-                        if($options = $this->loadSourceFile($file))
-                            $config->extend($options);
-
+                        if($options = $this->loadSourceFile($file)){
+                            if(null === $import_env){
+                                $options = [$env => $options];
+                                $import_env = $env;
+                            }
+                            $this->loadConfigOptions($options, $config, $import_env);
+                        }
                         
                     }while($import_file = next($values));
 
@@ -496,7 +504,10 @@ class Config extends \Hazaar\Map {
 
     }
 
-    public function parseString($elem, $key){
+    public function parseString($elem, $key = null){
+
+        if(!(is_string($elem) && preg_match_all('/%([\w\[\]]*)%/', $elem, $matches)))
+            return $elem;
 
         $allowed_values = [
             'GLOBALS' => $GLOBALS,
@@ -513,39 +524,35 @@ class Config extends \Hazaar\Map {
         if($app = \Hazaar\Application::getInstance())
             $allowed_values['_APP'] = &$app->GLOBALS;
 
-        if(is_string($elem) && preg_match_all('/%([\w\[\]]*)%/', $elem, $matches)){
+        foreach($matches[0] as $index => $match){
 
-            foreach($matches[0] as $index => $match){
+            if(strpos($matches[1][$index], '[') !== false){
 
-                if(strpos($matches[1][$index], '[') !== false){
+                parse_str($matches[1][$index], $result);
 
-                    parse_str($matches[1][$index], $result);
+                $parts = explode('.', key(array_to_dot_notation($result)));
 
-                    $parts = explode('.', key(array_to_dot_notation($result)));
+                if(!array_key_exists($parts[0], $allowed_values))
+                    return '';
 
-                    if(!array_key_exists($parts[0], $allowed_values))
+                $value =& $allowed_values;
+
+                foreach($parts as $part){
+
+                    if(!($value && array_key_exists($part, $value)))
                         return '';
 
-                    $value =& $allowed_values;
-
-                    foreach($parts as $part){
-
-                        if(!($value && array_key_exists($part, $value)))
-                            return '';
-
-                        $value =& $value[$part];
-
-                    }
-
-                }else{
-
-                    $value = defined($matches[1][$index]) ? constant($matches[1][$index]) : '';
+                    $value =& $value[$part];
 
                 }
 
-                $elem = preg_replace('/' . preg_quote($match) . '/', $value, $elem, 1);
+            }else{
+
+                $value = defined($matches[1][$index]) ? constant($matches[1][$index]) : '';
 
             }
+
+            $elem = preg_replace('/' . preg_quote($match) . '/', $value, $elem, 1);
 
         }
 
