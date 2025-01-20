@@ -578,7 +578,7 @@ abstract class Model implements \jsonSerializable, \Iterator
                 if (null !== $propertyValue && !$propertyValue instanceof DateTime) {
                     $propertyValue = new DateTime($propertyValue);
                 }
-            } elseif (enum_exists($propertyTypeName)) {
+            } elseif (enum_exists($propertyTypeName) && !is_object($propertyValue)) {
                 $enumReflection = new \ReflectionEnum($propertyTypeName);
                 if ($enumReflection->isBacked()) {
                     $enumTypeName = $enumReflection->getBackingType()->getName();
