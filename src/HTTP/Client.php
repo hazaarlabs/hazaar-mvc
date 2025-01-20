@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\HTTP;
 
+use Hazaar\Application\FilePath;
 use Hazaar\Auth\Adapter;
 use Hazaar\Cache;
 use Hazaar\DateTime;
@@ -358,7 +359,7 @@ class Client
     {
         if (null === $key) {
             if (null === Client::$encryptionDefaultKey) {
-                if (!($keyfile = Loader::getFilePath(FILE_PATH_CONFIG, '.key'))) {
+                if (!($keyfile = Loader::getFilePath(FilePath::CONFIG, '.key'))) {
                     throw new \Exception('Unable to encrypt.  No key provided and no default keyfile!');
                 }
                 Client::$encryptionDefaultKey = trim(file_get_contents($keyfile));

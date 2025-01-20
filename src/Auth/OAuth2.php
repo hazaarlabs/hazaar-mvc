@@ -627,8 +627,13 @@ class OAuth2 extends Adapter
      */
     private function getRedirectUri(): string
     {
-        if (APPLICATION_BASE !== substr($_SERVER['REQUEST_URI'], 0, strlen(APPLICATION_BASE))) {
-            throw new \Exception('The current APPLICATION_BASE does not match the REQUEST_URI?  What the!?');
+        $app = Application::getInstance();
+        if (!$app) {
+            throw new \Exception('No application instance found!');
+        }
+        $applicationBase = $app->getBase();
+        if ($applicationBase !== substr($_SERVER['REQUEST_URI'], 0, strlen($applicationBase))) {
+            throw new \Exception('The current application base does not match the REQUEST_URI?  What the!?');
         }
         $action = $_SERVER['REQUEST_URI'];
         $url = new URL($action);

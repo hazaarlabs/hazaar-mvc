@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Application\Router\Loader;
 
+use Hazaar\Application\FilePath;
 use Hazaar\Application\Request;
 use Hazaar\Application\Route;
 use Hazaar\Application\Router;
@@ -49,7 +50,7 @@ class Advanced extends Loader
         if ('' === $controller) {
             return null;
         }
-        $controllerClass = 'Application\Controller\\'.$controller;
+        $controllerClass = 'Application\Controllers\\'.$controller;
         $action = (count($parts) > 0) ? array_shift($parts) : null;
         $actionArgs = $parts;
         $route = new Route($path);
@@ -92,7 +93,7 @@ class Advanced extends Loader
     {
         $controllerParts = explode('/', ltrim($path, '/'));
         $controller = null;
-        $controllerRoot = \Hazaar\Loader::getFilePath(FILE_PATH_CONTROLLER);
+        $controllerRoot = \Hazaar\Loader::getFilePath(FilePath::CONTROLLER);
         $controllerPath = DIRECTORY_SEPARATOR;
         $controllerIndex = null;
         $defaultController = ucfirst($this->config['controller']);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Controller;
 
 use Hazaar\Application;
+use Hazaar\Application\FilePath;
 use Hazaar\Application\Route;
 use Hazaar\Controller;
 use Hazaar\Controller\Response\File;
@@ -34,7 +35,7 @@ class Internal extends Controller
         }
         $filename = $route->getPath();
         $app = Application::getInstance();
-        $file = $app->loader->getFilePath(FILE_PATH_SUPPORT, $filename);
+        $file = $app->loader->getFilePath(FilePath::SUPPORT, $filename);
         if (null === $file) {
             throw new \Exception("Hazaar support file '{$filename}' not found!", 404);
         }

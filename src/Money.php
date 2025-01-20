@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Hazaar;
 
+use Hazaar\Application\FilePath;
 use Hazaar\File\BTree;
 
 /**
@@ -115,7 +116,7 @@ class Money
     public function getCurrencyInfo(?string $currency = null): mixed
     {
         if (null == self::$db) {
-            $file = new File(Loader::getFilePath(FILE_PATH_SUPPORT, 'currency.db'));
+            $file = new File(Loader::getFilePath(FilePath::SUPPORT, 'currency.db'));
             self::$db = new BTree($file, true);
         }
         if (null === $currency) {

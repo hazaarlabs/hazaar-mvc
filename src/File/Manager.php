@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\File;
 
 use Hazaar\Application;
+use Hazaar\Application\FilePath;
 use Hazaar\File;
 use Hazaar\File\Backend\Exception\Offline;
 use Hazaar\File\Backend\Interfaces\Backend;
@@ -108,10 +109,7 @@ class Manager implements Backend
     public static function getAvailableBackends(): array|false
     {
         $backends = [];
-        $backendPath = LIBRARY_PATH
-            .DIRECTORY_SEPARATOR.'src'
-            .DIRECTORY_SEPARATOR.'File'
-            .DIRECTORY_SEPARATOR.'Backend';
+        $backendPath = __DIR__.DIRECTORY_SEPARATOR.'Backend';
         if (!file_exists($backendPath)) {
             throw new \Exception('Backend path does not exist!');
         }
@@ -789,7 +787,7 @@ class Manager implements Backend
     {
         if (null === self::$mime_types) {
             self::$mime_types = [];
-            $mt_file = Loader::getFilePath(FILE_PATH_SUPPORT, 'mime.types');
+            $mt_file = Loader::getFilePath(FilePath::SUPPORT, 'mime.types');
             $h = fopen($mt_file, 'r');
             while ($line = fgets($h)) {
                 $line = trim($line);

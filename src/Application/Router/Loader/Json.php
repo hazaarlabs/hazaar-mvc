@@ -81,7 +81,7 @@ class Json extends Loader
             if (!isset($route['route'])) {
                 continue;
             }
-            $controller = 'Application\Controller\\'.ucfirst($route['controller'] ?? $this->config['controller'] ?? 'index');
+            $controller = 'Application\Controllers\\'.ucfirst($route['controller'] ?? $this->config['controller'] ?? 'index');
             $action = $route['action'] ?? $this->config['action'] ?? 'index';
             $args = $route['args'] ?? [];
             Router::match($route['methods'] ?? ['GET'], $route['route'], [$controller, $action, $args]);

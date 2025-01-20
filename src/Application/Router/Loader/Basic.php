@@ -47,7 +47,7 @@ class Basic extends Loader
             return null; // Return true if the path is empty.  Allows for default controller/action to be used.
         }
         $parts = explode('/', ltrim($path, '/'));
-        $controller = 'Application\Controller\\'.(('' !== $parts[0]) ? ucfirst($parts[0]) : null);
+        $controller = 'Application\Controllers\\'.(('' !== $parts[0]) ? ucfirst($parts[0]) : null);
         if (!class_exists($controller)) {
             return null;
         }

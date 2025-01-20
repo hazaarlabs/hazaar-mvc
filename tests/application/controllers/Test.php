@@ -1,6 +1,6 @@
 <?php
 
-namespace Application\Controller;
+namespace Application\Controllers;
 
 use Hazaar\Application\Request;
 use Hazaar\Controller\Basic;

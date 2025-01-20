@@ -13,6 +13,7 @@ namespace Hazaar\DBI\Schema;
 
 use Hazaar\Application;
 use Hazaar\Application\Config;
+use Hazaar\Application\FilePath;
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\DataMapper;
 use Hazaar\DBI\Exception\ConnectionFailed;
@@ -20,6 +21,7 @@ use Hazaar\DBI\Result;
 use Hazaar\DBI\Schema\Exception\Datasync;
 use Hazaar\DBI\Schema\Exception\Schema;
 use Hazaar\File;
+use Hazaar\Loader;
 
 /**
  * Relational Database Schema Manager.
@@ -104,7 +106,10 @@ class Manager
             $this->log("Retrying connection to database '{$managerConfig['dbname']}' on host '{$managerConfig['host']}'");
             $this->dbi = new Adapter($managerConfig);
         }
-        $this->dbDir = realpath(defined('HAZAAR_VERSION') ? APPLICATION_PATH.DIRECTORY_SEPARATOR.'..' : getcwd()).DIRECTORY_SEPARATOR.'db';
+        $this->dbDir = Loader::getFilePath(FilePath::DB);
+        if (!is_dir($this->dbDir)) {
+            $this->dbDir = getcwd().DIRECTORY_SEPARATOR.'db';
+        }
         $this->migrateDir = $this->dbDir.DIRECTORY_SEPARATOR.'migrate';
         $this->dataFile = $this->dbDir.DIRECTORY_SEPARATOR.'data.json';
     }

@@ -6,7 +6,6 @@ namespace Hazaar\File\Backend;
 
 use Hazaar\File\BTree;
 use Hazaar\File\Manager;
-use Hazaar\Loader;
 
 class Local implements Interfaces\Backend, Interfaces\Driver
 {
@@ -44,7 +43,6 @@ class Local implements Interfaces\Backend, Interfaces\Driver
 
     public function resolvePath(string $path, ?string $file = null): string
     {
-        $path = Loader::fixDirectorySeparator($path);
         $base = $this->options['root'] ?? DIRECTORY_SEPARATOR;
         if (DIRECTORY_SEPARATOR == $path) {
             $path = $base;
@@ -135,7 +133,6 @@ class Local implements Interfaces\Backend, Interfaces\Driver
      */
     public function upload(string $path, array $file, bool $overwrite = true): bool
     {
-        $path = Loader::fixDirectorySeparator($path);
         $fullPath = $this->resolvePath(rtrim($path, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$file['name']);
         if (file_exists($fullPath) && false == $overwrite) {
             return false;
@@ -146,8 +143,8 @@ class Local implements Interfaces\Backend, Interfaces\Driver
 
     public function copy(string $src, string $dst, bool $recursive = false): bool
     {
-        $src = rtrim(Loader::fixDirectorySeparator($src), DIRECTORY_SEPARATOR);
-        $dst = rtrim(Loader::fixDirectorySeparator($dst), DIRECTORY_SEPARATOR);
+        $src = rtrim($src, DIRECTORY_SEPARATOR);
+        $dst = rtrim($dst, DIRECTORY_SEPARATOR);
         if ($this->isFile($src)) {
             $rSrc = $this->resolvePath($src);
             $rDst = $this->resolvePath($dst);

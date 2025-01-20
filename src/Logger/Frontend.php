@@ -134,7 +134,7 @@ class Frontend
         }
         if (!$this->backend->can('write_objects')) {
             if (is_array($message) || is_object($message)) {
-                $message = 'OBJECT DUMP:'.LINE_BREAK.preg_replace('/\n/', LINE_BREAK, print_r($message, true));
+                $message = 'OBJECT DUMP:'.PHP_EOL.preg_replace('/\n/', PHP_EOL, print_r($message, true));
             }
         }
         $this->backend->write($message, $level, $tag);

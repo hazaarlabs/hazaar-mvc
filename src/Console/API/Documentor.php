@@ -67,7 +67,7 @@ class Documentor
 
     private function render(\stdClass &$index, string $outputPath): bool
     {
-        $templates = $this->loadTemplates(SUPPORT_PATH.'/templates/api');
+        $templates = $this->loadTemplates(__DIR__.'/../../../libs/templates/api');
 
         try {
             if (!file_exists($outputPath)) {

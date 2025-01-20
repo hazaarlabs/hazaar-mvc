@@ -23,3 +23,6 @@ docs/src/.vuepress/.temp
 docs/src/.vuepress/dist
 docs/src/api
 .phpdoc
+.vscode/
+
+composer.lock

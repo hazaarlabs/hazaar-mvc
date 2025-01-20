@@ -78,9 +78,9 @@ class File extends Backend
             $line[] = $tag;
         }
         $line[] = $message;
-        fwrite($this->hLog, implode(' | ', $line)."\r\n");
+        fwrite($this->hLog, implode(' | ', $line).PHP_EOL);
         if (null !== $this->hErr && LOG_NOTICE == $level) {
-            fwrite($this->hErr, implode(' | ', $line)."\r\n");
+            fwrite($this->hErr, implode(' | ', $line).PHP_EOL);
         }
     }
 

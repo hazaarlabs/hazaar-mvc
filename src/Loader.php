@@ -11,43 +11,7 @@ declare(strict_types=1);
 
 namespace Hazaar;
 
-// Constant to indicate a path contains config files
-define('FILE_PATH_ROOT', 'root');
-// Constant to indicate a path contains config files
-define('FILE_PATH_CONFIG', 'config');
-// Constant to indicate a path contains model classes
-define('FILE_PATH_MODEL', 'model');
-// Constant to indicate a path contains view files
-define('FILE_PATH_VIEW', 'view');
-// Constant to indicate a path contains controller classes
-define('FILE_PATH_CONTROLLER', 'controller');
-// Constant to indicate a path contains service classes
-define('FILE_PATH_SERVICE', 'service');
-// Constant to indicate a path contains Support files
-define('FILE_PATH_SUPPORT', 'support');
-// Constant to indicate a path contains Helper files
-define('FILE_PATH_HELPER', 'helper');
-// Constant to indicate a path in the library path
-define('FILE_PATH_LIB', 'library');
-// Constant to indicate a path in the public path
-define('FILE_PATH_PUBLIC', 'public');
-define('LINE_BREAK', "\n");
-// Constant containing the path in which the current application resides.
-defined('APPLICATION_PATH') || define('APPLICATION_PATH', getApplicationPath($_SERVER['SCRIPT_FILENAME']));
-// Constant containing the application base path relative to the document root.
-define('APPLICATION_BASE', dirname($_SERVER['SCRIPT_NAME']));
-// Constant containing the name of the user running the script
-define('APPLICATION_USER', \posix_getpwuid(\posix_geteuid())['name']);
-// Constant containing the absolute filesystem path that contains the whole project.
-define('ROOT_PATH', realpath(APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'));
-// Constant containing the absolute filesystem path to the default configuration directory.
-define('CONFIG_PATH', realpath(APPLICATION_PATH.DIRECTORY_SEPARATOR.'configs'));
-// Constant containing the absolute filesystem path to the application public directory.
-define('PUBLIC_PATH', realpath(APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'public'));
-// Constant containing the absolute filesystem path to the HazaarMVC library
-define('LIBRARY_PATH', realpath(dirname(__FILE__)));
-// Constant containing the absolute filesystem path to the HazaarMVC support library
-define('SUPPORT_PATH', realpath(LIBRARY_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.'libs'));
+use Hazaar\Application\FilePath;
 
 /**
  * Global class file loader.
@@ -78,7 +42,12 @@ class Loader
      * @var array<string, array<string>> an array of search paths for this loader instance
      */
     public array $paths = [];
-    private static ?Loader $instance = null;
+    private string $applicationPath;
+
+    /**
+     * @var array<Loader> an array of loader instances
+     */
+    private static array $instances = [];
 
     /**
      * Initialise a new loader.
@@ -86,42 +55,35 @@ class Loader
      * !!! warning
      * Do NOT instantiate this class directly. See Loader::getInstance() on how to get a new Loader instance.
      */
-    public function __construct()
+    protected function __construct(string $applicationPath)
     {
-        if (!Loader::$instance instanceof Loader) {
-            Loader::$instance = $this;
-        }
+        $this->applicationPath = $applicationPath;
+        $rootPath = dirname($applicationPath);
         // Add some default search paths
-        $this->addSearchPath(FILE_PATH_ROOT, ROOT_PATH);
-        if (defined('CONFIG_PATH') && CONFIG_PATH) {
-            $this->addSearchPath(FILE_PATH_CONFIG, CONFIG_PATH);
-        }
-        if (defined('LIBRARY_PATH') && LIBRARY_PATH) {
-            $this->addSearchPath(FILE_PATH_LIB, LIBRARY_PATH);
-        }
-        if (defined('PUBLIC_PATH') && PUBLIC_PATH) {
-            $this->addSearchPath(FILE_PATH_PUBLIC, PUBLIC_PATH);
-        }
-        if (defined('SUPPORT_PATH') && SUPPORT_PATH) {
-            $this->addSearchPath(FILE_PATH_SUPPORT, SUPPORT_PATH);
-        }
-    }
-
-    public static function fixDirectorySeparator(string $path): string
-    {
-        return str_replace((DIRECTORY_SEPARATOR == '/') ? '\\' : '/', DIRECTORY_SEPARATOR, $path);
+        // The root path is the root of the project that contains the application, public, db and other directories.
+        $this->addSearchPath(FilePath::ROOT, $rootPath);
+        // The application path is the path that contains the application files.
+        $this->addSearchPath(FilePath::APPLICATION, $applicationPath);
+        // The config path is the path that contains the configuration files for the application.
+        $this->addSearchPath(FilePath::CONFIG, $applicationPath.'/configs');
+        // The public path is the path that contains the public files and entry point for the application.
+        $this->addSearchPath(FilePath::PUBLIC, $rootPath.'/public');
+        // The db path is the path that contains the database files for the application.
+        $this->addSearchPath(FilePath::DB, $rootPath.'/db');
+        // The support path is the path that contains library support files for the application.
+        $this->addSearchPath(FilePath::SUPPORT, __DIR__.'/../libs');
     }
 
     /**
      * Return the current instance of the Loader object.
      */
-    public static function getInstance(): Loader
+    public static function getInstance(string $path): Loader
     {
-        if (null === Loader::$instance) {
-            Loader::$instance = new Loader();
+        if (isset(Loader::$instances[$path])) {
+            return Loader::$instances[$path];
         }
 
-        return Loader::$instance;
+        return Loader::$instances[$path] = new Loader($path);
     }
 
     /**
@@ -151,27 +113,28 @@ class Loader
      * The path type can be anything if you are using the loader to load your own library files. There are
      * built in path types for loading Hazaar library files.
      *
-     * * FILE_PATH_ROOT - Path that contains the whole project
-     * * FILE_PATH_MODEL - Path contains model classes
-     * * FILE_PATH_VIEW - Path contains view files.
-     * * FILE_PATH_CONTROLLER - Path contains controller classes.
-     * * FILE_PATH_SUPPORT - Path contains support files. Used by the Application::runDirect()method.
-     * * FILE_PATH_CONFIG - Configuration files
+     * * FilePath::ROOT - Path that contains the whole project
+     * * FilePath::MODEL - Path contains model classes
+     * * FilePath::VIEW - Path contains view files.
+     * * FilePath::CONTROLLER - Path contains controller classes.
+     * * FilePath::SUPPORT - Path contains support files. Used by the Application::runDirect()method.
+     * * FilePath::CONFIG - Configuration files
      *
-     * @param string $type the path type to add
-     * @param string $path the path to add
+     * @param FilePath $type the path type to add
+     * @param string   $path the path to add
      */
-    public function addSearchPath(string $type, string $path): bool
+    public function addSearchPath(FilePath $type, string $path): bool
     {
-        if ($path = realpath($path)) {
-            if (!array_key_exists($type, $this->paths) || !in_array($path, $this->paths[$type])) {
-                $this->paths[$type][] = $path;
-            }
-
-            return true;
+        $path = realpath($path);
+        if (!$path) {
+            return false;
+        }
+        $typeName = $type->value;
+        if (!array_key_exists($typeName, $this->paths) || !in_array($path, $this->paths[$typeName])) {
+            $this->paths[$typeName][] = $path;
         }
 
-        return false;
+        return true;
     }
 
     /**
@@ -198,8 +161,12 @@ class Loader
      */
     public function addSearchPaths(array $array): void
     {
-        foreach ($array as $type => $path) {
-            $this->addSearchPath($type, APPLICATION_PATH.DIRECTORY_SEPARATOR.$path);
+        foreach ($array as $typeName => $path) {
+            $type = FilePath::tryFrom($typeName);
+            if (!$type) {
+                continue;
+            }
+            $this->addSearchPath($type, $this->applicationPath.DIRECTORY_SEPARATOR.$path);
         }
     }
 
@@ -208,14 +175,13 @@ class Loader
      *
      * @return array<mixed> Array of search paths
      */
-    public function getSearchPaths(?string $type = null): ?array
+    public function getSearchPaths(?FilePath $type = null): ?array
     {
-        if ($type) {
-            if (array_key_exists($type, $this->paths)) {
-                return $this->paths[$type];
-            }
-        } else {
+        if (!$type) {
             return $this->paths;
+        }
+        if (array_key_exists($type->value, $this->paths)) {
+            return $this->paths[$type->value];
         }
 
         return null;
@@ -241,40 +207,24 @@ class Loader
      * This method also checks that the file exists. If the file does not exist then null will be
      * returned.
      *
-     * @param string $type             The path type to search. See Loader::addSearchPath()
-     * @param string $base_path        The path to use as a search base if there are no paths of the requested type
-     * @param bool   $case_insensitive By default paths are case sensitive. In some circumstances this might not be
-     *                                 desirable so set this TRUE to perform a(slower)case insensitive search.
+     * @param FilePath $type       The path type to search. See Loader::addSearchPath()
+     * @param string   $searchFile The file to search for
      *
      * @return string The absolute path to the file if it exists. NULL otherwise.
      */
-    public static function getFilePath(string $type, ?string $search_file = null, ?string $base_path = null, bool $case_insensitive = false): ?string
+    public static function getFilePath(FilePath $type, ?string $searchFile = null): ?string
     {
-        if (!$base_path) {
-            if (!defined('APPLICATION_PATH')) {
-                define('APPLICATION_PATH', getApplicationPath());
-            }
-            $base_path = APPLICATION_PATH;
+        $app = Application::getInstance();
+        // If the search file is an absolute path just return it if it exists.
+        if ($searchFile && Loader::isAbsolutePath($searchFile)) {
+            return realpath($searchFile);
         }
-        $loader = Loader::getInstance();
-        if ($search_file) {
-            $search_file = Loader::fixDirectorySeparator($search_file);
-            // If the search file is an absolute path just return it if it exists.
-            if (Loader::isAbsolutePath($search_file)) {
-                return Loader::resolveRealPath($search_file);
-            }
-        }
-        if ($paths = $loader->getSearchPaths($type)) {
+        if ($paths = $app->loader->getSearchPaths($type)) {
             foreach ($paths as $path) {
-                $filename = $path.DIRECTORY_SEPARATOR.$search_file;
-                if ($realpath = Loader::resolveRealPath($filename, $case_insensitive)) {
-                    return $realpath;
+                $filename = $path.DIRECTORY_SEPARATOR.$searchFile;
+                if ($realPath = realpath($filename)) {
+                    return $realPath;
                 }
-            }
-        } else {
-            $absolute_path = $base_path.DIRECTORY_SEPARATOR.$type.DIRECTORY_SEPARATOR.$search_file;
-            if (file_exists($absolute_path)) {
-                return realpath($absolute_path);
             }
         }
 
@@ -317,59 +267,16 @@ class Loader
          * Check that the prefix is 'Application'. This is sort of a namespace 'key' if you will
          * to restrict the loadable path to that of the application itself.
          */
-        if ('Application' === $namepath[0]) {
-            $filename = implode(DIRECTORY_SEPARATOR, array_slice($namepath, 2)).'.php';
-            if ($full_path = Loader::getFilePath(strtolower($namepath[1]), $filename, null, true)) {
-                require_once $full_path;
-            }
+        if ('Application' !== $namepath[0]) {
+            return;
+        }
+        $filename = implode(DIRECTORY_SEPARATOR, array_slice($namepath, 2)).'.php';
+        $type = FilePath::fromApplicationNamespace($namepath[1]);
+        if (!$type) {
+            return;
+        }
+        if ($fullPath = Loader::getFilePath($type, $filename)) {
+            require_once $fullPath;
         }
     }
-
-    private static function resolveRealPath(string $filename, bool $case_insensitive = false): ?string
-    {
-        if (file_exists($filename)) {
-            return realpath($filename);
-        }
-        if ($case_insensitive) {
-            $dirname = dirname($filename);
-            $filename = strtolower(basename($filename));
-            if (!file_exists($dirname)) {
-                return null;
-            }
-            $dir = dir($dirname);
-            while (($file = $dir->read()) !== false) {
-                if ('.' == substr($file, 0, 1)) {
-                    continue;
-                }
-                if (strtolower($file) == $filename) {
-                    return realpath($dirname.DIRECTORY_SEPARATOR.$file);
-                }
-            }
-        }
-
-        return null;
-    }
-}
-
-function getApplicationPath(?string $search_path = null): false|string
-{
-    if ($path = getenv('APPLICATION_PATH')) {
-        return realpath($path);
-    }
-    $search_path = (null === $search_path) ? getcwd() : realpath($search_path);
-    $count = 0;
-    do {
-        if (':' === substr($search_path, 1, 1)) {
-            $search_path = substr($search_path, 2);
-        }
-        if (file_exists($search_path.DIRECTORY_SEPARATOR.'application')
-            && file_exists($search_path.DIRECTORY_SEPARATOR.'vendor')) {
-            return realpath($search_path.DIRECTORY_SEPARATOR.'application');
-        }
-        if (DIRECTORY_SEPARATOR === $search_path || ++$count >= 16) {
-            break;
-        }
-    } while ($search_path = dirname($search_path));
-
-    return false;
 }

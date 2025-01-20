@@ -2,10 +2,12 @@
 
 namespace Hazaar\Console\DBI;
 
+use Hazaar\Application\FilePath;
 use Hazaar\Console\Command;
 use Hazaar\Console\Input;
 use Hazaar\Console\Output;
 use Hazaar\DBI\Adapter;
+use Hazaar\Loader;
 
 class SyncCommand extends Command
 {
@@ -24,7 +26,7 @@ class SyncCommand extends Command
         $manager = Adapter::getSchemaManagerInstance($env);
         $data = null;
         if ($sync_file = $input->getArgument('sync_file')) {
-            $sync_file = realpath(APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.$sync_file);
+            $sync_file = Loader::getFilePath(FilePath::APPLICATION, DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.$sync_file);
             if (!($sync_file && file_exists($sync_file))) {
                 throw new \Exception('Unable to sync.  File not found: '.realpath($sync_file));
             }
