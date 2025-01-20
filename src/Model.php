@@ -699,8 +699,10 @@ abstract class Model implements \jsonSerializable, \Iterator
                         continue;
                     }
                     $modelRule = $reflectionAttribute->newInstance();
-                    $modelRule->evaluate($propertyValue, $reflectionProperty);
                     $this->propertyRules[$propertyName][] = $modelRule;
+                    if (!$modelRule->evaluate($propertyValue, $reflectionProperty)) {
+                        continue 2;
+                    }
                 }
             }
             if (null !== $propertyValue) {
