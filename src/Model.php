@@ -319,6 +319,7 @@ abstract class Model implements \jsonSerializable, \Iterator
             $this->eventHooks['serialize']($array);
         }
         foreach ($this->propertyNames as $propertyName) {
+            // Get the value of the property
             if (array_key_exists($propertyName, $this->userProperties)) {
                 $propertyValue = $this->userProperties[$propertyName]['value'];
             } else {
@@ -332,11 +333,14 @@ abstract class Model implements \jsonSerializable, \Iterator
                 continue;
             }
             if (isset($this->eventHooks['get'][$propertyName])) {
+                // Execute the get event hook for the property
                 $propertyValue = $this->eventHooks['get'][$propertyName]($propertyValue);
             }
             if ($propertyValue instanceof Model) {
+                // Convert model object to array
                 $propertyValue = $propertyValue->toArray($ignoreEmptyPropertyValues);
             } elseif (is_array($propertyValue)) {
+                // Convert array of models to array of arrays
                 $propertyValue = array_map(function ($value) use ($ignoreEmptyPropertyValues) {
                     if ($value instanceof Model) {
                         return $value->toArray($ignoreEmptyPropertyValues);
@@ -344,6 +348,9 @@ abstract class Model implements \jsonSerializable, \Iterator
 
                     return $value;
                 }, $propertyValue);
+            } elseif (is_object($propertyValue) && enum_exists($propertyValue::class)) {
+                // Convert enum object to its value or name if it is untyped
+                $propertyValue = property_exists($propertyValue, 'value') ? $propertyValue->value : $propertyValue->name;
             }
             $array[$propertyName] = $propertyValue;
         }
@@ -570,6 +577,21 @@ abstract class Model implements \jsonSerializable, \Iterator
             } elseif ('Hazaar\DateTime' === $propertyTypeName) {
                 if (null !== $propertyValue && !$propertyValue instanceof DateTime) {
                     $propertyValue = new DateTime($propertyValue);
+                }
+            } elseif (enum_exists($propertyTypeName)) {
+                $enumReflection = new \ReflectionEnum($propertyTypeName);
+                if ($enumReflection->isBacked()) {
+                    $enumTypeName = $enumReflection->getBackingType()->getName();
+                    if (get_debug_type($propertyValue) !== $enumTypeName) {
+                        settype($propertyValue, $enumTypeName);
+                    }
+                    // @phpstan-ignore staticMethod.notFound
+                    $propertyValue = $propertyTypeName::tryFrom($propertyValue);
+                } else {
+                    if (false === $enumReflection->hasCase($propertyValue)) {
+                        throw new \Exception("Invalid enum value '{$propertyValue}' for enum '{$propertyTypeName}'");
+                    }
+                    $propertyValue = $enumReflection->getCase($propertyValue)->getValue();
                 }
             } elseif (!(is_object($propertyValue)
                 && ($propertyTypeName === get_class($propertyValue) || is_subclass_of($propertyTypeName, get_class($propertyValue))))) {
