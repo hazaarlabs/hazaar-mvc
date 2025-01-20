@@ -28,7 +28,6 @@
   ],
   "autoload": {
     "files": [
-      "src/Loader.php",
       "src/Helpers.php"
     ],
     "psr-4": {

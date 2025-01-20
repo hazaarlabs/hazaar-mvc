@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Hazaar\Controller;
 
 use Hazaar\Application;
+use Hazaar\Application\FilePath;
 use Hazaar\Controller\Response\HTML;
 use Hazaar\Controller\Response\JSON;
 use Hazaar\Controller\Response\Text;
@@ -378,7 +379,7 @@ class Error extends Diagnostic
     private function loadStatusCodes(): array
     {
         $status_codes = [];
-        if ($file = Loader::getFilePath(FILE_PATH_SUPPORT, 'HTTP_Status.dat')) {
+        if ($file = Loader::getFilePath(FilePath::SUPPORT, 'HTTP_Status.dat')) {
             $h = fopen($file, 'r');
             while ($line = fgets($h)) {
                 if (preg_match('/^(\d*)\s(.*)$/', $line, $matches)) {

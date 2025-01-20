@@ -74,7 +74,7 @@ class Config implements \ArrayAccess, \Iterator
      * @param string       $sourceFile The absolute path to the config file
      * @param string       $env        The application environment to read settings for.  Usually `development`
      *                                 or `production`.
-     * @param array<mixed> $defaults   initial defaut values
+     * @param array<mixed> $defaults   initial defaut values9
      */
     protected function __construct(
         ?string $sourceFile = null,
@@ -83,7 +83,7 @@ class Config implements \ArrayAccess, \Iterator
         bool $overrideNamespaces = false
     ) {
         if (!$env) {
-            $env = APPLICATION_ENV;
+            $env = defined('APPLICATION_ENV') ? constant('APPLICATION_ENV') : 'development';
         }
         if (null === $sourceFile || !($this->source = trim($sourceFile))) {
             throw new \Exception('No configuration file specified');
@@ -172,12 +172,12 @@ class Config implements \ArrayAccess, \Iterator
             $sourceFile = null;
             // If we have an extension, just use that file.
             if (false !== ake(pathinfo($sourceInfo['name']), 'extension', false)) {
-                $sourceFile = Loader::getFilePath(FILE_PATH_CONFIG, $sourceInfo['name']);
+                $sourceFile = Loader::getFilePath(FilePath::CONFIG, $sourceInfo['name']);
             } else { // Otherwise, search for files with supported extensions
                 $extensions = ['json', 'ini']; // Ordered by preference
                 foreach ($extensions as $ext) {
                     $filename = $sourceInfo['name'].'.'.$ext;
-                    if ($sourceFile = Loader::getFilePath(FILE_PATH_CONFIG, $filename)) {
+                    if ($sourceFile = Loader::getFilePath(FilePath::CONFIG, $filename)) {
                         break;
                     }
                 }
@@ -452,7 +452,7 @@ class Config implements \ArrayAccess, \Iterator
                 }
                 if ($importFile = current($values)) {
                     do {
-                        if (!($file = Loader::getFilePath(FILE_PATH_CONFIG, $importFile))) {
+                        if (!($file = Loader::getFilePath(FilePath::CONFIG, $importFile))) {
                             continue;
                         }
                         if (is_dir($file)) {

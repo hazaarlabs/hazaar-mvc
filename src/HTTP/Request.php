@@ -130,7 +130,7 @@ class Request implements \ArrayAccess
      * Enable multipart mime request body optionally using the specified boundary and content type.
      *
      * @param string $content_type Optional request content type to use.  Defaults to multipart/form-data.
-     * @param string $boundary     Optional boundary identifier. Defaults to HazaarMVCMultipartBoundary_{uniqid}
+     * @param string $boundary     Optional boundary identifier. Defaults to HazaarMultipartBoundary_{uniqid}
      *
      * @return bool True if multipart was enabled.  False if it was already enabled.
      */
@@ -142,7 +142,7 @@ class Request implements \ArrayAccess
         $this->multipart = true;
         $this->body = (null === $this->body) ? [] : [$this->getContentType(), $this->body];
         if (!$boundary) {
-            $boundary = 'HazaarMVCMultipartBoundary_'.uniqid();
+            $boundary = 'HazaarMultipartBoundary_'.uniqid();
         }
         if (!$content_type) {
             $content_type = 'multipart/form-data';

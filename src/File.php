@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar;
 
+use Hazaar\Application\FilePath;
 use Hazaar\File\Dir;
 use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
@@ -1116,7 +1117,7 @@ class File implements \JsonSerializable
 
     private function getEncryptionKey(): string
     {
-        if ($key_file = Loader::getFilePath(FILE_PATH_CONFIG, '.key')) {
+        if ($key_file = Loader::getFilePath(FilePath::CONFIG, '.key')) {
             $key = trim(file_get_contents($key_file));
         } else {
             $key = File::$default_key;

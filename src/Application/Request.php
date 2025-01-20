@@ -63,12 +63,12 @@ class Request implements Interfaces\Request
     /**
      * @detail      The HTTP request object constructor.
      *
-     * @param array<mixed> $server  Optional reference to $_SERVER
      * @param array<mixed> $request Optional reference to $_REQUEST
+     * @param array<mixed> $server  Optional reference to $_SERVER
      */
-    public function __construct(?array $request = null, ?array $server = null, bool $processRequestBody = false)
+    public function __construct(?array $server = null, ?array $request = null, bool $processRequestBody = false)
     {
-        $this->path = $this->init($request, $server, $processRequestBody);
+        $this->path = $this->init($server, $request, $processRequestBody);
     }
 
     /**
@@ -103,10 +103,10 @@ class Request implements Interfaces\Request
      *              from there will use the [[Hazaar\Application\Request]] parent class to determine the
      *              name of the Controller and Action that is being requested via it's evaluate() method.
      *
-     * @param array<mixed> $server  Optional reference to $_SERVER
      * @param array<mixed> $request Optional reference to $_REQUEST
+     * @param array<mixed> $server  Optional reference to $_SERVER
      */
-    public function init(?array $request = null, ?array $server = null, bool $processRequestBody = false): string
+    public function init(?array $server = null, ?array $request = null, bool $processRequestBody = false): string
     {
         $request = $request ?: $_REQUEST;
         $server = $server ?: $_SERVER;
@@ -120,7 +120,7 @@ class Request implements Interfaces\Request
         $encryptionHeader = ucwords(strtolower(Client::$encryptionHeader), '-');
         if (array_key_exists($encryptionHeader, $this->headers)) {
             $iv = base64_decode($this->headers[$encryptionHeader]);
-            if (!($keyfile = Loader::getFilePath(FILE_PATH_CONFIG, '.key'))) {
+            if (!($keyfile = Loader::getFilePath(FilePath::CONFIG, '.key'))) {
                 throw new \Exception('Unable to encrypt.  No key provided and no default keyfile!');
             }
             Response::$encryptionKey = trim(file_get_contents($keyfile));

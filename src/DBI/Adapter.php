@@ -11,6 +11,7 @@ namespace Hazaar\DBI;
 
 use Hazaar\Application;
 use Hazaar\Application\Config;
+use Hazaar\Application\FilePath;
 use Hazaar\DBI\DBD\BaseDriver;
 use Hazaar\DBI\Exception\ConnectionFailed;
 use Hazaar\DBI\Exception\DriverNotFound;
@@ -165,7 +166,7 @@ class Adapter
      * Hazaar DBI Constructor.
      *
      * @param array<mixed>|string $config An array of configuration options to instantiate the DBI Adapter.  This can
-     *                                    also be a Hazaar configuration environment if DBI is being used by an HMVC
+     *                                    also be a Hazaar configuration environment if DBI is being used by a Hazaar
      *                                    application.
      */
     public function __construct(null|array|string $config = null)
@@ -633,7 +634,7 @@ class Adapter
             }
         }
         if (defined('HAZAAR_VERSION') && (isset($this->config['encrypt']['table']) && !isset($this->config['encrypt']['key']))) {
-            $keyfile = Loader::getFilePath(FILE_PATH_CONFIG, $this->config['encrypt']['keyfile'] ?? '.db_key');
+            $keyfile = Loader::getFilePath(FilePath::CONFIG, $this->config['encrypt']['keyfile'] ?? '.db_key');
             if (null === $keyfile) {
                 throw new \Exception('DBI keyfile is missing.  Database encryption will not work!');
             }

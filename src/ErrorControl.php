@@ -100,7 +100,7 @@ function dieDieDie(string|Throwable $err): void
         $errString = $err;
     }
     if ('cli' === php_sapi_name()) {
-        $msg = "HazaarMVC ERROR: {$errString}\n";
+        $msg = "Hazaar ERROR: {$errString}\n";
     } else {
         http_response_code($code);
         $msg = '<h1>'.http_response_text(http_response_code())."</h1><pre>{$errString}</pre>"

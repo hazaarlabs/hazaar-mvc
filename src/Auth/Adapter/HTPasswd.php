@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Hazaar\Auth\Adapter;
 
+use Hazaar\Application\FilePath;
 use Hazaar\Auth\Adapter;
 use Hazaar\Auth\Adapter\Exception\HTPasswdFileMissing;
+use Hazaar\Loader;
 
 class HTPasswd extends Adapter
 {
-    private string $passwd = CONFIG_PATH.DIRECTORY_SEPARATOR.'.passwd';
+    private string $passwd;
     private string $userHash = '$apr1$';
 
     /**
@@ -21,7 +23,7 @@ class HTPasswd extends Adapter
         if (isset($this->options['passwdFile'])) {
             $this->passwd = $this->options['passwdFile'];
         } else {
-            $this->passwd = CONFIG_PATH.DIRECTORY_SEPARATOR.'.passwd';
+            $this->passwd = Loader::getFilePath(FilePath::CONFIG, '.passwd');
         }
     }
 

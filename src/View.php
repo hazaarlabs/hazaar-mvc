@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Hazaar;
 
+use Hazaar\Application\FilePath;
 use Hazaar\Application\URL;
 use Hazaar\View\Helper;
 
@@ -102,14 +103,14 @@ class View implements \ArrayAccess
         $viewfile = null;
         $parts = pathinfo($view);
         $name = (('.' !== $parts['dirname']) ? $parts['dirname'].'/' : '').$parts['filename'];
-        $type = FILE_PATH_VIEW;
+        $type = FilePath::VIEW;
         /*
          * If the name begins with an @ symbol then we are trying to load the view from a
          * support file path, not the application path
          */
         if ('@' == substr($view, 0, 1)) {
             $view = substr($view, 1);
-            $type = FILE_PATH_SUPPORT;
+            $type = FilePath::SUPPORT;
         } else {
             $view = $name;
         }
@@ -406,7 +407,7 @@ class View implements \ArrayAccess
             return $this->prepared[$view];
         }
         /*
-         * This converts "absolute paths" to paths that are relative to FILE_PATH_VIEW.
+         * This converts "absolute paths" to paths that are relative to `\Hazaar\Application\FilePath::VIEW`.
          *
          * Relative paths are then made relative to the current view (using it's absolute path).
          */

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Auth\Storage;
 
 use Hazaar\Application;
-use Hazaar\Application\Request\HTTP;
+use Hazaar\Application\FilePath;
 use Hazaar\Auth\Adapter;
 use Hazaar\Auth\Interfaces\Storage;
 use Hazaar\Auth\Storage\Exception\JWTPrivateKeyFileNotFound;
@@ -63,7 +63,7 @@ class JWT implements Storage
         if (isset($this->config['privateKey'])) {
             $this->privateKey = $this->config['privateKey'];
         } elseif (isset($this->config['privateKeyFile'])) {
-            $privateKeyFile = Loader::getFilePath(FILE_PATH_CONFIG, $this->config['privateKeyFile']);
+            $privateKeyFile = Loader::getFilePath(FilePath::CONFIG, $this->config['privateKeyFile']);
             if ($privateKeyFile && is_readable($privateKeyFile) && is_file($privateKeyFile)) {
                 $this->privateKey = @file_get_contents($privateKeyFile);
             } else {
@@ -279,7 +279,7 @@ class JWT implements Storage
     private function buildRefreshTokenKey(string $passphrase): string
     {
         $fingerprint = $_SERVER['HTTP_USER_AGENT'];
-        $request = new Application\Request;
+        $request = new Application\Request();
         if (isset($this->config['fingerprintIP'])
             && true === $this->config['fingerprintIP']
             && ($clientIP = $request->getRemoteAddr())) {

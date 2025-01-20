@@ -285,7 +285,6 @@ class Master
         $this->log->write(W_NOTICE, 'PHP Binary = '.self::$config['sys']['phpBinary']);
         $this->log->write(W_NOTICE, 'Application path = '.APPLICATION_PATH);
         $this->log->write(W_NOTICE, 'Application name = '.self::$config['sys']['applicationName']);
-        $this->log->write(W_NOTICE, 'Library path = '.LIBRARY_PATH);
         $this->log->write(W_NOTICE, 'Application environment = '.APPLICATION_ENV);
         $this->log->write(W_NOTICE, 'Runtime path = '.$runtime_path);
         $this->log->write(W_NOTICE, 'PID = '.$this->pid);
@@ -442,7 +441,7 @@ class Master
     /**
      * Returns the application runtime directory.
      *
-     * The runtime directory is a place where HazaarMVC will keep files that it needs to create during
+     * The runtime directory is a place where Hazaar will keep files that it needs to create during
      * normal operation. For example, cached views, and backend applications.
      *
      * @param mixed $suffix     An optional suffix to tack on the end of the path

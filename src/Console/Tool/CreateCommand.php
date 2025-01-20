@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Console\Tool;
 
+use Hazaar\Application\FilePath;
 use Hazaar\Console\Command;
 use Hazaar\Console\Input;
 use Hazaar\Console\Output;
@@ -57,20 +58,20 @@ class CreateCommand extends Command
 
         switch ($type) {
             case 'layout':
-                $fileType = FILE_PATH_VIEW;
+                $fileType = FilePath::VIEW;
                 $targetFilename = strtolower($name).'.tpl';
 
                 break;
 
             case 'view':
-                $fileType = FILE_PATH_VIEW;
+                $fileType = FilePath::VIEW;
                 $targetFilename = strtolower($name).'.tpl';
 
                 break;
 
             case 'controller':
             case 'controller_basic':
-                $fileType = FILE_PATH_CONTROLLER;
+                $fileType = FilePath::CONTROLLER;
                 $templateFile = 'controller_basic.tpl';
                 $targetFilename = ucfirst($name).'.php';
                 $params = [
@@ -81,7 +82,7 @@ class CreateCommand extends Command
                 break;
 
             case 'controller_action':
-                $fileType = FILE_PATH_CONTROLLER;
+                $fileType = FilePath::CONTROLLER;
                 $targetFilename = ucfirst($name).'.php';
                 $params = [
                     'controllerName' => ucfirst($name),
@@ -91,7 +92,7 @@ class CreateCommand extends Command
                 break;
 
             case 'model':
-                $fileType = FILE_PATH_MODEL;
+                $fileType = FilePath::MODEL;
                 $targetFilename = $name.'.tpl';
                 $params['modelName'] = ucfirst($name);
 

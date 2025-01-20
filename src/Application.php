@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Hazaar;
 
 use Hazaar\Application\Config;
+use Hazaar\Application\FilePath;
 use Hazaar\Application\Request;
 use Hazaar\Application\Router;
 use Hazaar\Application\Router\Exception\RouteNotFound;
@@ -33,13 +34,6 @@ define('HAZAAR_START', microtime(true));
 
 // Constant containing the application environment current being used.
 defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV') ? getenv('APPLICATION_ENV') : 'development');
-/*
- * Constant containing the detected 'name' of the application.
- *
- * Essentially this is the name of the directory the application is stored in.
- */
-define('APPLICATION_NAME', array_slice(explode(DIRECTORY_SEPARATOR, realpath(APPLICATION_PATH.DIRECTORY_SEPARATOR.'..')), -1));
-putenv('HOME='.APPLICATION_PATH);
 
 /**
  * The Application.
@@ -61,7 +55,7 @@ putenv('HOME='.APPLICATION_PATH);
  * ```php
  * define('APPLICATION_ENV', 'development');
  * $config = 'application.ini';
- * $application = new Hazaar\Application(APPLICATION_ENV, $config);
+ * $application = new Hazaar\Application(APPLICATION_ENV);
  * $application->bootstrap()->run();
  * ```
  */
@@ -72,37 +66,12 @@ class Application
      */
     public const VERSION = '3.0';
 
-    /**
-     * The global variables container.
-     *
-     * This is a container for global variables that are available to all controllers and views.  This is
-     * a way to pass data to all controllers and views without having to pass it through the controller
-     * chain.
-     *
-     * The following variables are available by default:
-     *
-     * * hazaar - Contains the HazaarMVC version and the time the application was started.
-     * * env - The current application environment.
-     * * path - The path to the application root.
-     * * base - The base URL of the application.
-     * * name - The name of the application.
-     *
-     * @var array<mixed>
-     */
-    public array $GLOBALS = [
-        'hazaar' => [
-            'exec_start' => 0,
-            'version' => HAZAAR_VERSION,
-        ],
-        'env' => APPLICATION_ENV,
-        'path' => APPLICATION_PATH,
-        'base' => APPLICATION_BASE,
-        'name' => APPLICATION_NAME,
-    ];
     public ?Config $config = null;
     public ?Loader $loader = null;
     public ?Router $router = null;
     public string $environment = 'development';
+    public string $path;
+    public string $base;
     public ?Timer $timer = null;
     protected string $urlDefaultPart;
     private static ?Application $instance = null;
@@ -118,7 +87,7 @@ class Application
      *
      * The application is basically the center of the Hazaar universe. Everything hangs off of it
      * and controllers are executed within the context of the application. The main constructor prepares
-     * the application to begin processing and is the first piece of code executed within the HazaarMVC
+     * the application to begin processing and is the first piece of code executed within the Hazaar
      * environment.
      *
      * Because of this is it responsible for setting up the class loader, starting
@@ -132,25 +101,25 @@ class Application
      *
      * @param string $env The application environment name. eg: 'development' or 'production'
      */
-    public function __construct(string $env)
+    public function __construct(string $env, ?string $path = null)
     {
         try {
             set_error_handler([$this, 'errorHandler'], E_ERROR);
             set_exception_handler([$this, 'exceptionHandler']);
             register_shutdown_function([$this, 'shutdownHandler']);
             register_shutdown_function([$this, 'shutdown']);
-            $this->GLOBALS['hazaar']['exec_start'] = HAZAAR_START;
             Application::$instance = $this;
             $this->environment = $env;
+            $this->path = self::findApplicationPath($path);
+            $this->base = dirname($_SERVER['SCRIPT_NAME']);
             // Create a timer for performance measuring
             $startTime = isset($_SERVER['REQUEST_TIME_FLOAT']) ? floatval($_SERVER['REQUEST_TIME_FLOAT']) : microtime(true);
             $this->timer = new Timer(5, $startTime);
             $this->timer->start('init', $startTime);
             // Create a loader object and register it as the default autoloader
-            $this->loader = Loader::getInstance();
+            $this->loader = Loader::getInstance($this->path);
             $this->loader->register();
             // Store the search paths in the GLOBALS container so they can be used in config includes.
-            $this->GLOBALS['paths'] = $this->loader->getSearchPaths();
             Config::$overridePaths = self::getConfigOverridePaths();
             /*
              * Load it with a config object. if the file doesn't exist
@@ -161,7 +130,9 @@ class Application
             // Configure the application
             $this->configure($config);
             // Create a new router object for evaluating routes
-            $this->router = new Router($this->config['router'] ?? 'file');
+            $routerConfig = $this->config['router'] ?? ['type' => 'file'];
+            $routerConfig['applicationPath'] = $this->path;
+            $this->router = new Router($routerConfig);
             $this->timer->stop('init');
         } catch (\Throwable $e) {
             dieDieDie($e);
@@ -179,7 +150,7 @@ class Application
         if (!$this->config) {
             return;
         }
-        $shutdown = APPLICATION_PATH.DIRECTORY_SEPARATOR.ake($this->config, 'app.files.shutdown', 'shutdown.php');
+        $shutdown = $this->path.DIRECTORY_SEPARATOR.ake($this->config, 'app.files.shutdown', 'shutdown.php');
         if (file_exists($shutdown)) {
             include $shutdown;
         }
@@ -216,7 +187,7 @@ class Application
         $paths = [
             'server'.DIRECTORY_SEPARATOR.ake($_SERVER, 'SERVER_NAME'),
             'host'.DIRECTORY_SEPARATOR.ake($_SERVER, 'HTTP_HOST'),
-            'user'.DIRECTORY_SEPARATOR.APPLICATION_USER,
+            // 'user'.DIRECTORY_SEPARATOR.APPLICATION_USER,
             'local',
         ];
         if ('cli' === \php_sapi_name()) {
@@ -248,7 +219,7 @@ class Application
                     'media' => 'media.php',
                 ],
                 'responseImageCache' => false,
-                'runtimePath' => APPLICATION_PATH.DIRECTORY_SEPARATOR.'.runtime',
+                'runtimePath' => $this->path.DIRECTORY_SEPARATOR.'.runtime',
                 'metrics' => false,
                 'responseType' => 'html',
                 'layout' => 'application',
@@ -348,7 +319,7 @@ class Application
     /**
      * Returns the application runtime directory.
      *
-     * The runtime directory is a place where HazaarMVC will keep files that it needs to create during
+     * The runtime directory is a place where Hazaar will keep files that it needs to create during
      * normal operation. For example, socket files for background scheduler communication, cached views,
      * and backend applications.
      *
@@ -399,12 +370,12 @@ class Application
      * @param string $path          path suffix to append to the application path
      * @param bool   $forceRealpath Return the real path to a file.  If the file does not exist, this will return false.
      */
-    public static function getFilePath(?string $path = null, bool $forceRealpath = true): false|string
+    public function getFilePath(?string $path = null, bool $forceRealpath = true): false|string
     {
         if (strlen($path) > 0) {
             $path = DIRECTORY_SEPARATOR.trim($path ?? '', DIRECTORY_SEPARATOR);
         }
-        $path = APPLICATION_PATH.($path ? $path : null);
+        $path = $this->path.($path ? $path : null);
         if (true === $forceRealpath) {
             return realpath($path);
         }
@@ -431,7 +402,7 @@ class Application
      */
     public function getApplicationPath($suffix = null): string
     {
-        return realpath(APPLICATION_PATH.DIRECTORY_SEPARATOR.(string) $suffix);
+        return realpath($this->path.DIRECTORY_SEPARATOR.(string) $suffix);
     }
 
     /**
@@ -446,7 +417,7 @@ class Application
      */
     public function getBasePath($suffix = null): string
     {
-        return realpath(APPLICATION_PATH.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.(string) $suffix);
+        return realpath($this->path.DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.(string) $suffix);
     }
 
     /**
@@ -474,15 +445,12 @@ class Application
         if (!date_default_timezone_set($tz)) {
             throw new Application\Exception\BadTimezone($tz);
         }
-        if (!defined('RUNTIME_PATH')) {
-            define('RUNTIME_PATH', $this->getRuntimePath(null, true));
-            $this->GLOBALS['runtime'] = RUNTIME_PATH;
-        }
+        $this->loader->addSearchPath(FilePath::RUNTIME, $this->getRuntimePath(null, true));
         if (false === $this->router->initialise()) {
             throw new RouterInitialisationFailed('Router returned false');
         }
         // Check for an application bootstrap file and execute it
-        $bootstrapFile = APPLICATION_PATH
+        $bootstrapFile = $this->path
             .DIRECTORY_SEPARATOR
             .ake($this->config, 'app.files.bootstrap', 'bootstrap.php');
         if (file_exists($bootstrapFile)) {
@@ -523,8 +491,8 @@ class Application
             $this->timer->start('exec');
             ob_start();
             // Create the request object
-            $request = new Request($_REQUEST, $_SERVER);
-            $requestFile = APPLICATION_PATH
+            $request = new Request($_SERVER, $_REQUEST);
+            $requestFile = $this->path
                 .DIRECTORY_SEPARATOR
                 .ake($this->config, 'app.files.request', 'request.php');
             if (file_exists($requestFile)) {
@@ -564,7 +532,7 @@ class Application
             $controller->shutdown($response);
             $code = $response->getStatus();
             ob_end_flush();
-            $completeFile = APPLICATION_PATH
+            $completeFile = $this->path
                 .DIRECTORY_SEPARATOR
                 .ake($this->config, 'app.files.complete', 'complete.php');
             if (file_exists($completeFile)) {
@@ -708,5 +676,33 @@ class Application
             Frontend::e('CORE', 'Error #'.$e->getCode().' on line '.$e->getLine().' of file '.$e->getFile().': '.$e->getMessage());
         }
         errorAndDie($e, $responseType);
+    }
+
+    public function getBase(): string
+    {
+        return $this->base;
+    }
+
+    public static function findApplicationPath(?string $search_path = null): false|string
+    {
+        if ($path = getenv('APPLICATION_PATH')) {
+            return realpath($path);
+        }
+        $search_path = (null === $search_path) ? getcwd() : realpath($search_path);
+        $count = 0;
+        do {
+            if (':' === substr($search_path, 1, 1)) {
+                $search_path = substr($search_path, 2);
+            }
+            if (file_exists($search_path.DIRECTORY_SEPARATOR.'application')
+                && file_exists($search_path.DIRECTORY_SEPARATOR.'application'.DIRECTORY_SEPARATOR.'configs')) {
+                return realpath($search_path.DIRECTORY_SEPARATOR.'application');
+            }
+            if (DIRECTORY_SEPARATOR === $search_path || ++$count >= 16) {
+                break;
+            }
+        } while ($search_path = dirname($search_path));
+
+        return false;
     }
 }

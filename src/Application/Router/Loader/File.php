@@ -14,7 +14,10 @@ class File extends Loader
     public function initialise(Router $router): bool
     {
         $filename = $this->config['file'] ?? 'route.php';
-        $file = APPLICATION_PATH.DIRECTORY_SEPARATOR.$filename;
+        if (!isset($this->config['applicationPath'])) {
+            throw new \Exception('Application path not set for file router loader');
+        }
+        $file = $this->config['applicationPath'].DIRECTORY_SEPARATOR.$filename;
         if (false === file_exists($file)) {
             throw new Exception\MissingRouteFile($filename);
         }

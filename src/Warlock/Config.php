@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Hazaar\Warlock;
 
 use Hazaar\Application;
+use Hazaar\Application\FilePath;
+use Hazaar\Loader;
 
 class Config extends Application\Config
 {
@@ -122,7 +124,7 @@ class Config extends Application\Config
         } catch (\Exception $e) {
             throw new \Exception('There is no warlock configuration file.  Warlock is disabled!');
         }
-        
+
         if (!isset($this['sys']['id'])) {
             $this['sys']['id'] = $this->loadSystemID();
         }
@@ -154,6 +156,6 @@ class Config extends Application\Config
             return file_get_contents($systemIDFile);
         }
 
-        return (string) crc32(APPLICATION_PATH);
+        return (string) crc32(Loader::getFilePath(FilePath::APPLICATION));
     }
 }

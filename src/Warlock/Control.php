@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Hazaar\Warlock;
 
 use Hazaar\Application;
+use Hazaar\Application\FilePath;
+use Hazaar\Loader;
 
 /**
  * @brief       Control class for Warlock
@@ -124,7 +126,7 @@ class Control extends Process
             return true;
         }
         $env = [
-            'APPLICATION_PATH' => APPLICATION_PATH,
+            'APPLICATION_PATH' => Loader::getFilePath(FilePath::APPLICATION),
             'APPLICATION_ENV' => APPLICATION_ENV,
             'APPLICATION_ROOT' => Application::getRoot(),
             'WARLOCK_EXEC' => 1,

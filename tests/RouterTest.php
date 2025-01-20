@@ -2,8 +2,8 @@
 
 namespace Hazaar\Tests;
 
-use Application\Controller\Index;
-use Application\Controller\Test;
+use Application\Controllers\Index;
+use Application\Controllers\Test;
 use Hazaar\Application\Config;
 use Hazaar\Application\Request;
 use Hazaar\Application\Route;
@@ -116,6 +116,7 @@ class RouterTest extends TestCase
             'REQUEST_URI' => '/test/hellothere',
         ]);
         $this->config['type'] = 'file';
+        $this->config['applicationPath'] = __DIR__.'/application';
         $router = new Router($this->config);
         $this->assertTrue($router->initialise());
         $this->assertInstanceOf(Route::class, $route = $router->evaluateRequest($request));

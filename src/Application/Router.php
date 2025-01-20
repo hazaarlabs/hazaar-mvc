@@ -110,7 +110,7 @@ class Router
         }
         $method = $request->getMethod();
         foreach ($this->routes as $route) {
-            if ($route->match($method, $request->getPath())) {
+            if ($route->match($method, $path)) {
                 return $matchedRoute = $route;
             }
         }
@@ -120,7 +120,7 @@ class Router
         }
         $controllerClass = '\\' === substr($controller, 0, 1)
             ? $controller
-            : 'Application\Controller\\'.ucfirst($controller);
+            : 'Application\Controllers\\'.ucfirst($controller);
         $route = new Route();
         $route->setCallable([$controllerClass, $this->config['action']]);
 

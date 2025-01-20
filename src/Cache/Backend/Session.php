@@ -37,6 +37,8 @@ class Session extends Backend
     private array $values = [];
     private static bool $started = false;
 
+    private string $baseName = '/';
+
     public static function available(): bool
     {
         return true;
@@ -105,13 +107,16 @@ class Session extends Backend
          * If this is the first load the application base won't be an array
          * so we need to set that in the session first.
          */
-        if (!array_key_exists(APPLICATION_BASE, $_SESSION)) {
-            $_SESSION[APPLICATION_BASE] = [];
+        if ($app = Application::getInstance()) {
+            $this->baseName = $app->getBase();
+            if (!array_key_exists($this->baseName, $_SESSION)) {
+                $_SESSION[$this->baseName] = [];
+            }
+            if (!(array_key_exists($this->namespace, $_SESSION[$this->baseName]) && is_array($_SESSION[$this->baseName][$this->namespace]))) {
+                $_SESSION[$this->baseName][$this->namespace] = [];
+            }
+            $this->values = &$_SESSION[$this->baseName][$this->namespace];
         }
-        if (!(array_key_exists($this->namespace, $_SESSION[APPLICATION_BASE]) && is_array($_SESSION[APPLICATION_BASE][$this->namespace]))) {
-            $_SESSION[APPLICATION_BASE][$this->namespace] = [];
-        }
-        $this->values = &$_SESSION[APPLICATION_BASE][$this->namespace];
     }
 
     public function close(): bool
@@ -178,7 +183,7 @@ class Session extends Backend
         session_destroy();
         session_start();
         $_SESSION['session']['created'] = time();
-        $_SESSION[APPLICATION_BASE][$this->namespace] = [];
+        $_SESSION[$this->baseName][$this->namespace] = [];
 
         return true;
     }
@@ -187,7 +192,7 @@ class Session extends Backend
     {
         $args = func_get_args();
         foreach ($args as $arg) {
-            $_SESSION[APPLICATION_BASE][$this->namespace] = array_merge($_SESSION[APPLICATION_BASE][$this->namespace], $arg);
+            $_SESSION[$this->baseName][$this->namespace] = array_merge($_SESSION[$this->baseName][$this->namespace], $arg);
         }
     }
 
@@ -197,9 +202,9 @@ class Session extends Backend
     public function toArray(): array
     {
         $values = [];
-        foreach ($_SESSION[APPLICATION_BASE][$this->namespace] as $key => $item) {
+        foreach ($_SESSION[$this->baseName][$this->namespace] as $key => $item) {
             if (array_key_exists('expire', $item) && $item['expire'] <= time()) {
-                unset($_SESSION[APPLICATION_BASE][$this->namespace][$key]);
+                unset($_SESSION[$this->baseName][$this->namespace][$key]);
 
                 continue;
             }
@@ -211,7 +216,7 @@ class Session extends Backend
 
     public function count(): int
     {
-        return count($_SESSION[APPLICATION_BASE][$this->namespace]);
+        return count($_SESSION[$this->baseName][$this->namespace]);
     }
 
     private function load(string $key): mixed
