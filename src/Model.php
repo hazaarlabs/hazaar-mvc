@@ -308,6 +308,16 @@ abstract class Model implements \jsonSerializable, \Iterator
     }
 
     /**
+     * Returns the keys of the model object.
+     *
+     * @return array<string> the keys of the model object
+     */
+    public function keys(): array
+    {
+        return $this->propertyNames;
+    }
+
+    /**
      * Converts the object to an array representation.
      *
      * @return array<string,mixed> the array representation of the object
