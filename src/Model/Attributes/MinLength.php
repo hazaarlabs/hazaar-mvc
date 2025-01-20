@@ -1,23 +1,23 @@
 <?php
 
-namespace Hazaar\Model\Rules;
+namespace Hazaar\Model\Attributes;
 
 use Hazaar\Model\Interfaces\AttributeRule;
 
 /**
- * The MaxLength rule is used to ensure that a string is at most a certain length.
+ * The MinLength rule is used to ensure that a string is at least a certain length.
  *
- * @param int $length the maximum length of the string
+ * @param int $length the minimum length of the string
  *
  * @example
  *
  * ```php
- * #[MaxLength(10)]
+ * #[MinLength(10)]
  * public $my_property;
  * ```
  */
 #[\Attribute]
-class MaxLength implements AttributeRule
+class MinLength implements AttributeRule
 {
     private int $length = 0;
 
@@ -28,8 +28,10 @@ class MaxLength implements AttributeRule
 
     public function evaluate(mixed &$propertyValue, \ReflectionProperty &$property): bool
     {
-        $propertyValue = substr($propertyValue ?? '', 0, $this->length);
+        if (empty($propertyValue)) {
+            return true;
+        }
 
-        return true;
+        return strlen($propertyValue) >= $this->length;
     }
 }

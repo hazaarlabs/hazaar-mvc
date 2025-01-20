@@ -1,6 +1,6 @@
 <?php
 
-namespace Hazaar\Model\Rules;
+namespace Hazaar\Model\Attributes;
 
 use Hazaar\Model\Exception\PropertyValidationException;
 use Hazaar\Model\Interfaces\AttributeRule;

@@ -1,23 +1,23 @@
 <?php
 
-namespace Hazaar\Model\Rules;
+namespace Hazaar\Model\Attributes;
 
 use Hazaar\Model\Interfaces\AttributeRule;
 
 /**
- * The Pad rule is used to pad a string to a specified length.
+ * The MaxLength rule is used to ensure that a string is at most a certain length.
  *
- * @param int $length the length to pad the string to
+ * @param int $length the maximum length of the string
  *
  * @example
  *
  * ```php
- * #[Pad(10)]
+ * #[MaxLength(10)]
  * public $my_property;
  * ```
  */
 #[\Attribute]
-class Pad implements AttributeRule
+class MaxLength implements AttributeRule
 {
     private int $length = 0;
 
@@ -28,7 +28,7 @@ class Pad implements AttributeRule
 
     public function evaluate(mixed &$propertyValue, \ReflectionProperty &$property): bool
     {
-        $propertyValue = str_pad($propertyValue ?? '', $this->length);
+        $propertyValue = substr($propertyValue ?? '', 0, $this->length);
 
         return true;
     }

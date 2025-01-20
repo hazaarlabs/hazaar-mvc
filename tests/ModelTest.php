@@ -7,16 +7,16 @@ namespace Hazaar\Tests;
 use Hazaar\Model;
 use Hazaar\Model\Email;
 use Hazaar\Model\Exception\UnsetPropertyException;
-use Hazaar\Model\Rules\Contains;
-use Hazaar\Model\Rules\Filter;
-use Hazaar\Model\Rules\Format;
-use Hazaar\Model\Rules\Max;
-use Hazaar\Model\Rules\MaxLength;
-use Hazaar\Model\Rules\Min;
-use Hazaar\Model\Rules\MinLength;
-use Hazaar\Model\Rules\Pad;
-use Hazaar\Model\Rules\Required;
-use Hazaar\Model\Rules\Trim;
+use Hazaar\Model\Attributes\Contains;
+use Hazaar\Model\Attributes\Filter;
+use Hazaar\Model\Attributes\Format;
+use Hazaar\Model\Attributes\Max;
+use Hazaar\Model\Attributes\MaxLength;
+use Hazaar\Model\Attributes\Min;
+use Hazaar\Model\Attributes\MinLength;
+use Hazaar\Model\Attributes\Pad;
+use Hazaar\Model\Attributes\Required;
+use Hazaar\Model\Attributes\Trim;
 use PHPUnit\Framework\TestCase;
 
 class AgeModel extends Model

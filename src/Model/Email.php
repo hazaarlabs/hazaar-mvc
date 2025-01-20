@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Model;
 
 use Hazaar\Model;
-use Hazaar\Model\Rules\Required;
+use Hazaar\Model\Attributes\Required;
 
 /**
  * Email Address Strict Model.

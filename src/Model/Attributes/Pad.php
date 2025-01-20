@@ -1,23 +1,23 @@
 <?php
 
-namespace Hazaar\Model\Rules;
+namespace Hazaar\Model\Attributes;
 
 use Hazaar\Model\Interfaces\AttributeRule;
 
 /**
- * The MinLength rule is used to ensure that a string is at least a certain length.
+ * The Pad rule is used to pad a string to a specified length.
  *
- * @param int $length the minimum length of the string
+ * @param int $length the length to pad the string to
  *
  * @example
  *
  * ```php
- * #[MinLength(10)]
+ * #[Pad(10)]
  * public $my_property;
  * ```
  */
 #[\Attribute]
-class MinLength implements AttributeRule
+class Pad implements AttributeRule
 {
     private int $length = 0;
 
@@ -28,10 +28,8 @@ class MinLength implements AttributeRule
 
     public function evaluate(mixed &$propertyValue, \ReflectionProperty &$property): bool
     {
-        if (empty($propertyValue)) {
-            return true;
-        }
+        $propertyValue = str_pad($propertyValue ?? '', $this->length);
 
-        return strlen($propertyValue) >= $this->length;
+        return true;
     }
 }

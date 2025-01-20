@@ -1,26 +1,26 @@
 <?php
 
-namespace Hazaar\Model\Rules;
+namespace Hazaar\Model\Attributes;
 
 use Hazaar\Model\Exception\PropertyValidationException;
 use Hazaar\Model\Interfaces\AttributeRule;
 
 /**
- * The Min rule is used to ensure that a value is greater than a specified value.
+ * The Max rule is used to ensure that a value is less than a specified value.
  *
- * @param int $value the minimum value that the property can be
+ * @param int $value the maximum value that the property can be
  *
  * @throws PropertyValidationException
  *
  * @example
  *
  * ```php
- * #[Min(10)]
+ * #[Max(10)]
  * public $my_property;
  * ```
  */
 #[\Attribute]
-class Min implements AttributeRule
+class Max implements AttributeRule
 {
     private int $value = 0;
 
@@ -31,7 +31,7 @@ class Min implements AttributeRule
 
     public function evaluate(mixed &$propertyValue, \ReflectionProperty &$property): bool
     {
-        $propertyValue = max($propertyValue, $this->value);
+        $propertyValue = min($propertyValue, $this->value);
 
         return true;
     }
