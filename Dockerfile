@@ -1,7 +1,7 @@
 FROM composer:2.8.3
 RUN apk add --no-cache git g++ gcc libc-dev make zlib-dev \
     libpng-dev libzip-dev icu-dev libpq-dev php83-dev \
-    libxml2-dev musl-locales linux-headers
+    libxml2-dev musl-locales linux-headers npm
 # Set the locale
 ENV MUSL_LOCPATH /usr/share/i18n/locales/musl
 ENV LANG en_AU.UTF-8  
