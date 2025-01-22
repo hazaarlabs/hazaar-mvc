@@ -50,9 +50,8 @@ class Manager
     private array $appliedVersions;
     private \Closure $__callback;
 
-    /**
+    /*
      * @var array<string, array<mixed>>
-     */
     private static array $tableMap = [
         'extension' => ['extensions', false, null],
         'sequence' => ['sequences', false, null],
@@ -63,6 +62,7 @@ class Manager
         'function' => ['functions', false, 'functions'],
         'trigger' => ['triggers', true, 'functions'],
     ];
+    */
 
     /**
      * @param array<mixed> $dbiConfig
@@ -76,7 +76,6 @@ class Manager
             $dbiConfig['environment'] = APPLICATION_ENV;
         }
         $this->config = array_merge($dbiConfig, $dbiConfig['manager'] ?? []);
-        $this->ignoreTables[] = self::$schemaInfoTable;
         $this->workDir = Loader::getFilePath(FilePath::DB);
         if (!is_dir($this->workDir)) {
             $this->workDir = getcwd().DIRECTORY_SEPARATOR.'db';
@@ -98,17 +97,17 @@ class Manager
      *
      * @return array<Version> The available schema versions
      */
-    public function getVersions(bool $appliedOnly = false): array
+    public function getVersions(): array
     {
-        if (true === $appliedOnly && isset($this->appliedVersions)) {
-            return $this->appliedVersions;
-        }
-        if (false === $appliedOnly && isset($this->versions)) {
+        if (isset($this->versions)) {
             return $this->versions;
         }
         $migrateDir = $this->workDir.DIRECTORY_SEPARATOR.'migrate';
         if (!file_exists($migrateDir) && is_dir($migrateDir)) {
             return [];
+        }
+        if (!isset($this->dbi)) {
+            $this->connect();
         }
         $this->versions = [];
         $dir = dir($migrateDir);
@@ -124,15 +123,29 @@ class Manager
             $this->versions[] = Version::loadFromFile($migrateDir.DIRECTORY_SEPARATOR.$file);
         }
         ksort($this->versions);
-        if (true === $appliedOnly) {
-            $appliedVersions = [];
-            $this->getMissingVersions(null, $appliedVersions);
-            $versions = $this->appliedVersions = array_filter($versions, function ($value, $key) use ($appliedVersions) {
-                return in_array($key, $appliedVersions);
-            }, ARRAY_FILTER_USE_BOTH);
-        }
 
         return $this->versions;
+    }
+
+    /**
+     * Retrieves the list of applied versions.
+     *
+     * This method fetches all versions and filters them to return only the applied versions.
+     *
+     * @return array<Version> an array of applied version identifiers
+     */
+    public function getAppliedVersions(): array
+    {
+        if (isset($this->appliedVersions)) {
+            return $this->appliedVersions;
+        }
+        $versions = $this->getVersions();
+        $this->getMissingVersions(null, $appliedVersions);
+        $this->appliedVersions = array_filter($versions, function ($value, $key) use ($appliedVersions) {
+            return in_array($key, $appliedVersions);
+        }, ARRAY_FILTER_USE_BOTH);
+
+        return $this->appliedVersions;
     }
 
     /**
@@ -177,24 +190,26 @@ class Manager
         }
         $appliedVersions = [];
         if ($this->dbi->table(self::$schemaInfoTable)->exists()) {
-            $appliedVersions = array_map('intval', $this->dbi->table(self::$schemaInfoTable)->fetchAllColumn('version'));
+            $appliedVersions = array_map('intval', $this->dbi->table(self::$schemaInfoTable)->fetchAllColumn('number'));
         }
         $versions = $this->getVersions();
 
         return array_filter(array_diff(array_keys($versions), $appliedVersions), function ($v) use ($version) {
-            return $v <= $version;
+            return $v <= $version->number;
         });
     }
 
     /**
      * Returns the version number of the latest schema version.
      */
-    public function getLatestVersion(): ?int
+    public function getLatestVersion(): ?Version
     {
         $versions = $this->getVersions();
-        end($versions);
+        if (0 === count($versions)) {
+            return null;
+        }
 
-        return key($versions);
+        return end($versions);
     }
 
     /**
@@ -202,11 +217,15 @@ class Manager
      */
     public function isLatest(): bool
     {
-        if (($version = $this->getVersion()) === null) {
+        if (($currentVersion = $this->getVersion()) === null) {
+            return false;
+        }
+        $latestVersion = $this->getLatestVersion();
+        if (null === $latestVersion) {
             return false;
         }
 
-        return $this->getLatestVersion() === $this->getVersion();
+        return $latestVersion->number === $currentVersion->number;
     }
 
     /**

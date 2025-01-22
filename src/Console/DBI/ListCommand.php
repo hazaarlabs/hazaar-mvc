@@ -15,6 +15,7 @@ class ListCommand extends Command
             ->setDescription('List database versions')
             ->setHelp('This command allows you to list the database schema versions.')
             ->addOption('applied', null, 'List applied versions only')
+            ->addOption('missing', null, 'List missing versions only')
         ;
     }
 
@@ -22,7 +23,15 @@ class ListCommand extends Command
     {
         $manager = Adapter::getSchemaManagerInstance();
         $applied = $input->getOption('applied') ?? false;
-        $versions = $manager->getVersions(false, $applied);
+        $missing = $input->getOption('missing') ?? false;
+        $versions = [];
+        if (true === $applied) {
+            $version = $manager->getAppliedVersions();
+        } elseif (true === $missing) {
+            $version = $manager->getMissingVersions();
+        } else {
+            $versions = $manager->getVersions();
+        }
         if (count($versions) > 0) {
             foreach ($versions as $version) {
                 $output->write($version.PHP_EOL);
