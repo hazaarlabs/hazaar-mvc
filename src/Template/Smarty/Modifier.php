@@ -16,9 +16,6 @@ class Modifier
         $reflectionMethod = new \ReflectionMethod($this, $name);
         $reflectionParameter = $reflectionMethod->getParameters()[0];
         $type = (string) $reflectionParameter->getType();
-        if ('mixed' === $type && null === $value) {
-            $type = 'string';
-        }
         $value = match ($type) {
             'int' => (int) $value,
             'float' => (float) $value,

@@ -54,7 +54,7 @@ class Manager
     /**
      * @var array<int,array<string>>
      */
-    private array $versions = [];
+    private ?array $versions = null;
     private ?int $currentVersion = null;
 
     /**
@@ -68,6 +68,7 @@ class Manager
      */
     private static array $tableMap = [
         'extension' => ['extensions', false, null],
+        'sequence' => ['sequences', false, null],
         'table' => ['tables', 'cols', null],
         'view' => ['views', true, 'views'],
         'constraint' => ['constraints', true, null],
@@ -85,6 +86,9 @@ class Manager
             $this->setLogCallback($logCallback);
         }
         $this->dbiConfig = $dbiConfig;
+        if (!isset($this->dbiConfig['environment'])) {
+            $this->dbiConfig['environment'] = APPLICATION_ENV;
+        }
         $managerConfig = array_merge($this->dbiConfig, $this->dbiConfig['manager'] ?? []);
         $this->ignoreTables[] = self::$schemaInfoTable;
 
@@ -137,7 +141,7 @@ class Manager
      */
     public function &getVersions(bool $returnFullPath = false, bool $appliedOnly = false): array
     {
-        if (!count($this->versions) > 0) {
+        if (null === $this->versions) {
             $this->versions = [0 => [], 1 => []];
             // Get a list of all the available versions
             if (file_exists($this->migrateDir) && is_dir($this->migrateDir)) {
@@ -159,7 +163,7 @@ class Manager
                 ksort($this->versions[1]);
             }
         }
-        $versions = $returnFullPath ? $this->versions[0] : $this->versions[1];
+        $versions = $this->versions ? ($returnFullPath ? $this->versions[0] : $this->versions[1]) : [];
         if (true === $appliedOnly) {
             if (null !== $this->appliedVersions) {
                 return $this->appliedVersions;
@@ -243,7 +247,7 @@ class Manager
                     if (!($map = ake(self::$tableMap, $type))) {
                         continue 2;
                     }
-                    list($elem, $source, $content_type) = $map;
+                    list($elem, $source, $contentType) = $map;
                     if (!array_key_exists($elem, $schema)) {
                         $schema[$elem] = [];
                     }
@@ -253,59 +257,59 @@ class Manager
                                 if (true === $source) {
                                     $schema[$elem][$alterations['name']] = $alterations;
                                 } else {
-                                    foreach ($alterations as $alt_action => $alt_columns) {
-                                        if ('drop' === $alt_action) {
+                                    foreach ($alterations as $altAction => $altColumns) {
+                                        if ('drop' === $altAction) {
                                             if (!isset($schema['tables'][$table])) {
                                                 throw new \Exception("Drop action on table '{$table}' which does not exist!");
                                             }
                                             // Remove the column from the table schema
-                                            $schema['tables'][$table] = array_filter($schema['tables'][$table], function ($item) use ($alt_columns) {
-                                                return !in_array($item['name'], $alt_columns);
+                                            $schema['tables'][$table] = array_filter($schema['tables'][$table], function ($item) use ($altColumns) {
+                                                return !in_array($item['name'], $altColumns);
                                             });
                                             // Update any constraints/indexes that reference this column
                                             if (isset($schema['constraints'])) {
-                                                $schema['constraints'] = array_filter($schema['constraints'], function ($item) use ($alt_columns) {
-                                                    return !in_array($item['column'], $alt_columns);
+                                                $schema['constraints'] = array_filter($schema['constraints'], function ($item) use ($altColumns) {
+                                                    return !in_array($item['column'], $altColumns);
                                                 });
                                             }
                                             if (isset($schema['indexes'])) {
-                                                $schema['indexes'] = array_filter($schema['indexes'], function ($item) use ($table, $alt_columns) {
-                                                    return $item['table'] !== $table || 0 === count(array_intersect($item['columns'], $alt_columns));
+                                                $schema['indexes'] = array_filter($schema['indexes'], function ($item) use ($table, $altColumns) {
+                                                    return $item['table'] !== $table || 0 === count(array_intersect($item['columns'], $altColumns));
                                                 });
                                             }
                                         } else {
-                                            foreach ($alt_columns as $col_name => $col_data) {
-                                                if ('add' === $alt_action) {
-                                                    $schema['tables'][$table][] = $col_data;
-                                                } elseif ('alter' === $alt_action && array_key_exists($table, $schema['tables'])) {
+                                            foreach ($altColumns as $colName => $colData) {
+                                                if ('add' === $altAction) {
+                                                    $schema['tables'][$table][] = $colData;
+                                                } elseif ('alter' === $altAction && array_key_exists($table, $schema['tables'])) {
                                                     foreach ($schema['tables'][$table] as &$col) {
-                                                        if ($col['name'] !== $col_name) {
+                                                        if ($col['name'] !== $colName) {
                                                             continue;
                                                         }
                                                         // If we are renaming the column, we need to update index and constraints
-                                                        if (array_key_exists('name', $col_data) && $col['name'] !== $col_data['name']) {
+                                                        if (array_key_exists('name', $colData) && $col['name'] !== $colData['name']) {
                                                             if (isset($schema['constraints'])) {
-                                                                array_walk($schema['constraints'], function (&$item) use ($col_name, $col_data) {
-                                                                    if ($item['column'] === $col_name) {
-                                                                        $item['column'] = $col_data['name'];
+                                                                array_walk($schema['constraints'], function (&$item) use ($colName, $colData) {
+                                                                    if ($item['column'] === $colName) {
+                                                                        $item['column'] = $colData['name'];
                                                                     }
                                                                 });
                                                             }
                                                             if (isset($schema['indexes'])) {
-                                                                array_walk($schema['indexes'], function (&$item) use ($col_name, $col_data) {
-                                                                    if (in_array($col_name, $item['columns'])) {
-                                                                        $item['columns'][array_search($col_name, $item['columns'])] = $col_data['name'];
+                                                                array_walk($schema['indexes'], function (&$item) use ($colName, $colData) {
+                                                                    if (in_array($colName, $item['columns'])) {
+                                                                        $item['columns'][array_search($colName, $item['columns'])] = $colData['name'];
                                                                     }
                                                                 });
                                                             }
                                                         }
                                                         // If the column data type is changing and there is no 'length' property, set the length to null.
-                                                        if (array_key_exists('data_type', $col_data)
-                                                            && !array_key_exists('length', $col_data)
-                                                            && $col['data_type'] !== $col_data['data_type']) {
-                                                            $col_data['length'] = null;
+                                                        if (array_key_exists('data_type', $colData)
+                                                            && !array_key_exists('length', $colData)
+                                                            && $col['data_type'] !== $colData['data_type']) {
+                                                            $colData['length'] = null;
                                                         }
-                                                        $col = array_merge($col, $col_data);
+                                                        $col = array_merge($col, $colData);
 
                                                         break;
                                                     }
@@ -324,9 +328,9 @@ class Manager
                                         if (!array_key_exists('name', $item)) {
                                             throw new \Exception('Unable to remove elements with no name');
                                         }
-                                        foreach ($schema[$elem] as $index => $child_item) {
-                                            if (ake($child_item, 'name') === $item['name']
-                                                && ake($child_item, 'table') === ake($item, 'table')) {
+                                        foreach ($schema[$elem] as $index => $childItem) {
+                                            if (ake($childItem, 'name') === $item['name']
+                                                && ake($childItem, 'table') === ake($item, 'table')) {
                                                 unset($schema[$elem][$index]);
                                             }
                                         }
@@ -351,21 +355,21 @@ class Manager
                             }
                         }
                     } else {
-                        foreach ($items as $item_name => $item) {
+                        foreach ($items as $itemName => $item) {
                             if (is_string($item)) {
                                 if ('create' === $action) {
                                     $schema[$elem][] = $item;
                                 } elseif ('remove' === $action) {
-                                    foreach ($schema[$elem] as $schema_item_name => &$schema_item) {
-                                        if (is_array($schema_item)) {
-                                            if (!array_key_exists($item, $schema_item)) {
+                                    foreach ($schema[$elem] as $schemaItemName => &$schemaItem) {
+                                        if (is_array($schemaItem)) {
+                                            if (!array_key_exists($item, $schemaItem)) {
                                                 continue;
                                             }
-                                            unset($schema_item[$item]);
-                                        } elseif ($schema_item !== $item) {
+                                            unset($schemaItem[$item]);
+                                        } elseif ($schemaItem !== $item) {
                                             continue;
                                         } else {
-                                            unset($schema[$elem][$schema_item_name]);
+                                            unset($schema[$elem][$schemaItemName]);
                                         }
 
                                         break;
@@ -373,16 +377,16 @@ class Manager
                                 }
                             // Functions removed are a bit different as we have to look at parameters.
                             } elseif ('function' === $type && 'remove' === $action) {
-                                if (array_key_exists($item_name, $schema[$elem])) {
+                                if (array_key_exists($itemName, $schema[$elem])) {
                                     foreach ($item as $params) {
                                         // Find the existing function and remove it
-                                        foreach ($schema[$elem][$item_name] as $index => $func) {
-                                            $c_params = array_map(function ($item) {
+                                        foreach ($schema[$elem][$itemName] as $index => $func) {
+                                            $cParams = array_map(function ($item) {
                                                 return ake($item, 'type');
                                             }, ake($func, 'parameters'));
                                             // We do an array_diff_assoc so that parameter position is taken into account
-                                            if (0 === count(array_diff_assoc($params, $c_params)) && 0 === count(array_diff_assoc($c_params, $params))) {
-                                                unset($schema[$elem][$item_name][$index]);
+                                            if (0 === count(array_diff_assoc($params, $cParams)) && 0 === count(array_diff_assoc($cParams, $params))) {
+                                                unset($schema[$elem][$itemName][$index]);
                                             }
                                         }
                                     }
@@ -397,7 +401,8 @@ class Manager
                                 }
                             } else {
                                 if ('create' === $action || 'alter' === $action) {
-                                    $schema[$elem][$item['name']][] = $item;
+                                    $name = $item['name'] ?? $itemName;
+                                    $schema[$elem][$name][] = $item;
                                 } else {
                                     throw new Schema("I don't know how to handle: {$action}");
                                 }
@@ -411,13 +416,13 @@ class Manager
                      * For types that have content, we need to add the version to the content if
                      * it is stored in an external file.
                      */
-                    if ($content_type) {
-                        foreach ($schema[$elem] as &$content_item) {
+                    if ($contentType) {
+                        foreach ($schema[$elem] as &$contentItem) {
                             if (true === $source) {
-                                $this->processContent($version, $content_type, $content_item);
+                                $this->processContent($version, $contentType, $contentItem);
                             } else {
-                                foreach ($content_item as &$content_group) {
-                                    $this->processContent($version, $content_type, $content_group);
+                                foreach ($contentItem as &$contentGroup) {
+                                    $this->processContent($version, $contentType, $contentGroup);
                                 }
                             }
                         }
@@ -468,32 +473,32 @@ class Manager
      * rename a table AND change it's column layout, make sure you do either the rename or the modifications
      * first, then snapshot, then do the other operation before snapshotting again.
      *
-     * @param string $comment          a comment to add to the migration file
-     * @param bool   $test             Test only.  Does not make any changes.
-     * @param int    $override_version Manually specify the version number.  Default is to use current timestamp.
+     * @param string $comment         a comment to add to the migration file
+     * @param bool   $test            Test only.  Does not make any changes.
+     * @param int    $overrideVersion Manually specify the version number.  Default is to use current timestamp.
      *
      * @return bool True if the snapshot was successful. False if no changes were detected and nothing needed to be done.
      *
      * @throws Exception\Snapshot
      */
-    public function snapshot(?string $comment = null, bool $test = false, ?int $override_version = null)
+    public function snapshot(?string $comment = null, bool $test = false, ?int $overrideVersion = null)
     {
         $this->log('Snapshot process starting');
         if ($test) {
             $this->log('Test mode ENABLED');
         }
-        $this->log('APPLICATION_ENV: '.APPLICATION_ENV);
+        $this->log('APPLICATION_ENV: '.$this->dbiConfig['environment']);
         if ($versions = $this->getVersions()) {
             end($versions);
-            $latest_version = key($versions);
+            $latestVersion = key($versions);
         } else {
-            $latest_version = 0;
+            $latestVersion = 0;
         }
         $version = $this->getVersion();
-        if ($latest_version > $version) {
+        if ($latestVersion > $version) {
             throw new Exception\Snapshot('Snapshoting a database that is not at the latest schema version is not supported.');
         }
-        $this->dbi->beginTransaction();
+        $this->dbi->begin();
         if (!is_dir($this->dbDir)) {
             if (file_exists($this->dbDir)) {
                 throw new Exception\Snapshot('Unable to create database migration directory.  It exists but is not a directory!');
@@ -544,7 +549,7 @@ class Manager
         /**
          * Prepare a new version number based on the current date and time.
          */
-        $version = $override_version ?? date('YmdHis');
+        $version = $overrideVersion ?? date('YmdHis');
 
         /**
          * Stores the schema as it currently exists in the database.
@@ -567,6 +572,10 @@ class Manager
         $changes = [
             'up' => [
                 'extension' => [],
+                'sequence' => [
+                    'create' => [],
+                    'remove' => [],
+                ],
                 'table' => [
                     'create' => [],
                     'alter' => [],
@@ -632,6 +641,10 @@ class Manager
                     'remove' => [],
                     'rename' => [],
                 ],
+                'sequence' => [
+                    'create' => [],
+                    'remove' => [],
+                ],
                 'extension' => [],
             ],
         ];
@@ -663,6 +676,30 @@ class Manager
                 }
             }
         }
+        $this->log('*** SNAPSHOTTING SEQUENCES ***');
+        foreach ($this->dbi->listSequences() as $sequenceName) {
+            $this->log("Processing sequence '{$sequenceName}'.");
+            $sequence = $this->dbi->describeSequence($sequenceName);
+            foreach ($schema['tables'] as $table) {
+                foreach ($table as $column) {
+                    if (!('serial' === $column['type']
+                        && $column['sequence'] === $sequenceName)) {
+                        continue;
+                    }
+
+                    continue 3;
+                }
+            }
+            unset($sequence['name']);
+            $currentSchema['sequences'][$sequenceName] = $sequence;
+            if (!(array_key_exists('sequences', $schema) && array_key_exists($sequenceName, $schema['sequences']))) {
+                $this->log("+ Sequence '{$sequenceName}' has been created.");
+                $changes['up']['sequence']['create'][$sequenceName] = $sequence;
+                if (!$init) {
+                    $changes['down']['sequence']['remove'][] = $sequenceName;
+                }
+            }
+        }
         $this->log('*** SNAPSHOTTING TABLES ***');
         /*
          * Check for any new tables or changes to existing tables.
@@ -686,17 +723,17 @@ class Manager
                 if (count($diff) > 0) {
                     $this->log("> Table '{$name}' has changed.");
                     $changes['up']['table']['alter'][$name] = $diff;
-                    foreach ($diff as $diff_mode => $col_diff) {
-                        foreach ($col_diff as $col_name => $col_info) {
-                            if ('drop' === $diff_mode) {
-                                $info = $this->getColumn($col_info, $schema['tables'][$name]);
-                                $changes['down']['table']['alter'][$name]['add'][$col_name] = $info;
-                            } elseif ('alter' == $diff_mode) {
-                                $info = $this->getColumn($col_name, $schema['tables'][$name]);
-                                $inverse_diff = array_intersect_key($info, $col_info);
-                                $changes['down']['table']['alter'][$name]['alter'][$col_name] = $inverse_diff;
-                            } elseif ('add' === $diff_mode) {
-                                $changes['down']['table']['alter'][$name]['drop'][] = $col_name;
+                    foreach ($diff as $diffMode => $colDiff) {
+                        foreach ($colDiff as $colName => $colInfo) {
+                            if ('drop' === $diffMode) {
+                                $info = $this->getColumn($colInfo, $schema['tables'][$name]);
+                                $changes['down']['table']['alter'][$name]['add'][$colName] = $info;
+                            } elseif ('alter' == $diffMode) {
+                                $info = $this->getColumn($colName, $schema['tables'][$name]);
+                                $inverseDiff = array_intersect_key($info, $colInfo);
+                                $changes['down']['table']['alter'][$name]['alter'][$colName] = $inverseDiff;
+                            } elseif ('add' === $diffMode) {
+                                $changes['down']['table']['alter'][$name]['drop'][] = $colName;
                             }
                         }
                     }
@@ -731,9 +768,9 @@ class Manager
                     if (array_key_exists('constraints', $schema)
                         && array_key_exists($table, $schema['constraints'])) {
                         $changes['down']['constraint']['create'] = [];
-                        foreach ($schema['constraints'][$table] as $constraint_name => $constraint) {
+                        foreach ($schema['constraints'][$table] as $constraintName => $constraint) {
                             $changes['down']['constraint']['create'][] = array_merge($constraint, [
-                                'name' => $constraint_name,
+                                'name' => $constraintName,
                                 'table' => $table,
                             ]);
                         }
@@ -742,9 +779,9 @@ class Manager
                     if (array_key_exists('indexes', $schema)
                         && array_key_exists($table, $schema['indexes'])) {
                         $changes['down']['index']['create'] = [];
-                        foreach ($schema['indexes'][$table] as $index_name => $index) {
+                        foreach ($schema['indexes'][$table] as $indexName => $index) {
                             $changes['down']['index']['create'][] = array_merge($index, [
-                                'name' => $index_name,
+                                'name' => $indexName,
                                 'table' => $table,
                             ]);
                         }
@@ -755,8 +792,8 @@ class Manager
         // Now compare the create and remove changes to see if a table is actually being renamed
         if (true !== $init) {
             $this->log('Looking for renamed tables.');
-            foreach ($changes['up']['table']['create'] as $create_key => $create) {
-                foreach ($changes['up']['table']['remove'] as $remove_key => $remove) {
+            foreach ($changes['up']['table']['create'] as $createKey => $create) {
+                foreach ($changes['up']['table']['remove'] as $removeKey => $remove) {
                     $diff = array_udiff($schema['tables'][$remove], $create['cols'], function ($a, $b) {
                         if ($a['name'] == $b['name']) {
                             return 0;
@@ -775,20 +812,31 @@ class Manager
                             'to' => $remove,
                         ];
                         // Clean up the changes
-                        $changes['up']['table']['create'][$create_key] = null;
-                        $changes['up']['table']['remove'][$remove_key] = null;
-                        foreach ($changes['down']['table']['remove'] as $down_remove_key => $down_remove) {
-                            if ($down_remove === $create['name']) {
-                                $changes['down']['table']['remove'][$down_remove_key] = null;
+                        $changes['up']['table']['create'][$createKey] = null;
+                        $changes['up']['table']['remove'][$removeKey] = null;
+                        foreach ($changes['down']['table']['remove'] as $downRemoveKey => $downRemove) {
+                            if ($downRemove === $create['name']) {
+                                $changes['down']['table']['remove'][$downRemoveKey] = null;
                             }
                         }
-                        foreach ($changes['down']['table']['create'] as $down_create_key => $down_create) {
-                            if ($down_create['name'] == $remove) {
-                                $changes['down']['table']['create'][$down_create_key] = null;
+                        foreach ($changes['down']['table']['create'] as $downCreateKey => $downCreate) {
+                            if ($downCreate['name'] == $remove) {
+                                $changes['down']['table']['create'][$downCreateKey] = null;
                             }
                         }
                     }
                 }
+            }
+        }
+        // Unset serial columns from the sequence list (PostgreSQL only)
+        foreach ($changes['up']['table']['create'] as $createKey => $create) {
+            foreach ($create['cols'] as $col) {
+                if (!(array_key_exists('sequence', $col)
+                && array_key_exists($col['sequence'], $changes['up']['sequence']['create'])
+                && 'serial' === $col['type'])) {
+                    continue;
+                }
+                unset($changes['up']['sequence']['create'][$col['sequence']]);
             }
         }
         $this->log('*** SNAPSHOTTING CONSTRAINTS ***');
@@ -802,15 +850,15 @@ class Manager
         if (array_key_exists('constraints', $schema)) {
             $this->log('Looking for new constraints.');
             // Look for new constraints
-            foreach ($constraints as $constraint_name => $constraint) {
-                if (!array_key_exists($constraint_name, $schema['constraints'])) {
-                    $this->log("+ Added new constraint '{$constraint_name}'.");
+            foreach ($constraints as $constraintName => $constraint) {
+                if (!array_key_exists($constraintName, $schema['constraints'])) {
+                    $this->log("+ Added new constraint '{$constraintName}'.");
                     $changes['up']['constraint']['create'][] = array_merge([
-                        'name' => $constraint_name,
+                        'name' => $constraintName,
                     ], $constraint);
                     // If the constraint was added at the same time as the table, we don't need to add the removes
                     if (!$init && !in_array($constraint['table'], $changes['down']['table']['remove'])) {
-                        $changes['down']['constraint']['remove'][] = ['name' => $constraint_name, 'table' => $constraint['table']];
+                        $changes['down']['constraint']['remove'][] = ['name' => $constraintName, 'table' => $constraint['table']];
                     }
                 }
             }
@@ -818,23 +866,23 @@ class Manager
             // Look for any removed constraints.  If there are no constraints in the current schema, then all have been removed.
             $missing = array_diff(array_keys($schema['constraints']), array_keys($currentSchema['constraints']));
             if (count($missing) > 0) {
-                foreach ($missing as $constraint_name) {
-                    $this->log("- Constraint '{$constraint_name}' has been removed.");
-                    $idef = $schema['constraints'][$constraint_name];
-                    $changes['up']['constraint']['remove'][] = $constraint_name;
+                foreach ($missing as $constraintName) {
+                    $this->log("- Constraint '{$constraintName}' has been removed.");
+                    $idef = $schema['constraints'][$constraintName];
+                    $changes['up']['constraint']['remove'][] = $constraintName;
                     $changes['down']['constraint']['create'][] = array_merge([
-                        'name' => $constraint_name,
+                        'name' => $constraintName,
                     ], $idef);
                 }
             }
         } elseif (count($constraints) > 0) {
-            foreach ($constraints as $constraint_name => $constraint) {
-                $this->log("+ Added new constraint '{$constraint_name}'.");
+            foreach ($constraints as $constraintName => $constraint) {
+                $this->log("+ Added new constraint '{$constraintName}'.");
                 $changes['up']['constraint']['create'][] = array_merge([
-                    'name' => $constraint_name,
+                    'name' => $constraintName,
                 ], $constraint);
                 if (!$init) {
-                    $changes['down']['constraint']['remove'][] = ['name' => $constraint_name, 'table' => $constraint['table']];
+                    $changes['down']['constraint']['remove'][] = ['name' => $constraintName, 'table' => $constraint['table']];
                 }
             }
         } // END PROCESSING CONSTRAINTS
@@ -844,58 +892,58 @@ class Manager
             return !in_array($item['table'], $this->ignoreTables);
         });
         if (count($indexes) > 0) {
-            foreach ($indexes as $index_name => $index) {
+            foreach ($indexes as $indexName => $index) {
                 // Check if the index is actually a constraint
-                if (array_key_exists($index_name, $currentSchema['constraints'])) {
+                if (array_key_exists($indexName, $currentSchema['constraints'])) {
                     continue;
                 }
-                $currentSchema['indexes'][$index_name] = $index;
+                $currentSchema['indexes'][$indexName] = $index;
             }
         }
         if (array_key_exists('indexes', $schema)) {
             $this->log('Looking for new indexes.');
             // Look for new indexes
-            foreach ($indexes as $index_name => $index) {
+            foreach ($indexes as $indexName => $index) {
                 // Check if the index is actually a constraint
-                if (array_key_exists($index_name, $currentSchema['constraints'])) {
+                if (array_key_exists($indexName, $currentSchema['constraints'])) {
                     continue;
                 }
-                if (array_key_exists($index_name, $schema['indexes'])) {
+                if (array_key_exists($indexName, $schema['indexes'])) {
                     continue;
                 }
-                $this->log("+ Added new index '{$index_name}'.");
+                $this->log("+ Added new index '{$indexName}'.");
                 $changes['up']['index']['create'][] = array_merge([
-                    'name' => $index_name,
+                    'name' => $indexName,
                 ], $index);
                 if (!$init) {
-                    $changes['down']['index']['remove'][] = $index_name;
+                    $changes['down']['index']['remove'][] = $indexName;
                 }
             }
             $this->log('Looking for removed indexes');
             // Look for any removed indexes.  If there are no indexes in the current schema, then all have been removed.
             $missing = array_diff(array_keys($schema['indexes']), array_keys($currentSchema['indexes']));
             if (count($missing) > 0) {
-                foreach ($missing as $index_name) {
-                    $this->log("- Index '{$index_name}' has been removed.");
-                    $idef = $schema['indexes'][$index_name];
-                    $changes['up']['index']['remove'][] = $index_name;
+                foreach ($missing as $indexName) {
+                    $this->log("- Index '{$indexName}' has been removed.");
+                    $idef = $schema['indexes'][$indexName];
+                    $changes['up']['index']['remove'][] = $indexName;
                     $changes['down']['index']['create'][] = array_merge([
-                        'name' => $index_name,
+                        'name' => $indexName,
                     ], $idef);
                 }
             }
         } elseif (count($indexes) > 0) {
-            foreach ($indexes as $index_name => $index) {
+            foreach ($indexes as $indexName => $index) {
                 // Check if the index is actually a constraint
-                if (array_key_exists($index_name, $currentSchema['constraints'])) {
+                if (array_key_exists($indexName, $currentSchema['constraints'])) {
                     continue;
                 }
-                $this->log("+ Added new index '{$index_name}'.");
+                $this->log("+ Added new index '{$indexName}'.");
                 $changes['up']['index']['create'][] = array_merge([
-                    'name' => $index_name,
+                    'name' => $indexName,
                 ], $index);
                 if (!$init) {
-                    $changes['down']['index']['remove'][] = $index_name;
+                    $changes['down']['index']['remove'][] = $indexName;
                 }
             }
         } // END PROCESSING INDEXES
@@ -945,7 +993,7 @@ class Manager
                 throw new Exception\Snapshot("Error getting function definition for functions '{$name}'.  Does the connected user have the correct permissions?");
             }
             foreach ($func as $info) {
-                if (true === $this->dbiConfig['manager']['functionsInFiles']) {
+                if (true === ake($this->dbiConfig, 'manager.functionsInFiles', true)) {
                     $functions[$info['name']] = $info['content'];
                     unset($info['content']);
                 }
@@ -957,7 +1005,7 @@ class Manager
                 $fullname = $name.'('.implode(', ', $params).')';
                 if (array_key_exists('functions', $schema)
                     && array_key_exists($name, $schema['functions'])
-                    && count($ex_info = array_filter($schema['functions'][$name], function ($item) use ($info) {
+                    && count($exInfo = array_filter($schema['functions'][$name], function ($item) use ($info) {
                         if (!array_key_exists('parameters', $item)) {
                             if (!array_key_exists('parameters', $info) || 0 === count($info['parameters'])) {
                                 return true;
@@ -976,7 +1024,7 @@ class Manager
                         return true;
                     })) > 0) {
                     $this->log("Function '{$fullname}' already exists.  Checking differences.");
-                    foreach ($ex_info as $e) {
+                    foreach ($exInfo as $e) {
                         if (!array_key_exists('parameters', $e)) {
                             $e['parameters'] = [];
                         }
@@ -1000,38 +1048,38 @@ class Manager
         }
         if (array_key_exists('functions', $schema)) {
             $missing = [];
-            foreach ($schema['functions'] as $func_name => $func_instances) {
-                $missing_func = null;
-                foreach ($func_instances as $func) {
-                    if (array_key_exists($func_name, $currentSchema['functions'])
+            foreach ($schema['functions'] as $funcName => $funcInstances) {
+                $missingFunc = null;
+                foreach ($funcInstances as $func) {
+                    if (array_key_exists($funcName, $currentSchema['functions'])
                         && count($currentSchema['functions']) > 0) {
                         $p1 = ake($func, 'parameters', []);
-                        foreach ($currentSchema['functions'][$func_name] as $c_func) {
-                            $p2 = ake($c_func, 'parameters', []);
+                        foreach ($currentSchema['functions'][$funcName] as $cFunc) {
+                            $p2 = ake($cFunc, 'parameters', []);
                             if (0 === count(array_diff_assoc_recursive($p1, $p2))
                                 && 0 === count(array_diff_assoc_recursive($p2, $p1))) {
                                 continue 2;
                             }
                         }
                     }
-                    if (!array_key_exists($func_name, $missing)) {
-                        $missing[$func_name] = [];
+                    if (!array_key_exists($funcName, $missing)) {
+                        $missing[$funcName] = [];
                     }
-                    $missing[$func_name][] = $func;
+                    $missing[$funcName][] = $func;
                 }
             }
             if (count($missing) > 0) {
-                foreach ($missing as $func_name => $func_instances) {
-                    foreach ($func_instances as $func) {
+                foreach ($missing as $funcName => $funcInstances) {
+                    foreach ($funcInstances as $func) {
                         $params = [];
                         foreach (ake($func, 'parameters', []) as $param) {
                             $params[] = $param['type'];
                         }
-                        $func_full_name = $func_name.'('.implode(', ', $params).')';
-                        $this->log("- Function '{$func_full_name}' has been removed.");
-                        $changes['up']['function']['remove'][$func_name][] = $params;
-                        if (!array_key_exists($func_name, $changes['down']['function']['create'])) {
-                            $changes['down']['function']['create'][$func_name] = [];
+                        $funcFullName = $funcName.'('.implode(', ', $params).')';
+                        $this->log("- Function '{$funcFullName}' has been removed.");
+                        $changes['up']['function']['remove'][$funcName][] = $params;
+                        if (!array_key_exists($funcName, $changes['down']['function']['create'])) {
+                            $changes['down']['function']['create'][$funcName] = [];
                         }
                         $changes['down']['function']['create'][] = $func;
                     }
@@ -1044,10 +1092,10 @@ class Manager
         foreach ($this->dbi->listTriggers() as $trigger) {
             $name = $trigger['name'];
             $this->log("Processing trigger '{$name}'.");
-            if (!($info = $this->dbi->describeTrigger($trigger['name'], $trigger['schema']))) {
+            if (!($info = $this->dbi->describeTrigger($trigger['name']))) {
                 throw new Exception\Snapshot("Error getting trigger definition for '{$name}'.  Does the connected user have the correct permissions?");
             }
-            if (true === $this->dbiConfig['manager']['functionsInFiles']) {
+            if (true === ake($this->dbiConfig, 'manager.functionsInFiles', true)) {
                 $functions[$info['name']] = $info['content'];
                 unset($info['content']);
             }
@@ -1091,7 +1139,7 @@ class Manager
             // If there are no changes, bail out now
             if (!(count(ake($changes, 'up', [])) + count(ake($changes, 'down', []))) > 0) {
                 $this->log('No changes detected.');
-                $this->dbi->rollback();
+                $this->dbi->cancel();
 
                 return false;
             }
@@ -1105,7 +1153,7 @@ class Manager
             }
             // If we are testing, then return the diff between the previous schema version
             if ($test) {
-                $this->dbi->rollback();
+                $this->dbi->cancel();
 
                 return ake($changes, 'up');
             }
@@ -1114,9 +1162,9 @@ class Manager
                 $this->log('Migration directory does not exist.  Creating.');
                 mkdir($this->migrateDir);
             }
-            $migrate_file = $this->migrateDir.'/'.$version.'_'.preg_replace('/[^A-Za-z0-9]/', '_', trim($comment)).'.json';
-            $this->log("Writing migration file to '{$migrate_file}'");
-            file_put_contents($migrate_file, json_encode($changes, JSON_PRETTY_PRINT));
+            $migrateFile = $this->migrateDir.'/'.$version.'_'.preg_replace('/[^A-Za-z0-9]/', '_', trim($comment)).'.json';
+            $this->log("Writing migration file to '{$migrateFile}'");
+            file_put_contents($migrateFile, json_encode($changes, JSON_PRETTY_PRINT));
             if (!empty($functions)) {
                 if (!file_exists($this->migrateDir.'/functions')) {
                     mkdir($this->migrateDir.'/functions');
@@ -1125,9 +1173,9 @@ class Manager
                     mkdir($this->migrateDir.'/functions/'.$version);
                 }
                 foreach ($functions as $name => $content) {
-                    $func_file = $this->migrateDir.'/functions/'.$version.'/'.$name.'.sql';
-                    $this->log("Writing function file to '{$func_file}'");
-                    file_put_contents($func_file, $content);
+                    $funcFile = $this->migrateDir.'/functions/'.$version.'/'.$name.'.sql';
+                    $this->log("Writing function file to '{$funcFile}'");
+                    file_put_contents($funcFile, $content);
                 }
             }
             // Merge in static schema elements (like data) and save the current schema file
@@ -1206,17 +1254,17 @@ class Manager
         bool $forceDataSync = false,
         bool $test = false,
         bool $keepTables = false,
-        bool $force_reinitialise = false
+        bool $forceReinitialise = false
     ): bool {
         $this->log('Migration process starting');
         if ($test) {
             $this->log('Test mode ENABLED');
         }
-        $this->log('APPLICATION_ENV: '.APPLICATION_ENV);
+        $this->log('APPLICATION_ENV: '.$this->dbiConfig['environment']);
         $mode = 'up';
         $currentVersion = 0;
         $versions = $this->getVersions(true);
-        $latest_version = $this->getLatestVersion();
+        $latestVersion = $this->getLatestVersion();
         if ($version) {
             $version = (int) str_pad((string) $version, 14, '0', STR_PAD_RIGHT);
             // Make sure the requested version exists
@@ -1231,19 +1279,19 @@ class Manager
                 reset($versions);
                 $this->log('Migrating database to version: '.$version);
             } else {
-                $version = $latest_version;
+                $version = $latestVersion;
                 $this->log('Initialising database at version: '.$version);
             }
         }
 
         // Check that the database exists and can be written to.
         try {
-            $schemaName = $this->dbi->getSchemaName();
-            if (!$this->dbi->schemaExists($schemaName)) {
+            if (!$this->dbi->schemaExists()) {
                 $this->log('Database does not exist.  Creating...');
-                $this->dbi->createSchema($schemaName);
-                if (($dbiUser = $this->dbiConfig['user']) && $this->dbi->config['user'] !== $dbiUser) {
-                    $this->dbi->query("GRANT USAGE ON SCHEMA {$schemaName} TO {$dbiUser};");
+                $this->dbi->createSchema();
+                if (($dbiUser = $this->dbiConfig['user'] ?? '') && $this->dbi->config['user'] !== $dbiUser) {
+                    $schemaName = $this->dbi->getSchemaName();
+                    $this->dbi->grant('USAGE', 'SCHEMA '.$schemaName, $dbiUser);
                 }
             }
             $this->createInfoTable();
@@ -1255,28 +1303,28 @@ class Manager
             throw $e;
         }
         // Get the current version (if any) from the database
-        if ($this->dbi->tableExists(self::$schemaInfoTable)) {
-            $result = $this->dbi->table(self::$schemaInfoTable)->find([], ['version'])->sort('version', SORT_DESC);
+        if ($this->dbi->table(self::$schemaInfoTable)->exists()) {
+            $result = $this->dbi->table(self::$schemaInfoTable)->find([], ['version'])->order('version', SORT_DESC);
             if ($row = $result->fetch()) {
                 $currentVersion = $row['version'];
                 $this->log('Current database version: '.($currentVersion ? $currentVersion : 'None'));
             }
         }
-        $roles = [];
-        if (true === $this->dbi->config['createRole'] && isset($this->dbiConfig['user'])) {
-            $roles[] = [
+        $users = [];
+        if (true === ake($this->dbi->config, 'createUser') && isset($this->dbiConfig['user'])) {
+            $users[] = [
                 'name' => $this->dbiConfig['user'],
-                'password' => $this->dbiConfig['password'] ?? '',
+                'password' => $this->dbiConfig['password'],
                 'privileges' => ['LOGIN'],
             ];
         }
-        if (isset($this->dbi->config['roles'])) {
-            $roles = array_merge($roles, $this->dbi->config['roles']);
+        if (isset($this->dbi->config['users'])) {
+            $users = array_merge($users, $this->dbi->config['users']->toArray());
         }
-        if (count($roles) > 0) {
-            $this->createRoleIfNotExists($roles);
+        if (count($users) > 0) {
+            $this->createUserIfNotExists($users);
         }
-        if (true === $force_reinitialise) {
+        if (true === $forceReinitialise) {
             $this->log('WARNING: Forcing full database re-initialisation.  THIS WILL DELETE ALL DATA!!!');
             $this->log('IF YOU DO NOT WANT TO DO THIS, YOU HAVE 10 SECONDS TO CANCEL');
             sleep(10);
@@ -1285,13 +1333,13 @@ class Manager
             foreach ($views as $view) {
                 $this->dbi->dropView($view['name']);
             }
-            $last_tables = [];
+            $lastTables = [];
             for ($i = 0; $i < 255; ++$i) {
                 $tables = $this->dbi->listTables();
                 if (0 === count($tables)) {
                     break;
                 }
-                if (count($tables) === count($last_tables) && $i > count($tables)) {
+                if (count($tables) === count($lastTables) && $i > count($tables)) {
                     $this->log('Got stuck trying to resolve drop dependencies. Aborting!');
 
                     return false;
@@ -1302,12 +1350,12 @@ class Manager
                     } catch (\Throwable $e) {
                     }
                 }
-                $last_tables = $tables;
+                $lastTables = $tables;
             }
             if (254 === $i) {
                 exit('Something really BAD happened!');
             }
-            $functions = $this->dbi->listFunctions(null, true);
+            $functions = $this->dbi->listFunctions(true);
             foreach ($functions as $function) {
                 $this->dbi->dropFunction($function['name'], $function['parameters'], true);
             }
@@ -1319,7 +1367,7 @@ class Manager
             $this->createInfoTable();
         }
         $this->log('Starting database migration process.');
-        if (0 === $currentVersion && $version === $latest_version) {
+        if (0 === $currentVersion && $version === $latestVersion) {
             /**
              * This section sets up the database using the existing schema without migration replay.
              *
@@ -1346,8 +1394,8 @@ class Manager
             $this->log('Initialising database'.($version ? " at version '{$version}'" : ''));
             if ($schema['version'] > 0) {
                 if ($this->applySchema($schema, $test, $keepTables)) {
-                    $missing_versions = $this->getMissingVersions($version);
-                    foreach ($missing_versions as $ver) {
+                    $missingVersions = $this->getMissingVersions($version);
+                    foreach ($missingVersions as $ver) {
                         $this->dbi->insert(self::$schemaInfoTable, ['version' => $ver]);
                     }
                 }
@@ -1356,21 +1404,21 @@ class Manager
         } else {
             $this->log("Migrating to version '{$version}'.");
             // Compare known versions with the versions applied to the database and get a list of missing versions less than the requested version
-            $missing_versions = $this->getMissingVersions($version, $appliedVersions);
-            if (($count = count($missing_versions)) > 0) {
+            $missingVersions = $this->getMissingVersions($version, $appliedVersions);
+            if (($count = count($missingVersions)) > 0) {
                 $this->log("Found {$count} missing versions that will get replayed.");
             }
-            $migrations = array_combine($missing_versions, array_fill(0, count($missing_versions), 'up'));
+            $migrations = array_combine($missingVersions, array_fill(0, count($missingVersions), 'up'));
             ksort($migrations);
             if ($version < $currentVersion) {
-                $down_migrations = [];
+                $downMigrations = [];
                 foreach ($versions as $ver => $info) {
                     if ($ver > $version && $ver <= $currentVersion && in_array($ver, $appliedVersions)) {
-                        $down_migrations[$ver] = 'down';
+                        $downMigrations[$ver] = 'down';
                     }
                 }
-                krsort($down_migrations);
-                $migrations = $migrations + $down_migrations;
+                krsort($downMigrations);
+                $migrations = $migrations + $downMigrations;
             }
             if (0 === count($migrations)) {
                 $this->log('Nothing to do!');
@@ -1393,9 +1441,9 @@ class Manager
                     }
 
                     try {
-                        $this->dbi->beginTransaction();
+                        $this->dbi->begin();
                         if (true !== $this->replay($currentSchema[$mode], $test, $globalVars, $ver)) {
-                            $this->dbi->rollback();
+                            $this->dbi->cancel();
 
                             return false;
                         }
@@ -1415,13 +1463,13 @@ class Manager
                         }
                         $this->dbi->commit();
                     } catch (\Throwable $e) {
-                        $this->dbi->rollback();
+                        $this->dbi->cancel();
 
                         throw $e;
                     }
                     $this->log("-- Replay of version '{$ver}' completed.");
                 } while ($source = next($versions));
-                if ('up' === $mode && $version === $latest_version) {
+                if ('up' === $mode && $version === $latestVersion) {
                     $forceDataSync = true;
                 }
             }
@@ -1452,7 +1500,7 @@ class Manager
 
         try {
             $globalVars = null;
-            $this->dbi->beginTransaction();
+            $this->dbi->begin();
             $this->log('Removing version: '.$version);
             if (!$this->replay($currentSchema['down'], $test, $globalVars, $version)) {
                 throw new \Exception('Failed to migrate down!');
@@ -1463,7 +1511,7 @@ class Manager
             }
             $this->dbi->commit();
         } catch (\Throwable $e) {
-            $this->dbi->rollback();
+            $this->dbi->cancel();
 
             throw $e;
         }
@@ -1479,7 +1527,7 @@ class Manager
      */
     public function rollback(int $version, bool $test = false, array &$rollbacks = []): bool
     {
-        $this->log('Rollbacking back version '.$version.($test ? ' in TEST MODE' : ''));
+        $this->log('Rolling back version '.$version.($test ? ' in TEST MODE' : ''));
         $versions = $this->getVersions(true, true);
         if (!array_key_exists($version, $versions)) {
             $this->log('Version '.$version.' is not currently applied to the schema');
@@ -1487,78 +1535,78 @@ class Manager
             return false;
         }
         $items = ake(json_decode(file_get_contents($versions[$version]), true), 'down');
-        $version_list = array_keys($versions);
-        sort($version_list);
+        $versionList = array_keys($versions);
+        sort($versionList);
 
         /**
          * LOOK FOR DEPENDENTS SO WE CAN ROLL BACK THOSE VERSIONS AS WELL.
          */
-        $modified_tables = array_merge(ake($items, 'table.remove', []), array_keys(ake($items, 'table.alter', [])));
-        $start = array_search($version, $version_list);
+        $modifiedTables = array_merge(ake($items, 'table.remove', []), array_keys(ake($items, 'table.alter', [])));
+        $start = array_search($version, $versionList);
         $dependents = [];
-        for ($i = $start + 1; $i < count($version_list); ++$i) {
+        for ($i = $start + 1; $i < count($versionList); ++$i) {
             $dependent = false;
-            $compare_version = $version_list[$i];
-            if (!array_key_exists($compare_version, $versions)) {
+            $compareVersion = $versionList[$i];
+            if (!array_key_exists($compareVersion, $versions)) {
                 throw new \Exception('Something weird happened:  List had version number that is not in version array!');
             }
-            $version_item = json_decode(file_get_contents($versions[$compare_version]), true);
-            if (!($compare_item = ake($version_item, 'up'))) {
+            $versionItem = json_decode(file_get_contents($versions[$compareVersion]), true);
+            if (!($compareItem = ake($versionItem, 'up'))) {
                 continue;
             }
             // Migrations that alter a modified table
-            if (($table_alter = ake($compare_item, 'table.alter'))
-                && count(array_intersect(array_keys($table_alter), $modified_tables)) > 0) {
+            if (($tableAlter = ake($compareItem, 'table.alter'))
+                && count(array_intersect(array_keys($tableAlter), $modifiedTables)) > 0) {
                 $dependent = true;
             }
             // Migrations that remove a modified table
-            if (($table_remove = ake($compare_item, 'table.remove'))
-                && count(array_intersect($table_remove, $modified_tables)) > 0) {
+            if (($tableRemove = ake($compareItem, 'table.remove'))
+                && count(array_intersect($tableRemove, $modifiedTables)) > 0) {
                 $dependent = true;
             }
             // Migrations that create constraints on or referencing a modified table
-            if ($constraint_create = ake($compare_item, 'constraint.create')) {
-                foreach ($constraint_create as $constraint) {
-                    if ((($table = ake($constraint, 'table')) && false !== array_search($table, $modified_tables))
-                        || ($references_table = ake($constraint, 'references.table')) && false !== array_search($references_table, $modified_tables)) {
+            if ($constraintCreate = ake($compareItem, 'constraint.create')) {
+                foreach ($constraintCreate as $constraint) {
+                    if ((($table = ake($constraint, 'table')) && false !== array_search($table, $modifiedTables))
+                        || ($referencesTable = ake($constraint, 'references.table')) && false !== array_search($referencesTable, $modifiedTables)) {
                         $dependent = true;
                     }
                 }
             }
             // Migrations that create constraints on or referencing a modified table
-            if (ake($compare_item, 'constraint.remove')) {
-                if (!is_array($constraint_items = ake($version_item, 'down.constraint.create'))) {
+            if (ake($compareItem, 'constraint.remove')) {
+                if (!is_array($constraintItems = ake($versionItem, 'down.constraint.create'))) {
                     continue;
                 }
-                foreach ($constraint_items as $constraint) {
-                    if ((($table = ake($constraint, 'table')) && false !== array_search($table, $modified_tables))
-                        || ($references_table = ake($constraint, 'references.table')) && false !== array_search($references_table, $modified_tables)) {
+                foreach ($constraintItems as $constraint) {
+                    if ((($table = ake($constraint, 'table')) && false !== array_search($table, $modifiedTables))
+                        || ($referencesTable = ake($constraint, 'references.table')) && false !== array_search($referencesTable, $modifiedTables)) {
                         $dependent = true;
                     }
                 }
             }
             // Migrations that create indexes on a modified table
-            if ($index_create = ake($compare_item, 'index.create')) {
-                foreach ($index_create as $index) {
-                    if (false !== array_search(ake($index, 'table'), $modified_tables)) {
+            if ($indexCreate = ake($compareItem, 'index.create')) {
+                foreach ($indexCreate as $index) {
+                    if (false !== array_search(ake($index, 'table'), $modifiedTables)) {
                         $dependent = true;
                     }
                 }
             }
             // Migrations that remove indexes on a modified table
-            if (ake($compare_item, 'index.remove')) {
-                if (!is_array($index_items = ake($version_item, 'down.index.create'))) {
+            if (ake($compareItem, 'index.remove')) {
+                if (!is_array($indexItems = ake($versionItem, 'down.index.create'))) {
                     continue;
                 }
-                foreach ($index_items as $index_item) {
-                    if (false !== array_search(ake($index_item, 'table'), $modified_tables)) {
+                foreach ($indexItems as $indexItem) {
+                    if (false !== array_search(ake($indexItem, 'table'), $modifiedTables)) {
                         $dependent = true;
                     }
                 }
             }
             if (true === $dependent) {
-                $this->log('- '.$version.' depends on '.$compare_version);
-                $dependents[] = $compare_version;
+                $this->log('- '.$version.' depends on '.$compareVersion);
+                $dependents[] = $compareVersion;
             }
         }
         rsort($dependents);
@@ -1570,9 +1618,9 @@ class Manager
         }
 
         try {
-            $this->dbi->beginTransaction();
+            $this->dbi->begin();
             if ($this->replay($items, $test) === $test) {
-                $this->dbi->rollback();
+                $this->dbi->cancel();
 
                 return false;
             }
@@ -1585,12 +1633,12 @@ class Manager
             }
             $this->dbi->commit();
         } catch (\Throwable $e) {
-            $this->dbi->rollback();
+            $this->dbi->cancel();
 
             throw $e;
         }
         $rollbacks[] = $version;
-        $this->log("rollback of version '{$version}' completed.");
+        $this->log("Rollback of version '{$version}' completed.");
 
         return true;
     }
@@ -1602,7 +1650,7 @@ class Manager
      */
     public function applySchema(array $schema, bool $test = false, bool $keepTables = false): bool
     {
-        $this->dbi->beginTransaction();
+        $this->dbi->begin();
 
         try {
             // Create Extensions
@@ -1614,9 +1662,9 @@ class Manager
             // Create tables
             if ($tables = ake($schema, 'tables')) {
                 foreach ($tables as $table => $columns) {
-                    if (true === $keepTables && $this->dbi->tableExists($table)) {
-                        $cur_columns = $this->dbi->describeTable($table);
-                        $diff = array_diff_assoc_recursive($cur_columns, $columns);
+                    if (true === $keepTables && $this->dbi->table($table)->exists()) {
+                        $curColumns = $this->dbi->describeTable($table);
+                        $diff = array_diff_assoc_recursive($curColumns, $columns);
                         if (count($diff) > 0) {
                             throw new Schema('Table "'.$table.'" already exists but is different.  Bailing out!');
                         }
@@ -1628,59 +1676,59 @@ class Manager
                     if (!$ret || $this->dbi->errorCode() > 0) {
                         throw new Schema('Error creating table '.$table.': '.$this->dbi->errorInfo()[2]);
                     }
-                    if (($dbi_user = $this->dbiConfig['user']) && $this->dbi->config['user'] !== $dbi_user) {
-                        $this->dbi->grant($table, $dbi_user, ['INSERT', 'SELECT', 'UPDATE', 'DELETE']);
+                    if (($dbiUser = $this->dbiConfig['user']) && $this->dbi->config['user'] !== $dbiUser) {
+                        $this->dbi->grant(['INSERT', 'SELECT', 'UPDATE', 'DELETE'], $dbiUser, $table);
                     }
                 }
             }
             // Create foreign keys
             if ($constraints = ake($schema, 'constraints')) {
                 // Do primary keys first
-                $cur_constraints = $this->dbi->listConstraints();
-                foreach ($constraints as $constraint_name => $constraint) {
+                $curConstraints = $this->dbi->listConstraints();
+                foreach ($constraints as $constraintName => $constraint) {
                     if ('PRIMARY KEY' !== $constraint['type']) {
                         continue;
                     }
-                    if (true === $keepTables && array_key_exists($constraint_name, $cur_constraints)) {
-                        $diff = array_diff_assoc_recursive($cur_constraints[$constraint_name], $constraint);
+                    if (true === $keepTables && array_key_exists($constraintName, $curConstraints)) {
+                        $diff = array_diff_assoc_recursive($curConstraints[$constraintName], $constraint);
                         if (count($diff) > 0) {
-                            throw new Schema('Constraint "'.$constraint_name.'" already exists but is different.  Bailing out!');
+                            throw new Schema('Constraint "'.$constraintName.'" already exists but is different.  Bailing out!');
                         }
-                        $this->log('Constraint "'.$constraint_name.'" already exists and looks current.  Skipping.');
+                        $this->log('Constraint "'.$constraintName.'" already exists and looks current.  Skipping.');
 
                         continue;
                     }
-                    $ret = $this->dbi->addConstraint($constraint_name, $constraint);
+                    $ret = $this->dbi->addConstraint($constraintName, $constraint);
                     if (!$ret || $this->dbi->errorCode() > 0) {
-                        throw new Schema('Error creating constraint '.$constraint_name.': '.$this->dbi->errorInfo()[2]);
+                        throw new Schema('Error creating constraint '.$constraintName.': '.$this->dbi->errorInfo()[2]);
                     }
                 }
                 // Now do all other constraints
-                foreach ($constraints as $constraint_name => $constraint) {
+                foreach ($constraints as $constraintName => $constraint) {
                     if ('PRIMARY KEY' === $constraint['type']) {
                         continue;
                     }
-                    if (true === $keepTables && array_key_exists($constraint_name, $cur_constraints)) {
-                        $diff = array_diff_assoc_recursive($cur_constraints[$constraint_name], $constraint);
+                    if (true === $keepTables && array_key_exists($constraintName, $curConstraints)) {
+                        $diff = array_diff_assoc_recursive($curConstraints[$constraintName], $constraint);
                         if (count($diff) > 0) {
-                            throw new Schema('Constraint "'.$constraint_name.'" already exists but is different.  Bailing out!');
+                            throw new Schema('Constraint "'.$constraintName.'" already exists but is different.  Bailing out!');
                         }
-                        $this->log('Constraint "'.$constraint_name.'" already exists and looks current.  Skipping.');
+                        $this->log('Constraint "'.$constraintName.'" already exists and looks current.  Skipping.');
 
                         continue;
                     }
-                    $ret = $this->dbi->addConstraint($constraint_name, $constraint);
+                    $ret = $this->dbi->addConstraint($constraintName, $constraint);
                     if (!$ret || $this->dbi->errorCode() > 0) {
-                        throw new Schema('Error creating constraint '.$constraint_name.': '.$this->dbi->errorInfo()[2]);
+                        throw new Schema('Error creating constraint '.$constraintName.': '.$this->dbi->errorInfo()[2]);
                     }
                 }
             }
             // Create indexes
             if ($indexes = ake($schema, 'indexes')) {
-                foreach ($indexes as $index_name => $index_info) {
-                    $ret = $this->dbi->createIndex($index_name, $index_info['table'], $index_info);
+                foreach ($indexes as $indexName => $indexInfo) {
+                    $ret = $this->dbi->createIndex($indexName, $indexInfo['table'], $indexInfo);
                     if (!$ret || $this->dbi->errorCode() > 0) {
-                        throw new Schema('Error creating index '.$index_name.': '.$this->dbi->errorInfo()[2]);
+                        throw new Schema('Error creating index '.$indexName.': '.$this->dbi->errorInfo()[2]);
                     }
                 }
             }
@@ -1688,8 +1736,8 @@ class Manager
             if ($views = ake($schema, 'views')) {
                 foreach ($views as $view => $info) {
                     if (true === $keepTables && $this->dbi->viewExists($view)) {
-                        $cur_info = $this->dbi->describeView($view);
-                        $diff = array_diff_assoc_recursive($cur_info, $info);
+                        $curInfo = $this->dbi->describeView($view);
+                        $diff = array_diff_assoc_recursive($curInfo, $info);
                         if (count($diff) > 0) {
                             throw new Schema('View "'.$view.'" already exists but is different.  Bailing out!');
                         }
@@ -1701,8 +1749,8 @@ class Manager
                     if (!$ret || $this->dbi->errorCode() > 0) {
                         throw new Schema('Error creating view '.$view.': '.$this->dbi->errorInfo()[2]);
                     }
-                    if (($dbi_user = $this->dbiConfig['user']) && $this->dbi->config['user'] !== $dbi_user) {
-                        $this->dbi->grant($view, $dbi_user, ['SELECT']);
+                    if (($dbiUser = $this->dbiConfig['user']) && $this->dbi->config['user'] !== $dbiUser) {
+                        $this->dbi->grant(['SELECT'], $dbiUser, $view);
                     }
                 }
             }
@@ -1725,15 +1773,15 @@ class Manager
             }
             // Create triggers
             if ($triggers = ake($schema, 'triggers')) {
-                $cur_triggers = [];
+                $curTriggers = [];
                 foreach ($triggers as $name => $info) {
                     if (true === $keepTables) {
-                        if (!array_key_exists($info['table'], $cur_triggers)) {
-                            $cur_triggers[$info['table']] = array_collate($this->dbi->listTriggers($info['table']), 'name');
+                        if (!array_key_exists($info['table'], $curTriggers)) {
+                            $curTriggers[$info['table']] = array_collate($this->dbi->listTriggers($info['table']), 'name');
                         }
-                        if (array_key_exists($info['name'], $cur_triggers[$info['table']])) {
-                            $cur_info = $this->dbi->describeTrigger($info['name']);
-                            $diff = array_diff_assoc_recursive($cur_info, $info);
+                        if (array_key_exists($info['name'], $curTriggers[$info['table']])) {
+                            $curInfo = $this->dbi->describeTrigger($info['name']);
+                            $diff = array_diff_assoc_recursive($curInfo, $info);
                             if (count($diff) > 0) {
                                 throw new Schema('Trigger "'.$info['name'].'" already exists but is different.  Bailing out!');
                             }
@@ -1750,12 +1798,12 @@ class Manager
                 }
             }
         } catch (\Throwable $e) {
-            $this->dbi->rollback();
+            $this->dbi->cancel();
 
             throw $e;
         }
         if (true === $test) {
-            $this->dbi->rollback();
+            $this->dbi->cancel();
 
             return false;
         }
@@ -1782,17 +1830,22 @@ class Manager
     public function syncData(?array $dataSchema = null, bool $test = false, bool $forceDataSync = false): bool
     {
         $this->log('Initialising DBI data sync');
-        $this->log('APPLICATION_ENV: '.APPLICATION_ENV);
+        $this->log('APPLICATION_ENV: '.$this->dbiConfig['environment']);
         if (null === $dataSchema) {
             $schema = $this->getSchema($this->getVersion());
             $dataSchema = array_key_exists('data', $schema) ? $schema['data'] : [];
             $this->loadDataFromFile($dataSchema, $this->dataFile);
         }
-        $sync_hash = md5(json_encode($dataSchema));
-        $sync_hash_file = Application::getInstance()->getRuntimePath('.dbi_sync_hash');
+        if (0 === count($dataSchema)) {
+            $this->log('No data schema to sync.  Skipping data sync.');
+
+            return true;
+        }
+        $syncHash = md5(json_encode($dataSchema));
+        $syncHashFile = Application::getInstance()->getRuntimePath('.dbi_sync_hash');
         if (true !== $forceDataSync
-            && file_exists($sync_hash_file)
-            && $sync_hash == trim(file_get_contents($sync_hash_file))) {
+            && file_exists($syncHashFile)
+            && $syncHash == trim(file_get_contents($syncHashFile))) {
             $this->log('Sync hash is unchanged.  Skipping data sync.');
 
             return true;
@@ -1800,8 +1853,8 @@ class Manager
         $this->log('Starting DBI data sync on schema version '.$this->getVersion());
         $this->currentVersion = null;  // Removed to force reload
         $this->appliedVersions = null; // Removed to force reload
-        $this->dbi->beginTransaction();
-        $globalVars = new \stdClass();
+        $this->dbi->begin();
+        $globalVars = [];
 
         try {
             $records = [];
@@ -1809,20 +1862,22 @@ class Manager
                 $this->processDataObject($info, $records, $globalVars);
             }
             if ($test) {
-                $this->dbi->rollback();
+                $this->dbi->cancel();
             } else {
                 $this->dbi->commit();
             }
             $this->log('DBI Data sync completed successfully!');
-            $this->log('Running '.$this->dbi->driver.' repair process');
-            $result = $this->dbi->driver->repair();
-            $this->log('Repair '.($result ? 'completed successfully' : 'failed'));
+            if ($this->dbi->can('repair')) {
+                $this->log('Running '.$this->dbi->getDriverName().' repair process');
+                $result = $this->dbi->repair();
+                $this->log('Repair '.($result ? 'completed successfully' : 'failed'));
+            }
         } catch (\Throwable $e) {
-            $this->dbi->rollback();
+            $this->dbi->cancel();
             $this->log('DBI Data sync error: '.$e->getMessage());
         }
-        if (false === file_exists($sync_hash_file) || is_writable($sync_hash_file)) {
-            file_put_contents($sync_hash_file, $sync_hash);
+        if (false === file_exists($syncHashFile) || is_writable($syncHashFile)) {
+            file_put_contents($syncHashFile, $syncHash);
         }
 
         return true;
@@ -1868,27 +1923,31 @@ class Manager
     }
 
     /**
-     * @param array<array<mixed>>|string $roleOrRoles
+     * @param array<array{
+     *  name:string,
+     *  password:string,
+     *  privileges:array<string>|string
+     * }>|string $userOrUsers
      */
-    public function createRoleIfNotExists(array|string $roleOrRoles): void
+    public function createUserIfNotExists(array|string $userOrUsers): void
     {
-        $roles = is_array($roleOrRoles) ? $roleOrRoles : [$roleOrRoles];
-        $currentRoles = array_merge($this->dbi->listUsers(), $this->dbi->listGroups());
-        foreach ($roles as $role) {
-            if (in_array($role['name'], $currentRoles)) {
+        $users = is_array($userOrUsers) ? $userOrUsers : ['name' => $userOrUsers];
+        $currentUsers = array_merge($this->dbi->listUsers(), $this->dbi->listGroups());
+        foreach ($users as $user) {
+            if (in_array($user['name'], $currentUsers)) {
                 continue;
             }
-            $this->log('Creating role: '.$role['name']);
+            $this->log('Creating role: '.$user['name']);
             $privileges = ['INHERIT'];
-            if (array_key_exists('privileges', $role)) {
-                if (is_array($role['privileges'])) {
-                    $privileges = array_merge($privileges, $role['privileges']);
+            if (array_key_exists('privileges', $user)) {
+                if (is_array($user['privileges'])) {
+                    $privileges = array_merge($privileges, $user['privileges']);
                 } else {
-                    $privileges[] = $role['privileges'];
+                    $privileges[] = $user['privileges'];
                 }
             }
-            if (!$this->dbi->createRole($role['name'], $role['password'], $privileges)) {
-                throw new \Exception("Error creating role '{$role['name']}': ".ake($this->dbi->errorInfo(), 2));
+            if (!$this->dbi->createUser($user['name'], $user['password'], $privileges)) {
+                throw new \Exception("Error creating role '{$user['name']}': ".ake($this->dbi->errorInfo(), 2));
             }
         }
     }
@@ -1913,12 +1972,17 @@ class Manager
         return $this->snapshot('CHECKPOINT', false, $version);
     }
 
+    public function registerOutputHandler(callable $callback): void
+    {
+        $this->__callback = $callback;
+    }
+
     /**
      * Creates the info table that stores the version info of the current database.
      */
     private function createInfoTable(): bool
     {
-        if (!$this->dbi->tableExists(Manager::$schemaInfoTable)) {
+        if (!$this->dbi->table(Manager::$schemaInfoTable)->exists()) {
             $this->dbi->createTable(Manager::$schemaInfoTable, [
                 'version' => [
                     'data_type' => 'int8',
@@ -1968,17 +2032,17 @@ class Manager
         $this->log('Looking for new and updated columns');
         foreach ($new as $col) {
             // Check if the column is in the schema and if so, check it for changes
-            if (($old_column = $this->getColumn($col['name'], $old)) !== null) {
-                $column_diff = [];
+            if (($oldColumn = $this->getColumn($col['name'], $old)) !== null) {
+                $columnDiff = [];
                 foreach ($col as $key => $value) {
-                    if ((array_key_exists($key, $old_column) && $value !== $old_column[$key])
-                    || (!array_key_exists($key, $old_column) && null !== $value)) {
-                        $column_diff[$key] = $value;
+                    if ((array_key_exists($key, $oldColumn) && $value !== $oldColumn[$key])
+                    || (!array_key_exists($key, $oldColumn) && null !== $value)) {
+                        $columnDiff[$key] = $value;
                     }
                 }
-                if (count($column_diff) > 0) {
+                if (count($columnDiff) > 0) {
                     $this->log("> Column '{$col['name']}' has changed");
-                    $diff['alter'][$col['name']] = $column_diff;
+                    $diff['alter'][$col['name']] = $columnDiff;
                 }
             } else {
                 $this->log("+ Column '{$col['name']}' is new.");
@@ -2018,12 +2082,14 @@ class Manager
      *
      * This should only be used internally by the migrate method to replay an individual schema migration file.
      *
-     * @param array<mixed> $schema The JSON decoded schema to replay
+     * @param array<mixed>      $schema     The JSON decoded schema to replay
+     * @param bool              $test       If true, the migration will be simulated but not actually executed
+     * @param null|array<mixed> $globalVars
      */
     private function replay(
         array $schema,
         bool $test = false,
-        ?\stdClass &$globalVars = null,
+        ?array &$globalVars = null,
         ?int $version = null
     ): bool {
         foreach ($schema as $level1 => $data) {
@@ -2093,15 +2159,15 @@ class Manager
     ): bool {
         // Replay primary key constraints first!
         if ('constraint' === $type && 'create' === $action && true === $primaryKeysFirst) {
-            $pk_items = array_filter($items, function ($i) {
+            $pkItems = array_filter($items, function ($i) {
                 return 'PRIMARY KEY' === $i['type'];
             });
-            $this->replayItems($type, $action, $pk_items, $test, false, $version);
+            $this->replayItems($type, $action, $pkItems, $test, false, $version);
             $items = array_filter($items, function ($i) {
                 return 'PRIMARY KEY' !== $i['type'];
             });
         }
-        foreach ($items as $item_name => $item) {
+        foreach ($items as $itemName => $item) {
             switch ($action) {
                 case 'create':
                 case 'add':
@@ -2117,8 +2183,8 @@ class Manager
                             break;
                         }
                         $this->dbi->createTable($item['name'], $item['cols']);
-                        if (($dbi_user = $this->dbiConfig['user']) && $dbi_user != $this->dbi->config['user']) {
-                            $this->dbi->grant($item['name'], $dbi_user, ['INSERT', 'SELECT', 'UPDATE', 'DELETE']);
+                        if (($dbiUser = $this->dbiConfig['user']) && $dbiUser != $this->dbi->config['user']) {
+                            $this->dbi->grant(['INSERT', 'SELECT', 'UPDATE', 'DELETE'], $dbiUser, $item['name']);
                         }
                     } elseif ('index' === $type) {
                         $this->log("+ Creating index '{$item['name']}' on table '{$item['table']}'.");
@@ -2146,8 +2212,8 @@ class Manager
                         }
                         $this->processContent($version, 'views', $item);
                         $this->dbi->createView($item['name'], $item['content']);
-                        if (($dbi_user = $this->dbiConfig['user']) && $dbi_user != $this->dbi->config['user']) {
-                            $this->dbi->grant($item['name'], $dbi_user, ['SELECT']);
+                        if (($dbiUser = $this->dbiConfig['user']) && $dbiUser != $this->dbi->config['user']) {
+                            $this->dbi->grant(['SELECT'], $dbiUser, $item['name']);
                         }
                     } elseif ('function' === $type) {
                         $params = [];
@@ -2163,9 +2229,9 @@ class Manager
                         $this->processContent($version, 'functions', $item);
                         $this->dbi->createFunction($item['name'], $item);
                         if (true === ake($items, 'grant')
-                            && ($dbi_user = $this->dbiConfig['user'])
-                            && $dbi_user != $this->dbi->config['user']) {
-                            $this->dbi->grant('FUNCTION '.$item['name'], $dbi_user, ['EXECUTE']);
+                            && ($dbiUser = $this->dbiConfig['user'])
+                            && $dbiUser != $this->dbi->config['user']) {
+                            $this->dbi->grant(['EXECUTE'], $dbiUser, 'FUNCTION '.$item['name']);
                         }
                     } elseif ('trigger' === $type) {
                         $this->log("+ Creating trigger '{$item['name']}' on table '{$item['table']}'.");
@@ -2175,9 +2241,9 @@ class Manager
                         $this->processContent($version, 'functions', $item);
                         $this->dbi->createTrigger($item['name'], $item['table'], $item);
                         if (true === ake($items, 'grant')
-                            && ($dbi_user = $this->dbiConfig['user'])
-                            && $dbi_user != $this->dbi->config['user']) {
-                            $this->dbi->grant('FUNCTION '.$item['name'], $dbi_user, ['EXECUTE']);
+                            && ($dbiUser = $this->dbiConfig['user'])
+                            && $dbiUser != $this->dbi->config['user']) {
+                            $this->dbi->grant(['EXECUTE'], $dbiUser, 'FUNCTION '.$item['name']);
                         }
                     } else {
                         $this->log("I don't know how to create a {$type}!");
@@ -2241,46 +2307,46 @@ class Manager
 
                 case 'alter':
                 case 'change':
-                    $this->log("> Altering {$type} {$item_name}");
+                    $this->log("> Altering {$type} {$itemName}");
                     if ('table' === $type) {
-                        foreach ($item as $alter_action => $columns) {
-                            foreach ($columns as $col_name => $col) {
-                                if ('add' == $alter_action) {
+                        foreach ($item as $alterAction => $columns) {
+                            foreach ($columns as $colName => $col) {
+                                if ('add' == $alterAction) {
                                     $this->log("+ Adding column '{$col['name']}'.");
                                     if ($test) {
                                         break;
                                     }
-                                    $this->dbi->addColumn($item_name, $col);
-                                } elseif ('alter' == $alter_action) {
-                                    $this->log("> Altering column '{$col_name}'.");
+                                    $this->dbi->addColumn($itemName, $col);
+                                } elseif ('alter' == $alterAction) {
+                                    $this->log("> Altering column '{$colName}'.");
                                     if ($test) {
                                         break;
                                     }
-                                    $this->dbi->alterColumn($item_name, $col_name, $col);
-                                } elseif ('drop' == $alter_action) {
+                                    $this->dbi->alterColumn($itemName, $colName, $col);
+                                } elseif ('drop' == $alterAction) {
                                     $this->log("- Dropping column '{$col}'.");
                                     if ($test) {
                                         break;
                                     }
-                                    $this->dbi->dropColumn($item_name, $col, true);
+                                    $this->dbi->dropColumn($itemName, $col, true);
                                 }
                                 if ($this->dbi->errorCode() > 0) {
                                     throw new Exception\Migration($this->dbi->errorInfo()[2]);
                                 }
                             }
                         }
-                        if (($dbi_user = $this->dbiConfig['user']) && $dbi_user != $this->dbi->config['user']) {
-                            $this->dbi->grant($item_name, $dbi_user, ['INSERT', 'SELECT', 'UPDATE', 'DELETE']);
+                        if (($dbiUser = $this->dbiConfig['user']) && $dbiUser != $this->dbi->config['user']) {
+                            $this->dbi->grant(['INSERT', 'SELECT', 'UPDATE', 'DELETE'], $dbiUser, $itemName);
                         }
                     } elseif ('view' === $type) {
                         if ($test) {
                             break;
                         }
-                        $this->dbi->dropView($item_name, false, true);
+                        $this->dbi->dropView($itemName, false, true);
                         if ($this->dbi->errorCode() > 0) {
                             throw new Exception\Migration($this->dbi->errorInfo()[2]);
                         }
-                        $this->dbi->createView($item_name, $item['content']);
+                        $this->dbi->createView($itemName, $item['content']);
                     } elseif ('function' === $type) {
                         $params = [];
                         if ($parameters = ake($item, 'parameters')) {
@@ -2388,23 +2454,28 @@ class Manager
     }
 
     /**
-     * @param array<\stdClass> $records
+     * @param array<mixed> $row     The row to prepare
+     * @param array<mixed> $records The records that have been queried
+     * @param array<mixed> $refs    The references to other tables
+     * @param array<mixed> $vars    The variables to use in the row
+     *
+     * @return array<mixed>
      */
     private function prepareRow(
-        \stdClass &$row,
+        array &$row,
         array &$records = [],
-        ?\stdClass $refs = null,
-        ?\stdClass $vars = null
-    ): \stdClass {
-        $row_refs = [];
-        if ($refs instanceof \stdClass) {
-            $row = (object) array_merge((array) $row, (array) $refs);
+        ?array $refs = null,
+        ?array $vars = null
+    ): array {
+        $rowRefs = [];
+        if (count($refs) > 0) {
+            $row = array_merge($row, $refs);
         }
         if (null === $vars) {
             $vars = new \stdClass();
         }
         // Find any macros that have been defined in record fields
-        foreach (get_object_vars($row) as $columnName => &$field) {
+        foreach ($row as $columnName => &$field) {
             if (!is_string($field)) {
                 continue;
             }
@@ -2415,10 +2486,10 @@ class Manager
             if (($ref = $this->processMacro($field)) === false) {
                 continue;
             }
-            $row_refs[$columnName] = $ref;
+            $rowRefs[$columnName] = $ref;
         }
         // Process any macros that have been defined in record fields
-        foreach ($row_refs as $columnName => $ref) {
+        foreach ($rowRefs as $columnName => $ref) {
             $found = false;
             $value = null;
 
@@ -2431,22 +2502,22 @@ class Manager
                     break;
 
                 case self::MACRO_LOOKUP:
-                    list($ref_type, $ref_table, $ref_column, $ref_criteria) = $ref;
+                    list($refType, $refTable, $refColumn, $refCriteria) = $ref;
                     // Lookup already queried data records
-                    if (array_key_exists($ref_table, $records)) {
-                        foreach (get_object_vars($records[$ref_table]) as $record) {
-                            if (count(\array_diff_assoc($ref_criteria, (array) $record)) > 0) {
+                    if (array_key_exists($refTable, $records)) {
+                        foreach (get_object_vars($records[$refTable]) as $record) {
+                            if (count(\array_diff_assoc($refCriteria, (array) $record)) > 0) {
                                 continue;
                             }
-                            $value = ake($record, $ref_column);
+                            $value = ake($record, $refColumn);
                             $found = true;
 
                             break;
                         }
                     } else { // Fallback SQL query
-                        $match = $this->dbi->table($ref_table)
+                        $match = $this->dbi->table($refTable)
                             ->limit(1)
-                            ->find($ref_criteria, ['value' => $ref_column])
+                            ->find($refCriteria, ['value' => $refColumn])
                             ->fetch()
                         ;
                         if (false !== $match) {
@@ -2460,7 +2531,7 @@ class Manager
             if (false === $found) {
                 throw new Datasync("Macro for column '{$columnName}' did not find a value.");
             }
-            $row->{$columnName} = $value;
+            $row[$columnName] = $value;
         }
 
         return $row;
@@ -2468,41 +2539,39 @@ class Manager
 
     /**
      * @param array<mixed> $records
+     * @param array<mixed> $globalVars
      */
     private function processDataObject(
         \stdClass $info,
         ?array &$records = null,
-        ?\stdClass &$globalVars = null
+        ?array &$globalVars = null
     ): bool {
-        if (($required_version = ake($info, 'version')) && !array_key_exists((int) $required_version, $this->getVersions(false, true))) {
-            $this->log('Skipping section due to missing version '.$required_version);
+        if (($requiredVersion = ake($info, 'version')) && !array_key_exists((int) $requiredVersion, $this->getVersions(false, true))) {
+            $this->log('Skipping section due to missing version '.$requiredVersion);
 
             return false;
         }
         if (!is_array($records)) {
             $records = [];
         }
-        if (!is_array($env = ake($info, 'env', [APPLICATION_ENV]))) {
+        if (!is_array($env = ake($info, 'env', [$this->dbiConfig['environment']]))) {
             $env = [$env];
         }
-        if (!in_array(APPLICATION_ENV, $env)) {
+        if (!in_array($this->dbiConfig['environment'], $env)) {
             return false;
         }
         // Set up any data object variables
-        if (!$globalVars) {
-            $globalVars = new \stdClass();
+        if (!isset($globalVars)) {
+            $globalVars = [];
         }
         // We are setting these are global variables so store them un-prepared
-        if (count(get_object_vars($vars = ake($info, 'vars', new \stdClass()))) > 0
+        if (count($vars = ake($info, 'vars', new \stdClass())) > 0
             && !property_exists($info, 'table')) {
-            /**
-             * @var \stdClass $vars
-             */
-            $globalVars = object_merge($globalVars, $vars);
+            $globalVars = array_merge($globalVars, $vars);
         }
-        $vars = object_merge($globalVars, $vars);
+        $vars = array_merge($globalVars, $vars);
         // Prepare variables  using the compiled list of variables
-        if (count(get_object_vars($vars)) > 0) {
+        if (count($vars) > 0) {
             $vars = $this->prepareRow($vars, $records, null, $vars);
         }
         if ($message = ake($info, 'message')) {
@@ -2513,7 +2582,7 @@ class Manager
                 $exec = [$exec];
             }
             foreach ($exec as $execItem) {
-                if ($vars instanceof \stdClass) {
+                if (count($vars) > 0) {
                     $execItem = match_replace($execItem, $vars);
                 }
                 $this->log('EXEC_SQL: '.$execItem);
@@ -2525,7 +2594,7 @@ class Manager
             }
         }
         if ($table = ake($info, 'table')) {
-            if (true === $this->dbi->tableExists($table)) {
+            if (true === $this->dbi->table($table)->exists()) {
                 $pkey = null;
                 if ($constraints = $this->dbi->listConstraints($table, 'PRIMARY KEY')) {
                     $pkey = ake(reset($constraints), 'column');
@@ -2553,7 +2622,7 @@ class Manager
                         throw new Datasync("Purging rows from {$table} failed: ".ake($this->dbi->errorInfo(), 2));
                     }
                 }
-                if (($source = ake($info, 'source')) && ($remote_table = ake($info, 'table'))) {
+                if (($source = ake($info, 'source')) && ($remoteTable = ake($info, 'table'))) {
                     $this->log('Syncing rows from remote source');
                     $rows = [];
                     $rowdata = '[]';
@@ -2561,7 +2630,7 @@ class Manager
                         if (!isset($source->syncKey)
                             && ($config = ake($source, 'config'))
                             && is_string($config)) {
-                            $config = Adapter::getDefaultConfig($config);
+                            $config = Adapter::loadConfig($config);
                             $source->syncKey = $config['syncKey'];
                         }
                         $context = stream_context_create([
@@ -2575,7 +2644,7 @@ class Manager
                         $rowdata = file_get_contents(rtrim($hostURL, ' /').'/hazaar/dbi/sync', false, $context);
                     } elseif ($config = ake($source, 'config')) {
                         $remoteDBI = new Adapter($config);
-                        $remoteStatement = $remoteDBI->table($remote_table)->sort($pkey);
+                        $remoteStatement = $remoteDBI->table($remoteTable)->order($pkey);
                         if ($select = ake($source, 'select')) {
                             $remoteStatement->select((array) $select);
                         }
@@ -2614,36 +2683,36 @@ class Manager
                         $records[$table] = [];
                     }
                     $sequences = [];
-                    foreach ($rows as $row_num => $row) {
-                        if (count($col_diff = array_keys(array_diff_key((array) $row, $tableDef))) > 0) {
-                            $this->log("Skipping missing columns in table '{$table}': ".implode(', ', $col_diff));
-                            foreach ($col_diff as $key) {
+                    foreach ($rows as $rowNum => $row) {
+                        if (count($colDiff = array_keys(array_diff_key((array) $row, $tableDef))) > 0) {
+                            $this->log("Skipping missing columns in table '{$table}': ".implode(', ', $colDiff));
+                            foreach ($colDiff as $key) {
                                 unset($row->{$key});
                             }
                         }
                         // Prepare the row by resolving any macros
                         $row = $this->prepareRow($row, $records, $refs, $vars);
-                        $do_diff = false;
+                        $doDiff = false;
                         /*
                          * If the primary key is in the record, find the record using only that field, then
                          * we will check for differences between the records
                          */
-                        if (property_exists($row, $pkey)) {
+                        if (isset($row[$pkey])) {
                             $criteria = [$pkey => ake($row, $pkey)];
-                            $do_diff = true;
+                            $doDiff = true;
                         // Otherwise, if there are search keys specified, base the search criteria on that
                         } elseif (property_exists($info, 'keys')) {
                             $criteria = [];
                             foreach ($info->keys as $key) {
                                 $criteria[trim($key)] = ake($row, $key);
                             }
-                            $do_diff = true;
+                            $doDiff = true;
                         // Otherwise, look for the record in it's entirity and only insert if it doesn't exist.
                         } else {
                             $criteria = (array) $row;
-                            foreach ($criteria as &$criteria_item) {
-                                if (is_array($criteria_item) || $criteria_item instanceof \stdClass) {
-                                    $criteria_item = json_encode($criteria_item);
+                            foreach ($criteria as &$criteriaItem) {
+                                if (is_array($criteriaItem) || $criteriaItem instanceof \stdClass) {
+                                    $criteriaItem = json_encode($criteriaItem);
                                 }
                             }
                         }
@@ -2651,11 +2720,11 @@ class Manager
                         try {
                             // If this is an insert only row then move on because this row exists
                             if ($current = $this->dbi->table($table)->findOneRow($criteria)) {
-                                if (!(ake($info, 'insertonly') || true !== $do_diff)) {
-                                    $diff = array_diff_assoc_recursive(get_object_vars($row), $current->toArray());
+                                if (!(ake($info, 'insertonly') || true !== $doDiff)) {
+                                    $diff = array_diff_assoc_recursive($row, $current->toArray());
                                     // If nothing has been added to the row, look for child arrays/objects to backwards analyse
                                     if (($changes = count($diff)) === 0) {
-                                        foreach (get_object_vars($row) as $name => &$col) {
+                                        foreach ($row as $name => &$col) {
                                             if (!(is_array($col) || $col instanceof \stdClass)) {
                                                 continue;
                                             }
@@ -2663,9 +2732,9 @@ class Manager
                                         }
                                     }
                                     if ($changes > 0) {
-                                        $pkey_value = ake($current, $pkey);
-                                        $this->log("Updating record in table '{$table}' with {$pkey}={$pkey_value}");
-                                        if (!$this->dbi->update($table, $this->fixRow($row, $tableDef), [$pkey => $pkey_value])) {
+                                        $pkeyValue = ake($current, $pkey);
+                                        $this->log("Updating record in table '{$table}' with {$pkey}={$pkeyValue}");
+                                        if (!$this->dbi->update($table, $this->fixRow($row, $tableDef), [$pkey => $pkeyValue])) {
                                             throw new Datasync('Update failed: '.$this->dbi->errorInfo()[2]);
                                         }
                                         $current->extend($row);
@@ -2673,15 +2742,15 @@ class Manager
                                 }
                                 $current = $current->toArray();
                             } elseif (true !== ake($info, 'updateonly')) { // If this is an update only row then move on because this row does not exist
-                                if (($pkey_value = $this->dbi->insert($table, $this->fixRow($row, $tableDef), $pkey)) == false) {
+                                if (($pkeyValue = $this->dbi->insert($table, $this->fixRow($row, $tableDef), $pkey)) == false) {
                                     throw new Datasync('Insert failed: '.$this->dbi->errorInfo()[2]);
                                 }
-                                $row->{$pkey} = $pkey_value;
-                                $this->log("Inserted record into table '{$table}' with {$pkey}={$pkey_value}");
+                                $row->{$pkey} = $pkeyValue;
+                                $this->log("Inserted record into table '{$table}' with {$pkey}={$pkeyValue}");
                                 $current = (array) $row;
                             }
                         } catch (\Throwable $e) {
-                            throw new Datasync('Row #'.$row_num.': '.$e->getMessage());
+                            throw new Datasync('Row #'.$rowNum.': '.$e->getMessage());
                         }
                         $records[$table][] = $current;
                         // Look for any columns with sequences and increment the sequence if required
@@ -2702,10 +2771,10 @@ class Manager
                             }
                         }
                     }
-                    foreach ($sequences as $seq_name => $seq_value) {
-                        $last_value = $this->dbi->query("SELECT last_value FROM {$seq_name};")->fetchColumn(0);
-                        if ($last_value < $seq_value) {
-                            if (!$this->dbi->query("SELECT setval('{$seq_name}', {$seq_value})")) {
+                    foreach ($sequences as $seqName => $seqValue) {
+                        $lastValue = $this->dbi->query("SELECT last_value FROM {$seqName};")->fetchColumn(0);
+                        if ($lastValue < $seqValue) {
+                            if (!$this->dbi->query("SELECT setval('{$seqName}', {$seqValue})")) {
                                 throw new \Exception('Unable to update sequence: '.ake($this->dbi->errorInfo(), 2));
                             }
                         }
@@ -2742,10 +2811,10 @@ class Manager
                     }
                 }
                 if ($copy = ake($info, 'copy')) {
-                    if (!($source_table = ake($copy, 'sourceTable'))) {
+                    if (!($sourceTable = ake($copy, 'sourceTable'))) {
                         throw new Datasync('Data sync copy command requires a source table.');
                     }
-                    if (!($target_column = ake($copy, 'targetColumn'))) {
+                    if (!($targetColumn = ake($copy, 'targetColumn'))) {
                         throw new Datasync('Data sync copy command requires a target index column.');
                     }
                     $map = (array) ake($copy, 'map', []);
@@ -2753,30 +2822,30 @@ class Manager
                         throw new Datasync('Data sync copy command requires a valid column map.');
                     }
                     $set = (array) ake($copy, 'set', []);
-                    $source_sql = "SELECT * FROM \"{$source_table}\" AS \"source\"";
+                    $sourceSQL = "SELECT * FROM \"{$sourceTable}\" AS \"source\"";
                     if ($where = ake($copy, 'where')) {
-                        $source_sql .= ' WHERE '.trim($where);
+                        $sourceSQL .= ' WHERE '.trim($where);
                     }
-                    $source_query = $this->dbi->query($source_sql);
-                    while ($row = $source_query->fetch()) {
-                        $updates = new \stdClass();
-                        foreach ($map as $target_col => $source_col) {
-                            $updates->{$target_col} = ake($row, $source_col);
+                    $sourceQuery = $this->dbi->query($sourceSQL);
+                    while ($row = $sourceQuery->fetch()) {
+                        $updates = [];
+                        foreach ($map as $targetCol => $sourceCol) {
+                            $updates[$targetCol] = ake($row, $sourceCol);
                         }
                         foreach ($set as $setKey => $setData) {
-                            $updates->{$setKey} = $setData;
+                            $updates[$setKey] = $setData;
                         }
                         if (($vars = ake($copy, 'vars')) instanceof \stdClass) {
-                            $vars = clone $vars;
-                            $this->prepareRow($vars, $records, null, (object) $row);
+                            $vars = (array) $vars;
+                            $this->prepareRow($vars, $records, null, $row);
                         }
-                        $this->prepareRow($updates, $records, null, (object) array_merge((array) $vars, $row));
-                        if (!property_exists($updates, $target_column)) {
-                            throw new Datasync("Target column '{$target_column}' is not being updated in table '{$table}'!");
+                        $this->prepareRow($updates, $records, null, array_merge($vars, $row));
+                        if (!array_key_exists($targetColumn, $updates)) {
+                            throw new Datasync("Target column '{$targetColumn}' is not being updated in table '{$table}'!");
                         }
-                        $exist_criteria = [$target_column => $updates->{$target_column}];
-                        if ($this->dbi->table($table)->exists($exist_criteria)) {
-                            $result = $this->dbi->table($table, 'target')->update($exist_criteria, array_diff_assoc(get_object_vars($updates), $exist_criteria));
+                        $existCriteria = [$targetColumn => $updates[$targetColumn]];
+                        if ($this->dbi->table($table)->exists($existCriteria)) {
+                            $result = $this->dbi->table($table, 'target')->update($existCriteria, array_diff_assoc($updates, $existCriteria));
                         } else {
                             $result = $this->dbi->table($table, 'target')->insert($updates);
                         }
@@ -2802,7 +2871,7 @@ class Manager
      */
     private function fixRow(array|\stdClass &$row, mixed $tableDef): array
     {
-        $fixed_row = [];
+        $fixedRow = [];
         foreach ($row as $name => &$col) {
             if (!array_key_exists($name, $tableDef)) {
                 throw new Datasync("Attempting to modify data for non-existent row '{$name}'!");
@@ -2815,10 +2884,10 @@ class Manager
             } elseif (is_array($col)) {
                 $col = ['$array' => $col];
             }
-            $fixed_row[$name] = $col;
+            $fixedRow[$name] = $col;
         }
 
-        return $fixed_row;
+        return $fixedRow;
     }
 
     /**
@@ -2847,13 +2916,13 @@ class Manager
             if ('DBI' !== $settings->get('type')) {
                 continue;
             }
-            $fs_db = null;
+            $fsDb = null;
             $this->log('Found DBI filesystem: '.$name);
 
             try {
-                $settings->enhance(['dbi' => Adapter::getDefaultConfig(), 'initialise' => true]);
-                $fs_db = new Adapter($settings['dbi']);
-                if ($fs_db->tableExists('hz_file') && $fs_db->tableExists('hz_file_chunk')) {
+                $settings->enhance(['dbi' => Adapter::loadConfig(), 'initialise' => true]);
+                $fsDb = new Adapter($settings['dbi']);
+                if ($fsDb->table('hz_file')->exists() && $fsDb->table('hz_file_chunk')->exists()) {
                     continue;
                 }
                 if (true !== $settings['initialise']) {
@@ -2863,22 +2932,22 @@ class Manager
                     .DIRECTORY_SEPARATOR.'libs'
                     .DIRECTORY_SEPARATOR.'dbi'
                     .DIRECTORY_SEPARATOR.'schema.json');
-                $manager = $fs_db->getSchemaManager();
+                $manager = $fsDb->getSchemaManager();
                 $this->log('Initialising DBI filesystem: '.$name);
                 if (!$manager->applySchemaFromFile($schema)) {
                     throw new Exception\FileSystem('Unable to configure DBI filesystem schema!');
                 }
                 // Look for the old tables and if they exists, do an upgrade!
-                if ($fs_db->tableExists('file') && $fs_db->tableExists('file_chunk')) {
-                    if (!$fs_db->table('hz_file_chunk')->insert($fs_db->table('file_chunk')->select('id', null, 'n', 'data'))) {
-                        throw $fs_db->errorException();
+                if ($fsDb->table('file')->exists() && $fsDb->table('file_chunk')->exists()) {
+                    if (!$fsDb->table('hz_file_chunk')->insert($fsDb->table('file_chunk')->select(['id', null, 'n', 'data']))) {
+                        throw $fsDb->errorException();
                     }
-                    if (!$fs_db->table('hz_file')->insert($fs_db->table('file')->find(['kind' => 'dir'], ['id', 'kind', ['parent' => 'unnest(parents)'], null, 'filename', 'created_on', 'modified_on', 'length', 'mime_type', 'md5', 'owner', 'group', 'mode', 'metadata']))) {
-                        throw $fs_db->errorException();
+                    if (!$fsDb->table('hz_file')->insert($fsDb->table('file')->find(['kind' => 'dir'], ['id', 'kind', ['parent' => 'unnest(parents)'], null, 'filename', 'created_on', 'modified_on', 'length', 'mime_type', 'md5', 'owner', 'group', 'mode', 'metadata']))) {
+                        throw $fsDb->errorException();
                     }
-                    $fs_db->driver->repair();
-                    if (!$fs_db->query("INSERT INTO hz_file (kind, parent, start_chunk, filename, created_on, modified_on, length, mime_type, md5, owner, \"group\", mode, metadata) SELECT kind, unnest(parents) as parent, (SELECT fc.id FROM file_chunk fc WHERE fc.file_id=f.id), filename, created_on, modified_on, length, mime_type, md5, owner, \"group\", mode, metadata FROM file f WHERE kind = 'file'")) {
-                        throw $fs_db->errorException();
+                    $fsDb->repair();
+                    if (!$fsDb->query("INSERT INTO hz_file (kind, parent, start_chunk, filename, created_on, modified_on, length, mime_type, md5, owner, \"group\", mode, metadata) SELECT kind, unnest(parents) as parent, (SELECT fc.id FROM file_chunk fc WHERE fc.file_id=f.id), filename, created_on, modified_on, length, mime_type, md5, owner, \"group\", mode, metadata FROM file f WHERE kind = 'file'")) {
+                        throw $fsDb->errorException();
                     }
                 }
             } catch (\Throwable $e) {

@@ -22,8 +22,10 @@ class SyncCommand extends Command
 
     protected function execute(Input $input, Output $output): int
     {
-        $env = $input->getOption('env') ?? getenv('APPLICATION_ENV') ?: 'development';
-        $manager = Adapter::getSchemaManagerInstance($env);
+        $manager = Adapter::getSchemaManagerInstance();
+        $manager->registerOutputHandler(function ($time, $message) use ($output) {
+            $output->write(date('H:i:s', (int) round($time)).' '.$message.PHP_EOL);
+        });
         $data = null;
         if ($sync_file = $input->getArgument('sync_file')) {
             $sync_file = Loader::getFilePath(FilePath::APPLICATION, DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.$sync_file);

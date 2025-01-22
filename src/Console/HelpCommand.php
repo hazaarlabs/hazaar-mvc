@@ -12,6 +12,7 @@ class HelpCommand extends Command
             ->setName('help')
             ->setDescription('Display help information for a command.')
             ->addArgument('command', 'The command to display help for.')
+            ->addGlobalOption('env', 'e', 'The environment to use.  Overrides the APPLICATION_ENV environment variable.');
         ;
     }
 

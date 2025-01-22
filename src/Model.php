@@ -21,7 +21,10 @@ abstract class Model implements \jsonSerializable, \Iterator
     /**
      * Legacy property rules that can be replaced with PHP 8.4+ style property hooks.
      *
-     * @var array<callable>
+     * This array will still be used to store property rules for PHP 8.3 and below as well
+     * as user defined property hooks that can be triggered with the trigger() method.
+     *
+     * @var array<array<callable|string>|callable>
      */
     private array $eventHooks = [];
 
@@ -58,8 +61,11 @@ abstract class Model implements \jsonSerializable, \Iterator
      */
     private static array $allowTypes = [
         'bool',
+        'boolean',
         'int',
+        'integer',
         'float',
+        'double',
         'string',
         'array',
         'object',
@@ -458,6 +464,7 @@ abstract class Model implements \jsonSerializable, \Iterator
         if (property_exists($this, $propertyName) || array_key_exists($propertyName, $this->userProperties)) {
             return false;
         }
+
         $this->userProperties[$propertyName] = ['type' => $propertyType, 'value' => $propertyValue];
         $this->propertyNames[] = $propertyName;
 
@@ -516,6 +523,22 @@ abstract class Model implements \jsonSerializable, \Iterator
                 throw new DefineEventHookException(static::class, $hookName, 'Invalid callback');
             }
             $this->eventHooks[$hookName][$propertyName] = $callback;
+        }
+    }
+
+    /**
+     * Triggers an event hook if it exists.
+     *
+     * This method checks if an event hook with the given name exists in the
+     * $eventHooks array. If it does, it calls the hook with the provided arguments.
+     *
+     * @param string $hookName the name of the event hook to trigger
+     * @param mixed  ...$args  The arguments to pass to the event hook.
+     */
+    public function trigger(string $hookName, mixed ...$args): void
+    {
+        if (isset($this->eventHooks[$hookName]) && is_callable($this->eventHooks[$hookName])) {
+            call_user_func_array($this->eventHooks[$hookName], $args);
         }
     }
 
@@ -628,7 +651,7 @@ abstract class Model implements \jsonSerializable, \Iterator
     private function convertValueDataType(string $propertyType, mixed &$propertyValue): void
     {
         if (in_array($propertyType, self::$allowTypes, true)) {
-            if ('bool' === $propertyType) {
+            if ('bool' === $propertyType || 'boolean' === $propertyType) {
                 $propertyValue = boolify($propertyValue);
             } else {
                 settype($propertyValue, $propertyType);

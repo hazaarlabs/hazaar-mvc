@@ -37,7 +37,12 @@ use Hazaar\XML\Element;
  */
 class Dump extends Diagnostic
 {
-    private mixed $data = null;
+    /**
+     * The data to be dumped.  Can literally be an array of anything.
+     *
+     * @var array<mixed>
+     */
+    private array $data = [];
     private bool $backtrack = false;
 
     /**

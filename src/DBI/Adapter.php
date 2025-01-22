@@ -12,13 +12,9 @@ namespace Hazaar\DBI;
 use Hazaar\Application;
 use Hazaar\Application\Config;
 use Hazaar\Application\FilePath;
-use Hazaar\DBI\DBD\BaseDriver;
-use Hazaar\DBI\Exception\ConnectionFailed;
 use Hazaar\DBI\Exception\DriverNotFound;
-use Hazaar\DBI\Exception\DriverNotSpecified;
 use Hazaar\DBI\Exception\NotConfigured;
 use Hazaar\DBI\Schema\Manager;
-use Hazaar\File\Dir;
 use Hazaar\Loader;
 
 /**
@@ -56,66 +52,8 @@ use Hazaar\Loader;
  *
  * }
  * ```
- *
- * @method false|string       lastInsertId()
- * @method false|int          exec(string $sql)
- * @method false|int          delete(string $tableName, mixed $criteria = [], array<string> $from = [])
- * @method string             getSchemaName()
- * @method false|string       quote(string $string, int $parameterType = \PDO::PARAM_STR)
- * @method bool               setTimezone(string $timezone)
- * @method bool               repair(?string $table = null)
- * @method array<mixed>       errorInfo()
- * @method mixed              errorCode()
- * @method bool               truncate(string $tableName,bool $only = false,bool $restartIdentity = false,bool $cascade = false)
- * @method bool               createDatabase(string $name)
- * @method string             schemaName(string $table)
- * @method bool               schemaExists(string $schemaName)
- * @method bool               createSchema(string $schemaName)
- * @method bool               beginTransaction()
- * @method bool               commit()
- * @method bool               rollback()
- * @method bool               inTransaction()
- * @method mixed              getAttribute(int $attribute)
- * @method bool               setAttribute(int $attribute, mixed $value)
- * @method bool               createRole(string $roleName, ?string $password = null, array<mixed> $privileges = [])
- * @method bool               dropRole(string $name, bool $ifExists = false)
- * @method array<mixed>|false listUsers()
- * @method array<mixed>|false listGroups()
- * @method array<mixed>|false listTables()
- * @method bool               tableExists(string $tableName)
- * @method bool               createTable(string $tableName, mixed $columns)
- * @method bool               renameTable(string $fromName, string $toName)
- * @method array<mixed>|false describeTable(string $tableName, ?string $sort = null)
- * @method bool               dropTable(string $table, bool $cascade = false, bool $ifExists = false)
- * @method bool               addColumn(string $tableName, mixed $columnSpec)
- * @method bool               alterColumn(string $tableName, string $column, mixed $columnSpec)
- * @method bool               dropColumn(string $tableName, string $column, bool $ifExists = false)
- * @method array<mixed>|false listPrimaryKeys(?string $table = null)
- * @method array<mixed>|false listForeignKeys(?string $table = null)
- * @method array<mixed>|false listConstraints(?string $table = null, ?string $type = null, bool $invertType = false)
- * @method bool               addConstraint(string $constraintName, mixed $info)
- * @method bool               dropConstraint(string $constraintName, string $tableName, bool $cascade = false, bool $ifExists = false)
- * @method array<mixed>|false listIndexes(?string $tableName = null)
- * @method bool               createIndex(string $indexName, string $tableName, array<mixed> $idxInfo = [])
- * @method bool               dropIndex(string $indexName, bool $ifExists = false)
- * @method array<mixed>|false listViews()
- * @method bool               createView(string $viewName, mixed $content)
- * @method bool               viewExists(string $viewName)
- * @method array<mixed>|false describeView(string $viewName)
- * @method bool               dropView(string $viewName, bool $cascade = false, bool $ifExists = false)
- * @method array<mixed>|false listFunctions(?string $schema = null, bool $includeParameters = false)
- * @method bool               createFunction(string $functionName, mixed $content)
- * @method array<mixed>|false describeFunction(string $functionName)
- * @method bool               dropFunction(string $functionName, mixed $argTypes = null, bool $cascade = false, bool $ifExists = false)
- * @method array<mixed>|false listTriggers(?string $tableName = null, ?string $schema = null)
- * @method bool               createTrigger(string $functionName, string $tableName, mixed $content)
- * @method array<mixed>|false describeTrigger(string $functionName, ?string $schemaName = null)
- * @method bool               dropTrigger(string $functionName, mixed $argTypes = null, bool $cascade = false, bool $ifExists = false)
- * @method array<mixed>|false listExtensions()
- * @method bool               createExtension(string $name)
- * @method bool               dropExtension(string $name, bool $ifExists = false)
  */
-class Adapter
+class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, Interfaces\API\Group, Interfaces\API\Index, Interfaces\API\Schema, Interfaces\API\Sequence, Interfaces\API\SQL, Interfaces\API\StoredFunction, Interfaces\API\Table, Interfaces\API\Transaction, Interfaces\API\Trigger, Interfaces\API\User, Interfaces\API\View, Interfaces\API\Statement
 {
     /**
      * @var array<string, array{cipher:string,checkstring:string}|int|string>
@@ -132,35 +70,27 @@ class Adapter
      * @var array<mixed>
      */
     public array $config;
-    public BaseDriver $driver;
 
     /**
-     * @var array<Config>
-     */
-    private static array $loadedConfigs = [];
-    private ?Manager $schemaManager = null;
-
-    /**
-     * @var array<BaseDriver>
-     */
-    private static array $connections = [];
-
-    /**
-     * @var array<Adapter>
+     * @var array<string,self>
      */
     private static array $instances = [];
+
+    /**
+     * @var array<string,Config>
+     */
+    private static array $loadedConfigs = [];
+
+    private DBD\Interfaces\Driver $driver;
+
+    private Manager $schemaManager;
 
     /**
      * @var array<Manager>
      */
     private static array $managerInstances = [];
 
-    // Prepared statements
-    /**
-     * @var array<\PDOStatement>
-     */
-    private array $statements = [];
-    private ?string $dsn = null;
+    private string $env = APPLICATION_ENV;
 
     /**
      * Hazaar DBI Constructor.
@@ -171,32 +101,63 @@ class Adapter
      */
     public function __construct(null|array|string $config = null)
     {
-        $configName = null;
-        if (defined('HAZAAR_VERSION') && (null === $config || is_string($config))) {
-            $configName = $config;
-            $config = $this->getDefaultConfig($configName);
-        } elseif (!is_string($config)) {
-            $config = array_merge(self::$defaultConfig, $config);
+        if (is_array($config)) {
+            $config = array_merge($config, self::$defaultConfig);
         } else {
+            if (is_string($config)) {
+                $this->env = $config;
+            }
+            $config = $this->loadConfig($this->env)->toArray();
+        }
+        if (!isset($config['driver'])) {
             throw new NotConfigured();
         }
         $this->config = $config;
-        if ($configName && !array_key_exists($configName, self::$instances)) {
-            self::$instances[$configName] = $this;
+        if ($this->env && !array_key_exists($this->env, self::$instances)) {
+            self::$instances[$this->env] = $this;
         }
         $this->reconfigure();
     }
 
     /**
-     * @param array<mixed> $args
+     * Magic method to pass any undefined methods to the driver.
+     *
+     * This allows the DBI Adapter to be used as a proxy to the underlying driver.
+     *
+     * @param string       $method The method name to call
+     * @param array<mixed> $args   The arguments to pass to the method
+     *
+     * @return mixed The result of the method call
      */
     public function __call(string $method, array $args): mixed
     {
         if (!method_exists($this->driver, $method)) {
-            throw new \Exception("Call to unknown method: '{$method}'");
+            throw new \Exception('Method '.$method.' does not exist in '.get_class($this->driver).' driver.');
         }
 
         return call_user_func_array([$this->driver, $method], $args);
+    }
+
+    public function can(string $method): bool
+    {
+        return method_exists($this->driver, $method);
+    }
+
+    public function getDriverName(): string
+    {
+        return strtoupper(get_class($this->driver));
+    }
+
+    /**
+     * Returns an instance of the Hazaar\DBI\Schema\Manager for managing database schema versions.
+     */
+    public function getSchemaManager(?\Closure $logCallback = null): Manager
+    {
+        if (!isset($this->schemaManager)) {
+            $this->schemaManager = self::getSchemaManagerInstance($this->env, $logCallback);
+        }
+
+        return $this->schemaManager;
     }
 
     /**
@@ -212,13 +173,13 @@ class Adapter
      * NOTE:  Only the first instance created is tracked, so it is still possible to create multiple connections by
      * instantiating the DBI Adapter directly.  The choice is yours.
      */
-    public static function getInstance(?string $configEnv = null): Adapter
+    public static function getInstance(?string $configEnv = APPLICATION_ENV): self
     {
         if (array_key_exists($configEnv, self::$instances)) {
             return self::$instances[$configEnv];
         }
 
-        return new Adapter($configEnv);
+        return new self($configEnv);
     }
 
     /**
@@ -226,329 +187,18 @@ class Adapter
      */
     public static function getSchemaManagerInstance(?string $configEnv = null, ?callable $logCallback = null): Manager
     {
-        if (array_key_exists($configEnv, self::$managerInstances)) {
+        if (isset(self::$managerInstances[$configEnv])) {
             return self::$managerInstances[$configEnv];
         }
 
         try {
-            $config = self::getDefaultConfig($configEnv);
+            $config = self::loadConfig($configEnv);
+            $config['environment'] = $configEnv;
         } catch (\Exception $e) {
             throw new \Exception("DBI is not configured for APPLICATION_ENV '".APPLICATION_ENV."'");
         }
 
         return new Manager($config->toArray(), $logCallback);
-    }
-
-    public static function getDriverClass(string $driver): string
-    {
-        return 'Hazaar\DBI\DBD\\'.ucfirst($driver);
-    }
-
-    public static function setDefaultConfig(string $config, ?string $env = null): bool
-    {
-        if (!defined('HAZAAR_VERSION')) {
-            return false;
-        }
-        if (!$env) {
-            $env = APPLICATION_ENV;
-        }
-        Adapter::$defaultConfig[$env] = $config;
-
-        return true;
-    }
-
-    /**
-     * Get the default configuration for the DBI Adapter.
-     *
-     * This function will return the default configuration for the DBI Adapter.  If the configuration has not been
-     * loaded yet, it will be loaded from the configuration file.
-     */
-    public static function getDefaultConfig(?string $configName = null): Config|false
-    {
-        $configName ??= APPLICATION_ENV;
-        if (!array_key_exists($configName, Adapter::$loadedConfigs)) {
-            self::$defaultConfig['timezone'] = date_default_timezone_get();
-            if (!Config::$overridePaths) {
-                Config::$overridePaths = Application::getConfigOverridePaths();
-            }
-            $config = Config::getInstance('database', $configName, self::$defaultConfig, true);
-            self::$loadedConfigs[$configName] = $config;
-        }
-
-        return self::$loadedConfigs[$configName];
-    }
-
-    /**
-     * @param array<int, bool> $driverOptions
-     */
-    public function connect(
-        ?string $dsn = null,
-        ?string $username = null,
-        ?string $password = null,
-        ?array $driverOptions = null,
-        bool $reconnect = false
-    ): bool {
-        if (null === $dsn) {
-            $dsn = $this->dsn;
-        }
-        $driver = ucfirst(substr($dsn, 0, strpos($dsn, ':')));
-        if (!$driver) {
-            throw new DriverNotSpecified();
-        }
-        $DBD = Adapter::getDriverClass($driver);
-        if (!class_exists($DBD)) {
-            throw new DriverNotFound($driver);
-        }
-        $this->driver = new $DBD($this, array_unflatten(substr($dsn, strpos($dsn, ':') + 1)));
-        if (!$driverOptions) {
-            $driverOptions = [];
-        }
-        $driverOptions = array_replace([
-            \PDO::ATTR_STRINGIFY_FETCHES => false,
-            \PDO::ATTR_EMULATE_PREPARES => false,
-        ], $driverOptions);
-        if (!$this->driver->connect($dsn, $username, $password, $driverOptions)) {
-            return false;
-        }
-        if (isset($this->config['timezone'])) {
-            $this->setTimezone($this->config['timezone']);
-        }
-
-        return true;
-    }
-
-    public function getDriver(): string
-    {
-        $class = get_class($this->driver);
-
-        return substr($class, strrpos($class, '\\') + 1);
-    }
-
-    /**
-     * @return array<string>
-     */
-    public function getAvailableDrivers(): array
-    {
-        $drivers = [];
-        $dir = new Dir(dirname(__FILE__).'/DBD');
-        while ($file = $dir->read()) {
-            if (preg_match('/class (\w*) extends BaseDriver\W/m', $file->getContents(), $matches)) {
-                $drivers[] = $matches[1];
-            }
-        }
-
-        return $drivers;
-    }
-
-    /**
-     * Build a sub-query using an existing query.
-     *
-     * @param string|Table $subquery Table The existing query to use as the sub-query
-     * @param string       $name     The named alias of the sub-query
-     */
-    public function subquery(string|Table $subquery, string $name): Table
-    {
-        return new Table($this, $subquery, $name);
-    }
-
-    public function query(string $sql): false|Result
-    {
-        $result = false;
-        $retries = 0;
-        while ($retries++ < 3) {
-            $result = $this->driver->query($sql);
-            if ($result instanceof \PDOStatement) {
-                return new Result($this, $result);
-            }
-            $error = $this->errorCode();
-            if (!('57P01' === $error || 'HY000' === $error)) {
-                break;
-            }
-            $this->reconfigure(true);
-        }
-
-        return $result;
-    }
-
-    public function exists(string $table, mixed $criteria = []): bool
-    {
-        return $this->table($table)->exists($criteria);
-    }
-
-    public function table(string $name, ?string $alias = null): Table
-    {
-        return new Table($this, $name, $alias);
-    }
-
-    public function from(string $name, ?string $alias = null): Table
-    {
-        return $this->table($name, $alias);
-    }
-
-    /**
-     * @param array<string> $args
-     */
-    public function call(string $method, array $args = [], mixed $criteria = null): Result
-    {
-        $sql = 'SELECT * FROM '.$method.'('.$this->driver->prepareValues($args).')';
-        if (null !== $criteria) {
-            $sql .= ' WHERE '.$this->driver->prepareCriteria($criteria);
-        }
-        $sql .= ';';
-
-        return $this->query($sql);
-    }
-
-    /**
-     * Prepared statements.
-     */
-    public function prepare(string $sql, ?string $name = null): Result
-    {
-        $statement = $this->driver->prepare($sql);
-        if (false === $statement) {
-            throw new \Exception('DBI failed to prepare the SQL statement.');
-        }
-        if ($name) {
-            $this->statements[$name] = $statement;
-        } else {
-            $this->statements[] = $statement;
-        }
-
-        return new Result($this, $statement);
-    }
-
-    /**
-     * @param array<mixed> $inputParameters
-     */
-    public function execute(string $name, array $inputParameters): bool
-    {
-        if (!($statement = ake($this->statements, $name)) instanceof \PDOStatement) {
-            return false;
-        }
-
-        return $statement->execute($inputParameters);
-    }
-
-    /**
-     * @return array<\PDOStatement>
-     */
-    public function getPreparedStatements(): array
-    {
-        return $this->statements;
-    }
-
-    /**
-     * @return array<string>
-     */
-    public function listPreparedStatements(): array
-    {
-        return array_keys($this->statements);
-    }
-
-    /**
-     * Returns an instance of the Hazaar\DBI\Schema\Manager for managing database schema versions.
-     *
-     * @return Manager
-     */
-    public function getSchemaManager()
-    {
-        if (!$this->schemaManager instanceof Manager) {
-            $this->schemaManager = new Manager($this->config);
-        }
-
-        return $this->schemaManager;
-    }
-
-    /**
-     * Perform and "upsert".
-     *
-     * An upsert is an INSERT, that when it fails, columns can be updated in the existing row.
-     *
-     * @param string                   $tableName      the table to insert a record into
-     * @param mixed                    $fields         the fields to be inserted
-     * @param mixed                    $returning      a column to return when the row is inserted (usually the primary key)
-     * @param null|array<mixed>|string $conflictTarget the column(s) to check for a conflict.  If the conflict is found,
-     *                                                 the row will be updated.
-     * @param array<mixed>             $conflictUpdate
-     *
-     * @return array<mixed>|false|int
-     */
-    public function insert(
-        string $tableName,
-        mixed $fields,
-        mixed $returning = null,
-        null|array|string $conflictTarget = null,
-        ?array $conflictUpdate = null,
-        ?Table $table = null
-    ): array|false|int {
-        $result = $this->driver->insert(
-            $tableName,
-            $this->encrypt($tableName, $fields),
-            $returning,
-            $conflictTarget,
-            $conflictUpdate,
-            $table
-        );
-        if ($result instanceof \PDOStatement) {
-            $result = new Result($this, $result);
-
-            return $result->fetch();
-        }
-
-        return $result;
-    }
-
-    /**
-     * @param array<string> $from
-     * @param array<string> $tables
-     *
-     * @return array<mixed>|false|int
-     */
-    public function update(
-        string $tableName,
-        mixed $fields,
-        mixed $criteria = [],
-        array $from = [],
-        mixed $returning = [],
-        array $tables = []
-    ): array|false|int {
-        $result = $this->driver->update($tableName, $this->encrypt($tableName, $fields), $criteria, $from, $returning, $tables);
-        if ($result instanceof \PDOStatement) {
-            $result = new Result($this, $result);
-            if (count(BaseDriver::$selectGroups) > 0) {
-                $result->setSelectGroups(BaseDriver::$selectGroups);
-            }
-            $fetchArg = $result->hasSelectGroups() ? \PDO::FETCH_NAMED : \PDO::FETCH_ASSOC;
-
-            return ((is_string($returning) && $returning) || (is_array($returning) && count($returning) > 0)) ? $result->fetchAll($fetchArg) : $result->fetch($fetchArg);
-        }
-
-        return $result;
-    }
-
-    public function encrypt(string $table, mixed &$data): mixed
-    {
-        if (null === $data
-            || !(is_array($data) && count($data) > 0)
-            || ($encryptedFields = ake(ake($this->config['encrypt'], 'table'), $table)) === null) {
-            return $data;
-        }
-        $cipher = $this->config['encrypt']['cipher'] ?? 'aes-256-ctr';
-        $key = $this->config['encrypt']['key'] ?? '0000';
-        $checkstring = $this->config['encrypt']['checkstring'] ?? '!!';
-        foreach ($data as $column => &$value) {
-            if (!in_array($column, $encryptedFields)
-                && true !== $encryptedFields) {
-                continue;
-            }
-            if (!is_string($value)) {
-                throw new \Exception('Trying to encrypt non-string field: '.$column);
-            }
-            $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($cipher));
-            $value = base64_encode($iv.openssl_encrypt($checkstring.$value, $cipher, $key, OPENSSL_RAW_DATA, $iv));
-        }
-
-        return $data;
     }
 
     public function errorException(?string $msg = null): \Exception
@@ -566,80 +216,734 @@ class Adapter
     }
 
     /**
-     * Parse an SQL query into a DBI Table query so that it can be manipulated.
+     * Insert a new record into the specified table.
      *
-     * @param string $sql The SQL query to parse
+     * @param string $tableName the name of the table to insert the record into
+     * @param mixed  $data      The data to be inserted. This can be an associative array or an object.
+     * @param mixed  $returning Optional. Whether to return the inserted record. Defaults to false.
+     *
+     * @return mixed returns false if the insert fails, otherwise returns the ID of the inserted record
      */
-    public function parseSQL(string $sql): Table\SQL
+    public function insert(string $tableName, mixed $data, mixed $returning = null): mixed
     {
-        return new Table\SQL($this, $sql);
+        return $this->table($tableName)->insert($data, $returning);
     }
 
     /**
-     * Grant privileges on a table to a user.
+     * Update a record in the specified table.
      *
-     * @param string               $table      the name of the table to grant privileges on
-     * @param string               $user       The name of the user who is being given the privileges
-     * @param array<string>|string $privileges One or more privileges being applied.  Example: (string)'ALL' and (array)['INSERT', 'UPDATE', 'DELETE'] are both valid.
+     * @param string $tableName the name of the table to update the record in
+     * @param mixed  $data      The data to be updated. This can be an associative array or an object.
+     * @param mixed  $where     The WHERE clause to apply to the update. This can be an associative array or an object.
+     * @param mixed  $returning Optional. Whether to return the updated record. Defaults to false.
+     *
+     * @return false|int returns false if the update fails, otherwise returns the number of rows updated
      */
-    public function grant(string $table, string $user, array|string $privileges = 'ALL'): bool
+    public function update(string $tableName, mixed $data, mixed $where, mixed $returning = null): false|int
     {
-        $table = $this->driver->schemaName($table);
-        if (!is_array($privileges)) {
-            $privileges = [$privileges];
-        }
-        $privilegeString = implode(', ', $privileges);
+        return $this->table($tableName)->update($data, $where, $returning);
+    }
 
-        return $this->driver->exec("GRANT {$privilegeString} ON {$table} TO {$user};");
+    /**
+     * Delete a record from the specified table.
+     *
+     * @param string $tableName the name of the table to delete the record from
+     * @param mixed  $where     The WHERE clause to apply to the delete. This can be an associative array or an object.
+     *
+     * @return false|int returns false if the delete fails, otherwise returns the number of rows deleted
+     */
+    public function delete(string $tableName, mixed $where): false|int
+    {
+        return $this->table($tableName)->delete($where);
+    }
+
+    /**
+     * Returns a Table object for the specified table name.
+     *
+     * @param string $tableName the name of the table
+     *
+     * @return Table the Table object for the specified table name
+     */
+    public function table(string $tableName, ?string $alias = null): Table
+    {
+        return new Table($this, $tableName, $alias);
+    }
+
+    /**
+     * Returns a Query object for the specified table name.
+     *
+     * @param-out string $configName  The name of the configuration that was loaded
+     */
+    public static function loadConfig(?string &$configName = null): Config
+    {
+        $configName ??= APPLICATION_ENV;
+        if (!array_key_exists($configName, Adapter::$loadedConfigs)) {
+            self::$defaultConfig['timezone'] = date_default_timezone_get();
+            if (!Config::$overridePaths) {
+                Config::$overridePaths = Application::getConfigOverridePaths();
+            }
+            $config = Config::getInstance('database', $configName, self::$defaultConfig, true);
+            self::$loadedConfigs[$configName] = $config;
+        }
+
+        return self::$loadedConfigs[$configName];
+    }
+
+    public function listConstraints($table = null, $type = null, $invertType = false): array|false
+    {
+        if (!$this->driver instanceof Interfaces\API\Constraint) {
+            throw new \BadMethodCallException('Driver does not support constraints');
+        }
+
+        return $this->driver->listConstraints($table, $type, $invertType);
+    }
+
+    public function addConstraint(string $constraintName, array $info): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Constraint) {
+            throw new \BadMethodCallException('Driver does not support constraints');
+        }
+
+        return $this->driver->addConstraint($constraintName, $info);
+    }
+
+    public function dropConstraint(string $constraintName, string $tableName, bool $ifExists = false, bool $cascade = false): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Constraint) {
+            throw new \BadMethodCallException('Driver does not support constraints');
+        }
+
+        return $this->driver->dropConstraint($constraintName, $tableName, $ifExists, $cascade);
+    }
+
+    public function listExtensions(): array
+    {
+        if (!$this->driver instanceof Interfaces\API\Extension) {
+            throw new \BadMethodCallException('Driver does not support extensions');
+        }
+
+        return $this->driver->listExtensions();
+    }
+
+    public function extensionExists(string $name): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Extension) {
+            throw new \BadMethodCallException('Driver does not support extensions');
+        }
+
+        return $this->driver->extensionExists($name);
+    }
+
+    public function createExtension(string $name): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Extension) {
+            throw new \BadMethodCallException('Driver does not support extensions');
+        }
+
+        return $this->driver->createExtension($name);
+    }
+
+    public function dropExtension(string $name, bool $ifExists = false): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Extension) {
+            throw new \BadMethodCallException('Driver does not support extensions');
+        }
+
+        return $this->driver->dropExtension($name, $ifExists);
+    }
+
+    public function listGroups(): array
+    {
+        if (!$this->driver instanceof Interfaces\API\Group) {
+            throw new \BadMethodCallException('Driver does not support groups');
+        }
+
+        return $this->driver->listGroups();
+    }
+
+    public function createGroup(string $groupName): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Group) {
+            throw new \BadMethodCallException('Driver does not support groups');
+        }
+
+        return $this->driver->createGroup($groupName);
+    }
+
+    public function dropGroup(string $groupName): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Group) {
+            throw new \BadMethodCallException('Driver does not support groups');
+        }
+
+        return $this->driver->dropGroup($groupName);
+    }
+
+    public function addToGroup(string $roleName, string $parentRoleName): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Group) {
+            throw new \BadMethodCallException('Driver does not support groups');
+        }
+
+        return $this->driver->addToGroup($roleName, $parentRoleName);
+    }
+
+    public function removeFromGroup(string $roleName, string $parentRoleName): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Group) {
+            throw new \BadMethodCallException('Driver does not support groups');
+        }
+
+        return $this->driver->removeFromGroup($roleName, $parentRoleName);
+    }
+
+    public function listIndexes(?string $tableName = null): array
+    {
+        if (!$this->driver instanceof Interfaces\API\Index) {
+            throw new \BadMethodCallException('Driver does not support indexes');
+        }
+
+        return $this->driver->listIndexes($tableName);
+    }
+
+    public function indexExists(string $indexName, ?string $tableName = null): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Index) {
+            throw new \BadMethodCallException('Driver does not support indexes');
+        }
+
+        return $this->driver->indexExists($indexName, $tableName);
+    }
+
+    public function createIndex(string $indexName, string $tableName, mixed $idxInfo): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Index) {
+            throw new \BadMethodCallException('Driver does not support indexes');
+        }
+
+        return $this->driver->createIndex($indexName, $tableName, $idxInfo);
+    }
+
+    public function dropIndex(string $indexName, bool $ifExists = false): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Index) {
+            throw new \BadMethodCallException('Driver does not support indexes');
+        }
+
+        return $this->driver->dropIndex($indexName, $ifExists);
+    }
+
+    public function getSchemaName(): string
+    {
+        if (!$this->driver instanceof Interfaces\API\Schema) {
+            throw new \BadMethodCallException('Driver does not support schemas');
+        }
+
+        return $this->driver->getSchemaName();
+    }
+
+    public function schemaExists(?string $schemaName = null): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Schema) {
+            throw new \BadMethodCallException('Driver does not support schemas');
+        }
+
+        return $this->driver->schemaExists($schemaName);
+    }
+
+    public function createSchema(?string $schemaName = null): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Schema) {
+            throw new \BadMethodCallException('Driver does not support schemas');
+        }
+
+        return $this->driver->createSchema($schemaName);
+    }
+
+    public function listSequences(): array
+    {
+        if (!$this->driver instanceof Interfaces\API\Sequence) {
+            throw new \BadMethodCallException('Driver does not support sequences');
+        }
+
+        return $this->driver->listSequences();
+    }
+
+    public function sequenceExists(string $sequenceName): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Sequence) {
+            throw new \BadMethodCallException('Driver does not support sequences');
+        }
+
+        return $this->driver->sequenceExists($sequenceName);
+    }
+
+    public function describeSequence(string $name): array|false
+    {
+        if (!$this->driver instanceof Interfaces\API\Sequence) {
+            throw new \BadMethodCallException('Driver does not support sequences');
+        }
+
+        return $this->driver->describeSequence($name);
+    }
+
+    public function createSequence(string $name, array $sequenceInfo, bool $ifNotExists = false): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Sequence) {
+            throw new \BadMethodCallException('Driver does not support sequences');
+        }
+
+        return $this->driver->createSequence($name, $sequenceInfo, $ifNotExists);
+    }
+
+    public function dropSequence(string $name, bool $ifExists = false): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Sequence) {
+            throw new \BadMethodCallException('Driver does not support sequences');
+        }
+
+        return $this->driver->dropSequence($name, $ifExists);
+    }
+
+    public function nextSequenceValue(string $name): false|int
+    {
+        if (!$this->driver instanceof Interfaces\API\Sequence) {
+            throw new \BadMethodCallException('Driver does not support sequences');
+        }
+
+        return $this->driver->nextSequenceValue($name);
+    }
+
+    public function setSequenceValue(string $name, int $value): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Sequence) {
+            throw new \BadMethodCallException('Driver does not support sequences');
+        }
+
+        return $this->driver->setSequenceValue($name, $value);
+    }
+
+    public function createDatabase(string $name): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\SQL) {
+            throw new \BadMethodCallException('Driver does not support SQL');
+        }
+
+        return $this->driver->createDatabase($name);
+    }
+
+    public function exec(string $sql): false|int
+    {
+        if (!$this->driver instanceof Interfaces\API\SQL) {
+            throw new \BadMethodCallException('Driver does not support SQL');
+        }
+
+        return $this->driver->exec($sql);
+    }
+
+    public function query(string $sql): false|Result
+    {
+        if (!$this->driver instanceof Interfaces\API\SQL) {
+            throw new \BadMethodCallException('Driver does not support SQL');
+        }
+
+        return $this->driver->query($sql);
+    }
+
+    public function quote(mixed $string, int $type = \PDO::PARAM_STR): false|string
+    {
+        if (!$this->driver instanceof Interfaces\API\SQL) {
+            throw new \BadMethodCallException('Driver does not support SQL');
+        }
+
+        return $this->driver->quote($string, $type);
+    }
+
+    public function setTimezone(string $tz): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\SQL) {
+            throw new \BadMethodCallException('Driver does not support SQL');
+        }
+
+        return $this->driver->setTimezone($tz);
+    }
+
+    public function errorInfo(): array|false
+    {
+        if (!$this->driver instanceof Interfaces\API\SQL) {
+            throw new \BadMethodCallException('Driver does not support SQL');
+        }
+
+        return $this->driver->errorInfo();
+    }
+
+    public function errorCode(): string
+    {
+        if (!$this->driver instanceof Interfaces\API\SQL) {
+            throw new \BadMethodCallException('Driver does not support SQL');
+        }
+
+        return $this->driver->errorCode();
+    }
+
+    public function getQueryBuilder(): Interfaces\QueryBuilder
+    {
+        if (!$this->driver instanceof Interfaces\API\SQL) {
+            throw new \BadMethodCallException('Driver does not support SQL');
+        }
+
+        return $this->driver->getQueryBuilder();
+    }
+
+    public function repair(): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\SQL) {
+            throw new \BadMethodCallException('Driver does not support SQL');
+        }
+
+        return $this->driver->repair();
+    }
+
+    public function lastQueryString(): string
+    {
+        if (!$this->driver instanceof Interfaces\API\SQL) {
+            throw new \BadMethodCallException('Driver does not support SQL');
+        }
+
+        return $this->driver->lastQueryString();
+    }
+
+    public function listFunctions(bool $includeParameters = false): array
+    {
+        if (!$this->driver instanceof Interfaces\API\StoredFunction) {
+            throw new \BadMethodCallException('Driver does not support stored functions');
+        }
+
+        return $this->driver->listFunctions($includeParameters);
+    }
+
+    public function functionExists(string $functionName, ?string $argTypes = null): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\StoredFunction) {
+            throw new \BadMethodCallException('Driver does not support stored functions');
+        }
+
+        return $this->driver->functionExists($functionName, $argTypes);
+    }
+
+    public function describeFunction(string $name): array|false
+    {
+        if (!$this->driver instanceof Interfaces\API\StoredFunction) {
+            throw new \BadMethodCallException('Driver does not support stored functions');
+        }
+
+        return $this->driver->describeFunction($name);
+    }
+
+    public function createFunction($name, $spec): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\StoredFunction) {
+            throw new \BadMethodCallException('Driver does not support stored functions');
+        }
+
+        return $this->driver->createFunction($name, $spec);
+    }
+
+    public function dropFunction(string $name, null|array|string $argTypes = null, bool $cascade = false, bool $ifExists = false): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\StoredFunction) {
+            throw new \BadMethodCallException('Driver does not support stored functions');
+        }
+
+        return $this->driver->dropFunction($name, $argTypes, $cascade, $ifExists);
+    }
+
+    public function listTables(): array
+    {
+        if (!$this->driver instanceof Interfaces\API\Table) {
+            throw new \BadMethodCallException('Driver does not support tables');
+        }
+
+        return $this->driver->listTables();
+    }
+
+    public function tableExists(string $tableName): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Table) {
+            throw new \BadMethodCallException('Driver does not support tables');
+        }
+
+        return $this->driver->tableExists($tableName);
+    }
+
+    public function createTable(string $tableName, mixed $columns): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Table) {
+            throw new \BadMethodCallException('Driver does not support tables');
+        }
+
+        return $this->driver->createTable($tableName, $columns);
+    }
+
+    public function describeTable(string $tableName, ?string $sort = null): array|false
+    {
+        if (!$this->driver instanceof Interfaces\API\Table) {
+            throw new \BadMethodCallException('Driver does not support tables');
+        }
+
+        return $this->driver->describeTable($tableName, $sort);
+    }
+
+    public function renameTable(string $fromName, string $toName): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Table) {
+            throw new \BadMethodCallException('Driver does not support tables');
+        }
+
+        return $this->driver->renameTable($fromName, $toName);
+    }
+
+    public function dropTable(string $name, bool $ifExists = false, bool $cascade = false): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Table) {
+            throw new \BadMethodCallException('Driver does not support tables');
+        }
+
+        return $this->driver->dropTable($name, $ifExists, $cascade);
+    }
+
+    public function addColumn(string $tableName, mixed $columnSpec): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Table) {
+            throw new \BadMethodCallException('Driver does not support tables');
+        }
+
+        return $this->driver->addColumn($tableName, $columnSpec);
+    }
+
+    public function alterColumn(string $tableName, string $column, mixed $columnSpec): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Table) {
+            throw new \BadMethodCallException('Driver does not support tables');
+        }
+
+        return $this->driver->alterColumn($tableName, $column, $columnSpec);
+    }
+
+    public function dropColumn(string $tableName, string $column, bool $ifExists = false): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Table) {
+            throw new \BadMethodCallException('Driver does not support tables');
+        }
+
+        return $this->driver->dropColumn($tableName, $column, $ifExists);
+    }
+
+    public function truncate(string $tableName, bool $only = false, bool $restartIdentity = false, bool $cascade = false): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Table) {
+            throw new \BadMethodCallException('Driver does not support tables');
+        }
+
+        return $this->driver->truncate($tableName, $only, $restartIdentity, $cascade);
+    }
+
+    public function begin(): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Transaction) {
+            throw new \BadMethodCallException('Driver does not support transactions');
+        }
+
+        return $this->driver->begin();
+    }
+
+    public function commit(): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Transaction) {
+            throw new \BadMethodCallException('Driver does not support transactions');
+        }
+
+        return $this->driver->commit();
+    }
+
+    public function cancel(): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Transaction) {
+            throw new \BadMethodCallException('Driver does not support transactions');
+        }
+
+        return $this->driver->cancel();
+    }
+
+    public function listTriggers(?string $tableName = null): array
+    {
+        if (!$this->driver instanceof Interfaces\API\Trigger) {
+            throw new \BadMethodCallException('Driver does not support triggers');
+        }
+
+        return $this->driver->listTriggers($tableName);
+    }
+
+    public function triggerExists(string $triggerName, string $tableName): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Trigger) {
+            throw new \BadMethodCallException('Driver does not support triggers');
+        }
+
+        return $this->driver->triggerExists($triggerName, $tableName);
+    }
+
+    public function describeTrigger(string $triggerName): array|false
+    {
+        if (!$this->driver instanceof Interfaces\API\Trigger) {
+            throw new \BadMethodCallException('Driver does not support triggers');
+        }
+
+        return $this->driver->describeTrigger($triggerName);
+    }
+
+    public function createTrigger(string $triggerName, string $tableName, mixed $spec = []): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Trigger) {
+            throw new \BadMethodCallException('Driver does not support triggers');
+        }
+
+        return $this->driver->createTrigger($triggerName, $tableName, $spec);
+    }
+
+    public function dropTrigger(string $triggerName, string $tableName, bool $ifExists = false, bool $cascade = false): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\Trigger) {
+            throw new \BadMethodCallException('Driver does not support triggers');
+        }
+
+        return $this->driver->dropTrigger($triggerName, $tableName, $ifExists, $cascade);
+    }
+
+    public function listUsers(): array
+    {
+        if (!$this->driver instanceof Interfaces\API\User) {
+            throw new \BadMethodCallException('Driver does not support users');
+        }
+
+        return $this->driver->listUsers();
+    }
+
+    public function createUser(string $name, ?string $password = null, array $privileges = []): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\User) {
+            throw new \BadMethodCallException('Driver does not support users');
+        }
+
+        return $this->driver->createUser($name, $password, $privileges);
+    }
+
+    public function dropUser(string $name, bool $ifExists = false): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\User) {
+            throw new \BadMethodCallException('Driver does not support users');
+        }
+
+        return $this->driver->dropUser($name, $ifExists);
+    }
+
+    public function grant(array|string $role, string $to, string $on): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\User) {
+            throw new \BadMethodCallException('Driver does not support users');
+        }
+
+        return $this->driver->grant($role, $to, $on);
+    }
+
+    public function revoke(array|string $role, string $from, string $on): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\User) {
+            throw new \BadMethodCallException('Driver does not support users');
+        }
+
+        return $this->driver->revoke($role, $from, $on);
+    }
+
+    public function listViews(): array
+    {
+        if (!$this->driver instanceof Interfaces\API\View) {
+            throw new \BadMethodCallException('Driver does not support views');
+        }
+
+        return $this->driver->listViews();
+    }
+
+    public function viewExists(string $viewName): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\View) {
+            throw new \BadMethodCallException('Driver does not support views');
+        }
+
+        return $this->driver->viewExists($viewName);
+    }
+
+    public function describeView(string $name): array|false
+    {
+        if (!$this->driver instanceof Interfaces\API\View) {
+            throw new \BadMethodCallException('Driver does not support views');
+        }
+
+        return $this->driver->describeView($name);
+    }
+
+    public function createView(string $name, mixed $content): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\View) {
+            throw new \BadMethodCallException('Driver does not support views');
+        }
+
+        return $this->driver->createView($name, $content);
+    }
+
+    public function dropView(string $name, bool $ifExists = false, bool $cascade = false): bool
+    {
+        if (!$this->driver instanceof Interfaces\API\View) {
+            throw new \BadMethodCallException('Driver does not support views');
+        }
+
+        return $this->driver->dropView($name, $ifExists, $cascade);
+    }
+
+    public function prepare(string $sql): \PDOStatement
+    {
+        if (!$this->driver instanceof Interfaces\API\Statement) {
+            throw new \BadMethodCallException('Driver does not support prepared statements');
+        }
+
+        return $this->driver->prepare($sql);
+    }
+
+    private function getDriverClass(string $driver): string
+    {
+        return 'Hazaar\DBI\DBD\\'.ucfirst($driver);
     }
 
     private function reconfigure(bool $reconnect = false): bool
     {
-        $user = $this->config['user'] ?? '';
-        $password = $this->config['password'] ?? '';
-        if (isset($this->config['dsn'])) {
-            $this->dsn = $this->config['dsn'];
-        } else {
-            $DBD = Adapter::getDriverClass($this->config['driver']);
-            if (!class_exists($DBD)) {
-                return false;
-            }
-            $this->dsn = $DBD::mkdsn($this->config);
+        if (!$this->config['driver']) {
+            throw new \Exception('No DBI driver specified!');
         }
-        $driverOptions = [];
-        if (isset($this->config['options'])) {
-            $driverOptions = $this->config['options'];
-            foreach ($driverOptions as $key => $value) {
-                if (($constKey = constant('\PDO::'.$key)) === null) {
-                    continue;
-                }
-                $driverOptions[$constKey] = $value;
-                unset($driverOptions[$key]);
-            }
+        $driverClass = $this->getDriverClass($this->config['driver']);
+        if (!class_exists($driverClass)) {
+            throw new DriverNotFound($this->config['driver']);
         }
-        $driver = ucfirst(substr($this->dsn, 0, strpos($this->dsn, ':')));
-        if (!array_key_exists($driver, Adapter::$connections)) {
-            Adapter::$connections[$driver] = [];
+        $this->driver = new $driverClass($this->config);
+        if (isset($this->config['timezone'])) {
+            $this->setTimezone($this->config['timezone']);
         }
-        $hash = md5(serialize($this->config));
-        if (true !== $reconnect && array_key_exists($hash, Adapter::$connections)) {
-            $this->driver = Adapter::$connections[$hash];
-        } else {
-            if (!$this->connect($this->dsn, $user, $password, $driverOptions, $reconnect)) {
-                throw new ConnectionFailed(ake($this->config, 'host', 'none'), $this->errorInfo());
-            }
-            Adapter::$connections[$hash] = $this->driver;
-            if (isset($this->config['schema'])) {
-                $this->driver->setSchemaName($this->config['schema']);
-            }
-        }
-        if (defined('HAZAAR_VERSION') && (isset($this->config['encrypt']['table']) && !isset($this->config['encrypt']['key']))) {
-            $keyfile = Loader::getFilePath(FilePath::CONFIG, $this->config['encrypt']['keyfile'] ?? '.db_key');
-            if (null === $keyfile) {
-                throw new \Exception('DBI keyfile is missing.  Database encryption will not work!');
-            }
-            $this->config['encrypt']['key'] = trim(file_get_contents($keyfile));
-        }
+        // if (defined('HAZAAR_VERSION') && (isset($this->config['encrypt']['table']) && !isset($this->config['encrypt']['key']))) {
+        //     $keyfile = Loader::getFilePath(FilePath::CONFIG, $this->config['encrypt']['keyfile'] ?? '.db_key');
+        //     if (null === $keyfile) {
+        //         throw new \Exception('DBI keyfile is missing.  Database encryption will not work!');
+        //     }
+        //     $this->config['encrypt']['key'] = trim(file_get_contents($keyfile));
+        // }
 
         return true;
     }

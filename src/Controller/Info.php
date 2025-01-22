@@ -23,7 +23,6 @@ class Info extends Action
         $this->layout('@views/info');
         $this->view->populate([
             'version' => HAZAAR_VERSION,
-            // @phpstan-ignore-next-line
             'time' => (microtime(true) - HAZAAR_START) * 1000,
         ]);
     }
