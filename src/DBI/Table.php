@@ -534,4 +534,14 @@ class Table
     {
         return $this->result = $this->adapter->query($this->queryBuilder->toString());
     }
+
+    public function create(mixed $columns): bool
+    {
+        return $this->adapter->createTable($this->table, $columns);
+    }
+
+    public function drop(): bool
+    {
+        return $this->adapter->dropTable($this->table);
+    }
 }
