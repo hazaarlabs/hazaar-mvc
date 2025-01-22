@@ -9,7 +9,7 @@ use Hazaar\Cron;
 use Hazaar\DateTime;
 use Hazaar\Warlock\Connection\Pipe;
 use Hazaar\Warlock\Connection\Socket;
-use Hazaar\Warlock\Interfaces\Connection;
+use Hazaar\Warlock\Interface\Connection;
 
 require 'Server/Functions.php';
 define('W_LOCAL', -1);

@@ -4,7 +4,7 @@ namespace Hazaar\Cache;
 
 use Hazaar\Map;
 
-abstract class Backend implements Interfaces\Backend
+abstract class Backend implements Interface\Backend
 {
     /**
      * The backend options.

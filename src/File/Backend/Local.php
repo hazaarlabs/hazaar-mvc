@@ -7,7 +7,7 @@ namespace Hazaar\File\Backend;
 use Hazaar\File\BTree;
 use Hazaar\File\Manager;
 
-class Local implements Interfaces\Backend, Interfaces\Driver
+class Local implements Interface\Backend, Interface\Driver
 {
     public string $separator = DIRECTORY_SEPARATOR;
     protected Manager $manager;

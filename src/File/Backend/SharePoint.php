@@ -11,7 +11,7 @@ use Hazaar\HTTP\Request;
 use Hazaar\HTTP\Response;
 use Hazaar\Map;
 
-class SharePoint extends Client implements Interfaces\Backend, Interfaces\Driver
+class SharePoint extends Client implements Interface\Backend, Interface\Driver
 {
     public string $separator = '/';
 

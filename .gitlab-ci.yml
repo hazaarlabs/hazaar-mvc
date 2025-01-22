@@ -23,8 +23,8 @@ variables:
   before_script:
     - composer install
   script:
-    # - phpdoc -d src -t docs/src/api --template="/md/themes/markdown"
-    - bin/hztool --scan src --title "API Reference" doc docs/src/api
+    - mkdir -p docs/src/api
+    - bin/hztool doc --scan=src --title="API Reference" docs/src/api
   artifacts:
     paths:
       - docs/src/api

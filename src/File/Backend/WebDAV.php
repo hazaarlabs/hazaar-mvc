@@ -10,7 +10,7 @@ use Hazaar\File\Manager;
 use Hazaar\HTTP\Request;
 use Hazaar\HTTP\Response;
 
-class WebDAV extends \Hazaar\HTTP\WebDAV implements Interfaces\Backend, Interfaces\Driver
+class WebDAV extends \Hazaar\HTTP\WebDAV implements Interface\Backend, Interface\Driver
 {
     public string $separator = '/';
     protected Manager $manager;

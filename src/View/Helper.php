@@ -7,7 +7,7 @@ namespace Hazaar\View;
 use Hazaar\Application;
 use Hazaar\View;
 
-abstract class Helper implements Interfaces\Helper
+abstract class Helper implements Interface\Helper
 {
     protected View $view;
     protected Application $application;

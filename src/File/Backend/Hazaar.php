@@ -10,7 +10,7 @@ use Hazaar\HTTP\Request;
 use Hazaar\HTTP\URL;
 use Hazaar\Map;
 
-class Hazaar implements Interfaces\Backend, Interfaces\Driver
+class Hazaar implements Interface\Backend, Interface\Driver
 {
     public string $separator = '/';
     protected Manager $manager;

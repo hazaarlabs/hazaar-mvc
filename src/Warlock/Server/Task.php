@@ -16,7 +16,7 @@ define('TASK_ERROR', 7);
 define('TASK_RETRY', 8);
 define('TASK_WAIT', 9);
 
-abstract class Task extends Process implements \Hazaar\Warlock\Interfaces\Task
+abstract class Task extends Process implements \Hazaar\Warlock\Interface\Task
 {
     public ?Client $client = null;
     public string $type = 'task';

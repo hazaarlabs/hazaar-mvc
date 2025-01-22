@@ -53,7 +53,7 @@ use Hazaar\Loader;
  * }
  * ```
  */
-class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, Interfaces\API\Group, Interfaces\API\Index, Interfaces\API\Schema, Interfaces\API\Sequence, Interfaces\API\SQL, Interfaces\API\StoredFunction, Interfaces\API\Table, Interfaces\API\Transaction, Interfaces\API\Trigger, Interfaces\API\User, Interfaces\API\View, Interfaces\API\Statement
+class Adapter implements Interface\API\Constraint, Interface\API\Extension, Interface\API\Group, Interface\API\Index, Interface\API\Schema, Interface\API\Sequence, Interface\API\SQL, Interface\API\StoredFunction, Interface\API\Table, Interface\API\Transaction, Interface\API\Trigger, Interface\API\User, Interface\API\View, Interface\API\Statement
 {
     /**
      * @var array<string, array{cipher:string,checkstring:string}|int|string>
@@ -81,7 +81,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
      */
     private static array $loadedConfigs = [];
 
-    private DBD\Interfaces\Driver $driver;
+    private DBD\Interface\Driver $driver;
 
     private Manager $schemaManager;
 
@@ -291,7 +291,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function listConstraints($table = null, $type = null, $invertType = false): array|false
     {
-        if (!$this->driver instanceof Interfaces\API\Constraint) {
+        if (!$this->driver instanceof Interface\API\Constraint) {
             throw new \BadMethodCallException('Driver does not support constraints');
         }
 
@@ -300,7 +300,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function addConstraint(string $constraintName, array $info): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Constraint) {
+        if (!$this->driver instanceof Interface\API\Constraint) {
             throw new \BadMethodCallException('Driver does not support constraints');
         }
 
@@ -309,7 +309,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function dropConstraint(string $constraintName, string $tableName, bool $ifExists = false, bool $cascade = false): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Constraint) {
+        if (!$this->driver instanceof Interface\API\Constraint) {
             throw new \BadMethodCallException('Driver does not support constraints');
         }
 
@@ -318,7 +318,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function listExtensions(): array
     {
-        if (!$this->driver instanceof Interfaces\API\Extension) {
+        if (!$this->driver instanceof Interface\API\Extension) {
             throw new \BadMethodCallException('Driver does not support extensions');
         }
 
@@ -327,7 +327,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function extensionExists(string $name): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Extension) {
+        if (!$this->driver instanceof Interface\API\Extension) {
             throw new \BadMethodCallException('Driver does not support extensions');
         }
 
@@ -336,7 +336,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function createExtension(string $name): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Extension) {
+        if (!$this->driver instanceof Interface\API\Extension) {
             throw new \BadMethodCallException('Driver does not support extensions');
         }
 
@@ -345,7 +345,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function dropExtension(string $name, bool $ifExists = false): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Extension) {
+        if (!$this->driver instanceof Interface\API\Extension) {
             throw new \BadMethodCallException('Driver does not support extensions');
         }
 
@@ -354,7 +354,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function listGroups(): array
     {
-        if (!$this->driver instanceof Interfaces\API\Group) {
+        if (!$this->driver instanceof Interface\API\Group) {
             throw new \BadMethodCallException('Driver does not support groups');
         }
 
@@ -363,7 +363,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function createGroup(string $groupName): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Group) {
+        if (!$this->driver instanceof Interface\API\Group) {
             throw new \BadMethodCallException('Driver does not support groups');
         }
 
@@ -372,7 +372,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function dropGroup(string $groupName): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Group) {
+        if (!$this->driver instanceof Interface\API\Group) {
             throw new \BadMethodCallException('Driver does not support groups');
         }
 
@@ -381,7 +381,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function addToGroup(string $roleName, string $parentRoleName): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Group) {
+        if (!$this->driver instanceof Interface\API\Group) {
             throw new \BadMethodCallException('Driver does not support groups');
         }
 
@@ -390,7 +390,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function removeFromGroup(string $roleName, string $parentRoleName): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Group) {
+        if (!$this->driver instanceof Interface\API\Group) {
             throw new \BadMethodCallException('Driver does not support groups');
         }
 
@@ -399,7 +399,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function listIndexes(?string $tableName = null): array
     {
-        if (!$this->driver instanceof Interfaces\API\Index) {
+        if (!$this->driver instanceof Interface\API\Index) {
             throw new \BadMethodCallException('Driver does not support indexes');
         }
 
@@ -408,7 +408,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function indexExists(string $indexName, ?string $tableName = null): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Index) {
+        if (!$this->driver instanceof Interface\API\Index) {
             throw new \BadMethodCallException('Driver does not support indexes');
         }
 
@@ -417,7 +417,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function createIndex(string $indexName, string $tableName, mixed $idxInfo): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Index) {
+        if (!$this->driver instanceof Interface\API\Index) {
             throw new \BadMethodCallException('Driver does not support indexes');
         }
 
@@ -426,7 +426,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function dropIndex(string $indexName, bool $ifExists = false): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Index) {
+        if (!$this->driver instanceof Interface\API\Index) {
             throw new \BadMethodCallException('Driver does not support indexes');
         }
 
@@ -435,7 +435,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function getSchemaName(): string
     {
-        if (!$this->driver instanceof Interfaces\API\Schema) {
+        if (!$this->driver instanceof Interface\API\Schema) {
             throw new \BadMethodCallException('Driver does not support schemas');
         }
 
@@ -444,7 +444,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function schemaExists(?string $schemaName = null): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Schema) {
+        if (!$this->driver instanceof Interface\API\Schema) {
             throw new \BadMethodCallException('Driver does not support schemas');
         }
 
@@ -453,7 +453,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function createSchema(?string $schemaName = null): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Schema) {
+        if (!$this->driver instanceof Interface\API\Schema) {
             throw new \BadMethodCallException('Driver does not support schemas');
         }
 
@@ -462,7 +462,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function listSequences(): array
     {
-        if (!$this->driver instanceof Interfaces\API\Sequence) {
+        if (!$this->driver instanceof Interface\API\Sequence) {
             throw new \BadMethodCallException('Driver does not support sequences');
         }
 
@@ -471,7 +471,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function sequenceExists(string $sequenceName): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Sequence) {
+        if (!$this->driver instanceof Interface\API\Sequence) {
             throw new \BadMethodCallException('Driver does not support sequences');
         }
 
@@ -480,7 +480,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function describeSequence(string $name): array|false
     {
-        if (!$this->driver instanceof Interfaces\API\Sequence) {
+        if (!$this->driver instanceof Interface\API\Sequence) {
             throw new \BadMethodCallException('Driver does not support sequences');
         }
 
@@ -489,7 +489,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function createSequence(string $name, array $sequenceInfo, bool $ifNotExists = false): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Sequence) {
+        if (!$this->driver instanceof Interface\API\Sequence) {
             throw new \BadMethodCallException('Driver does not support sequences');
         }
 
@@ -498,7 +498,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function dropSequence(string $name, bool $ifExists = false): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Sequence) {
+        if (!$this->driver instanceof Interface\API\Sequence) {
             throw new \BadMethodCallException('Driver does not support sequences');
         }
 
@@ -507,7 +507,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function nextSequenceValue(string $name): false|int
     {
-        if (!$this->driver instanceof Interfaces\API\Sequence) {
+        if (!$this->driver instanceof Interface\API\Sequence) {
             throw new \BadMethodCallException('Driver does not support sequences');
         }
 
@@ -516,7 +516,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function setSequenceValue(string $name, int $value): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Sequence) {
+        if (!$this->driver instanceof Interface\API\Sequence) {
             throw new \BadMethodCallException('Driver does not support sequences');
         }
 
@@ -525,7 +525,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function createDatabase(string $name): bool
     {
-        if (!$this->driver instanceof Interfaces\API\SQL) {
+        if (!$this->driver instanceof Interface\API\SQL) {
             throw new \BadMethodCallException('Driver does not support SQL');
         }
 
@@ -534,7 +534,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function exec(string $sql): false|int
     {
-        if (!$this->driver instanceof Interfaces\API\SQL) {
+        if (!$this->driver instanceof Interface\API\SQL) {
             throw new \BadMethodCallException('Driver does not support SQL');
         }
 
@@ -543,7 +543,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function query(string $sql): false|Result
     {
-        if (!$this->driver instanceof Interfaces\API\SQL) {
+        if (!$this->driver instanceof Interface\API\SQL) {
             throw new \BadMethodCallException('Driver does not support SQL');
         }
 
@@ -552,7 +552,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function quote(mixed $string, int $type = \PDO::PARAM_STR): false|string
     {
-        if (!$this->driver instanceof Interfaces\API\SQL) {
+        if (!$this->driver instanceof Interface\API\SQL) {
             throw new \BadMethodCallException('Driver does not support SQL');
         }
 
@@ -561,7 +561,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function setTimezone(string $tz): bool
     {
-        if (!$this->driver instanceof Interfaces\API\SQL) {
+        if (!$this->driver instanceof Interface\API\SQL) {
             throw new \BadMethodCallException('Driver does not support SQL');
         }
 
@@ -570,7 +570,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function errorInfo(): array|false
     {
-        if (!$this->driver instanceof Interfaces\API\SQL) {
+        if (!$this->driver instanceof Interface\API\SQL) {
             throw new \BadMethodCallException('Driver does not support SQL');
         }
 
@@ -579,16 +579,16 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function errorCode(): string
     {
-        if (!$this->driver instanceof Interfaces\API\SQL) {
+        if (!$this->driver instanceof Interface\API\SQL) {
             throw new \BadMethodCallException('Driver does not support SQL');
         }
 
         return $this->driver->errorCode();
     }
 
-    public function getQueryBuilder(): Interfaces\QueryBuilder
+    public function getQueryBuilder(): Interface\QueryBuilder
     {
-        if (!$this->driver instanceof Interfaces\API\SQL) {
+        if (!$this->driver instanceof Interface\API\SQL) {
             throw new \BadMethodCallException('Driver does not support SQL');
         }
 
@@ -597,7 +597,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function repair(): bool
     {
-        if (!$this->driver instanceof Interfaces\API\SQL) {
+        if (!$this->driver instanceof Interface\API\SQL) {
             throw new \BadMethodCallException('Driver does not support SQL');
         }
 
@@ -606,7 +606,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function lastQueryString(): string
     {
-        if (!$this->driver instanceof Interfaces\API\SQL) {
+        if (!$this->driver instanceof Interface\API\SQL) {
             throw new \BadMethodCallException('Driver does not support SQL');
         }
 
@@ -615,7 +615,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function listFunctions(bool $includeParameters = false): array
     {
-        if (!$this->driver instanceof Interfaces\API\StoredFunction) {
+        if (!$this->driver instanceof Interface\API\StoredFunction) {
             throw new \BadMethodCallException('Driver does not support stored functions');
         }
 
@@ -624,7 +624,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function functionExists(string $functionName, ?string $argTypes = null): bool
     {
-        if (!$this->driver instanceof Interfaces\API\StoredFunction) {
+        if (!$this->driver instanceof Interface\API\StoredFunction) {
             throw new \BadMethodCallException('Driver does not support stored functions');
         }
 
@@ -633,7 +633,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function describeFunction(string $name): array|false
     {
-        if (!$this->driver instanceof Interfaces\API\StoredFunction) {
+        if (!$this->driver instanceof Interface\API\StoredFunction) {
             throw new \BadMethodCallException('Driver does not support stored functions');
         }
 
@@ -642,7 +642,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function createFunction($name, $spec): bool
     {
-        if (!$this->driver instanceof Interfaces\API\StoredFunction) {
+        if (!$this->driver instanceof Interface\API\StoredFunction) {
             throw new \BadMethodCallException('Driver does not support stored functions');
         }
 
@@ -651,7 +651,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function dropFunction(string $name, null|array|string $argTypes = null, bool $cascade = false, bool $ifExists = false): bool
     {
-        if (!$this->driver instanceof Interfaces\API\StoredFunction) {
+        if (!$this->driver instanceof Interface\API\StoredFunction) {
             throw new \BadMethodCallException('Driver does not support stored functions');
         }
 
@@ -660,7 +660,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function listTables(): array
     {
-        if (!$this->driver instanceof Interfaces\API\Table) {
+        if (!$this->driver instanceof Interface\API\Table) {
             throw new \BadMethodCallException('Driver does not support tables');
         }
 
@@ -669,7 +669,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function tableExists(string $tableName): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Table) {
+        if (!$this->driver instanceof Interface\API\Table) {
             throw new \BadMethodCallException('Driver does not support tables');
         }
 
@@ -678,7 +678,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function createTable(string $tableName, mixed $columns): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Table) {
+        if (!$this->driver instanceof Interface\API\Table) {
             throw new \BadMethodCallException('Driver does not support tables');
         }
 
@@ -687,7 +687,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function describeTable(string $tableName, ?string $sort = null): array|false
     {
-        if (!$this->driver instanceof Interfaces\API\Table) {
+        if (!$this->driver instanceof Interface\API\Table) {
             throw new \BadMethodCallException('Driver does not support tables');
         }
 
@@ -696,7 +696,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function renameTable(string $fromName, string $toName): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Table) {
+        if (!$this->driver instanceof Interface\API\Table) {
             throw new \BadMethodCallException('Driver does not support tables');
         }
 
@@ -705,7 +705,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function dropTable(string $name, bool $ifExists = false, bool $cascade = false): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Table) {
+        if (!$this->driver instanceof Interface\API\Table) {
             throw new \BadMethodCallException('Driver does not support tables');
         }
 
@@ -714,7 +714,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function addColumn(string $tableName, mixed $columnSpec): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Table) {
+        if (!$this->driver instanceof Interface\API\Table) {
             throw new \BadMethodCallException('Driver does not support tables');
         }
 
@@ -723,7 +723,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function alterColumn(string $tableName, string $column, mixed $columnSpec): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Table) {
+        if (!$this->driver instanceof Interface\API\Table) {
             throw new \BadMethodCallException('Driver does not support tables');
         }
 
@@ -732,7 +732,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function dropColumn(string $tableName, string $column, bool $ifExists = false): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Table) {
+        if (!$this->driver instanceof Interface\API\Table) {
             throw new \BadMethodCallException('Driver does not support tables');
         }
 
@@ -741,7 +741,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function truncate(string $tableName, bool $only = false, bool $restartIdentity = false, bool $cascade = false): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Table) {
+        if (!$this->driver instanceof Interface\API\Table) {
             throw new \BadMethodCallException('Driver does not support tables');
         }
 
@@ -750,7 +750,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function begin(): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Transaction) {
+        if (!$this->driver instanceof Interface\API\Transaction) {
             throw new \BadMethodCallException('Driver does not support transactions');
         }
 
@@ -759,7 +759,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function commit(): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Transaction) {
+        if (!$this->driver instanceof Interface\API\Transaction) {
             throw new \BadMethodCallException('Driver does not support transactions');
         }
 
@@ -768,7 +768,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function cancel(): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Transaction) {
+        if (!$this->driver instanceof Interface\API\Transaction) {
             throw new \BadMethodCallException('Driver does not support transactions');
         }
 
@@ -777,7 +777,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function listTriggers(?string $tableName = null): array
     {
-        if (!$this->driver instanceof Interfaces\API\Trigger) {
+        if (!$this->driver instanceof Interface\API\Trigger) {
             throw new \BadMethodCallException('Driver does not support triggers');
         }
 
@@ -786,7 +786,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function triggerExists(string $triggerName, string $tableName): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Trigger) {
+        if (!$this->driver instanceof Interface\API\Trigger) {
             throw new \BadMethodCallException('Driver does not support triggers');
         }
 
@@ -795,7 +795,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function describeTrigger(string $triggerName): array|false
     {
-        if (!$this->driver instanceof Interfaces\API\Trigger) {
+        if (!$this->driver instanceof Interface\API\Trigger) {
             throw new \BadMethodCallException('Driver does not support triggers');
         }
 
@@ -804,7 +804,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function createTrigger(string $triggerName, string $tableName, mixed $spec = []): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Trigger) {
+        if (!$this->driver instanceof Interface\API\Trigger) {
             throw new \BadMethodCallException('Driver does not support triggers');
         }
 
@@ -813,7 +813,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function dropTrigger(string $triggerName, string $tableName, bool $ifExists = false, bool $cascade = false): bool
     {
-        if (!$this->driver instanceof Interfaces\API\Trigger) {
+        if (!$this->driver instanceof Interface\API\Trigger) {
             throw new \BadMethodCallException('Driver does not support triggers');
         }
 
@@ -822,7 +822,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function listUsers(): array
     {
-        if (!$this->driver instanceof Interfaces\API\User) {
+        if (!$this->driver instanceof Interface\API\User) {
             throw new \BadMethodCallException('Driver does not support users');
         }
 
@@ -831,7 +831,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function createUser(string $name, ?string $password = null, array $privileges = []): bool
     {
-        if (!$this->driver instanceof Interfaces\API\User) {
+        if (!$this->driver instanceof Interface\API\User) {
             throw new \BadMethodCallException('Driver does not support users');
         }
 
@@ -840,7 +840,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function dropUser(string $name, bool $ifExists = false): bool
     {
-        if (!$this->driver instanceof Interfaces\API\User) {
+        if (!$this->driver instanceof Interface\API\User) {
             throw new \BadMethodCallException('Driver does not support users');
         }
 
@@ -849,7 +849,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function grant(array|string $role, string $to, string $on): bool
     {
-        if (!$this->driver instanceof Interfaces\API\User) {
+        if (!$this->driver instanceof Interface\API\User) {
             throw new \BadMethodCallException('Driver does not support users');
         }
 
@@ -858,7 +858,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function revoke(array|string $role, string $from, string $on): bool
     {
-        if (!$this->driver instanceof Interfaces\API\User) {
+        if (!$this->driver instanceof Interface\API\User) {
             throw new \BadMethodCallException('Driver does not support users');
         }
 
@@ -867,7 +867,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function listViews(): array
     {
-        if (!$this->driver instanceof Interfaces\API\View) {
+        if (!$this->driver instanceof Interface\API\View) {
             throw new \BadMethodCallException('Driver does not support views');
         }
 
@@ -876,7 +876,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function viewExists(string $viewName): bool
     {
-        if (!$this->driver instanceof Interfaces\API\View) {
+        if (!$this->driver instanceof Interface\API\View) {
             throw new \BadMethodCallException('Driver does not support views');
         }
 
@@ -885,7 +885,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function describeView(string $name): array|false
     {
-        if (!$this->driver instanceof Interfaces\API\View) {
+        if (!$this->driver instanceof Interface\API\View) {
             throw new \BadMethodCallException('Driver does not support views');
         }
 
@@ -894,7 +894,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function createView(string $name, mixed $content): bool
     {
-        if (!$this->driver instanceof Interfaces\API\View) {
+        if (!$this->driver instanceof Interface\API\View) {
             throw new \BadMethodCallException('Driver does not support views');
         }
 
@@ -903,7 +903,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function dropView(string $name, bool $ifExists = false, bool $cascade = false): bool
     {
-        if (!$this->driver instanceof Interfaces\API\View) {
+        if (!$this->driver instanceof Interface\API\View) {
             throw new \BadMethodCallException('Driver does not support views');
         }
 
@@ -912,7 +912,7 @@ class Adapter implements Interfaces\API\Constraint, Interfaces\API\Extension, In
 
     public function prepare(string $sql): \PDOStatement
     {
-        if (!$this->driver instanceof Interfaces\API\Statement) {
+        if (!$this->driver instanceof Interface\API\Statement) {
             throw new \BadMethodCallException('Driver does not support prepared statements');
         }
 

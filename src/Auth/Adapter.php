@@ -77,7 +77,7 @@ use Hazaar\Auth\Adapter\Exception\UnknownStorageAdapter;
  *
  * @implements \ArrayAccess<string,mixed>
  */
-abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
+abstract class Adapter implements Interface\Adapter, \ArrayAccess
 {
     /**
      * The configuration options.
@@ -85,7 +85,7 @@ abstract class Adapter implements Interfaces\Adapter, \ArrayAccess
      * @var array<mixed>
      */
     protected array $options;
-    protected Interfaces\Storage $storage;
+    protected Interface\Storage $storage;
     protected ?string $identity = null;
     protected ?string $credential = null;
 

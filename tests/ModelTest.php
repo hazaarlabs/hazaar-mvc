@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace Hazaar\Tests;
 
 use Hazaar\Model;
+use Hazaar\Model\Attribute\Contains;
+use Hazaar\Model\Attribute\Filter;
+use Hazaar\Model\Attribute\Format;
+use Hazaar\Model\Attribute\Max;
+use Hazaar\Model\Attribute\MaxLength;
+use Hazaar\Model\Attribute\Min;
+use Hazaar\Model\Attribute\MinLength;
+use Hazaar\Model\Attribute\Pad;
+use Hazaar\Model\Attribute\Required;
+use Hazaar\Model\Attribute\Trim;
 use Hazaar\Model\Email;
 use Hazaar\Model\Exception\UnsetPropertyException;
-use Hazaar\Model\Attributes\Contains;
-use Hazaar\Model\Attributes\Filter;
-use Hazaar\Model\Attributes\Format;
-use Hazaar\Model\Attributes\Max;
-use Hazaar\Model\Attributes\MaxLength;
-use Hazaar\Model\Attributes\Min;
-use Hazaar\Model\Attributes\MinLength;
-use Hazaar\Model\Attributes\Pad;
-use Hazaar\Model\Attributes\Required;
-use Hazaar\Model\Attributes\Trim;
 use PHPUnit\Framework\TestCase;
 
 class AgeModel extends Model

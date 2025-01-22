@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\DBI\QueryBuilder;
 
 use Hazaar\DateTime;
-use Hazaar\DBI\Interfaces\QueryBuilder;
+use Hazaar\DBI\Interface\QueryBuilder;
 use Hazaar\DBI\Table;
 use Hazaar\Model;
 

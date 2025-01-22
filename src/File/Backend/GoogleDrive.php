@@ -10,7 +10,7 @@ use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 
-class GoogleDrive extends Client implements Interfaces\Backend, Interfaces\Driver
+class GoogleDrive extends Client implements Interface\Backend, Interface\Driver
 {
     public string $separator = '/';
 

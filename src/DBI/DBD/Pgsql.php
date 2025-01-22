@@ -4,22 +4,23 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\DBD;
 
-use Hazaar\DBI\Interfaces\API\Constraint;
-use Hazaar\DBI\Interfaces\API\Extension;
-use Hazaar\DBI\Interfaces\API\Group;
-use Hazaar\DBI\Interfaces\API\Index;
-use Hazaar\DBI\Interfaces\API\Schema;
-use Hazaar\DBI\Interfaces\API\Sequence;
-use Hazaar\DBI\Interfaces\API\SQL;
-use Hazaar\DBI\Interfaces\API\StoredFunction;
-use Hazaar\DBI\Interfaces\API\Table;
-use Hazaar\DBI\Interfaces\API\Transaction;
-use Hazaar\DBI\Interfaces\API\Trigger;
-use Hazaar\DBI\Interfaces\API\User;
-use Hazaar\DBI\Interfaces\API\View;
-use Hazaar\DBI\Interfaces\QueryBuilder;
+use Hazaar\DBI\DBD\Interface\Driver;
+use Hazaar\DBI\Interface\API\Constraint;
+use Hazaar\DBI\Interface\API\Extension;
+use Hazaar\DBI\Interface\API\Group;
+use Hazaar\DBI\Interface\API\Index;
+use Hazaar\DBI\Interface\API\Schema;
+use Hazaar\DBI\Interface\API\Sequence;
+use Hazaar\DBI\Interface\API\SQL;
+use Hazaar\DBI\Interface\API\StoredFunction;
+use Hazaar\DBI\Interface\API\Table;
+use Hazaar\DBI\Interface\API\Transaction;
+use Hazaar\DBI\Interface\API\Trigger;
+use Hazaar\DBI\Interface\API\User;
+use Hazaar\DBI\Interface\API\View;
+use Hazaar\DBI\Interface\QueryBuilder;
 
-class Pgsql implements Interfaces\Driver, Constraint, Extension, Group, Index, Schema, Sequence, SQL, StoredFunction, Table, Trigger, User, View, Transaction
+class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequence, SQL, StoredFunction, Table, Trigger, User, View, Transaction
 {
     use Traits\PDO {
         Traits\PDO::query as pdoQuery; // Alias the trait's query method to pdoQuery

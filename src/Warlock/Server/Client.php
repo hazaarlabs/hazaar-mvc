@@ -7,7 +7,7 @@ namespace Hazaar\Warlock\Server;
 use Hazaar\Warlock\Protocol;
 use Hazaar\Warlock\Protocol\WebSockets;
 
-class Client extends WebSockets implements \Hazaar\Warlock\Interfaces\Client
+class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
 {
     public Logger $log;
     // WebSocket specific stuff

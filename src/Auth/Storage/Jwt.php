@@ -7,7 +7,7 @@ namespace Hazaar\Auth\Storage;
 use Hazaar\Application;
 use Hazaar\Application\FilePath;
 use Hazaar\Auth\Adapter;
-use Hazaar\Auth\Interfaces\Storage;
+use Hazaar\Auth\Interface\Storage;
 use Hazaar\Auth\Storage\Exception\JWTPrivateKeyFileNotFound;
 use Hazaar\Auth\Storage\Exception\NoApplication;
 use Hazaar\Auth\Storage\Exception\NoJWTAlgorithm;

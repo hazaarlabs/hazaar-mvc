@@ -17,7 +17,7 @@ namespace Hazaar\Auth\Storage;
 use Hazaar\Application;
 use Hazaar\Application\Request;
 use Hazaar\Auth\Adapter;
-use Hazaar\Auth\Interfaces\Storage;
+use Hazaar\Auth\Interface\Storage;
 use Hazaar\Cache as HazaarCache;
 
 /**
