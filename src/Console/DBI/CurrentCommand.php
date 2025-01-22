@@ -19,8 +19,12 @@ class CurrentCommand extends Command
     protected function execute(Input $input, Output $output): int
     {
         $manager = Adapter::getSchemaManagerInstance();
-        $comment = ake($manager->getVersions(), $version = $manager->getVersion());
-        $output->write(str_pad((string) $version, 10, ' ', STR_PAD_RIGHT)." {$comment}".PHP_EOL);
+        $version = $manager->getVersion();
+        if (null === $version) {
+            $output->write('No schema version found.'.PHP_EOL);
+        } else {
+            $output->write($version.PHP_EOL);
+        }
 
         return 0;
     }

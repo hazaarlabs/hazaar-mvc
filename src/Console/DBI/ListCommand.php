@@ -24,8 +24,8 @@ class ListCommand extends Command
         $applied = $input->getOption('applied') ?? false;
         $versions = $manager->getVersions(false, $applied);
         if (count($versions) > 0) {
-            foreach ($versions as $version => $comment) {
-                $output->write(str_pad((string) $version, 10, ' ', STR_PAD_RIGHT)." {$comment}".PHP_EOL);
+            foreach ($versions as $version) {
+                $output->write($version.PHP_EOL);
             }
         } else {
             $output->write('No schema versions found!'.PHP_EOL);
