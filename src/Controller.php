@@ -28,7 +28,7 @@ use Hazaar\Controller\Response\HTTP\Redirect;
  *
  * @property Helper\Response $response
  */
-abstract class Controller implements Controller\Interfaces\Controller
+abstract class Controller implements Controller\Interface\Controller
 {
     protected string $name;
     protected Request $request;

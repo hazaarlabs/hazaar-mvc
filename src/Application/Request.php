@@ -26,7 +26,7 @@ use Hazaar\Session;
  *              If you want to generate your own HTTP request object to pass to another method or function that requires
  *              one, see [[Hazaar\Http\Request]].
  */
-class Request implements Interfaces\Request
+class Request implements Interface\Request
 {
     public static string $pathParam = 'hzpath';
     public static string $queryParam = 'hzqs';

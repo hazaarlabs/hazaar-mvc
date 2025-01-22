@@ -8,7 +8,7 @@ use Hazaar\Model\Exception\DefineEventHookException;
 use Hazaar\Model\Exception\PropertyAttributeException;
 use Hazaar\Model\Exception\PropertyException;
 use Hazaar\Model\Exception\UnsetPropertyException;
-use Hazaar\Model\Interfaces\AttributeRule;
+use Hazaar\Model\Interface\AttributeRule;
 
 /**
  * This is an abstract class that implements the \jsonSerializable interface.
@@ -718,7 +718,7 @@ abstract class Model implements \jsonSerializable, \Iterator
                 }
                 foreach ($reflectionAttributes as $reflectionAttribute) {
                     $reflectionAttributeClass = new \ReflectionClass($reflectionAttribute->getName());
-                    if (!$reflectionAttributeClass->isSubclassOf('Hazaar\Model\Interfaces\AttributeRule')) {
+                    if (!$reflectionAttributeClass->isSubclassOf('Hazaar\Model\Interface\AttributeRule')) {
                         continue;
                     }
                     $modelRule = $reflectionAttribute->newInstance();

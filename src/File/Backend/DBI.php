@@ -8,7 +8,7 @@ use Hazaar\DateTime;
 use Hazaar\DBI\Adapter;
 use Hazaar\File\Manager;
 
-class DBI implements Interfaces\Backend, Interfaces\Driver
+class DBI implements Interface\Backend, Interface\Driver
 {
     public string $separator = '/';
     protected Manager $manager;

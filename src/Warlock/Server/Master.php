@@ -10,7 +10,7 @@ use Hazaar\File\Metric;
 use Hazaar\File\RRD;
 use Hazaar\Map;
 use Hazaar\Warlock\Config;
-use Hazaar\Warlock\Interfaces\Client as ClientInterface;
+use Hazaar\Warlock\Interface\Client as ClientInterface;
 use Hazaar\Warlock\Protocol;
 
 class Master

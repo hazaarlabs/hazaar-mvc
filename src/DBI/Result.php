@@ -6,7 +6,7 @@ namespace Hazaar\DBI;
 
 use Hazaar\DateTime;
 
-abstract class Result implements Interfaces\Result, \Countable
+abstract class Result implements Interface\Result, \Countable
 {
     /**
      * @var array<string, array<string>>

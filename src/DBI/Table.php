@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI;
 
-use Hazaar\DBI\Interfaces\QueryBuilder;
-use Hazaar\DBI\Interfaces\Result;
+use Hazaar\DBI\Interface\QueryBuilder;
+use Hazaar\DBI\Interface\Result;
 use Hazaar\Model;
 
 class Table

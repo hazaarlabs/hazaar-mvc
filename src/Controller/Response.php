@@ -7,7 +7,7 @@ namespace Hazaar\Controller;
 use Hazaar\Controller\Exception\HeadersSent;
 use Hazaar\HTTP\Client;
 
-class Response implements Interfaces\Response
+class Response implements Interface\Response
 {
     public const TYPE_HTML = 1;
     public const TYPE_JSON = 2;

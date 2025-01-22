@@ -8,7 +8,7 @@ use Hazaar\Auth\Adapter;
 use Hazaar\DBI\Adapter as DBIAdapter;
 use Hazaar\DBI\Table;
 
-class DBITable extends Adapter implements \Hazaar\Auth\Interfaces\Adapter
+class DBITable extends Adapter implements \Hazaar\Auth\Interface\Adapter
 {
     private Table $table;
 

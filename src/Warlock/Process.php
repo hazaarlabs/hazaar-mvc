@@ -6,7 +6,7 @@ namespace Hazaar\Warlock;
 
 use Hazaar\Application;
 use Hazaar\DateTime;
-use Hazaar\Warlock\Interfaces\Connection;
+use Hazaar\Warlock\Interface\Connection;
 
 abstract class Process
 {

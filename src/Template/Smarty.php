@@ -251,7 +251,7 @@ class Smarty
             $obj->custom_handlers = $this->__custom_function_handlers;
             $obj->render($params);
         } catch (\Throwable $e) {
-            throw new Exceptions\SmartyTemplateError($e);
+            throw new Exception\SmartyTemplateError($e);
         } finally {
             error_clear_last();
             error_reporting($errors);

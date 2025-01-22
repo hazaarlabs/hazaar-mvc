@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\DBD\Traits;
 
-use Hazaar\DBI\Interfaces\QueryBuilder;
+use Hazaar\DBI\Interface\QueryBuilder;
 use Hazaar\DBI\QueryBuilder\SQL as SQLBuilder;
 
 trait SQL

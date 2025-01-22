@@ -11,7 +11,7 @@ use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 
-class Dropbox extends Client implements Interfaces\Backend, Interfaces\Driver
+class Dropbox extends Client implements Interface\Backend, Interface\Driver
 {
     public string $separator = '/';
     protected Manager $manager;

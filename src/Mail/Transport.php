@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Mail;
 
-abstract class Transport implements Interfaces\Transport
+abstract class Transport implements Interface\Transport
 {
     /**
      * @var array<mixed>

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\File;
 
 use Hazaar\File;
-use Hazaar\File\Backend\Interfaces\Backend;
+use Hazaar\File\Backend\Interface\Backend;
 use Hazaar\HTTP\URL;
 
 define('HZ_SYNC_DIR', 1);
