@@ -34,7 +34,10 @@ class Application
 
     public function run(): int
     {
+        $this->input->initialise((array) $_SERVER['argv']);
         $this->output->write('<fg=green>'.$this->name.' v'.$this->version.'</>'.PHP_EOL);
+        define('APPLICATION_ENV', $this->input->getGlobalOption('env') ?? getenv('APPLICATION_ENV') ?: 'development');
+        $this->output->write('<fg=green>Environment: '.APPLICATION_ENV.'</>'.PHP_EOL);
         $commandName = $this->input->getCommand();
         if (!array_key_exists($commandName, $this->commands)) {
             $this->writeHelp($this->output);
@@ -42,7 +45,7 @@ class Application
             return 1;
         }
         $command = $this->commands[$commandName];
-        $this->input->initialise($command);
+        $this->input->run($command);
         $code = $command->run($this);
         if (-1 === $code) {
             $this->writeHelp($this->output);
@@ -54,8 +57,24 @@ class Application
 
     public function writeHelp(Output $output): void
     {
-        $output->write('<fg=green>Usage: '.$this->name.' [command] [options]</>'.PHP_EOL);
+        $cli = $this->input->getExecutable();
+        if ($globalOptions = Command::$globalOptions) {
+            $cli .= ' [globals]';
+        }
+        $cli .= ' [command] [options]';
+        $output->write('<fg=green>Usage: '.$cli.'</>'.PHP_EOL);
         $output->write(PHP_EOL);
+        if (count(Command::$globalOptions) > 0) {
+            $output->write('<fg=green>Global Options:</>'.PHP_EOL);
+            foreach (Command::$globalOptions as $option) {
+                $output->write('  <fg=green>--'.$option['long'].'</>');
+                if (null !== $option['short']) {
+                    $output->write(', <fg=green>-'.$option['short'].'</>');
+                }
+                $output->write(' - '.$option['description'].PHP_EOL);
+            }
+            $output->write(PHP_EOL);
+        }
         $output->write('<fg=green>Commands:</>'.PHP_EOL);
         foreach ($this->commands as $command) {
             $output->write('  '.$command->getName().' - '.$command->getDescription().PHP_EOL);

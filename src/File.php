@@ -592,6 +592,9 @@ class File implements \JsonSerializable
         $json = $this->getContents();
         $bom = pack('H*', 'EFBBBF');
         $json = preg_replace("/^{$bom}/", '', $json);
+        if (false === json_validate($json)) {
+            return false;
+        }
 
         return json_decode($json, $assoc);
     }

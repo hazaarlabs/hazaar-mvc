@@ -13,14 +13,12 @@ class SchemaCommand extends Command
     {
         $this->setName('schema')
             ->setDescription('Display the current database schema.')
-            ->addOption('env', 'e', 'The environment to use.')
         ;
     }
 
     protected function execute(Input $input, Output $output): int
     {
-        $env = $input->getOption('env') ?? getenv('APPLICATION_ENV') ?: 'development';
-        $manager = Adapter::getSchemaManagerInstance($env);
+        $manager = Adapter::getSchemaManagerInstance();
         if ($schema = $manager->getSchema()) {
             $output->write(json_encode($schema, JSON_PRETTY_PRINT));
 

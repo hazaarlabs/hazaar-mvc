@@ -15,15 +15,16 @@ class ReplayCommand extends Command
             ->setDescription('Replay the database schema.')
             ->setHelp('This command will replay the database schema to a specific version.')
             ->addArgument('version', 'The version to rollback to.')
-            ->addOption('env', 'e', 'The environment to use.')
             ->addOption('test', 't', 'Test the migration without actually applying it.')
         ;
     }
 
     protected function execute(Input $input, Output $output): int
     {
-        $env = $input->getOption('env') ?? getenv('APPLICATION_ENV') ?: 'development';
-        $manager = Adapter::getSchemaManagerInstance($env);
+        $manager = Adapter::getSchemaManagerInstance();
+        $manager->registerOutputHandler(function ($time, $message) use ($output) {
+            $output->write(date('H:i:s', (int) round($time)).' '.$message.PHP_EOL);
+        });
         if ($version = $input->getArgument('version')) {
             settype($version, 'int');
         }

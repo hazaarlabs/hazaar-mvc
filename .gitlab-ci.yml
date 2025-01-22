@@ -111,10 +111,14 @@ Unit Testing:
     APPLICATION_PATH: tests/application
   before_script:
     - composer install
+    - npm install --prefix tests/db
+    - nohup npm start --prefix tests/db > db.log 2>&1 &
+    - sleep 5
   script:
     - vendor/bin/phpunit
   artifacts:
-    when: always
+    paths:
+      - db.log
     reports:
       junit: phpunit-test-results.xml
 

@@ -4,89 +4,52 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\DBD\Interfaces;
 
-use Hazaar\DBI\Table;
+use Hazaar\DBI\Interfaces\QueryBuilder;
+use Hazaar\DBI\Result;
 
 /**
  * @brief Relational Database Driver Interface
  */
 interface Driver
 {
-    /**
-     * @param array<string, mixed> $config
-     */
-    public static function mkdsn(array $config): false|string;
+    public function createDatabase(string $name): bool;
 
     /**
-     * @param array<int, bool> $driverOptions
+     * @return array{string, string, string}
      */
-    public function connect(string $dsn, ?string $username = null, ?string $password = null, ?array $driverOptions = null): bool;
+    public function errorInfo(): array|false;
+
+    public function errorCode(): string;
 
     public function setTimezone(string $tz): bool;
 
-    public function repair(?string $table = null): bool;
-
-    public function beginTransaction(): bool;
-
-    public function commit(): bool;
-
-    public function rollBack(): bool;
-
-    public function inTransaction(): bool;
-
-    public function schemaExists(string $schema): bool;
-
-    public function getAttribute(int $attribute): mixed;
-
-    public function setAttribute(int $attribute, mixed $value): bool;
-
-    public function lastInsertId(): false|string;
-
-    public function quote(mixed $value): mixed;
-
-    public function quoteSpecial(mixed $value): mixed;
-
+    /**
+     * Executes an SQL statement and returns the number of affected rows or false on failure.
+     *
+     * @param string $sql the SQL statement to execute
+     *
+     * @return false|int the number of affected rows or false on failure
+     */
     public function exec(string $sql): false|int;
 
-    public function query(string $sql): false|\PDOStatement;
-
-    public function prepare(string $sql): false|\PDOStatement;
+    /**
+     * Executes a SQL query.
+     *
+     * @param string $sql the SQL query to execute
+     *
+     * @return false|Result returns a Result object if the query is successful, or false if there was an error
+     */
+    public function query(string $sql): false|Result;
 
     /**
-     * @param array<mixed>                   $conflictTarget
-     * @param null|array<string>|bool|string $returning
+     * Returns a query builder instance.
+     *
+     * @return QueryBuilder the query builder instance
      */
-    public function insert(
-        string $tableName,
-        mixed $fields,
-        null|array|bool|string $returning = null,
-        null|array|string $conflictTarget = null,
-        mixed $conflictUpdate = null,
-        ?Table $table = null
-    ): false|int|\PDOStatement;
+    public function getQueryBuilder(): QueryBuilder;
 
     /**
-     * @param array<string> $criteria
-     * @param array<string> $from
-     * @param array<string> $tables
+     * Returns the last query string executed by the driver.
      */
-    public function update(
-        string $table,
-        mixed $fields,
-        array $criteria = [],
-        array $from = [],
-        ?string $returning = null,
-        array $tables = []
-    ): false|int|\PDOStatement;
-
-    /**
-     * @param array<string> $criteria
-     * @param array<string> $from
-     */
-    public function delete(
-        string $table,
-        array $criteria,
-        array $from = []
-    ): false|int;
-
-    public function deleteAll(string $table): false|int;
+    public function lastQueryString(): string;
 }

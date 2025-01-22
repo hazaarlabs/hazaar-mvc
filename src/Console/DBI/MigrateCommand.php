@@ -15,7 +15,6 @@ class MigrateCommand extends Command
             ->setDescription('Migrate the database schema')
             ->setHelp('This command allows you to migrate the database schema to a specific version.')
             ->addArgument('version', 'The version to migrate to.')
-            ->addOption('env', 'e', 'The environment to use.')
             ->addOption('test', 't', 'Test the migration without actually applying it.')
             ->addOption('force_sync', 'f', 'Force a sync of the database schema.')
             ->addOption('keep_tables', 'k', 'Keep the tables in the database.')
@@ -25,8 +24,10 @@ class MigrateCommand extends Command
 
     protected function execute(Input $input, Output $output): int
     {
-        $env = $input->getOption('env') ?? getenv('APPLICATION_ENV') ?: 'development';
-        $manager = Adapter::getSchemaManagerInstance($env);
+        $manager = Adapter::getSchemaManagerInstance();
+        $manager->registerOutputHandler(function ($time, $message) use ($output) {
+            $output->write(date('H:i:s', (int) round($time)).' '.$message.PHP_EOL);
+        });
         if ($version = $input->getArgument('version')) {
             settype($version, 'int');
         }

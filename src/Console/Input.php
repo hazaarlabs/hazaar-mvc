@@ -13,6 +13,8 @@ namespace Hazaar\Console;
 
 class Input
 {
+    private string $executable;
+
     /**
      * @var array<mixed>
      */
@@ -26,55 +28,60 @@ class Input
     /**
      * @var array<string,mixed>
      */
+    private array $globalOptions = [];
+
+    /**
+     * @var array<string,mixed>
+     */
     private array $options = [];
 
     private ?string $command = null;
 
     private ?Command $commandObject = null;
 
-    public function __construct()
+    /**
+     * Initialises the input object with the command line arguments.
+     *
+     * @param array<mixed> $argv
+     */
+    public function initialise(array $argv): void
     {
-        $this->argv = array_slice((array) $_SERVER['argv'], 1);
-        $this->command = array_shift($this->argv);
+        $this->executable = basename(array_shift($argv));
+        $definedOptions = $this->reduceOptions(Command::$globalOptions);
+        while ('-' === substr(current($argv), 0, 1)) {
+            $this->parseOption(current($argv), $definedOptions, $this->globalOptions);
+            next($argv);
+        }
+        $this->command = current($argv);
+        $this->argv = array_slice($argv, key($argv) + 1);
     }
 
-    public function initialise(Command $command): void
+    public function run(Command $command): void
     {
         $this->commandObject = $command;
-        $definedOptions = $command->getOptions();
-        $optionsDefinition = [];
-        foreach ($definedOptions as $def) {
-            $optionsDefinition[] = $def['long'];
-            if ($def['short']) {
-                $definition[] = $def['short'];
-            }
-        }
+        $optionsDefinition = $this->reduceOptions($command->getOptions());
         $definedArguments = $command->getArguments();
         $argumentsDefinition = [];
         foreach ($definedArguments as $def) {
             $argumentsDefinition[] = $def['name'];
         }
         foreach ($this->argv as $arg) {
-            if (str_starts_with($arg, '--')) {
-                $eq = strpos($arg, '=');
-                $key = substr($arg, 2, $eq ? $eq - 2 : null);
-                if (!in_array($key, $optionsDefinition)) {
-                    continue;
-                }
-                $value = $eq ? substr($arg, $eq + 1) : true;
-                $this->options[$key] = $value;
-            } elseif (str_starts_with($arg, '-')) {
-                $key = substr($arg, 1, 1);
-                if (!in_array($key, $optionsDefinition)) {
-                    continue;
-                }
-                $value = substr($arg, 2);
-                $this->options[$key] = $value;
-            } else {
-                $argName = array_shift($argumentsDefinition);
-                $this->args[$argName] = $arg;
+            if ($this->parseOption($arg, $optionsDefinition, $this->options)) {
+                continue;
             }
+            $argName = array_shift($argumentsDefinition);
+            $this->args[$argName] = $arg;
         }
+    }
+
+    public function getExecutable(): string
+    {
+        return $this->executable;
+    }
+
+    public function getGlobalOption(string $name): mixed
+    {
+        return ake($this->globalOptions, $name);
     }
 
     public function getCommandObject(): ?Command
@@ -100,6 +107,57 @@ class Input
     public function getOption(string $name): mixed
     {
         return ake($this->options, $name);
+    }
+
+    /**
+     * Reduces the options array to a simple array of option names.
+     *
+     * @param array<array{long: string, short: null|string, description: null|string, required: bool}> $definedOptions
+     *
+     * @return array<string>
+     */
+    private function reduceOptions(array $definedOptions): array
+    {
+        $optionsDefinition = [];
+        foreach ($definedOptions as $def) {
+            $optionsDefinition[] = $def['long'];
+            if ($def['short']) {
+                $definition[] = $def['short'];
+            }
+        }
+
+        return $optionsDefinition;
+    }
+
+    /**
+     * Parses a command line option and adds it to the options array.
+     *
+     * @param array<string,mixed> $optionsDefinition
+     * @param array<string,mixed> $options
+     */
+    private function parseOption(string $arg, array &$optionsDefinition, array &$options): bool
+    {
+        if (str_starts_with($arg, '--')) {
+            $eq = strpos($arg, '=');
+            $key = substr($arg, 2, $eq ? $eq - 2 : null);
+            if (in_array($key, $optionsDefinition)) {
+                $value = $eq ? substr($arg, $eq + 1) : true;
+                $options[$key] = $value;
+            }
+
+            return true;
+        }
+        if (str_starts_with($arg, '-')) {
+            $key = substr($arg, 1, 1);
+            if (in_array($key, $optionsDefinition)) {
+                $value = substr($arg, 2);
+                $options[$key] = $value;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     // Shows a help page on the CLI for the options and commands that have been configured.

@@ -6,6 +6,11 @@ namespace Hazaar\Console;
 
 abstract class Command
 {
+    /**
+     * @var array<array{long: string, short: null|string, description: null|string, required: bool}>
+     */
+    public static array $globalOptions = [];
+
     protected Application $application;
     private string $name;
     private string $description;
@@ -89,6 +94,18 @@ abstract class Command
 
     protected function setHelp(string $help): self
     {
+        return $this;
+    }
+
+    protected function addGlobalOption(string $long, ?string $short, ?string $description, bool $required = false): self
+    {
+        self::$globalOptions[] = [
+            'long' => $long,
+            'short' => $short,
+            'description' => $description,
+            'required' => $required,
+        ];
+
         return $this;
     }
 

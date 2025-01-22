@@ -4,13 +4,42 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\DBD;
 
-use Hazaar\DBI\Adapter;
-use PgSql\Connection;
+use Hazaar\DBI\Interfaces\API\Constraint;
+use Hazaar\DBI\Interfaces\API\Extension;
+use Hazaar\DBI\Interfaces\API\Group;
+use Hazaar\DBI\Interfaces\API\Index;
+use Hazaar\DBI\Interfaces\API\Schema;
+use Hazaar\DBI\Interfaces\API\Sequence;
+use Hazaar\DBI\Interfaces\API\SQL;
+use Hazaar\DBI\Interfaces\API\StoredFunction;
+use Hazaar\DBI\Interfaces\API\Table;
+use Hazaar\DBI\Interfaces\API\Transaction;
+use Hazaar\DBI\Interfaces\API\Trigger;
+use Hazaar\DBI\Interfaces\API\User;
+use Hazaar\DBI\Interfaces\API\View;
+use Hazaar\DBI\Interfaces\QueryBuilder;
 
-class Pgsql extends BaseDriver
+class Pgsql implements Interfaces\Driver, Constraint, Extension, Group, Index, Schema, Sequence, SQL, StoredFunction, Table, Trigger, User, View, Transaction
 {
+    use Traits\PDO {
+        Traits\PDO::query as pdoQuery; // Alias the trait's query method to pdoQuery
+    }
+    use Traits\PDO\Transaction;
+    use Traits\SQL;
+    use Traits\SQL\Extension;
+    use Traits\SQL\Constraint;
+    use Traits\SQL\Index;
+    use Traits\SQL\Schema;
+    use Traits\SQL\Table;
+    use Traits\SQL\View;
+    use Traits\SQL\StoredFunction;
+    use Traits\SQL\Trigger;
+    use Traits\SQL\Sequence;
+    use Traits\SQL\User;
+    use Traits\SQL\Group;
+
     /**
-     * @var array<string> The elements that make up the DSN for the PostgreSQL database connection
+     * @var array<string>
      */
     public static array $dsnElements = [
         'host',
@@ -20,271 +49,132 @@ class Pgsql extends BaseDriver
         'password',
     ];
 
-    /**
-     * Constructor for the Pgsql class.
-     *
-     * @param array<mixed> $config the configuration settings for the Pgsql class
-     */
-    public function __construct(Adapter $adapter, array $config = [])
-    {
-        parent::__construct($adapter, $config);
-        $this->schemaName = 'public';
-    }
+    private QueryBuilder $queryBuilder;
 
     /**
-     * Checks if a schema exists in the database.
-     *
-     * @param string $schemaName the name of the schema to check
-     *
-     * @return bool returns true if the schema exists, false otherwise
+     * @var array<mixed>
      */
-    public function schemaExists($schemaName): bool
+    private array $config;
+
+    /**
+     * @param array<mixed> $config
+     */
+    public function __construct(array $config)
     {
-        $sql = "SELECT schema_name FROM information_schema.schemata WHERE schema_name = '{$schemaName}';";
-        if ($result = $this->query($sql)) {
-            return $result->fetch(\PDO::FETCH_ASSOC) ? true : false;
+        $this->config = $config;
+        $this->queryBuilder = $this->getQueryBuilder();
+        $driverOptions = [];
+        if (isset($config['options'])) {
+            $driverOptions = $config['options']->toArray();
+            foreach ($driverOptions as $key => $value) {
+                if (($constKey = constant('\PDO::'.$key)) === null) {
+                    continue;
+                }
+                $driverOptions[$constKey] = $value;
+                unset($driverOptions[$key]);
+            }
         }
-
-        return false;
+        $this->connect($this->mkdsn($config), $config['user'] ?? '', $config['password'] ?? '', $driverOptions);
     }
 
     /**
-     * Creates a new database schema if it does not already exist.
+     * Retrieves a list of extensions in the specified schema.
      *
-     * @param string $schemaName the name of the schema to create
-     *
-     * @return bool returns true if the schema was created successfully, false otherwise
+     * @return array<int, array<string>> an array containing the names of the extensions
      */
-    public function createSchema(string $schemaName): bool
+    public function listExtensions(): array
     {
-        $sql = "CREATE SCHEMA IF NOT EXISTS {$schemaName};";
+        $results = $this->query('SELECT e.extname FROM pg_catalog.pg_extension e
+            INNER JOIN pg_catalog.pg_namespace n ON e.extnamespace=n.oid
+            WHERE n.nspname=\''.$this->queryBuilder->getSchemaName().'\';')->fetchAll(\PDO::FETCH_NUM);
+
+        return array_column($results, 0);
+    }
+
+    /**
+     * Creates a PostgreSQL extension.
+     *
+     * @param string $name the name of the extension to create
+     *
+     * @return bool returns true if the extension was created successfully, false otherwise
+     */
+    public function createExtension($name): bool
+    {
+        $sql = 'CREATE EXTENSION IF NOT EXISTS '.$this->queryBuilder->quoteSpecial($name).';';
 
         return false !== $this->exec($sql);
     }
 
     /**
-     * Sets the timezone for the database connection.
+     * Drops a PostgreSQL extension from the database.
      *
-     * @param string $tz the timezone to set
+     * @param string $name     the name of the extension to drop
+     * @param bool   $ifExists (optional) Whether to drop the extension only if it exists. Default is false.
      *
-     * @return bool returns true if the timezone was set successfully, false otherwise
+     * @return bool returns true if the extension was successfully dropped, false otherwise
      */
-    public function setTimezone(string $tz): bool
+    public function dropExtension($name, $ifExists = false): bool
     {
-        return false != $this->exec("SET TIME ZONE '{$tz}';");
+        $sql = 'DROP EXTENSION ';
+        if (true === $ifExists) {
+            $sql .= 'IF EXISTS ';
+        }
+        $sql .= $this->queryBuilder->quoteSpecial($name).';';
+
+        return false !== $this->exec($sql);
     }
 
-    /**
-     * Run a DBD repair process for this database type.
-     *
-     * @param $table string (optional) Run the repair on a single table
-     */
-    public function repair(?string $table = null): bool
+    public function listUsers(): array
     {
-        /*
-         * Fix sequence current values to max value of column
-         *
-         * See: https://wiki.postgresql.org/wiki/Fixing_Sequences
-         */
-        $sql = "SELECT quote_ident(PGT.schemaname) || '.' || quote_ident(T.relname) as t, 'SELECT SETVAL(' ||
-               quote_literal(quote_ident(PGT.schemaname) || '.' || quote_ident(S.relname)) ||
-               ', GREATEST(MAX(' ||quote_ident(C.attname)|| '), 1) ) FROM ' ||
-               quote_ident(PGT.schemaname) || '.' || quote_ident(T.relname) || ';' as sql
-               FROM pg_class AS S,
-                    pg_depend AS D,
-                    pg_class AS T,
-                    pg_attribute AS C,
-                    pg_tables AS PGT
-               WHERE S.relkind = 'S'
-                   AND S.oid = D.objid
-                   AND D.refobjid = T.oid
-                   AND D.refobjid = C.attrelid
-                   AND D.refobjsubid = C.attnum
-                   AND T.relname = PGT.tablename
-               ORDER BY S.relname";
-        if ($table) {
-            $sql = "SELECT t, sql FROM ({$sql}) s WHERE t = '{$this->schemaName}.{$table}';";
-        } else {
-            $sql .= ';';
-        }
-        if (($result = $this->query($sql)) === false) {
-            throw new \Exception(ake($this->errorInfo(), 2));
-        }
-        $tables = [];
-        while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
-            $tables[] = $row['t'];
-            $this->query($row['sql']);
-        }
-        // Do a quick vacuum as well.
-        if (null === $table) {
-            $this->query('VACUUM');
-        }
+        $sql = 'SELECT rolname FROM pg_roles WHERE rolcanlogin = true';
 
-        return true;
+        return $this->query($sql)->fetchAll();
     }
 
-    /**
-     * Fixes the value before it is used in a database query.
-     *
-     * @param mixed $value the value to be fixed
-     *
-     * @return mixed the fixed value
-     */
-    public function fixValue($value): mixed
+    public function createUser(string $name, ?string $password = null, array $privileges = []): bool
     {
-        if (!$value) {
-            return $value;
+        $sql = 'CREATE ROLE '
+            .$this->queryBuilder->quoteSpecial($name)
+            .' WITH LOGIN';
+        if (null !== $password) {
+            $sql .= ' PASSWORD '.$this->queryBuilder->prepareValue($password);
         }
-        // Convert the 'now()' function call to the standard CURRENT_TIMESTAMP
-        if ('now()' == strtolower($value)) {
-            return 'CURRENT_TIMESTAMP';
-        }
-        // Strip any type casts
-        if ($pos = strpos($value, '::')) {
-            return substr($value, 0, $pos);
+        if (!empty($privileges)) {
+            $sql .= ' '.implode(' ', $privileges);
         }
 
-        return $value;
+        return false !== $this->exec($sql);
     }
 
-    /**
-     * Converts the given value to a string representation suitable for use in a database query.
-     *
-     * @param mixed $string the value to be converted
-     *
-     * @return string the converted string representation of the value
-     */
-    public function field($string): string
+    public function dropUser(string $name, bool $ifExists = false): bool
     {
-        if (!is_string($string)) {
-            if (is_bool($string)) {
-                return strbool($string);
-            }
-            if (is_array($string) && array_key_exists('schema', $string) && array_key_exists('name', $string)) {
-                $string = $string['schema'].'.'.$string['name'];
-            } elseif (null === $string) {
-                return 'NULL';
-            } else {
-                return (string) $string;
-            }
-        } else {
-            $string = trim($string);
-        }
-        // This matches an string that contain a non-word character, which means it is either a function call, concat or
-        // at least definitely not a reserved word as all reserved words have only word characters
-        if (preg_match('/\W/', $string)) {
-            return $string;
-        }
+        $sql = 'DROP ROLE '.($ifExists ? 'IF EXISTS ' : '')
+            .$this->queryBuilder->quoteSpecial($name);
 
-        return $this->quoteSpecial($string);
+        return false !== $this->exec($sql);
     }
 
-    /**
-     * Retrieves a list of tables in the database.
-     *
-     * @param string $schema the name of the schema to retrieve the tables from. default is current schema
-     *
-     * @return array<int, array<string>>|false an array of tables, each represented as an associative array with keys 'schema' and 'name'
-     */
-    public function listTables(?string $schema = null): array|false
+    public function listGroups(): array
     {
-        if (!$schema) {
-            $schema = $this->schemaName;
-        }
-        $sql = 'SELECT table_schema as "schema", table_name as name '
-            ."FROM information_schema.tables t WHERE table_type = 'BASE TABLE'"
-            ." AND table_schema = '{$schema}'"
-            .' ORDER BY table_name DESC;';
-        if ($result = $this->query($sql)) {
-            return $result->fetchAll(\PDO::FETCH_ASSOC);
-        }
+        $sql = 'SELECT rolname FROM pg_roles WHERE rolcanlogin = false';
 
-        return false;
+        return $this->query($sql)->fetchAll();
     }
 
-    /**
-     * Retrieves a list of constraints for a given table or all tables in the schema.
-     *
-     * @param null|string $table      The name of the table. If null, constraints for all tables in the schema will be retrieved.
-     * @param null|string $type       The type of constraints to retrieve. If null, all types of constraints will be retrieved.
-     * @param bool        $invertType Whether to invert the constraint type filter. If true, constraints of types other than the specified type will be retrieved.
-     *
-     * @return array<int, array<string>>|false an array of constraints or false if constraints are not allowed or an error occurred
-     */
-    public function listConstraints($table = null, $type = null, $invertType = false): array|false
+    public function createGroup(string $name): bool
     {
-        if (!$this->allowConstraints) {
-            return false;
-        }
-        if ($table) {
-            list($schema, $table) = $this->parseSchemaName($table);
-        } else {
-            $schema = $this->schemaName;
-        }
-        $constraints = [];
-        $sql = 'SELECT
-                tc.constraint_name as name,
-                tc.table_name as '.$this->field('table').',
-                tc.table_schema as '.$this->field('schema').',
-                kcu.column_name as '.$this->field('column').",
-                ccu.table_schema AS foreign_schema,
-                ccu.table_name AS foreign_table,
-                ccu.column_name AS foreign_column,
-                tc.constraint_type as type,
-                rc.match_option,
-                rc.update_rule,
-                rc.delete_rule
-            FROM information_schema.table_constraints tc
-            INNER JOIN information_schema.key_column_usage kcu
-                ON kcu.constraint_schema = tc.constraint_schema
-                AND kcu.constraint_name = tc.constraint_name
-                AND kcu.table_schema = tc.table_schema
-                AND kcu.table_name = tc.table_name
-            JOIN information_schema.constraint_column_usage AS ccu
-                ON ccu.constraint_name = tc.constraint_name
-            LEFT JOIN information_schema.referential_constraints rc ON tc.constraint_name = rc.constraint_name
-            WHERE tc.CONSTRAINT_SCHEMA='{$schema}'";
-        if ($table) {
-            $sql .= "\nAND tc.table_name='{$table}'";
-        }
-        if ($type) {
-            $sql .= "\nAND tc.constraint_type".($invertType ? '!=' : '=')."'{$type}'";
-        }
-        $sql .= ';';
-        if ($result = $this->query($sql)) {
-            while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
-                if ($constraint = ake($constraints, $row['name'])) {
-                    if (!is_array($constraint['column'])) {
-                        $constraint['column'] = [$constraint['column']];
-                    }
-                    if (!in_array($row['column'], $constraint['column'])) {
-                        $constraint['column'][] = $row['column'];
-                    }
-                } else {
-                    $constraint = [
-                        'table' => $row['table'],
-                        'column' => $row['column'],
-                        'type' => $row['type'],
-                    ];
-                }
-                foreach (['match_option', 'update_rule', 'delete_rule'] as $rule) {
-                    if ($row[$rule]) {
-                        $constraint[$rule] = $row[$rule];
-                    }
-                }
-                if ('FOREIGN KEY' == $row['type'] && $row['foreign_table']) {
-                    $constraint['references'] = [
-                        'table' => $row['foreign_table'],
-                        'column' => $row['foreign_column'],
-                    ];
-                }
-                $constraints[$row['name']] = $constraint;
-            }
+        $sql = 'CREATE ROLE '
+            .$this->queryBuilder->prepareValue($name);
 
-            return $constraints;
-        }
+        return false !== $this->exec($sql);
+    }
 
-        return false;
+    public function dropGroup(string $name, bool $ifExists = false): bool
+    {
+        $sql = 'DROP ROLE '.($ifExists ? 'IF EXISTS ' : '')
+            .$this->queryBuilder->prepareValue($name);
+
+        return false !== $this->exec($sql);
     }
 
     /**
@@ -292,19 +182,19 @@ class Pgsql extends BaseDriver
      *
      * @param null|string $table The name of the table. If null, all tables in the schema will be considered.
      *
-     * @return array<mixed>|false An array of indexes, where each index is represented by an associative array with the following keys:
-     *                            - 'table': The name of the table the index belongs to.
-     *                            - 'columns': An array of column names that make up the index.
-     *                            - 'unique': A boolean indicating whether the index is unique or not.
+     * @return array<mixed> An array of indexes, where each index is represented by an associative array with the following keys:
+     *                      - 'table': The name of the table the index belongs to.
+     *                      - 'columns': An array of column names that make up the index.
+     *                      - 'unique': A boolean indicating whether the index is unique or not.
      *
      * @throws \Exception if the index list retrieval fails
      */
-    public function listIndexes(?string $table = null): array|false
+    public function listIndexes(?string $table = null): array
     {
         if ($table) {
-            list($schema, $table) = $this->parseSchemaName($table);
+            list($schema, $table) = $this->queryBuilder->parseSchemaName($table);
         } else {
-            $schema = $this->schemaName;
+            $schema = $this->queryBuilder->getSchemaName();
         }
         $sql = "SELECT s.nspname, t.relname as table_name, i.relname as index_name, array_to_string(array_agg(a.attname), ', ') as column_names, ix.indisunique
             FROM pg_namespace s, pg_class t, pg_class i, pg_index ix, pg_attribute a
@@ -334,16 +224,11 @@ class Pgsql extends BaseDriver
         return $indexes;
     }
 
-    /**
-     * Retrieves a list of views from the database.
-     *
-     * @return array<int, array<string>>|false an array of views, or null if no views are found
-     */
-    public function listViews(): array|false
+    public function listViews(): array
     {
         $sql = 'SELECT table_schema as "schema", table_name as name FROM INFORMATION_SCHEMA.views WHERE ';
-        if ('public' != $this->schemaName) {
-            $sql .= "table_schema = '{$this->schemaName}'";
+        if ('public' != $this->queryBuilder->getSchemaName()) {
+            $sql .= "table_schema = '{$this->queryBuilder->getSchemaName()}'";
         } else {
             $sql .= "table_schema NOT IN ( 'information_schema', 'pg_catalog' )";
         }
@@ -352,7 +237,7 @@ class Pgsql extends BaseDriver
             return $result->fetchAll(\PDO::FETCH_ASSOC);
         }
 
-        return false;
+        return [];
     }
 
     /**
@@ -364,9 +249,9 @@ class Pgsql extends BaseDriver
      */
     public function describeView($name): array|false
     {
-        list($schema, $name) = $this->parseSchemaName($name);
+        list($schema, $name) = $this->queryBuilder->parseSchemaName($name);
         $sql = 'SELECT table_name as name, trim(view_definition) as content FROM INFORMATION_SCHEMA.views WHERE table_schema='
-            .$this->prepareValue($schema).' AND table_name='.$this->prepareValue($name);
+            .$this->queryBuilder->prepareValue($schema).' AND table_name='.$this->queryBuilder->prepareValue($name);
         if ($result = $this->query($sql)) {
             return $result->fetch(\PDO::FETCH_ASSOC);
         }
@@ -374,137 +259,37 @@ class Pgsql extends BaseDriver
         return false;
     }
 
-    /**
-     * Prepares the criteria action for the database query.
-     *
-     * @param string      $action the action to perform on the criteria
-     * @param mixed       $value  the value to use in the criteria
-     * @param string      $tissue the comparison operator for the criteria
-     * @param null|string $key    the key to use in the criteria
-     * @param bool        $setKey whether to set the key in the criteria
-     *
-     * @return string the prepared criteria action
-     */
-    public function prepareCriteriaAction($action, $value, $tissue = '=', $key = null, &$setKey = true): string
+    public function createView(string $name, mixed $content): bool
     {
-        switch ($action) {
-            case 'array':
-                if (!is_array($value)) {
-                    $value = [$value];
-                }
-                foreach ($value as &$val) {
-                    $val = $this->prepareValue($val);
-                }
-
-                return 'ARRAY['.implode(',', $value).']';
-
-            case 'push':
-                if (!is_array($value)) {
-                    $value = [$value];
-                }
-                foreach ($value as &$val) {
-                    $val = $this->prepareValue($val);
-                }
-
-                return $this->field($key).' || ARRAY['.implode(',', $value).']';
-
-            case 'any':
-                $setKey = false;
-
-                return $this->prepareValue($value)." {$tissue} ANY ({$key})";
-
-            case 'all':
-                $setKey = false;
-
-                return $this->prepareValue($value)." {$tissue} ALL ({$key})";
-        }
-
-        return parent::prepareCriteriaAction($action, $value, $tissue, $key, $setKey);
-    }
-
-    /**
-     * Retrieves a list of users from the PostgreSQL database.
-     *
-     * @return array<int, array<string>>|false an array containing the usernames of all the users in the database
-     */
-    public function listUsers(): array|false
-    {
-        $results = $this->query('SELECT usename FROM pg_catalog.pg_user;')->fetchAll(\PDO::FETCH_NUM);
-
-        return array_column($results, 0);
-    }
-
-    /**
-     * Retrieves a list of groups from the PostgreSQL database.
-     *
-     * @return array<int, array<string>>|false returns an array of group names
-     */
-    public function listGroups(): array|false
-    {
-        $results = $this->query('SELECT groname FROM pg_catalog.pg_group;')->fetchAll(\PDO::FETCH_NUM);
-
-        return array_column($results, 0);
-    }
-
-    /**
-     * Creates a new database role with the given name, password, and privileges.
-     *
-     * @param string        $name       the name of the role to create
-     * @param string        $password   the password for the role (optional)
-     * @param array<string> $privileges an array of privileges to assign to the role (optional)
-     *
-     * @return bool returns true if the role was created successfully, false otherwise
-     */
-    public function createRole(string $name, ?string $password = null, array $privileges = []): bool
-    {
-        $sql = 'CREATE ROLE '.$this->quoteSpecial($name).' WITH '.implode(' ', $privileges)." PASSWORD '{$password}';";
+        $sql = 'CREATE OR REPLACE VIEW '.$this->queryBuilder->schemaName($name).' AS '.rtrim($content, ' ;');
 
         return false !== $this->exec($sql);
     }
 
-    /**
-     * Retrieves a list of extensions in the specified schema.
-     *
-     * @return array<int, array<string>>|false an array containing the names of the extensions
-     */
-    public function listExtensions(): array|false
+    public function viewExists(string $viewName): bool
     {
-        $results = $this->query('SELECT e.extname FROM pg_catalog.pg_extension e
-            INNER JOIN pg_catalog.pg_namespace n ON e.extnamespace=n.oid
-            WHERE n.nspname=\''.$this->schemaName.'\';')->fetchAll(\PDO::FETCH_NUM);
+        $views = $this->listViews();
 
-        return array_column($results, 0);
+        return in_array($viewName, $views);
     }
 
-    /**
-     * Creates a PostgreSQL extension.
-     *
-     * @param string $name the name of the extension to create
-     *
-     * @return bool returns true if the extension was created successfully, false otherwise
-     */
-    public function createExtension($name): bool
+    public function dropView(string $name, bool $cascade = false, bool $ifExists = false): bool
     {
-        $sql = 'CREATE EXTENSION IF NOT EXISTS '.$this->quoteSpecial($name).';';
-
-        return false !== $this->exec($sql);
-    }
-
-    /**
-     * Drops a PostgreSQL extension from the database.
-     *
-     * @param string $name     the name of the extension to drop
-     * @param bool   $ifExists (optional) Whether to drop the extension only if it exists. Default is false.
-     *
-     * @return bool returns true if the extension was successfully dropped, false otherwise
-     */
-    public function dropExtension($name, $ifExists = false): bool
-    {
-        $sql = 'DROP EXTENSION ';
+        $sql = 'DROP VIEW ';
         if (true === $ifExists) {
             $sql .= 'IF EXISTS ';
         }
-        $sql .= $this->quoteSpecial($name).';';
+        $sql .= $this->queryBuilder->schemaName($name);
+        if (true === $cascade) {
+            $sql .= ' CASCADE';
+        }
+
+        return false !== $this->exec($sql);
+    }
+
+    public function repair(): bool
+    {
+        $sql = 'VACUUM ANALYZE';
 
         return false !== $this->exec($sql);
     }

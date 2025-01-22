@@ -31,7 +31,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
     {
         $this->manager = $manager;
         $defaults = [
-            'dbi' => Adapter::getDefaultConfig(),
+            'dbi' => Adapter::loadConfig(),
             'initialise' => true,
             'chunkSize' => 4194304,
         ];
@@ -141,7 +141,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
             $copies = 0;
             // IMPORTANT: We sort by kind so that 'dir' is first.  This means it will end up being the master.
             $dups = $this->db->table('hz_file')->find(['parent' => $row['parent'], 'filename' => $row['filename']])
-                ->sort(['kind' => 1, 'created_on' => 1])
+                ->order(['kind' => 1, 'created_on' => 1])
                 ->fetchAll()
             ;
             $master = array_shift($dups);
@@ -892,7 +892,7 @@ class DBI implements Interfaces\Backend, Interfaces\Driver
 
     private function dedupDirectory(string $parent, string $filename): bool
     {
-        $q = $this->db->table('hz_file')->find(['parent' => $parent, 'filename' => $filename])->sort('created_on');
+        $q = $this->db->table('hz_file')->find(['parent' => $parent, 'filename' => $filename])->order('created_on');
         $dups = $q->fetchAll();
         if (count($dups) < 2) {
             return true;

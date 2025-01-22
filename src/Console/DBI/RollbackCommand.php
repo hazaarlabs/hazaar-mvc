@@ -15,15 +15,16 @@ class RollbackCommand extends Command
             ->setDescription('Rollback the database schema.')
             ->setHelp('This command will rollback the database schema to a specific version.')
             ->addArgument('version', 'The version to rollback to.')
-            ->addOption('env', 'e', 'The environment to use.')
             ->addOption('test', 't', 'Enable test mode.  Any write actions will be simulated but not applied to the database.')
         ;
     }
 
     protected function execute(Input $input, Output $output): int
     {
-        $env = $input->getOption('env') ?? getenv('APPLICATION_ENV') ?: 'development';
-        $manager = Adapter::getSchemaManagerInstance($env);
+        $manager = Adapter::getSchemaManagerInstance();
+        $manager->registerOutputHandler(function ($time, $message) use ($output) {
+            $output->write(date('H:i:s', (int) round($time)).' '.$message.PHP_EOL);
+        });
         if ($version = $input->getArgument('version')) {
             settype($version, 'int');
         }
