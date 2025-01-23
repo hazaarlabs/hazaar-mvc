@@ -633,6 +633,25 @@ abstract class Model implements \jsonSerializable, \Iterator
         } elseif (null !== $propertyValue && false === $propertyType->allowsNull()) {
             if ('bool' === $propertyTypeName) {
                 $propertyValue = boolify($propertyValue);
+            } elseif ('array' === $propertyTypeName) {
+                $docComment = $reflectionProperty->getDocComment();
+                if (false !== $docComment && preg_match('/^\s*\*\s*@var\s+array<(.+)>\s*$/m', $docComment, $matches)) {
+                    if (false === strpos($matches[1], ',')) {
+                        $matches[1] = 'int,'.$matches[1];
+                    }
+                    list($propertyKeyType, $propertyArrayType) = explode(',', $matches[1], 2);
+                    if (!in_array($propertyArrayType, self::$allowTypes, true)) {
+                        if (false !== strpos($propertyArrayType, '|')) {
+                            throw new \Exception("Implicit conversion of unsupported type '{$propertyArrayType}'.  Type must be a single subclass of 'Hazaar\\Model'");
+                        }
+                        $propertyArrayType = '\\' === substr($propertyArrayType, 0, 1)
+                            ? substr($propertyArrayType, 1)
+                            : $reflectionProperty->getDeclaringClass()->getNamespaceName().'\\'.$propertyArrayType;
+                    }
+                    foreach ($propertyValue as $key => $value) {
+                        $this->convertValueDataType($propertyArrayType, $propertyValue[$key]);
+                    }
+                }
             }
         }
         if (null === $propertyValue && $reflectionProperty->hasDefaultValue()) {
