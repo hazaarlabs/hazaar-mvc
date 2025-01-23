@@ -644,9 +644,13 @@ abstract class Model implements \jsonSerializable, \Iterator
                         if (false !== strpos($propertyArrayType, '|')) {
                             throw new \Exception("Implicit conversion of unsupported type '{$propertyArrayType}'.  Type must be a single subclass of 'Hazaar\\Model'");
                         }
-                        $propertyArrayType = '\\' === substr($propertyArrayType, 0, 1)
-                            ? substr($propertyArrayType, 1)
-                            : $reflectionProperty->getDeclaringClass()->getNamespaceName().'\\'.$propertyArrayType;
+                        if ('\\' !== substr($propertyArrayType, 0, 1)) {
+                            $propertyFullClassName = $this->getFullClassName($propertyArrayType, $reflectionProperty);
+                            if (null === $propertyFullClassName) {
+                                $propertyFullClassName = $reflectionProperty->getDeclaringClass()->getNamespaceName().'\\'.$propertyArrayType;
+                            }
+                            $propertyArrayType = $propertyFullClassName;
+                        }
                     }
                     foreach ($propertyValue as $key => $value) {
                         $this->convertValueDataType($propertyArrayType, $propertyValue[$key]);
@@ -683,10 +687,44 @@ abstract class Model implements \jsonSerializable, \Iterator
             if (null !== $propertyValue && !$propertyValue instanceof DateTime) {
                 $propertyValue = new DateTime($propertyValue);
             }
-        } elseif (!(is_object($propertyValue)
-            && ($propertyType === get_class($propertyValue) || is_subclass_of($propertyType, get_class($propertyValue))))) {
-            throw new \Exception("Implicit conversion of unsupported type '{$propertyType}'.  Type must be a subclass of 'Hazaar\\Model'");
+        } elseif (!is_object($propertyValue)) {
+            if (!class_exists($propertyType)) {
+                throw new \Exception("Implicit conversion to unknown class '{$propertyType}'.");
+            }
+
+            throw new \Exception("Implicit conversion of unsupported type '{$propertyType}'.  Type must be a subclass of 'Hazaar\\Model'.");
         }
+    }
+
+    private function getFullClassName(string $className, \ReflectionProperty $reflectionProperty): ?string
+    {
+        $sourceFile = $reflectionProperty->getDeclaringClass()->getFileName();
+        $code = file_get_contents($sourceFile);
+        $tokens = token_get_all($code, TOKEN_PARSE);
+        while ($token = next($tokens)) {
+            // Quit early if the class name is found in the use statement.
+            if (match ($token[0]) {
+                T_INTERFACE, T_TRAIT, T_CLASS, T_FUNCTION => true,
+                default => false
+            }) {
+                break;
+            }
+            if (!(is_array($token) && T_USE === $token[0])) {
+                continue;
+            }
+            $useStatememnt = '';
+            while ($token = next($tokens)) {
+                if (';' === $token) {
+                    break;
+                }
+                $useStatememnt .= trim(is_array($token) ? $token[1] : $token);
+            }
+            if ($className === substr($useStatememnt, strrpos($useStatememnt, '\\') + 1)) {
+                return $useStatememnt;
+            }
+        }
+
+        return null;
     }
 
     /**
