@@ -22,8 +22,8 @@ class SnapshotCommand extends Command
     protected function execute(Input $input, Output $output): int
     {
         $manager = Adapter::getSchemaManagerInstance();
-        $manager->registerOutputHandler(function ($time, $message) use ($output) {
-            $output->write(date('H:i:s', (int) round($time)).' '.$message.PHP_EOL);
+        $manager->registerLogHandler(function ($message) use ($output) {
+            $output->write($message.PHP_EOL);
         });
         $comment = $input->getArgument('comment') ?: 'New Snapshot';
         if ($manager->snapshot($comment, $input->getOption('test') ?? false)) {

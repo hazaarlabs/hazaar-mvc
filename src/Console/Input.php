@@ -47,6 +47,9 @@ class Input
     public function initialise(array $argv): void
     {
         $this->executable = basename(array_shift($argv));
+        if (!current($argv)) {
+            return;
+        }
         $definedOptions = $this->reduceOptions(Command::$globalOptions);
         while ('-' === substr(current($argv), 0, 1)) {
             $this->parseOption(current($argv), $definedOptions, $this->globalOptions);

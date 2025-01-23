@@ -20,8 +20,8 @@ class CheckpointCommand extends Command
     protected function execute(Input $input, Output $output): int
     {
         $manager = Adapter::getSchemaManagerInstance();
-        $manager->registerOutputHandler(function ($time, $message) use ($output) {
-            $output->write($time.' '.$message.PHP_EOL);
+        $manager->registerLogHandler(function ($message) use ($output) {
+            $output->write($message.PHP_EOL);
         });
         if ($manager->checkpoint()) {
             return 0;

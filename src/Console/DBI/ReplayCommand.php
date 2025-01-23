@@ -22,13 +22,13 @@ class ReplayCommand extends Command
     protected function execute(Input $input, Output $output): int
     {
         $manager = Adapter::getSchemaManagerInstance();
-        $manager->registerOutputHandler(function ($time, $message) use ($output) {
-            $output->write(date('H:i:s', (int) round($time)).' '.$message.PHP_EOL);
+        $manager->registerLogHandler(function ($message) use ($output) {
+            $output->write($message.PHP_EOL);
         });
         if ($version = $input->getArgument('version')) {
             settype($version, 'int');
         }
-        if ($manager->migrateReplay(
+        if ($manager->replay(
             $version,
             $input->getOption('test') ?? false
         )) {

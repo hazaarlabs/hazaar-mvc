@@ -14,7 +14,6 @@ use Hazaar\Application\Config;
 use Hazaar\Application\FilePath;
 use Hazaar\DBI\Exception\DriverNotFound;
 use Hazaar\DBI\Exception\NotConfigured;
-use Hazaar\DBI\Schema\Manager;
 use Hazaar\Loader;
 
 /**

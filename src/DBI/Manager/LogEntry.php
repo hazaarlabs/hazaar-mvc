@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\DBI\Schema;
+namespace Hazaar\DBI\Manager;
 
 class LogEntry
 {

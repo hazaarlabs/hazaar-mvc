@@ -23,8 +23,8 @@ class SyncCommand extends Command
     protected function execute(Input $input, Output $output): int
     {
         $manager = Adapter::getSchemaManagerInstance();
-        $manager->registerOutputHandler(function ($time, $message) use ($output) {
-            $output->write(date('H:i:s', (int) round($time)).' '.$message.PHP_EOL);
+        $manager->registerLogHandler(function ($message) use ($output) {
+            $output->write($message.PHP_EOL);
         });
         $data = null;
         if ($sync_file = $input->getArgument('sync_file')) {
@@ -36,7 +36,7 @@ class SyncCommand extends Command
                 throw new \Exception('Unable to sync.  File is not a valid JSON file.');
             }
         }
-        if ($manager->syncData($data, $input->getOption('test') ?? false, true)) {
+        if ($manager->sync($data, $input->getOption('test') ?? false, true)) {
             $code = 0;
         }
 

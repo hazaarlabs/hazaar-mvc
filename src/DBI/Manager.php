@@ -9,12 +9,13 @@ declare(strict_types=1);
  * @copyright   Copyright (c) 2018 Jamie Carl (http://www.hazaar.io)
  */
 
-namespace Hazaar\DBI\Schema;
+namespace Hazaar\DBI;
 
 use Hazaar\Application\FilePath;
-use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Exception\ConnectionFailed;
-use Hazaar\DBI\Schema\Exception\Schema;
+use Hazaar\DBI\Manager\LogEntry;
+use Hazaar\DBI\Manager\Schema;
+use Hazaar\DBI\Manager\Schema\Version;
 use Hazaar\Loader;
 
 /**
@@ -75,7 +76,7 @@ class Manager
     public function __construct(array $dbiConfig, ?\Closure $logCallback = null)
     {
         if ($logCallback) {
-            $this->setLogCallback($logCallback);
+            $this->registerLogHandler($logCallback);
         }
         if (!isset($dbiConfig['environment'])) {
             $dbiConfig['environment'] = APPLICATION_ENV;
@@ -92,7 +93,7 @@ class Manager
      *
      * @param \Closure $callback The callback function
      */
-    public function setLogCallback(\Closure $callback): void
+    public function registerLogHandler(\Closure $callback): void
     {
         $this->__callback = $callback;
     }
@@ -239,6 +240,70 @@ class Manager
     public function hasUpdates(): bool
     {
         return count($this->getMissingVersions()) > 0;
+    }
+
+    public function getSchema(bool $allSchema = false): ?Schema
+    {
+        $versions = $allSchema ? $this->getVersions() : $this->getAppliedVersions();
+        if (0 === count($versions)) {
+            return null;
+        }
+
+        return Schema::load($versions);
+    }
+
+    public function migrate(
+        ?int $version = null,
+        bool $forceDataSync = false,
+        bool $test = false,
+        bool $keepTables = false,
+        bool $forceReinitialise = false
+    ): bool {
+        return false;
+    }
+
+    /**
+     * Undo a migration version.
+     *
+     * @param array<int> $rollbacks
+     */
+    public function rollback(
+        int $version,
+        bool $test = false,
+        array &$rollbacks = []
+    ): bool {
+        return false;
+    }
+
+    public function replay(
+        int $version,
+        bool $test = false
+    ): bool {
+        return false;
+    }
+
+    /**
+     * @param array<mixed> $dataSchema
+     */
+    public function sync(
+        ?array $dataSchema = null,
+        bool $test = false,
+        bool $forceDataSync = false
+    ): bool {
+        return false;
+    }
+
+    public function snapshot(
+        ?string $comment = null,
+        bool $test = false,
+        ?int $overrideVersion = null
+    ): bool {
+        return false;
+    }
+
+    public function checkpoint(): bool
+    {
+        return false;
     }
 
     /**
