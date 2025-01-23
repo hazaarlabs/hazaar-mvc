@@ -48,6 +48,11 @@ class Manager
      * @var array<int,Version>
      */
     private array $appliedVersions;
+
+    /**
+     * @var array<int, Version>
+     */
+    private array $missingVersions;
     private \Closure $__callback;
 
     /*
@@ -93,7 +98,7 @@ class Manager
     }
 
     /**
-     * Gets the available schema versions from the migration directory.
+     * Gets all the available schema versions from the migration directory.
      *
      * @return array<Version> The available schema versions
      */
@@ -106,9 +111,6 @@ class Manager
         if (!file_exists($migrateDir) && is_dir($migrateDir)) {
             return [];
         }
-        if (!isset($this->dbi)) {
-            $this->connect();
-        }
         $this->versions = [];
         $dir = dir($migrateDir);
         while ($file = $dir->read()) {
@@ -120,7 +122,8 @@ class Manager
             if (!(isset($info['extension']) && 'json' === $info['extension'] && preg_match('/^(\d+)_(\w+)$/', $info['filename'], $matches))) {
                 continue;
             }
-            $this->versions[] = Version::loadFromFile($migrateDir.DIRECTORY_SEPARATOR.$file);
+            $version = Version::loadFromFile($migrateDir.DIRECTORY_SEPARATOR.$file);
+            $this->versions[$version->number] = $version;
         }
         ksort($this->versions);
 
@@ -128,9 +131,7 @@ class Manager
     }
 
     /**
-     * Retrieves the list of applied versions.
-     *
-     * This method fetches all versions and filters them to return only the applied versions.
+     * Retrieves the list of schema versions that have been applied to the database.
      *
      * @return array<Version> an array of applied version identifiers
      */
@@ -139,13 +140,40 @@ class Manager
         if (isset($this->appliedVersions)) {
             return $this->appliedVersions;
         }
+        if (!isset($this->dbi)) {
+            $this->connect();
+        }
         $versions = $this->getVersions();
-        $this->getMissingVersions(null, $appliedVersions);
-        $this->appliedVersions = array_filter($versions, function ($value, $key) use ($appliedVersions) {
-            return in_array($key, $appliedVersions);
-        }, ARRAY_FILTER_USE_BOTH);
+        $this->appliedVersions = $this->dbi->table(self::$schemaInfoTable)->fetchAllModel(Version::class, 'number');
+        array_walk($this->appliedVersions, function (Version $version) use ($versions) {
+            if (!array_key_exists($version->number, $versions)) {
+                $version->valid = false;
+            }
+        });
 
         return $this->appliedVersions;
+    }
+
+    /**
+     * Retrieves the list of schema versions that have not been applied to the database.
+     *
+     * @return array<Version>
+     */
+    public function getMissingVersions(?int $version = null): array
+    {
+        if (isset($this->missingVersions)) {
+            return $this->missingVersions;
+        }
+        if (!isset($this->dbi)) {
+            $this->connect();
+        }
+        $versions = $this->getVersions();
+        $appliedVersions = $this->dbi->table(self::$schemaInfoTable)->fetchAllModel(Version::class, 'number');
+        $this->missingVersions = array_filter($versions, function ($value, $key) use ($appliedVersions) {
+            return !array_key_exists($key, $appliedVersions);
+        }, ARRAY_FILTER_USE_BOTH);
+
+        return $this->missingVersions;
     }
 
     /**
@@ -174,29 +202,6 @@ class Manager
         }
 
         return $this->currentVersion = $version;
-    }
-
-    /**
-     * @param array<int> $appliedVersions
-     *
-     * @param-out array<int> $appliedVersions
-     *
-     * @return array<int>
-     */
-    public function getMissingVersions(?int $version = null, ?array &$appliedVersions = null): array
-    {
-        if (null === $version) {
-            $version = $this->getLatestVersion();
-        }
-        $appliedVersions = [];
-        if ($this->dbi->table(self::$schemaInfoTable)->exists()) {
-            $appliedVersions = array_map('intval', $this->dbi->table(self::$schemaInfoTable)->fetchAllColumn('number'));
-        }
-        $versions = $this->getVersions();
-
-        return array_filter(array_diff(array_keys($versions), $appliedVersions), function ($v) use ($version) {
-            return $v <= $version->number;
-        });
     }
 
     /**

@@ -14,12 +14,15 @@ class Version extends Model
      */
     public array $sourceFile;
     public string $description;
+    public bool $valid = true;
     #[Required]
     protected string $number;
 
     public function __toString()
     {
-        return str_pad($this->number, 10, '0', STR_PAD_RIGHT).' '.$this->description;
+        return str_pad($this->number, 10, '0', STR_PAD_RIGHT).' '
+            .($this->valid ? "\u{2713}" : "\u{2717}")
+            .' '.$this->description;
     }
 
     /**

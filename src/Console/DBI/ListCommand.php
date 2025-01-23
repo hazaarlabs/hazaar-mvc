@@ -26,9 +26,9 @@ class ListCommand extends Command
         $missing = $input->getOption('missing') ?? false;
         $versions = [];
         if (true === $applied) {
-            $version = $manager->getAppliedVersions();
+            $versions = $manager->getAppliedVersions();
         } elseif (true === $missing) {
-            $version = $manager->getMissingVersions();
+            $versions = $manager->getMissingVersions();
         } else {
             $versions = $manager->getVersions();
         }
