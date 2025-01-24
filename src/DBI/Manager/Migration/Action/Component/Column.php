@@ -12,6 +12,6 @@ class Column extends Model
     public string $name;
     public mixed $default;
     public bool $not_null;
-    public DataType $type;
+    public string $type;
     public bool $primary_key;
 }

@@ -62,7 +62,7 @@ trait SQL
      */
     protected function type(array $info): string
     {
-        if (!($type = ake($info, 'data_type'))) {
+        if (!($type = ake($info, 'type'))) {
             return 'character varying';
         }
         if ($array = ('[]' === substr($type, -2))) {
