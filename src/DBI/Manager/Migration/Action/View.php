@@ -13,7 +13,7 @@ class View extends BaseAction
 
     public function create(Adapter $dbi): bool
     {
-        return false;
+        return $dbi->createView($this->name, $this->content);
     }
 
     public function alter(Adapter $dbi): bool
@@ -23,6 +23,6 @@ class View extends BaseAction
 
     public function drop(Adapter $dbi): bool
     {
-        return false;
+        return $dbi->dropView($this->name, true);
     }
 }

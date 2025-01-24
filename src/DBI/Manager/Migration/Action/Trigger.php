@@ -21,7 +21,7 @@ class Trigger extends BaseAction
 
     public function create(Adapter $dbi): bool
     {
-        return false;
+        return $dbi->createTrigger($this->name, $this->table, $this->toArray());
     }
 
     public function alter(Adapter $dbi): bool
@@ -31,6 +31,6 @@ class Trigger extends BaseAction
 
     public function drop(Adapter $dbi): bool
     {
-        return false;
+        return $dbi->dropTrigger($this->name, $this->table, true);
     }
 }

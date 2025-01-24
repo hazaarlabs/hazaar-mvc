@@ -14,7 +14,7 @@ class Func extends BaseAction
 
     public function create(Adapter $dbi): bool
     {
-        return false;
+        return $dbi->createFunction($this->name, $this->toArray());
     }
 
     public function alter(Adapter $dbi): bool
@@ -24,6 +24,6 @@ class Func extends BaseAction
 
     public function drop(Adapter $dbi): bool
     {
-        return false;
+        return $dbi->dropFunction($this->name);
     }
 }
