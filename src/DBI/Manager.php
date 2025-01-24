@@ -15,7 +15,7 @@ use Hazaar\Application\FilePath;
 use Hazaar\DBI\Exception\ConnectionFailed;
 use Hazaar\DBI\Manager\LogEntry;
 use Hazaar\DBI\Manager\Schema;
-use Hazaar\DBI\Manager\Schema\Version;
+use Hazaar\DBI\Manager\Version;
 use Hazaar\Loader;
 
 /**

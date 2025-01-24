@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\DBI\Schema\Migration;
+namespace Hazaar\DBI\Manager\Migration\Action\Component;
 
-use Hazaar\DBI\Schema\Migration\Enum\DataType;
+use Hazaar\DBI\Manager\Migration\Enum\DataType;
 use Hazaar\Model;
 
 class Column extends Model
@@ -13,4 +13,5 @@ class Column extends Model
     public mixed $default;
     public bool $not_null;
     public DataType $type;
+    public bool $primary_key;
 }

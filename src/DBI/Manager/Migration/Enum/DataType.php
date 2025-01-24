@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\DBI\Schema\Migration\Enum;
+namespace Hazaar\DBI\Manager\Migration\Enum;
 
 enum DataType: string
 {

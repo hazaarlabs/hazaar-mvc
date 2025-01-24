@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\DBI\Manager\Schema;
+namespace Hazaar\DBI\Manager;
 
+use Hazaar\DBI\Manager\Migration;
 use Hazaar\Model;
 use Hazaar\Model\Attribute\Required;
 
@@ -74,19 +75,22 @@ class Version extends Model
      * and returns it as a \stdClass object. If the JSON content is invalid, an exception
      * is thrown.
      *
-     * @return array<mixed> the decoded JSON content from the source file
+     * @return null|Migration The migration script object
      *
      * @throws \Exception if the JSON content is invalid
      */
-    public function getMigrationScript(): array
+    public function getMigrationScript(): ?Migration
     {
+        if (!isset($this->sourceFile)) {
+            return null;
+        }
         $rawContent = file_get_contents($this->sourceFile['dirname'].DIRECTORY_SEPARATOR.$this->sourceFile['basename']);
-        $content = json_decode($rawContent, true);
+        $content = json_decode($rawContent);
         if (JSON_ERROR_NONE !== json_last_error()) {
             throw new \Exception('Error reading schema migration file: '.$this->getSourceFile());
         }
 
-        return $content;
+        return new Migration($content);
     }
 
     public function replay(): void
