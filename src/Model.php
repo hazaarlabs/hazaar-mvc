@@ -604,7 +604,9 @@ abstract class Model implements \jsonSerializable, \Iterator
         $propertyTypeName = $propertyType->getName();
         if (false === $propertyType->isBuiltin()) {
             if (is_subclass_of($propertyTypeName, 'Hazaar\Model')) {
-                if (null !== $propertyValue && !$propertyValue instanceof $propertyTypeName) {
+                if (!is_subclass_of($propertyValue, $propertyTypeName)
+                    && null !== $propertyValue
+                    && !$propertyValue instanceof $propertyTypeName) {
                     $propertyValue = new $propertyTypeName($propertyValue);
                 }
             } elseif ('Hazaar\DateTime' === $propertyTypeName) {
