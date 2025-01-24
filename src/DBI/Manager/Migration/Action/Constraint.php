@@ -10,15 +10,12 @@ class Constraint extends BaseAction
 {
     public string $name;
     public string $table;
-
-    /**
-     * @var array<string>
-     */
-    public array $columns;
+    public string $type;
+    public string $column;
 
     public function create(Adapter $dbi): bool
     {
-        return false;
+        return $dbi->addConstraint($this->name, $this->toArray());
     }
 
     public function alter(Adapter $dbi): bool
@@ -28,6 +25,6 @@ class Constraint extends BaseAction
 
     public function drop(Adapter $dbi): bool
     {
-        return false;
+        return $dbi->dropConstraint($this->name, $this->table);
     }
 }

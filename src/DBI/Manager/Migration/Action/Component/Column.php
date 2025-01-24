@@ -13,5 +13,5 @@ class Column extends Model
     public mixed $default;
     public bool $not_null;
     public string $type;
-    public bool $primary_key;
+    public bool $primarykey;
 }

@@ -10,12 +10,17 @@ class Index extends BaseAction
 {
     public string $name;
     public string $table;
-    public string $column;
+
+    /**
+     * @var array<string>
+     */
+    public array $columns;
     public bool $unique = false;
+    public string $using;
 
     public function create(Adapter $dbi): bool
     {
-        return false;
+        return $dbi->createIndex($this->name, $this->table, $this->toArray());
     }
 
     public function alter(Adapter $dbi): bool
@@ -25,6 +30,6 @@ class Index extends BaseAction
 
     public function drop(Adapter $dbi): bool
     {
-        return false;
+        return $dbi->dropIndex($this->name, true);
     }
 }

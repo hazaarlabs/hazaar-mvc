@@ -38,11 +38,6 @@ class Table extends BaseAction
     public function alter(Adapter $dbi): bool
     {
         return false;
-        // $columns = array_map(function (Column $column) {
-        //     return $column->toArray();
-        // }, $this->columns);
-
-        // return $dbi->alterTable($this->name, $columns);
     }
 
     public function drop(Adapter $dbi): bool
