@@ -12,7 +12,17 @@ class Func extends BaseAction
     public string $return_type;
     public string $lang;
 
-    public function run(Adapter $dbi): bool
+    public function create(Adapter $dbi): bool
+    {
+        return false;
+    }
+
+    public function alter(Adapter $dbi): bool
+    {
+        return false;
+    }
+
+    public function drop(Adapter $dbi): bool
     {
         return false;
     }

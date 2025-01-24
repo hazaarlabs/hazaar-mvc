@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hazaar\DBI\Manager\Migration\Action;
 
 use Hazaar\DBI\Adapter;
-use Hazaar\Model;
 
 class Trigger extends BaseAction
 {
@@ -20,7 +19,17 @@ class Trigger extends BaseAction
     public string $orientation;
     public string $function;
 
-    public function run(Adapter $dbi): bool
+    public function create(Adapter $dbi): bool
+    {
+        return false;
+    }
+
+    public function alter(Adapter $dbi): bool
+    {
+        return false;
+    }
+
+    public function drop(Adapter $dbi): bool
     {
         return false;
     }

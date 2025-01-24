@@ -11,7 +11,17 @@ class View extends BaseAction
     public string $name;
     public string $content;
 
-    public function run(Adapter $dbi): bool
+    public function create(Adapter $dbi): bool
+    {
+        return false;
+    }
+
+    public function alter(Adapter $dbi): bool
+    {
+        return false;
+    }
+
+    public function drop(Adapter $dbi): bool
     {
         return false;
     }

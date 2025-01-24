@@ -69,16 +69,15 @@ class Schema
         }
         $schema = new self();
         foreach ($versions as $version) {
-            $schema->addVersion($version);
+            $schema->loadVersion($version);
         }
 
         return $schema;
     }
 
-    public function addVersion(Version $version): void
+    public function loadVersion(Version $version): void
     {
         $migrate = $version->getMigrationScript();
-        dump($migrate);
         if (!isset($migrate->up)) {
             return;
         }

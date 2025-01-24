@@ -259,6 +259,19 @@ class Manager
         bool $keepTables = false,
         bool $forceReinitialise = false
     ): bool {
+        if (!isset($this->dbi)) {
+            $this->connect();
+        }
+        $versions = $this->getMissingVersions();
+        if (0 === count($versions)) {
+            return false;
+        }
+        foreach ($versions as $version) {
+            if (!$version->replay($this->dbi)) {
+                return false;
+            }
+        }
+
         return false;
     }
 

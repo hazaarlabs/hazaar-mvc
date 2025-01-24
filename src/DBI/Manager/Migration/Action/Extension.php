@@ -20,10 +20,26 @@ class Extension extends BaseAction
         $data = ['extensions' => $data];
     }
 
-    public function run(Adapter $dbi): bool
+    public function create(Adapter $dbi): bool
     {
         foreach ($this->extensions as $extension) {
             if (!$dbi->createExtension($extension)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public function alter(Adapter $dbi): bool
+    {
+        return false;
+    }
+
+    public function drop(Adapter $dbi): bool
+    {
+        foreach ($this->extensions as $extension) {
+            if (!$dbi->dropExtension($extension)) {
                 return false;
             }
         }

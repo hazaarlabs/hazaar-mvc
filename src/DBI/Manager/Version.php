@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\Manager;
 
-use Hazaar\DBI\Manager\Migration;
+use Hazaar\DBI\Adapter;
 use Hazaar\Model;
 use Hazaar\Model\Attribute\Required;
 
@@ -79,7 +79,7 @@ class Version extends Model
      *
      * @throws \Exception if the JSON content is invalid
      */
-    public function getMigrationScript(): ?Migration
+    public function getMigration(): ?Migration
     {
         if (!isset($this->sourceFile)) {
             return null;
@@ -93,8 +93,13 @@ class Version extends Model
         return new Migration($content);
     }
 
-    public function replay(): void
+    public function replay(Adapter $dbi): bool
     {
-        throw new \Exception('Not implemented');
+        $migration = $this->getMigration();
+        if (null === $migration) {
+            return false;
+        }
+
+        return $migration->replay($dbi);
     }
 }

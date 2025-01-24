@@ -54,6 +54,6 @@ class Action extends Model
 
     public function run(Adapter $dbi): bool
     {
-        return $this->spec->run($dbi);
+        return $this->spec->run($dbi, $this->name);
     }
 }

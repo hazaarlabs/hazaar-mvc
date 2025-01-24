@@ -13,7 +13,17 @@ class Index extends BaseAction
     public string $column;
     public bool $unique = false;
 
-    public function run(Adapter $dbi): bool
+    public function create(Adapter $dbi): bool
+    {
+        return false;
+    }
+
+    public function alter(Adapter $dbi): bool
+    {
+        return false;
+    }
+
+    public function drop(Adapter $dbi): bool
     {
         return false;
     }

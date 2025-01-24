@@ -26,8 +26,27 @@ class Table extends BaseAction
         }
     }
 
-    public function run(Adapter $dbi): bool
+    public function create(Adapter $dbi): bool
     {
-        return $dbi->createTable($this->name, $this->columns);
+        $columns = array_map(function (Column $column) {
+            return $column->toArray();
+        }, $this->columns);
+
+        return $dbi->createTable($this->name, $columns);
+    }
+
+    public function alter(Adapter $dbi): bool
+    {
+        return false;
+        // $columns = array_map(function (Column $column) {
+        //     return $column->toArray();
+        // }, $this->columns);
+
+        // return $dbi->alterTable($this->name, $columns);
+    }
+
+    public function drop(Adapter $dbi): bool
+    {
+        return $dbi->dropTable($this->name);
     }
 }

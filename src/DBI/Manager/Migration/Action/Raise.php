@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\DBI\Manager\Migration\Action;
 
 use Hazaar\DBI\Adapter;
+use Hazaar\DBI\Manager\Migration\Enum\ActionName;
 
 class Raise extends BaseAction
 {
@@ -15,7 +16,7 @@ class Raise extends BaseAction
         $data = ['message' => $data['raise'] ?? 'Unknown migration error'];
     }
 
-    public function run(Adapter $dbi): bool
+    public function run(Adapter $dbi, ActionName $type): bool
     {
         throw new \Exception($this->message);
     }

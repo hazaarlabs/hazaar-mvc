@@ -16,9 +16,18 @@ class Constraint extends BaseAction
      */
     public array $columns;
 
-    public function run(Adapter $dbi): bool
+    public function create(Adapter $dbi): bool
     {
         return false;
-        // return $dbi->createConstraint($this->table, $this->name, $this->columns);
+    }
+
+    public function alter(Adapter $dbi): bool
+    {
+        return false;
+    }
+
+    public function drop(Adapter $dbi): bool
+    {
+        return false;
     }
 }
