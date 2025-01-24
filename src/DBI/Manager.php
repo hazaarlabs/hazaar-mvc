@@ -320,6 +320,54 @@ class Manager
     }
 
     /**
+     * Drops all database objects.
+     *
+     * WARNING: This will delete all tables, views, functions, and extensions in the database!
+     */
+    public function deleteEverything(): bool
+    {
+        if (!isset($this->dbi)) {
+            $this->connect();
+        }
+        $views = $this->dbi->listViews();
+        foreach ($views as $view) {
+            $this->dbi->dropView($view['name']);
+        }
+        $lastTables = [];
+        for ($i = 0; $i < 255; ++$i) {
+            $tables = $this->dbi->listTables();
+            if (0 === count($tables)) {
+                break;
+            }
+            if (count($tables) === count($lastTables) && $i > count($tables)) {
+                $this->log('Got stuck trying to resolve drop dependencies. Aborting!');
+
+                return false;
+            }
+            foreach ($tables as $table) {
+                try {
+                    $this->dbi->dropTable($table['name']);
+                } catch (\Throwable $e) {
+                }
+            }
+            $lastTables = $tables;
+        }
+        if (254 === $i) {
+            return false;
+        }
+        $functions = $this->dbi->listFunctions(true);
+        foreach ($functions as $function) {
+            $this->dbi->dropFunction($function['name'], $function['parameters'], true);
+        }
+        $extensions = $this->dbi->listExtensions();
+        foreach ($extensions as $extension) {
+            $this->dbi->dropExtension($extension);
+        }
+
+        return true;
+    }
+
+    /**
      * Connects to the database.
      *
      * @param array<mixed> $config The database configuration

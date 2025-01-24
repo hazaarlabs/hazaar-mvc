@@ -31,12 +31,18 @@ class MigrateCommand extends Command
         if ($version = $input->getArgument('version')) {
             settype($version, 'int');
         }
+        if ($input->getOption('force_init') ?? false) {
+            $output->write('WARNING: Forcing full database re-initialisation.  THIS WILL DELETE ALL DATA!!!');
+            $output->write('IF YOU DO NOT WANT TO DO THIS, YOU HAVE 10 SECONDS TO CANCEL');
+            sleep(10);
+            $output->write('DELETING YOUR DATA!!!  YOU WERE WARNED!!!');
+            $manager->deleteEverything();
+        }
         if ($manager->migrate(
             $version,
             $input->getOption('force_sync') ?? false,
             $input->getOption('test') ?? false,
-            $input->getOption('keep_tables') ?? false,
-            $input->getOption('force_init') ?? false
+            $input->getOption('keep_tables') ?? false
         )) {
             $code = 0;
         }
