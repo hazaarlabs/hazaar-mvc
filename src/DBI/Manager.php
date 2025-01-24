@@ -272,7 +272,7 @@ class Manager
             }
         }
 
-        return false;
+        return true;
     }
 
     /**
@@ -364,7 +364,7 @@ class Manager
             $this->dbi->dropExtension($extension);
         }
 
-        return true;
+        return $this->createSchemaVersionTable();
     }
 
     /**
@@ -399,31 +399,37 @@ class Manager
             $this->log("Retrying connection to database '{$config['dbname']}' on host '{$config['host']}'");
             $this->dbi = new Adapter($config);
         }
-        if (!$this->dbi->tableExists(self::$schemaInfoTable)) {
-            $this->log('Creating schema info table');
-            $this->dbi->table(self::$schemaInfoTable)->create([
-                'number' => [
-                    'data_type' => 'bigint',
-                    'not_null' => true,
-                    'primarykey' => true,
-                ],
-                'applied_on' => [
-                    'data_type' => 'timestamp with time zone',
-                    'not_null' => true,
-                    'default' => 'CURRENT_TIMESTAMP',
-                ],
-                'description' => [
-                    'data_type' => 'text',
-                    'not_null' => false,
-                ],
-                'migrate_down' => [
-                    'data_type' => 'jsonb',
-                    'null' => true,
-                ],
-            ]);
-        }
+        $this->createSchemaVersionTable();
 
         return true;
+    }
+
+    private function createSchemaVersionTable(): bool
+    {
+        if ($this->dbi->tableExists(self::$schemaInfoTable)) {
+            return false;
+        }
+        $this->log('Creating schema info table');
+        return $this->dbi->table(self::$schemaInfoTable)->create([
+            'number' => [
+                'data_type' => 'bigint',
+                'not_null' => true,
+                'primarykey' => true,
+            ],
+            'applied_on' => [
+                'data_type' => 'timestamp with time zone',
+                'not_null' => true,
+                'default' => 'CURRENT_TIMESTAMP',
+            ],
+            'description' => [
+                'data_type' => 'text',
+                'not_null' => false,
+            ],
+            'migrate_down' => [
+                'data_type' => 'jsonb',
+                'null' => true,
+            ],
+        ]);
     }
 
     /**
