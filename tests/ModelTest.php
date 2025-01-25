@@ -224,7 +224,7 @@ class ModelTest extends TestCase
         $this->assertEquals(513, strlen($string));
         $newModel = unserialize($string);
         $this->assertInstanceOf(TestModel::class, $newModel);
-        $array = $newModel->toArray(true);
+        $array = $newModel->toArray();
         $this->assertArrayNotHasKey('email', $array);
     }
 
