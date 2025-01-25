@@ -412,21 +412,21 @@ class Manager
         $this->log('Creating schema info table');
         return $this->dbi->table(self::$schemaInfoTable)->create([
             'number' => [
-                'data_type' => 'bigint',
+                'type' => 'bigint',
                 'not_null' => true,
                 'primarykey' => true,
             ],
             'applied_on' => [
-                'data_type' => 'timestamp with time zone',
+                'type' => 'timestamp with time zone',
                 'not_null' => true,
                 'default' => 'CURRENT_TIMESTAMP',
             ],
             'description' => [
-                'data_type' => 'text',
+                'type' => 'text',
                 'not_null' => false,
             ],
-            'migrate_down' => [
-                'data_type' => 'jsonb',
+            'migrate' => [
+                'type' => 'jsonb',
                 'null' => true,
             ],
         ]);

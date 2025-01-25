@@ -29,6 +29,7 @@ class Action extends Model
     {
         if (isset($data['raise'])) {
             $data = [
+                'type' => ActionType::RAISE,
                 'name' => ActionName::RAISE,
                 'spec' => new Raise($data),
             ];

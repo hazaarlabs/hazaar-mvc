@@ -11,9 +11,9 @@ use Hazaar\Model;
 
 abstract class BaseAction extends Model implements Spec
 {
-    public function run(Adapter $dbi, ActionName $type): bool
+    public function run(Adapter $dbi, ActionName $actionName): bool
     {
-        return match ($type) {
+        return match ($actionName) {
             ActionName::CREATE => $this->create($dbi),
             ActionName::ALTER => $this->alter($dbi),
             ActionName::DROP => $this->drop($dbi),

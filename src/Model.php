@@ -333,7 +333,7 @@ abstract class Model implements \jsonSerializable, \Iterator
      *
      * @return array<string,mixed> the array representation of the object
      */
-    public function toArray(?string $context = null): array
+    public function toArray(?string $context = null, int $depth = 256): array
     {
         $array = [];
         if (isset($this->eventHooks['serialize'])) {
@@ -361,14 +361,14 @@ abstract class Model implements \jsonSerializable, \Iterator
                 // Execute the get event hook for the property
                 $propertyValue = $this->eventHooks['get'][$propertyName]($propertyValue);
             }
-            if ($propertyValue instanceof Model) {
+            if ($depth > 0 && $propertyValue instanceof Model) {
                 // Convert model object to array
-                $propertyValue = $propertyValue->toArray($context);
-            } elseif (is_array($propertyValue)) {
+                $propertyValue = $propertyValue->toArray($context, $depth - 1);
+            } elseif ($depth > 0 && is_array($propertyValue)) {
                 // Convert array of models to array of arrays
-                $propertyValue = array_map(function ($value) use ($context) {
-                    if ($value instanceof Model) {
-                        return $value->toArray($context);
+                $propertyValue = array_map(function ($value) use ($context, $depth) {
+                    if ($depth > 1 && $value instanceof Model) {
+                        return $value->toArray($context, $depth - 2);
                     }
 
                     return $value;

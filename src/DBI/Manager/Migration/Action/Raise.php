@@ -13,7 +13,9 @@ class Raise extends BaseAction
 
     public function construct(array &$data): void
     {
-        $data = ['message' => $data['raise'] ?? 'Unknown migration error'];
+        $data = [
+            'message' => $data['raise'] ?? 'Unknown migration error',
+        ];
     }
 
     public function run(Adapter $dbi, ActionName $type): bool

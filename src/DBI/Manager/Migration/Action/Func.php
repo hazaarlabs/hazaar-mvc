@@ -11,6 +11,7 @@ class Func extends BaseAction
     public string $name;
     public string $return_type;
     public string $lang;
+    public string $content;
 
     public function create(Adapter $dbi): bool
     {

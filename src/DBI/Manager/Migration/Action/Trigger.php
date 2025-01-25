@@ -17,7 +17,7 @@ class Trigger extends BaseAction
     public array $events;
     public string $timing;
     public string $orientation;
-    public string $function;
+    public string $content;
 
     public function create(Adapter $dbi): bool
     {

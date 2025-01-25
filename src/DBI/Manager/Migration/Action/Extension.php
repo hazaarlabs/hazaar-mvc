@@ -8,8 +8,6 @@ use Hazaar\DBI\Adapter;
 
 class Extension extends BaseAction
 {
-    public string $name;
-
     /**
      * @var array<string>
      */

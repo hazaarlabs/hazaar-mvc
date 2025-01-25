@@ -123,13 +123,9 @@ class SQL implements QueryBuilder
         return $this->quoteSpecial($tableName).($alias ? ' '.$this->quoteSpecial($alias) : '');
     }
 
-    public function quote(mixed $string, int $type = \PDO::PARAM_STR): false|string
+    public function quote(string $string, bool $addSlashes = true): string
     {
-        if (is_string($string)) {
-            $string = '\''.addslashes($string).'\'';
-        }
-
-        return $string;
+        return '\''.($addSlashes ? addslashes($string) : $string).'\'';
     }
 
     public function quoteSpecial(mixed $value): mixed
@@ -185,7 +181,7 @@ class SQL implements QueryBuilder
     ): string {
         $sql = 'INSERT INTO '.$this->schemaName($tableName);
         if ($fields instanceof Model) {
-            $fields = $fields->toArray();
+            $fields = $fields->toArray('dbiWrite', 0);
         } elseif ($fields instanceof \stdClass) {
             $fields = (array) $fields;
         }
@@ -611,6 +607,8 @@ class SQL implements QueryBuilder
             $value = ($value ? 'TRUE' : 'FALSE');
         } elseif ($value instanceof \stdClass) {
             $value = $this->quote(json_encode($value));
+        } elseif ($value instanceof Model) {
+            $value = $this->quote((string) json_encode($value->toArray('dbiWrite')), false);
         } elseif (!is_int($value) && (':' !== substr($value, 0, 1) || ':' === substr($value, 1, 1))) {
             $value = $this->quote((string) $value);
         }

@@ -46,16 +46,16 @@ class Schema
      */
     public array $triggers = [];
 
-    private static array $tableMap = [
-        'extension' => ['extensions', false, null],
-        'sequence' => ['sequences', false, null],
-        'table' => ['tables', 'cols', null],
-        'view' => ['views', true, 'views'],
-        'constraint' => ['constraints', true, null],
-        'index' => ['indexes', true, null],
-        'function' => ['functions', false, 'functions'],
-        'trigger' => ['triggers', true, 'functions'],
-    ];
+    // private static array $tableMap = [
+    //     'extension' => ['extensions', false, null],
+    //     'sequence' => ['sequences', false, null],
+    //     'table' => ['tables', 'cols', null],
+    //     'view' => ['views', true, 'views'],
+    //     'constraint' => ['constraints', true, null],
+    //     'index' => ['indexes', true, null],
+    //     'function' => ['functions', false, 'functions'],
+    //     'trigger' => ['triggers', true, 'functions'],
+    // ];
 
     /**
      * Load a schema from an array of versions.
@@ -77,7 +77,7 @@ class Schema
 
     public function loadVersion(Version $version): void
     {
-        $migrate = $version->getMigrationScript();
+        $migrate = $version->loadMigration();
         if (!isset($migrate->up)) {
             return;
         }
@@ -85,30 +85,21 @@ class Schema
     }
 
     /**
-     * @return array<mixed>|false
-     * */
-    public function getSchema(?int $maxVersion = null): array|false
+     * @param array<Version> $versions
+     */
+    public static function getSchema(array $versions): self
     {
         $schema = ['version' => 0];
         foreach (self::$tableMap as $i) {
             $schema[$i[0]] = [];
         }
 
-        /**
-         * Get a list of all the available versions.
-         */
-        $versions = $this->getVersions(true);
-        foreach ($versions as $version => $file) {
-            if (null !== $maxVersion && $version > $maxVersion) {
-                break;
+        // Get a list of all the available versions.
+        foreach ($versions as $version) {
+            if (!($migrate = $version->loadMigration())) {
+                throw new \Exception('Error decoding schema migration file: '.$version->source['basename']);
             }
-            if (!($fileContent = @file_get_contents($file))) {
-                throw new \Exception('Error reading schema migration file: '.$file);
-            }
-            if (!($migrate = json_decode($fileContent, true))) {
-                throw new \Exception('Error decoding schema migration file: '.$file);
-            }
-            if (!array_key_exists('up', $migrate)) {
+            if (!isset($migrate->up)) {
                 continue;
             }
             foreach ($migrate['up'] as $type => $actions) {
