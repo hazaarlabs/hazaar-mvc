@@ -3,7 +3,6 @@
 namespace Hazaar\Model\Attribute;
 
 use Hazaar\Model\Exception\PropertyValidationException;
-use Hazaar\Model\Interface\AttributeRule;
 
 /**
  * The Max rule is used to ensure that a value is less than a specified value.
@@ -20,7 +19,7 @@ use Hazaar\Model\Interface\AttributeRule;
  * ```
  */
 #[\Attribute]
-class Max implements AttributeRule
+class Max extends Base
 {
     private int $value = 0;
 

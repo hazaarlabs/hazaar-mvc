@@ -328,7 +328,7 @@ abstract class Model implements \jsonSerializable, \Iterator
      *
      * @return array<string,mixed> the array representation of the object
      */
-    public function toArray(bool $ignoreEmptyPropertyValues = false): array
+    public function toArray(?string $context = null): array
     {
         $array = [];
         if (isset($this->eventHooks['serialize'])) {
@@ -344,9 +344,13 @@ abstract class Model implements \jsonSerializable, \Iterator
                     continue;
                 }
                 $propertyValue = $reflectionProperty->getValue($this);
-            }
-            if (true === $ignoreEmptyPropertyValues && empty($propertyValue)) {
-                continue;
+                if (isset($this->propertyAttributes[$propertyName])) {
+                    foreach ($this->propertyAttributes[$propertyName] as $rule) {
+                        if (!$rule->serialize($propertyValue, $reflectionProperty, $context)) {
+                            continue 2;
+                        }
+                    }
+                }
             }
             if (isset($this->eventHooks['get'][$propertyName])) {
                 // Execute the get event hook for the property
@@ -354,12 +358,12 @@ abstract class Model implements \jsonSerializable, \Iterator
             }
             if ($propertyValue instanceof Model) {
                 // Convert model object to array
-                $propertyValue = $propertyValue->toArray($ignoreEmptyPropertyValues);
+                $propertyValue = $propertyValue->toArray($context);
             } elseif (is_array($propertyValue)) {
                 // Convert array of models to array of arrays
-                $propertyValue = array_map(function ($value) use ($ignoreEmptyPropertyValues) {
+                $propertyValue = array_map(function ($value) use ($context) {
                     if ($value instanceof Model) {
-                        return $value->toArray($ignoreEmptyPropertyValues);
+                        return $value->toArray($context);
                     }
 
                     return $value;

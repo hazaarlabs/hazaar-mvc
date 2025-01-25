@@ -2,8 +2,6 @@
 
 namespace Hazaar\Model\Attribute;
 
-use Hazaar\Model\Interface\AttributeRule;
-
 /**
  * The Format rule is used to format a property value according to a specified format.
  *
@@ -19,7 +17,7 @@ use Hazaar\Model\Interface\AttributeRule;
  * ```
  */
 #[\Attribute]
-class Format implements AttributeRule
+class Format extends Base
 {
     private string $format = '';
 

@@ -2,8 +2,6 @@
 
 namespace Hazaar\Model\Attribute;
 
-use Hazaar\Model\Interface\AttributeRule;
-
 /**
  * The Filter rule is used to apply a filter to a property.
  *
@@ -18,7 +16,7 @@ use Hazaar\Model\Interface\AttributeRule;
  * ```
  */
 #[\Attribute]
-class Filter implements AttributeRule
+class Filter extends Base
 {
     private ?int $type = null;
 
@@ -32,7 +30,7 @@ class Filter implements AttributeRule
     /**
      * Create a new Filter rule.
      *
-     * @param int              $type    The filter type to apply.  See FILTER_VALIDATE_* constants at https://www.php.net/manual/en/filter.filters.validate.php
+     * @param int              $type    The filter type to apply.  See FILTER_VALIDATE_* constants at https://www.php.net/manual/en/filter.constants.php#constant.filter-validate-bool
      * @param array<mixed>|int $options Additional options for the filter.  See https://www.php.net/manual/en/filter.filters.validate.php
      */
     public function __construct(int $type, array|int $options = [])

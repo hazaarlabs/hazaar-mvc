@@ -2,8 +2,6 @@
 
 namespace Hazaar\Model\Attribute;
 
-use Hazaar\Model\Interface\AttributeRule;
-
 /**
  * The Pad rule is used to pad a string to a specified length.
  *
@@ -17,7 +15,7 @@ use Hazaar\Model\Interface\AttributeRule;
  * ```
  */
 #[\Attribute]
-class Pad implements AttributeRule
+class Pad extends Base
 {
     private int $length = 0;
 

@@ -2,8 +2,6 @@
 
 namespace Hazaar\Model\Attribute;
 
-use Hazaar\Model\Interface\AttributeRule;
-
 /**
  * The MaxLength rule is used to ensure that a string is at most a certain length.
  *
@@ -17,7 +15,7 @@ use Hazaar\Model\Interface\AttributeRule;
  * ```
  */
 #[\Attribute]
-class MaxLength implements AttributeRule
+class MaxLength extends Base
 {
     private int $length = 0;
 

@@ -2,8 +2,6 @@
 
 namespace Hazaar\Model\Attribute;
 
-use Hazaar\Model\Interface\AttributeRule;
-
 /**
  * The Range rule is used to ensure that a value is within a specified range.
  *
@@ -18,7 +16,7 @@ use Hazaar\Model\Interface\AttributeRule;
  * ```
  */
 #[\Attribute]
-class Range implements AttributeRule
+class Range extends Base
 {
     private int $minValue = 0;
     private int $maxValue = 0;

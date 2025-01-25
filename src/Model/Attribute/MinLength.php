@@ -2,8 +2,6 @@
 
 namespace Hazaar\Model\Attribute;
 
-use Hazaar\Model\Interface\AttributeRule;
-
 /**
  * The MinLength rule is used to ensure that a string is at least a certain length.
  *
@@ -17,7 +15,7 @@ use Hazaar\Model\Interface\AttributeRule;
  * ```
  */
 #[\Attribute]
-class MinLength implements AttributeRule
+class MinLength extends Base
 {
     private int $length = 0;
 
