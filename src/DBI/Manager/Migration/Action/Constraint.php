@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\DBI\Manager\Migration\Action;
 
 use Hazaar\DBI\Adapter;
+use Hazaar\DBI\Manager\Migration\Action\Component\ConstraintReference;
 
 class Constraint extends BaseAction
 {
@@ -12,6 +13,7 @@ class Constraint extends BaseAction
     public string $table;
     public string $type;
     public string $column;
+    public ConstraintReference $references;
 
     public function create(Adapter $dbi): bool
     {

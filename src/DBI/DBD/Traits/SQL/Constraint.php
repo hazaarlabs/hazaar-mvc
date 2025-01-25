@@ -108,7 +108,7 @@ trait Constraint
                 return false;
             }
         }
-        if ('FOREIGN KEY' == $info['type']) {
+        if ('FOREIGN KEY' == strtoupper($info['type'])) {
             if (!array_key_exists('update_rule', $info)) {
                 $info['update_rule'] = 'NO ACTION';
             }
