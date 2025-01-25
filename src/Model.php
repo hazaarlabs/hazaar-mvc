@@ -31,7 +31,7 @@ abstract class Model implements \jsonSerializable, \Iterator
     /**
      * @var array<string,array<AttributeRule>>
      */
-    private array $propertyRules = [];
+    private array $propertyAttributes = [];
 
     /**
      * @var array<string>
@@ -174,21 +174,21 @@ abstract class Model implements \jsonSerializable, \Iterator
          * Executes read event hooks and property rules for a given property.
          *
          * If a read event hook is registered for the property, it is executed with the current property value as the argument.
-         * If property rules are defined for the property, they are executed using the execPropertyRules() method.
+         * If property rules are defined for the property, they are executed using the execPropertyAttributes() method.
          *
          * @param string $propertyName  the name of the property
          * @param mixed  $propertyValue the current value of the property
          */
         if (isset($this->eventHooks['get'][$propertyName])) {
             $propertyValue = $this->eventHooks['get'][$propertyName]($propertyValue);
-            if (isset($this->propertyRules[$propertyName])) {
-                $this->execPropertyRules($propertyValue, new \ReflectionProperty($this, $propertyName), $this->propertyRules[$propertyName]);
+            if (isset($this->propertyAttributes[$propertyName])) {
+                $this->execPropertyAttributes($propertyValue, new \ReflectionProperty($this, $propertyName), $this->propertyAttributes[$propertyName]);
             }
         }
         if (isset($this->eventHooks['get'][true])) {
             $propertyValue = $this->eventHooks['get'][true]($propertyValue);
-            if (isset($this->propertyRules[$propertyName])) {
-                $this->execPropertyRules($propertyName, $propertyValue, $this->propertyRules[$propertyName]);
+            if (isset($this->propertyAttributes[$propertyName])) {
+                $this->execPropertyAttributes($propertyName, $propertyValue, $this->propertyAttributes[$propertyName]);
             }
         }
 
@@ -215,8 +215,8 @@ abstract class Model implements \jsonSerializable, \Iterator
                 return;
             }
         }
-        if (isset($this->propertyRules[$propertyName]) && count($this->propertyRules[$propertyName]) > 0) {
-            $result = $this->execPropertyRules($propertyValue, new \ReflectionProperty($this, $propertyName), $this->propertyRules[$propertyName]);
+        if (isset($this->propertyAttributes[$propertyName]) && count($this->propertyAttributes[$propertyName]) > 0) {
+            $result = $this->execPropertyAttributes($propertyValue, new \ReflectionProperty($this, $propertyName), $this->propertyAttributes[$propertyName]);
             if (false === $result) {
                 return;
             }
@@ -490,11 +490,11 @@ abstract class Model implements \jsonSerializable, \Iterator
             $propertyNames = [$propertyNames];
         }
         foreach ($propertyNames as $propertyName) {
-            if (!array_key_exists($propertyName, $this->propertyRules)) {
-                $this->propertyRules[$propertyName] = [];
+            if (!array_key_exists($propertyName, $this->propertyAttributes)) {
+                $this->propertyAttributes[$propertyName] = [];
             }
             $attributeRuleClass = 'Hazaar\Model\Rules\\'.ucfirst($rule);
-            $this->propertyRules[$propertyName][] = new $attributeRuleClass(...$args);
+            $this->propertyAttributes[$propertyName][] = new $attributeRuleClass(...$args);
         }
     }
 
@@ -734,7 +734,7 @@ abstract class Model implements \jsonSerializable, \Iterator
      *
      * @param array<AttributeRule> $rules the array of rules to be applied
      */
-    private function execPropertyRules(mixed &$value, \ReflectionProperty $property, array $rules): bool
+    private function execPropertyAttributes(mixed &$value, \ReflectionProperty $property, array $rules): bool
     {
         foreach ($rules as $rule) {
             if (!$rule->evaluate($value, $property)) {
@@ -772,8 +772,8 @@ abstract class Model implements \jsonSerializable, \Iterator
                 if ($reflectionProperty->isPublic()) {
                     throw new PropertyAttributeException(static::class, $propertyName, 'is public.  Only protected properties can have attributes');
                 }
-                if (!isset($this->propertyRules[$propertyName])) {
-                    $this->propertyRules[$propertyName] = [];
+                if (!isset($this->propertyAttributes[$propertyName])) {
+                    $this->propertyAttributes[$propertyName] = [];
                 }
                 foreach ($reflectionAttributes as $reflectionAttribute) {
                     $reflectionAttributeClass = new \ReflectionClass($reflectionAttribute->getName());
@@ -781,7 +781,8 @@ abstract class Model implements \jsonSerializable, \Iterator
                         continue;
                     }
                     $modelRule = $reflectionAttribute->newInstance();
-                    $this->propertyRules[$propertyName][] = $modelRule;
+                    $this->propertyAttributes[$propertyName][] = $modelRule;
+                    // We don't use the execPropertyAttributes() method here because we only need to check the rule once.
                     if (!$modelRule->evaluate($propertyValue, $reflectionProperty)) {
                         continue 2;
                     }
