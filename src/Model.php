@@ -7,7 +7,6 @@ namespace Hazaar;
 use Hazaar\Model\Exception\DefineEventHookException;
 use Hazaar\Model\Exception\PropertyAttributeException;
 use Hazaar\Model\Exception\PropertyException;
-use Hazaar\Model\Exception\UnsetPropertyException;
 use Hazaar\Model\Interface\AttributeRule;
 
 /**
@@ -104,9 +103,16 @@ abstract class Model implements \jsonSerializable, \Iterator
      *
      * @return bool returns true if the property is set, false otherwise
      */
-    public function __isset(string $propertyName)
+    public function __isset(string $propertyName): bool
     {
-        return $this->has($propertyName);
+        if (property_exists($this, $propertyName)) {
+            return isset($this->{$propertyName});
+        }
+        if (array_key_exists($propertyName, $this->userProperties)) {
+            return isset($this->userProperties[$propertyName], $this->propertyNames[array_search($propertyName, $this->propertyNames)]);
+        }
+
+        return false;
     }
 
     /**
@@ -120,9 +126,8 @@ abstract class Model implements \jsonSerializable, \Iterator
     public function __unset(string $propertyName): void
     {
         if (property_exists($this, $propertyName)) {
-            throw new UnsetPropertyException(static::class, $propertyName);
-        }
-        if (array_key_exists($propertyName, $this->userProperties)) {
+            unset($this->{$propertyName});
+        } elseif (array_key_exists($propertyName, $this->userProperties)) {
             unset($this->userProperties[$propertyName], $this->propertyNames[array_search($propertyName, $this->propertyNames)]);
         }
     }

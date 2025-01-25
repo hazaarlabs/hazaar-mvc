@@ -16,7 +16,6 @@ use Hazaar\Model\Attribute\Pad;
 use Hazaar\Model\Attribute\Required;
 use Hazaar\Model\Attribute\Trim;
 use Hazaar\Model\Email;
-use Hazaar\Model\Exception\UnsetPropertyException;
 use PHPUnit\Framework\TestCase;
 
 class AgeModel extends Model
@@ -39,7 +38,7 @@ class TestModel extends Model
     #[Trim()]
     protected string $name;
     #[Filter(FILTER_VALIDATE_EMAIL)]
-    protected ?string $email = null;
+    protected string $email;
     #[Contains('ID')]
     #[Pad(8)]
     protected ?string $description = null;
@@ -96,7 +95,7 @@ class ModelTest extends TestCase
     private array $data = [
         'id' => 1234,
         'name' => 'John Doe',
-        'email' => '',
+        'email' => 'test@example.com',
         'description' => 'ID:1234',
         'counter' => 0,
         'child' => ['name' => 'George Doe', 'id' => 1235],
@@ -175,6 +174,8 @@ class ModelTest extends TestCase
         $this->assertEquals('jonny@doe.com', $model->email);
         $model->email = 'john@doe';
         $this->assertEquals('jonny@doe.com', $model->email);
+        $model->email = 'bad email';
+        $this->assertEquals('jonny@doe.com', $model->email);
     }
 
     public function testEmailModel(): void
@@ -213,17 +214,18 @@ class ModelTest extends TestCase
         $this->assertEquals('John Doe!!!', $model->name);
         $this->assertTrue(isset($model->name));
         $this->assertFalse(isset($model->test));
-        $this->expectException(UnsetPropertyException::class);
         unset($model->name);
+        $this->assertFalse(isset($model->name));
     }
 
     public function testSerialise(): void
     {
         $model = new TestModel($this->data);
         $string = serialize($model);
-        $this->assertEquals(513, strlen($string));
+        $this->assertEquals(516, strlen($string));
         $newModel = unserialize($string);
         $this->assertInstanceOf(TestModel::class, $newModel);
+        unset($newModel->email);
         $array = $newModel->toArray();
         $this->assertArrayNotHasKey('email', $array);
     }
