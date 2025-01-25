@@ -255,7 +255,7 @@ class SQL implements QueryBuilder
         array $tables = []
     ): string {
         if ($fields instanceof Model) {
-            $fields = $fields->toArray(true);
+            $fields = $fields->toArray('dbiWrite');
         } elseif ($fields instanceof \stdClass) {
             $fields = (array) $fields;
         }

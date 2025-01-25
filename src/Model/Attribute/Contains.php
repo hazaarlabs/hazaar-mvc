@@ -2,10 +2,8 @@
 
 namespace Hazaar\Model\Attribute;
 
-use Hazaar\Model\Interface\AttributeRule;
-
 #[\Attribute]
-class Contains implements AttributeRule
+class Contains extends Base
 {
     private string $value = '';
 

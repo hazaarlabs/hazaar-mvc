@@ -2,8 +2,6 @@
 
 namespace Hazaar\Model\Attribute;
 
-use Hazaar\Model\Interface\AttributeRule;
-
 /**
  * The Trim rule is used to trim a string of specified characters.
  *
@@ -17,7 +15,7 @@ use Hazaar\Model\Interface\AttributeRule;
  * ```
  */
 #[\Attribute]
-class Trim implements AttributeRule
+class Trim extends Base
 {
     private string $char;
 

@@ -3,7 +3,6 @@
 namespace Hazaar\Model\Attribute;
 
 use Hazaar\Model\Exception\PropertyValidationException;
-use Hazaar\Model\Interface\AttributeRule;
 
 /**
  * The Min rule is used to ensure that a value is greater than a specified value.
@@ -20,7 +19,7 @@ use Hazaar\Model\Interface\AttributeRule;
  * ```
  */
 #[\Attribute]
-class Min implements AttributeRule
+class Min extends Base
 {
     private int $value = 0;
 

@@ -3,7 +3,6 @@
 namespace Hazaar\Model\Attribute;
 
 use Hazaar\Model\Exception\PropertyValidationException;
-use Hazaar\Model\Interface\AttributeRule;
 
 /**
  * The Required rule is used to ensure that a value is not empty.
@@ -18,7 +17,7 @@ use Hazaar\Model\Interface\AttributeRule;
  * ```
  */
 #[\Attribute]
-class Required implements AttributeRule
+class Required extends Base
 {
     public function evaluate(mixed &$propertyValue, \ReflectionProperty &$property): bool
     {
