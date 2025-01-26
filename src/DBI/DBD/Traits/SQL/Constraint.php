@@ -127,6 +127,9 @@ trait Constraint
         }
         $sql = 'ALTER TABLE '.$this->queryBuilder->schemaName($info['table']).' ADD CONSTRAINT '.$this->queryBuilder->field($constraintName)." {$info['type']} (".$column.')';
         if (array_key_exists('references', $info)) {
+            if (!array_key_exists('table', $info['references']) || !array_key_exists('column', $info['references'])) {
+                return false;
+            }
             $sql .= ' REFERENCES '.$this->queryBuilder->schemaName($info['references']['table']).' ('.$this->queryBuilder->field($info['references']['column']).") ON UPDATE {$info['update_rule']} ON DELETE {$info['delete_rule']}";
         }
         $affected = $this->exec($sql);

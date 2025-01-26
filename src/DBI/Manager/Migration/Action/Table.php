@@ -16,6 +16,16 @@ class Table extends BaseAction
      */
     public array $columns;
 
+    /**
+     * @var array<Column>
+     */
+    public array $add;
+
+    /**
+     * @var array<string>
+     */
+    public array $drop;
+
     public function construct(array &$data): void
     {
         if (!array_key_exists('columns', $data)) {
@@ -37,6 +47,17 @@ class Table extends BaseAction
 
     public function alter(Adapter $dbi): bool
     {
+        if (isset($this->add) && count($this->add) > 0) {
+            foreach ($this->add as $column) {
+                $dbi->addColumn($this->name, $column->toArray());
+            }
+        }
+        if (isset($this->drop) && count($this->drop) > 0) {
+            foreach ($this->drop as $column) {
+                $dbi->dropColumn($this->name, $column);
+            }
+        }
+
         return false;
     }
 

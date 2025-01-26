@@ -125,7 +125,9 @@ class Version extends Model
             if (false === $result) {
                 throw new \Exception('Failed to apply version '.$this->number);
             }
-            $this->migrate = $migration->down;
+            if (isset($migration->up)) {
+                $this->migrate = $migration->up;
+            }
             $dbi->table('schema_version')->insert($this);
         } catch (\Exception $e) {
             $dbi->cancel();
