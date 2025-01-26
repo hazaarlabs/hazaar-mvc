@@ -35,4 +35,9 @@ abstract class BaseAction extends Model implements Spec
     {
         return false;
     }
+
+    public function apply(self $action): bool
+    {
+        return false;
+    }
 }

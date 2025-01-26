@@ -65,4 +65,20 @@ class Table extends BaseAction
     {
         return $dbi->dropTable($this->name);
     }
+
+    public function apply(BaseAction $action): bool
+    {
+        if (isset($action->add) && count($action->add) > 0) {
+            foreach ($action->add as $column) {
+                $this->columns[] = $column;
+            }
+        }
+        if (isset($action->drop) && count($action->drop) > 0) {
+            $this->columns = array_filter($this->columns, function (Column $column) use ($action) {
+                return !in_array($column->name, $action->drop);
+            });
+        }
+
+        return false;
+    }
 }

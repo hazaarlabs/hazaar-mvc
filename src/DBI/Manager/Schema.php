@@ -112,12 +112,22 @@ class Schema extends Model
         if (isset($this->{$elementName}[$action->spec->name])) {
             throw new \Exception(ucfirst($action->type->value).' already exists: '.$action->spec->name);
         }
-        $this->{$elementName}[$action->spec->name] = $action->spec->toArray();
+        $this->{$elementName}[$action->spec->name] = $action->spec;
     }
 
     private function alter(Action $action): void
     {
-        // dump($action);
+        if (ActionType::EXTENSION === $action->type) {
+            return;
+        }
+        $elementName = $this->getElementName($action->type);
+        if (!isset($this->{$elementName})) {
+            throw new \Exception('Unknown element type: '.$action->type->value);
+        }
+        if (!isset($this->{$elementName}[$action->spec->name])) {
+            throw new \Exception(ucfirst($action->type->value).' does not exist: '.$action->spec->name);
+        }
+        $this->{$elementName}[$action->spec->name]->apply($action->spec);
     }
 
     /**
