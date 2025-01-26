@@ -103,7 +103,7 @@ class Manager
      *
      * @return array<Version> The available schema versions
      */
-    public function getVersions(): array
+    public function getVersions(bool $mergeApplied = false): array
     {
         if (isset($this->versions)) {
             return $this->versions;
@@ -125,6 +125,15 @@ class Manager
             }
             $version = Version::loadFromFile($migrateDir.DIRECTORY_SEPARATOR.$file);
             $this->versions[$version->number] = $version;
+        }
+        if ($mergeApplied) {
+            $applied = $this->getAppliedVersions();
+            foreach ($applied as $version) {
+                if (array_key_exists($version->number, $this->versions)) {
+                    continue;
+                }
+                $this->versions[$version->number] = $version;
+            }
         }
         ksort($this->versions);
 
