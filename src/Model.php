@@ -808,6 +808,5 @@ abstract class Model implements \jsonSerializable, \Iterator
             $this->setUserProperty($propertyName, $data[$propertyName]);
         }
         $this->constructed($data, ...$args);
-        sort($this->propertyNames);
     }
 }
