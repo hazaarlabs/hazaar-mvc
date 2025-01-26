@@ -170,7 +170,15 @@ class Manager
             $this->connect();
         }
 
-        return $this->dbi->table(self::$schemaInfoTable)->findOneModel(Version::class, ['number' => $version]);
+        /**
+         * @var false|Version $version
+         */
+        $version = $this->dbi->table(self::$schemaInfoTable)->findOneModel(Version::class, ['number' => $version]);
+        if (false === $version) {
+            return null;
+        }
+
+        return $version;
     }
 
     /**
@@ -312,7 +320,7 @@ class Manager
 
             return false;
         }
-        $version->rollback($this->dbi, $test);
+        $version->rollback($this->dbi);
 
         return false;
     }
