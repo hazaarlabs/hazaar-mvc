@@ -125,10 +125,33 @@ class Version extends Model
             if (false === $result) {
                 throw new \Exception('Failed to apply version '.$this->number);
             }
-            if (isset($migration->up)) {
-                $this->migrate = $migration->up;
+            if (isset($migration->down)) {
+                $this->migrate = $migration->down;
             }
             $dbi->table('schema_version')->insert($this);
+        } catch (\Exception $e) {
+            $dbi->cancel();
+
+            throw $e;
+        }
+        $dbi->commit();
+
+        return true;
+    }
+
+    public function rollback(Adapter $dbi): bool
+    {
+        if (!isset($this->migrate)) {
+            $this->migrate = $this->loadMigration()->down;
+        }
+
+        try {
+            $dbi->begin();
+            $result = $this->migrate->run($dbi);
+            if (false === $result) {
+                throw new \Exception('Failed to rollback version '.$this->number);
+            }
+            $dbi->table('schema_version')->delete(['number' => $this->number]);
         } catch (\Exception $e) {
             $dbi->cancel();
 

@@ -36,9 +36,11 @@ class Action extends Model
 
             return;
         }
-        $data['name'] = $data['action'];
         if (!isset($data['spec'])) {
             return;
+        }
+        if (!isset($data['name']) && isset($data['action'])) {
+            $data['name'] = $data['action'];
         }
         $data['type'] = ActionType::tryFrom($data['type']);
         $data['spec'] = match ($data['type']) {

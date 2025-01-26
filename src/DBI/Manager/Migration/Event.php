@@ -16,6 +16,9 @@ class Event extends Model
 
     public function construct(array &$actions): void
     {
+        if (array_key_exists('actions', $actions)) {
+            return;
+        }
         $actions = ['actions' => $actions];
     }
 

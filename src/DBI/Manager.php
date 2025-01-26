@@ -155,6 +155,15 @@ class Manager
         return $this->appliedVersions;
     }
 
+    public function getAppliedVersion(int $version): ?Version
+    {
+        if (!isset($this->dbi)) {
+            $this->connect();
+        }
+
+        return $this->dbi->table(self::$schemaInfoTable)->findOneModel(Version::class, ['number' => $version]);
+    }
+
     /**
      * Retrieves the list of schema versions that have not been applied to the database.
      *
@@ -281,10 +290,21 @@ class Manager
      * @param array<int> $rollbacks
      */
     public function rollback(
-        int $version,
+        int $versionNumber,
         bool $test = false,
         array &$rollbacks = []
     ): bool {
+        if (!isset($this->dbi)) {
+            $this->connect();
+        }
+        $version = $this->getAppliedVersion($versionNumber);
+        if (null === $version) {
+            $this->log("Version {$versionNumber} has not been applied.  Skipping rollback.");
+
+            return false;
+        }
+        $version->rollback($this->dbi, $test);
+
         return false;
     }
 
@@ -410,6 +430,7 @@ class Manager
             return false;
         }
         $this->log('Creating schema info table');
+
         return $this->dbi->table(self::$schemaInfoTable)->create([
             'number' => [
                 'type' => 'bigint',
