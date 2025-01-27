@@ -9,11 +9,11 @@ use Hazaar\DBI\Adapter;
 class View extends BaseAction
 {
     public string $name;
-    public string $content;
+    public string $query;
 
     public function create(Adapter $dbi): bool
     {
-        return $dbi->createView($this->name, $this->content);
+        return $dbi->createView($this->name, $this->query);
     }
 
     public function alter(Adapter $dbi): bool

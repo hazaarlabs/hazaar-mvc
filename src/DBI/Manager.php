@@ -451,9 +451,20 @@ class Manager
             $this->log("Retrying connection to database '{$config['dbname']}' on host '{$config['host']}'");
             $this->dbi = new Adapter($config);
         }
-        $this->createSchemaVersionTable();
+        for ($i = 0; $i < 2; ++$i) {
+            try {
+                $this->createSchemaVersionTable();
+                return true;
+            } catch (\PDOException $e) {
+                if (isset($config['schema']) && '3F000' !== $e->getCode()) {
+                    throw $e;
+                }
+                $this->log('Failed to create schema info table.  Retrying...');
+                $this->dbi->createSchema($config['schema']);
+            }
+        }
 
-        return true;
+        return false;
     }
 
     private function createSchemaVersionTable(): bool
