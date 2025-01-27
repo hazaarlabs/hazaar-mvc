@@ -19,7 +19,7 @@ class CurrentCommand extends Command
     protected function execute(Input $input, Output $output): int
     {
         $manager = Adapter::getSchemaManagerInstance();
-        $version = $manager->getVersion();
+        $version = $manager->getCurrentVersion();
         if (null === $version) {
             $output->write('No schema version found.'.PHP_EOL);
         } else {

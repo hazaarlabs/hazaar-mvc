@@ -140,6 +140,16 @@ class Manager
         return $this->versions;
     }
 
+    public function getVersion(int $version): ?Version
+    {
+        $versions = $this->getVersions();
+        if (!array_key_exists($version, $versions)) {
+            return null;
+        }
+
+        return $versions[$version];
+    }
+
     /**
      * Retrieves the list of schema versions that have been applied to the database.
      *
@@ -206,7 +216,7 @@ class Manager
     /**
      * Returns the currently applied schema version.
      */
-    public function getVersion(): ?Version
+    public function getCurrentVersion(): ?Version
     {
         if (isset($this->currentVersion)) {
             return $this->currentVersion;
@@ -249,7 +259,7 @@ class Manager
      */
     public function isLatest(): bool
     {
-        if (($currentVersion = $this->getVersion()) === null) {
+        if (($currentVersion = $this->getCurrentVersion()) === null) {
             return false;
         }
         $latestVersion = $this->getLatestVersion();
@@ -320,16 +330,21 @@ class Manager
 
             return false;
         }
-        $version->rollback($this->dbi);
 
-        return false;
+        return $version->rollback($this->dbi);
     }
 
     public function replay(
         int $version,
         bool $test = false
     ): bool {
-        return false;
+        if (!isset($this->dbi)) {
+            $this->connect();
+        }
+        $version = $this->getVersion($version);
+        $version->rollback($this->dbi);
+
+        return $version->replay($this->dbi);
     }
 
     /**
