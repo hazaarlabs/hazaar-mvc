@@ -144,7 +144,7 @@ trait Table
         return true;
     }
 
-    public function dropTable(string $name, bool $cascade = false, bool $ifExists = false): bool
+    public function dropTable(string $name, bool $ifExists = false, bool $cascade = false): bool
     {
         $sql = 'DROP TABLE ';
         if (true === $ifExists) {

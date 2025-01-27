@@ -140,7 +140,7 @@ trait Constraint
         return true;
     }
 
-    public function dropConstraint(string $constraintName, string $tableName, bool $cascade = false, bool $ifExists = false): bool
+    public function dropConstraint(string $constraintName, string $tableName, bool $ifExists = false, bool $cascade = false): bool
     {
         $sql = 'ALTER TABLE ';
         if (true === $ifExists) {

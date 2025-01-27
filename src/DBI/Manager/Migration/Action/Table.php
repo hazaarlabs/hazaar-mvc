@@ -54,7 +54,7 @@ class Table extends BaseAction
         }
         if (isset($this->drop) && count($this->drop) > 0) {
             foreach ($this->drop as $column) {
-                $dbi->dropColumn($this->name, $column);
+                $dbi->dropColumn($this->name, $column, true);
             }
         }
 
@@ -63,7 +63,7 @@ class Table extends BaseAction
 
     public function drop(Adapter $dbi): bool
     {
-        return $dbi->dropTable($this->name);
+        return $dbi->dropTable($this->name, true);
     }
 
     public function apply(BaseAction $action): bool

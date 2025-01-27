@@ -27,6 +27,6 @@ class Constraint extends BaseAction
 
     public function drop(Adapter $dbi): bool
     {
-        return $dbi->dropConstraint($this->name, $this->table);
+        return $dbi->dropConstraint($this->name, $this->table, true);
     }
 }
