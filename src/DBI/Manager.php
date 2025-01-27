@@ -15,6 +15,7 @@ use Hazaar\Application\FilePath;
 use Hazaar\DBI\Exception\ConnectionFailed;
 use Hazaar\DBI\Manager\LogEntry;
 use Hazaar\DBI\Manager\Schema;
+use Hazaar\DBI\Manager\Snapshot;
 use Hazaar\DBI\Manager\Version;
 use Hazaar\Loader;
 
@@ -347,6 +348,22 @@ class Manager
         return $version->replay($this->dbi);
     }
 
+    public function snapshot(
+        ?string $comment = null,
+        bool $test = false,
+        ?int $overrideVersion = null
+    ): bool {
+        if (!isset($this->dbi)) {
+            $this->connect();
+        }
+        $snapshot = Snapshot::create($comment ?? 'Snapshot');
+        $snapshot->initialise($this->dbi);
+        $currentSchema = $this->getSchema(true);
+        $migration = $snapshot->compare($currentSchema);
+
+        return false;
+    }
+
     /**
      * @param array<mixed> $dataSchema
      */
@@ -354,14 +371,6 @@ class Manager
         ?array $dataSchema = null,
         bool $test = false,
         bool $forceDataSync = false
-    ): bool {
-        return false;
-    }
-
-    public function snapshot(
-        ?string $comment = null,
-        bool $test = false,
-        ?int $overrideVersion = null
     ): bool {
         return false;
     }
@@ -454,6 +463,7 @@ class Manager
         for ($i = 0; $i < 2; ++$i) {
             try {
                 $this->createSchemaVersionTable();
+
                 return true;
             } catch (\PDOException $e) {
                 if (isset($config['schema']) && '3F000' !== $e->getCode()) {
