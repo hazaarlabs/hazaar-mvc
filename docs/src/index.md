@@ -7,7 +7,7 @@ bgImageStyle: bg-image-blurred
 heroFullScreen: true
 actions:
   - text: Get Started
-    link: /docs/start/installation
+    link: /docs/start/install/overview
     type: primary
 
   - text: API Documentation

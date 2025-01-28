@@ -12,6 +12,7 @@ namespace Hazaar\DBI;
 use Hazaar\Application;
 use Hazaar\Application\Config;
 use Hazaar\Application\FilePath;
+use Hazaar\DBI\Exception\ConnectionFailed;
 use Hazaar\DBI\Exception\DriverNotFound;
 use Hazaar\DBI\Exception\NotConfigured;
 use Hazaar\Loader;
@@ -932,9 +933,18 @@ class Adapter implements Interface\API\Constraint, Interface\API\Extension, Inte
         if (!class_exists($driverClass)) {
             throw new DriverNotFound($this->config['driver']);
         }
-        $this->driver = new $driverClass($this->config);
-        if (isset($this->config['timezone'])) {
-            $this->setTimezone($this->config['timezone']);
+
+        try {
+            $this->driver = new $driverClass($this->config);
+            if (isset($this->config['timezone'])) {
+                $this->setTimezone($this->config['timezone']);
+            }
+        } catch (\PDOException $e) {
+            if (7 === $e->getCode()) {
+                throw new ConnectionFailed($this->config['host']);
+            }
+
+            throw $e;
         }
         // if (defined('HAZAAR_VERSION') && (isset($this->config['encrypt']['table']) && !isset($this->config['encrypt']['key']))) {
         //     $keyfile = Loader::getFilePath(FilePath::CONFIG, $this->config['encrypt']['keyfile'] ?? '.db_key');

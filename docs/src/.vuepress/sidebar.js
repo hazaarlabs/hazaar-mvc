@@ -10,7 +10,14 @@ function sidebarGuide() {
             text: 'Getting Started',
             collapsible: true,
             children: [
-                { text: 'Installation', link: '/docs/start/installation' },
+                {
+                    text: 'Installation', link: '/docs/start/installoverview',
+                    "children": [
+                        { text: 'Composer', link: '/docs/start/install/composer' },
+                        { text: 'Manual', link: '/docs/start/install/manual' },
+                        { text: 'Dev Container', link: '/docs/start/install/devcontainer' }
+                    ]
+                },
                 { text: 'Configuration', link: '/docs/start/configuration' },
                 { text: 'Directory Structure', link: '/docs/start/structure' },
                 {
