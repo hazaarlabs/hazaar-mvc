@@ -1,4 +1,27 @@
-# Introduction
+<p align="center"><a href="https://hazaar.io" target="_blank"><img src="https://git.hazaar.io/hazaar/hazaar-mvc/-/raw/master/libs/hazaar-icon-lg.png?inline=false" width="200" alt="Laravel Logo"></a></p>
+
+<p align="center">
+<a href="https://github.com/laravel/framework/actions"><img src="https://git.hazaar.io/hazaar/hazaar-mvc/badges/master/pipeline.svg" alt="Build Status"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/hazaarlabs/hazaar-mvc" alt="Total Downloads"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/hazaarlabs/hazaar-mvc" alt="Latest Stable Version"></a>
+<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/hazaarlabs/hazaar-mvc" alt="License"></a>
+</p>
+
+# About Hazaar
+
+Hazaar is a robust light-weight MVC framework for PHP8+ that focuses on speed, efficiency and simplicity.  Some of the
+features availble in Hazaar include:
+
+* [Fast and configurable router](https://hazaar.io/docs/basics/routing.html)
+* [Fluent database ORM](https://hazaar.io/docs/dbi/overview.html)
+* [Multiple cache and session backend options](https://hazaar.io/docs/advanced/caching/overview.html)
+* [Database schema management with snapshots](https://hazaar.io/docs/dbi/schema-manager.html)
+* Unified file storage system
+* [Background job processing](https://hazaar.io/docs/components/warlock/delayed-exec.html)
+* [Built-in WebSocket server](https://hazaar.io/docs/components/warlock/overview.html)
+* [Robust message broker](https://hazaar.io/docs/components/warlock/realtime-signalling.html)
+
+# Getting Started
 
 Getting up and running with HazaarMVC is really easy and is done in only a few basic
 steps, depending on the operating system you are working with.  I suggest Ubuntu Linux
