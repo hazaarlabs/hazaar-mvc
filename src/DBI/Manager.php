@@ -83,10 +83,17 @@ class Manager
             $dbiConfig['environment'] = APPLICATION_ENV;
         }
         $this->config = array_merge($dbiConfig, $dbiConfig['manager'] ?? []);
-        $this->workDir = Loader::getFilePath(FilePath::DB);
-        if (!is_dir($this->workDir)) {
-            $this->workDir = getcwd().DIRECTORY_SEPARATOR.'db';
+        $workDir = Loader::getFilePath(FilePath::DB);
+        if (file_exists($workDir)) {
+            if (!is_dir($workDir)) {
+                throw new \Exception('DB directory exists but is not a directory!');
+            }
+        } else {
+            if (!mkdir($workDir, 0777, true)) {
+                throw new \Exception('Failed to create DB directory!');
+            }
         }
+        $this->workDir = $workDir;
     }
 
     /**
