@@ -96,24 +96,25 @@ class Manager
             $this->log("Connecting to database '{$managerConfig['dbname']}' on host '{$managerConfig['host']}'");
             $this->dbi = new Adapter($managerConfig);
         } catch (ConnectionFailed $e) {
-            if (7 !== $e->getCode() || true !== ake($managerConfig, 'createDatabase')) {
+            if (true !== ake($managerConfig, 'createDatabase')) {
                 throw $e;
             }
             $this->log('Database does not exist.  Attempting to create it as requested.');
+            $managerConfig['orgDBName'] = $managerConfig['dbname'];
             $managerConfig['dbname'] = isset($managerConfig['maintenanceDatabase'])
                 ? $managerConfig['maintenanceDatabase']
                 : $managerConfig['user'];
             $this->log("Connecting to database '{$managerConfig['dbname']}' on host '{$managerConfig['host']}'");
             $maintDB = new Adapter($managerConfig);
             $this->log("Creating database '{$managerConfig['dbname']}'");
-            $maintDB->createDatabase($managerConfig['dbname']);
+            $maintDB->createDatabase($managerConfig['orgDBName']);
+            unset($maintDB);
+            $managerConfig['dbname'] = $managerConfig['orgDBName'];
+            unset($managerConfig['orgDBName']);
             $this->log("Retrying connection to database '{$managerConfig['dbname']}' on host '{$managerConfig['host']}'");
             $this->dbi = new Adapter($managerConfig);
         }
-        $this->dbDir = Loader::getFilePath(FilePath::DB);
-        if (!is_dir($this->dbDir)) {
-            $this->dbDir = getcwd().DIRECTORY_SEPARATOR.'db';
-        }
+        $this->dbDir = $this->getSchemaManagerDirectory();
         $this->migrateDir = $this->dbDir.DIRECTORY_SEPARATOR.'migrate';
         $this->dataFile = $this->dbDir.DIRECTORY_SEPARATOR.'data.json';
     }
@@ -2958,5 +2959,23 @@ class Manager
         }
 
         return true;
+    }
+
+    private function getSchemaManagerDirectory(): string
+    {
+        $dbDir = Loader::getFilePath(FilePath::DB);
+        if (file_exists($dbDir)) {
+            if (!is_dir($dbDir)) {
+                throw new Schema("The database directory '{$dbDir}' exists but is not a directory!");
+            }
+
+            return $dbDir;
+        }
+        if (!is_writable(dirname($dbDir))) {
+            throw new Schema('The directory that contains the database directory is not writable!');
+        }
+        mkdir($dbDir);
+
+        return $dbDir;
     }
 }

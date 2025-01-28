@@ -9,9 +9,9 @@ class ConnectionFailed extends \Exception
     /**
      * @param array<int, int|string> $error
      */
-    public function __construct(string $server, ?array $error = null)
+    public function __construct(string $host, ?array $error = null)
     {
-        $msg = "Database connection failed connecting to server '{$server}'.";
+        $msg = "Database connection failed connecting to host '{$host}'.";
         if ($error) {
             $msg .= ' Reason: '.$error[1];
         }

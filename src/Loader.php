@@ -123,18 +123,12 @@ class Loader
      * @param FilePath $type the path type to add
      * @param string   $path the path to add
      */
-    public function addSearchPath(FilePath $type, string $path): bool
+    public function addSearchPath(FilePath $type, string $path): void
     {
-        $path = realpath($path);
-        if (!$path) {
-            return false;
-        }
         $typeName = $type->value;
         if (!array_key_exists($typeName, $this->paths) || !in_array($path, $this->paths[$typeName])) {
             $this->paths[$typeName][] = $path;
         }
-
-        return true;
     }
 
     /**
@@ -144,14 +138,11 @@ class Loader
      *
      * @param mixed $type the path type to add
      * @param mixed $path the path to add
-     *
-     * @return bool
      */
-    public function setSearchPath($type, $path)
+    public function setSearchPath($type, $path): void
     {
         $this->paths[$type] = [];
-
-        return $this->addSearchPath($type, $path);
+        $this->addSearchPath($type, $path);
     }
 
     /**
@@ -222,6 +213,9 @@ class Loader
         }
         if ($paths = $loader->getSearchPaths($type)) {
             foreach ($paths as $path) {
+                if (!$searchFile) {
+                    return $path;
+                }
                 $filename = $path.DIRECTORY_SEPARATOR.$searchFile;
                 if ($realPath = realpath($filename)) {
                     return $realPath;
