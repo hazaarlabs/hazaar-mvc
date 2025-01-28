@@ -42,17 +42,21 @@ class Action extends Model
         if (!isset($data['name']) && isset($data['action'])) {
             $data['name'] = $data['action'];
         }
-        $data['type'] = ActionType::tryFrom($data['type']);
-        $data['spec'] = match ($data['type']) {
-            ActionType::EXTENSION => new Extension($data['spec']),
-            ActionType::TABLE => new Table($data['spec']),
-            ActionType::INDEX => new Index($data['spec']),
-            ActionType::CONSTRAINT => new Constraint($data['spec']),
-            ActionType::FUNC => new Func($data['spec']),
-            ActionType::VIEW => new View($data['spec']),
-            ActionType::TRIGGER => new Trigger($data['spec']),
-            default => null
-        };
+        if (!is_object($data['type'])) {
+            $data['type'] = ActionType::tryFrom($data['type']);
+        }
+        if (!$data['spec'] instanceof BaseAction) {
+            $data['spec'] = match ($data['type']) {
+                ActionType::EXTENSION => new Extension($data['spec']),
+                ActionType::TABLE => new Table($data['spec']),
+                ActionType::INDEX => new Index($data['spec']),
+                ActionType::CONSTRAINT => new Constraint($data['spec']),
+                ActionType::FUNC => new Func($data['spec']),
+                ActionType::VIEW => new View($data['spec']),
+                ActionType::TRIGGER => new Trigger($data['spec']),
+                default => null
+            };
+        }
     }
 
     public function run(Adapter $dbi): bool
