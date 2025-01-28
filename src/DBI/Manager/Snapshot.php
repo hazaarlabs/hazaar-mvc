@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace Hazaar\DBI\Manager;
 
 use Hazaar\Controller\Exception\HeadersSent;
+use Hazaar\DBI\Manager\Migration\Action\BaseAction;
+use Hazaar\DBI\Manager\Migration\Enum\ActionName;
+use Hazaar\DBI\Manager\Migration\Enum\ActionType;
+use Hazaar\DBI\Manager\Migration\Event;
 use Hazaar\Model;
 
 class Snapshot extends Model
@@ -31,10 +35,38 @@ class Snapshot extends Model
     public function compare(Schema $masterSchama, Schema $compareSchema): ?Migration
     {
         $migration = new Migration();
+        $migration->up = new Event();
+        // Look for new or changed tables
         foreach ($compareSchema->tables as $table) {
-            dump($table);
+            $action = $this->findAction($table->name, $masterSchama->tables);
+            // Table does not exist in master schema. Add a create action.
+            if (null === $action) {
+                $migration->up->add(ActionName::CREATE, ActionType::TABLE, $table);
+
+                continue;
+            }
+            // Table exists in master schema. Compare the table schemas.
+            // $diff = $table->diff($action);
+            // // Table schema is different. Add an alter action.
+            // if (null !== $diff) {
+            //     $migration->up->add(ActionName::ALTER, ActionType::TABLE, $diff);
+            // }
         }
 
         return $migration;
+    }
+
+    /**
+     * @param array<BaseAction> $haystack
+     */
+    private function findAction(string $name, array $haystack): ?BaseAction
+    {
+        foreach ($haystack as $action) {
+            if ($action->name === $name) {
+                return $action;
+            }
+        }
+
+        return null;
     }
 }

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Hazaar\DBI\Manager\Migration;
 
 use Hazaar\DBI\Adapter;
+use Hazaar\DBI\Manager\Migration\Action\BaseAction;
+use Hazaar\DBI\Manager\Migration\Enum\ActionName;
+use Hazaar\DBI\Manager\Migration\Enum\ActionType;
 use Hazaar\Model;
 
 class Event extends Model
@@ -29,5 +32,14 @@ class Event extends Model
         }
 
         return true;
+    }
+
+    public function add(ActionName $actionName, ActionType $actionType, BaseAction $action): void
+    {
+        $this->actions[] = new Action([
+            'name' => $actionName,
+            'type' => $actionType,
+            'spec' => $action,
+        ]);
     }
 }

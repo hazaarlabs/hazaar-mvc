@@ -34,6 +34,7 @@ class Manager
      */
     private array $config;
     private string $workDir;
+    private string $migrateDir;
 
     /**
      * @var array<array<mixed|string>>
@@ -80,6 +81,7 @@ class Manager
             }
         }
         $this->workDir = $workDir;
+        $this->migrateDir = $this->workDir.DIRECTORY_SEPARATOR.'migrate';
     }
 
     /**
@@ -102,12 +104,12 @@ class Manager
         if (isset($this->versions)) {
             return $this->versions;
         }
-        $migrateDir = $this->workDir.DIRECTORY_SEPARATOR.'migrate';
-        if (!file_exists($migrateDir) && is_dir($migrateDir)) {
+
+        if (!file_exists($this->migrateDir) && is_dir($this->migrateDir)) {
             return [];
         }
         $this->versions = [];
-        $dir = dir($migrateDir);
+        $dir = dir($this->migrateDir);
         while ($file = $dir->read()) {
             if ('.' === substr($file, 0, 1)) {
                 continue;
@@ -117,7 +119,7 @@ class Manager
             if (!(isset($info['extension']) && 'json' === $info['extension'] && preg_match('/^(\d+)_(\w+)$/', $info['filename'], $matches))) {
                 continue;
             }
-            $version = Version::loadFromFile($migrateDir.DIRECTORY_SEPARATOR.$file);
+            $version = Version::loadFromFile($this->migrateDir.DIRECTORY_SEPARATOR.$file);
             $this->versions[$version->number] = $version;
         }
         if ($mergeApplied) {
@@ -358,9 +360,10 @@ class Manager
 
             return false;
         }
-        dump($migration);
+        $version = date('YmdHis').'_'.str_replace(' ', '_', $comment ?? 'Snapshot');
+        $migrateFile = $this->migrateDir.DIRECTORY_SEPARATOR.$version.'.json';
 
-        return false;
+        return file_put_contents($migrateFile, $migration->toJSON(JSON_PRETTY_PRINT)) > 0;
     }
 
     /**
