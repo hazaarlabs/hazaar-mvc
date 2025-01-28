@@ -428,13 +428,13 @@ abstract class Model implements \jsonSerializable, \Iterator
      *
      * @return string the JSON representation of the model object
      */
-    public function toJSON(): string
+    public function toJSON(int $flags = 0, int $depth = 512): string
     {
         if (isset($this->eventHooks['json'])) {
             $this->eventHooks['json']();
         }
 
-        return json_encode($this);
+        return json_encode($this, $flags, $depth);
     }
 
     /**
