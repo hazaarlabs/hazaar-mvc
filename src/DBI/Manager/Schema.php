@@ -73,40 +73,47 @@ class Schema extends Model
 
     public static function import(Adapter $dbi): self
     {
-        $schema = new self();
-        $schema->extensions = $dbi->listExtensions();
+        $schema = [
+            'extensions' => $dbi->listExtensions(),
+            'tables' => [],
+            'constraints' => [],
+            'indexes' => [],
+            'functions' => [],
+            'triggers' => [],
+            'views' => [],
+        ];
         $tables = $dbi->listTables();
         foreach ($tables as $table) {
-            $schema->tables[] = new Table([
+            $schema['tables'][] = [
                 'name' => $table['name'],
                 'columns' => $dbi->describeTable($table['name']),
-            ]);
+            ];
         }
         $constraints = $dbi->listConstraints();
         foreach ($constraints as $name => $constraint) {
-            $schema->constraints[] = new Constraint($constraint);
+            $schema['constraints'][] = $constraint;
         }
         $indexes = $dbi->listIndexes();
         foreach ($indexes as $name => $index) {
-            $schema->indexes[] = new Index($index);
+            $schema['indexes'][] = $index;
         }
         $functions = $dbi->listFunctions();
         foreach ($functions as $functionName) {
             $functionInstances = $dbi->describeFunction($functionName);
             foreach ($functionInstances as $function => $functionInstance) {
-                $schema->functions[] = new Func($functionInstance);
+                $schema['functions'][] = $functionInstance;
             }
         }
         $triggers = $dbi->listTriggers();
         foreach ($triggers as $trigger) {
-            $schema->triggers[] = new Trigger($dbi->describeTrigger($trigger['name']));
+            $schema['triggers'][] = $dbi->describeTrigger($trigger['name']);
         }
         $views = $dbi->listViews();
         foreach ($views as $view) {
-            $schema->views[] = new View($dbi->describeView($view['name']));
+            $schema['views'][] = $dbi->describeView($view['name']);
         }
 
-        return $schema;
+        return new self($schema);
     }
 
     public function applyVersion(Version $version): void
