@@ -50,7 +50,7 @@ trait Constraint
                 AND kcu.table_schema = tc.table_schema
                 AND kcu.table_name = tc.table_name
             JOIN information_schema.constraint_column_usage AS ccu
-                ON ccu.constraint_name = tc.constraint_name
+                ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema
             LEFT JOIN information_schema.referential_constraints rc ON tc.constraint_name = rc.constraint_name
             WHERE tc.CONSTRAINT_SCHEMA='{$schema}'";
         if ($table) {
@@ -63,17 +63,14 @@ trait Constraint
         if ($result = $this->query($sql)) {
             while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
                 if ($constraint = ake($constraints, $row['name'])) {
-                    if (!is_array($constraint['column'])) {
-                        $constraint['column'] = [$constraint['column']];
-                    }
-                    if (!in_array($row['column'], $constraint['column'])) {
-                        $constraint['column'][] = $row['column'];
+                    if (!in_array($row['column'], $constraint['columns'])) {
+                        $constraint['columns'][] = $row['column'];
                     }
                 } else {
                     $constraint = [
                         'name' => $row['name'],
                         'table' => $row['table'],
-                        'column' => $row['column'],
+                        'columns' => [$row['column']],
                         'type' => $row['type'],
                     ];
                 }
@@ -83,10 +80,16 @@ trait Constraint
                     }
                 }
                 if ('FOREIGN KEY' == $row['type'] && $row['foreign_table']) {
-                    $constraint['references'] = [
-                        'table' => $row['foreign_table'],
-                        'column' => $row['foreign_column'],
-                    ];
+                    if (isset($constraint['references'])) {
+                        if (!in_array($row['foreign_column'], $constraint['references']['columns'])) {
+                            $constraint['references']['columns'][] = $row['foreign_column'];
+                        }
+                    } else {
+                        $constraint['references'] = [
+                            'table' => $row['foreign_table'],
+                            'columns' => [$row['foreign_column']],
+                        ];
+                    }
                 }
                 $constraints[$row['name']] = $constraint;
             }
