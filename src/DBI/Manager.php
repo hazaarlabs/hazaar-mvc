@@ -350,9 +350,14 @@ class Manager
             $this->connect();
         }
         $snapshot = Snapshot::create($comment ?? 'Snapshot');
-        $snapshot->initialise($this->dbi);
-        $currentSchema = $this->getSchema(true);
-        $migration = $snapshot->compare($currentSchema);
+        $databaseSchema = Schema::import($this->dbi);
+        $masterSchema = $this->getSchema(true);
+        $migration = $snapshot->compare($masterSchema, $databaseSchema);
+        if (null === $migration) {
+            $this->log('No changes detected.  Skipping snapshot.');
+
+            return false;
+        }
         dump($migration);
 
         return false;
