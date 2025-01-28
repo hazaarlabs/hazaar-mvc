@@ -57,20 +57,6 @@ class Manager
     private array $missingVersions;
     private \Closure $__callback;
 
-    /*
-     * @var array<string, array<mixed>>
-    private static array $tableMap = [
-        'extension' => ['extensions', false, null],
-        'sequence' => ['sequences', false, null],
-        'table' => ['tables', 'cols', null],
-        'view' => ['views', true, 'views'],
-        'constraint' => ['constraints', true, null],
-        'index' => ['indexes', true, null],
-        'function' => ['functions', false, 'functions'],
-        'trigger' => ['triggers', true, 'functions'],
-    ];
-    */
-
     /**
      * @param array<mixed> $dbiConfig
      */
@@ -367,6 +353,7 @@ class Manager
         $snapshot->initialise($this->dbi);
         $currentSchema = $this->getSchema(true);
         $migration = $snapshot->compare($currentSchema);
+        dump($migration);
 
         return false;
     }

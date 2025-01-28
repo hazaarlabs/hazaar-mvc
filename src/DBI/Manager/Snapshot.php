@@ -10,6 +10,7 @@ use Hazaar\Model;
 class Snapshot extends Model
 {
     public string $description;
+    private Schema $schema;
 
     public static function create(string $comment): self
     {
@@ -20,11 +21,21 @@ class Snapshot extends Model
 
     public function initialise(Adapter $dbi): bool
     {
-        return false;
+        $this->schema = Schema::import($dbi);
+
+        return true;
     }
 
     public function compare(Schema $compareSchema): Migration
     {
-        return new Migration();
+        if (!isset($this->schema)) {
+            throw new \Exception('Snapshot has not been initialised!');
+        }
+        $migration = new Migration();
+        foreach ($compareSchema->tables as $table) {
+            dump($table);
+        }
+
+        return $migration;
     }
 }

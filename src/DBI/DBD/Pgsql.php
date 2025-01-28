@@ -216,6 +216,7 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
         $indexes = [];
         while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
             $indexes[$row['index_name']] = [
+                'name' => $row['index_name'],
                 'table' => $row['table_name'],
                 'columns' => array_map('trim', explode(',', $row['column_names'])),
                 'unique' => boolify($row['indisunique']),
@@ -251,7 +252,7 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
     public function describeView($name): array|false
     {
         list($schema, $name) = $this->queryBuilder->parseSchemaName($name);
-        $sql = 'SELECT table_name as name, trim(view_definition) as content FROM INFORMATION_SCHEMA.views WHERE table_schema='
+        $sql = 'SELECT table_name as name, trim(view_definition) as query FROM INFORMATION_SCHEMA.views WHERE table_schema='
             .$this->queryBuilder->prepareValue($schema).' AND table_name='.$this->queryBuilder->prepareValue($name);
         if ($result = $this->query($sql)) {
             return $result->fetch(\PDO::FETCH_ASSOC);

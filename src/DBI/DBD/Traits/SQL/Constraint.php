@@ -71,6 +71,7 @@ trait Constraint
                     }
                 } else {
                     $constraint = [
+                        'name' => $row['name'],
                         'table' => $row['table'],
                         'column' => $row['column'],
                         'type' => $row['type'],

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\Manager;
 
+use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Manager\Migration\Action;
 use Hazaar\DBI\Manager\Migration\Action\Constraint;
 use Hazaar\DBI\Manager\Migration\Action\Func;
@@ -65,6 +66,44 @@ class Schema extends Model
         $schema = new self();
         foreach ($versions as $version) {
             $schema->applyVersion($version);
+        }
+
+        return $schema;
+    }
+
+    public static function import(Adapter $dbi): self
+    {
+        $schema = new self();
+        $schema->extensions = $dbi->listExtensions();
+        $tables = $dbi->listTables();
+        foreach ($tables as $table) {
+            $schema->tables[] = new Table([
+                'name' => $table['name'],
+                'columns' => $dbi->describeTable($table['name']),
+            ]);
+        }
+        $constraints = $dbi->listConstraints();
+        foreach ($constraints as $name => $constraint) {
+            $schema->constraints[] = new Constraint($constraint);
+        }
+        $indexes = $dbi->listIndexes();
+        foreach ($indexes as $name => $index) {
+            $schema->indexes[] = new Index($index);
+        }
+        $functions = $dbi->listFunctions();
+        foreach ($functions as $functionName) {
+            $functionInstances = $dbi->describeFunction($functionName);
+            foreach ($functionInstances as $function => $functionInstance) {
+                $schema->functions[] = new Func($functionInstance);
+            }
+        }
+        $triggers = $dbi->listTriggers();
+        foreach ($triggers as $trigger) {
+            $schema->triggers[] = new Trigger($dbi->describeTrigger($trigger['name']));
+        }
+        $views = $dbi->listViews();
+        foreach ($views as $view) {
+            $schema->views[] = new View($dbi->describeView($view['name']));
         }
 
         return $schema;
