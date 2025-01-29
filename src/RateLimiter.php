@@ -17,6 +17,8 @@ class RateLimiter
     private int $windowLength;
     private int $requestLimit;
     private int $requestMinimumPeriod = 0;
+    private int $intervalThreshold = 0;
+    private int $intervalMatch = 0;
 
     /**
      * @var array<string,string>
@@ -41,6 +43,8 @@ class RateLimiter
         $this->windowLength = $options['window'] ?? 60;
         $this->requestLimit = $options['limit'] ?? 60;
         $this->requestMinimumPeriod = $options['minimum'] ?? 0;
+        $this->intervalThreshold = $options['intervalThreshold'] ?? 0;
+        $this->intervalMatch = $options['intervalMatch'] ?? 0;
         $backendType = ake($options, 'backend', 'cache');
         if (null === $backend) {
             switch ($backendType) {
@@ -88,28 +92,107 @@ class RateLimiter
      */
     public function check(string $identifier): bool
     {
-        $now = time();
         $info = $this->backend->get($identifier);
         if (isset($info['result'])) {
             $info['last_result'] = $info['result'];
         }
-        if ($this->requestMinimumPeriod > 0
-            && array_key_exists('last', $info)
-            && $now < $info['last'] + $this->requestMinimumPeriod) {
+        $info['result'] = $this->checkRateLimitRules($info);
+        if (true === $info['result']) {
+            $now = time();
+            $info['last'] = $now;
+            $info['log'][] = $now;
+        }
+        if (!$this->checkRequestIntervals($info)) {
             $info['result'] = false;
-        } else {
-            if (count($info['log']) < $this->requestLimit) {
-                // Log the current request timestamp
-                $info['result'] = true;
-                $info['last'] = $now;
-                $info['log'][] = $now;
-            } else {
-                $info['result'] = false;
-            }
         }
         $this->backend->set($identifier, $info);
 
         return $info['result']; // Request limit exceeded
+    }
+
+    /**
+     * Checks if the current request adheres to the rate limit rules.
+     *
+     * This method verifies two conditions:
+     * 1. If the time since the last request is within the minimum period threshold.
+     * 2. If the number of requests in the log exceeds the allowed request limit.
+     *
+     * @param array $info Reference to the array containing rate limit information.
+     *                    - 'last': Timestamp of the last request.
+     *                    - 'log': Array of timestamps of previous requests.
+     *
+     * @return bool returns true if the request is within the rate limit rules, false otherwise
+     */
+    private function checkRateLimitRules(array &$info): bool
+    {
+        $now = time();
+        // Check if the last request is within the interval threshold
+        if ($this->requestMinimumPeriod > 0
+            && array_key_exists('last', $info)
+            && $now < $info['last'] + $this->requestMinimumPeriod) {
+            return false;
+        }
+        // Check if the last request exceeds the number of requests allowed in the interval window
+        if (count($info['log']) >= $this->requestLimit) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks if the last set of requests have been made within the specified interval threshold.
+     *
+     * This function evaluates the intervals between the last few requests to determine if they fall within
+     * a defined threshold. If the requests are too frequent, it sets an interval lock to prevent further
+     * processing until the interval condition is no longer met.
+     *
+     * @param array $info An associative array containing request log information and interval lock status.
+     *                    - 'log' (array): A list of timestamps representing the times of the requests.
+     *                    - 'intervalLock' (bool): A flag indicating if the interval lock is active.
+     *
+     * @return bool Returns true if the requests are within the allowed interval threshold or if there are
+     *              not enough requests to check. Returns false if the interval lock is active or if the
+     *              requests exceed the interval threshold.
+     */
+    private function checkRequestIntervals(array &$info): bool
+    {
+        // Check if the last x requests have been made within the interval threshold
+        if (!($this->intervalThreshold > 0
+            && $this->intervalMatch > 0
+            && count($info['log']) >= ($this->intervalMatch + 2))) {
+            // Unlock the interval lock if it is set when there are no longer enough requests to check
+            $info['intervalLock'] = false;
+
+            return true;
+        }
+        // If the interval lock is already set, return false
+        if (isset($info['intervalLock'])
+            && true === $info['intervalLock']) {
+            return false;
+        }
+        $prevDiff = 0;
+        $intervalMatch = 0;
+        for ($i = count($info['log']) - 1; $i > 0; --$i) {
+            $timeDiff = $info['log'][$i] - $info['log'][$i - 1];
+            if ($prevDiff > 0) {
+                $checkDiff = abs($timeDiff - $prevDiff);
+                // If the difference between the last x requests is greater than the interval threshold, stop checking
+                // This is because we want consecutive requests to be within the interval threshold
+                if ($checkDiff > $this->intervalThreshold) {
+                    break;
+                }
+                ++$intervalMatch;
+                if ($intervalMatch >= $this->intervalMatch) {
+                    $info['intervalLock'] = true;
+
+                    return false;
+                }
+            }
+            $prevDiff = $timeDiff;
+        }
+
+        return true;
     }
 
     /**
