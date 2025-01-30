@@ -22,6 +22,11 @@ class Table extends BaseAction
     public array $add;
 
     /**
+     * @var array<Column>
+     */
+    public array $alter;
+
+    /**
      * @var array<string>
      */
     public array $drop;
@@ -80,5 +85,36 @@ class Table extends BaseAction
         }
 
         return false;
+    }
+
+    public function diff(BaseAction $table): ?self
+    {
+        $diff = new self([
+            'name' => $this->name,
+        ]);
+        foreach ($table->columns as $column) {
+            $index = array_usearch($this->columns, function (Column $localColumn) use ($column) {
+                return $localColumn->name === $column->name;
+            });
+            // Column does not exist in local schema. Add it. Otherwise, check if the column has changed.
+            if (false === $index) {
+                if (!isset($diff->add)) {
+                    $diff->add = [];
+                }
+                $diff->add[] = $column;
+            } elseif ($this->columns[$index]->changed($column)) {
+                if (!isset($diff->alter)) {
+                    $diff->alter = [];
+                }
+                $diff->alter[] = $column;
+            }
+        }
+        if (isset($diff->add)
+            || isset($diff->alter)
+            || isset($diff->drop)) {
+            return $diff;
+        }
+
+        return null;
     }
 }

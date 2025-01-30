@@ -63,4 +63,13 @@ class Action extends Model
     {
         return $this->spec->run($dbi, $this->name);
     }
+
+    public static function create(ActionType $type, mixed $spec): self
+    {
+        return new self([
+            'name' => ActionName::CREATE,
+            'type' => $type,
+            'spec' => $spec,
+        ]);
+    }
 }

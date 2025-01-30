@@ -40,4 +40,9 @@ abstract class BaseAction extends Model implements Spec
     {
         return false;
     }
+
+    public function diff(self $action): ?self
+    {
+        return null;
+    }
 }

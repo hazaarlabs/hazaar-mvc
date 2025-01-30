@@ -46,12 +46,13 @@ class Snapshot extends Model
                 continue;
             }
             // Table exists in master schema. Compare the table schemas.
-            // $diff = $table->diff($action);
-            // // Table schema is different. Add an alter action.
-            // if (null !== $diff) {
-            //     $migration->up->add(ActionName::ALTER, ActionType::TABLE, $diff);
-            // }
+            $diff = $action->diff($table);
+            // Table schema is different. Add an alter action.
+            if (null !== $diff) {
+                $migration->up->add(ActionName::ALTER, ActionType::TABLE, $diff);
+            }
         }
+        // dump($migration->up->toArray());
 
         return $migration;
     }

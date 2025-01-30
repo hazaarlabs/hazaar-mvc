@@ -361,12 +361,17 @@ class Manager
         $this->log('Loading master schema');
         $masterSchema = $this->getSchema(true);
         $snapshot = Snapshot::create($comment ?? 'Snapshot');
-        $this->log('Comparing schemas');
-        $migration = $snapshot->compare($masterSchema, $databaseSchema);
-        if (null === $migration || !isset($migration->up) || 0 === count($migration->up->actions)) {
-            $this->log('No changes detected.');
+        if (null === $masterSchema) {
+            $this->log('No master schema found. Creating initial snapshot.');
+            $migration = $databaseSchema->toMigration();
+        } else {
+            $this->log('Comparing schemas');
+            $migration = $snapshot->compare($masterSchema, $databaseSchema);
+            if (null === $migration || !isset($migration->up) || 0 === count($migration->up->actions)) {
+                $this->log('No changes detected.');
 
-            return false;
+                return false;
+            }
         }
         $this->log('Found '.count($migration->up->actions).' changes to apply');
         if (true === $test) {

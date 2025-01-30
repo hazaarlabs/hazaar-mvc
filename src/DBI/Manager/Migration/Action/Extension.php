@@ -16,6 +16,11 @@ class Extension extends BaseAction
     public function construct(array &$data): void
     {
         $data = ['extensions' => $data];
+        $this->defineEventHook('serialized', function (array &$data) {
+            if (isset($this->extensions)) {
+                $data = $this->extensions;
+            }
+        });
     }
 
     public function create(Adapter $dbi): bool

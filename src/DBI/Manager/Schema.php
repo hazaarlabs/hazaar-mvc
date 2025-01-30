@@ -132,6 +132,33 @@ class Schema extends Model
         }
     }
 
+    public function toMigration(): Migration
+    {
+        $migration = new Migration();
+        $migration->up = new Migration\Event();
+        $migration->up->actions[] = Action::create(ActionType::EXTENSION, $this->extensions);
+        foreach ($this->tables as $table) {
+            $migration->up->actions[] = Action::create(ActionType::TABLE, $table);
+        }
+        foreach ($this->views as $view) {
+            $migration->up->actions[] = Action::create(ActionType::VIEW, $view);
+        }
+        foreach ($this->constraints as $constraint) {
+            $migration->up->actions[] = Action::create(ActionType::CONSTRAINT, $constraint);
+        }
+        foreach ($this->indexes as $index) {
+            $migration->up->actions[] = Action::create(ActionType::INDEX, $index);
+        }
+        foreach ($this->functions as $function) {
+            $migration->up->actions[] = Action::create(ActionType::FUNC, $function);
+        }
+        foreach ($this->triggers as $trigger) {
+            $migration->up->actions[] = Action::create(ActionType::TRIGGER, $trigger);
+        }
+
+        return $migration;
+    }
+
     /**
      * Creates a new element in the schema.
      *
