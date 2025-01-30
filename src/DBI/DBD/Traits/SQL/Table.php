@@ -11,8 +11,12 @@ trait Table
      */
     public function listTables(): array
     {
-        return $this->listInformationSchema('tables', ['name' => 'table_name', 'schema' => 'table_schema'], [
+        return $this->listInformationSchema('tables', [
+            'name' => 'table_name',
+            'schema' => 'table_schema',
+        ], [
             'table_schema' => $this->queryBuilder->getSchemaName(),
+            'table_type' => 'BASE TABLE',
         ]);
     }
 
