@@ -27,6 +27,11 @@ class Action extends Model
 
     public function construct(array &$data): void
     {
+        $this->defineEventHook('serialized', function (&$data) {
+            if (ActionName::DROP === $this->name) {
+                $data['spec'] = $this->spec->name;
+            }
+        });
         if (isset($data['raise'])) {
             $data = [
                 'type' => ActionType::RAISE,

@@ -71,11 +71,37 @@ class Table extends BaseAction
         return $dbi->dropTable($this->name, true);
     }
 
+    /**
+     * Applies the given action to the table.
+     *
+     * This method processes the action by adding, altering, or dropping columns
+     * based on the properties of the provided BaseAction object.
+     *
+     * @param BaseAction $action The action to be applied. It may contain 'add', 'alter', and 'drop' properties.
+     *                           - 'add': An array of columns to be added.
+     *                           - 'alter': An array of columns to be altered.
+     *                           - 'drop': An array of column names to be dropped.
+     *
+     * @return bool always returns false
+     */
     public function apply(BaseAction $action): bool
     {
+        if (!$action instanceof self) {
+            return false;
+        }
         if (isset($action->add) && count($action->add) > 0) {
             foreach ($action->add as $column) {
                 $this->columns[] = $column;
+            }
+        }
+        if (isset($action->alter) && count($action->alter) > 0) {
+            foreach ($action->alter as $column) {
+                $index = array_usearch($this->columns, function (Column $localColumn) use ($column) {
+                    return $localColumn->name === $column->name;
+                });
+                if (false !== $index) {
+                    $this->columns[$index] = $column;
+                }
             }
         }
         if (isset($action->drop) && count($action->drop) > 0) {
@@ -89,6 +115,9 @@ class Table extends BaseAction
 
     public function diff(BaseAction $table): ?self
     {
+        if (!$table instanceof self) {
+            return null;
+        }
         $diff = new self([
             'name' => $this->name,
         ]);
@@ -107,6 +136,18 @@ class Table extends BaseAction
                     $diff->alter = [];
                 }
                 $diff->alter[] = $column;
+            }
+        }
+        foreach ($this->columns as $column) {
+            $index = array_usearch($table->columns, function (Column $remoteColumn) use ($column) {
+                return $remoteColumn->name === $column->name;
+            });
+            // Column does not exist in remote schema. Drop it.
+            if (false === $index) {
+                if (!isset($diff->drop)) {
+                    $diff->drop = [];
+                }
+                $diff->drop[] = $column->name;
             }
         }
         if (isset($diff->add)

@@ -13,12 +13,17 @@ use Hazaar\Model;
 
 class Snapshot extends Model
 {
-    public string $description;
+    public Version $version;
+    public string $comment;
+    public Migration $migration;
 
     public static function create(string $comment): self
     {
         return new Snapshot([
-            'description' => $comment,
+            'comment' => $comment,
+            'version' => [
+                'number' => date('YmdHis'),
+            ],
         ]);
     }
 
@@ -52,9 +57,36 @@ class Snapshot extends Model
                 $migration->up->add(ActionName::ALTER, ActionType::TABLE, $diff);
             }
         }
-        // dump($migration->up->toArray());
+        // Look for tables that have been removed'
+        foreach ($masterSchama->tables as $table) {
+            $action = $this->findAction($table->name, $compareSchema->tables);
+            // Table does not exist in compare schema. Add a drop action.
+            if (null === $action) {
+                $migration->up->add(ActionName::DROP, ActionType::TABLE, $table);
+            }
+        }
+        dump($migration->toArray());
 
-        return $migration;
+        return $this->migration = $migration;
+    }
+
+    public function setSchema(Schema $schema): void
+    {
+        $this->migration = $schema->toMigration();
+    }
+
+    public function count(): int
+    {
+        return count($this->migration->up->actions);
+    }
+
+    public function save(string $targetDir): bool
+    {
+        $migrateFile = $targetDir.DIRECTORY_SEPARATOR
+            .$this->version->number.'_'
+            .str_replace(' ', '_', $this->comment).'.json';
+
+        return file_put_contents($migrateFile, $this->migration->toJSON(JSON_PRETTY_PRINT)) > 0;
     }
 
     /**

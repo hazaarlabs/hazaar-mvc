@@ -363,7 +363,7 @@ class Manager
         $snapshot = Snapshot::create($comment ?? 'Snapshot');
         if (null === $masterSchema) {
             $this->log('No master schema found. Creating initial snapshot.');
-            $migration = $databaseSchema->toMigration();
+            $snapshot->setSchema($databaseSchema);
         } else {
             $this->log('Comparing schemas');
             $migration = $snapshot->compare($masterSchema, $databaseSchema);
@@ -373,18 +373,13 @@ class Manager
                 return false;
             }
         }
-        $this->log('Found '.count($migration->up->actions).' changes to apply');
+        $this->log('Found '.$snapshot->count().' changes to apply');
         if (true === $test) {
             return true;
         }
-        $version = date('YmdHis').'_'.str_replace(' ', '_', $comment ?? 'Snapshot');
-        $this->log('Setting version to '.$version);
-        $migrateFile = $this->migrateDir.DIRECTORY_SEPARATOR.$version.'.json';
-        $this->log('Writing migration file: '.$migrateFile);
-        $result = file_put_contents($migrateFile, $migration->toJSON(JSON_PRETTY_PRINT));
+        $this->log('Setting version to '.$snapshot->version->number);
+        $result = $snapshot->save($this->migrateDir);
         if (!$result) {
-            $this->log('Failed to write migration file: '.$migrateFile);
-
             return false;
         }
 
