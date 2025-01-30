@@ -23,6 +23,11 @@ class Event extends Model
             return;
         }
         $actions = ['actions' => $actions];
+        $this->defineEventHook('serialized', function (array &$array) {
+            if (isset($array['actions'])) {
+                $array = $array['actions'];
+            }
+        });
     }
 
     public function run(Adapter $dbi): bool
