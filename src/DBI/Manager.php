@@ -37,7 +37,7 @@ class Manager
     private string $migrateDir;
 
     /**
-     * @var array<array<mixed|string>>
+     * @var array<LogEntry>
      */
     private array $migrationLog = [];
 
@@ -294,11 +294,16 @@ class Manager
         if (!isset($this->dbi)) {
             $this->connect();
         }
+        $this->log('Starting migration...');
         $versions = $this->getMissingVersions();
         if (0 === count($versions)) {
+            $this->log('No updates available.');
+
             return false;
         }
+        $this->log('Found '.count($versions).' updates to apply.');
         foreach ($versions as $version) {
+            $this->log('Replaying version '.$version->number.': '.$version->description);
             if (!$version->replay($this->dbi)) {
                 return false;
             }
@@ -351,19 +356,34 @@ class Manager
         if (!isset($this->dbi)) {
             $this->connect();
         }
-        $snapshot = Snapshot::create($comment ?? 'Snapshot');
+        $this->log('Importing database schema');
         $databaseSchema = Schema::import($this->dbi);
+        $this->log('Loading master schema');
         $masterSchema = $this->getSchema(true);
+        $snapshot = Snapshot::create($comment ?? 'Snapshot');
+        $this->log('Comparing schemas');
         $migration = $snapshot->compare($masterSchema, $databaseSchema);
-        if (null === $migration) {
-            $this->log('No changes detected.  Skipping snapshot.');
+        if (null === $migration || !isset($migration->up) || 0 === count($migration->up->actions)) {
+            $this->log('No changes detected.');
 
             return false;
         }
+        $this->log('Found '.count($migration->up->actions).' changes to apply');
+        if (true === $test) {
+            return true;
+        }
         $version = date('YmdHis').'_'.str_replace(' ', '_', $comment ?? 'Snapshot');
+        $this->log('Setting version to '.$version);
         $migrateFile = $this->migrateDir.DIRECTORY_SEPARATOR.$version.'.json';
+        $this->log('Writing migration file: '.$migrateFile);
+        $result = file_put_contents($migrateFile, $migration->toJSON(JSON_PRETTY_PRINT));
+        if (!$result) {
+            $this->log('Failed to write migration file: '.$migrateFile);
 
-        return file_put_contents($migrateFile, $migration->toJSON(JSON_PRETTY_PRINT)) > 0;
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -392,6 +412,7 @@ class Manager
         if (!isset($this->dbi)) {
             $this->connect();
         }
+        $this->log('WARNING: Deleting all database objects!');
         $views = $this->dbi->listViews();
         foreach ($views as $view) {
             $this->dbi->dropView($view['name']);
@@ -428,6 +449,16 @@ class Manager
         }
 
         return $this->createSchemaVersionTable();
+    }
+
+    /**
+     * Returns the migration log.
+     *
+     * @return array<LogEntry>
+     */
+    public function getMigrationLog(): array
+    {
+        return $this->migrationLog;
     }
 
     /**
@@ -515,8 +546,7 @@ class Manager
      */
     private function log(string $msg): void
     {
-        $entry = new LogEntry($msg);
-        $this->migrationLog[] = $entry;
+        $this->migrationLog[] = new LogEntry($msg);
         if (!isset($this->__callback)) {
             return;
         }
