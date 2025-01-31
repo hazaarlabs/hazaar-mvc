@@ -43,6 +43,9 @@ class Snapshot extends Model
         $migration->up = new Event();
         // Look for new or changed tables
         foreach ($compareSchema->tables as $table) {
+            if (!isset($table->name)) {
+                throw new \Exception('Table name is required by schema');
+            }
             $action = $this->findAction($table->name, $masterSchama->tables);
             // Table does not exist in master schema. Add a create action.
             if (null === $action) {
@@ -65,7 +68,6 @@ class Snapshot extends Model
                 $migration->up->add(ActionName::DROP, ActionType::TABLE, $table);
             }
         }
-        dump($migration->toArray());
 
         return $this->migration = $migration;
     }
