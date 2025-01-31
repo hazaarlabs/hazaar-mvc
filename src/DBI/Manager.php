@@ -366,12 +366,12 @@ class Manager
             $snapshot->setSchema($databaseSchema);
         } else {
             $this->log('Comparing schemas');
-            $migration = $snapshot->compare($masterSchema, $databaseSchema);
-            if (null === $migration || !isset($migration->up) || 0 === count($migration->up->actions)) {
-                $this->log('No changes detected.');
+            $snapshot->compare($masterSchema, $databaseSchema);
+        }
+        if (0 === $snapshot->count()) {
+            $this->log('No changes detected.');
 
-                return false;
-            }
+            return false;
         }
         $this->log('Found '.$snapshot->count().' changes to apply');
         if (true === $test) {

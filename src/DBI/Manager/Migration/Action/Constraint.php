@@ -12,7 +12,11 @@ class Constraint extends BaseAction
     public string $name;
     public string $table;
     public string $type;
-    public string $column;
+
+    /**
+     * @var array<string>
+     */
+    public array $columns;
     public ConstraintReference $references;
 
     public function create(Adapter $dbi): bool

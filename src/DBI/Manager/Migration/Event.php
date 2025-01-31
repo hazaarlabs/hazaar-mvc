@@ -33,7 +33,9 @@ class Event extends Model
     public function run(Adapter $dbi): bool
     {
         foreach ($this->actions as $action) {
-            $action->run($dbi);
+            if (!$action->run($dbi)) {
+                return false;
+            }
         }
 
         return true;

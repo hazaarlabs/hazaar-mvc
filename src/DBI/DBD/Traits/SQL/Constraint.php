@@ -120,14 +120,16 @@ trait Constraint
                 $info['delete_rule'] = 'NO ACTION';
             }
         }
-        $column = $info['column'];
+        $column = $info['columns'];
         if (is_array($column)) {
             foreach ($column as &$col) {
                 $col = $this->queryBuilder->field($col);
             }
             $column = implode(', ', $column);
-        } else {
+        } elseif ($column) {
             $column = $this->queryBuilder->field($column);
+        } else {
+            return false;
         }
         $sql = 'ALTER TABLE '.$this->queryBuilder->schemaName($info['table']).' ADD CONSTRAINT '.$this->queryBuilder->field($constraintName)." {$info['type']} (".$column.')';
         if (array_key_exists('references', $info)) {

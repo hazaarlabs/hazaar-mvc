@@ -37,33 +37,34 @@ trait Table
         $coldefs = [];
         $constraints = [];
         foreach ($columns as $name => $info) {
-            if (is_array($info)) {
-                if (is_numeric($name)) {
-                    if (!array_key_exists('name', $info)) {
-                        throw new \Exception('Error creating new table.  Name is a number which is not allowed!');
-                    }
-                    $name = $info['name'];
+            if (!is_array($info)) {
+                $coldefs[] = "\t".$this->queryBuilder->field($name).' '.$info;
+
+                continue;
+            }
+            if (is_numeric($name)) {
+                if (!array_key_exists('name', $info)) {
+                    throw new \Exception('Error creating new table.  Name is a number which is not allowed!');
                 }
-                if (!($type = $this->type($info))) {
-                    throw new \Exception("Column '{$name}' has no data type!");
+                $name = $info['name'];
+            }
+            if (!($type = $this->type($info))) {
+                throw new \Exception("Column '{$name}' has no data type!");
+            }
+            $def = $this->queryBuilder->field($name).' '.$type;
+            if (array_key_exists('default', $info) && null !== $info['default']) {
+                $def .= ' DEFAULT '.$info['default'];
+            }
+            if (array_key_exists('not_null', $info) && $info['not_null']) {
+                $def .= ' NOT NULL';
+            }
+            if (array_key_exists('primarykey', $info) && $info['primarykey']) {
+                $driver = strtolower(basename(str_replace('\\', '/', get_class($this))));
+                if ('pgsql' == $driver) {
+                    $constraints[] = ' PRIMARY KEY('.$this->queryBuilder->field($name).')';
+                } else {
+                    $def .= ' PRIMARY KEY';
                 }
-                $def = $this->queryBuilder->field($name).' '.$type;
-                if (array_key_exists('default', $info) && null !== $info['default']) {
-                    $def .= ' DEFAULT '.$info['default'];
-                }
-                if (array_key_exists('not_null', $info) && $info['not_null']) {
-                    $def .= ' NOT NULL';
-                }
-                if (array_key_exists('primarykey', $info) && $info['primarykey']) {
-                    $driver = strtolower(basename(str_replace('\\', '/', get_class($this))));
-                    if ('pgsql' == $driver) {
-                        $constraints[] = ' PRIMARY KEY('.$this->queryBuilder->field($name).')';
-                    } else {
-                        $def .= ' PRIMARY KEY';
-                    }
-                }
-            } else {
-                $def = "\t".$this->queryBuilder->field($name).' '.$info;
             }
             $coldefs[] = $def;
         }

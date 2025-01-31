@@ -54,6 +54,15 @@ class Schema extends Model
     public array $triggers = [];
 
     /**
+     * @var array<string>
+     */
+    private static array $ignoreTables = [
+        'schema_version',
+        '__hz_file',
+        '__hz_file_chunk',
+    ];
+
+    /**
      * Load a schema from an array of versions.
      *
      * @param array<Version> $versions
@@ -84,6 +93,9 @@ class Schema extends Model
         ];
         $tables = $dbi->listTables();
         foreach ($tables as $table) {
+            if (in_array($table['name'], self::$ignoreTables)) {
+                continue;
+            }
             $schema['tables'][] = [
                 'name' => $table['name'],
                 'columns' => $dbi->describeTable($table['name']),
@@ -91,10 +103,16 @@ class Schema extends Model
         }
         $constraints = $dbi->listConstraints();
         foreach ($constraints as $name => $constraint) {
+            if (in_array($constraint['table'], self::$ignoreTables)) {
+                continue;
+            }
             $schema['constraints'][] = $constraint;
         }
         $indexes = $dbi->listIndexes();
         foreach ($indexes as $name => $index) {
+            if (in_array($index['table'], self::$ignoreTables)) {
+                continue;
+            }
             $schema['indexes'][] = $index;
         }
         $functions = $dbi->listFunctions();
@@ -106,6 +124,9 @@ class Schema extends Model
         }
         $triggers = $dbi->listTriggers();
         foreach ($triggers as $trigger) {
+            if (in_array($trigger['table'], self::$ignoreTables)) {
+                continue;
+            }
             $schema['triggers'][] = $dbi->describeTrigger($trigger['name']);
         }
         $views = $dbi->listViews();
@@ -136,7 +157,9 @@ class Schema extends Model
     {
         $migration = new Migration();
         $migration->up = new Migration\Event();
-        $migration->up->actions[] = Action::create(ActionType::EXTENSION, $this->extensions);
+        if (count($this->extensions) > 0) {
+            $migration->up->actions[] = Action::create(ActionType::EXTENSION, $this->extensions);
+        }
         foreach ($this->tables as $table) {
             $migration->up->actions[] = Action::create(ActionType::TABLE, $table);
         }
