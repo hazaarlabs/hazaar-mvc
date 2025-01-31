@@ -51,6 +51,9 @@ class Action extends Model
             $data['type'] = ActionType::tryFrom($data['type']);
         }
         if (!$data['spec'] instanceof BaseAction) {
+            if (!(is_array($data['spec']) || is_object($data['spec']))) {
+                $data['spec'] = [$data['spec']];
+            }
             $data['spec'] = match ($data['type']) {
                 ActionType::EXTENSION => new Extension($data['spec']),
                 ActionType::TABLE => new Table($data['spec']),
