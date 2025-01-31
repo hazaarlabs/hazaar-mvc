@@ -15,7 +15,7 @@ trait Constraint
      *
      * @return array<array{
      *  table:string,
-     *  column:string,
+     *  columns:string,
      *  type:string,
      *  match_option:?string,
      *  update_rule:?string,

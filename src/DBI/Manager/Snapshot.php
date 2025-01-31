@@ -6,6 +6,7 @@ namespace Hazaar\DBI\Manager;
 
 use Hazaar\Controller\Exception\HeadersSent;
 use Hazaar\DBI\Manager\Migration\Action\BaseAction;
+use Hazaar\DBI\Manager\Migration\Action\Component\BaseComponent;
 use Hazaar\DBI\Manager\Migration\Enum\ActionName;
 use Hazaar\DBI\Manager\Migration\Enum\ActionType;
 use Hazaar\DBI\Manager\Migration\Event;
@@ -42,32 +43,17 @@ class Snapshot extends Model
         $migration = new Migration();
         $migration->up = new Event();
         // Look for new or changed tables
-        foreach ($compareSchema->tables as $table) {
-            if (!isset($table->name)) {
-                throw new \Exception('Table name is required by schema');
-            }
-            $action = $this->findAction($table->name, $masterSchama->tables);
-            // Table does not exist in master schema. Add a create action.
-            if (null === $action) {
-                $migration->up->add(ActionName::CREATE, ActionType::TABLE, $table);
-
-                continue;
-            }
-            // Table exists in master schema. Compare the table schemas.
-            $diff = $action->diff($table);
-            // Table schema is different. Add an alter action.
-            if (null !== $diff) {
-                $migration->up->add(ActionName::ALTER, ActionType::TABLE, $diff);
-            }
-        }
-        // Look for tables that have been removed'
-        foreach ($masterSchama->tables as $table) {
-            $action = $this->findAction($table->name, $compareSchema->tables);
-            // Table does not exist in compare schema. Add a drop action.
-            if (null === $action) {
-                $migration->up->add(ActionName::DROP, ActionType::TABLE, $table);
-            }
-        }
+        $this->compareTables($migration, $masterSchama, $compareSchema);
+        // Look for new or changed constraints
+        $this->compareConstraints($migration, $masterSchama, $compareSchema);
+        // Look for new or changed indexes
+        $this->compareIndexes($migration, $masterSchama, $compareSchema);
+        // Look for new or changed functions
+        $this->compareFunctions($migration, $masterSchama, $compareSchema);
+        // Look for new or changed triggers
+        $this->compareTriggers($migration, $masterSchama, $compareSchema);
+        // Look for new or changed views
+        $this->compareViews($migration, $masterSchama, $compareSchema);
 
         return $this->migration = $migration;
     }
@@ -92,9 +78,123 @@ class Snapshot extends Model
     }
 
     /**
-     * @param array<BaseAction> $haystack
+     * Compares the tables between the master schema and the compare schema, and generates the necessary migration actions.
+     *
+     * @param Migration $migration     the migration object to which the actions will be added
+     * @param Schema    $masterSchama  the master schema to compare against
+     * @param Schema    $compareSchema the schema to compare with the master schema
+     *
+     * @throws \Exception If a table in the compare schema does not have a name.
+     *
+     * This method performs the following actions:
+     * - If a table in the compare schema does not exist in the master schema, a create action is added to the migration.
+     * - If a table in the compare schema exists in the master schema but has differences, an alter action is added to the migration.
+     * - If a table in the master schema does not exist in the compare schema, a drop action is added to the migration.
      */
-    private function findAction(string $name, array $haystack): ?BaseAction
+    private function compareTables(Migration $migration, Schema $masterSchama, Schema $compareSchema): void
+    {
+        foreach ($compareSchema->tables as $table) {
+            if (!isset($table->name)) {
+                throw new \Exception('Table name is required by schema');
+            }
+            $action = $this->findActionOrComponent($table->name, $masterSchama->tables);
+            // Table does not exist in master schema. Add a create action.
+            if (null === $action) {
+                $migration->up->add(ActionName::CREATE, ActionType::TABLE, $table);
+
+                continue;
+            }
+            // Table exists in master schema. Compare the table schemas.
+            $diff = $action->diff($table);
+            // Table schema is different. Add an alter action.
+            if (null !== $diff) {
+                $migration->up->add(ActionName::ALTER, ActionType::TABLE, $diff);
+            }
+        }
+        // Look for tables that have been removed'
+        foreach ($masterSchama->tables as $table) {
+            $action = $this->findActionOrComponent($table->name, $compareSchema->tables);
+            // Table does not exist in compare schema. Add a drop action.
+            if (null === $action) {
+                $migration->up->add(ActionName::DROP, ActionType::TABLE, $table);
+            }
+        }
+    }
+
+    /**
+     * Compares the constraints between the master schema and the schema to be compared.
+     * If a constraint does not exist in the master schema, it adds a create action to the migration.
+     * If a constraint exists but is different, it adds an alter action to the migration.
+     *
+     * @param Migration $migration     the migration object to which actions will be added
+     * @param Schema    $masterSchama  the master schema to compare against
+     * @param Schema    $compareSchema the schema to be compared
+     *
+     * @throws \Exception if a table or column for a constraint is not found in the master schema
+     */
+    private function compareConstraints(Migration $migration, Schema $masterSchama, Schema $compareSchema): void
+    {
+        foreach ($compareSchema->constraints as $constraint) {
+            $action = $this->findActionOrComponent($constraint->name, $masterSchama->constraints);
+            // Constraint does not exist in master schema. Add a create action.
+            if (null === $action) {
+                $table = $this->findActionOrComponent($constraint->table, $masterSchama->tables);
+                if (null === $table) {
+                    throw new \Exception('Table not found for constraint: '.$constraint->table);
+                }
+                // If this is a primary key constraint, check if the column is already a primary key.
+                if ('PRIMARY KEY' === $constraint->type) {
+                    $column = $this->findActionOrComponent(array_shift($constraint->columns), $table->columns);
+                    if (null === $column) {
+                        throw new \Exception('Column not found for primary key constraint: '.$constraint->columns[0]);
+                    }
+                    // Column is already a primary key. Skip the constraint.
+                    if (isset($column->primarykey) && true === $column->primarykey) {
+                        continue;
+                    }
+                }
+                $migration->up->add(ActionName::CREATE, ActionType::CONSTRAINT, $constraint);
+
+                continue;
+            }
+            // Constraint exists in master schema. Compare the constraint schemas.
+            $diff = $action->diff($constraint);
+            // Constraint schema is different. Add an alter action.
+            if (null !== $diff) {
+                $migration->up->add(ActionName::ALTER, ActionType::CONSTRAINT, $diff);
+            }
+        }
+    }
+
+    private function compareIndexes(Migration $migration, Schema $masterSchama, Schema $compareSchema): void
+    {
+        foreach ($compareSchema->indexes as $index) {
+            $action = $this->findActionOrComponent($index->name, $masterSchama->indexes);
+            // Index does not exist in master schema. Add a create action.
+            if (null === $action) {
+                $migration->up->add(ActionName::CREATE, ActionType::INDEX, $index);
+
+                continue;
+            }
+            // Index exists in master schema. Compare the index schemas.
+            $diff = $action->diff($index);
+            // Index schema is different. Add an alter action.
+            if (null !== $diff) {
+                $migration->up->add(ActionName::ALTER, ActionType::INDEX, $diff);
+            }
+        }
+    }
+
+    private function compareFunctions(Migration $migration, Schema $masterSchama, Schema $compareSchema): void {}
+
+    private function compareTriggers(Migration $migration, Schema $masterSchama, Schema $compareSchema): void {}
+
+    private function compareViews(Migration $migration, Schema $masterSchama, Schema $compareSchema): void {}
+
+    /**
+     * @param array<BaseAction|BaseComponent> $haystack
+     */
+    private function findActionOrComponent(string $name, array $haystack): null|BaseAction|BaseComponent
     {
         foreach ($haystack as $action) {
             if ($action->name === $name) {

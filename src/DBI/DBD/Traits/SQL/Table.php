@@ -48,7 +48,7 @@ trait Table
                 }
                 $name = $info['name'];
             }
-            if (!($type = $this->type($info))) {
+            if (!($type = $this->type($info['type']))) {
                 throw new \Exception("Column '{$name}' has no data type!");
             }
             $def = $this->queryBuilder->field($name).' '.$type;
@@ -96,6 +96,8 @@ trait Table
         if (false === $result) {
             throw new \Exception(ake($this->errorInfo(), 2));
         }
+        $primaryKeyColumn = ($primaryKeyConstraint = $this->listConstraints($tableName, 'PRIMARY KEY'))
+            ? array_shift($primaryKeyConstraint)['columns'][0] : null;
         $columns = [];
         while ($col = $result->fetch(\PDO::FETCH_ASSOC)) {
             $col = array_change_key_case($col, CASE_LOWER);
@@ -103,7 +105,7 @@ trait Table
                 && $col['column_default']
                 && preg_match('/nextval\(\'(\w*)\'::regclass\)/', $col['column_default'], $matches)) {
                 if ($info = $this->describeSequence($matches[1])) {
-                    $col['data_type'] = 'serial';
+                    $col['type'] = 'serial';
                     $col['column_default'] = null;
                     $col['sequence'] = $info;
                 }
@@ -119,11 +121,14 @@ trait Table
                 'name' => $col['column_name'],
                 'default' => $this->fixValue($col['column_default']),
                 'not_null' => (('NO' == $col['is_nullable']) ? true : false),
-                'type' => $this->type($col),
+                'type' => $this->type($col['data_type'], $col['length'] ?? null),
                 'length' => $col['character_maximum_length'],
             ];
             if (array_key_exists('sequence', $col)) {
                 $coldata['sequence'] = $col['sequence']['name'];
+            }
+            if ($primaryKeyColumn == $col['column_name']) {
+                $coldata['primarykey'] = true;
             }
             $columns[] = $coldata;
         }
@@ -172,7 +177,10 @@ trait Table
         if (!array_key_exists('type', $columnSpec)) {
             return false;
         }
-        $sql = 'ALTER TABLE '.$this->queryBuilder->schemaName($tableName).' ADD COLUMN '.$this->queryBuilder->field($columnSpec['name']).' '.$this->type($columnSpec);
+        $sql = 'ALTER TABLE '
+            .$this->queryBuilder->schemaName($tableName)
+            .' ADD COLUMN '.$this->queryBuilder->field($columnSpec['name'])
+            .' '.$this->type($columnSpec['type'], $columnSpec['length'] ?? null);
         if (array_key_exists('not_null', $columnSpec) && $columnSpec['not_null']) {
             $sql .= ' NOT NULL';
         }
@@ -198,7 +206,7 @@ trait Table
         }
         $prefix = 'ALTER TABLE '.$this->queryBuilder->schemaName($tableName).' ALTER COLUMN '.$this->queryBuilder->field($column);
         if (array_key_exists('type', $columnSpec)) {
-            $alterType = $prefix.' TYPE '.$this->type($columnSpec);
+            $alterType = $prefix.' TYPE '.$this->type($columnSpec['type'], $columnSpec['length'] ?? null);
             if (array_key_exists('using', $columnSpec)) {
                 $alterType .= ' USING '.$columnSpec['using'];
             }

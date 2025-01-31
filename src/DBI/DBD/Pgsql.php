@@ -200,6 +200,7 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
         $sql = "SELECT s.nspname, t.relname as table_name, i.relname as index_name, array_to_string(array_agg(a.attname), ', ') as column_names, ix.indisunique
             FROM pg_namespace s, pg_class t, pg_class i, pg_index ix, pg_attribute a
             WHERE s.oid = t.relnamespace
+                AND ix.indisprimary = FALSE
                 AND t.oid = ix.indrelid
                 AND i.oid = ix.indexrelid
                 AND a.attrelid = t.oid
