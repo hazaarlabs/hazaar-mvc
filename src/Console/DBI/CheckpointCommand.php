@@ -14,6 +14,7 @@ class CheckpointCommand extends Command
         $this->setName('checkpoint')
             ->setDescription('Checkpoints the database schema.')
             ->setHelp('This command will checkpoint the database schema by consolidating all changes into a single migration file.')
+            ->addArgument('comment', 'Add a comment to the checkpoint')
         ;
     }
 
@@ -23,7 +24,7 @@ class CheckpointCommand extends Command
         $manager->registerLogHandler(function ($message) use ($output) {
             $output->write($message.PHP_EOL);
         });
-        if ($manager->checkpoint()) {
+        if ($manager->checkpoint($input->getArgument('comment'))) {
             return 0;
         }
 

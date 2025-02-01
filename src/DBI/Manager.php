@@ -397,7 +397,7 @@ class Manager
         return false;
     }
 
-    public function checkpoint(): bool
+    public function checkpoint(?string $comment = null): bool
     {
         if (!isset($this->dbi)) {
             $this->connect();
@@ -414,7 +414,7 @@ class Manager
             return false;
         }
         $this->log('Creating checkpoint');
-        $snapshot = Snapshot::create('Checkpoint');
+        $snapshot = Snapshot::create($comment ?? 'Checkpoint');
         $snapshot->setSchema($masterSchema);
         $result = $snapshot->save($this->migrateDir);
         if (!$result) {
