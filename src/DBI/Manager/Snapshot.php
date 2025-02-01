@@ -18,6 +18,13 @@ class Snapshot extends Model
     public string $comment;
     public Migration $migration;
 
+    /**
+     * Creates a new Snapshot instance with the provided comment and a version number based on the current date and time.
+     *
+     * @param string $comment the comment to associate with the snapshot
+     *
+     * @return self a new Snapshot instance
+     */
     public static function create(string $comment): self
     {
         return new Snapshot([
@@ -58,16 +65,36 @@ class Snapshot extends Model
         return $this->migration = $migration;
     }
 
+    /**
+     * Sets the schema for the snapshot.
+     *
+     * This method takes a Schema object and converts it to a migration,
+     * which is then stored in the $migration property.
+     *
+     * @param Schema $schema the schema to be set
+     */
     public function setSchema(Schema $schema): void
     {
         $this->migration = $schema->toMigration();
     }
 
+    /**
+     * Counts the number of actions in the migration's "up" phase.
+     *
+     * @return int the number of actions
+     */
     public function count(): int
     {
         return count($this->migration->up->actions);
     }
 
+    /**
+     * Saves the current migration snapshot to a JSON file in the specified target directory.
+     *
+     * @param string $targetDir the directory where the migration snapshot file will be saved
+     *
+     * @return bool returns true if the file was successfully written, false otherwise
+     */
     public function save(string $targetDir): bool
     {
         $migrateFile = $targetDir.DIRECTORY_SEPARATOR
@@ -176,6 +203,14 @@ class Snapshot extends Model
         }
     }
 
+    /**
+     * Compares the indexes between the master schema and the schema to be compared,
+     * and generates the appropriate migration actions.
+     *
+     * @param Migration $migration     the migration object to which actions will be added
+     * @param Schema    $masterSchama  the master schema containing the current state of the database
+     * @param Schema    $compareSchema the schema to be compared against the master schema
+     */
     private function compareIndexes(Migration $migration, Schema $masterSchama, Schema $compareSchema): void
     {
         foreach ($compareSchema->indexes as $index) {

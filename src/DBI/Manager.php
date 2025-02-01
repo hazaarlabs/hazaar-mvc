@@ -136,6 +136,16 @@ class Manager
         return $this->versions;
     }
 
+    /**
+     * Retrieves a specific version from the internal collection of versions.
+     *
+     * This method checks if the requested version key exists in the versions array,
+     * returning the associated Version instance if found, or null otherwise.
+     *
+     * @param int $version The version number to look up
+     *
+     * @return null|Version The located Version instance or null if not found
+     */
     public function getVersion(int $version): ?Version
     {
         $versions = $this->getVersions();
@@ -170,6 +180,17 @@ class Manager
         return $this->appliedVersions;
     }
 
+    /**
+     * Retrieves an applied version from the schema information table based on the provided version number.
+     *
+     * If the database connection is not established, it attempts to connect first.
+     * Once connected, it searches for the matching version. If no version is found,
+     * it returns null; otherwise, it returns the corresponding Version model.
+     *
+     * @param int $version version number to look up
+     *
+     * @return null|Version a Version instance if found, otherwise null
+     */
     public function getAppliedVersion(int $version): ?Version
     {
         if (!isset($this->dbi)) {
@@ -274,6 +295,17 @@ class Manager
         return count($this->getMissingVersions()) > 0;
     }
 
+    /**
+     * Retrieves a schema based on the specified versions.
+     *
+     * Determines whether to use all schema versions or only the applied
+     * versions, returning a loaded Schema object. If no versions exist,
+     * null is returned.
+     *
+     * @param bool $allSchema flag to retrieve all available schema versions or only the applied versions
+     *
+     * @return null|Schema loaded Schema object or null when no versions are found
+     */
     public function getSchema(bool $allSchema = false): ?Schema
     {
         $versions = $allSchema ? $this->getVersions() : $this->getAppliedVersions();
@@ -284,6 +316,17 @@ class Manager
         return Schema::load($versions);
     }
 
+    /**
+     * Migrates the database to the specified version or the latest available version.
+     *
+     * @param null|int $version           The target version to migrate to. If null, migrates to the latest version.
+     * @param bool     $forceDataSync     whether to force data synchronization during migration
+     * @param bool     $test              whether to run the migration in test mode
+     * @param bool     $keepTables        whether to keep existing tables during migration
+     * @param bool     $forceReinitialise whether to force reinitialization during migration
+     *
+     * @return bool returns true if the migration was successful, false otherwise
+     */
     public function migrate(
         ?int $version = null,
         bool $forceDataSync = false,
@@ -315,7 +358,16 @@ class Manager
     /**
      * Undo a migration version.
      *
-     * @param array<int> $rollbacks
+     * This method rolls back a specific migration version. It first checks if the database
+     * interface (DBI) is connected, and if not, it establishes a connection. Then, it retrieves
+     * the applied version of the migration. If the version has not been applied, it logs a message
+     * and skips the rollback. Otherwise, it performs the rollback using the DBI.
+     *
+     * @param int        $versionNumber the version number of the migration to be rolled back
+     * @param bool       $test          Optional. If true, the rollback is tested but not actually performed. Default is false.
+     * @param array<int> &$rollbacks    Optional. An array to store rollback information. Default is an empty array.
+     *
+     * @return bool returns true if the rollback was successful, false otherwise
      */
     public function rollback(
         int $versionNumber,
@@ -335,6 +387,18 @@ class Manager
         return $version->rollback($this->dbi);
     }
 
+    /**
+     * Replays the specified version of the database changes.
+     *
+     * This method ensures that the database connection is established,
+     * retrieves the specified version, rolls back the changes of that version,
+     * and then replays the changes.
+     *
+     * @param int  $version the version number to replay
+     * @param bool $test    Optional. If true, the replay will be tested without applying changes. Default is false.
+     *
+     * @return bool returns true if the replay was successful, false otherwise
+     */
     public function replay(
         int $version,
         bool $test = false
@@ -348,6 +412,15 @@ class Manager
         return $version->replay($this->dbi);
     }
 
+    /**
+     * Creates a snapshot of the current database schema.
+     *
+     * @param null|string $comment         optional comment for the snapshot
+     * @param bool        $test            if true, the method will only test for changes without saving the snapshot
+     * @param null|int    $overrideVersion optional version number to override the default version
+     *
+     * @return bool returns true if the snapshot was created and saved successfully, false otherwise
+     */
     public function snapshot(
         ?string $comment = null,
         bool $test = false,
@@ -397,6 +470,16 @@ class Manager
         return false;
     }
 
+    /**
+     * Creates a checkpoint in the database.
+     *
+     * This method creates a checkpoint by taking a snapshot of the current master schema
+     * and saving it. It also truncates the schema info table and inserts the checkpoint version.
+     *
+     * @param null|string $comment an optional comment for the checkpoint
+     *
+     * @return bool returns true if the checkpoint was successfully created, false otherwise
+     */
     public function checkpoint(?string $comment = null): bool
     {
         if (!isset($this->dbi)) {
@@ -541,6 +624,18 @@ class Manager
         return false;
     }
 
+    /**
+     * Creates the schema version table if it does not already exist.
+     *
+     * This method checks if the schema version table exists in the database.
+     * If it does not exist, it creates the table with the following columns:
+     * - number: A bigint that serves as the primary key.
+     * - applied_on: A timestamp with time zone that defaults to the current timestamp.
+     * - comment: A text field that can be null.
+     * - migrate: A jsonb field that can be null.
+     *
+     * @return bool returns false if the table already exists, true if the table was created successfully
+     */
     private function createSchemaVersionTable(): bool
     {
         if ($this->dbi->tableExists(self::$schemaInfoTable)) {

@@ -112,6 +112,19 @@ class Version extends Model
         return $migration;
     }
 
+    /**
+     * Replays the migration for the current version.
+     *
+     * This method loads the migration, begins a database transaction, and attempts to replay the migration.
+     * If the migration is successfully replayed, it updates the schema version in the database.
+     * If any exception occurs during the process, the transaction is canceled and the exception is rethrown.
+     *
+     * @param Adapter $dbi the database adapter instance
+     *
+     * @return bool returns true if the migration was successfully replayed, false otherwise
+     *
+     * @throws \Exception if the migration replay fails or any other error occurs during the process
+     */
     public function replay(Adapter $dbi): bool
     {
         $migration = $this->loadMigration();
@@ -139,6 +152,20 @@ class Version extends Model
         return true;
     }
 
+    /**
+     * Rollbacks the current migration version.
+     *
+     * This method attempts to rollback the current migration version by running the
+     * `down` method of the migration. If the rollback is successful, the version
+     * number is removed from the `schema_version` table. If the rollback fails, an
+     * exception is thrown and the transaction is cancelled.
+     *
+     * @param Adapter $dbi the database adapter instance
+     *
+     * @return bool returns true if the rollback is successful
+     *
+     * @throws \Exception if the rollback fails
+     */
     public function rollback(Adapter $dbi): bool
     {
         if (!isset($this->migrate)) {
@@ -162,11 +189,29 @@ class Version extends Model
         return true;
     }
 
+    /**
+     * Unlinks (deletes) the source file associated with this object.
+     *
+     * @return bool returns true on success or false on failure
+     */
     public function unlink(): bool
     {
         return unlink($this->getSourceFile());
     }
 
+    /**
+     * Loads migration event functions from the specified event.
+     *
+     * This method iterates through the actions of the given event and checks if the action type
+     * is either a function or a trigger. If the action type is not a function or trigger, or if
+     * the action specification content is already set, it continues to the next action.
+     *
+     * For each action that requires loading content, it constructs the file path to the SQL file
+     * containing the function definition. If the file exists, it reads the content of the file
+     * and assigns it to the action specification content.
+     *
+     * @param Event $event the event containing actions to be processed
+     */
     private function loadMigrationEventFunctions(Event $event): void
     {
         foreach ($event->actions as $action) {
