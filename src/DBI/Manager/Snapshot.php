@@ -177,6 +177,9 @@ class Snapshot extends Model
             if (null === $action) {
                 $table = $this->findActionOrComponent($constraint->table, $masterSchama->tables);
                 if (null === $table) {
+                    $table = $this->findActionOrComponent($constraint->table, $compareSchema->tables);
+                }
+                if (null === $table) {
                     throw new \Exception('Table not found for constraint: '.$constraint->table);
                 }
                 // If this is a primary key constraint, check if the column is already a primary key.
