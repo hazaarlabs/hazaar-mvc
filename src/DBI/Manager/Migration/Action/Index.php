@@ -18,6 +18,18 @@ class Index extends BaseAction
     public bool $unique = false;
     public string $using;
 
+    /**
+     * @var array<string>
+     */
+    public array $drop = [];
+
+    public function construct(array &$data): void
+    {
+        if (!isset($data['name'])) {
+            $data = ['drop' => $data];
+        }
+    }
+
     public function create(Adapter $dbi): bool
     {
         return $dbi->createIndex($this->name, $this->table, $this->toArray());

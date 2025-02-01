@@ -19,6 +19,18 @@ class Constraint extends BaseAction
     public array $columns;
     public ConstraintReference $references;
 
+    /**
+     * @var array<string>
+     */
+    public array $drop = [];
+
+    public function construct(array &$data): void
+    {
+        if (!isset($data['name'])) {
+            $data = ['drop' => $data];
+        }
+    }
+
     public function create(Adapter $dbi): bool
     {
         return $dbi->addConstraint($this->name, $this->toArray());

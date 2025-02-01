@@ -204,6 +204,14 @@ class Snapshot extends Model
                 $migration->up->add(ActionName::ALTER, ActionType::CONSTRAINT, $diff);
             }
         }
+        // Look for constraints that have been removed.
+        foreach ($masterSchama->constraints as $constraint) {
+            $action = $this->findActionOrComponent($constraint->name, $compareSchema->constraints);
+            // Constraint does not exist in compare schema. Add a drop action.
+            if (null === $action) {
+                $migration->up->add(ActionName::DROP, ActionType::CONSTRAINT, $constraint);
+            }
+        }
     }
 
     /**
@@ -229,6 +237,14 @@ class Snapshot extends Model
             // Index schema is different. Add an alter action.
             if (null !== $diff) {
                 $migration->up->add(ActionName::ALTER, ActionType::INDEX, $diff);
+            }
+        }
+        // Look for indexes that have been removed.
+        foreach ($masterSchama->indexes as $index) {
+            $action = $this->findActionOrComponent($index->name, $compareSchema->indexes);
+            // Index does not exist in compare schema. Add a drop action.
+            if (null === $action) {
+                $migration->up->add(ActionName::DROP, ActionType::INDEX, $index);
             }
         }
     }
