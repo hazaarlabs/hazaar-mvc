@@ -399,7 +399,38 @@ class Manager
 
     public function checkpoint(): bool
     {
-        return false;
+        if (!isset($this->dbi)) {
+            $this->connect();
+        }
+        $masterSchema = $this->getSchema(true);
+        if (null === $masterSchema) {
+            $this->log('No master schema found.  Skipping checkpoint.');
+
+            return false;
+        }
+        if (!count($this->versions) > 0) {
+            $this->log('FATAL ERROR: No versions found.  Skipping checkpoint.');
+
+            return false;
+        }
+        $this->log('Creating checkpoint');
+        $snapshot = Snapshot::create('Checkpoint');
+        $snapshot->setSchema($masterSchema);
+        $result = $snapshot->save($this->migrateDir);
+        if (!$result) {
+            return false;
+        }
+        foreach ($this->versions as $version) {
+            $version->unlink();
+        }
+        $this->log('Truncating schema info table');
+        $schemaTable = $this->dbi->table(self::$schemaInfoTable);
+        $schemaTable->truncate();
+        $this->log('Inserting checkpoint version');
+        $schemaTable->insert($snapshot->getVersion());
+        $this->log('Checkpoint complete');
+
+        return true;
     }
 
     /**
@@ -528,7 +559,7 @@ class Manager
                 'not_null' => true,
                 'default' => 'CURRENT_TIMESTAMP',
             ],
-            'description' => [
+            'comment' => [
                 'type' => 'text',
                 'not_null' => false,
             ],

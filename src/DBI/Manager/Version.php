@@ -16,7 +16,7 @@ use Hazaar\Model\Attribute\Required;
 
 class Version extends Model
 {
-    public string $description;
+    public string $comment;
 
     /**
      * @var array{dirname: string, basename: string, extension: string, filename: string}
@@ -35,15 +35,15 @@ class Version extends Model
     {
         return sprintf('%-10s', $this->number).' '
             .($this->valid ? "\u{2713}" : "\u{2717}")
-            .' '.$this->description;
+            .' '.$this->comment;
     }
 
     /**
      * Loads a schema version from a file.
      *
      * This method reads the specified file and extracts version information
-     * from its filename. The filename must follow the pattern: {number}_{description}.json
-     * where {number} is a sequence of digits and {description} is a word.
+     * from its filename. The filename must follow the pattern: {number}_{comment}.json
+     * where {number} is a sequence of digits and {comment} is a word.
      *
      * @param string $filename the path to the file to load
      *
@@ -62,7 +62,7 @@ class Version extends Model
         return new self([
             'source' => $source,
             'number' => str_pad($matches[1], 14, '0', STR_PAD_RIGHT),
-            'description' => str_replace('_', ' ', $matches[2]),
+            'comment' => str_replace('_', ' ', $matches[2]),
         ]);
     }
 
@@ -160,6 +160,11 @@ class Version extends Model
         $dbi->commit();
 
         return true;
+    }
+
+    public function unlink(): bool
+    {
+        return unlink($this->getSourceFile());
     }
 
     private function loadMigrationEventFunctions(Event $event): void

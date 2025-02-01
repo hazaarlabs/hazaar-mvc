@@ -77,6 +77,16 @@ class Snapshot extends Model
         return file_put_contents($migrateFile, $this->migration->toJSON(JSON_PRETTY_PRINT)) > 0;
     }
 
+    public function getVersion(): Version
+    {
+        if (isset($this->migration->down)) {
+            $this->version->migrate = $this->migration->down;
+        }
+        $this->version->comment = $this->comment;
+
+        return $this->version;
+    }
+
     /**
      * Compares the tables between the master schema and the compare schema, and generates the necessary migration actions.
      *
