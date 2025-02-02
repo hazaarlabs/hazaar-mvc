@@ -259,7 +259,28 @@ class Snapshot extends Model
         }
     }
 
-    private function compareFunctions(Migration $migration, Schema $masterSchama, Schema $compareSchema): void {}
+    private function compareFunctions(Migration $migration, Schema $masterSchama, Schema $compareSchema): void
+    {
+        foreach ($compareSchema->functions as $function) {
+            $action = Schema::findActionOrComponent($function->name, $masterSchama->functions);
+            if (null === $action) {
+                $migration->up->add(ActionName::CREATE, ActionType::FUNC, $function);
+
+                continue;
+            }
+            $diff = $action->diff($function);
+            if (null !== $diff) {
+                $migration->up->add(ActionName::ALTER, ActionType::FUNC, $diff);
+            }
+        }
+        // Look for functions that have been removed.
+        foreach ($masterSchama->functions as $function) {
+            $action = Schema::findActionOrComponent($function->name, $compareSchema->functions);
+            if (null === $action) {
+                $migration->up->add(ActionName::DROP, ActionType::FUNC, $function);
+            }
+        }
+    }
 
     private function compareTriggers(Migration $migration, Schema $masterSchama, Schema $compareSchema): void {}
 
