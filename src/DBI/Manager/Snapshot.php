@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\DBI\Manager;
 
 use Hazaar\Controller\Exception\HeadersSent;
+use Hazaar\DBI\Manager\Migration\Action\Extension;
 use Hazaar\DBI\Manager\Migration\Enum\ActionName;
 use Hazaar\DBI\Manager\Migration\Enum\ActionType;
 use Hazaar\DBI\Manager\Migration\Event;
@@ -47,6 +48,8 @@ class Snapshot extends Model
     {
         $migration = new Migration();
         $migration->up = new Event();
+        // Look for new or changed extensions
+        $this->compareExtensions($migration, $masterSchama, $compareSchema);
         // Look for new or changed tables
         $this->compareTables($migration, $masterSchama, $compareSchema);
         // Look for new or changed constraints
@@ -110,6 +113,15 @@ class Snapshot extends Model
         $this->version->comment = $this->comment;
 
         return $this->version;
+    }
+
+    private function compareExtensions(Migration $migration, Schema $masterSchama, Schema $compareSchema): void
+    {
+        $extensions = array_diff($compareSchema->extensions, $masterSchama->extensions);
+        if (empty($extensions)) {
+            return;
+        }
+        $migration->up->add(ActionName::CREATE, ActionType::EXTENSION, new Extension($extensions));
     }
 
     /**
