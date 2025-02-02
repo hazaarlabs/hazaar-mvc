@@ -22,6 +22,7 @@ class Constraint extends BaseAction
 
     public function construct(array &$data): void
     {
+        // If there is no 'name' key, then this is a drop action.
         if (!isset($data['name'])) {
             $data = ['drop' => $data];
         }

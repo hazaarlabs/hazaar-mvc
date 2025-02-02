@@ -33,11 +33,7 @@ class Table extends BaseAction
 
     public function construct(array &$data): void
     {
-        if (isset($data['columns'])) {
-            foreach ($data['columns'] as &$column) {
-                $column = new Column($column);
-            }
-        }
+        // If there is no 'name' key, then this is a drop action.
         if (!isset($data['name'])) {
             $data = ['drop' => $data];
         }
