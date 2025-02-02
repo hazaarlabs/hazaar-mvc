@@ -15,7 +15,7 @@ trait Constraint
      *
      * @return array<array{
      *  table:string,
-     *  columns:string,
+     *  column:string,
      *  type:string,
      *  match_option:?string,
      *  update_rule:?string,
@@ -63,14 +63,17 @@ trait Constraint
         if ($result = $this->query($sql)) {
             while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
                 if ($constraint = ake($constraints, $row['name'])) {
-                    if (!in_array($row['column'], $constraint['columns'])) {
-                        $constraint['columns'][] = $row['column'];
+                    if(!is_array($constraint['column'])) {
+                        $constraint['column'] = [$constraint['column']];
+                    }
+                    if (!in_array($row['column'], $constraint['column'])) {
+                        $constraint['column'][] = $row['column'];
                     }
                 } else {
                     $constraint = [
                         'name' => $row['name'],
                         'table' => $row['table'],
-                        'columns' => [$row['column']],
+                        'column' => $row['column'],
                         'type' => $row['type'],
                     ];
                 }
@@ -81,13 +84,13 @@ trait Constraint
                 }
                 if ('FOREIGN KEY' == $row['type'] && $row['foreign_table']) {
                     if (isset($constraint['references'])) {
-                        if (!in_array($row['foreign_column'], $constraint['references']['columns'])) {
-                            $constraint['references']['columns'][] = $row['foreign_column'];
+                        if (!in_array($row['foreign_column'], $constraint['references']['column'])) {
+                            $constraint['references']['column'][] = $row['foreign_column'];
                         }
                     } else {
                         $constraint['references'] = [
                             'table' => $row['foreign_table'],
-                            'columns' => [$row['foreign_column']],
+                            'column' => $row['foreign_column'],
                         ];
                     }
                 }
@@ -103,13 +106,13 @@ trait Constraint
     public function addConstraint(string $constraintName, array $info): bool
     {
         if (!array_key_exists('table', $info)) {
-            return false;
+            throw new \Exception("Create constraint '{$info['name']}' failed.  Missing table.");
         }
         if (!array_key_exists('type', $info) || !$info['type']) {
             if (array_key_exists('references', $info)) {
                 $info['type'] = 'FOREIGN KEY';
             } else {
-                return false;
+                throw new \Exception("Create constraint '{$info['name']}' failed.  Missing constraint type.");
             }
         }
         if ('FOREIGN KEY' == strtoupper($info['type'])) {
@@ -120,7 +123,7 @@ trait Constraint
                 $info['delete_rule'] = 'NO ACTION';
             }
         }
-        $column = $info['columns'];
+        $column = $info['column'];
         if (is_array($column)) {
             foreach ($column as &$col) {
                 $col = $this->queryBuilder->field($col);
@@ -129,12 +132,12 @@ trait Constraint
         } elseif ($column) {
             $column = $this->queryBuilder->field($column);
         } else {
-            return false;
+            throw new \Exception("Create constraint '{$info['name']}' failed.  Missing column.");
         }
         $sql = 'ALTER TABLE '.$this->queryBuilder->schemaName($info['table']).' ADD CONSTRAINT '.$this->queryBuilder->field($constraintName)." {$info['type']} (".$column.')';
         if (array_key_exists('references', $info)) {
             if (!array_key_exists('table', $info['references']) || !array_key_exists('column', $info['references'])) {
-                return false;
+                throw new \Exception("Create constraint '{$info['name']}' failed.  Missing references table or column.");
             }
             $sql .= ' REFERENCES '.$this->queryBuilder->schemaName($info['references']['table']).' ('.$this->queryBuilder->field($info['references']['column']).") ON UPDATE {$info['update_rule']} ON DELETE {$info['delete_rule']}";
         }

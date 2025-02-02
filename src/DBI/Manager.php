@@ -346,7 +346,7 @@ class Manager
         }
         $this->log('Found '.count($versions).' updates to apply.');
         foreach ($versions as $version) {
-            $this->log('Replaying version '.$version->number.': '.$version->description);
+            $this->log('Replaying version '.$version->number.': '.$version->comment);
             if (!$version->replay($this->dbi)) {
                 return false;
             }

@@ -97,7 +97,7 @@ trait Table
             throw new \Exception(ake($this->errorInfo(), 2));
         }
         $primaryKeyColumn = ($primaryKeyConstraint = $this->listConstraints($tableName, 'PRIMARY KEY'))
-            ? array_shift($primaryKeyConstraint)['columns'][0] : null;
+            ? array_shift($primaryKeyConstraint)['column'] : null;
         $columns = [];
         while ($col = $result->fetch(\PDO::FETCH_ASSOC)) {
             $col = array_change_key_case($col, CASE_LOWER);

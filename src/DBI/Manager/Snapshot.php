@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Hazaar\DBI\Manager;
 
 use Hazaar\Controller\Exception\HeadersSent;
-use Hazaar\DBI\Manager\Migration\Action\BaseAction;
-use Hazaar\DBI\Manager\Migration\Action\Component\BaseComponent;
 use Hazaar\DBI\Manager\Migration\Enum\ActionName;
 use Hazaar\DBI\Manager\Migration\Enum\ActionType;
 use Hazaar\DBI\Manager\Migration\Event;
@@ -134,7 +132,7 @@ class Snapshot extends Model
             if (!isset($table->name)) {
                 throw new \Exception('Table name is required by schema');
             }
-            $action = $this->findActionOrComponent($table->name, $masterSchama->tables);
+            $action = Schema::findActionOrComponent($table->name, $masterSchama->tables);
             // Table does not exist in master schema. Add a create action.
             if (null === $action) {
                 $migration->up->add(ActionName::CREATE, ActionType::TABLE, $table);
@@ -150,7 +148,7 @@ class Snapshot extends Model
         }
         // Look for tables that have been removed'
         foreach ($masterSchama->tables as $table) {
-            $action = $this->findActionOrComponent($table->name, $compareSchema->tables);
+            $action = Schema::findActionOrComponent($table->name, $compareSchema->tables);
             // Table does not exist in compare schema. Add a drop action.
             if (null === $action) {
                 $migration->up->add(ActionName::DROP, ActionType::TABLE, $table);
@@ -172,21 +170,21 @@ class Snapshot extends Model
     private function compareConstraints(Migration $migration, Schema $masterSchama, Schema $compareSchema): void
     {
         foreach ($compareSchema->constraints as $constraint) {
-            $action = $this->findActionOrComponent($constraint->name, $masterSchama->constraints);
+            $action = Schema::findActionOrComponent($constraint->name, $masterSchama->constraints);
             // Constraint does not exist in master schema. Add a create action.
             if (null === $action) {
-                $table = $this->findActionOrComponent($constraint->table, $masterSchama->tables);
+                $table = Schema::findActionOrComponent($constraint->table, $masterSchama->tables);
                 if (null === $table) {
-                    $table = $this->findActionOrComponent($constraint->table, $compareSchema->tables);
+                    $table = Schema::findActionOrComponent($constraint->table, $compareSchema->tables);
                 }
                 if (null === $table) {
                     throw new \Exception('Table not found for constraint: '.$constraint->table);
                 }
                 // If this is a primary key constraint, check if the column is already a primary key.
                 if ('PRIMARY KEY' === $constraint->type) {
-                    $column = $this->findActionOrComponent(array_shift($constraint->columns), $table->columns);
+                    $column = Schema::findActionOrComponent($constraint->column, $table->columns);
                     if (null === $column) {
-                        throw new \Exception('Column not found for primary key constraint: '.$constraint->columns[0]);
+                        throw new \Exception('Column not found for primary key constraint: '.$constraint->column);
                     }
                     // Column is already a primary key. Skip the constraint.
                     if (isset($column->primarykey) && true === $column->primarykey) {
@@ -206,7 +204,7 @@ class Snapshot extends Model
         }
         // Look for constraints that have been removed.
         foreach ($masterSchama->constraints as $constraint) {
-            $action = $this->findActionOrComponent($constraint->name, $compareSchema->constraints);
+            $action = Schema::findActionOrComponent($constraint->name, $compareSchema->constraints);
             // Constraint does not exist in compare schema. Add a drop action.
             if (null === $action) {
                 $migration->up->add(ActionName::DROP, ActionType::CONSTRAINT, $constraint);
@@ -225,7 +223,7 @@ class Snapshot extends Model
     private function compareIndexes(Migration $migration, Schema $masterSchama, Schema $compareSchema): void
     {
         foreach ($compareSchema->indexes as $index) {
-            $action = $this->findActionOrComponent($index->name, $masterSchama->indexes);
+            $action = Schema::findActionOrComponent($index->name, $masterSchama->indexes);
             // Index does not exist in master schema. Add a create action.
             if (null === $action) {
                 $migration->up->add(ActionName::CREATE, ActionType::INDEX, $index);
@@ -241,7 +239,7 @@ class Snapshot extends Model
         }
         // Look for indexes that have been removed.
         foreach ($masterSchama->indexes as $index) {
-            $action = $this->findActionOrComponent($index->name, $compareSchema->indexes);
+            $action = Schema::findActionOrComponent($index->name, $compareSchema->indexes);
             // Index does not exist in compare schema. Add a drop action.
             if (null === $action) {
                 $migration->up->add(ActionName::DROP, ActionType::INDEX, $index);
@@ -254,18 +252,4 @@ class Snapshot extends Model
     private function compareTriggers(Migration $migration, Schema $masterSchama, Schema $compareSchema): void {}
 
     private function compareViews(Migration $migration, Schema $masterSchama, Schema $compareSchema): void {}
-
-    /**
-     * @param array<BaseAction|BaseComponent> $haystack
-     */
-    private function findActionOrComponent(string $name, array $haystack): null|BaseAction|BaseComponent
-    {
-        foreach ($haystack as $action) {
-            if ($action->name === $name) {
-                return $action;
-            }
-        }
-
-        return null;
-    }
 }

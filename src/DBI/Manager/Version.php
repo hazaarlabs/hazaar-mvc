@@ -136,7 +136,7 @@ class Version extends Model
             $dbi->begin();
             $result = $migration->replay($dbi);
             if (false === $result) {
-                throw new \Exception('Failed to apply version '.$this->number);
+                throw new \Exception('Failed to apply version '.$this->number.'. Last error was: '.$dbi->errorInfo()[2]);
             }
             if (isset($migration->down)) {
                 $this->migrate = $migration->down;

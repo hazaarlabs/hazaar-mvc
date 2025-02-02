@@ -6,6 +6,8 @@ namespace Hazaar\DBI\Manager;
 
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Manager\Migration\Action;
+use Hazaar\DBI\Manager\Migration\Action\BaseAction;
+use Hazaar\DBI\Manager\Migration\Action\Component\BaseComponent;
 use Hazaar\DBI\Manager\Migration\Action\Constraint;
 use Hazaar\DBI\Manager\Migration\Action\Func;
 use Hazaar\DBI\Manager\Migration\Action\Index;
@@ -167,6 +169,17 @@ class Schema extends Model
             $migration->up->actions[] = Action::create(ActionType::VIEW, $view);
         }
         foreach ($this->constraints as $constraint) {
+            if ('PRIMARY KEY' === $constraint->type) {
+                $table = self::findActionOrComponent($constraint->table, $this->tables);
+                if ($table) {
+                    $column = self::findActionOrComponent($constraint->column, $table->columns);
+                    if ($column) {
+                        $column->primarykey = true;
+
+                        continue;
+                    }
+                }
+            }
             $migration->up->actions[] = Action::create(ActionType::CONSTRAINT, $constraint);
         }
         foreach ($this->indexes as $index) {
@@ -180,6 +193,20 @@ class Schema extends Model
         }
 
         return $migration;
+    }
+
+    /**
+     * @param array<BaseAction|BaseComponent> $haystack
+     */
+    public static function findActionOrComponent(string $name, array $haystack): null|BaseAction|BaseComponent
+    {
+        foreach ($haystack as $action) {
+            if ($action->name === $name) {
+                return $action;
+            }
+        }
+
+        return null;
     }
 
     /**

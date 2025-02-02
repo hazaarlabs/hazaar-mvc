@@ -12,17 +12,13 @@ class Constraint extends BaseAction
     public string $name;
     public string $table;
     public string $type;
-
-    /**
-     * @var array<string>
-     */
-    public array $columns;
+    public string $column;
     public ConstraintReference $references;
 
     /**
      * @var array<string>
      */
-    public array $drop = [];
+    public array $drop;
 
     public function construct(array &$data): void
     {

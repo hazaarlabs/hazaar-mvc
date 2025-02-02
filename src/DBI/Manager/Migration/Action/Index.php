@@ -21,7 +21,7 @@ class Index extends BaseAction
     /**
      * @var array<string>
      */
-    public array $drop = [];
+    public array $drop;
 
     public function construct(array &$data): void
     {
