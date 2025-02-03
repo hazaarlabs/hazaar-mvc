@@ -36,4 +36,23 @@ class Func extends BaseAction
 
         return true;
     }
+
+    public function apply(BaseAction $action): bool
+    {
+        if (!$action instanceof self) {
+            return false;
+        }
+        $this->body = $action->body;
+
+        return true;
+    }
+
+    public function diff(BaseAction $action): ?BaseAction
+    {
+        if ($this->body !== $action->body) {
+            return $action;
+        }
+
+        return null;
+    }
 }
