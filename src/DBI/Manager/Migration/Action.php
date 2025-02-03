@@ -34,7 +34,7 @@ class Action extends Model
         });
         if (isset($data['raise'])) {
             $data = [
-                'type' => ActionType::RAISE,
+                'type' => ActionType::ERROR,
                 'name' => ActionName::RAISE,
                 'spec' => new Raise($data),
             ];
