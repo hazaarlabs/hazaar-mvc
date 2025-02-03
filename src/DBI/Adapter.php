@@ -892,13 +892,13 @@ class Adapter implements Interface\API\Constraint, Interface\API\Extension, Inte
         return $this->driver->describeView($name);
     }
 
-    public function createView(string $name, mixed $content): bool
+    public function createView(string $name, mixed $content, bool $replace = false): bool
     {
         if (!$this->driver instanceof Interface\API\View) {
             throw new \BadMethodCallException('Driver does not support views');
         }
 
-        return $this->driver->createView($name, $content);
+        return $this->driver->createView($name, $content, $replace);
     }
 
     public function dropView(string $name, bool $ifExists = false, bool $cascade = false): bool

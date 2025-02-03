@@ -22,7 +22,7 @@ abstract class BaseAction extends Model implements Spec
             $data['drop'] = $data;
         }
     }
-    
+
     public function run(Adapter $dbi, ActionName $actionName): bool
     {
         return match ($actionName) {
@@ -48,11 +48,17 @@ abstract class BaseAction extends Model implements Spec
         return false;
     }
 
+    /**
+     * Apply an ALTER action to the BaseAction.
+     */
     public function apply(self $action): bool
     {
         return false;
     }
 
+    /**
+     * Find the difference between two BaseActions.
+     */
     public function diff(self $action): ?self
     {
         return null;

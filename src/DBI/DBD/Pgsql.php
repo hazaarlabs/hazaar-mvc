@@ -262,9 +262,11 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
         return false;
     }
 
-    public function createView(string $name, mixed $content): bool
+    public function createView(string $name, mixed $content, bool $replace = false): bool
     {
-        $sql = 'CREATE OR REPLACE VIEW '.$this->queryBuilder->schemaName($name).' AS '.rtrim($content, ' ;');
+        $sql = 'CREATE '
+            .($replace ? 'OR REPLACE ' : '')
+            .'VIEW '.$this->queryBuilder->schemaName($name).' AS '.rtrim($content, ' ;');
 
         return false !== $this->exec($sql);
     }
