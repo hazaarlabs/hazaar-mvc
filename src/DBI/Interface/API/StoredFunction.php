@@ -38,7 +38,7 @@ interface StoredFunction
      * @param string $name the name of the function to create
      * @param mixed  $spec the function specification
      */
-    public function createFunction($name, $spec): bool;
+    public function createFunction(string $name, mixed $spec, bool $replace = false): bool;
 
     /**
      * Drop a function from the database.

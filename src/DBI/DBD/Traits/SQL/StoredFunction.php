@@ -127,12 +127,12 @@ trait StoredFunction
     /**
      * Create a new database function.
      *
-     * @param mixed $name The name of the function to create
-     * @param mixed $spec A function specification.  This is basically the array returned from describeFunction()
+     * @param string $name The name of the function to create
+     * @param mixed  $spec A function specification.  This is basically the array returned from describeFunction()
      */
-    public function createFunction($name, $spec): bool
+    public function createFunction(string $name, mixed $spec, bool $replace = false): bool
     {
-        $sql = 'CREATE OR REPLACE FUNCTION '.$this->queryBuilder->schemaName($name).' (';
+        $sql = 'CREATE '.($replace ? 'OR REPLACE ' : '').'FUNCTION'.$this->queryBuilder->schemaName($name).' (';
         if ($params = ake($spec, 'parameters')) {
             $items = [];
             foreach ($params as $param) {

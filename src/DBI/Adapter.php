@@ -640,13 +640,13 @@ class Adapter implements Interface\API\Constraint, Interface\API\Extension, Inte
         return $this->driver->describeFunction($name);
     }
 
-    public function createFunction($name, $spec): bool
+    public function createFunction(string $name, mixed $spec, bool $replace = false): bool
     {
         if (!$this->driver instanceof Interface\API\StoredFunction) {
             throw new \BadMethodCallException('Driver does not support stored functions');
         }
 
-        return $this->driver->createFunction($name, $spec);
+        return $this->driver->createFunction($name, $spec, $replace);
     }
 
     public function dropFunction(string $name, null|array|string $argTypes = null, bool $cascade = false, bool $ifExists = false): bool
