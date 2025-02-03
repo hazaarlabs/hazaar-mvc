@@ -422,6 +422,15 @@ class Manager
         return $version->rollback($this->dbi);
     }
 
+    public function rollbackVersion(Version $version): bool
+    {
+        if (!isset($this->dbi)) {
+            $this->connect();
+        }
+
+        return $version->rollback($this->dbi);
+    }
+
     /**
      * Replays the specified version of the database changes.
      *
