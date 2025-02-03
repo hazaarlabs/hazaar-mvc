@@ -11,6 +11,11 @@ use Hazaar\Model;
 
 abstract class BaseAction extends Model implements Spec
 {
+    /**
+     * @var array<string>
+     */
+    public array $drop;
+
     public function run(Adapter $dbi, ActionName $actionName): bool
     {
         return match ($actionName) {

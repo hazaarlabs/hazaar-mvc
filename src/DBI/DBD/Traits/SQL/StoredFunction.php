@@ -56,7 +56,7 @@ trait StoredFunction
      * @return array<int,array{
      *  name:string,
      *  return_type:string,
-     *  content:string,
+     *  body:string,
      *  parameters:?array<int,array{name:string,type:string,mode:string,ordinal_position:int}>,
      *  lang:string
      * }>|false
@@ -95,7 +95,7 @@ trait StoredFunction
                 $item = [
                     'name' => $row['routine_name'],
                     'return_type' => $row['return_type'],
-                    'content' => trim($routineDefinition),
+                    'body' => trim($routineDefinition),
                 ];
                 $item['parameters'] = [];
                 $item['lang'] = ('EXTERNAL' === strtoupper($row['routine_body']))
@@ -141,7 +141,7 @@ trait StoredFunction
             $sql .= implode(', ', $items);
         }
         $sql .= ') RETURNS '.ake($spec, 'return_type', 'TEXT').' LANGUAGE '.ake($spec, 'lang', 'SQL')." AS\n\$BODY$ ";
-        $sql .= ake($spec, 'content');
+        $sql .= ake($spec, 'body');
         $sql .= '$BODY$;';
 
         return false !== $this->exec($sql);

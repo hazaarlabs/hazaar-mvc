@@ -276,7 +276,7 @@ class Schema extends Model
         if (!isset($this->{$elementName})) {
             throw new \Exception('Unknown element type: '.$action->type->value);
         }
-        if (!(isset($action->spec->drop) && is_array($action->spec->drop))) {
+        if (!(isset($action->spec->drop))) {
             throw new \Exception('Invalid action spec for drop action.  Needs array of names to drop.');
         }
         foreach ($action->spec->drop as $dropItem) {

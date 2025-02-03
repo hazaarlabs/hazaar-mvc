@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\DBI\Manager;
 
 use Hazaar\DBI\Adapter;
+use Hazaar\DBI\Manager\Migration\Enum\ActionName;
 use Hazaar\DBI\Manager\Migration\Enum\ActionType;
 use Hazaar\DBI\Manager\Migration\Event;
 use Hazaar\Model;
@@ -215,11 +216,12 @@ class Version extends Model
     private function loadMigrationEventFunctions(Event $event): void
     {
         foreach ($event->actions as $action) {
-            if (match ($action->type) {
-                ActionType::FUNC,
-                ActionType::TRIGGER => false,
-                default => true,
-            } || isset($action->spec->content)) {
+            if (ActionName::DROP === $action->name
+                || match ($action->type) {
+                    ActionType::FUNC,
+                    ActionType::TRIGGER => false,
+                    default => true,
+                } || true === isset($action->spec->content)) {
                 continue;
             }
             $contentFile = $this->source['dirname']

@@ -15,11 +15,6 @@ class Constraint extends BaseAction
     public string $column;
     public ConstraintReference $references;
 
-    /**
-     * @var array<string>
-     */
-    public array $drop;
-
     public function construct(array &$data): void
     {
         // If there is no 'name' key, then this is a drop action.

@@ -18,11 +18,6 @@ class Index extends BaseAction
     public bool $unique = false;
     public string $using;
 
-    /**
-     * @var array<string>
-     */
-    public array $drop;
-
     public function construct(array &$data): void
     {
         // If there is no 'name' key, then this is a drop action.
