@@ -13,7 +13,7 @@ class Extension extends BaseAction
      */
     public array $extensions;
 
-    public function construct(array &$data): void
+    public function construct(mixed &$data): void
     {
         $data = ['extensions' => $data];
         $this->defineEventHook('serialized', function (array &$data) {

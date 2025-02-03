@@ -16,6 +16,13 @@ abstract class BaseAction extends Model implements Spec
      */
     public array $drop;
 
+    public function construct(mixed &$data): void
+    {
+        if (!isset($data['name'])) {
+            $data['drop'] = $data;
+        }
+    }
+    
     public function run(Adapter $dbi, ActionName $actionName): bool
     {
         return match ($actionName) {

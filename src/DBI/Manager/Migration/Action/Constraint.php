@@ -15,14 +15,6 @@ class Constraint extends BaseAction
     public string $column;
     public ConstraintReference $references;
 
-    public function construct(array &$data): void
-    {
-        // If there is no 'name' key, then this is a drop action.
-        if (!isset($data['name'])) {
-            $data = ['drop' => $data];
-        }
-    }
-
     public function create(Adapter $dbi): bool
     {
         return $dbi->addConstraint($this->name, $this->toArray());

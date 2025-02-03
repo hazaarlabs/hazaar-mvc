@@ -11,7 +11,7 @@ class Raise extends BaseAction
 {
     public string $message;
 
-    public function construct(array &$data): void
+    public function construct(mixed &$data): void
     {
         $data = [
             'message' => $data['raise'] ?? 'Unknown migration error',

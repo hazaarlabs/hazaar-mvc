@@ -26,14 +26,6 @@ class Table extends BaseAction
      */
     public array $alter;
 
-    public function construct(array &$data): void
-    {
-        // If there is no 'name' key, then this is a drop action.
-        if (!isset($data['name'])) {
-            $data = ['drop' => $data];
-        }
-    }
-
     public function create(Adapter $dbi): bool
     {
         $columns = array_map(function (Column $column) {
@@ -47,16 +39,22 @@ class Table extends BaseAction
     {
         if (isset($this->add) && count($this->add) > 0) {
             foreach ($this->add as $column) {
-                $dbi->addColumn($this->name, $column->toArray());
+                $result = $dbi->addColumn($this->name, $column->toArray());
+                if (!$result) {
+                    return false;
+                }
             }
         }
         if (isset($this->drop) && count($this->drop) > 0) {
             foreach ($this->drop as $column) {
-                $dbi->dropColumn($this->name, $column, true);
+                $result = $dbi->dropColumn($this->name, $column, true);
+                if (!$result) {
+                    return false;
+                }
             }
         }
 
-        return false;
+        return true;
     }
 
     public function drop(Adapter $dbi): bool

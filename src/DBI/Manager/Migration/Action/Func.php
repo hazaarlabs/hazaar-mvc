@@ -14,13 +14,6 @@ class Func extends BaseAction
     public string $lang;
     public string $body;
 
-    public function construct(mixed &$data): void
-    {
-        if (!isset($data['name'])) {
-            $data['drop'] = $data;
-        }
-    }
-
     public function create(Adapter $dbi): bool
     {
         if (!isset($this->body)) {

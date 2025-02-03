@@ -282,7 +282,48 @@ class Snapshot extends Model
         }
     }
 
-    private function compareTriggers(Migration $migration, Schema $masterSchama, Schema $compareSchema): void {}
+    private function compareTriggers(Migration $migration, Schema $masterSchama, Schema $compareSchema): void {
+        foreach ($compareSchema->triggers as $trigger) {
+            $action = Schema::findActionOrComponent($trigger->name, $masterSchama->triggers);
+            if (null === $action) {
+                $migration->up->add(ActionName::CREATE, ActionType::TRIGGER, $trigger);
 
-    private function compareViews(Migration $migration, Schema $masterSchama, Schema $compareSchema): void {}
+                continue;
+            }
+            $diff = $action->diff($trigger);
+            if (null !== $diff) {
+                $migration->up->add(ActionName::ALTER, ActionType::TRIGGER, $diff);
+            }
+        }
+        // Look for triggers that have been removed.
+        foreach ($masterSchama->triggers as $trigger) {
+            $action = Schema::findActionOrComponent($trigger->name, $compareSchema->triggers);
+            if (null === $action) {
+                $migration->up->add(ActionName::DROP, ActionType::TRIGGER, $trigger);
+            }
+        }
+    }
+
+    private function compareViews(Migration $migration, Schema $masterSchama, Schema $compareSchema): void
+    {
+        foreach ($compareSchema->views as $view) {
+            $action = Schema::findActionOrComponent($view->name, $masterSchama->views);
+            if (null === $action) {
+                $migration->up->add(ActionName::CREATE, ActionType::VIEW, $view);
+
+                continue;
+            }
+            $diff = $action->diff($view);
+            if (null !== $diff) {
+                $migration->up->add(ActionName::ALTER, ActionType::VIEW, $diff);
+            }
+        }
+        // Look for views that have been removed.
+        foreach ($masterSchama->views as $view) {
+            $action = Schema::findActionOrComponent($view->name, $compareSchema->views);
+            if (null === $action) {
+                $migration->up->add(ActionName::DROP, ActionType::VIEW, $view);
+            }
+        }
+    }
 }
