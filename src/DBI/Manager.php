@@ -85,9 +85,19 @@ class Manager
     }
 
     /**
-     * Sets the callback function to be called when a log entry is added.
+     * Sets a callback function that can be used to process log messages as they are generated.
      *
-     * @param \Closure $callback The callback function
+     * The callback function provided must accept one argument.  `LogEvent $event`.
+     *
+     * Example, to simply echo formatted log data:
+     *
+     * '''php
+     * $manager->registerLogHandler(function(LogEvent $event){
+     *      echo $event->toString() . PHP_EOL;
+     * });
+     * '''
+     *
+     * @param \Closure $callback The 'callable' callback function.  See: is_callable();
      */
     public function registerLogHandler(\Closure $callback): void
     {
@@ -317,7 +327,32 @@ class Manager
     }
 
     /**
-     * Migrates the database to the specified version or the latest available version.
+     * Database migration method.
+     *
+     * This method does some fancy database migration magic. It makes use of the 'db' subdirectory in the project directory
+     * which should contain the at least a `migrate` directory that contains schema migrations.
+     *
+     * A few things can occur here.
+     *
+     * # If the database schema does not exist, then a new schema will be created using the current schema.  The current
+     * schema is resolved in-memory by loading all the migration files in the `migrate` directory and applying them in
+     * order.  This will create the database at the latest version of the schema.
+     * # If the database schema already exists, then the function will search for missing versions between the current
+     * schema version and the latest schema version.  If no versions are missing, then the function will return false.
+     * # If versions are missing, then the function will replay all the missing versions in order to bring the database
+     * schema up to the `$version` parameter. If no version is requested ($version is NULL) then the latest version number is used.
+     * # If the version numbers are different, then a migration will be performed.
+     * # # If the requested version is greater than the current version, the migration mode will be 'up'.
+     * # # If the requested version is less than the current version, the migration mode will be 'down'.
+     * # All migration files between the two selected versions (current and requested) will be replayed using the migration mode.
+     *
+     * This process can be used to bring a database schema up to the latest version using database migration files stored in the
+     * `db/migrate` project subdirectory. These migration files are typically created using the `\Hazaar\DBI\Manager::snapshot()`
+     * method although they can be created manually.
+     *
+     * The migration is performed in a database transaction (if the database supports it) so that if anything goes wrong there
+     * is no damage to the database. If something goes wrong, errors will be available in the migration log accessible with
+     * `\Hazaar\DBI\Manager::getMigrationLog()`. Errors in the migration files can be fixed and the migration retried.
      *
      * @param null|int $version           The target version to migrate to. If null, migrates to the latest version.
      * @param bool     $forceDataSync     whether to force data synchronization during migration
@@ -413,7 +448,34 @@ class Manager
     }
 
     /**
-     * Creates a snapshot of the current database schema.
+     * Snapshot the database schema and create a new schema version with migration replay files.
+     *
+     * This method is used to create the database schema migration files. These files are used by
+     * the \Hazaar\Adapter::migrate() method to bring a database up to a certain version. Using this method
+     * simplifies creating these migration files and removes the need to create them manually when there are
+     * trivial changes.
+     *
+     * Current supported database objects and operations are:
+     *
+     * | Operation | CREATE | ALTER | DROP | RENAME |
+     * |-----------|--------|-------|------|--------|
+     * | Extension |   X    |       |   X  |        |
+     * | Table     |   X    |   X   |   X  |   X    |
+     * | Constraint|   X    |       |   X  |        |
+     * | Index     |   X    |       |   X  |        |
+     * | View      |   X    |   X   |   X  |        |
+     * | Function  |   X    |   X   |   X  |        |
+     * | Trigger   |   X    |   X   |   X  |        |
+     * |-----------|--------|-------|------|--------|
+     *
+     * !!! notice
+     *
+     * Table rename detection works by comparing new tables with removed tables for tables that have the same
+     * columns. Because of this, rename detection will not work if columns are added or removed at the same time
+     * the table is renamed. If you want to rename a table, make sure that this is the only operation being
+     * performed on the table for a single snapshot. Modifying other tables will not affect this. If you want to
+     * rename a table AND change it's column layout, make sure you do either the rename or the modifications
+     * first, then snapshot, then do the other operation before snapshotting again.
      *
      * @param null|string $comment         optional comment for the snapshot
      * @param bool        $test            if true, the method will only test for changes without saving the snapshot
@@ -567,6 +629,13 @@ class Manager
 
     /**
      * Returns the migration log.
+     *
+     * Snapshots and migrations are complex processes where many things happen in a single execution. This means stuff
+     * can go wrong and you will probably want to know what/why/when they do.
+     *
+     * When running `\Hazaar\Adapter::snapshot()` or `\Hazaar\Adapter::migrate()` a log of what has been done is stored internally
+     * in an array of timestamped messages. You can use the `\Hazaar\Adapter::getMigrationLog()` method to retrieve this
+     * log so that if anything goes wrong, you can see what and fix it/
      *
      * @return array<LogEntry>
      */
