@@ -126,9 +126,6 @@ class Schema extends Model
         }
         $triggers = $dbi->listTriggers();
         foreach ($triggers as $trigger) {
-            if (in_array($trigger['table'], self::$ignoreTables)) {
-                continue;
-            }
             $schema['triggers'][] = $dbi->describeTrigger($trigger['name']);
         }
         $views = $dbi->listViews();
