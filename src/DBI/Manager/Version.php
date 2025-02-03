@@ -170,7 +170,11 @@ class Version extends Model
     public function rollback(Adapter $dbi): bool
     {
         if (!isset($this->migrate)) {
-            $this->migrate = $this->loadMigration()->down;
+            $migration = $this->loadMigration();
+            if (null === $migration || !isset($migration->down)) {
+                throw new \Exception('No down migration found for version '.$this->number);
+            }
+            $this->migrate = $migration->down;
         }
 
         try {

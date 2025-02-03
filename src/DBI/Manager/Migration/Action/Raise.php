@@ -6,6 +6,7 @@ namespace Hazaar\DBI\Manager\Migration\Action;
 
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Manager\Migration\Enum\ActionName;
+use Hazaar\DBI\Manager\Migration\Enum\ActionType;
 
 class Raise extends BaseAction
 {
@@ -13,13 +14,21 @@ class Raise extends BaseAction
 
     public function construct(mixed &$data): void
     {
-        $data = [
-            'message' => $data['raise'] ?? 'Unknown migration error',
-        ];
+        $this->defineEventHook('serialized', function (array &$data) {
+            if (isset($this->message)) {
+                $data = [$this->message];
+            }
+        });
     }
 
     public function run(Adapter $dbi, ActionName $type): bool
     {
-        throw new \Exception($this->message);
+        if (ActionType::ERROR == $this->type) {
+            throw new \Exception($this->message);
+        }
+
+        dump($this->message);
+
+        return true;
     }
 }

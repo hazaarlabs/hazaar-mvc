@@ -13,5 +13,7 @@ enum ActionType: string
     case VIEW = 'view';
     case FUNC = 'function';
     case TRIGGER = 'trigger';
-    case RAISE = 'raise';
+    case NOTICE = 'notice';
+    case WARNING = 'warning';
+    case ERROR = 'error';
 }

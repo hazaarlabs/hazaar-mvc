@@ -6,6 +6,7 @@ namespace Hazaar\DBI\Manager;
 
 use Hazaar\Controller\Exception\HeadersSent;
 use Hazaar\DBI\Manager\Migration\Action\Extension;
+use Hazaar\DBI\Manager\Migration\Action\Raise;
 use Hazaar\DBI\Manager\Migration\Enum\ActionName;
 use Hazaar\DBI\Manager\Migration\Enum\ActionType;
 use Hazaar\DBI\Manager\Migration\Event;
@@ -77,6 +78,9 @@ class Snapshot extends Model
     public function setSchema(Schema $schema): void
     {
         $this->migration = $schema->toMigration();
+        $this->migration->down = new Event();
+        $action = new Raise(['message' => 'This migration is not reversible.']);
+        $this->migration->down->add(ActionName::RAISE, ActionType::ERROR, $action);
     }
 
     /**
@@ -148,6 +152,7 @@ class Snapshot extends Model
             // Table does not exist in master schema. Add a create action.
             if (null === $action) {
                 $migration->up->add(ActionName::CREATE, ActionType::TABLE, $table);
+                $migration->down->add(ActionName::DROP, ActionType::TABLE, $table->spec->name);
 
                 continue;
             }
@@ -282,7 +287,8 @@ class Snapshot extends Model
         }
     }
 
-    private function compareTriggers(Migration $migration, Schema $masterSchama, Schema $compareSchema): void {
+    private function compareTriggers(Migration $migration, Schema $masterSchama, Schema $compareSchema): void
+    {
         foreach ($compareSchema->triggers as $trigger) {
             $action = Schema::findActionOrComponent($trigger->name, $masterSchama->triggers);
             if (null === $action) {
