@@ -105,6 +105,22 @@ class Manager
     }
 
     /**
+     * Retrieves the database adapter instance.
+     *
+     * If the adapter is not already set, it will establish a connection first.
+     *
+     * @return Adapter the database adapter instance
+     */
+    public function getAdapter(): Adapter
+    {
+        if (!isset($this->dbi)) {
+            $this->connect();
+        }
+
+        return $this->dbi;
+    }
+
+    /**
      * Gets all the available schema versions from the migration directory.
      *
      * @return array<Version> The available schema versions

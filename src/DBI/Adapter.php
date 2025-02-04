@@ -941,7 +941,7 @@ class Adapter implements Interface\API\Constraint, Interface\API\Extension, Inte
             }
         } catch (\PDOException $e) {
             if (7 === $e->getCode()) {
-                throw new ConnectionFailed($this->config['host']);
+                throw new ConnectionFailed($this->config['host'], [1, $e->getMessage()]);
             }
 
             throw $e;
