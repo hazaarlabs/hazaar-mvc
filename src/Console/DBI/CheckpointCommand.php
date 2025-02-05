@@ -24,10 +24,10 @@ class CheckpointCommand extends Command
         $manager->registerLogHandler(function ($message) use ($output) {
             $output->write($message.PHP_EOL);
         });
-        if ($manager->checkpoint($input->getArgument('comment'))) {
-            return 0;
+        if (!$manager->checkpoint($input->getArgument('comment'))) {
+            return 1;
         }
 
-        return 1;
+        return 0;
     }
 }

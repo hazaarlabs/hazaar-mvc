@@ -28,11 +28,8 @@ class RollbackCommand extends Command
         if ($version = $input->getArgument('version')) {
             settype($version, 'int');
         }
-        if ($manager->rollback(
-            $version,
-            $input->getOption('test') ?? false
-        )) {
-            $code = 0;
+        if (!$manager->rollback($version)) {
+            return 1;
         }
 
         return 0;

@@ -15,7 +15,6 @@ class MigrateCommand extends Command
             ->setDescription('Migrate the database schema')
             ->setHelp('This command allows you to migrate the database schema to a specific version.')
             ->addArgument('version', 'The version to migrate to.')
-            ->addOption('test', 't', 'Test the migration without actually applying it.')
             ->addOption('force_sync', 'f', 'Force a sync of the database schema.')
             ->addOption('keep_tables', 'k', 'Keep the tables in the database.')
             ->addOption('force_init', null, 'Force the database to be re-initialised.')
@@ -38,13 +37,11 @@ class MigrateCommand extends Command
             $output->write('DELETING YOUR DATA!!!  YOU WERE WARNED!!!');
             $manager->deleteEverything();
         }
-        if ($manager->migrate(
-            $version,
-            $input->getOption('force_sync') ?? false,
-            $input->getOption('test') ?? false,
-            $input->getOption('keep_tables') ?? false
-        )) {
-            $code = 0;
+        if (!$manager->migrate($version)) {
+            return 1;
+        }
+        if (!$manager->sync($input->getOption('force_sync') ?? false)) {
+            return 2;
         }
 
         return 0;

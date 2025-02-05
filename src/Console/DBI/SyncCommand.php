@@ -36,8 +36,8 @@ class SyncCommand extends Command
                 throw new \Exception('Unable to sync.  File is not a valid JSON file.');
             }
         }
-        if ($manager->sync($data, $input->getOption('test') ?? false, true)) {
-            $code = 0;
+        if (!$manager->sync($data, true)) {
+            return 1;
         }
 
         return 0;

@@ -15,7 +15,6 @@ class ReplayCommand extends Command
             ->setDescription('Replay the database schema.')
             ->setHelp('This command will replay the database schema to a specific version.')
             ->addArgument('version', 'The version to rollback to.')
-            ->addOption('test', 't', 'Test the migration without actually applying it.')
         ;
     }
 
@@ -28,11 +27,8 @@ class ReplayCommand extends Command
         if ($version = $input->getArgument('version')) {
             settype($version, 'int');
         }
-        if ($manager->replay(
-            $version,
-            $input->getOption('test') ?? false
-        )) {
-            $code = 0;
+        if (!$manager->replay($version)) {
+            return 1;
         }
 
         return 0;

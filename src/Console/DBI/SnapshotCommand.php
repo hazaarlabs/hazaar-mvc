@@ -26,10 +26,10 @@ class SnapshotCommand extends Command
             $output->write($message.PHP_EOL);
         });
         $comment = $input->getArgument('comment') ?: 'New Snapshot';
-        if ($manager->snapshot($comment, $input->getOption('test') ?? false)) {
-            return 0;
+        if (!$manager->snapshot($comment, $input->getOption('test') ?? false)) {
+            return 1;
         }
 
-        return 1;
+        return 0;
     }
 }

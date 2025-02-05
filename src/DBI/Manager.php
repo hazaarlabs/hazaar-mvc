@@ -345,21 +345,12 @@ class Manager
      * is no damage to the database. If something goes wrong, errors will be available in the migration log accessible with
      * `\Hazaar\DBI\Manager::getMigrationLog()`. Errors in the migration files can be fixed and the migration retried.
      *
-     * @param null|int $version           The target version to migrate to. If null, migrates to the latest version.
-     * @param bool     $forceDataSync     whether to force data synchronization during migration
-     * @param bool     $test              whether to run the migration in test mode
-     * @param bool     $keepTables        whether to keep existing tables during migration
-     * @param bool     $forceReinitialise whether to force reinitialization during migration
+     * @param null|int $version The target version to migrate to. If null, migrates to the latest version.
      *
      * @return bool returns true if the migration was successful, false otherwise
      */
-    public function migrate(
-        ?int $version = null,
-        bool $forceDataSync = false,
-        bool $test = false,
-        bool $keepTables = false,
-        bool $forceReinitialise = false
-    ): bool {
+    public function migrate(?int $version = null): bool
+    {
         if (!isset($this->dbi)) {
             $this->connect();
         }
@@ -418,17 +409,12 @@ class Manager
      * the applied version of the migration. If the version has not been applied, it logs a message
      * and skips the rollback. Otherwise, it performs the rollback using the DBI.
      *
-     * @param int        $versionNumber the version number of the migration to be rolled back
-     * @param bool       $test          Optional. If true, the rollback is tested but not actually performed. Default is false.
-     * @param array<int> &$rollbacks    Optional. An array to store rollback information. Default is an empty array.
+     * @param int $versionNumber the version number of the migration to be rolled back
      *
      * @return bool returns true if the rollback was successful, false otherwise
      */
-    public function rollback(
-        int $versionNumber,
-        bool $test = false,
-        array &$rollbacks = []
-    ): bool {
+    public function rollback(int $versionNumber): bool
+    {
         if (!isset($this->dbi)) {
             $this->connect();
         }
@@ -464,15 +450,12 @@ class Manager
      * retrieves the specified version, rolls back the changes of that version,
      * and then replays the changes.
      *
-     * @param int  $version the version number to replay
-     * @param bool $test    Optional. If true, the replay will be tested without applying changes. Default is false.
+     * @param int $version the version number to replay
      *
      * @return bool returns true if the replay was successful, false otherwise
      */
-    public function replay(
-        int $version,
-        bool $test = false
-    ): bool {
+    public function replay(int $version): bool
+    {
         if (!isset($this->dbi)) {
             $this->connect();
         }
@@ -517,17 +500,13 @@ class Manager
      * rename a table AND change it's column layout, make sure you do either the rename or the modifications
      * first, then snapshot, then do the other operation before snapshotting again.
      *
-     * @param null|string $comment         optional comment for the snapshot
-     * @param bool        $test            if true, the method will only test for changes without saving the snapshot
-     * @param null|int    $overrideVersion optional version number to override the default version
+     * @param null|string $comment optional comment for the snapshot
+     * @param bool        $test    if true, the method will only test for changes without saving the snapshot
      *
      * @return bool returns true if the snapshot was created and saved successfully, false otherwise
      */
-    public function snapshot(
-        ?string $comment = null,
-        bool $test = false,
-        ?int $overrideVersion = null
-    ): bool {
+    public function snapshot(?string $comment = null, bool $test = false): bool
+    {
         if (!isset($this->dbi)) {
             $this->connect();
         }
@@ -567,11 +546,8 @@ class Manager
     /**
      * @param array<mixed> $dataSchema
      */
-    public function sync(
-        ?array $dataSchema = null,
-        bool $test = false,
-        bool $forceDataSync = false
-    ): bool {
+    public function sync(?array $dataSchema = null, bool $force = false): bool
+    {
         return false;
     }
 
