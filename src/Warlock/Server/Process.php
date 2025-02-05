@@ -233,7 +233,7 @@ abstract class Process extends Model
         return $pid;
     }
 
-    protected function constructed(array &$data): void
+    protected function constructed(): void
     {
         $this->id = $this->getProcessID();
         $this->defineEventHook('read', 'pid', function () {

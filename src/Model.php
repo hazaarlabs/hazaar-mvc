@@ -571,10 +571,8 @@ abstract class Model implements \jsonSerializable, \Iterator
      * Constructed placeholder method.
      *
      * This method is called after the model has been constructed and the data has been populated.
-     *
-     * @param array<string,mixed> $data
      */
-    protected function constructed(array &$data): void {}
+    protected function constructed(): void {}
 
     /**
      * Sets the value of a user-defined property.
@@ -807,6 +805,6 @@ abstract class Model implements \jsonSerializable, \Iterator
             }
             $this->setUserProperty($propertyName, $data[$propertyName]);
         }
-        $this->constructed($data, ...$args);
+        $this->constructed(...$args);
     }
 }

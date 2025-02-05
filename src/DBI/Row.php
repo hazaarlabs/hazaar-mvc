@@ -33,7 +33,7 @@ final class Row extends Model
         }
     }
 
-    protected function constructed(array &$data): void
+    protected function constructed(): void
     {
         $this->defineEventHook('written', function ($propertyValue, $propertyName) {
             $this->changedProperties[] = $propertyName;
