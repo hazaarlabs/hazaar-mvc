@@ -363,6 +363,7 @@ class Manager
         if (!isset($this->dbi)) {
             $this->connect();
         }
+        $start = microtime(true);
         $this->dbi->log('Starting migration...');
         $versions = $this->getMissingVersions();
         if (0 === count($versions)) {
@@ -377,6 +378,7 @@ class Manager
                 return false;
             }
         }
+        $this->dbi->log('Migration completed in '.round(microtime(true) - $start, 2).' seconds.');
 
         return true;
     }
@@ -403,6 +405,7 @@ class Manager
         if (!isset($this->dbi)) {
             $this->connect();
         }
+        $start = microtime(true);
         $version = $this->getAppliedVersion($versionNumber);
         if (null === $version) {
             $this->dbi->log("Version {$versionNumber} has not been applied.  Skipping rollback.");
@@ -410,7 +413,7 @@ class Manager
             return false;
         }
 
-        return $version->rollback($this->dbi);
+        return $this->rollbackVersion($version);
     }
 
     public function rollbackVersion(Version $version): bool
@@ -418,8 +421,13 @@ class Manager
         if (!isset($this->dbi)) {
             $this->connect();
         }
+        $start = microtime(true);
+        $result = $version->rollback($this->dbi);
+        if ($result) {
+            $this->dbi->log("Rollback of version {$version->number} completed in ".round(microtime(true) - $start, 2).' seconds.');
+        }
 
-        return $version->rollback($this->dbi);
+        return $result;
     }
 
     /**
@@ -441,10 +449,15 @@ class Manager
         if (!isset($this->dbi)) {
             $this->connect();
         }
+        $start = microtime(true);
         $version = $this->getVersion($version);
         $version->rollback($this->dbi);
+        $result = $version->replay($this->dbi);
+        if ($result) {
+            $this->dbi->log("Replay of version {$version->number} completed in ".round(microtime(true) - $start, 2).' seconds.');
+        }
 
-        return $version->replay($this->dbi);
+        return $result;
     }
 
     /**
@@ -491,6 +504,7 @@ class Manager
         if (!isset($this->dbi)) {
             $this->connect();
         }
+        $start = microtime(true);
         $this->dbi->log('Importing database schema');
         $databaseSchema = Schema::import($this->dbi);
         $this->dbi->log('Loading master schema');
@@ -518,6 +532,7 @@ class Manager
         if (!$result) {
             return false;
         }
+        $this->dbi->log('Snapshot completed in '.round(microtime(true) - $start, 2).' seconds.');
 
         return true;
     }
@@ -559,6 +574,7 @@ class Manager
 
             return false;
         }
+        $start = microtime(true);
         $this->dbi->log('Creating checkpoint');
         $snapshot = Snapshot::create($comment ?? 'Checkpoint');
         $snapshot->setSchema($masterSchema);
@@ -574,7 +590,7 @@ class Manager
         $schemaTable->truncate();
         $this->dbi->log('Inserting checkpoint version');
         $schemaTable->insert($snapshot->getVersion());
-        $this->dbi->log('Checkpoint complete');
+        $this->dbi->log('Checkpoint completed in '.round(microtime(true) - $start, 2).' seconds.');
 
         return true;
     }
@@ -589,6 +605,7 @@ class Manager
         if (!isset($this->dbi)) {
             $this->connect();
         }
+        $start = microtime(true);
         $this->dbi->log('WARNING: Deleting all database objects!');
         $views = $this->dbi->listViews();
         foreach ($views as $view) {
@@ -624,8 +641,10 @@ class Manager
         foreach ($extensions as $extension) {
             $this->dbi->dropExtension($extension);
         }
+        $result = $this->createSchemaVersionTable();
+        $this->dbi->log('All database objects deleted in '.round(microtime(true) - $start, 2).' seconds.');
 
-        return $this->createSchemaVersionTable();
+        return $result;
     }
 
     /**

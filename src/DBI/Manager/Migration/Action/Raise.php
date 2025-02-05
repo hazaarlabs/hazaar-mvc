@@ -22,6 +22,7 @@ class Raise extends BaseAction
         if (ActionType::ERROR === $type) {
             throw new \Exception($this->message);
         }
+        $dbi->log(strtoupper($type->value).': '.$this->message);
 
         return true;
     }
