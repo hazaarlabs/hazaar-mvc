@@ -356,6 +356,9 @@ abstract class Model implements \jsonSerializable, \Iterator
                         }
                     }
                 }
+                if (is_array($propertyValue)) {
+                    $this->modelArrayToArray($propertyValue, $context);
+                }
             }
             if (isset($this->eventHooks['get'][$propertyName])) {
                 // Execute the get event hook for the property
@@ -573,6 +576,24 @@ abstract class Model implements \jsonSerializable, \Iterator
      * This method is called after the model has been constructed and the data has been populated.
      */
     protected function constructed(): void {}
+
+    /**
+     * Convert an array of model objects to an array of arrays.
+     *
+     * This method is used to convert an array of model objects to an array of arrays.
+     *
+     * @param array<mixed> $array the array of model objects to convert
+     */
+    private function modelArrayToArray(array &$array, ?string $context = null): void
+    {
+        foreach ($array as &$value) {
+            if ($value instanceof Model) {
+                $value = $value->toArray($context);
+            } elseif (is_array($value)) {
+                $this->modelArrayToArray($value, $context);
+            }
+        }
+    }
 
     /**
      * Sets the value of a user-defined property.
