@@ -511,6 +511,12 @@ class Manager
             $this->connect();
         }
         $start = microtime(true);
+        $missingVersions = $this->getMissingVersions();
+        if (count($missingVersions) > 0) {
+            $this->dbi->log('There are missing versions.  Please migrate the database before taking a snapshot.');
+
+            return false;
+        }
         $this->dbi->log('Importing database schema');
         $databaseSchema = Schema::import($this->dbi);
         $this->dbi->log('Loading master schema');
