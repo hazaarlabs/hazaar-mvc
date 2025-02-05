@@ -30,7 +30,7 @@ class Snapshot extends Model
         return new Snapshot([
             'comment' => $comment,
             'version' => [
-                'number' => date('YmdHis'),
+                'number' => Version::generateVersionNumber(),
             ],
         ]);
     }

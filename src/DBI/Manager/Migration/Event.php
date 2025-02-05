@@ -41,12 +41,14 @@ class Event extends Model
         return true;
     }
 
-    public function add(ActionName $actionName, ActionType $actionType, BaseAction $action): void
+    public function add(ActionName $actionName, ActionType $actionType, BaseAction $actionSpec): Action
     {
-        $this->actions[] = new Action([
+        $this->actions[] = $action = new Action([
             'name' => $actionName,
             'type' => $actionType,
-            'spec' => $action,
+            'spec' => $actionSpec,
         ]);
+
+        return $action;
     }
 }

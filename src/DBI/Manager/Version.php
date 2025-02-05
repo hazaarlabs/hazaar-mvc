@@ -67,6 +67,14 @@ class Version extends Model
         ]);
     }
 
+    public static function create(): self
+    {
+        return new self([
+            'number' => self::generateVersionNumber(),
+            'comment' => 'New migration',
+        ]);
+    }
+
     /**
      * Retrieves the full path of the source file.
      *
@@ -202,6 +210,11 @@ class Version extends Model
     public function unlink(): bool
     {
         return unlink($this->getSourceFile());
+    }
+
+    public static function generateVersionNumber(): string
+    {
+        return str_pad((string) (new \DateTime())->getTimestamp(), 14, '0', STR_PAD_RIGHT);
     }
 
     protected function constructed(): void
