@@ -661,7 +661,7 @@ class Manager
      */
     public function getMigrationLog(): array
     {
-        return $this->dbi->getEventLog();
+        return isset($this->dbi) ? $this->dbi->getEventLog() : [];
     }
 
     public function registerLogHandler(\Closure $handler): void

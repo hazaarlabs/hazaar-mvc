@@ -59,7 +59,16 @@ class Table extends BaseAction
 
     public function drop(Adapter $dbi): bool
     {
-        return $dbi->dropTable($this->name, true);
+        if (!isset($this->drop)) {
+            return false;
+        }
+        foreach ($this->drop as $table) {
+            if (!$dbi->dropTable($table, true)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
