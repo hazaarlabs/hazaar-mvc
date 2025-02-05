@@ -204,6 +204,18 @@ class Version extends Model
         return unlink($this->getSourceFile());
     }
 
+    protected function constructed(): void
+    {
+        $this->defineEventHook('serialize', function () {
+            if (!isset($this->migrate)) {
+                $migration = $this->loadMigration();
+                if (null !== $migration) {
+                    $this->migrate = $migration->down;
+                }
+            }
+        });
+    }
+
     /**
      * Loads migration event functions from the specified event.
      *
