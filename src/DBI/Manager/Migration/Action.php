@@ -27,14 +27,27 @@ class Action extends Model
 
     public function construct(array &$data): void
     {
-        $this->defineEventHook('serialized', function (&$data) {
-            if (ActionName::DROP === $this->name) {
-                $data['spec'] = $this->spec->name;
-            }
-        });
         if (isset($data['raise'])) {
             $data = [
                 'type' => ActionType::ERROR,
+                'name' => ActionName::RAISE,
+                'spec' => new Raise($data),
+            ];
+
+            return;
+        }
+        if (isset($data['warn'])) {
+            $data = [
+                'type' => ActionType::WARNING,
+                'name' => ActionName::RAISE,
+                'spec' => new Raise($data),
+            ];
+
+            return;
+        }
+        if (isset($data['notice'])) {
+            $data = [
+                'type' => ActionType::NOTICE,
                 'name' => ActionName::RAISE,
                 'spec' => new Raise($data),
             ];
@@ -46,6 +59,9 @@ class Action extends Model
         }
         if (!isset($data['name']) && isset($data['action'])) {
             $data['name'] = $data['action'];
+        }
+        if (!is_object($data['name'])) {
+            $data['name'] = ActionName::tryFrom($data['name']);
         }
         if (!is_object($data['type'])) {
             $data['type'] = ActionType::tryFrom($data['type']);
@@ -69,7 +85,11 @@ class Action extends Model
 
     public function run(Adapter $dbi): bool
     {
-        return $this->spec->run($dbi, $this->name);
+        if (!isset($this->spec)) {
+            throw new \Exception('No action specification found for action '.$this->name->value);
+        }
+
+        return $this->spec->run($dbi, $this->type, $this->name);
     }
 
     public static function create(ActionType $type, mixed $spec): self
@@ -79,5 +99,22 @@ class Action extends Model
             'type' => $type,
             'spec' => $spec,
         ]);
+    }
+
+    protected function constructed(): void
+    {
+        /*
+        * Simplify the action spec if the action is a drop action or a raise action
+        *
+        * Drop actions only need the name of the object to drop
+        * Raise actions only need the message to raise
+        */
+        $this->defineEventHook('serialized', function (&$data) {
+            if (ActionName::DROP === $this->name) {
+                $data['spec'] = $this->spec->name;
+            } elseif (ActionName::RAISE === $this->name) {
+                $data = ['raise' => $this->spec->message];
+            }
+        });
     }
 }

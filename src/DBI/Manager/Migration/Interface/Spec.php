@@ -6,10 +6,11 @@ namespace Hazaar\DBI\Manager\Migration\Interface;
 
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Manager\Migration\Enum\ActionName;
+use Hazaar\DBI\Manager\Migration\Enum\ActionType;
 
 interface Spec
 {
-    public function run(Adapter $dbi, ActionName $name): bool;
+    public function run(Adapter $dbi, ActionType $type, ActionName $name): bool;
 
     public function create(Adapter $dbi): bool;
 

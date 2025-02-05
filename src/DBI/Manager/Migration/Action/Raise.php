@@ -14,20 +14,14 @@ class Raise extends BaseAction
 
     public function construct(mixed &$data): void
     {
-        $this->defineEventHook('serialized', function (array &$data) {
-            if (isset($this->message)) {
-                $data = [$this->message];
-            }
-        });
+        $this->message = $data['raise'] ?? $data['warn'] ?? $data['notice'] ?? '';
     }
 
-    public function run(Adapter $dbi, ActionName $type): bool
+    public function run(Adapter $dbi, ActionType $type, ActionName $name): bool
     {
-        if (ActionType::ERROR == $this->type) {
+        if (ActionType::ERROR === $type) {
             throw new \Exception($this->message);
         }
-
-        dump($this->message);
 
         return true;
     }

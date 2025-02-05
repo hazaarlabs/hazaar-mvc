@@ -6,6 +6,7 @@ namespace Hazaar\DBI\Manager\Migration\Action;
 
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Manager\Migration\Enum\ActionName;
+use Hazaar\DBI\Manager\Migration\Enum\ActionType;
 use Hazaar\DBI\Manager\Migration\Interface\Spec;
 use Hazaar\Model;
 
@@ -23,9 +24,9 @@ abstract class BaseAction extends Model implements Spec
         }
     }
 
-    public function run(Adapter $dbi, ActionName $actionName): bool
+    public function run(Adapter $dbi, ActionType $type, ActionName $name): bool
     {
-        return match ($actionName) {
+        return match ($name) {
             ActionName::CREATE => $this->create($dbi),
             ActionName::ALTER => $this->alter($dbi),
             ActionName::DROP => $this->drop($dbi),
