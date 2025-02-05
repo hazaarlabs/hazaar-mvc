@@ -371,11 +371,38 @@ class Manager
 
             return false;
         }
-        $this->dbi->log('Found '.count($versions).' updates to apply.');
-        foreach ($versions as $version) {
-            $this->dbi->log('Replaying version '.$version->number.': '.$version->comment);
-            if (!$version->replay($this->dbi)) {
-                return false;
+        $currentVersion = $this->getCurrentVersion();
+        /*
+         * If there is no current schema applied, then we need to create the schema from scratch
+         * by replaying the migrations in-memory.  This prevents unnecessary database changes, such
+         * as tables being created and then dropped.
+         */
+        if (null === $currentVersion) {
+            $this->dbi->log('No schema found.  Creating initial schema.');
+
+            try {
+                $this->dbi->begin();
+                $result = $this->getSchema(true)->toMigration()->replay($this->dbi);
+                if (!$result) {
+                    return false;
+                }
+                $schemaInfoTable = $this->dbi->table(self::$schemaInfoTable);
+                foreach ($versions as $version) {
+                    $schemaInfoTable->insert($version);
+                }
+                $this->dbi->log('Schema applied at version '.$version->number);
+                $this->dbi->commit();
+            } catch (\Exception $e) {
+                $this->dbi->cancel();
+                $this->dbi->log($e->getMessage());
+            }
+        } else {
+            $this->dbi->log('Found '.count($versions).' updates to apply.');
+            foreach ($versions as $version) {
+                $this->dbi->log('Replaying version '.$version->number.': '.$version->comment);
+                if (!$version->replay($this->dbi)) {
+                    return false;
+                }
             }
         }
         $this->dbi->log('Migration completed in '.round(microtime(true) - $start, 2).' seconds.');
