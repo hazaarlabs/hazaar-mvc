@@ -13,7 +13,6 @@ namespace Hazaar\DBI;
 
 use Hazaar\Application\FilePath;
 use Hazaar\DBI\Exception\ConnectionFailed;
-use Hazaar\DBI\Manager\LogEntry;
 use Hazaar\DBI\Manager\Schema;
 use Hazaar\DBI\Manager\Snapshot;
 use Hazaar\DBI\Manager\Version;
@@ -37,11 +36,6 @@ class Manager
     private string $migrateDir;
 
     /**
-     * @var array<LogEntry>
-     */
-    private array $migrationLog = [];
-
-    /**
      * @var array<int,Version>
      */
     private array $versions;
@@ -56,15 +50,16 @@ class Manager
      * @var array<int, Version>
      */
     private array $missingVersions;
-    private \Closure $__callback;
+
+    private \Closure $logHandler;
 
     /**
      * @param array<mixed> $dbiConfig
      */
-    public function __construct(array $dbiConfig, ?\Closure $logCallback = null)
+    public function __construct(array $dbiConfig, ?\Closure $logHandler = null)
     {
-        if ($logCallback) {
-            $this->registerLogHandler($logCallback);
+        if ($logHandler) {
+            $this->logHandler = $logHandler;
         }
         if (!isset($dbiConfig['environment'])) {
             $dbiConfig['environment'] = APPLICATION_ENV;
@@ -82,26 +77,6 @@ class Manager
         }
         $this->workDir = $workDir;
         $this->migrateDir = $this->workDir.DIRECTORY_SEPARATOR.'migrate';
-    }
-
-    /**
-     * Sets a callback function that can be used to process log messages as they are generated.
-     *
-     * The callback function provided must accept one argument.  `LogEvent $event`.
-     *
-     * Example, to simply echo formatted log data:
-     *
-     * '''php
-     * $manager->registerLogHandler(function(LogEvent $event){
-     *      echo $event->toString() . PHP_EOL;
-     * });
-     * '''
-     *
-     * @param \Closure $callback The 'callable' callback function.  See: is_callable();
-     */
-    public function registerLogHandler(\Closure $callback): void
-    {
-        $this->__callback = $callback;
     }
 
     /**
@@ -388,16 +363,16 @@ class Manager
         if (!isset($this->dbi)) {
             $this->connect();
         }
-        $this->log('Starting migration...');
+        $this->dbi->log('Starting migration...');
         $versions = $this->getMissingVersions();
         if (0 === count($versions)) {
-            $this->log('No updates available.');
+            $this->dbi->log('No updates available.');
 
             return false;
         }
-        $this->log('Found '.count($versions).' updates to apply.');
+        $this->dbi->log('Found '.count($versions).' updates to apply.');
         foreach ($versions as $version) {
-            $this->log('Replaying version '.$version->number.': '.$version->comment);
+            $this->dbi->log('Replaying version '.$version->number.': '.$version->comment);
             if (!$version->replay($this->dbi)) {
                 return false;
             }
@@ -430,7 +405,7 @@ class Manager
         }
         $version = $this->getAppliedVersion($versionNumber);
         if (null === $version) {
-            $this->log("Version {$versionNumber} has not been applied.  Skipping rollback.");
+            $this->dbi->log("Version {$versionNumber} has not been applied.  Skipping rollback.");
 
             return false;
         }
@@ -516,28 +491,29 @@ class Manager
         if (!isset($this->dbi)) {
             $this->connect();
         }
-        $this->log('Importing database schema');
+        $this->dbi->log('Importing database schema');
         $databaseSchema = Schema::import($this->dbi);
-        $this->log('Loading master schema');
+        $this->dbi->log('Loading master schema');
         $masterSchema = $this->getSchema(true);
         $snapshot = Snapshot::create($comment ?? 'Snapshot');
         if (null === $masterSchema) {
-            $this->log('No master schema found. Creating initial snapshot.');
+            $this->dbi->log('No master schema found. Creating initial snapshot.');
             $snapshot->setSchema($databaseSchema);
         } else {
-            $this->log('Comparing schemas');
+            $this->dbi->log('Comparing schemas');
             $snapshot->compare($masterSchema, $databaseSchema);
         }
         if (0 === $snapshot->count()) {
-            $this->log('No changes detected.');
+            $this->dbi->log('No changes detected.');
 
             return false;
         }
-        $this->log('Found '.$snapshot->count().' changes to apply');
+        // dump($snapshot->migration->down->actions[0]->toArray());
+        $this->dbi->log('Found '.$snapshot->count().' changes to apply');
         if (true === $test) {
             return true;
         }
-        $this->log('Setting version to '.$snapshot->version->number);
+        $this->dbi->log('Setting version to '.$snapshot->version->number);
         $result = $snapshot->save($this->migrateDir);
         if (!$result) {
             return false;
@@ -574,16 +550,16 @@ class Manager
         }
         $masterSchema = $this->getSchema(true);
         if (null === $masterSchema) {
-            $this->log('No master schema found.  Skipping checkpoint.');
+            $this->dbi->log('No master schema found.  Skipping checkpoint.');
 
             return false;
         }
         if (!count($this->versions) > 0) {
-            $this->log('FATAL ERROR: No versions found.  Skipping checkpoint.');
+            $this->dbi->log('FATAL ERROR: No versions found.  Skipping checkpoint.');
 
             return false;
         }
-        $this->log('Creating checkpoint');
+        $this->dbi->log('Creating checkpoint');
         $snapshot = Snapshot::create($comment ?? 'Checkpoint');
         $snapshot->setSchema($masterSchema);
         $result = $snapshot->save($this->migrateDir);
@@ -593,12 +569,12 @@ class Manager
         foreach ($this->versions as $version) {
             $version->unlink();
         }
-        $this->log('Truncating schema info table');
+        $this->dbi->log('Truncating schema info table');
         $schemaTable = $this->dbi->table(self::$schemaInfoTable);
         $schemaTable->truncate();
-        $this->log('Inserting checkpoint version');
+        $this->dbi->log('Inserting checkpoint version');
         $schemaTable->insert($snapshot->getVersion());
-        $this->log('Checkpoint complete');
+        $this->dbi->log('Checkpoint complete');
 
         return true;
     }
@@ -613,7 +589,7 @@ class Manager
         if (!isset($this->dbi)) {
             $this->connect();
         }
-        $this->log('WARNING: Deleting all database objects!');
+        $this->dbi->log('WARNING: Deleting all database objects!');
         $views = $this->dbi->listViews();
         foreach ($views as $view) {
             $this->dbi->dropView($view['name']);
@@ -625,7 +601,7 @@ class Manager
                 break;
             }
             if (count($tables) === count($lastTables) && $i > count($tables)) {
-                $this->log('Got stuck trying to resolve drop dependencies. Aborting!');
+                $this->dbi->log('Got stuck trying to resolve drop dependencies. Aborting!');
 
                 return false;
             }
@@ -666,7 +642,15 @@ class Manager
      */
     public function getMigrationLog(): array
     {
-        return $this->migrationLog;
+        return $this->dbi->getEventLog();
+    }
+
+    public function registerLogHandler(\Closure $handler): void
+    {
+        $this->logHandler = $handler;
+        if (isset($this->dbi)) {
+            $this->dbi->registerLogHandler($handler);
+        }
     }
 
     /**
@@ -684,21 +668,24 @@ class Manager
         }
 
         try {
-            $this->log("Connecting to database '{$this->config['dbname']}' on host '{$config['host']}'");
             $this->dbi = new Adapter($config);
+            if (isset($this->logHandler)) {
+                $this->dbi->registerLogHandler($this->logHandler);
+            }
+            $this->dbi->log("Connected to database '{$this->config['dbname']}' on host '{$config['host']}'");
         } catch (ConnectionFailed $e) {
             if (7 !== $e->getCode() || true !== ake($config, 'createDatabase')) {
                 throw $e;
             }
-            $this->log('Database does not exist.  Attempting to create it as requested.');
+            $this->dbi->log('Database does not exist.  Attempting to create it as requested.');
             $config['dbname'] = isset($config['maintenanceDatabase'])
                 ? $config['maintenanceDatabase']
                 : $config['user'];
-            $this->log("Connecting to database '{$config['dbname']}' on host '{$config['host']}'");
+            $this->dbi->log("Connecting to database '{$config['dbname']}' on host '{$config['host']}'");
             $maintDB = new Adapter($config);
-            $this->log("Creating database '{$config['dbname']}'");
+            $this->dbi->log("Creating database '{$config['dbname']}'");
             $maintDB->createDatabase($config['dbname']);
-            $this->log("Retrying connection to database '{$config['dbname']}' on host '{$config['host']}'");
+            $this->dbi->log("Retrying connection to database '{$config['dbname']}' on host '{$config['host']}'");
             $this->dbi = new Adapter($config);
         }
         for ($i = 0; $i < 2; ++$i) {
@@ -710,7 +697,7 @@ class Manager
                 if (isset($config['schema']) && '3F000' !== $e->getCode()) {
                     throw $e;
                 }
-                $this->log('Failed to create schema info table.  Retrying...');
+                $this->dbi->log('Failed to create schema info table.  Retrying...');
                 $this->dbi->createSchema($config['schema']);
             }
         }
@@ -735,7 +722,7 @@ class Manager
         if ($this->dbi->tableExists(self::$schemaInfoTable)) {
             return false;
         }
-        $this->log('Creating schema info table');
+        $this->dbi->log('Creating schema info table');
 
         return $this->dbi->table(self::$schemaInfoTable)->create([
             'number' => [
@@ -757,21 +744,5 @@ class Manager
                 'null' => true,
             ],
         ]);
-    }
-
-    /**
-     * Logs a message to the migration log.
-     *
-     * @param string $msg The message to log
-     */
-    private function log(string $msg): void
-    {
-        $this->migrationLog[] = new LogEntry($msg);
-        if (!isset($this->__callback)) {
-            return;
-        }
-        while ($entry = array_shift($this->migrationLog)) {
-            call_user_func($this->__callback, $entry);
-        }
     }
 }
