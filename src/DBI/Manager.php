@@ -530,7 +530,7 @@ class Manager
             $snapshot->compare($masterSchema, $databaseSchema);
         }
         if (0 === $snapshot->count()) {
-            $this->dbi->log('No changes detected.');
+            $this->dbi->log('No changes detected in '.$timer);
 
             return false;
         }
@@ -542,6 +542,8 @@ class Manager
         $this->dbi->log('Setting version to '.$snapshot->version->number);
         $result = $snapshot->save($this->dbi, self::$schemaInfoTable, $this->migrateDir);
         if (!$result) {
+            $this->dbi->log('Snapshot failed in '.$timer);
+
             return false;
         }
         $this->dbi->log('Snapshot completed in '.$timer);
