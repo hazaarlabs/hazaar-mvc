@@ -141,7 +141,7 @@ class SQL implements QueryBuilder
         return implode('.', $parts);
     }
 
-    public function reset(): void
+    public function reset(): self
     {
         $this->selectGroups = [];
         $this->from = [];
@@ -158,6 +158,8 @@ class SQL implements QueryBuilder
         $this->distinct = false;
         $this->limit = null;
         $this->offset = null;
+
+        return $this;
     }
 
     public function create(string $name, string $type, bool $ifNotExists = false): string

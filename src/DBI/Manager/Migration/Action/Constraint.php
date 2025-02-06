@@ -12,8 +12,19 @@ class Constraint extends BaseAction
     public string $name;
     public string $table;
     public string $type;
-    public string $column;
+
+    /**
+     * @var array<string>
+     */
+    public array $column;
     public ConstraintReference $references;
+
+    public function construct(mixed &$data): void
+    {
+        if (!is_array($data['column'])) {
+            $data['column'] = [$data['column']];
+        }
+    }
 
     public function create(Adapter $dbi): bool
     {

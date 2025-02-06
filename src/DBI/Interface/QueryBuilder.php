@@ -133,5 +133,5 @@ interface QueryBuilder
         bool &$setKey = true
     ): string;
 
-    public function reset(): void;
+    public function reset(): self;
 }
