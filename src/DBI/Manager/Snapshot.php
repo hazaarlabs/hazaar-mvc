@@ -214,13 +214,15 @@ class Snapshot extends Model
                 }
                 // If this is a primary key constraint, check if the column is already a primary key.
                 if ('PRIMARY KEY' === $constraint->type) {
-                    $column = Schema::findActionOrComponent($constraint->column, $table->columns);
-                    if (null === $column) {
-                        throw new \Exception('Column not found for primary key constraint: '.$constraint->column);
-                    }
-                    // Column is already a primary key. Skip the constraint.
-                    if (isset($column->primarykey) && true === $column->primarykey) {
-                        continue;
+                    foreach ($constraint->column as $column) {
+                        $column = Schema::findActionOrComponent($column, $table->columns);
+                        if (null === $column) {
+                            throw new \Exception('Column not found for primary key constraint: '.$column);
+                        }
+                        // Column is already a primary key. Skip the constraint.
+                        if (isset($column->primarykey) && true === $column->primarykey) {
+                            continue 2;
+                        }
                     }
                 }
                 $migration->up->add(ActionName::CREATE, ActionType::CONSTRAINT, $constraint);

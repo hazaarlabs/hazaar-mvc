@@ -169,12 +169,14 @@ class Schema extends Model
             if (isset($constraint->type) && 'PRIMARY KEY' === $constraint->type) {
                 $table = self::findActionOrComponent($constraint->table, $this->tables);
                 if ($table) {
-                    $column = self::findActionOrComponent($constraint->column, $table->columns);
-                    if ($column) {
-                        $column->primarykey = true;
-
-                        continue;
+                    foreach ($constraint->column as $column) {
+                        $column = self::findActionOrComponent($column, $table->columns);
+                        if ($column) {
+                            $column->primarykey = true;
+                        }
                     }
+
+                    continue;
                 }
             }
             $migration->up->actions[] = Action::create(ActionType::CONSTRAINT, $constraint);
