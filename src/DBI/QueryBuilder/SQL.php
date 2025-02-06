@@ -90,6 +90,11 @@ class SQL implements QueryBuilder
         $this->schemaName = $schemaName;
     }
 
+    public function setReservedWords(array $words): void
+    {
+        $this->reservedWords = $words;
+    }
+
     public function getSchemaName(): ?string
     {
         return $this->schemaName;
