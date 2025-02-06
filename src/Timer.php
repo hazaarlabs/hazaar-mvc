@@ -86,7 +86,7 @@ class Timer
      * @param string $name a name for the timer
      * @param float  $when Optionally allow the start time to be overriden.  Defaults to PHP's microtime(true) value.
      */
-    public function start(string $name = 'default', ?float $when = null): void
+    public function start(string $name = 'total', ?float $when = null): void
     {
         if (isset($this->timers[$name])) {
             return;
