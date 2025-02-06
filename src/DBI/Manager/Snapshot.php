@@ -227,18 +227,19 @@ class Snapshot extends Model
         foreach ($masterSchama->constraints as $constraint) {
             $action = Schema::findActionOrComponent($constraint->name, $compareSchema->constraints);
             // Constraint does not exist in compare schema. Add a drop action.
-            if (null === $action) {
-                // Check if the table is being dropped and if so, skip the drop constraint action
-                // because the table drop action will take care of it.
-                $tableAction = Schema::findActionOrComponent($constraint->table, $migration->up->actions);
-                if (null !== $tableAction
-                    && !(ActionName::DROP === $tableAction->name
-                    && ActionType::TABLE === $tableAction->type)) {
-                    $migration->up->add(ActionName::DROP, ActionType::CONSTRAINT, $constraint);
-                }
-                // We still need to add a down action to create the constraint again
-                $migration->down->add(ActionName::CREATE, ActionType::CONSTRAINT, $constraint);
+            if (null !== $action) {
+                continue;
             }
+            // Check if the table is being dropped and if so, skip the drop constraint action
+            // because the table drop action will take care of it.
+            $tableAction = Schema::findActionOrComponent($constraint->table, $migration->up->actions);
+            if (null === $tableAction
+                || !(ActionName::DROP === $tableAction->name
+                && ActionType::TABLE === $tableAction->type)) {
+                $migration->up->add(ActionName::DROP, ActionType::CONSTRAINT, $constraint);
+            }
+            // We still need to add a down action to create the constraint again
+            $migration->down->add(ActionName::CREATE, ActionType::CONSTRAINT, $constraint);
         }
     }
 
@@ -272,18 +273,19 @@ class Snapshot extends Model
         foreach ($masterSchama->indexes as $index) {
             $action = Schema::findActionOrComponent($index->name, $compareSchema->indexes);
             // Index does not exist in compare schema. Add a drop action.
-            if (null === $action) {
-                // Check if the table is being dropped and if so, skip the drop index action
-                // because the table drop action will take care of it.
-                $tableAction = Schema::findActionOrComponent($index->table, $migration->up->actions);
-                if (null !== $tableAction
-                    && !(ActionName::DROP === $tableAction->name
-                    && ActionType::TABLE === $tableAction->type)) {
-                    $migration->up->add(ActionName::DROP, ActionType::INDEX, $index);
-                }
-                // We still need to add a down action to create the index again
-                $migration->down->add(ActionName::CREATE, ActionType::INDEX, $index);
+            if (null !== $action) {
+                continue;
             }
+            // Check if the table is being dropped and if so, skip the drop index action
+            // because the table drop action will take care of it.
+            $tableAction = Schema::findActionOrComponent($index->table, $migration->up->actions);
+            if (null === $tableAction
+                || !(ActionName::DROP === $tableAction->name
+                && ActionType::TABLE === $tableAction->type)) {
+                $migration->up->add(ActionName::DROP, ActionType::INDEX, $index);
+            }
+            // We still need to add a down action to create the index again
+            $migration->down->add(ActionName::CREATE, ActionType::INDEX, $index);
         }
     }
 
@@ -305,10 +307,11 @@ class Snapshot extends Model
         // Look for functions that have been removed.
         foreach ($masterSchama->functions as $function) {
             $action = Schema::findActionOrComponent($function->name, $compareSchema->functions);
-            if (null === $action) {
-                $migration->up->add(ActionName::DROP, ActionType::FUNC, $function);
-                $migration->down->add(ActionName::CREATE, ActionType::FUNC, $function);
+            if (null !== $action) {
+                continue;
             }
+            $migration->up->add(ActionName::DROP, ActionType::FUNC, $function);
+            $migration->down->add(ActionName::CREATE, ActionType::FUNC, $function);
         }
     }
 
@@ -330,10 +333,11 @@ class Snapshot extends Model
         // Look for triggers that have been removed.
         foreach ($masterSchama->triggers as $trigger) {
             $action = Schema::findActionOrComponent($trigger->name, $compareSchema->triggers);
-            if (null === $action) {
-                $migration->up->add(ActionName::DROP, ActionType::TRIGGER, $trigger);
-                $migration->down->add(ActionName::CREATE, ActionType::TRIGGER, $trigger);
+            if (null !== $action) {
+                continue;
             }
+            $migration->up->add(ActionName::DROP, ActionType::TRIGGER, $trigger);
+            $migration->down->add(ActionName::CREATE, ActionType::TRIGGER, $trigger);
         }
     }
 
@@ -355,10 +359,11 @@ class Snapshot extends Model
         // Look for views that have been removed.
         foreach ($masterSchama->views as $view) {
             $action = Schema::findActionOrComponent($view->name, $compareSchema->views);
-            if (null === $action) {
-                $migration->up->add(ActionName::DROP, ActionType::VIEW, $view);
-                $migration->down->add(ActionName::CREATE, ActionType::VIEW, $view);
+            if (null !== $action) {
+                continue;
             }
+            $migration->up->add(ActionName::DROP, ActionType::VIEW, $view);
+            $migration->down->add(ActionName::CREATE, ActionType::VIEW, $view);
         }
     }
 }
