@@ -37,6 +37,11 @@ class Table extends BaseAction
 
     public function alter(Adapter $dbi): bool
     {
+        if (!isset($this->name)) {
+            $dbi->log('ERROR: Table name not set for alter action');
+
+            return false;
+        }
         if (isset($this->add) && count($this->add) > 0) {
             foreach ($this->add as $column) {
                 $result = $dbi->addColumn($this->name, $column->toArray());
@@ -157,5 +162,28 @@ class Table extends BaseAction
         }
 
         return null;
+    }
+
+    public function reverse(self $sourceTable): self
+    {
+        $spec = [
+            'name' => $this->name,
+        ];
+        if (isset($this->drop)) {
+            $spec['add'] = [];
+            foreach ($this->drop as $column) {
+                $spec['add'][] = $sourceTable->columns[array_usearch($sourceTable->columns, function (Column $sourceColumn) use ($column) {
+                    return $sourceColumn->name === $column;
+                })];
+            }
+        }
+        if (isset($this->add)) {
+            $spec['drop'] = [];
+            foreach ($this->add as $column) {
+                $spec['drop'][] = $column->name;
+            }
+        }
+
+        return new self($spec);
     }
 }

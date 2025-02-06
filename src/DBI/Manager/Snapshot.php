@@ -7,6 +7,7 @@ namespace Hazaar\DBI\Manager;
 use Hazaar\Controller\Exception\HeadersSent;
 use Hazaar\DBI\Manager\Migration\Action\Extension;
 use Hazaar\DBI\Manager\Migration\Action\Raise;
+use Hazaar\DBI\Manager\Migration\Action\Table;
 use Hazaar\DBI\Manager\Migration\Enum\ActionName;
 use Hazaar\DBI\Manager\Migration\Enum\ActionType;
 use Hazaar\DBI\Manager\Migration\Event;
@@ -160,9 +161,11 @@ class Snapshot extends Model
             // Table exists in master schema. Compare the table schemas.
             $diff = $action->diff($table);
             // Table schema is different. Add an alter action.
-            if (null !== $diff) {
+            if (null !== $diff
+                && $diff instanceof Table
+                && $action instanceof Table) {
                 $migration->up->add(ActionName::ALTER, ActionType::TABLE, $diff);
-                // $migration->down->add(ActionName::ALTER, ActionType::TABLE, $diff->reverse());
+                $migration->down->add(ActionName::ALTER, ActionType::TABLE, $diff->reverse($action));
             }
         }
         // Look for tables that have been removed'

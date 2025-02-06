@@ -85,6 +85,12 @@ class Action extends Model
 
     public function run(Adapter $dbi): bool
     {
+        if (!isset($this->name)) {
+            throw new \Exception('No action name found');
+        }
+        if (!isset($this->type)) {
+            throw new \Exception('No action type found for action '.$this->name->value);
+        }
         if (!isset($this->spec)) {
             throw new \Exception('No action specification found for action '.$this->name->value);
         }

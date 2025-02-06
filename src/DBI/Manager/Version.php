@@ -189,7 +189,9 @@ class Version extends Model
             $dbi->begin();
             $result = $this->migrate->run($dbi);
             if (false === $result) {
-                throw new \Exception('Failed to rollback version '.$this->number);
+                $dbi->log('Failed to rollback version '.$this->number);
+
+                return false;
             }
             $dbi->table('schema_version')->delete(['number' => $this->number]);
         } catch (\Exception $e) {
