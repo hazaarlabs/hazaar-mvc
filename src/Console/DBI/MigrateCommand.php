@@ -40,7 +40,7 @@ class MigrateCommand extends Command
         if (!$manager->migrate($version)) {
             return 1;
         }
-        if (!$manager->sync($input->getOption('force_sync') ?? false)) {
+        if (!$manager->sync(null, $input->getOption('force_sync') ?? false)) {
             return 2;
         }
 

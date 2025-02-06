@@ -17,6 +17,7 @@ use Hazaar\DBI\Manager\Schema;
 use Hazaar\DBI\Manager\Snapshot;
 use Hazaar\DBI\Manager\Version;
 use Hazaar\Loader;
+use Hazaar\Timer;
 
 /**
  * Relational Database Schema Manager.
@@ -354,7 +355,7 @@ class Manager
         if (!isset($this->dbi)) {
             $this->connect();
         }
-        $start = microtime(true);
+        $timer = new Timer();
         $this->dbi->log('Starting migration...');
         $versions = $this->getMissingVersions();
         if (0 === count($versions)) {
@@ -396,7 +397,7 @@ class Manager
                 }
             }
         }
-        $this->dbi->log('Migration completed in '.round(microtime(true) - $start, 2).' seconds.');
+        $this->dbi->log('Migration completed in '.$timer);
 
         return true;
     }
@@ -418,7 +419,6 @@ class Manager
         if (!isset($this->dbi)) {
             $this->connect();
         }
-        $start = microtime(true);
         $version = $this->getAppliedVersion($versionNumber);
         if (null === $version) {
             $this->dbi->log("Version {$versionNumber} has not been applied.  Skipping rollback.");
@@ -434,10 +434,10 @@ class Manager
         if (!isset($this->dbi)) {
             $this->connect();
         }
-        $start = microtime(true);
+        $timer = new Timer();
         $result = $version->rollback($this->dbi, self::$schemaInfoTable);
         if ($result) {
-            $this->dbi->log("Rollback of version {$version->number} completed in ".round(microtime(true) - $start, 2).' seconds.');
+            $this->dbi->log("Rollback of version {$version->number} completed in ".$timer);
         }
 
         return $result;
@@ -459,12 +459,12 @@ class Manager
         if (!isset($this->dbi)) {
             $this->connect();
         }
-        $start = microtime(true);
+        $timer = new Timer();
         $version = $this->getVersion($version);
         $version->rollback($this->dbi, self::$schemaInfoTable);
         $result = $version->replay($this->dbi, self::$schemaInfoTable);
         if ($result) {
-            $this->dbi->log("Replay of version {$version->number} completed in ".round(microtime(true) - $start, 2).' seconds.');
+            $this->dbi->log("Replay of version {$version->number} completed in ".$timer);
         }
 
         return $result;
@@ -510,7 +510,7 @@ class Manager
         if (!isset($this->dbi)) {
             $this->connect();
         }
-        $start = microtime(true);
+        $timer = new Timer();
         $missingVersions = $this->getMissingVersions();
         if (count($missingVersions) > 0) {
             $this->dbi->log('There are missing versions.  Please migrate the database before taking a snapshot.');
@@ -544,7 +544,7 @@ class Manager
         if (!$result) {
             return false;
         }
-        $this->dbi->log('Snapshot completed in '.round(microtime(true) - $start, 2).' seconds.');
+        $this->dbi->log('Snapshot completed in '.$timer);
 
         return true;
     }
@@ -583,7 +583,7 @@ class Manager
 
             return false;
         }
-        $start = microtime(true);
+        $timer = new Timer();
         $this->dbi->log('Creating checkpoint');
         $snapshot = Snapshot::create($comment ?? 'Checkpoint');
         $snapshot->setSchema($masterSchema);
@@ -599,7 +599,7 @@ class Manager
         $schemaTable->truncate();
         $this->dbi->log('Inserting checkpoint version');
         $schemaTable->insert($snapshot->getVersion());
-        $this->dbi->log('Checkpoint completed in '.round(microtime(true) - $start, 2).' seconds.');
+        $this->dbi->log('Checkpoint completed in '.$timer);
 
         return true;
     }
@@ -614,7 +614,7 @@ class Manager
         if (!isset($this->dbi)) {
             $this->connect();
         }
-        $start = microtime(true);
+        $timer = new Timer();
         $this->dbi->log('WARNING: Deleting all database objects!');
         $views = $this->dbi->listViews();
         foreach ($views as $view) {
@@ -651,7 +651,7 @@ class Manager
             $this->dbi->dropExtension($extension);
         }
         $result = $this->createSchemaVersionTable();
-        $this->dbi->log('All database objects deleted in '.round(microtime(true) - $start, 2).' seconds.');
+        $this->dbi->log('All database objects deleted in '.$timer);
 
         return $result;
     }

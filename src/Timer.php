@@ -72,7 +72,7 @@ class Timer
      */
     public function __toString()
     {
-        return (string) $this->get();
+        return (string) interval($this->get() / 1000);
     }
 
     /**
@@ -145,7 +145,7 @@ class Timer
      * @param string $name      The name of the timer to stop.  If the timer does not exist an exception is thrown.
      * @param int    $precision The precision of the returned value.  If not specified the precision used in the constructor is used.
      */
-    public function get(string $name = 'default', ?int $precision = null): float
+    public function get(string $name = 'total', ?int $precision = null): float
     {
         if (!array_key_exists($name, $this->timers)) {
             throw new \Exception("Unable to return current value of non-existent timer '{$name}'.");
