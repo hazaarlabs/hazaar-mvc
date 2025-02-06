@@ -30,6 +30,15 @@ class Index extends BaseAction
 
     public function drop(Adapter $dbi): bool
     {
-        return $dbi->dropIndex($this->name, true);
+        if (!isset($this->drop)) {
+            return false;
+        }
+        foreach ($this->drop as $index) {
+            if (!$dbi->dropIndex($index, true)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
