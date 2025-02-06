@@ -166,7 +166,7 @@ class Schema extends Model
             $migration->up->actions[] = Action::create(ActionType::VIEW, $view);
         }
         foreach ($this->constraints as $constraint) {
-            if ('PRIMARY KEY' === $constraint->type) {
+            if (isset($constraint->type) && 'PRIMARY KEY' === $constraint->type) {
                 $table = self::findActionOrComponent($constraint->table, $this->tables);
                 if ($table) {
                     $column = self::findActionOrComponent($constraint->column, $table->columns);
@@ -193,12 +193,18 @@ class Schema extends Model
     }
 
     /**
-     * @param array<BaseAction|BaseComponent> $haystack
+     * @param array<Action|BaseAction|BaseComponent> $haystack
      */
-    public static function findActionOrComponent(string $name, array $haystack): null|BaseAction|BaseComponent
+    public static function findActionOrComponent(string $name, array $haystack): null|Action|BaseAction|BaseComponent
     {
         foreach ($haystack as $action) {
-            if ($action->name === $name) {
+            if ($action instanceof Action
+                && isset($action->spec, $action->spec->name)
+                && $action->spec->name === $name) {
+                return $action;
+            }
+            if (($action instanceof BaseAction || $action instanceof BaseComponent)
+                && $action->name === $name) {
                 return $action;
             }
         }
@@ -282,6 +288,26 @@ class Schema extends Model
             }
 
             unset($this->{$elementName}[$dropItem]);
+            // If we are dropping a table, we need to drop any constraints or indexes that reference it as well
+            if ('tables' === $elementName) {
+                $this->dropTableReferences($this->constraints, $dropItem);
+                $this->dropTableReferences($this->indexes, $dropItem);
+            }
+        }
+    }
+
+    /**
+     * Drops all constraints or indexes that reference the specified table.
+     *
+     * @param array<Constraint|Index> $elements the array of constraints or indexes to search for references
+     */
+    private function dropTableReferences(array &$elements, string $table): void
+    {
+        foreach ($elements as $key => $element) {
+            if ($element->table !== $table) {
+                continue;
+            }
+            unset($elements[$key]);
         }
     }
 

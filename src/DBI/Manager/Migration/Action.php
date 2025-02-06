@@ -115,6 +115,10 @@ class Action extends Model
             } elseif (ActionName::RAISE === $this->name) {
                 $data = ['raise' => $this->spec->message];
             }
+            if (!isset($data['action'])) {
+                unset($data['name']);
+                $data = ['action' => $this->name->value] + $data;
+            }
         });
     }
 }

@@ -49,6 +49,7 @@ class Snapshot extends Model
     {
         $migration = new Migration();
         $migration->up = new Event();
+        $migration->down = new Event();
         // Look for new or changed extensions
         $this->compareExtensions($migration, $masterSchama, $compareSchema);
         // Look for new or changed tables
@@ -161,6 +162,7 @@ class Snapshot extends Model
             // Table schema is different. Add an alter action.
             if (null !== $diff) {
                 $migration->up->add(ActionName::ALTER, ActionType::TABLE, $diff);
+                // $migration->down->add(ActionName::ALTER, ActionType::TABLE, $diff->reverse());
             }
         }
         // Look for tables that have been removed'
@@ -169,6 +171,7 @@ class Snapshot extends Model
             // Table does not exist in compare schema. Add a drop action.
             if (null === $action) {
                 $migration->up->add(ActionName::DROP, ActionType::TABLE, $table);
+                $migration->down->add(ActionName::CREATE, ActionType::TABLE, $table);
             }
         }
     }
@@ -209,6 +212,7 @@ class Snapshot extends Model
                     }
                 }
                 $migration->up->add(ActionName::CREATE, ActionType::CONSTRAINT, $constraint);
+                $migration->down->add(ActionName::DROP, ActionType::CONSTRAINT, $constraint);
 
                 continue;
             }
@@ -224,7 +228,16 @@ class Snapshot extends Model
             $action = Schema::findActionOrComponent($constraint->name, $compareSchema->constraints);
             // Constraint does not exist in compare schema. Add a drop action.
             if (null === $action) {
-                $migration->up->add(ActionName::DROP, ActionType::CONSTRAINT, $constraint);
+                // Check if the table is being dropped and if so, skip the drop constraint action
+                // because the table drop action will take care of it.
+                $tableAction = Schema::findActionOrComponent($constraint->table, $migration->up->actions);
+                if (null !== $tableAction
+                    && !(ActionName::DROP === $tableAction->name
+                    && ActionType::TABLE === $tableAction->type)) {
+                    $migration->up->add(ActionName::DROP, ActionType::CONSTRAINT, $constraint);
+                }
+                // We still need to add a down action to create the constraint again
+                $migration->down->add(ActionName::CREATE, ActionType::CONSTRAINT, $constraint);
             }
         }
     }
@@ -244,6 +257,7 @@ class Snapshot extends Model
             // Index does not exist in master schema. Add a create action.
             if (null === $action) {
                 $migration->up->add(ActionName::CREATE, ActionType::INDEX, $index);
+                $migration->down->add(ActionName::DROP, ActionType::INDEX, $index);
 
                 continue;
             }
@@ -259,7 +273,16 @@ class Snapshot extends Model
             $action = Schema::findActionOrComponent($index->name, $compareSchema->indexes);
             // Index does not exist in compare schema. Add a drop action.
             if (null === $action) {
-                $migration->up->add(ActionName::DROP, ActionType::INDEX, $index);
+                // Check if the table is being dropped and if so, skip the drop index action
+                // because the table drop action will take care of it.
+                $tableAction = Schema::findActionOrComponent($index->table, $migration->up->actions);
+                if (null !== $tableAction
+                    && !(ActionName::DROP === $tableAction->name
+                    && ActionType::TABLE === $tableAction->type)) {
+                    $migration->up->add(ActionName::DROP, ActionType::INDEX, $index);
+                }
+                // We still need to add a down action to create the index again
+                $migration->down->add(ActionName::CREATE, ActionType::INDEX, $index);
             }
         }
     }
@@ -270,6 +293,7 @@ class Snapshot extends Model
             $action = Schema::findActionOrComponent($function->name, $masterSchama->functions);
             if (null === $action) {
                 $migration->up->add(ActionName::CREATE, ActionType::FUNC, $function);
+                $migration->down->add(ActionName::DROP, ActionType::FUNC, $function);
 
                 continue;
             }
@@ -283,6 +307,7 @@ class Snapshot extends Model
             $action = Schema::findActionOrComponent($function->name, $compareSchema->functions);
             if (null === $action) {
                 $migration->up->add(ActionName::DROP, ActionType::FUNC, $function);
+                $migration->down->add(ActionName::CREATE, ActionType::FUNC, $function);
             }
         }
     }
@@ -293,6 +318,7 @@ class Snapshot extends Model
             $action = Schema::findActionOrComponent($trigger->name, $masterSchama->triggers);
             if (null === $action) {
                 $migration->up->add(ActionName::CREATE, ActionType::TRIGGER, $trigger);
+                $migration->down->add(ActionName::DROP, ActionType::TRIGGER, $trigger);
 
                 continue;
             }
@@ -306,6 +332,7 @@ class Snapshot extends Model
             $action = Schema::findActionOrComponent($trigger->name, $compareSchema->triggers);
             if (null === $action) {
                 $migration->up->add(ActionName::DROP, ActionType::TRIGGER, $trigger);
+                $migration->down->add(ActionName::CREATE, ActionType::TRIGGER, $trigger);
             }
         }
     }
@@ -316,6 +343,7 @@ class Snapshot extends Model
             $action = Schema::findActionOrComponent($view->name, $masterSchama->views);
             if (null === $action) {
                 $migration->up->add(ActionName::CREATE, ActionType::VIEW, $view);
+                $migration->down->add(ActionName::DROP, ActionType::VIEW, $view);
 
                 continue;
             }
@@ -329,6 +357,7 @@ class Snapshot extends Model
             $action = Schema::findActionOrComponent($view->name, $compareSchema->views);
             if (null === $action) {
                 $migration->up->add(ActionName::DROP, ActionType::VIEW, $view);
+                $migration->down->add(ActionName::CREATE, ActionType::VIEW, $view);
             }
         }
     }

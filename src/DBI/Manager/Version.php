@@ -214,7 +214,7 @@ class Version extends Model
 
     public static function generateVersionNumber(): string
     {
-        return str_pad((string) (new \DateTime())->getTimestamp(), 14, '0', STR_PAD_RIGHT);
+        return str_pad(date('YmdHis'), 14, '0', STR_PAD_RIGHT);
     }
 
     protected function constructed(): void
