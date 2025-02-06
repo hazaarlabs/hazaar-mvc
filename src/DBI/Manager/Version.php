@@ -134,7 +134,7 @@ class Version extends Model
      *
      * @throws \Exception if the migration replay fails or any other error occurs during the process
      */
-    public function replay(Adapter $dbi): bool
+    public function replay(Adapter $dbi, string $schemaVersionTable): bool
     {
         $migration = $this->loadMigration();
         if (null === $migration) {
@@ -150,7 +150,7 @@ class Version extends Model
             if (isset($migration->down)) {
                 $this->migrate = $migration->down;
             }
-            $dbi->table('schema_version')->insert($this);
+            $dbi->table($schemaVersionTable)->insert($this);
         } catch (\Exception $e) {
             $dbi->cancel();
 
@@ -175,7 +175,7 @@ class Version extends Model
      *
      * @throws \Exception if the rollback fails
      */
-    public function rollback(Adapter $dbi): bool
+    public function rollback(Adapter $dbi, string $schemaVersionTable): bool
     {
         if (!isset($this->migrate)) {
             $migration = $this->loadMigration();
@@ -193,7 +193,7 @@ class Version extends Model
 
                 return false;
             }
-            $dbi->table('schema_version')->delete(['number' => $this->number]);
+            $dbi->table($schemaVersionTable)->delete(['number' => $this->number]);
         } catch (\Exception $e) {
             $dbi->cancel();
 

@@ -391,7 +391,7 @@ class Manager
             $this->dbi->log('Found '.count($versions).' updates to apply.');
             foreach ($versions as $version) {
                 $this->dbi->log('Replaying version '.$version->number.': '.$version->comment);
-                if (!$version->replay($this->dbi)) {
+                if (!$version->replay($this->dbi, self::$schemaInfoTable)) {
                     return false;
                 }
             }
@@ -435,7 +435,7 @@ class Manager
             $this->connect();
         }
         $start = microtime(true);
-        $result = $version->rollback($this->dbi);
+        $result = $version->rollback($this->dbi, self::$schemaInfoTable);
         if ($result) {
             $this->dbi->log("Rollback of version {$version->number} completed in ".round(microtime(true) - $start, 2).' seconds.');
         }
@@ -461,8 +461,8 @@ class Manager
         }
         $start = microtime(true);
         $version = $this->getVersion($version);
-        $version->rollback($this->dbi);
-        $result = $version->replay($this->dbi);
+        $version->rollback($this->dbi, self::$schemaInfoTable);
+        $result = $version->replay($this->dbi, self::$schemaInfoTable);
         if ($result) {
             $this->dbi->log("Replay of version {$version->number} completed in ".round(microtime(true) - $start, 2).' seconds.');
         }
@@ -540,7 +540,7 @@ class Manager
             return true;
         }
         $this->dbi->log('Setting version to '.$snapshot->version->number);
-        $result = $snapshot->save($this->migrateDir);
+        $result = $snapshot->save($this->dbi, self::$schemaInfoTable, $this->migrateDir);
         if (!$result) {
             return false;
         }
@@ -587,7 +587,7 @@ class Manager
         $this->dbi->log('Creating checkpoint');
         $snapshot = Snapshot::create($comment ?? 'Checkpoint');
         $snapshot->setSchema($masterSchema);
-        $result = $snapshot->save($this->migrateDir);
+        $result = $snapshot->save($this->dbi, self::$schemaInfoTable, $this->migrateDir);
         if (!$result) {
             return false;
         }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\DBI\Manager;
 
 use Hazaar\Controller\Exception\HeadersSent;
+use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Manager\Migration\Action\Extension;
 use Hazaar\DBI\Manager\Migration\Action\Raise;
 use Hazaar\DBI\Manager\Migration\Action\Table;
@@ -102,8 +103,16 @@ class Snapshot extends Model
      *
      * @return bool returns true if the file was successfully written, false otherwise
      */
-    public function save(string $targetDir): bool
+    public function save(Adapter $dbi, string $schemaInfoTable, string $targetDir): bool
     {
+        $this->version->comment = $this->comment;
+        $this->version->migrate = $this->migration->down;
+        $result = $dbi->table($schemaInfoTable)->insert($this->version);
+        if (!$result) {
+            $dbi->log('Failed to save schema version record to table '.$schemaInfoTable);
+
+            return false;
+        }
         $migrateFile = $targetDir.DIRECTORY_SEPARATOR
             .$this->version->number.'_'
             .str_replace(' ', '_', $this->comment).'.json';
