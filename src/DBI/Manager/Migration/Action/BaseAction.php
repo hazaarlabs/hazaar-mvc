@@ -64,4 +64,12 @@ abstract class BaseAction extends Model implements Spec
     {
         return null;
     }
+
+    /**
+     * Return the BaseAction as an array.
+     */
+    public function serializeDrop(): mixed
+    {
+        return $this->name;
+    }
 }

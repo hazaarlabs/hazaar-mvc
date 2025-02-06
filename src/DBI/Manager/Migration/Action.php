@@ -111,9 +111,11 @@ class Action extends Model
         */
         $this->defineEventHook('serialized', function (&$data) {
             if (ActionName::DROP === $this->name) {
-                $data['spec'] = $this->spec->name;
+                $data['spec'] = $this->spec->serializeDrop();
             } elseif (ActionName::RAISE === $this->name) {
                 $data = ['raise' => $this->spec->message];
+
+                return;
             }
             if (!isset($data['action'])) {
                 unset($data['name']);
