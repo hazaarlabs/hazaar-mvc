@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\Manager;
 
+use Hazaar\DBI\Adapter;
+use Hazaar\DBI\Manager\Sync\Item;
 use Hazaar\Model;
 
 class Data extends Model
@@ -14,7 +16,7 @@ class Data extends Model
     public array $appliedVersions = [];
 
     /**
-     * @var array<mixed>
+     * @var array<Item>
      */
     public array $items = [];
 
@@ -42,11 +44,20 @@ class Data extends Model
         return md5(json_encode($this->items));
     }
 
-    public function run(?\Closure $callback = null): bool
+    public function run(Adapter $dbi): bool
     {
-        if (is_callable($callback)) {
-            $callback('Data sync is working...');
+        $dbi->log('Data sync is working...');
+        foreach ($this->items as $item) {
+            if (isset($item->message)) {
+                $dbi->log($item->message);
+            }
+            if (!isset($item->table)) {
+                continue;
+            }
+            $dbi->log("Syncing rows to table '{$item->table}'");
+            // TODO: Add the bit that does the actual syncing
         }
+        $dbi->log('Data sync is complete');
 
         return true;
     }

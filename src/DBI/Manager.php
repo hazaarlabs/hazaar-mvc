@@ -584,9 +584,7 @@ class Manager
                 $sync->appliedVersions = array_keys($this->getAppliedVersions());
                 $this->dbi->log('Starting DBI data sync on schema version '.$currentVersion);
             }
-            $result = $sync->run(function ($event) {
-                $this->dbi->log($event);
-            });
+            $result = $sync->run($this->dbi);
             if (false === $result) {
                 throw new \Exception('Data sync failed');
             }
