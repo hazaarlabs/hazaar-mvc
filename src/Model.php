@@ -69,6 +69,7 @@ abstract class Model implements \jsonSerializable, \Iterator
         'array',
         'object',
         'null',
+        'mixed',
     ];
 
     /**
@@ -703,6 +704,9 @@ abstract class Model implements \jsonSerializable, \Iterator
      */
     private function convertValueDataType(string $propertyType, mixed &$propertyValue): void
     {
+        if ('mixed' === $propertyType) {
+            return;
+        }
         if (in_array($propertyType, self::$allowTypes, true)) {
             if ('bool' === $propertyType || 'boolean' === $propertyType) {
                 $propertyValue = boolify($propertyValue);
