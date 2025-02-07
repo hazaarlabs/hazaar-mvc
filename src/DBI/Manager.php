@@ -11,8 +11,10 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI;
 
+use Hazaar\Application;
 use Hazaar\Application\FilePath;
 use Hazaar\DBI\Exception\ConnectionFailed;
+use Hazaar\DBI\Manager\Data;
 use Hazaar\DBI\Manager\Schema;
 use Hazaar\DBI\Manager\Snapshot;
 use Hazaar\DBI\Manager\Version;
@@ -556,7 +558,54 @@ class Manager
      */
     public function sync(?array $dataSchema = null, bool $force = false): bool
     {
-        return false;
+        if (!isset($this->dbi)) {
+            $this->connect();
+        }
+        $timer = new Timer();
+        $this->dbi->log('Initialising DBI data sync');
+        $env = $this->config['environment'];
+        $this->dbi->log('APPLICATION_ENV: '.$env);
+        $dataFile = $this->workDir.DIRECTORY_SEPARATOR.'data.json';
+
+        try {
+            $sync = $dataSchema ? new Data($dataSchema) : Data::load($dataFile);
+            $application = new Application($env);
+            $syncHash = $sync->getHash();
+            $syncHashFile = $application->getRuntimePath('.dbi_sync_hash');
+            if (true !== $force
+                && file_exists($syncHashFile)
+                && $syncHash == trim(file_get_contents($syncHashFile))) {
+                $this->dbi->log('Sync hash is unchanged.  Skipping data sync.');
+
+                return true;
+            }
+            $currentVersion = $this->getCurrentVersion();
+            if ($currentVersion) {
+                $sync->appliedVersions = array_keys($this->getAppliedVersions());
+                $this->dbi->log('Starting DBI data sync on schema version '.$currentVersion);
+            }
+            $result = $sync->run(function ($event) {
+                $this->dbi->log($event);
+            });
+            if (false === $result) {
+                throw new \Exception('Data sync failed');
+            }
+            if ($this->dbi->can('repair')) {
+                $this->dbi->log('Running '.$this->dbi->getDriverName().' repair process');
+                $result = $this->dbi->repair();
+                $this->dbi->log('Repair '.($result ? 'completed successfully' : 'failed'));
+            }
+            if (false === file_exists($syncHashFile) || is_writable($syncHashFile)) {
+                file_put_contents($syncHashFile, $syncHash);
+            }
+        } catch (\Throwable $e) {
+            $this->dbi->log('DBI data sync error: '.$e->getMessage());
+
+            return false;
+        }
+        $this->dbi->log('DBI data sync completed in '.$timer);
+
+        return true;
     }
 
     /**
