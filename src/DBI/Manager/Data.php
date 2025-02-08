@@ -6,6 +6,7 @@ namespace Hazaar\DBI\Manager;
 
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Manager\Sync\Item;
+use Hazaar\DBI\Manager\Sync\Stats;
 use Hazaar\Model;
 
 class Data extends Model
@@ -46,18 +47,20 @@ class Data extends Model
 
     public function run(Adapter $dbi): bool
     {
-        $dbi->log('Data sync is working...');
+        $dbi->log('Processing '.count($this->items).' sync items');
+        $stats = new Stats();
         foreach ($this->items as $item) {
-            if (isset($item->message)) {
-                $dbi->log($item->message);
-            }
-            if (!isset($item->table)) {
-                continue;
-            }
-            $dbi->log("Syncing rows to table '{$item->table}'");
-            // TODO: Add the bit that does the actual syncing
+            $item->run($dbi, $stats);
         }
-        $dbi->log('Data sync is complete');
+        $dbi->log('Finished processing sync items');
+        $dbi->log(sprintf(
+            'Processed %d rows: %d inserted, %d updated, %d deleted, %d skipped',
+            $stats->rows,
+            $stats->inserts,
+            $stats->updates,
+            $stats->deletes,
+            $stats->unchanged
+        ));
 
         return true;
     }

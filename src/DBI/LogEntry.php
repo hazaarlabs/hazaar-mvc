@@ -17,6 +17,6 @@ class LogEntry
 
     public function __toString()
     {
-        return date('Y-m-d H:i:s', intval($this->timestamp)).' '.$this->message;
+        return date('Y-m-d H:i:s', intval($this->timestamp)).' - '.$this->message;
     }
 }
