@@ -571,4 +571,14 @@ class Table
     {
         return $this->adapter->dropTable($this->table);
     }
+
+    /**
+     * @return array<mixed>|false
+     */
+    public function getPrimaryKey(): array|false
+    {
+        $constraints = $this->adapter->listConstraints($this->table, 'PRIMARY KEY');
+
+        return array_shift($constraints);
+    }
 }
