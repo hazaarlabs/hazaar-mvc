@@ -55,11 +55,24 @@ class Macro extends Model
     }
 
     /**
-     * @param string $criteria The string criteria to prepare as defined in the macro
-     *
      * @return array<string,mixed>
      */
-    private static function prepareCriteria(string $criteria): array
+    private static function prepareCriteria(string $value): array
+    {
+        $criteria = [];
+        // Split string at , with no whitespace
+        $criteriaItems = preg_split('/\s*,\s*/', $value);
+        foreach ($criteriaItems as $criteriaItem) {
+            $criteria = array_merge($criteria, self::prepareCriteriaItem($criteriaItem));
+        }
+
+        return $criteria;
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private static function prepareCriteriaItem(string $criteria): array
     {
         // Split string at = with no whitespace
         list($field, $value) = preg_split('/\s*=\s*/', $criteria);
