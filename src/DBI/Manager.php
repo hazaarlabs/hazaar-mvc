@@ -704,6 +704,12 @@ class Manager
         }
         $result = $this->createSchemaVersionTable();
         $this->dbi->log('All database objects deleted in '.$timer);
+        $env = $this->config['environment'];
+        $application = new Application($env);
+        $syncHashFile = $application->getRuntimePath('.dbi_sync_hash');
+        if (file_exists($syncHashFile)) {
+            unlink($syncHashFile);
+        }
 
         return $result;
     }
