@@ -159,7 +159,9 @@ class Dump extends Diagnostic
         }
         $out .= "\nDATA\n\n";
         foreach ($this->data as $dataItem) {
-            $out .= print_r($dataItem, true)."\n";
+            ob_start();
+            var_dump($dataItem);
+            $out .= preg_replace('/^.*\:\d+\:\n/', '', ob_get_clean());
         }
         if (count($this->log) > 0) {
             $out .= "\n\nLOG\n\n";
