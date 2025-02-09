@@ -36,7 +36,10 @@ class Item extends Model
      */
     public array $refs;
 
-    private mixed $primaryKey;
+    /**
+     * @var array{name: string, table: string, column: string, type: string}
+     */
+    private array $primaryKey;
 
     public function run(Adapter $dbi, Stats $stats): ?Stats
     {
@@ -55,22 +58,27 @@ class Item extends Model
             return null;
         }
         // Get the primary key of the table
-        $this->primaryKey = $dbi->table($this->table)->getPrimaryKey();
-        if (!isset($this->primaryKey)) {
-            $dbi->log('Table '.$this->table.' does not have a primary key.  Skipping import.');
+        $primaryKey = $dbi->table($this->table)->getPrimaryKey();
+        if (false === $primaryKey) {
+            $dbi->log('WARNING: Table '.$this->table.' does not have a primary key.  Skipping import.');
 
             return null;
         }
+        $this->primaryKey = $primaryKey;
         // If the truncate flag is set, truncate the table
         if (true === $this->truncate) {
             $dbi->table($this->table)->truncate();
             $dbi->log('Truncated table '.$this->table);
         }
         // Apply variables to the sync refs
-        $this->applyVars($this->refs);
+        if (isset($this->refs)) {
+            $this->applyVars($this->refs);
+        }
         $dbi->log('Processing '.count($this->rows)." rows in table '{$this->table}'");
         // Process each row
         foreach ($this->rows as $row) {
+            // Apply macros to the row
+            $this->applyMacros($dbi, $row);
             // Apply variables to the row
             $this->applyVars($row);
             // If refs are set, merge them with the row
@@ -153,6 +161,11 @@ class Item extends Model
                 $value = (float) $value;
             } elseif (is_bool($existingRow[$key])) {
                 $value = boolify($value);
+            } elseif (is_string($value)) {
+                $macro = Macro::match($value);
+                if (null !== $macro) {
+                    $value = $macro;
+                }
             }
         }
     }
@@ -175,5 +188,35 @@ class Item extends Model
                 }
             }, $field);
         }
+    }
+
+    /**
+     * @param array<mixed> $row
+     */
+    private function applyMacros(Adapter $dbi, array &$row): void
+    {
+        foreach ($row as &$field) {
+            $macro = Macro::match($field);
+            if (null === $macro) {
+                continue;
+            }
+            $field = $macro->run($dbi);
+        }
+
+        //         if ($matches[2]) {
+        //             $criteria = [];
+        //             $parts = explode(',', $matches[4]);
+        //             foreach ($parts as $part) {
+        //                 list($key, $value) = explode('=', $part, 2);
+        //                 $criteria[$key] = is_numeric($value) ? (int) $value : $value;
+        //             }
+
+        //             return [self::MACRO_LOOKUP, $matches[1], $matches[3], $criteria];
+        //         }
+        //         if ($matches[1]) {
+        //             return [self::MACRO_VARIABLE, $matches[1]];
+        //         }
+
+        //         return false;
     }
 }
