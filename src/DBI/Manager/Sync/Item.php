@@ -11,6 +11,7 @@ use Hazaar\Model;
 class Item extends Model
 {
     public string $message;
+    public string $exec;
     public string $table;
     public bool $truncate = false;
 
@@ -38,34 +39,50 @@ class Item extends Model
 
     public function run(Adapter $dbi, Stats $stats): ?Stats
     {
+        // If a message is set, log it
         if (isset($this->message)) {
             $dbi->log($this->message);
         }
+        // If an exec statement is set, execute it
+        if (isset($this->exec)) {
+            $dbi->log('Executing SQL: '.$this->exec);
+            $affectedRows = $dbi->exec($this->exec);
+            $dbi->log('Affected rows: '.$affectedRows);
+        }
+        // If no table is set, skip the import
         if (!isset($this->table)) {
             return null;
         }
+        // Get the primary key of the table
         $this->primaryKey = $dbi->table($this->table)->getPrimaryKey();
         if (!isset($this->primaryKey)) {
             $dbi->log('Table '.$this->table.' does not have a primary key.  Skipping import.');
 
             return null;
         }
-        if ($this->truncate) {
+        // If the truncate flag is set, truncate the table
+        if (true === $this->truncate) {
             $dbi->table($this->table)->truncate();
             $dbi->log('Truncated table '.$this->table);
         }
+        // Apply variables to the sync refs
         $this->applyVars($this->refs);
         $dbi->log('Processing '.count($this->rows)." rows in table '{$this->table}'");
+        // Process each row
         foreach ($this->rows as $row) {
+            // Apply variables to the row
             $this->applyVars($row);
+            // If refs are set, merge them with the row
             if (isset($this->refs)) {
                 $row = array_merge($row, $this->refs);
             }
+            // Get the row status and add it to the stats
             $rowStatus = $stats->addRow($this->getRowItem($dbi, $row));
             if (RowStatus::UNCHANGED === $rowStatus) {
                 continue;
             }
 
+            // Perform the action based on the row status
             switch ($rowStatus) {
                 case RowStatus::NEW:
                     $pkData = $dbi->insert($this->table, $row, $this->primaryKey['column']);
