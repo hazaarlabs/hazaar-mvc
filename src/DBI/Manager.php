@@ -584,10 +584,12 @@ class Manager
                 $sync->appliedVersions = array_keys($this->getAppliedVersions());
                 $this->dbi->log('Starting DBI data sync on schema version '.$currentVersion);
             }
+            $this->dbi->begin();
             $result = $sync->run($this->dbi);
             if (false === $result) {
                 throw new \Exception('Data sync failed');
             }
+            $this->dbi->commit();
             if ($this->dbi->can('repair')) {
                 $this->dbi->log('Running '.$this->dbi->getDriverName().' repair process');
                 $result = $this->dbi->repair();
@@ -598,6 +600,7 @@ class Manager
             }
         } catch (\Throwable $e) {
             $this->dbi->log('DBI data sync error: '.$e->getMessage());
+            $this->dbi->cancel();
 
             return false;
         }
