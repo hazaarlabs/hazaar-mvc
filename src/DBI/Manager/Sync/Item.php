@@ -14,6 +14,7 @@ class Item extends Model
     public string $exec;
     public string $table;
     public bool $truncate = false;
+    public bool $insertOnly = false;
 
     /**
      * @var array<mixed>
@@ -91,6 +92,12 @@ class Item extends Model
                     break;
 
                 case RowStatus::UPDATED:
+                    if (true === $this->insertOnly) {
+                        $dbi->log("Skipping update of row in table '{$this->table}' with key ".$this->primaryKey['column'].'='.$row[$this->primaryKey['column']]);
+
+                        break;
+                    }
+
                     $dbi->table($this->table)->update($row, [$this->primaryKey['column'] => $row[$this->primaryKey['column']]]);
                     $dbi->log("Updated row in table '{$this->table}' with key ".$this->primaryKey['column'].'='.$row[$this->primaryKey['column']]);
 
