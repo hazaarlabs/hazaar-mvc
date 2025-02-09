@@ -195,28 +195,16 @@ class Item extends Model
      */
     private function applyMacros(Adapter $dbi, array &$row): void
     {
+        $this->applyVars($row);
         foreach ($row as &$field) {
+            if (!is_string($field)) {
+                continue;
+            }
             $macro = Macro::match($field);
             if (null === $macro) {
                 continue;
             }
             $field = $macro->run($dbi);
         }
-
-        //         if ($matches[2]) {
-        //             $criteria = [];
-        //             $parts = explode(',', $matches[4]);
-        //             foreach ($parts as $part) {
-        //                 list($key, $value) = explode('=', $part, 2);
-        //                 $criteria[$key] = is_numeric($value) ? (int) $value : $value;
-        //             }
-
-        //             return [self::MACRO_LOOKUP, $matches[1], $matches[3], $criteria];
-        //         }
-        //         if ($matches[1]) {
-        //             return [self::MACRO_VARIABLE, $matches[1]];
-        //         }
-
-        //         return false;
     }
 }
