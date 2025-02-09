@@ -54,8 +54,13 @@ class Item extends Model
             $dbi->table($this->table)->truncate();
             $dbi->log('Truncated table '.$this->table);
         }
+        $this->applyVars($this->refs);
         $dbi->log('Processing '.count($this->rows)." rows in table '{$this->table}'");
         foreach ($this->rows as $row) {
+            $this->applyVars($row);
+            if (isset($this->refs)) {
+                $row = array_merge($row, $this->refs);
+            }
             $rowStatus = $stats->addRow($this->getRowItem($dbi, $row));
             if (RowStatus::UNCHANGED === $rowStatus) {
                 continue;
@@ -98,6 +103,7 @@ class Item extends Model
         if (false === $existingRow) {
             return RowStatus::NEW;
         }
+        $this->fixTypes($data, $existingRow);
         $diff = array_diff_assoc($data, $existingRow);
         if (0 === count($diff)) {
             return RowStatus::UNCHANGED;
@@ -105,5 +111,45 @@ class Item extends Model
         $data[$this->primaryKey['column']] = $existingRow[$this->primaryKey['column']];
 
         return RowStatus::UPDATED;
+    }
+
+    /**
+     * @param array<mixed> $row
+     * @param array<mixed> $existingRow
+     */
+    private function fixTypes(array &$row, array &$existingRow): void
+    {
+        foreach ($row as $key => &$value) {
+            if (!array_key_exists($key, $existingRow)) {
+                continue;
+            }
+            if (is_int($existingRow[$key])) {
+                $value = (int) $value;
+            } elseif (is_float($existingRow[$key])) {
+                $value = (float) $value;
+            } elseif (is_bool($existingRow[$key])) {
+                $value = boolify($value);
+            }
+        }
+    }
+
+    /**
+     * @param array<mixed> $row
+     */
+    private function applyVars(array &$row): void
+    {
+        if (!isset($this->vars)) {
+            return;
+        }
+        foreach ($row as &$field) {
+            if (!is_string($field)) {
+                continue;
+            }
+            $field = preg_replace_callback('/\{\{([a-zA-Z0-9_]+)\}\}/', function ($matches) {
+                if (isset($this->vars[$matches[1]])) {
+                    return $this->vars[$matches[1]];
+                }
+            }, $field);
+        }
     }
 }
