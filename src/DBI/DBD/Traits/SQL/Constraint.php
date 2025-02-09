@@ -63,7 +63,7 @@ trait Constraint
         if ($result = $this->query($sql)) {
             while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
                 if ($constraint = ake($constraints, $row['name'])) {
-                    if(!is_array($constraint['column'])) {
+                    if (!is_array($constraint['column'])) {
                         $constraint['column'] = [$constraint['column']];
                     }
                     if (!in_array($row['column'], $constraint['column'])) {
@@ -123,7 +123,7 @@ trait Constraint
                 $info['delete_rule'] = 'NO ACTION';
             }
         }
-        $column = $info['column'];
+        $column = $info['column'] ?? null;
         if (is_array($column)) {
             foreach ($column as &$col) {
                 $col = $this->queryBuilder->field($col);

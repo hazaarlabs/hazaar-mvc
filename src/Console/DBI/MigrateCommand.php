@@ -31,10 +31,11 @@ class MigrateCommand extends Command
             settype($version, 'int');
         }
         if ($input->getOption('force_init') ?? false) {
-            $output->write('WARNING: Forcing full database re-initialisation.  THIS WILL DELETE ALL DATA!!!');
-            $output->write('IF YOU DO NOT WANT TO DO THIS, YOU HAVE 10 SECONDS TO CANCEL');
+            $output->write('WARNING: Forcing full database re-initialisation.'.PHP_EOL);
+            $output->write('THIS WILL DELETE ALL DATA!!!'.PHP_EOL);
+            $output->write('IF YOU DO NOT WANT TO DO THIS, YOU HAVE 10 SECONDS TO CANCEL'.PHP_EOL);
             sleep(10);
-            $output->write('DELETING YOUR DATA!!!  YOU WERE WARNED!!!');
+            $output->write('DELETING YOUR DATA!!!  YOU WERE WARNED!!!'.PHP_EOL);
             $manager->deleteEverything();
         }
         if (!$manager->migrate($version)) {

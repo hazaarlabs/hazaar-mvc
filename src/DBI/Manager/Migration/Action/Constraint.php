@@ -21,7 +21,7 @@ class Constraint extends BaseAction
 
     public function construct(mixed &$data): void
     {
-        if (!is_array($data['column'])) {
+        if (isset($data['column']) && !is_array($data['column'])) {
             $data['column'] = [$data['column']];
         }
     }

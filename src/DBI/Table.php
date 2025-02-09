@@ -573,11 +573,14 @@ class Table
     }
 
     /**
-     * @return array<mixed>|false
+     * @return array{name: string, table: string, column: string, type: string}|false
      */
     public function getPrimaryKey(): array|false
     {
         $constraints = $this->adapter->listConstraints($this->table, 'PRIMARY KEY');
+        if (0 === count($constraints)) {
+            return false;
+        }
 
         return array_shift($constraints);
     }
