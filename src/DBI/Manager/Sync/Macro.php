@@ -23,6 +23,13 @@ class Macro extends Model
      */
     private static $lookups = [];
 
+    public function __toString(): string
+    {
+        return '::'.$this->table.($this->field ? '('.$this->field.')' : '').':'.implode(',', array_map(function ($value, $key) {
+            return $key.'='.$value;
+        }, $this->criteria, array_keys($this->criteria)));
+    }
+
     public function constructed(): void
     {
         $this->indexKey = md5($this->table.'.'.$this->field.'.'.serialize($this->criteria));
@@ -48,7 +55,7 @@ class Macro extends Model
         }
         $row = $dbi->table($this->table)->findOne($this->criteria, $this->field);
         if (!($row && isset($row[$this->field]))) {
-            return null;
+            throw new \Exception('Macro lookup failed: '.$this);
         }
 
         return self::$lookups[$this->indexKey] = $row[$this->field];
