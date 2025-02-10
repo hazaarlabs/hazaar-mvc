@@ -48,7 +48,7 @@ class Macro extends Model
         ]);
     }
 
-    public function run(Adapter $dbi): ?string
+    public function run(Adapter $dbi): mixed
     {
         if (isset(self::$lookups[$this->indexKey])) {
             return self::$lookups[$this->indexKey];
