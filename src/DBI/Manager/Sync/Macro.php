@@ -30,7 +30,7 @@ class Macro extends Model
 
     public static function match(string $field): ?self
     {
-        if (!preg_match('/^\:\:(\w+)(\((\w+)\))?\:?(.*)$/', $field, $matches)) {
+        if (!preg_match('/^\:\:(\w+)\s*(\(\s*(\w+)\s*\))?\s*\:?(.*)$/', $field, $matches)) {
             return null;
         }
 
