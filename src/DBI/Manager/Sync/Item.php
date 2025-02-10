@@ -72,7 +72,7 @@ class Item extends Model
         }
         // Apply variables to the sync refs
         if (isset($this->refs)) {
-            $this->applyVars($this->refs);
+            $this->applyMacros($dbi, $this->refs); // Only apply macros to the refs as this will also apply the vars
         }
         $dbi->log('Processing '.count($this->rows)." rows in table '{$this->table}'");
         // Process each row
