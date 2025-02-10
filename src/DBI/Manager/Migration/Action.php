@@ -61,10 +61,18 @@ class Action extends Model
             $data['name'] = $data['action'];
         }
         if (!is_object($data['name'])) {
-            $data['name'] = ActionName::tryFrom($data['name']);
+            $actionName = ActionName::tryFrom($data['name']);
+            if (!isset($actionName)) {
+                throw new \Exception('Invalid action name: '.$data['name']);
+            }
+            $data['name'] = $actionName;
         }
         if (!is_object($data['type'])) {
-            $data['type'] = ActionType::tryFrom($data['type']);
+            $actionType = ActionType::tryFrom($data['type']);
+            if (!isset($actionType)) {
+                throw new \Exception('Invalid action type: '.$data['type']);
+            }
+            $data['type'] = $actionType;
         }
         if (!$data['spec'] instanceof BaseAction) {
             if (!(is_array($data['spec']) || is_object($data['spec']))) {

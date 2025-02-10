@@ -247,6 +247,12 @@ class Version extends Model
     private function loadMigrationEventFunctions(Event $event): void
     {
         foreach ($event->actions as $action) {
+            if (!isset($action->name)) {
+                throw new \Exception('Action name invalid or not set');
+            }
+            if (!isset($action->type)) {
+                throw new \Exception('Action type invalid or not set on: '.$action->name->value);
+            }
             if (ActionName::DROP === $action->name
                 || match ($action->type) {
                     ActionType::FUNC,
