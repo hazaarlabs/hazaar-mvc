@@ -20,6 +20,17 @@ class Index extends BaseAction
 
     public function create(Adapter $dbi): bool
     {
+        if (!isset($this->name)) {
+            $dbi->log('ERROR: Index name not set for create action');
+
+            return false;
+        }
+        if (!isset($this->table)) {
+            $dbi->log("ERROR: Table not set creating index '{$this->name}'");
+
+            return false;
+        }
+
         return $dbi->createIndex($this->name, $this->table, $this->toArray());
     }
 

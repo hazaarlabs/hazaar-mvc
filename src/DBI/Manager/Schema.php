@@ -237,6 +237,9 @@ class Schema extends Model
         if (!isset($this->{$elementName})) {
             throw new \Exception('Unknown element type: '.$action->type->value);
         }
+        if (!isset($action->spec->name)) {
+            throw new \Exception('Invalid action spec for create action.  Needs a name.');
+        }
         if (isset($this->{$elementName}[$action->spec->name])) {
             throw new \Exception(ucfirst($action->type->value).' already exists: '.$action->spec->name);
         }

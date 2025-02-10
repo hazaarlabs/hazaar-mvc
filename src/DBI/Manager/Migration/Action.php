@@ -54,9 +54,6 @@ class Action extends Model
 
             return;
         }
-        if (!isset($data['spec'])) {
-            return;
-        }
         if (!isset($data['name']) && isset($data['action'])) {
             $data['name'] = $data['action'];
         }
@@ -73,6 +70,9 @@ class Action extends Model
                 throw new \Exception('Invalid action type: '.$data['type']);
             }
             $data['type'] = $actionType;
+        }
+        if (!isset($data['spec'])) {
+            throw new \Exception("Missing action specification for action '{$data['name']->value}' of type '{$data['type']->value}'");
         }
         if (!$data['spec'] instanceof BaseAction) {
             if (!(is_array($data['spec']) || is_object($data['spec']))) {

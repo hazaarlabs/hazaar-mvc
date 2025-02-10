@@ -28,6 +28,16 @@ class Table extends BaseAction
 
     public function create(Adapter $dbi): bool
     {
+        if (!isset($this->name)) {
+            $dbi->log('ERROR: Table name not set for create action');
+
+            return false;
+        }
+        if (!isset($this->columns) || 0 === count($this->columns)) {
+            $dbi->log("ERROR: No columns defined for table '{$this->name}'");
+
+            return false;
+        }
         $columns = array_map(function (Column $column) {
             return $column->toArray();
         }, $this->columns);

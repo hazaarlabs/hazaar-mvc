@@ -34,6 +34,8 @@ class Event extends Model
     {
         foreach ($this->actions as $action) {
             if (!$action->run($dbi)) {
+                $dbi->log("ERROR: Failed to {$action->name->value} {$action->type->value}: {$action->spec->name}");
+
                 return false;
             }
         }

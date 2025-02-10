@@ -19,7 +19,7 @@ abstract class BaseAction extends Model implements Spec
 
     public function construct(mixed &$data): void
     {
-        if (!isset($data['name']) && !isset($data['drop'])) {
+        if (!isset($data['name']) && !isset($data['drop']) && !is_assoc($data)) {
             $data['drop'] = $data;
         }
     }
