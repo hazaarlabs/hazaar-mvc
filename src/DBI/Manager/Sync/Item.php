@@ -83,6 +83,7 @@ class Item extends Model
             if (isset($this->refs)) {
                 $row = array_merge($row, $this->refs);
             }
+            $this->fixJsonFields($row);
             // Get the row status and add it to the stats
             $rowStatus = $stats->addRow($this->getRowItem($dbi, $row));
             if (RowStatus::UNCHANGED === $rowStatus) {
@@ -134,7 +135,7 @@ class Item extends Model
             return RowStatus::NEW;
         }
         $this->fixTypes($data, $existingRow);
-        $diff = array_diff_assoc($data, $existingRow);
+        $diff = array_diff_assoc_recursive($data, $existingRow);
         if (0 === count($diff)) {
             return RowStatus::UNCHANGED;
         }
@@ -149,6 +150,7 @@ class Item extends Model
      */
     private function fixTypes(array &$row, array &$existingRow): void
     {
+        $this->fixJsonFields($existingRow);
         foreach ($row as $key => &$value) {
             if (!array_key_exists($key, $existingRow)) {
                 continue;
@@ -204,5 +206,18 @@ class Item extends Model
             }
             $field = $macro->run($dbi);
         }
+    }
+
+    /**
+     * @param array<mixed> $row
+     */
+    private function fixJsonFields(array &$row): void
+    {
+        // Convert any criteria arrays to $json objects
+        array_walk($row, function (&$value) {
+            if (is_array($value) || $value instanceof \stdClass) {
+                $value = ['$json' => (array) $value];
+            }
+        });
     }
 }
