@@ -60,7 +60,11 @@ class Item extends Model
         // Get the primary key of the table
         $primaryKey = $dbi->table($this->table)->getPrimaryKey();
         if (false === $primaryKey) {
-            $dbi->log('WARNING: Table '.$this->table.' does not have a primary key.  Skipping import.');
+            if (!$dbi->table($this->table)->exists()) {
+                $dbi->log('WARNING: Table '.$this->table.' does not exist.  Skipping import.');
+            } else {
+                $dbi->log('WARNING: Table '.$this->table.' does not have a primary key.  Skipping import.');
+            }
 
             return null;
         }
@@ -161,11 +165,6 @@ class Item extends Model
                 $value = (float) $value;
             } elseif (is_bool($existingRow[$key])) {
                 $value = boolify($value);
-            } elseif (is_string($value)) {
-                $macro = Macro::match($value);
-                if (null !== $macro) {
-                    $value = $macro;
-                }
             }
         }
     }
