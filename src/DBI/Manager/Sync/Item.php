@@ -182,7 +182,7 @@ class Item extends Model
             if (!is_string($field)) {
                 continue;
             }
-            $field = preg_replace_callback('/\{\{([a-zA-Z0-9_]+)\}\}/', function ($matches) {
+            $field = preg_replace_callback('/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/', function ($matches) {
                 if (isset($this->vars[$matches[1]])) {
                     return $this->vars[$matches[1]];
                 }

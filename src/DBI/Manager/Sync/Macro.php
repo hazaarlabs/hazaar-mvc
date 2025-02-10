@@ -30,7 +30,7 @@ class Macro extends Model
 
     public static function match(string $field): ?self
     {
-        if (!preg_match('/^\:\:(\w+)\s*(\(\s*(\w+)\s*\))?\s*\:?(.*)$/', $field, $matches)) {
+        if (!preg_match('/^\:\:(\w+)\s*(\(\s*(\w+)\s*\))?\s*\:?(.*)\s*$/', $field, $matches)) {
             return null;
         }
 
@@ -61,7 +61,7 @@ class Macro extends Model
     {
         $criteria = [];
         // Split string at , with no whitespace
-        $criteriaItems = preg_split('/\s*,\s*/', $value);
+        $criteriaItems = preg_split('/\s*,\s*/', trim($value));
         foreach ($criteriaItems as $criteriaItem) {
             $criteria = array_merge($criteria, self::prepareCriteriaItem($criteriaItem));
         }
