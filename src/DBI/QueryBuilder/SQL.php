@@ -130,7 +130,7 @@ class SQL implements QueryBuilder
 
     public function quote(string $string, bool $addSlashes = true): string
     {
-        return '\''.($addSlashes ? addslashes($string) : $string).'\'';
+        return '\''.($addSlashes ? addcslashes($string, "'") : $string).'\'';
     }
 
     public function quoteSpecial(mixed $value): mixed
