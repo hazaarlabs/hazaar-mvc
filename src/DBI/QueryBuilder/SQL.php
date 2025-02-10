@@ -658,8 +658,7 @@ class SQL implements QueryBuilder
         ?string $bindType = null,
         ?string $tissue = null,
         ?string $parentRef = null,
-        null|int|string $optionalKey = null,
-        bool &$setKey = true
+        null|int|string $optionalKey = null
     ): string {
         if (!is_array($criteria)) {
             return $criteria;
@@ -683,7 +682,7 @@ class SQL implements QueryBuilder
             if (is_int($key) && is_string($value)) {
                 $parts[] = '('.$value.')';
             } elseif (!is_int($key) && '$' == substr($key, 0, 1)) {
-                if ($actionParts = $this->prepareCriteriaAction(strtolower(substr($key, 1)), $value, $tissue, $optionalKey, $setKey)) {
+                if ($actionParts = $this->prepareCriteriaAction(strtolower(substr($key, 1)), $value, $tissue, $optionalKey)) {
                     if (is_array($actionParts)) {
                         $parts = array_merge($parts, $actionParts);
                     } else {
@@ -693,15 +692,14 @@ class SQL implements QueryBuilder
                     $parts[] = ' '.$tissue.' '.$this->prepareCriteria($value, strtoupper(substr($key, 1)));
                 }
             } elseif (is_array($value)) {
-                $set = true;
-                $subValue = $this->prepareCriteria($value, $bindType, $tissue, $parentRef, $key, $set);
+                $subValue = $this->prepareCriteria($value, $bindType, $tissue, $parentRef, $key);
                 if (is_numeric($key)) {
                     $parts[] = $subValue;
                 } else {
                     if ($parentRef && false === strpos($key, '.')) {
                         $key = $parentRef.'.'.$key;
                     }
-                    $parts[] = ((true === $set) ? $this->field($key).' ' : '').$subValue;
+                    $parts[] = $this->field($key).' '.$tissue.' '.$subValue;
                 }
             } else {
                 if ($parentRef && false === strpos($key, '.')) {

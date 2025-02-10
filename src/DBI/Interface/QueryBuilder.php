@@ -134,8 +134,7 @@ interface QueryBuilder
         ?string $bindType = null,
         ?string $tissue = null,
         ?string $parentRef = null,
-        null|int|string $optionalKey = null,
-        bool &$setKey = true
+        null|int|string $optionalKey = null
     ): string;
 
     public function reset(): self;
