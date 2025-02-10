@@ -77,10 +77,8 @@ class Item extends Model
         $dbi->log('Processing '.count($this->rows)." rows in table '{$this->table}'");
         // Process each row
         foreach ($this->rows as $row) {
-            // Apply macros to the row
+            // Apply macros to the row.  This will also apply the vars
             $this->applyMacros($dbi, $row);
-            // Apply variables to the row
-            $this->applyVars($row);
             // If refs are set, merge them with the row
             if (isset($this->refs)) {
                 $row = array_merge($row, $this->refs);
