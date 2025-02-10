@@ -389,6 +389,8 @@ class Manager
             } catch (\Exception $e) {
                 $this->dbi->cancel();
                 $this->dbi->log($e->getMessage());
+
+                return false;
             }
         } else {
             $this->dbi->log('Found '.count($versions).' updates to apply.');
