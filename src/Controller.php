@@ -14,6 +14,7 @@ namespace Hazaar;
 use Hazaar\Application\Request;
 use Hazaar\Application\Route;
 use Hazaar\Application\URL;
+use Hazaar\Cache\Adapter;
 use Hazaar\Controller\Exception\NoAction;
 use Hazaar\Controller\Helper;
 use Hazaar\Controller\Response;
@@ -49,7 +50,7 @@ abstract class Controller implements Controller\Interface\Controller
      * @var array<Response>
      */
     private array $cachedResponses = [];
-    private ?Cache $responseCache = null;
+    private ?Adapter $responseCache = null;
     private static string $redirectCookieName = 'hazaar-redirect-token';
 
     /**
@@ -306,7 +307,7 @@ abstract class Controller implements Controller\Interface\Controller
     public function cacheAction(string $actionName, int $timeout = 60, bool $private = false): bool
     {
         if (null === $this->responseCache) {
-            $this->responseCache = new Cache();
+            $this->responseCache = new Adapter();
         }
         $this->getCacheKey($this->name, $actionName, [], $cacheName);
         $this->cachedActions[$cacheName] = [

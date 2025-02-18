@@ -2,11 +2,12 @@
 
 namespace Hazaar\RateLimiter\Backend;
 
+use Hazaar\Cache\Adapter;
 use Hazaar\RateLimiter\Backend;
 
 class Cache extends Backend
 {
-    private \Hazaar\Cache $cache;
+    private Adapter $cache;
     private string $prefix = 'rate_limiter_';
 
     /**
@@ -21,7 +22,7 @@ class Cache extends Backend
      */
     public function __construct(array $options = [])
     {
-        $this->cache = new \Hazaar\Cache(ake($options, 'type'), ake($options, 'cacheOptions', []));
+        $this->cache = new Adapter(ake($options, 'type'), ake($options, 'cacheOptions', []));
         $this->cache->on(); // Force cache on even if no_pragma is set
         if (!$this->cache->can('lock')) {
             throw new \Exception('Cache backend does not support locking!');

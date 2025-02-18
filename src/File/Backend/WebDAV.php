@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\File\Backend;
 
-use Hazaar\Cache;
+use Hazaar\Cache\Adapter;
 use Hazaar\File\Image;
 use Hazaar\File\Manager;
 use Hazaar\HTTP\Request;
@@ -19,7 +19,7 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements Interface\Backend, Interface
      * @var array<mixed>
      */
     private array $options;
-    private Cache $cache;
+    private Adapter $cache;
 
     /**
      * @var array<mixed>
@@ -44,7 +44,7 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements Interface\Backend, Interface
         if (isset($this->options['cookies'])) {
             $this->setCookie($this->options['cookies']);
         }
-        $this->cache = new Cache($this->options['cache_backend'], ['use_pragma' => false, 'namespace' => 'webdav_'.$this->options['baseuri'].'_'.$this->options['username']]);
+        $this->cache = new Adapter($this->options['cache_backend'], ['use_pragma' => false, 'namespace' => 'webdav_'.$this->options['baseuri'].'_'.$this->options['username']]);
         if ($this->options['cache_meta'] ?? false) {
             if (($meta = $this->cache->get('meta')) !== false) {
                 $this->meta = $meta;

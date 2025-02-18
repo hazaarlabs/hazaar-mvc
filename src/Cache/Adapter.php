@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * @file        Cache.php
+ * @file        Adapter.php
  *
  * @author      Jamie Carl <jamie@hazaar.io>
  * @copyright   Copyright (c) 2012 Jamie Carl (http://hazaar.io)
@@ -11,16 +11,16 @@ declare(strict_types=1);
  * @version     $Id: Application.php 24593 2012-08-29 20:35:02Z jamie $
  */
 
-namespace Hazaar;
+namespace Hazaar\Cache;
 
-use Hazaar\Cache\Backend;
+use Hazaar\Application;
 
 /**
  * The cache frontend.
  *
  * @implements \ArrayAccess<string, mixed>
  */
-class Cache implements \ArrayAccess
+class Adapter implements \ArrayAccess
 {
     /**
      * @var array<mixed> The cache options
@@ -71,10 +71,10 @@ class Cache implements \ArrayAccess
             unset($backendClass);
         }
         if (!isset($backendClass)) {
-            throw new Cache\Exception\NoBackendAvailable();
+            throw new Exception\NoBackendAvailable();
         }
         if (!in_array(Backend::class, class_parents($backendClass))) {
-            throw new Cache\Exception\InvalidBackend($backendClass);
+            throw new Exception\InvalidBackend($backendClass);
         }
         $this->backend = new $backendClass($this->options, $namespace);
         /*

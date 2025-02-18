@@ -6,7 +6,7 @@ This page is tagged as a draft and is a work in progress.  It is not yet complet
 
 As stated, frontends define the interface for how the application stores and retrieves data.
 
-## Hazaar\Cache
+## Hazaar\Cache\Adapter
 
 The basic cache frontend is the core frontend that all other frontends are built upon and is used to store key/value pairs.  Keys are simply a unique text string to identify the cache record.  Values can be just about anything including strings, numbers, arrays and objects.  For an object to be stored it MUST be serializable.  For a class object to be serializable it must usually implement the `__sleep()` and `__wakeup()` methods.
 
@@ -37,7 +37,7 @@ Available options are:
 |$data|Mixed|The data that should be stored in the cache backend.|
 
 ```php
-$cache = new Hazaar\Cache('basic', 'file');
+$cache = new Hazaar\Cache\Adapter('basic', 'file');
 if(($data = $cache->load('my_cache_key')) === false){
     $data = [];
     for($i=0;$i<1000;$i++){
@@ -74,7 +74,7 @@ Available options are:
 Calling a global function:
 
 ```php
-$cache = new Hazaar\Cache('func', 'file');
+$cache = new Hazaar\Cache\Adapter('func', 'file');
 $result = $cache->call('myFunction', 'a string', 1234);
 # Do something with result here
 ```
@@ -82,7 +82,7 @@ $result = $cache->call('myFunction', 'a string', 1234);
 Calling a class method:
 
 ```php
-$cache = new Hazaar\Cache('func', 'file');
+$cache = new Hazaar\Cache\Adapter('func', 'file');
 $result = $cache->call([$obj, 'myMethod'], 'a string', 1234);
 # Do something with result here
 ```
@@ -110,7 +110,7 @@ This tells the cache object to start redirecting the output buffer into the cach
 This tells the cache object to stop redirecting the output buffer into the cache object and store the buffered data in the cache backend.
 
 ```php
-$cache = new Hazaar\Cache('output', 'file');
+$cache = new Hazaar\Cache\Adapter('output', 'file');
 if(!$cache->start('my_cache_key')){
     echo "Hello world!";
     echo "This is going to be cached!";

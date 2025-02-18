@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\File\Backend;
 
-use Hazaar\Cache;
+use Hazaar\Cache\Adapter;
 use Hazaar\File\Backend\Exception\DropboxError;
 use Hazaar\File\Image;
 use Hazaar\File\Manager;
@@ -20,7 +20,7 @@ class Dropbox extends Client implements Interface\Backend, Interface\Driver
      * @var array<mixed>
      */
     private array $options;
-    private Cache $cache;
+    private Adapter $cache;
 
     /**
      * @var array<mixed>
@@ -49,7 +49,7 @@ class Dropbox extends Client implements Interface\Backend, Interface\Driver
         if (!(isset($this->options['app_key'], $this->options['app_secret']))) {
             throw new DropboxError('Dropbox filesystem backend requires both app_key and app_secret.');
         }
-        $this->cache = new Cache($this->options['cache_backend'], ['use_pragma' => false, 'namespace' => 'dropbox_'.$this->options['app_key']]);
+        $this->cache = new Adapter($this->options['cache_backend'], ['use_pragma' => false, 'namespace' => 'dropbox_'.$this->options['app_key']]);
         if ($oauth2 = $this->cache->get('oauth2_data')) {
             $this->options['oauth2'] = $oauth2;
         }

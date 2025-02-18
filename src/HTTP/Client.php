@@ -6,7 +6,7 @@ namespace Hazaar\HTTP;
 
 use Hazaar\Application\FilePath;
 use Hazaar\Auth\Adapter;
-use Hazaar\Cache;
+use Hazaar\Cache\Adapter as CacheAdapter;
 use Hazaar\DateTime;
 use Hazaar\HTTP\Exception\RedirectNotAllowed;
 use Hazaar\Loader;
@@ -313,7 +313,7 @@ class Client
         return $this->cookies[$key] = $data;
     }
 
-    public function cacheCookie(Cache $cache, bool $cacheAll = false): bool
+    public function cacheCookie(CacheAdapter $cache, bool $cacheAll = false): bool
     {
         if (!count($this->cookies) > 0) {
             return false;
@@ -335,7 +335,7 @@ class Client
         return true;
     }
 
-    public function uncacheCookie(Cache $cache): bool
+    public function uncacheCookie(CacheAdapter $cache): bool
     {
         if ($this->cookies = $cache->get('hazaar-http-client-cookies')) {
             return true;

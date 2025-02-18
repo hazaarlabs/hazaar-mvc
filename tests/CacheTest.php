@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Tests;
 
 use Hazaar\Application;
-use Hazaar\Cache;
+use Hazaar\Cache\Adapter;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -24,7 +24,7 @@ class CacheTest extends TestCase
                 ],
             ],
         ];
-        $cache = new Cache('chain', $options);
+        $cache = new Adapter('chain', $options);
         $this->assertTrue($cache->set('test', 'value'));
         $this->assertEquals('value', $cache->get('test'));
     }
@@ -34,7 +34,7 @@ class CacheTest extends TestCase
         $options = [
             'path' => Application::getInstance()->getRuntimePath('cache'),
         ];
-        $cache = new Cache('file', $options);
+        $cache = new Adapter('file', $options);
         $this->assertTrue($cache->set('test', 'value'));
         $this->assertEquals('value', $cache->get('test'));
     }
@@ -44,7 +44,7 @@ class CacheTest extends TestCase
     //     $options = [
     //         'namespace' => 'test',
     //     ];
-    //     $cache = new Cache('shm', $options);
+    //     $cache = new Adapter('shm', $options);
     //     $this->assertTrue($cache->set('test', 'value'));
     //     $this->assertEquals('value', $cache->get('test'));
     // }
@@ -54,7 +54,7 @@ class CacheTest extends TestCase
     //     $options = [
     //         'namespace' => 'test',
     //     ];
-    //     $cache = new Cache('apc', $options);
+    //     $cache = new Adapter('apc', $options);
     //     $this->assertTrue($cache->set('test', 'value'));
     //     $this->assertEquals('value', $cache->get('test'));
     // }

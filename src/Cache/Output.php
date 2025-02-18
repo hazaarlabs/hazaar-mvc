@@ -6,7 +6,7 @@ namespace Hazaar\Cache;
 
 use Hazaar\Cache;
 
-class Output extends Cache
+class Output extends Adapter
 {
     private string $key;
 

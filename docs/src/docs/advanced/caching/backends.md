@@ -56,7 +56,7 @@ $config = [
     'user'     =>   'hazaar',
     'password' =>   'password'
 ];
-$cache = new Hazaar\Cache('core', [
+$cache = new Hazaar\Cache\Adapter('core', [
     'database' => ['config' => $config ],
     'apc'
 ]);

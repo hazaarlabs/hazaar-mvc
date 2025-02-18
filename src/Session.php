@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Hazaar;
 
+use Hazaar\Cache\Adapter;
+
 /**
  * @brief       Session class
  *
@@ -18,7 +20,7 @@ namespace Hazaar;
  *              shared between user sessions.  If you want to store data that can be shared then use the Hazaar\Cache
  *              classes directly.
  */
-class Session extends Cache
+class Session extends Adapter
 {
     private string $session_name = 'hazaar-session';
     private ?string $session_id = null;

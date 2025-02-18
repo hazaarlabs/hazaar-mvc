@@ -18,7 +18,7 @@ Frontends are designed to return false if no cached data is available and this c
 
 ### Available Frontends
 
-* [[Hazaar\Cache]] - The basic frontend is for storing key/value pairs. Keys are alpha-numeric but values can be anything that can be serialized, including class objects (as long as they are loaded in the correct context) (Supports Timeout)
+* [[Hazaar\Cache\Adapter]] - The basic frontend is for storing key/value pairs. Keys are alpha-numeric but values can be anything that can be serialized, including class objects (as long as they are loaded in the correct context) (Supports Timeout)
 * [[Hazaar\Cache\Func]] - The function frontend is for storing the result of a function call. This frontend allows you to make a consistent function call via the caching object but the function will only be executed if cached data is available and not expired. If the function returns an object, then the object can only be stored if it is serializable. (Supports Timeout)
 * [[Hazaar\Cache\Output]] - The output frontend is used to cache controller responses. The entire execution path of a controller can be skipped if the output has already been generated using this cache frontend. This is useful for caching the entire output of, for example, a report that takes some time to generate. (Supports Timeout)
 
@@ -31,15 +31,15 @@ Frontends are designed to return false if no cached data is available and this c
 * [[Hazaar\Cache\Backend\Memcached]] - The memcached backend stores cached data with a memcached server. Memcached is caching for medium-scale applications.
 * [[Hazaar\Cache\Backend\Database]] - The database backend can store caching information in a PDO database table.
 * [[Hazaar\Cache\Backend\Sqlite]] - This backend will store data in a persistent SQLite database that is stored in the Hazaar library runtime directory.
-* [[Hazaar\Cache\Backend\Chain]] - The chaining backend allows multiple backends to be used for storing cached data. This allows a mix of backends to be used as persistent backends usually have lower performance as compared to non-persistent backends. Using chaining, a high performance backend can be used as the primary and a low performance persistent backend can be used to protect cached data. The chain backend can be used by simply providing an array of backends to use to the [api:Hazaar\Cache] object.
+* [[Hazaar\Cache\Backend\Chain]] - The chaining backend allows multiple backends to be used for storing cached data. This allows a mix of backends to be used as persistent backends usually have lower performance as compared to non-persistent backends. Using chaining, a high performance backend can be used as the primary and a low performance persistent backend can be used to protect cached data. The chain backend can be used by simply providing an array of backends to use to the [api:Hazaar\Cache\Adapter] object.
 
 ## Example Usage
 
-Below is an example of how to use the [[Hazaar\Cache]] class to cache some data from a database query using the [[Hazaar\Cache\Backend\Redis]] backend.
+Below is an example of how to use the [[Hazaar\Cache\Adapter]] class to cache some data from a database query using the [[Hazaar\Cache\Backend\Redis]] backend.
 
 ```php
 
-$cache = new Hazaar\Cache('redis');
+$cache = new Hazaar\Cache\Adapter('redis');
 
 if(!($result = $cache->get('dbi_result'))){
 

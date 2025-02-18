@@ -72,7 +72,7 @@ Here is a simple example of how to authenticate with a backend using automatic r
 ```php
 public function init(){
     $this->fs = new \Hazaar\File\Browser();
-    $cache = new \Hazaar\Cache();
+    $cache = new \Hazaar\Cache\Adapter();
     if(($token = $this->fs->authorise($cache->load('access_token'), $this->url())) !== true){
         $cache->save('access_token', $token);
         $this->redirect($this->url());
@@ -106,7 +106,7 @@ Here is a simple example of how to authenticate with a backend using automatic r
 ```php
 public function init(){
     $this->fs = new \Hazaar\File\Browser();
-    $cache = new \Hazaar\Cache();
+    $cache = new \Hazaar\Cache\Adapter();
     if(($token = $this->fs->authorise($cache->load('access_token'))) === false){
         $this->redirect($this->fs->buildAuthUrl($this->url()));
     }elseif($token !== true){
@@ -206,7 +206,7 @@ class IndexController extends \Hazaar\Controller\Action {
     private $fs;
     public function init(){
         $this->fs = new \Hazaar\File\Browser();
-        $cache = new \Hazaar\Cache();
+        $cache = new \Hazaar\Cache\Adapter();
         if(($token = $this->fs->authorise($cache->load('access_token'))) == false){
             $this->redirect($this->fs->buildAuthURL($this->url()));
         }elseif($token !== true){

@@ -15,7 +15,7 @@ use Hazaar\Cache\Exception\NoFunction;
  * @throws NoFunction if no function is provided to call
  * @throws \Exception if an unsupported callback declaration is used
  */
-class Func extends Cache
+class Func extends Adapter
 {
     /**
      * @param array<mixed> $options
