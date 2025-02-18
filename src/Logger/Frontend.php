@@ -33,7 +33,7 @@ class Frontend
         $this->backend = new $backend_class($backend_options);
         if (is_numeric($level)) {
             $this->level = $level;
-        } elseif (($this->level = $this->backend->getLogLevelId($level)) === false) {
+        } elseif (($this->level = $this->backend->getLogLevelId($level)) === 0) {
             $this->level = E_ERROR;
         }
         $buf = Frontend::$message_buffer;

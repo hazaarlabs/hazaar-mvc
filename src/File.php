@@ -43,7 +43,7 @@ class File implements \JsonSerializable
     protected ?array $csv_contents = null;
 
     /**
-     * @var resource
+     * @var ?resource
      */
     protected mixed $resource = null;
 

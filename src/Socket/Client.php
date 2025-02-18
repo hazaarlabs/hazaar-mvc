@@ -158,7 +158,7 @@ class Client
     /**
      * @var \Socket The socket resource
      */
-    private \Socket $socket;
+    private false|\Socket $socket;
 
     /**
      * @var int The length of the read buffer in bytes

@@ -25,8 +25,8 @@ class Shm extends Backend
 {
     private const GC_KEY = '__garbage_collection__';
     protected int $weight = 0;
-    private ?\SysvSemaphore $sem;
-    private ?\SysvSharedMemory $shm;
+    private false|\SysvSemaphore $sem = false;
+    private false|\SysvSharedMemory $shm = false;
     private bool $keepalive;
     private int $indexKey;
 
@@ -113,7 +113,7 @@ class Shm extends Backend
      */
     public function close(): bool
     {
-        if (null === $this->shm || null === $this->sem) {
+        if (false === $this->shm || false === $this->sem) {
             return false;
         }
         $index = $this->getIndex();
@@ -134,9 +134,9 @@ class Shm extends Backend
             shm_put_var($this->shm, $this->indexKey, $index);
         }
         shm_detach($this->shm);
-        $this->shm = null;
+        $this->shm = false;
         sem_remove($this->sem);
-        $this->sem = null;
+        $this->sem = false;
         // Release all locks
         foreach ($this->locks as $key => $lock) {
             sem_release($lock);

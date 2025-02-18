@@ -60,7 +60,7 @@ abstract class Service extends Process
     /**
      * @var false|resource
      */
-    private mixed $__log = null;
+    private mixed $__log = false;
 
     private int $__localLogLevel = W_INFO;
     private bool $__remote = false;
@@ -108,10 +108,10 @@ abstract class Service extends Process
             }
         }
         $this->__remote = $remote;
-        if ($this->config->log->has('level') && defined($out_level = $this->config->log->get('level'))) {
+        if ($this->config['log']->has('level') && defined($out_level = $this->config['log']->get('level'))) {
             $this->__localLogLevel = constant($out_level);
         }
-        if (true === $remote && !$this->config->has('server')) {
+        if (true === $remote && !isset($this->config['server'])) {
             throw new \Exception("Warlock server required to run in remote service mode.\n");
         }
         $this->__logFile = $warlock['sys']['runtimePath'].DIRECTORY_SEPARATOR.$this->name.'.log';
@@ -121,7 +121,7 @@ abstract class Service extends Process
         $this->log(W_LOCAL, "Service '{$this->name}' starting up");
         $this->setErrorHandler('__errorHandler');
         $this->setExceptionHandler('__exceptionHandler');
-        if ($tz = $this->config->get('timezone')) {
+        if ($tz = $this->config['timezone']) {
             date_default_timezone_set($tz);
         }
         if ($this->config['checkfile'] > 0) {

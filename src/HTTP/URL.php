@@ -21,7 +21,7 @@ class URL implements \ArrayAccess
     /**
      * @var array<string, int|string>
      */
-    private array $parts = [
+    private null|array|false|int|string $parts = [
         'scheme' => 'http',
         'host' => 'localhost',
         'path' => '/',

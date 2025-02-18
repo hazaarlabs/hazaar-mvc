@@ -17,7 +17,7 @@ use Hazaar\Socket\Exception\OptionFailed;
 abstract class Server
 {
     protected int $maxBufferSize;
-    protected \Socket $master;
+    protected false|\Socket $master;
 
     /**
      * @var array<\Socket>

@@ -13,7 +13,7 @@ class Table
     private Adapter $adapter;
     private QueryBuilder $queryBuilder;
     private string $table;
-    private ?Result $result = null;
+    private null|false|Result $result = null;
 
     public function __construct(Adapter $adapter, string $table, ?string $alias = null)
     {

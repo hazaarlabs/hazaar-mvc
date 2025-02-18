@@ -158,7 +158,7 @@ class Router
             && ($errorController = $this->config['errorController'])) {
             $controllerClass = '\Application\Controllers\\'.ucfirst($errorController);
             if (class_exists($controllerClass) && is_subclass_of($controllerClass, Error::class)) {
-                $controller = new $controllerClass($this, $errorController);
+                $controller = new $controllerClass($errorController);
             }
         }
         if (null === $controller) {

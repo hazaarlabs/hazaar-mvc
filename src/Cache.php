@@ -73,10 +73,10 @@ class Cache implements \ArrayAccess
         if (!isset($backendClass)) {
             throw new Cache\Exception\NoBackendAvailable();
         }
-        $this->backend = new $backendClass($this->options, $namespace);
-        if (!$this->backend instanceof Backend) {
+        if (!in_array(Backend::class, class_parents($backendClass))) {
             throw new Cache\Exception\InvalidBackend($backendClass);
         }
+        $this->backend = new $backendClass($this->options, $namespace);
         /*
          * Cache skip
          *

@@ -34,7 +34,7 @@ class Request implements Interface\Request
     /**
      * Request body.  This is only used in certain circumstances such as with XML-RPC or REST.
      */
-    public string $body = '';
+    public false|string $body = '';
     protected bool $dispatched = false;
 
     /**

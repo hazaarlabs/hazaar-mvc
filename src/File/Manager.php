@@ -52,7 +52,7 @@ class Manager implements Backend
      */
     private static array $default_backend_options = [];
     private Backend $backend;
-    private string $backend_name;
+    private string $backendName;
 
     /**
      * @var array<mixed>
@@ -77,15 +77,15 @@ class Manager implements Backend
                 $backend_options = ['root' => '/'];
             }
         }
-        $class = 'Hazaar\File\Backend\\'.ake(self::$backend_aliases, $backend, ucfirst($backend));
-        if (!class_exists($class)) {
+        $backendClass = 'Hazaar\File\Backend\\'.ake(self::$backend_aliases, $backend, ucfirst($backend));
+        if (!class_exists($backendClass)) {
             throw new Exception\BackendNotFound($backend);
         }
-        $this->backend_name = $backend;
-        $this->backend = new $class($backend_options, $this);
-        if (!$this->backend instanceof Backend) {
+        if (!in_array(Backend::class, class_implements($backendClass))) {
             throw new Exception\InvalidBackend($backend);
         }
+        $this->backendName = $backend;
+        $this->backend = new $backendClass($backend_options, $this);
         if (!$name) {
             $name = strtolower($backend);
         }
@@ -214,7 +214,7 @@ class Manager implements Backend
 
     public function getBackendName(): string
     {
-        return $this->backend_name;
+        return $this->backendName;
     }
 
     public function setOption(string $name, mixed $value): void
