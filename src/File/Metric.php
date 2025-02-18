@@ -24,7 +24,7 @@ class Metric
     private int $tickSec = 0;
 
     /**
-     * @var resource
+     * @var ?resource
      */
     private mixed $handle = null;
 

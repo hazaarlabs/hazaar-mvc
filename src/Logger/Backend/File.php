@@ -10,16 +10,16 @@ use Hazaar\Logger\Backend;
 class File extends Backend
 {
     /**
-     * @var resource
+     * @var false|resource
      */
-    private mixed $hLog = null;
+    private mixed $hLog = false;
 
     /**
-     * @var resource
+     * @var false|resource
      */
-    private mixed $hErr = null;
+    private mixed $hErr = false;
 
-    private int $level_padding = 0;
+    private int $levelPadding = 0;
 
     public function init(): void
     {
@@ -44,22 +44,22 @@ class File extends Backend
                 throw new Exception\OpenLogFileFailed($error_file);
             }
         }
-        $this->level_padding = max(array_map('strlen', array_keys($this->levels))) - strlen(self::LOG_LEVEL_PREFIX);
+        $this->levelPadding = max(array_map('strlen', array_keys($this->levels))) - strlen(self::LOG_LEVEL_PREFIX);
     }
 
     public function postRun(): void
     {
-        if (null !== $this->hLog) {
+        if ($this->hLog) {
             fclose($this->hLog);
         }
-        if (null !== $this->hErr) {
+        if ($this->hErr) {
             fclose($this->hErr);
         }
     }
 
     public function write(string $message, int $level = LOG_INFO, ?string $tag = null): void
     {
-        if (null !== $this->hLog) {
+        if (!$this->hLog) {
             return;
         }
         $remote = ake($_SERVER, 'REMOTE_ADDR', '--');
@@ -73,13 +73,13 @@ class File extends Backend
         if ($this->getOption('write_pid')) {
             $line[] = getmypid();
         }
-        $line[] = str_pad(strtoupper($this->getLogLevelName($level)), $this->level_padding, ' ', STR_PAD_RIGHT);
+        $line[] = str_pad(strtoupper($this->getLogLevelName($level)), $this->levelPadding, ' ', STR_PAD_RIGHT);
         if (null !== $tag) {
             $line[] = $tag;
         }
         $line[] = $message;
         fwrite($this->hLog, implode(' | ', $line).PHP_EOL);
-        if (null !== $this->hErr && LOG_NOTICE == $level) {
+        if ($this->hErr && LOG_NOTICE == $level) {
             fwrite($this->hErr, implode(' | ', $line).PHP_EOL);
         }
     }
