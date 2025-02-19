@@ -23,9 +23,9 @@ enum FilePath: string
     public static function fromApplicationNamespace(string $namespace): ?self
     {
         return match ($namespace) {
-            'Models' => self::MODEL,
-            'Controllers' => self::CONTROLLER,
-            'Helpers' => self::HELPER,
+            'Model' => self::MODEL,
+            'Controller' => self::CONTROLLER,
+            'Helper' => self::HELPER,
             default => null,
         };
     }
