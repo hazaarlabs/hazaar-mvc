@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\File\Backend;
 
-use Hazaar\Cache;
+use Hazaar\Cache\Adapter;
 use Hazaar\File\Backend\Exception\GoogleDriveError;
 use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
@@ -27,7 +27,7 @@ class GoogleDrive extends Client implements Interface\Backend, Interface\Driver
      * @var array<mixed>
      */
     private array $options;
-    private Cache $cache;
+    private Adapter $cache;
 
     /**
      * @var array<mixed>
@@ -76,7 +76,7 @@ class GoogleDrive extends Client implements Interface\Backend, Interface\Driver
             'use_pragma' => false,
             'namespace' => 'googledrive_'.$this->options['client_id'],
         ];
-        $this->cache = new Cache($this->options['cache_backend'], $cacheOps);
+        $this->cache = new Adapter($this->options['cache_backend'], $cacheOps);
         $this->oauth2ID = 'oauth2_data::'.md5(implode('', $this->scope));
         $this->reload();
     }

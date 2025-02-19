@@ -18,7 +18,7 @@ use Hazaar\Application;
 use Hazaar\Application\Request;
 use Hazaar\Auth\Adapter;
 use Hazaar\Auth\Interface\Storage;
-use Hazaar\Cache as HazaarCache;
+use Hazaar\Cache\Adapter as CacheAdapter;
 
 /**
  * @brief       Session based authentication adapter
@@ -47,7 +47,7 @@ use Hazaar\Cache as HazaarCache;
  */
 class Cache implements Storage
 {
-    protected ?HazaarCache $session = null;
+    protected ?CacheAdapter $session = null;
 
     /**
      * @var array<string,mixed>
@@ -199,7 +199,7 @@ class Cache implements Storage
             throw new \Exception("Cache backend '{$this->config['backend']}' not supported for session storage");
         }
         $this->sessionID = $sessionID;
-        $this->session = new HazaarCache($this->config['backend'], $this->config, $sessionID);
+        $this->session = new CacheAdapter($this->config['backend'], $this->config, $sessionID);
         Application::getInstance()->registerOutputFunction(function () use ($sessionID): void {
             setcookie($this->config['name'], $sessionID, 0, '/', '', true, true);
         });

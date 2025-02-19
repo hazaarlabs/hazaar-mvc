@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Hazaar;
 
 use Hazaar\Application\FilePath;
+use Hazaar\Cache\Adapter;
 use Hazaar\File\BTree;
 
 /**
@@ -66,7 +67,7 @@ class Money
      * @var array<string, mixed>
      */
     private static array $exchangeRates = [];
-    private static ?Cache $cache = null;
+    private static ?Adapter $cache = null;
 
     /**
      * @detail      The money class constructors takes two parameters.  The value of the currency and the type of
@@ -244,7 +245,7 @@ class Money
         $foreignCurrency = strtoupper(trim($foreignCurrency));
         if (!ake(self::$exchangeRates, $base)) {
             if (null === self::$cache) {
-                self::$cache = new Cache(['apc', 'file']);
+                self::$cache = new Adapter(['apc', 'file']);
             }
             $key = 'exchange_rate_'.$base;
             if (!(self::$exchangeRates[$base] = self::$cache->get($key))) {

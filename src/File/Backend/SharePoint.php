@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\File\Backend;
 
-use Hazaar\Cache;
+use Hazaar\Cache\Adapter;
 use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
@@ -21,7 +21,7 @@ class SharePoint extends Client implements Interface\Backend, Interface\Driver
      * @var array<mixed>
      */
     private array $options;
-    private Cache $cache;
+    private Adapter $cache;
     private static string $STSAuthURL = 'https://login.microsoftonline.com/extSTS.srf';
     private static string $signInURL = '/_forms/default.aspx?wa=wsignin1.0';
     private ?string $requestFormDigest;
@@ -57,7 +57,7 @@ class SharePoint extends Client implements Interface\Backend, Interface\Driver
             'use_pragma' => false,
             'namespace' => 'sharepoint_'.md5($this->options['username'].':'.$this->options['password'].'@'.$this->options['webURL']),
         ];
-        $this->cache = new Cache($this->options['cache_backend'], $cache_options);
+        $this->cache = new Adapter($this->options['cache_backend'], $cache_options);
         $this->uncacheCookie($this->cache);
         $this->root = new \stdClass();
         $this->hostInfo = parse_url($this->options['webURL']);
