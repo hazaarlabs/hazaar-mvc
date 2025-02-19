@@ -188,9 +188,6 @@ class DocBlock
         $blocks = [];
         $b = -1;
         foreach ($comment as $line) {
-            if (empty($line)) {
-                continue;
-            }
             if (self::isTagged($line)) {
                 ++$b;
                 $blocks[] = [];
