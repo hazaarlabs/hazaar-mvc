@@ -115,7 +115,7 @@ class Adapter implements Interface\API\Constraint, Interface\API\Extension, Inte
             }
             $config = $this->loadConfig($this->env)->toArray();
         }
-        if (!isset($config['driver'])) {
+        if (!isset($config['type'])) {
             throw new NotConfigured();
         }
         $this->config = $config;
@@ -978,12 +978,12 @@ class Adapter implements Interface\API\Constraint, Interface\API\Extension, Inte
 
     private function reconfigure(bool $reconnect = false): bool
     {
-        if (!$this->config['driver']) {
+        if (!$this->config['type']) {
             throw new \Exception('No DBI driver specified!');
         }
-        $driverClass = $this->getDriverClass($this->config['driver']);
+        $driverClass = $this->getDriverClass($this->config['type']);
         if (!class_exists($driverClass)) {
-            throw new DriverNotFound($this->config['driver']);
+            throw new DriverNotFound($this->config['type']);
         }
 
         try {
