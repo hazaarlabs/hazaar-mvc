@@ -1,4 +1,4 @@
-namespace Application\Controllers;
+namespace Application\Controller;
 
 use Hazaar\Application\Request;
 use Hazaar\Controller\Basic;
