@@ -17,5 +17,5 @@
     };
     $name = $object->fullName;
     $text = $object->name;
-    echo "[$text](/api/$root/".str_replace('\\', '/', ltrim($name, '\\')).")";
+    echo "[$text](/api/$root/".str_replace('\\', '/', ltrim($name, '\\')).".md)";
 {/php}{/function}

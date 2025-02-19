@@ -91,6 +91,11 @@ class Smarty
     private array $__capture_stack = [];
 
     /**
+     * @var array<\Closure>
+     */
+    private array $__filters = [];
+
+    /**
      * Create a new Smarty template object.
      *
      * @param array<string> $include_funcs
@@ -176,6 +181,17 @@ class Smarty
     }
 
     /**
+     * Add a post-processing filter to the template.
+     *
+     * Filters are applied after the template has been rendered and can be used to modify the output.  Useful for
+     * things like minifying the output or removing whitespace.
+     */
+    public function addFilter(\Closure $filter): void
+    {
+        $this->__filters[] = $filter;
+    }
+
+    /**
      * Render the template with the supplied parameters and return the rendered content.
      *
      * @param array<mixed> $params parameters to use when embedding variables in the rendered template
@@ -256,8 +272,14 @@ class Smarty
             error_clear_last();
             error_reporting($errors);
         }
+        $content = ob_get_clean();
+        if (count($this->__filters) > 0) {
+            foreach ($this->__filters as $filter) {
+                $content = $filter($content);
+            }
+        }
 
-        return ob_get_clean();
+        return $content;
     }
 
     /**
@@ -415,7 +437,7 @@ class Smarty
         }
         if (count($modifiers) > 0) {
             foreach ($modifiers as $modifier) {
-                $params = str_getcsv($modifier, ':', '"', "\\");
+                $params = str_getcsv($modifier, ':', '"', '\\');
                 $func = array_shift($params);
                 $name = '$this->modify->execute("'.$func.'", '.$name.((count($params) > 0) ? ', "'.implode('", "', $params).'"' : '').')';
             }

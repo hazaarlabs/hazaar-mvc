@@ -9,7 +9,11 @@ class Application
     private string $name;
     private string $version;
 
-    /** @var array<Command> */
+    /**
+     * A list of commands.
+     *
+     * @var array<Command>
+     */
     private array $commands = [];
 
     private Input $input;
@@ -35,9 +39,9 @@ class Application
     public function run(): int
     {
         $this->input->initialise((array) $_SERVER['argv']);
-        $this->output->write("<fg=green>".$this->name.' v'.$this->version."</>".PHP_EOL);
+        $this->output->write('<fg=green>'.$this->name.' v'.$this->version.'</>'.PHP_EOL);
         define('APPLICATION_ENV', $this->input->getGlobalOption('env') ?? getenv('APPLICATION_ENV') ?: 'development');
-        $this->output->write("<fg=green>Environment: ".APPLICATION_ENV."</>".PHP_EOL);
+        $this->output->write('<fg=green>Environment: '.APPLICATION_ENV.'</>'.PHP_EOL);
         $commandName = $this->input->getCommand();
         if (!array_key_exists($commandName, $this->commands)) {
             $this->writeHelp($this->output);
@@ -62,20 +66,20 @@ class Application
             $cli .= ' [globals]';
         }
         $cli .= ' [command] [options]';
-        $output->write("<fg=green>Usage: $cli</>".PHP_EOL);
+        $output->write("<fg=green>Usage: {$cli}</>".PHP_EOL);
         $output->write(PHP_EOL);
         if (count(Command::$globalOptions) > 0) {
-            $output->write("<fg=green>Global Options:</>".PHP_EOL);
+            $output->write('<fg=green>Global Options:</>'.PHP_EOL);
             foreach (Command::$globalOptions as $option) {
-                $output->write('  <fg=green>--'.$option['long']."</>");
+                $output->write('  <fg=green>--'.$option['long'].'</>');
                 if (null !== $option['short']) {
-                    $output->write(', <fg=green>-'.$option['short']."</>");
+                    $output->write(', <fg=green>-'.$option['short'].'</>');
                 }
                 $output->write(' - '.$option['description'].PHP_EOL);
             }
             $output->write(PHP_EOL);
         }
-        $output->write("<fg=green>Commands:</>".PHP_EOL);
+        $output->write('<fg=green>Commands:</>'.PHP_EOL);
         foreach ($this->commands as $command) {
             $output->write('  '.$command->getName().' - '.$command->getDescription().PHP_EOL);
         }
@@ -89,18 +93,18 @@ class Application
     public function handleException(\Throwable $e): void
     {
         $this->output->write(PHP_EOL);
-        $this->output->write("<fg=red>Exception:</> <fg=white>".get_class($e)."</>".PHP_EOL);
-        $this->output->write("<fg=red>File:</> <fg=white>".$e->getFile()."</>".PHP_EOL);
-        $this->output->write("<fg=red>Line:</> <fg=white>".$e->getLine()."</>".PHP_EOL);
-        $this->output->write("<fg=red>Error:</> <fg=white>".$e->getMessage()."</>".PHP_EOL);
+        $this->output->write('<fg=red>Exception:</> <fg=white>'.get_class($e).'</>'.PHP_EOL);
+        $this->output->write('<fg=red>File:</> <fg=white>'.$e->getFile().'</>'.PHP_EOL);
+        $this->output->write('<fg=red>Line:</> <fg=white>'.$e->getLine().'</>'.PHP_EOL);
+        $this->output->write('<fg=red>Error:</> <fg=white>'.$e->getMessage().'</>'.PHP_EOL);
     }
 
     public function handleError(int $errno, string $errstr, string $errfile, int $errline): bool
     {
         $this->output->write(PHP_EOL);
-        $this->output->write("<fg=red>Error:</> <fg=white>".$errstr."</>".PHP_EOL);
-        $this->output->write("<fg=red>File:</> <fg=white>".$errfile."</>".PHP_EOL);
-        $this->output->write("<fg=red>Line:</> <fg=white>".$errline."</>".PHP_EOL);
+        $this->output->write('<fg=red>Error:</> <fg=white>'.$errstr.'</>'.PHP_EOL);
+        $this->output->write('<fg=red>File:</> <fg=white>'.$errfile.'</>'.PHP_EOL);
+        $this->output->write('<fg=red>Line:</> <fg=white>'.$errline.'</>'.PHP_EOL);
 
         return true;
     }
