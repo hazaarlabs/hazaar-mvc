@@ -146,6 +146,9 @@ class Documentor
             }
             $template = new Smarty();
             $template->loadFromFile($file->getPathname());
+            $template->addFilter(function($content){
+                return preg_replace('/^\s+$/m', '', $content);
+            });
             $templates[$file->getBasename('.tpl')] = $template;
         }
 
