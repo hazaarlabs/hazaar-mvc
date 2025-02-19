@@ -48,6 +48,11 @@ class Input
     {
         $this->executable = basename(array_shift($argv));
         $definedOptions = $this->reduceOptions(Command::$globalOptions);
+        if (0 === count($argv)) {
+            $this->argv = [];
+
+            return;
+        }
         while ('-' === substr(current($argv), 0, 1)) {
             $this->parseOption(current($argv), $definedOptions, $this->globalOptions);
             next($argv);
