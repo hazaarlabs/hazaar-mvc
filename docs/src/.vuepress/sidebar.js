@@ -1,6 +1,6 @@
 export default {
     '/docs/': sidebarGuide(),
-    '/examples/': 'structure',
+    '/examples/': sidebarExamples(),
     '/api/': 'structure'
 }
 
@@ -130,8 +130,53 @@ function sidebarGuide() {
                 { text: 'HTTP Status Codes', link: '/docs/reference/http-status-codes' }
             ]
         },
-        { text: "API Documentation", link: "/api/" },
         { text: 'Licence', link: '/docs/licence' }
     ]
 }
 
+function sidebarExamples() {
+    return [
+        {
+            "text": "Overview",
+            "link": "/examples/"
+        },
+        {
+            "text": "Your First Application",
+            "link": "/examples/your-first-app"
+        },
+        {
+            "text": "Routing",
+            "link": "/examples/routing"
+        },
+        {
+            "text": "Using Templates",
+            "link": "/examples/templates"
+        },
+        {
+            "text": "Using Databases",
+            "link": "/examples/databases"
+        },
+        {
+            "text": "Controller Responses",
+            "link": "/examples/responses"
+        },
+        {
+            "text": "Applications",
+            "collapsible": true,
+            "children": [
+                {
+                    "text": "REST API",
+                    "link": "/examples/apps/rest-api"
+                },
+                {
+                    "text": "Web Application",
+                    "link": "/examples/apps/web"
+                },
+                {
+                    "text": "CLI Application",
+                    "link": "/examples/apps/cli"
+                }
+            ]
+        }
+    ]
+}
