@@ -2,8 +2,8 @@
 
 namespace Hazaar\Tests;
 
-use Application\Controllers\Index;
-use Application\Controllers\Test;
+use Application\Controller\Index;
+use Application\Controller\Test;
 use Hazaar\Application\Config;
 use Hazaar\Application\Request;
 use Hazaar\Application\Route;

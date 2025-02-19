@@ -50,7 +50,7 @@ class Advanced extends Loader
         if ('' === $controller) {
             return null;
         }
-        $controllerClass = 'Application\Controllers\\'.$controller;
+        $controllerClass = 'Application\Controller\\'.$controller;
         $action = (count($parts) > 0) ? array_shift($parts) : null;
         $actionArgs = $parts;
         $route = new Route($path);

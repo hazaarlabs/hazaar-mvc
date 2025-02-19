@@ -19,7 +19,7 @@ use Hazaar\Application\Router\Loader;
  *
  * This will set the controller to 'Controller', the action to 'action', and the
  * arguments to ['arg1', 'arg2', 'arg3'] which will result in the
- * \Application\Controllers\Controller::action('arg1', 'arg2', 'arg3') method being called.
+ * \Application\Controller\Controller::action('arg1', 'arg2', 'arg3') method being called.
  */
 class Basic extends Loader
 {
@@ -47,7 +47,7 @@ class Basic extends Loader
             return null; // Return true if the path is empty.  Allows for default controller/action to be used.
         }
         $parts = explode('/', ltrim($path, '/'));
-        $controller = 'Application\Controllers\\'.(('' !== $parts[0]) ? ucfirst($parts[0]) : null);
+        $controller = 'Application\Controller\\'.(('' !== $parts[0]) ? ucfirst($parts[0]) : null);
         if (!class_exists($controller)) {
             return null;
         }

@@ -120,7 +120,7 @@ class Router
         }
         $controllerClass = '\\' === substr($controller, 0, 1)
             ? $controller
-            : 'Application\Controllers\\'.ucfirst($controller);
+            : 'Application\Controller\\'.ucfirst($controller);
         $route = new Route();
         $route->setCallable([$controllerClass, $this->config['action']]);
 
@@ -156,7 +156,7 @@ class Router
         $controller = null;
         if (isset($this->config['errorController'])
             && ($errorController = $this->config['errorController'])) {
-            $controllerClass = '\Application\Controllers\\'.ucfirst($errorController);
+            $controllerClass = '\Application\Controller\\'.ucfirst($errorController);
             if (class_exists($controllerClass) && is_subclass_of($controllerClass, Error::class)) {
                 $controller = new $controllerClass($errorController);
             }
