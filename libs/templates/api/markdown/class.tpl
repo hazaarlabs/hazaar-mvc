@@ -41,7 +41,7 @@
 ### [{$method->name}](#{$method->name})
 {if $method->brief}{$method->brief}{/if}
 ```php
-{$method->access} {$method->return} {$method->name}({{$method->params}})
+{$method->access} {$method->name}({$method->params|implode:, }): {$method->returns}
 ```
 {if $method->detail}{$method->detail}{/if}
 {if $method->params}
