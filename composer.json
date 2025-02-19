@@ -1,5 +1,5 @@
 {
-  "name": "hazaarlabs/hazaar-mvc",
+  "name": "hazaar/framework",
   "description": "The MVC framework that makes PHP not suck!",
   "homepage": "http://hazaar.io",
   "license": "Apache-2.0",
@@ -7,16 +7,16 @@
     {
       "name": "Jamie Carl",
       "email": "jamie@hazaar.io",
-      "homepage": "http://www.hazaar.io",
+      "homepage": "https://funkynerd.com",
       "role": "developer"
     }
   ],
   "support": {
     "email": "support@hazaar.io",
-    "issues": "https://git.hazaar.io/hazaar/hazaar-mvc/issues",
-    "wiki": "https://git.hazaar.io/hazaar/hazaar-mvc/wikis/home",
-    "docs": "https://scroly.io/hazaarmvc",
-    "source": "https://git.hazaar.io/hazaar/hazaar-mvc/tree/master"
+    "issues": "https://git.hazaar.io/hazaar/framework/issues",
+    "wiki": "https://git.hazaar.io/hazaar/framework/wikis/home",
+    "docs": "https://hazaar.io",
+    "source": "https://git.hazaar.io/hazaar/framework/tree/master"
   },
   "type": "library",
   "keywords": [
@@ -24,7 +24,8 @@
     "mvc",
     "framework",
     "hazaar",
-    "hmvc"
+    "hmvc",
+    "websockets"
   ],
   "autoload": {
     "files": [
@@ -35,13 +36,12 @@
     }
   },
   "require": {
-    "php": ">=7.0",
-    "dompdf/dompdf": "^3.0"
+    "php": ">=8.3"
   },
   "require-dev": {
     "phpunit/phpunit": "^9.0",
     "overtrue/phplint": "*",
-    "phpstan/phpstan": "2.1.1",
+    "phpstan/phpstan": "^2.1.0",
     "squizlabs/php_codesniffer": "^3.9"
   },
   "autoload-dev": {
