@@ -33,6 +33,21 @@ class Smarty
     /**
      * @var array<string>
      */
+    public array $__include_funcs = [];
+
+    /**
+     * @var array<mixed>
+     */
+    public array $__custom_functions = [];
+
+    /**
+     * @var array<mixed>
+     */
+    public array $__functions = [];
+
+    /**
+     * @var array<string>
+     */
     protected static array $tags = [
         'if',
         'elseif',
@@ -56,19 +71,9 @@ class Smarty
     protected string $__compiled_content = '';
 
     /**
-     * @var array<mixed>
-     */
-    protected array $__custom_functions = [];
-
-    /**
      * @var array<string>
      */
     protected array $__includes = [];
-
-    /**
-     * @var array<string>
-     */
-    protected array $__include_funcs = [];
 
     /**
      * @var array<object>
@@ -238,9 +243,9 @@ class Smarty
             private \$modify;
             private \$variables = [];
             private \$params = [];
-            private \$functions = [];
+            public  \$functions = [];
             public  \$custom_handlers;
-            private \$include_funcs = [];
+            public  \$include_funcs = [];
             function __construct(){ \$this->modify = new \\Hazaar\\Template\\Smarty\\Modifier; }
             public function render(\$params){
                 extract(\$this->params = \$params, EXTR_REFS);
@@ -256,6 +261,13 @@ class Smarty
             private function write(\$var){
                 echo (\$var === null ? \$this->params['__DEFAULT_VAR__'] : @\$var);
             }
+            private function include(\$hash, array \$params = []){
+                if(!isset(\$this->include_funcs[\$hash])) return '';
+                \$i = \$this->include_funcs[\$hash];
+                \$out = \$i->render(\$params);
+                \$this->functions = array_merge(\$this->functions, \$i->__functions);
+                return \$out;
+            }
         }";
         $errors = error_reporting();
         error_reporting(0);
@@ -265,7 +277,10 @@ class Smarty
             $obj = new $id();
             ob_start();
             $obj->custom_handlers = $this->__custom_function_handlers;
+            $obj->include_funcs = $this->__include_funcs;
             $obj->render($params);
+            // Merge the functions from the included templates
+            $this->__functions = array_merge($this->__functions, $obj->functions);
         } catch (\Throwable $e) {
             throw new Exception\SmartyTemplateError($e);
         } finally {
@@ -290,12 +305,15 @@ class Smarty
      */
     public function compile(): string
     {
+        if ($this->__compiled_content) {
+            return $this->__compiled_content;
+        }
         $compiled_content = preg_replace(['/\<\?/', '/\?\>/'], ['&lt;?', '?&gt;'], $this->__content);
         $regex = '/\{([#\$\*][^\}]+|(\/?\w+)\s*([^\}]*))\}(\r?\n)?/';
         $literal = false;
         $strip = false;
 
-        return preg_replace_callback($regex, function ($matches) use (&$literal, &$strip) {
+        return $this->__compiled_content = preg_replace_callback($regex, function ($matches) use (&$literal, &$strip) {
             $replacement = '';
             if (preg_match('/(\/?)literal/', $matches[1], $literals)) {
                 $literal = ('/' !== $literals[1]);
@@ -676,14 +694,15 @@ class Smarty
     protected function compileFUNCTION(mixed $params): string
     {
         $params = $this->parsePARAMS($params);
-        if (!($name = ake($params, 'name')) || array_key_exists($name, $this->__custom_functions)) {
+        if (!($name = trim(ake($params, 'name'), '\'"'))
+            || array_key_exists($name, $this->__custom_functions)) {
             return '';
         }
         unset($params['name']);
         $this->__custom_functions[$name] = $params;
         if (array_key_exists('params', $params)) {
             $funcParams = eval('return '.$params['params'].';');
-            $compiledParams = implode(', ', array_map(function ($item) { return '&$'.$item; }, $funcParams));
+            $compiledParams = implode(', ', array_map(function ($item) { return '$'.$item; }, $funcParams));
         } else {
             $compiledParams = '';
         }
@@ -715,6 +734,7 @@ class Smarty
             (count($params) > 0) => implode(', ', $params),
             default => ''
         };
+        $code .= "if(!isset(\$this->functions['{$name}'])) throw new \\Exception('Function \\'{$name}\\' not found');\n";
         $code .= "\$this->functions['{$name}']({$compiledParams});\n?>";
 
         return $code;
@@ -765,7 +785,10 @@ class Smarty
         $file = trim($params['file'], '\'"');
         unset($params['file']);
         if ('/' !== $file[0] && !preg_match('/^\w+\:\/\//', $file)) {
-            $file = ($this->cwd ? rtrim($this->cwd, ' /') : getcwd()).DIRECTORY_SEPARATOR.$file;
+            $file = realpath($this->cwd ? rtrim($this->cwd, ' /') : getcwd()).DIRECTORY_SEPARATOR.$file;
+        }
+        if (!file_exists($file)) {
+            throw new Exception\IncludeFileNotFound($file);
         }
         $info = pathinfo($file);
         if (!(array_key_exists('extension', $info) && $info['extension'])
@@ -773,23 +796,21 @@ class Smarty
             $file .= '.tpl';
         }
         $hash = hash('crc32b', $file);
-        $output = '';
         if (!array_key_exists($hash, $this->__include_funcs)) {
             $this->__includes[] = $file;
             $this->__include_funcs[$hash] = $include = new Smarty();
             $include->loadFromFile($file);
             $include->__include_funcs = $this->__include_funcs;
-            $output = $include->compile();
+            $include->__custom_functions = $this->__custom_functions;
+            $none = $include->render($params);
             $this->__custom_functions = array_merge($this->__custom_functions, $include->__custom_functions);
+            $this->__functions = array_merge($this->__functions, $include->__functions);
             $this->__includes = array_unique(array_merge($this->__includes, $include->__includes));
-            if (0 === count($params)) {
-                return $output;
-            }
-            $args = implode(', ', array_map(function ($item) { return '$'.$item; }, array_keys($params)));
-            $output = "<?php \$this->include_funcs['{$hash}'] = function({$args}){ ?>\n{$output}\n<?php }; ?>";
         }
-        $output .= "<?php \$this->include_funcs['{$hash}'](".$this->compilePARAMS(implode(', ', $params)).'); ?>';
+        $args = count($params) > 0
+            ? '['.implode(', ', array_map(function ($item, $key) { return "'{$key}' => {$item}"; }, $params, array_keys($params))).']'
+            : '';
 
-        return $output;
+        return "<?php echo \$this->include('{$hash}'".($args ? ", {$args}" : '').'); ?>';
     }
 }

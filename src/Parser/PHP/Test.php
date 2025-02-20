@@ -22,12 +22,12 @@ const TEST_CONSTANT = 'test';
 /**
  * This is a test function.
  *
- * @param float  $text        The text to display
+ * @param float  $precision   The precision of the text
  * @param string $description The description of the text
  */
-function testFunction(float $text = 1.2, string $description = 'none'): bool
+function testFunction(float $precision = 1.2, string $description = 'none'): bool
 {
-    echo $text;
+    echo $precision;
 
     if ($description) {
         echo $description;
@@ -49,6 +49,11 @@ function variaticFunction(string $name, int $dob): void
 
 interface TestInterface
 {
+    /**
+     * This is a test method.
+     *
+     * @param string $text The text to display
+     */
     public function testMethod(string $text = 'Hello World'): void;
 }
 
