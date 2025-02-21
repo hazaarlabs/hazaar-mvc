@@ -57,7 +57,14 @@ interface TestInterface
     public function testMethod(int $n, string $text = 'Hello World'): void;
 }
 
-class BaseClass
+/**
+ * This is a test class.
+ * 
+ * Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+ * Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. 
+ * Sed nisi. Nulla quis sem at nibh elementum imperdiet.
+ */
+abstract class BaseClass
 {
     /**
      * @var array<mixed>
