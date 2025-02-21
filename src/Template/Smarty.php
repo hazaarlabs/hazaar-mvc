@@ -725,7 +725,7 @@ class Smarty
     protected function compileCUSTOMFUNC(string $name, mixed $params): string
     {
         $code = "<?php\n";
-        $params = $this->parsePARAMS($params);
+        $params = empty($params) ? [] : $this->parsePARAMS($params);
         foreach ($params as &$value) {
             if ('$' === substr($value, 0, 1)) {
                 continue;

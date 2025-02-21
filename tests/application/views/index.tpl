@@ -4,8 +4,7 @@
 
         <p>
             Congratulations! You have successfully installed the Hazaar framework example
-            application. You are currently running Hazaar version
-            {HAZAAR_VERSION}.
+            application. You are currently running Hazaar version {$hazaar.version}.
             This example application is a good starting point for building your own application with Hazaar.
         </p>
         <p>
