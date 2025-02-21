@@ -31,6 +31,11 @@ class Smarty
     public ?string $cwd = null;
 
     /**
+     * @var array<mixed>
+     */
+    public array $__functions = [];
+
+    /**
      * @var array<string>
      */
     protected array $__includeFuncs = [];
@@ -39,11 +44,6 @@ class Smarty
      * @var array<mixed>
      */
     protected array $__customFunctions = [];
-
-    /**
-     * @var array<mixed>
-     */
-    public array $__functions = [];
 
     /**
      * @var array<string>
@@ -139,6 +139,9 @@ class Smarty
         if (!$file instanceof File) {
             $file = new File($file);
         }
+        if (!$file->exists()) {
+            throw new Exception\IncludeFileNotFound($file->fullpath());
+        }
         $this->sourceFile = $file->fullpath();
         $this->cwd = $file->dirname();
         $this->loadFromString($file->getContents());
@@ -232,19 +235,15 @@ class Smarty
             $defaultParams['_SERVER'] = $_SERVER;
         }
         $renderParameters = array_merge($defaultParams, (array) $params);
-        if (array_key_exists('*', $renderParameters)) {
-            $renderParameters['__DEFAULT_VAR__'] = $renderParameters['*'];
-            unset($params['*']);
-        } else {
-            $renderParameters['__DEFAULT_VAR__'] = '';
-        }
+        // if (array_key_exists('*', $renderParameters)) {
+        //     $renderParameters['__DEFAULT_VAR__'] = $renderParameters['*'];
+        //     unset($params['*']);
+        // } else {
+        //     $renderParameters['__DEFAULT_VAR__'] = '';
+        // }
         $id = '_template_'.md5(uniqid());
         if (!$this->__compiledContent) {
             $this->__compiledContent = $this->compile();
-        }
-        // Don't bother rendering if the template is empty
-        if (!$this->__compiledContent) {
-            return '';
         }
         $code = "class {$id} {
             private \$modify;
@@ -266,7 +265,7 @@ class Smarty
                 return new \\Hazaar\\Application\\Url(urldecode(implode('/', func_get_args())));
             }
             private function write(\$var){
-                echo (\$var === null ? \$this->params['__DEFAULT_VAR__'] : @\$var);
+                if(\$var !== null) echo \$var;
             }
             private function include(\$hash, array \$params = []){
                 if(!isset(\$this->includeFuncs[\$hash])) return '';
