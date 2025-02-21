@@ -33,6 +33,11 @@ class ParserNamespace extends TokenParser
     public array $functions = [];
 
     /**
+     * @var array<ParserTrait>
+     */
+    public array $traits = [];
+
+    /**
      * Apply the namespace to the given array of namespaces.
      */
     public function apply(string $namespace): string

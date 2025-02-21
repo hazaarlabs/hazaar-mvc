@@ -50,6 +50,7 @@ class Documentor
             ],
             'namespaces' => [],
             'interfaces' => [],
+            'traits' => [],
             'classes' => [],
             'functions' => [],
             'constants' => [],
@@ -92,6 +93,7 @@ class Documentor
                 'classes' => 'class',
                 'functions' => 'function',
                 'interfaces' => 'interface',
+                'traits' => 'trait',
                 'constants' => 'constant',
             ];
             foreach ($subdirs as &$subdir) {
@@ -185,6 +187,7 @@ class Documentor
             $updateIndex = &$index;
         }
         $this->pushIndexItem($updateIndex->interfaces, $parsedFile->getInterfaces());
+        $this->pushIndexItem($updateIndex->traits, $parsedFile->getTraits());
         $this->pushIndexItem($updateIndex->classes, $parsedFile->getClasses());
         $this->pushIndexItem($updateIndex->functions, $parsedFile->getFunctions());
         $this->pushIndexItem($updateIndex->constants, $parsedFile->getConstants());

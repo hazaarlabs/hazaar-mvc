@@ -24,10 +24,10 @@ class ParserConstant extends TokenParser
             $this->access = $token->value;
         }
         next($tokens);
+        $this->docBlock = $this->checkDocComment($tokens);
         $token = next($tokens);
         $this->name = $token->value;
         $this->line = $token->line;
-        $this->docBlock = $this->checkDocComment($tokens);
         $token = next($tokens);
         if (is_string($token) && '=' === $token) {
             next($tokens);
