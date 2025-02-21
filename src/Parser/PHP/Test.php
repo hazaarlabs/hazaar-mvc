@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace Hazaar\Test;
 
 /**
- * This is a test namespace.
+ * This is a test constant.
  */
 const TEST_CONSTANT = 'test';
 
