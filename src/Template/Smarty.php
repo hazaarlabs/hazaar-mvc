@@ -235,12 +235,12 @@ class Smarty
             $defaultParams['_SERVER'] = $_SERVER;
         }
         $renderParameters = array_merge($defaultParams, (array) $params);
-        // if (array_key_exists('*', $renderParameters)) {
-        //     $renderParameters['__DEFAULT_VAR__'] = $renderParameters['*'];
-        //     unset($params['*']);
-        // } else {
-        //     $renderParameters['__DEFAULT_VAR__'] = '';
-        // }
+        if (array_key_exists('*', $renderParameters)) {
+            $renderParameters['__DEFAULT_VAR__'] = $renderParameters['*'];
+            unset($params['*']);
+        } else {
+            $renderParameters['__DEFAULT_VAR__'] = '';
+        }
         $id = '_template_'.md5(uniqid());
         if (!$this->__compiledContent) {
             $this->__compiledContent = $this->compile();
@@ -265,7 +265,7 @@ class Smarty
                 return new \\Hazaar\\Application\\Url(urldecode(implode('/', func_get_args())));
             }
             private function write(\$var){
-                if(\$var !== null) echo \$var;
+                echo (\$var === null ? \$this->params['__DEFAULT_VAR__'] : @\$var);
             }
             private function include(\$hash, array \$params = []){
                 if(!isset(\$this->includeFuncs[\$hash])) return '';
