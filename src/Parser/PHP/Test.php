@@ -54,7 +54,7 @@ interface TestInterface
      *
      * @param string $text The text to display
      */
-    public function testMethod(string $text = 'Hello World'): void;
+    public function testMethod(int $n, string $text = 'Hello World'): void;
 }
 
 class BaseClass
@@ -90,10 +90,31 @@ class TestClass extends BaseClass implements TestInterface
      */
     protected static string $name = 'John Doe';
 
+    public static int $age = 21;
+
+    public static float $height = 1.8;
+
+    public static bool $active = true;
+
+    public static array $names = [
+        'one' => 'John',
+        'two' => 'Jane',
+        'three' => [
+            'Jill', 'Jack',
+        ],
+        'four' => [
+            'Jenny', 'James', [1, 2, 3, 4, 5],
+        ],
+        'five' => [
+            'primary' => 'John',
+            'secondary' => 'Jane',
+        ],
+    ];
+
     /**
      * This is a test method.
      */
-    public function testMethod(string $text = 'Hello World'): void
+    public function testMethod(int $number, ?string $text = 'Hello World'): void
     {
         echo $text;
         if ('test' === $text) {
@@ -104,8 +125,8 @@ class TestClass extends BaseClass implements TestInterface
     /**
      * This is also a test method.
      */
-    public function testMethod2(string $text = 'Hello World'): void
+    public function testMethod2(string $text = 'Hello World'): ?string
     {
-        echo $text;
+        return $text;
     }
 }

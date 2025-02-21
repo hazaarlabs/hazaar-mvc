@@ -15,7 +15,7 @@ class ParserProperty extends TokenParser
     public ?string $type = null;
     public bool $nullable = false;
     public string $access = 'public';
-    public mixed $value;
+    public mixed $value = null;
     public bool $static = false;
 
     protected function parse(array &$tokens): bool

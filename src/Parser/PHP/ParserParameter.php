@@ -21,12 +21,12 @@ class ParserParameter extends TokenParser
         parent::__construct($tokens);
     }
 
-    public function __toString()
-    {
-        return (false == $this->isNullable ? '?' : '')
-            .$this->type.' $'.$this->name
-            .(null !== $this->default ? ' = '.$this->default : '');
-    }
+    // public function __toString()
+    // {
+    //     return (true == $this->isNullable ? '?' : '')
+    //         .$this->type.' $'.$this->name
+    //         .(null !== $this->default ? ' = '.$this->default : '');
+    // }
 
     protected function parse(array &$tokens): bool
     {
