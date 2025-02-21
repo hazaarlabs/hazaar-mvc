@@ -93,6 +93,7 @@ class Documentor
                 'classes' => 'class',
                 'functions' => 'function',
                 'interfaces' => 'interface',
+                'traits' => 'trait',
                 'constants' => 'constant',
             ];
             foreach ($subdirs as &$subdir) {

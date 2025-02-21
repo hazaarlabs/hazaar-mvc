@@ -7,13 +7,14 @@
 {/function}
 
 {function name=link params=['object']}{php}
-    $root = match(true){
-    $object instanceof \Hazaar\Parser\PHP\ParserInterface => 'interface',
-    $object instanceof \Hazaar\Parser\PHP\ParserClass => 'class',
-    $object instanceof \Hazaar\Parser\PHP\ParserTrait => 'trait',
-    $object instanceof \Hazaar\Parser\PHP\ParserFunction => 'function',
-    $object instanceof \Hazaar\Parser\PHP\ParserConstant => 'constant',
-    default => 'namespace'
+    $class = get_class($object);
+    $root = match($class){
+        'Hazaar\Parser\PHP\ParserInterface' => 'interface',
+        'Hazaar\Parser\PHP\ParserTrait' => 'trait',
+        'Hazaar\Parser\PHP\ParserClass' => 'class',
+        'Hazaar\Parser\PHP\ParserFunction' => 'function',
+        'Hazaar\Parser\PHP\ParserConstant' => 'constant',
+        default => 'namespace'
     };
     $name = $object->fullName;
     $text = $object->name;
