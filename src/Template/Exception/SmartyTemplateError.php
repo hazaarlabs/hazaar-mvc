@@ -4,8 +4,11 @@ namespace Hazaar\Template\Exception;
 
 class SmartyTemplateError extends \Exception
 {
-    public function __construct(?\Throwable $previous = null)
+    public function __construct(?\Throwable $previous = null, ?string $sourceFile = null)
     {
-        parent::__construct('Smarty template error: '.$previous->getMessage(), $previous->getCode(), $previous);
+        $msg = 'Smarty template error'
+            .($sourceFile ? ' rendering '.$sourceFile : '')
+            .': '.$previous->getMessage();
+        parent::__construct($msg, $previous->getCode(), $previous);
     }
 }

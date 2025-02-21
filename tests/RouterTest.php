@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Hazaar\Tests;
 
 use Application\Controller\Index;

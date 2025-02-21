@@ -18,16 +18,16 @@
     };
     $name = $object->fullName;
     $text = $object->name;
-    echo "[$text](/api/$root/".str_replace('\\', '/', ltrim($name, '\\')).".md)";
+    return "[$text](/api/$root/".str_replace('\\', '/', ltrim($name, '\\')).".md)";
 {/php}{/function}
 
 {function name=return params=['value']}{php}
-    echo $value ? ($value->isNullable ? '?' : '').$value->type : 'void';
+    return $value ? ($value->isNullable ? '?' : '').$value->type : 'void';
 {/php}{/function}
 
 {function name=value params=['value']}{php}
     $type = gettype($value);
-    echo match($type){
+    return match($type){
         'boolean' => $value ? 'true' : 'false',
         'integer', 'double' => $value,
         'string' => "'$value'",
@@ -57,5 +57,5 @@
         }
         $items[] = $item;
     }
-    echo implode(', ', $items);
+    return implode(', ', $items);
 {/php}{/function}

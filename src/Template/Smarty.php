@@ -152,9 +152,22 @@ class Smarty
         $this->__customFunctionHandlers[] = $object;
     }
 
-    public function registerPlugin(string $modifier, callable $callback): void
+    /**
+     * Register a custom function with the template.
+     *
+     * Custom functions are functions that can be called from within the template.  The function must be
+     * defined in the template and can be called using the syntax:
+     *
+     * ```
+     * {$functionName param1="value" param2="value"}
+     * ```
+     *
+     * The function will be called with the parameters as an array.  The function must return a string
+     * which will be inserted into the template at the point the function was called.
+     */
+    public function registerFunction(string $functionName, callable $callback): void
     {
-        $this->__customFunctions[$modifier] = $callback;
+        $this->__customFunctions[$functionName] = $callback;
     }
 
     /**
@@ -284,11 +297,12 @@ class Smarty
             ob_start();
             $obj->customHandlers = $this->__customFunctionHandlers;
             $obj->includeFuncs = $this->__includeFuncs;
+            $obj->functions = $this->__customFunctions;
             $obj->render($renderParameters);
             // Merge the functions from the included templates
             $this->__functions = array_merge($this->__functions, $obj->functions);
         } catch (\Throwable $e) {
-            throw new Exception\SmartyTemplateError($e);
+            throw new Exception\SmartyTemplateError($e, $this->sourceFile);
         } finally {
             error_clear_last();
             error_reporting($errors);
@@ -304,6 +318,20 @@ class Smarty
     }
 
     /**
+     * Set the left and right delimiters for the template.
+     *
+     * The default delimiters are '{' and '}'.
+     *
+     * @param string $ldelim The left delimiter
+     * @param string $rdelim The right delimiter
+     */
+    public function setDelimiters(string $ldelim, string $rdelim): void
+    {
+        $this->ldelim = $ldelim;
+        $this->rdelim = $rdelim;
+    }
+
+    /**
      * Compile the template ready for rendering.
      *
      * This will normally happen automatically when calling Hazaar\Template\Smarty::render() but can be called
@@ -315,7 +343,7 @@ class Smarty
             return $this->__compiledContent;
         }
         $compiled_content = preg_replace(['/\<\?/', '/\?\>/'], ['&lt;?', '?&gt;'], $this->__content);
-        $regex = '/\{([#\$\*][^\}]+|(\/?\w+)\s*([^\}]*))\}(\r?\n)?/';
+        $regex = '/\\'.$this->ldelim.'([#\$\*][^\}]+|(\/?\w+)\s*([^\}]*))\\'.$this->rdelim.'(\r?\n)?/';
         $literal = false;
         $strip = false;
 
@@ -701,12 +729,10 @@ class Smarty
     protected function compileFUNCTION(mixed $params): string
     {
         $params = $this->parsePARAMS($params);
-        if (!($name = trim(ake($params, 'name'), '\'"'))
-            || array_key_exists($name, $this->__customFunctions)) {
+        if (!($name = trim(ake($params, 'name'), '\'"'))) {
             return '';
         }
         unset($params['name']);
-        $this->__customFunctions[$name] = $params;
         if (array_key_exists('params', $params)) {
             $funcParams = eval('return '.$params['params'].';');
             $compiledParams = implode(', ', array_map(function ($item) { return '&$'.$item; }, $funcParams));
@@ -739,7 +765,7 @@ class Smarty
             default => ''
         };
         $code .= "if(!isset(\$this->functions['{$name}'])) throw new \\Exception('Function \\'{$name}\\' not found');\n";
-        $code .= "\$this->functions['{$name}']({$compiledParams});\n?>";
+        $code .= "echo \$this->functions['{$name}']({$compiledParams});\n?>";
 
         return $code;
     }
