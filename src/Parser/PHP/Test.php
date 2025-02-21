@@ -11,12 +11,11 @@
  */
 declare(strict_types=1);
 
+namespace Hazaar\Test;
+
 /**
  * This is a test namespace.
  */
-
-namespace Hazaar\Test;
-
 const TEST_CONSTANT = 'test';
 
 /**
@@ -37,6 +36,8 @@ function testFunction(float $precision = 1.2, string $description = 'none'): boo
 }
 
 /**
+ * This is a variatic function.
+ * 
  * @param string $name The name of the person
  * @param int    $dob  The date of birth
  */
@@ -47,6 +48,9 @@ function variaticFunction(string $name, int $dob): void
     dump($args);
 }
 
+/**
+ * This is a test interface.
+ */
 interface TestInterface
 {
     /**
@@ -58,10 +62,24 @@ interface TestInterface
 }
 
 /**
+ * This is a test trait.
+ */
+trait TestTrait
+{
+    /**
+     * This is a test trait.
+     */
+    public function testTrait(): void
+    {
+        echo 'test';
+    }
+}
+
+/**
  * This is a test class.
- * 
- * Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
- * Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. 
+ *
+ * Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+ * Integer nec odio. Praesent libero. Sed cursus ante dapibus diam.
  * Sed nisi. Nulla quis sem at nibh elementum imperdiet.
  */
 abstract class BaseClass
@@ -86,16 +104,13 @@ abstract class BaseClass
 }
 
 /**
+ * This is a test class.
+ *
  * @internal
  */
 class TestClass extends BaseClass implements TestInterface
 {
     public const TEST_CONSTANT = 'test';
-
-    /**
-     * This is a test property.
-     */
-    protected static string $name = 'John Doe';
 
     public static int $age = 21;
 
@@ -117,6 +132,11 @@ class TestClass extends BaseClass implements TestInterface
             'secondary' => 'Jane',
         ],
     ];
+
+    /**
+     * This is a test property.
+     */
+    protected static string $name = 'John Doe';
 
     /**
      * This is a test method.
