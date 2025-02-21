@@ -10,6 +10,7 @@ class TokenParser
 {
     public ?ParserNamespace $namespace = null;
     public ?string $name = null;
+    public ?ParserFile $file = null;
     public ?int $line = null;
 
     public ?DocBlock $docBlock = null;
@@ -36,9 +37,13 @@ class TokenParser
      * @param array<Token|string> $tokens
      * @param-out array<Token|string> $tokens
      */
-    public function __construct(?array &$tokens = null, ?ParserNamespace $namespace = null)
-    {
+    public function __construct(
+        ?array &$tokens = null, 
+        ?ParserNamespace $namespace = null,
+        ?ParserFile $file = null
+    ) {
         $this->namespace = $namespace;
+        $this->file = $file;
         if (!$this->parse($tokens)) {
             $parserType = strtolower(substr(basename(str_replace('\\', '/', get_class($this))), 6));
 

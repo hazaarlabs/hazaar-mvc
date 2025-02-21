@@ -44,27 +44,27 @@ class ParserFile extends TokenParser
             try {
                 switch ($token->type) {
                     case T_CONST:
-                        $this->constants[] = new ParserConstant($tokens, $this->namespace);
+                        $this->constants[] = new ParserConstant($tokens, $this->namespace, $this);
 
                         break;
 
                     case T_FUNCTION:
-                        $this->functions[] = new ParserFunction($tokens, $this->namespace);
+                        $this->functions[] = new ParserFunction($tokens, $this->namespace, $this);
 
                         break;
 
                     case T_NAMESPACE:
-                        $this->namespace = new ParserNamespace($tokens);
+                        $this->namespace = new ParserNamespace($tokens, null, $this);
 
                         break;
 
                     case T_INTERFACE:
-                        $this->interfaces[] = new ParserInterface($tokens, $this->namespace);
+                        $this->interfaces[] = new ParserInterface($tokens, $this->namespace, $this);
 
                         break;
 
                     case T_CLASS:
-                        $this->classes[] = new ParserClass($tokens, $this->namespace);
+                        $this->classes[] = new ParserClass($tokens, $this->namespace, $this);
 
                         break;
 
