@@ -17,11 +17,17 @@ class Documentor
 
     private int $outputFormat;
     private ?string $title;
+    private ?\Closure $callback = null;
 
     public function __construct(int $outputFormat, ?string $title = null)
     {
         $this->outputFormat = $outputFormat;
         $this->title = $title;
+    }
+
+    public function setCallback(\Closure $callback): void
+    {
+        $this->callback = $callback;
     }
 
     public function generate(string $path, string $outputPath): bool
@@ -48,21 +54,30 @@ class Documentor
             'functions' => [],
             'constants' => [],
         ];
+        $this->log('Generating API documentation');
         foreach ($files as $file) {
             try {
+                $this->log("Parsing file: {$file}");
                 $parsedFile = $PHPParser->parse($file);
                 if (null === $parsedFile) {
                     continue;
                 }
                 $this->updateIndex($index, $parsedFile);
             } catch (\Exception $e) {
-                echo "Error parsing file: {$file}\n";
+                $this->log("Error parsing file: {$file}");
 
                 continue;
             }
         }
 
         return $this->render($index, $outputPath);
+    }
+
+    private function log(string $message): void
+    {
+        if ($this->callback) {
+            ($this->callback)($message);
+        }
     }
 
     private function render(\stdClass &$index, string $outputPath): bool
@@ -89,16 +104,15 @@ class Documentor
 
             // Render the index
             $output = $outputPath.'/home';
-            file_put_contents($output.'.md', $templates['index']->render((array) $index));
             $this->renderNamespace($index, $subdirs, $templates);
             foreach ($index->namespaces as $namespace) {
+                $this->log("Rendering namespace: {$namespace->name}");
                 $this->renderNamespace($namespace, $subdirs, $templates);
             }
+            $this->log('Rendering index');
+            file_put_contents($output.'.md', $templates['index']->render((array) $index));
         } catch (\Throwable $e) {
-            ob_end_clean();
-            echo "\n\n".$e->getMessage()."\n\nFiles:\n";
-            echo ' * Template: '.$templates['index']->getTemplateFile()."\n";
-            echo isset($output) ? ' * Output: '.$output.'.md'."\n\n" : "\n";
+            $this->log($e->getMessage());
         }
 
         return true;
@@ -112,17 +126,21 @@ class Documentor
     {
         foreach ($subdirs as $type => $subdir) {
             foreach ($namespace->{$type} as $item) {
-                $output = $subdir.'/'.($namespace instanceof ParserNamespace
-                    ? str_replace('\\', '/', $namespace->name).'/'
-                    : '').$item->name;
-                $name = basename($subdir);
-                if (!array_key_exists($name, $template)) {
-                    continue;
+                try {
+                    $output = $subdir.'/'.($namespace instanceof ParserNamespace
+                        ? str_replace('\\', '/', $namespace->name).'/'
+                        : '').$item->name;
+                    $name = basename($subdir);
+                    if (!array_key_exists($name, $template)) {
+                        continue;
+                    }
+                    if (!file_exists($dirname = dirname($output))) {
+                        mkdir($dirname, 0777, true);
+                    }
+                    file_put_contents($output.'.md', $template[$name]->render([$name => $item]));
+                } catch (\Throwable $e) {
+                    $this->log("Processing: {$item->name}".PHP_EOL.$e->getMessage());
                 }
-                if (!file_exists($dirname = dirname($output))) {
-                    mkdir($dirname, 0777, true);
-                }
-                file_put_contents($output.'.md', $template[$name]->render([$name => $item]));
             }
         }
     }
@@ -146,7 +164,7 @@ class Documentor
             }
             $template = new Smarty();
             $template->loadFromFile($file->getPathname());
-            $template->addFilter(function($content){
+            $template->addFilter(function ($content) {
                 return preg_replace('/^\s+$/m', '', $content);
             });
             $templates[$file->getBasename('.tpl')] = $template;
