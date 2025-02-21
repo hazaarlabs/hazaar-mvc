@@ -11,23 +11,22 @@
  */
 declare(strict_types=1);
 
-/**
- * This is a test namespace.
- */
-
 namespace Hazaar\Test;
 
+/**
+ * This is a test constant.
+ */
 const TEST_CONSTANT = 'test';
 
 /**
  * This is a test function.
  *
- * @param float  $text        The text to display
+ * @param float  $precision   The precision of the text
  * @param string $description The description of the text
  */
-function testFunction(float $text = 1.2, string $description = 'none'): bool
+function testFunction(float $precision = 1.2, string $description = 'none'): bool
 {
-    echo $text;
+    echo $precision;
 
     if ($description) {
         echo $description;
@@ -37,6 +36,8 @@ function testFunction(float $text = 1.2, string $description = 'none'): bool
 }
 
 /**
+ * This is a variatic function.
+ * 
  * @param string $name The name of the person
  * @param int    $dob  The date of birth
  */
@@ -47,12 +48,27 @@ function variaticFunction(string $name, int $dob): void
     dump($args);
 }
 
+/**
+ * This is a test interface.
+ */
 interface TestInterface
 {
-    public function testMethod(string $text = 'Hello World'): void;
+    /**
+     * This is a test method.
+     *
+     * @param string $text The text to display
+     */
+    public function testMethod(int $n, string $text = 'Hello World'): void;
 }
 
-class BaseClass
+/**
+ * This is a test class.
+ *
+ * Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+ * Integer nec odio. Praesent libero. Sed cursus ante dapibus diam.
+ * Sed nisi. Nulla quis sem at nibh elementum imperdiet.
+ */
+abstract class BaseClass
 {
     /**
      * @var array<mixed>
@@ -74,11 +90,34 @@ class BaseClass
 }
 
 /**
+ * This is a test class.
+ *
  * @internal
  */
 class TestClass extends BaseClass implements TestInterface
 {
     public const TEST_CONSTANT = 'test';
+
+    public static int $age = 21;
+
+    public static float $height = 1.8;
+
+    public static bool $active = true;
+
+    public static array $names = [
+        'one' => 'John',
+        'two' => 'Jane',
+        'three' => [
+            'Jill', 'Jack',
+        ],
+        'four' => [
+            'Jenny', 'James', [1, 2, 3, 4, 5],
+        ],
+        'five' => [
+            'primary' => 'John',
+            'secondary' => 'Jane',
+        ],
+    ];
 
     /**
      * This is a test property.
@@ -88,7 +127,7 @@ class TestClass extends BaseClass implements TestInterface
     /**
      * This is a test method.
      */
-    public function testMethod(string $text = 'Hello World'): void
+    public function testMethod(int $number, ?string $text = 'Hello World'): void
     {
         echo $text;
         if ('test' === $text) {
@@ -99,8 +138,8 @@ class TestClass extends BaseClass implements TestInterface
     /**
      * This is also a test method.
      */
-    public function testMethod2(string $text = 'Hello World'): void
+    public function testMethod2(string $text = 'Hello World'): ?string
     {
-        echo $text;
+        return $text;
     }
 }

@@ -28,7 +28,7 @@ class ParserFunction extends TokenParser
     /**
      * The return type of the function.
      */
-    public ?ParserParameter $returns = null;
+    public ?ParserReturn $returns = null;
 
     /**
      * @var array<ParserParameter>
@@ -92,7 +92,7 @@ class ParserFunction extends TokenParser
                     $token = next($tokens);
                 }
                 if ($token instanceof Token && T_STRING == $token->type) {
-                    $this->returns = new ParserParameter($tokens, $isNullable);
+                    $this->returns = new ParserReturn($tokens, $isNullable);
                 }
             } elseif (')' !== $token) {
                 if ('?' === $token) {

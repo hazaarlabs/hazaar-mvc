@@ -45,8 +45,9 @@ class ParserClass extends TokenParser
         $token = prev($tokens);
         if ($token instanceof Token && T_ABSTRACT == $token->type) {
             $this->abstract = true;
+        } else {
+            $token = next($tokens);
         }
-        $token = next($tokens);
         $this->docBlock = $this->checkDocComment($tokens);
         prev($tokens);
         while ($token = next($tokens)) {

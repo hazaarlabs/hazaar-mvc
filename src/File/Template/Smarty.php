@@ -40,7 +40,7 @@ class Smarty extends \Hazaar\Template\Smarty
                 }
                 $header .= ';'.implode(';', $this->__includes);
             }
-            $this->__cache_file->putContents($header."\n".$this->__compiled_content);
+            $this->__cache_file->putContents($header."\n".$this->__compiledContent);
         }
     }
 
@@ -70,10 +70,10 @@ class Smarty extends \Hazaar\Template\Smarty
         $cwd = getcwd();
         chdir($this->__cwd);
         $this->__content = $this->__source_file->getContents();
-        $this->__compiled_content = parent::compile();
+        $this->__compiledContent = parent::compile();
         chdir($cwd);
 
-        return $this->__compiled_content;
+        return $this->__compiledContent;
     }
 
     /**

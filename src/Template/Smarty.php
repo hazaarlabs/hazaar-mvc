@@ -31,6 +31,21 @@ class Smarty
     public ?string $cwd = null;
 
     /**
+     * @var array<mixed>
+     */
+    public array $__functions = [];
+
+    /**
+     * @var array<string>
+     */
+    protected array $__includeFuncs = [];
+
+    /**
+     * @var array<mixed>
+     */
+    protected array $__customFunctions = [];
+
+    /**
      * @var array<string>
      */
     protected static array $tags = [
@@ -53,12 +68,7 @@ class Smarty
         'php',
     ];
     protected string $__content = '';
-    protected string $__compiled_content = '';
-
-    /**
-     * @var array<mixed>
-     */
-    protected array $__custom_functions = [];
+    protected string $__compiledContent = '';
 
     /**
      * @var array<string>
@@ -66,40 +76,43 @@ class Smarty
     protected array $__includes = [];
 
     /**
-     * @var array<string>
-     */
-    protected array $__include_funcs = [];
-
-    /**
      * @var array<object>
      */
-    private array $__custom_function_handlers = [];
+    private array $__customFunctionHandlers = [];
 
     /**
      * @var array<mixed>
      */
-    private array $__section_stack = [];
+    private array $__sectionStack = [];
 
     /**
      * @var array<mixed>
      */
-    private array $__foreach_stack = [];
+    private array $__foreachStack = [];
 
     /**
      * @var array<mixed>
      */
-    private array $__capture_stack = [];
+    private array $__captureStack = [];
+
+    /**
+     * @var array<\Closure>
+     */
+    private array $__filters = [];
 
     /**
      * Create a new Smarty template object.
      *
-     * @param array<string> $include_funcs
+     * @param array<mixed> $customFunctions
+     * @param array<mixed> $includeFuncs
      */
-    public function __construct(?string $content = null, ?array $include_funcs = null)
-    {
-        if ($include_funcs) {
-            $this->__include_funcs = $include_funcs;
-        }
+    public function __construct(
+        ?string $content = null,
+        ?array $customFunctions = null,
+        ?array $includeFuncs = null
+    ) {
+        $this->__customFunctions = $customFunctions ?? [];
+        $this->__includeFuncs = $includeFuncs ?? [];
         if ($content) {
             $this->loadFromString($content);
         }
@@ -113,7 +126,7 @@ class Smarty
     public function loadFromString(string $content): void
     {
         $this->__content = (string) $content;
-        $this->__compiled_content = '';
+        $this->__compiledContent = '';
     }
 
     /**
@@ -126,6 +139,9 @@ class Smarty
         if (!$file instanceof File) {
             $file = new File($file);
         }
+        if (!$file->exists()) {
+            throw new Exception\IncludeFileNotFound($file->fullpath());
+        }
         $this->sourceFile = $file->fullpath();
         $this->cwd = $file->dirname();
         $this->loadFromString($file->getContents());
@@ -133,12 +149,12 @@ class Smarty
 
     public function registerFunctionHandler(object $object): void
     {
-        $this->__custom_function_handlers[] = $object;
+        $this->__customFunctionHandlers[] = $object;
     }
 
     public function registerPlugin(string $modifier, callable $callback): void
     {
-        $this->__custom_functions[$modifier] = $callback;
+        $this->__customFunctions[$modifier] = $callback;
     }
 
     /**
@@ -176,6 +192,17 @@ class Smarty
     }
 
     /**
+     * Add a post-processing filter to the template.
+     *
+     * Filters are applied after the template has been rendered and can be used to modify the output.  Useful for
+     * things like minifying the output or removing whitespace.
+     */
+    public function addFilter(\Closure $filter): void
+    {
+        $this->__filters[] = $filter;
+    }
+
+    /**
      * Render the template with the supplied parameters and return the rendered content.
      *
      * @param array<mixed> $params parameters to use when embedding variables in the rendered template
@@ -183,7 +210,7 @@ class Smarty
     public function render(array $params = []): string
     {
         $app = Application::getInstance();
-        $default_params = [
+        $defaultParams = [
             'hazaar' => ['version' => HAZAAR_VERSION],
             'application' => $app ?? null,
             'smarty' => [
@@ -200,38 +227,38 @@ class Smarty
             ],
         ];
         if ($this->allowGlobals) {
-            $default_params['_COOKIE'] = $_COOKIE;
-            $default_params['_ENV'] = $_ENV;
-            $default_params['_GET'] = $_GET;
-            $default_params['_POST'] = $_POST;
-            $default_params['_REQUEST'] = $_REQUEST;
-            $default_params['_SERVER'] = $_SERVER;
+            $defaultParams['_COOKIE'] = $_COOKIE;
+            $defaultParams['_ENV'] = $_ENV;
+            $defaultParams['_GET'] = $_GET;
+            $defaultParams['_POST'] = $_POST;
+            $defaultParams['_REQUEST'] = $_REQUEST;
+            $defaultParams['_SERVER'] = $_SERVER;
         }
-        $params = array_merge($default_params, (array) $params);
-        if (array_key_exists('*', $params)) {
-            $params['__DEFAULT_VAR__'] = $params['*'];
+        $renderParameters = array_merge($defaultParams, (array) $params);
+        if (array_key_exists('*', $renderParameters)) {
+            $renderParameters['__DEFAULT_VAR__'] = $renderParameters['*'];
             unset($params['*']);
         } else {
-            $params['__DEFAULT_VAR__'] = '';
+            $renderParameters['__DEFAULT_VAR__'] = '';
         }
         $id = '_template_'.md5(uniqid());
-        if (!$this->__compiled_content) {
-            $this->__compiled_content = $this->compile();
+        if (!$this->__compiledContent) {
+            $this->__compiledContent = $this->compile();
         }
         $code = "class {$id} {
             private \$modify;
             private \$variables = [];
             private \$params = [];
-            private \$functions = [];
-            public  \$custom_handlers;
-            private \$include_funcs = [];
+            public  \$functions = [];
+            public  \$customHandlers;
+            public  \$includeFuncs = [];
             function __construct(){ \$this->modify = new \\Hazaar\\Template\\Smarty\\Modifier; }
             public function render(\$params){
                 extract(\$this->params = \$params, EXTR_REFS);
-                ?>{$this->__compiled_content}<?php
+                ?>{$this->__compiledContent}<?php
             }
             private function url(){
-                if(\$custom_handler = current(array_filter(\$this->custom_handlers, function(\$item){
+                if(\$custom_handler = current(array_filter(\$this->customHandlers, function(\$item){
                     return method_exists(\$item, 'url');
                 })))
                     return call_user_func_array([\$custom_handler, 'url'], func_get_args());
@@ -239,6 +266,13 @@ class Smarty
             }
             private function write(\$var){
                 echo (\$var === null ? \$this->params['__DEFAULT_VAR__'] : @\$var);
+            }
+            private function include(\$hash, array \$params = []){
+                if(!isset(\$this->includeFuncs[\$hash])) return '';
+                \$i = \$this->includeFuncs[\$hash];
+                \$out = \$i->render(\$params??[]);
+                \$this->functions = array_merge(\$this->functions, \$i->__functions);
+                return \$out;
             }
         }";
         $errors = error_reporting();
@@ -248,16 +282,25 @@ class Smarty
             eval($code);
             $obj = new $id();
             ob_start();
-            $obj->custom_handlers = $this->__custom_function_handlers;
-            $obj->render($params);
+            $obj->customHandlers = $this->__customFunctionHandlers;
+            $obj->includeFuncs = $this->__includeFuncs;
+            $obj->render($renderParameters);
+            // Merge the functions from the included templates
+            $this->__functions = array_merge($this->__functions, $obj->functions);
         } catch (\Throwable $e) {
             throw new Exception\SmartyTemplateError($e);
         } finally {
             error_clear_last();
             error_reporting($errors);
         }
+        $content = ob_get_clean();
+        if (count($this->__filters) > 0) {
+            foreach ($this->__filters as $filter) {
+                $content = $filter($content);
+            }
+        }
 
-        return ob_get_clean();
+        return $content;
     }
 
     /**
@@ -268,12 +311,15 @@ class Smarty
      */
     public function compile(): string
     {
+        if ($this->__compiledContent) {
+            return $this->__compiledContent;
+        }
         $compiled_content = preg_replace(['/\<\?/', '/\?\>/'], ['&lt;?', '?&gt;'], $this->__content);
         $regex = '/\{([#\$\*][^\}]+|(\/?\w+)\s*([^\}]*))\}(\r?\n)?/';
         $literal = false;
         $strip = false;
 
-        return preg_replace_callback($regex, function ($matches) use (&$literal, &$strip) {
+        return $this->__compiledContent = preg_replace_callback($regex, function ($matches) use (&$literal, &$strip) {
             $replacement = '';
             if (preg_match('/(\/?)literal/', $matches[1], $literals)) {
                 $literal = ('/' !== $literals[1]);
@@ -291,20 +337,21 @@ class Smarty
                 || in_array($matches[2], Smarty::$tags)) {
                 $func = 'compile'.str_replace('/', 'END', strtoupper($matches[2]));
                 $replacement = $this->{$func}($matches[3]);
-            } elseif (array_key_exists($matches[2], $this->__custom_functions)) {
-                $replacement = $this->compileCUSTOMFUNC($matches[2], $matches[3]);
-            } elseif (count($this->__custom_function_handlers) > 0
-            && $custom_handler = current(array_filter($this->__custom_function_handlers, function ($item, $index) use ($matches) {
-                if (!method_exists($item, $matches[2])) {
-                    return false;
-                }
-                $item->__index = $index;
+            } elseif (count($this->__customFunctionHandlers) > 0
+                && $custom_handler = current(array_filter($this->__customFunctionHandlers, function ($item, $index) use ($matches) {
+                    if (!method_exists($item, $matches[2])) {
+                        return false;
+                    }
+                    $item->__index = $index;
 
-                return true;
-            }, ARRAY_FILTER_USE_BOTH))) {
+                    return true;
+                }, ARRAY_FILTER_USE_BOTH))) {
                 $replacement = $this->compileCUSTOMHANDLERFUNC($custom_handler, $matches[2], $matches[3], $custom_handler->__index);
             } elseif (preg_match('/(\/?)strip/', $matches[1], $flags)) {
                 $strip = ('/' !== $flags[1]);
+            } else {
+                // Anything else is considered a custom function.
+                $replacement = $this->compileCUSTOMFUNC($matches[2], $matches[3]);
             }
             if (true === $strip) {
                 $replacement = trim($replacement);
@@ -415,7 +462,7 @@ class Smarty
         }
         if (count($modifiers) > 0) {
             foreach ($modifiers as $modifier) {
-                $params = str_getcsv($modifier, ':', '"', "\\");
+                $params = str_getcsv($modifier, ':', '"', '\\');
                 $func = array_shift($params);
                 $name = '$this->modify->execute("'.$func.'", '.$name.((count($params) > 0) ? ', "'.implode('", "', $params).'"' : '').')';
             }
@@ -505,7 +552,7 @@ class Smarty
         if (!(($name = ake($params, 'name')) && ($loop = ake($params, 'loop')))) {
             return '';
         }
-        $this->__section_stack[] = ['name' => $name, 'else' => false];
+        $this->__sectionStack[] = ['name' => $name, 'else' => false];
         $var = $this->compileVAR($loop);
         $index = '$smarty[\'section\'][\''.$name.'\'][\'index\']';
         $count = '$__count_'.$name;
@@ -523,15 +570,15 @@ class Smarty
 
     protected function compileSECTIONELSE(): string
     {
-        end($this->__section_stack);
-        $this->__section_stack[key($this->__section_stack)]['else'] = true;
+        end($this->__sectionStack);
+        $this->__sectionStack[key($this->__sectionStack)]['else'] = true;
 
         return '<?php endfor; else: ?>';
     }
 
     protected function compileENDSECTION(): string
     {
-        $section = array_pop($this->__section_stack);
+        $section = array_pop($this->__sectionStack);
         if (true === $section['else']) {
             return '<?php endif; ?>';
         }
@@ -564,7 +611,7 @@ class Smarty
         if (($from = ake($params, 'from')) && ($item = ake($params, 'item'))) {
             $name = ake($params, 'name', 'foreach_'.uniqid());
             $var = $this->compileVAR($from);
-            $this->__foreach_stack[] = ['name' => $name, 'else' => false];
+            $this->__foreachStack[] = ['name' => $name, 'else' => false];
             $target = (($key = ake($params, 'key')) ? '$'.$key.' => ' : '').'$'.$item;
             $code = "<?php \$smarty['foreach']['{$name}'] = ['index' => -1, 'total' => ((isset({$var}) && is_array({$var}))?count({$var}):0)]; ";
             $code .= "if(isset({$var}) && is_array({$var}) && count({$var}) > 0): ";
@@ -573,7 +620,7 @@ class Smarty
             $name = ake($params, 'name', 'foreach_'.uniqid());
             $var = $this->compileVAR(ake($params, 0));
             $target = $this->compileVAR(ake($params, 2));
-            $this->__foreach_stack[] = ['name' => $name, 'else' => false];
+            $this->__foreachStack[] = ['name' => $name, 'else' => false];
             $code = "<?php \$smarty['foreach']['{$name}'] = ['index' => -1, 'total' => ((isset({$var}) && is_array({$var}))?count({$var}):0)]; ";
             $code .= "if(isset({$var}) && is_array({$var}) && count({$var}) > 0): ";
             $code .= "foreach({$var} as {$target}): \$smarty['foreach']['{$name}']['index']++; ?>";
@@ -584,15 +631,15 @@ class Smarty
 
     protected function compileFOREACHELSE(): string
     {
-        end($this->__foreach_stack);
-        $this->__foreach_stack[key($this->__foreach_stack)]['else'] = true;
+        end($this->__foreachStack);
+        $this->__foreachStack[key($this->__foreachStack)]['else'] = true;
 
         return '<?php endforeach; else: ?>';
     }
 
     protected function compileENDFOREACH(): string
     {
-        $loop = array_pop($this->__foreach_stack);
+        $loop = array_pop($this->__foreachStack);
         if (true === $loop['else']) {
             return '<?php endif; ?>';
         }
@@ -616,14 +663,14 @@ class Smarty
         if (!array_key_exists('name', $params)) {
             return '';
         }
-        $this->__capture_stack[] = $params;
+        $this->__captureStack[] = $params;
 
         return '<?php ob_start(); ?>';
     }
 
     protected function compileENDCAPTURE(): string
     {
-        $params = array_pop($this->__capture_stack);
+        $params = array_pop($this->__captureStack);
         $code = '<?php $'.$this->compileVAR('smarty.capture.'.$params['name']);
         if (array_key_exists('assign', $params)) {
             $code .= ' = $'.$this->compileVAR($params['assign']);
@@ -654,11 +701,12 @@ class Smarty
     protected function compileFUNCTION(mixed $params): string
     {
         $params = $this->parsePARAMS($params);
-        if (!($name = ake($params, 'name')) || array_key_exists($name, $this->__custom_functions)) {
+        if (!($name = trim(ake($params, 'name'), '\'"'))
+            || array_key_exists($name, $this->__customFunctions)) {
             return '';
         }
         unset($params['name']);
-        $this->__custom_functions[$name] = $params;
+        $this->__customFunctions[$name] = $params;
         if (array_key_exists('params', $params)) {
             $funcParams = eval('return '.$params['params'].';');
             $compiledParams = implode(', ', array_map(function ($item) { return '&$'.$item; }, $funcParams));
@@ -676,11 +724,8 @@ class Smarty
 
     protected function compileCUSTOMFUNC(string $name, mixed $params): string
     {
-        if (!array_key_exists($name, $this->__custom_functions)) {
-            return '';
-        }
         $code = "<?php\n";
-        $params = $this->parsePARAMS($params);
+        $params = empty($params) ? [] : $this->parsePARAMS($params);
         foreach ($params as &$value) {
             if ('$' === substr($value, 0, 1)) {
                 continue;
@@ -693,6 +738,7 @@ class Smarty
             (count($params) > 0) => implode(', ', $params),
             default => ''
         };
+        $code .= "if(!isset(\$this->functions['{$name}'])) throw new \\Exception('Function \\'{$name}\\' not found');\n";
         $code .= "\$this->functions['{$name}']({$compiledParams});\n?>";
 
         return $code;
@@ -717,7 +763,7 @@ class Smarty
         }
         $params = implode(', ', $func_params);
 
-        return "<?php echo call_user_func_array([\$this->custom_handlers[{$index}], '{$method}'], [{$params}]); ?>";
+        return "<?php echo call_user_func_array([\$this->customHandlers[{$index}], '{$method}'], [{$params}]); ?>";
     }
 
     protected function compileCALL(mixed $params): string
@@ -743,7 +789,10 @@ class Smarty
         $file = trim($params['file'], '\'"');
         unset($params['file']);
         if ('/' !== $file[0] && !preg_match('/^\w+\:\/\//', $file)) {
-            $file = ($this->cwd ? rtrim($this->cwd, ' /') : getcwd()).DIRECTORY_SEPARATOR.$file;
+            $file = realpath($this->cwd ? rtrim($this->cwd, ' /') : getcwd()).DIRECTORY_SEPARATOR.$file;
+        }
+        if (!file_exists($file)) {
+            throw new Exception\IncludeFileNotFound($file);
         }
         $info = pathinfo($file);
         if (!(array_key_exists('extension', $info) && $info['extension'])
@@ -751,23 +800,16 @@ class Smarty
             $file .= '.tpl';
         }
         $hash = hash('crc32b', $file);
-        $output = '';
-        if (!array_key_exists($hash, $this->__include_funcs)) {
+        if (!array_key_exists($hash, $this->__includeFuncs)) {
             $this->__includes[] = $file;
-            $this->__include_funcs[$hash] = $include = new Smarty();
+            $include = new Smarty(null, $this->__customFunctions, $this->__includeFuncs);
             $include->loadFromFile($file);
-            $include->__include_funcs = $this->__include_funcs;
-            $output = $include->compile();
-            $this->__custom_functions = array_merge($this->__custom_functions, $include->__custom_functions);
-            $this->__includes = array_unique(array_merge($this->__includes, $include->__includes));
-            if (0 === count($params)) {
-                return $output;
-            }
-            $args = implode(', ', array_map(function ($item) { return '$'.$item; }, array_keys($params)));
-            $output = "<?php \$this->include_funcs['{$hash}'] = function({$args}){ ?>\n{$output}\n<?php }; ?>";
+            $this->__includeFuncs[$hash] = $include;
         }
-        $output .= "<?php \$this->include_funcs['{$hash}'](".$this->compilePARAMS(implode(', ', $params)).'); ?>';
+        $args = count($params) > 0
+            ? '['.implode(', ', array_map(function ($item, $key) { return "'{$key}' => {$item}"; }, $params, array_keys($params))).']'
+            : '';
 
-        return $output;
+        return "<?php echo \$this->include('{$hash}'".($args ? ", {$args}" : '').'); ?>';
     }
 }

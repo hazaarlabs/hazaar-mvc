@@ -78,9 +78,10 @@ class DocBlock
      */
     public function __construct($comment = null)
     {
-        if ($comment) {
-            $this->setComment($comment);
+        if (!$comment) {
+            return;
         }
+        $this->setComment($comment);
     }
 
     /**
@@ -176,7 +177,7 @@ class DocBlock
     protected function parseComment(string $comment): void
     {
         // Strip the opening and closing tags of the docblock
-        $comment = substr($comment, 3, -2);
+        $comment = trim(substr($comment, 3, -2));
         // Split into arrays of lines
         $comment = preg_split('/\r?\n\r?/', $comment);
         // Trim asterisks and a single whitespace from the beginning and whitespace from the end of lines

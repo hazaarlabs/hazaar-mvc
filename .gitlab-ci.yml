@@ -122,17 +122,17 @@ Unit Testing:
     reports:
       junit: phpunit-test-results.xml
 
-# Build Production Documentation:
-#   extends: .Build Docs
-#   environment: production
-#   rules:
-#     - if: '$CI_COMMIT_BRANCH == "master"'
+Build Production Documentation:
+  extends: .Build Docs
+  environment: production
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
 
 Build Production Image:
   extends: .Build Image
   environment: production
-  # needs: 
-  #   - Build Production Documentation
+  needs: 
+    - Build Production Documentation
   rules:
     - if: '$CI_COMMIT_BRANCH == "master"'
 

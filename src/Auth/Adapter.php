@@ -19,6 +19,7 @@ use Hazaar\Application\Request;
 use Hazaar\Application\Request\HTTP;
 use Hazaar\Auth\Adapter\Exception\Unauthorised;
 use Hazaar\Auth\Adapter\Exception\UnknownStorageAdapter;
+use Hazaar\Auth\Interface\Storage;
 
 /**
  * Abstract authentication adapter.
@@ -85,7 +86,7 @@ abstract class Adapter implements Interface\Adapter, \ArrayAccess
      * @var array<mixed>
      */
     protected array $options;
-    protected Interface\Storage $storage;
+    protected Storage $storage;
     protected ?string $identity = null;
     protected ?string $credential = null;
 

@@ -34,6 +34,9 @@ class DocCommand extends Command
         $title = $input->getOption('title') ?? 'API Documentation';
         $scanPath = $input->getOption('scan') ?? '.';
         $doc = new Documentor(Documentor::DOC_OUTPUT_MARKDOWN, $title);
+        $doc->setCallback(function (string $message) use ($output) {
+            $output->write($message.PHP_EOL);
+        });
         $doc->generate($scanPath, $outputPath);
 
         return 0;

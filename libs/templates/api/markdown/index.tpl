@@ -8,6 +8,7 @@
 
 This is an automatically generated documentation for **{$project.title}**.
 
+{if $namespaces}
 ## Namespaces
 
 {sort $namespaces}
@@ -60,6 +61,7 @@ This is an automatically generated documentation for **{$project.title}**.
 {/if}
 
 {/foreach}
+{/if}
 
 {if $classes}
 ## Classes
