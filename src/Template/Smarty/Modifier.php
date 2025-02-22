@@ -14,17 +14,18 @@ class Modifier
             throw new \Exception('Modifier '.$name.' does not exist!');
         }
         $reflectionMethod = new \ReflectionMethod($this, $name);
-        $reflectionParameter = $reflectionMethod->getParameters()[0];
-        $type = (string) $reflectionParameter->getType();
-        $value = match ($type) {
-            'int' => (int) $value,
-            'float' => (float) $value,
-            'bool' => (bool) $value,
-            'string' => (string) $value,
-            'array' => (array) $value,
-            'object' => (object) $value,
-            default => $value,
-        };
+        if ($reflectionParameter = $reflectionMethod->getParameters()[0] ?? null) {
+            $type = (string) $reflectionParameter->getType();
+            $value = match ($type) {
+                'int' => (int) $value,
+                'float' => (float) $value,
+                'bool' => (bool) $value,
+                'string' => (string) $value,
+                'array' => (array) $value,
+                'object' => (object) $value,
+                default => $value,
+            };
+        }
 
         return $reflectionMethod->invokeArgs($this, array_merge([$value], $args));
     }
@@ -50,7 +51,7 @@ class Modifier
 
     public function count_paragraphs(string $string): int
     {
-        return substr_count(trim($string, "\n\n"), "\n\n") + 1;
+        return substr_count(preg_replace('/\n{2,}/', "\n", trim($string, "\n\n")), "\n") + 1;
     }
 
     /**
@@ -161,7 +162,7 @@ class Modifier
 
     public function indent(string $string, int $length = 4, string $pad_string = ' '): string
     {
-        return str_pad($string, $length, $pad_string, STR_PAD_LEFT);
+        return "\n".str_repeat($pad_string, $length).$string;
     }
 
     public function lower(string $string): string
@@ -191,7 +192,7 @@ class Modifier
 
     public function spacify(string $string, string $replacement = ' '): string
     {
-        return implode($replacement, preg_split('//', $string));
+        return implode($replacement, preg_split('//', $string, -1, PREG_SPLIT_NO_EMPTY));
     }
 
     public function string_format(string $string, string $format): string
@@ -199,7 +200,7 @@ class Modifier
         return sprintf($format, $string);
     }
 
-    public function strip(string $string, string $replacement = ' '): string
+    public function strip(string $string, string $replacement = ''): string
     {
         return preg_replace('/[\s\n\t]+/', $replacement, $string);
     }
@@ -209,21 +210,26 @@ class Modifier
         return preg_replace('/<[^>]+>/', '', $string);
     }
 
-    public function truncate(string $string, int $chars = 80, string $text = '...', bool $cut = false, bool $middle = false): string
-    {
-        if (strlen($string) > ($chars -= strlen($text))) {
-            if (true === $middle) {
-                $string = substr($string, 0, $chars / 2).$text.substr($string, -($chars / 2));
-            } else {
-                $string = substr($string, 0, $chars);
-                if (false === $cut) {
-                    $string = substr($string, 0, strrpos($string, ' '));
-                }
-                $string = $string.$text;
-            }
+    public function truncate(
+        string $string,
+        int $chars = 80,
+        string $text = '...',
+        bool $cut = false,
+        bool $middle = false
+    ): string {
+        $chars -= strlen($text);
+        if (strlen($string) <= $chars) {
+            return $string;
+        }
+        if (true === $middle) {
+            return substr($string, 0, $chars / 2).$text.substr($string, -($chars / 2));
+        }
+        $string = substr($string, 0, $chars);
+        if (false === $cut && ($pos = strrpos($string, ' '))) {
+            $string = substr($string, 0, $pos);
         }
 
-        return $string;
+        return $string.$text;
     }
 
     public function upper(string $string): string
