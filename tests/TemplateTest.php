@@ -110,7 +110,7 @@ class TemplateTest extends TestCase
     public function testCanRenderSmartyTemplateWithModifierDefault(): void
     {
         $smarty = new Smarty();
-        $smarty->loadFromString('Hello {$name|default:"World"}!');
+        $smarty->loadFromString('Hello {$name|default:World}!');
         $this->assertEquals('Hello World!', $smarty->render([]));
     }
 

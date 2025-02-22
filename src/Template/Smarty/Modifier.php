@@ -4,250 +4,86 @@ declare(strict_types=1);
 
 namespace Hazaar\Template\Smarty;
 
-use Hazaar\DateTime;
-
 class Modifier
 {
+    /**
+     * @var array<string, array{object, array<int, \ReflectionParameter>}>
+     */
+    private array $loadedModifiers = [];
+
+    /**
+     * Executes a modifier function by its name with the provided value and arguments.
+     *
+     * @param string $name    the name of the modifier function to execute
+     * @param mixed  $value   the value to be passed to the modifier function
+     * @param mixed  ...$args Additional arguments to be passed to the modifier function.
+     *
+     * @return mixed the result of the modifier function execution
+     *
+     * @throws \Exception if the modifier class does not exist
+     */
     public function execute(string $name, mixed $value, mixed ...$args): mixed
     {
-        if (!method_exists($this, $name)) {
+        if (array_key_exists($name, $this->loadedModifiers)) {
+            return $this->runWithArgs($name, $value, $args);
+        }
+        $className = 'Hazaar\Template\Smarty\Modifier\\'.str_replace(' ', '', ucwords(str_replace('_', ' ', $name)));
+        if (is_reserved($name)) {
+            $className .= 'Modifier';
+        }
+        if (!class_exists($className)) {
             throw new \Exception('Modifier '.$name.' does not exist!');
         }
-        $reflectionMethod = new \ReflectionMethod($this, $name);
-        if ($reflectionParameter = $reflectionMethod->getParameters()[0] ?? null) {
-            $type = (string) $reflectionParameter->getType();
-            $value = match ($type) {
-                'int' => (int) $value,
-                'float' => (float) $value,
-                'bool' => (bool) $value,
-                'string' => (string) $value,
-                'array' => (array) $value,
-                'object' => (object) $value,
-                default => $value,
-            };
+        $argTypes = [];
+        $reflectionMethod = new \ReflectionMethod($className, 'run');
+        foreach ($reflectionMethod->getParameters() as $index => $parameter) {
+            $argTypes[] = $parameter;
         }
+        $this->loadedModifiers[$name] = [
+            new $className(),
+            $argTypes,
+        ];
 
-        return $reflectionMethod->invokeArgs($this, array_merge([$value], $args));
-    }
-
-    public function capitalize(string $string): string
-    {
-        return ucwords($string);
-    }
-
-    public function cat(): string
-    {
-        return implode('', func_get_args());
-    }
-
-    public function count_characters(string $string, bool $include_whitespace = false): int
-    {
-        if (false === $include_whitespace) {
-            $string = str_replace(' ', '', $string);
-        }
-
-        return strlen($string);
-    }
-
-    public function count_paragraphs(string $string): int
-    {
-        return substr_count(preg_replace('/\n{2,}/', "\n", trim($string, "\n\n")), "\n") + 1;
+        return $this->runWithArgs($name, $value, ...$args);
     }
 
     /**
-     * Counts the number of sentences in a given string.
+     * Executes a modifier with the provided arguments.
      *
-     * @param string $string the input string to count sentences from
+     * Arguments are passed to the modifier in the order they are provided and
+     * are cast to the type expected by the modifier.
      *
-     * @return int the number of sentences in the string
+     * @param string $name    the name of the modifier to run
+     * @param mixed  $value   the initial value to pass to the modifier
+     * @param mixed  ...$args Additional arguments to pass to the modifier.
+     *
+     * @return mixed the result of the modifier execution
+     *
+     * @throws \Exception      if a required argument is missing
+     * @throws \LogicException if a union or intersection type is encountered
      */
-    public function count_sentences(string $string): int
+    public function runWithArgs(string $name, mixed $value, mixed ...$args): mixed
     {
-        if (!preg_match_all('/[\.\!\?]+[\s\n]?/', $string, $matches)) {
-            return strlen($string) > 0 ? 1 : 0;
-        }
-        $count = count($matches[0]);
-        $final = substr(trim($string), -1);
-        if ('.' != $final && '!' != $final && '?' != $final) {
-            ++$count;
-        }
-
-        return $count;
-    }
-
-    /**
-     * Counts the number of words in a string.
-     *
-     * @param string $string the input string
-     *
-     * @return int the number of words in the string
-     */
-    public function count_words(string $string): int
-    {
-        return str_word_count($string);
-    }
-
-    /**
-     * Formats a date using the specified format.
-     *
-     * @param mixed       $item   The date to format. Can be a string, integer, or DateTime object.
-     * @param null|string $format The format to use for the date. If not provided, the default format '%c' will be used.
-     *
-     * @return string the formatted date
-     */
-    public function date_format(mixed $item, ?string $format = null): string
-    {
-        if (!$item instanceof DateTime) {
-            $item = new DateTime($item);
-        }
-        if (!$format) {
-            $format = '%c';
+        $args = array_merge([$value], $args);
+        list($callable, $argTypes) = $this->loadedModifiers[$name];
+        foreach ($argTypes as $index => $reflectionParameter) {
+            if (!array_key_exists($index, $args)) {
+                if (!$reflectionParameter->isOptional()) {
+                    throw new \Exception('Missing argument '.$index.' for modifier '.$name.'!');
+                }
+                $args[$index] = $reflectionParameter->getDefaultValue();
+            } else {
+                $type = $reflectionParameter->getType();
+                if (!$type instanceof \ReflectionNamedType) {
+                    throw new \LogicException('Union or intersection types not supported here.');
+                }
+                $paramType = $type->getName();
+                if ('mixed' !== $paramType) {
+                    settype($args[$index], $paramType);
+                }
+            }
         }
 
-        return str_ftime($format, $item->getTimestamp());
-    }
-
-    public function default(mixed $value, mixed $default = null): mixed
-    {
-        if (null !== $value) {
-            return $value;
-        }
-
-        return $default;
-    }
-
-    public function print(mixed $value): string
-    {
-        return print_r($value, true);
-    }
-
-    public function dump(mixed $value): string
-    {
-        ob_start();
-        var_dump($value);
-        $output = ob_get_clean();
-        if ('<pre' === substr($output, 0, 4)) {
-            $offsetCR = strpos($output, "\n") + 1;
-            $suffixPRE = strrpos($output, '</pre>');
-            $offsetSmallOpen = strpos($output, '<small>', $offsetCR);
-            $offsetSmallClose = strpos($output, '</small>', $offsetSmallOpen) + 8;
-            $output = substr($output, $offsetSmallClose, $suffixPRE - $offsetSmallClose);
-        }
-
-        return trim($output);
-    }
-
-    public function export(mixed $value): string
-    {
-        return var_export($value, true);
-    }
-
-    public function type(mixed $value): string
-    {
-        return gettype($value);
-    }
-
-    public function escape(string $string, string $format = 'html', string $character_encoding = 'ISO-8859-1'): string
-    {
-        if ('html' == $format) {
-            $string = htmlspecialchars($string, ENT_COMPAT, $character_encoding);
-        } elseif ('url' === $format) {
-            $string = urlencode($string);
-        } elseif ('quotes' === $format) {
-            $string = addcslashes($string, "'");
-        }
-
-        return $string;
-    }
-
-    public function indent(string $string, int $length = 4, string $pad_string = ' '): string
-    {
-        return "\n".str_repeat($pad_string, $length).$string;
-    }
-
-    public function lower(string $string): string
-    {
-        return strtolower($string);
-    }
-
-    public function nl2br(string $string): string
-    {
-        return str_replace("\n", '<br />', $string);
-    }
-
-    public function number_format(string $string, int $decimals = 0, string $dec_point = '.', string $thousands_sep = ','): string
-    {
-        return number_format(floatval($string), $decimals, $dec_point, $thousands_sep);
-    }
-
-    public function regex_replace(string $string, string $pattern = '//', string $replacement = ''): string
-    {
-        return preg_replace($pattern, $replacement, $string);
-    }
-
-    public function replace(string $string, string $search, string $replace): string
-    {
-        return str_replace($search, $replace, $string);
-    }
-
-    public function spacify(string $string, string $replacement = ' '): string
-    {
-        return implode($replacement, preg_split('//', $string, -1, PREG_SPLIT_NO_EMPTY));
-    }
-
-    public function string_format(string $string, string $format): string
-    {
-        return sprintf($format, $string);
-    }
-
-    public function strip(string $string, string $replacement = ''): string
-    {
-        return preg_replace('/[\s\n\t]+/', $replacement, $string);
-    }
-
-    public function strip_tags(string $string): string
-    {
-        return preg_replace('/<[^>]+>/', '', $string);
-    }
-
-    public function truncate(
-        string $string,
-        int $chars = 80,
-        string $text = '...',
-        bool $cut = false,
-        bool $middle = false
-    ): string {
-        $chars -= strlen($text);
-        if (strlen($string) <= $chars) {
-            return $string;
-        }
-        if (true === $middle) {
-            return substr($string, 0, $chars / 2).$text.substr($string, -($chars / 2));
-        }
-        $string = substr($string, 0, $chars);
-        if (false === $cut && ($pos = strrpos($string, ' '))) {
-            $string = substr($string, 0, $pos);
-        }
-
-        return $string.$text;
-    }
-
-    public function upper(string $string): string
-    {
-        return strtoupper($string);
-    }
-
-    public function wordwrap(string $string, int $width = 80, string $break = "\n", bool $cut = true): string
-    {
-        return wordwrap($string, $width, $break, $cut);
-    }
-
-    public function implode(mixed $array, string $glue = ''): string
-    {
-        if (is_array($array)) {
-            return implode($glue, $array);
-        }
-
-        return $array;
+        return $callable->run(...$args);
     }
 }
