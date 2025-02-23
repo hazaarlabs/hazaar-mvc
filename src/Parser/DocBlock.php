@@ -209,7 +209,7 @@ class DocBlock
             $tag = substr(self::strTag($body), 1);
             $body = str_repeat(' ', strlen($tag) + 1).substr($body, strlen($tag) + 1);
             if (isset(self::$vectors[$tag])) {
-                $body = trim($body);
+                $body = preg_replace('/[\n\s]+/', ' ', trim($body));
                 $fields = (isset(self::$vectors[$tag]['fields']) ? self::$vectors[$tag]['fields'] : self::$vectors[$tag]);
                 // The tagged block is a vector
                 $count = count($fields);

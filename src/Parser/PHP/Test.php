@@ -21,7 +21,8 @@ const TEST_CONSTANT = 'test';
 /**
  * This is a test function.
  *
- * @param float  $precision   The precision of the text
+ * @param float  $precision   The precision of the text.  This is also a very long description that
+ *                            should wrap to the next line.
  * @param string $description The description of the text
  */
 function testFunction(float $precision = 1.2, string $description = 'none'): bool
