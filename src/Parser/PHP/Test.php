@@ -37,7 +37,7 @@ function testFunction(float $precision = 1.2, string $description = 'none'): boo
 
 /**
  * This is a variatic function.
- * 
+ *
  * @param string $name The name of the person
  * @param int    $dob  The date of birth
  */
@@ -67,10 +67,16 @@ interface TestInterface
  * Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Integer nec odio. Praesent libero. Sed cursus ante dapibus diam.
  * Sed nisi. Nulla quis sem at nibh elementum imperdiet.
+ *
+ * Testing a link to [[Hazaar\Test\TestClass]].
+ *
+ * Testing a linkt to [[DateTime]].
  */
 abstract class BaseClass
 {
     /**
+     * This is a test constant.
+     *
      * @var array<mixed>
      */
     public static array $names = [
@@ -91,6 +97,12 @@ abstract class BaseClass
 
 /**
  * This is a test class.
+ *
+ * Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+ * Integer nec odio. Praesent libero. Sed cursus ante dapibus diam.
+ * Sed nisi. Nulla quis sem at nibh elementum imperdiet.
+ *
+ * Testing a link to [[Hazaar\Test\BaseClass]].
  *
  * @internal
  */
@@ -126,6 +138,10 @@ class TestClass extends BaseClass implements TestInterface
 
     /**
      * This is a test method.
+     *
+     * @param int    $number The number to display.  This description is very long and should
+     *                       be wrapped to the next line.
+     * @param string $text   The text to display
      */
     public function testMethod(int $number, ?string $text = 'Hello World'): void
     {

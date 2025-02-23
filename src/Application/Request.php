@@ -24,7 +24,7 @@ use Hazaar\Session;
  *              the current request including request data, headers and any request body content.
  *
  *              If you want to generate your own HTTP request object to pass to another method or function that requires
- *              one, see [[Hazaar\Http\Request]].
+ *              one, see [[Hazaar\HTTP\Request]].
  */
 class Request implements Interface\Request
 {

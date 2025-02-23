@@ -11,7 +11,7 @@ namespace Hazaar\XML;
  *              rapidly and will full support for attributes and namespaces.
  *
  *              ```php
- *              $xml = new Hazaar\Xml\Element('list');
+ *              $xml = new Hazaar\XML\Element('list');
  *              $xml->properties['name'] = 'myProperties';
  *              $xml->properties->add('property', 'Property #1');
  *              $xml->properties->add('property', 'Property #2');
@@ -112,7 +112,7 @@ class Element implements \ArrayAccess, \Iterator
      *
      * @param string        $name       The name of the element to create, optionally including a namespace
      * @param mixed         $value      The value of the element.  This can be pretty much anything, including another
-     *                                  \Hazaar\Xml\Element object.
+     *                                  \Hazaar\XML\Element object.
      * @param array<string> $namespaces Array of namespaces to declare where the key is the prefix and the value is the
      *                                  namespace URI
      * @param string        $open_tag   Configurable open tag for elements.  XML defines this as '<'.  This can be changed for
@@ -334,7 +334,7 @@ class Element implements \ArrayAccess, \Iterator
      *
      * @param string        $name       The name of the element to create, optionally including a namespace
      * @param mixed         $value      The value of the element.  This can be pretty much anything, including another
-     *                                  \Hazaar\Xml\Element object.
+     *                                  \Hazaar\XML\Element object.
      * @param array<string> $namespaces Array of namespaces to declare where the key is the prefix and the value is the
      *                                  namespace URI
      *
@@ -393,7 +393,7 @@ class Element implements \ArrayAccess, \Iterator
      *
      * @param string        $name       The name of the element to create, optionally including a namespace
      * @param mixed         $value      The value of the element.  This can be pretty much anything, including another
-     *                                  Hazaar\Xml\Element object.
+     *                                  Hazaar\XML\Element object.
      * @param array<string> $namespaces Array of namespaces to declare where the key is the prefix and the value is the
      *                                  namespace URI
      *
@@ -488,7 +488,7 @@ class Element implements \ArrayAccess, \Iterator
      * Get or set the current value of the node element.
      *
      * If the node element does not have any child nodes then it's value can be set directly.  If there are child nodes
-     * defined then this value is ignored when generating XML output using the Hazaar\Xml\Element::toXML() method.
+     * defined then this value is ignored when generating XML output using the Hazaar\XML\Element::toXML() method.
      *
      * If the $value parameter is not defined then current value is returned without modification
      *
@@ -581,7 +581,7 @@ class Element implements \ArrayAccess, \Iterator
     /**
      * Load an XML definition from a string.
      *
-     * The [[Hazaar\Xml\Element]] class can not only be used to generate XML, but also parse it to allow programmatic
+     * The [[Hazaar\XML\Element]] class can not only be used to generate XML, but also parse it to allow programmatic
      * access to the data structure.  This method takes a single string argument and attempts to parse it as valid XML.
      *
      * @param string $xml The XML source string
@@ -894,11 +894,11 @@ class Element implements \ArrayAccess, \Iterator
     }
 
     /**
-     * Sets the parent object for the current Hazaar\Xml\Element object.
+     * Sets the parent object for the current Hazaar\XML\Element object.
      *
-     * This is an internal method and is not accessible outside of the Hazaar\Xml\Element class.
+     * This is an internal method and is not accessible outside of the Hazaar\XML\Element class.
      *
-     * @param Element $parent the Hazaar\Xml\Element object to use as the parent
+     * @param Element $parent the Hazaar\XML\Element object to use as the parent
      */
     private function setParent(Element $parent): void
     {

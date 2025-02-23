@@ -202,7 +202,7 @@ class File implements \JsonSerializable
      * Get the relative path of the file.
      *
      * If the file was returned from a [[Hazaar\File\Dir]] object, then it will have a stored
-     * relative path.  Otherwise any file/path can be provided in the form of another [[Hazaar\File\\
+     * relative path.  Otherwise any file/path can be provided in the form of another [[Hazaar\File]]
      * object, [[Hazaar\File\Dir]] object, or string path, and the relative path to the file will
      * be returned.
      *
