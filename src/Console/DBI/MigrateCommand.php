@@ -15,7 +15,6 @@ class MigrateCommand extends Command
             ->setDescription('Migrate the database schema')
             ->setHelp('This command allows you to migrate the database schema to a specific version.')
             ->addArgument('version', 'The version to migrate to.')
-            ->addOption('test', 't', 'Test the migration without actually applying it.')
             ->addOption('force_sync', 'f', 'Force a sync of the database schema.')
             ->addOption('keep_tables', 'k', 'Keep the tables in the database.')
             ->addOption('force_init', null, 'Force the database to be re-initialised.')
@@ -25,20 +24,25 @@ class MigrateCommand extends Command
     protected function execute(Input $input, Output $output): int
     {
         $manager = Adapter::getSchemaManagerInstance();
-        $manager->registerOutputHandler(function ($time, $message) use ($output) {
-            $output->write(date('H:i:s', (int) round($time)).' '.$message.PHP_EOL);
+        $manager->registerLogHandler(function ($message) use ($output) {
+            $output->write($message.PHP_EOL);
         });
         if ($version = $input->getArgument('version')) {
             settype($version, 'int');
         }
-        if ($manager->migrate(
-            $version,
-            $input->getOption('force_sync') ?? false,
-            $input->getOption('test') ?? false,
-            $input->getOption('keep_tables') ?? false,
-            $input->getOption('force_init') ?? false
-        )) {
-            $code = 0;
+        if ($input->getOption('force_init') ?? false) {
+            $output->write('WARNING: Forcing full database re-initialisation.'.PHP_EOL);
+            $output->write('THIS WILL DELETE ALL DATA!!!'.PHP_EOL);
+            $output->write('IF YOU DO NOT WANT TO DO THIS, YOU HAVE 10 SECONDS TO CANCEL'.PHP_EOL);
+            sleep(10);
+            $output->write('DELETING YOUR DATA!!!  YOU WERE WARNED!!!'.PHP_EOL);
+            $manager->deleteEverything();
+        }
+        if (!$manager->migrate($version)) {
+            return 1;
+        }
+        if (!$manager->sync(null, $input->getOption('force_sync') ?? false)) {
+            return 2;
         }
 
         return 0;

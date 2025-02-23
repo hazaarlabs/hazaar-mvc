@@ -14,19 +14,20 @@ class CheckpointCommand extends Command
         $this->setName('checkpoint')
             ->setDescription('Checkpoints the database schema.')
             ->setHelp('This command will checkpoint the database schema by consolidating all changes into a single migration file.')
+            ->addArgument('comment', 'Add a comment to the checkpoint')
         ;
     }
 
     protected function execute(Input $input, Output $output): int
     {
         $manager = Adapter::getSchemaManagerInstance();
-        $manager->registerOutputHandler(function ($time, $message) use ($output) {
-            $output->write($time.' '.$message.PHP_EOL);
+        $manager->registerLogHandler(function ($message) use ($output) {
+            $output->write($message.PHP_EOL);
         });
-        if ($manager->checkpoint()) {
-            return 0;
+        if (!$manager->checkpoint($input->getArgument('comment'))) {
+            return 1;
         }
 
-        return 1;
+        return 0;
     }
 }

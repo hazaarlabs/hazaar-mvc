@@ -1,40 +1,52 @@
 # Hazaar DBI Configuration
 
-::: danger
-This page is tagged as a draft and is a work in progress.  It is not yet complete and may contain errors or inaccuracies.
-:::
+Hazaar provides a simple and easy to use database abstraction layer that allows you to interact with a variety of database systems in a consistent way.  The database abstraction layer is built on top of the [PDO](http://php.net/manual/en/book.pdo.php) extension and provides a simple and easy to use interface for interacting with databases.
 
-## Bootstrap
+## Configuring a Database Connection
 
-In your application configuration directory you need to create a database.ini file which looks a bit like this:
+To use the database abstraction layer you first need to configure a database connection.  This is done by creating a `database.json` file in your application configuration directory.  The database configuration file is a JSON formatted file that contains the connection details for each database you wish to connect to.  The database configuration file is loaded automatically by the framework when it is required.
 
-```ini
-db.driver = {driver anme}
-db.host = {your db host}
-db.user = {your db user}
-db.password = {password}
-db.dbname = {dbname}
-db.master = {your master db host} #Optional.  Use only with PGSQL replication.  See below.
-```
-
-Drivers are the PDO driver name, such as pgsql, mysql, etc.
-
-In your bootstrap, add:
-
-```php
-Hazaar\Db\Adapter::configure($this->config->db);
-```
-
-## Using the adapter
-
-```php
-$db = new Hazaar\Db\Adapter();   
-$select = new Hazaar\Db\Select('*', 'users');
-$result = $db->select($select);
-while($row = $result->fetch()){
-    //Do things with $row here
+```json
+{
+    "development": {
+        "type": "pgsql",
+        "host": "localhost",
+        "dbname": "my_database",
+        "user": "my_user",
+        "password": "my_password"
+    },
+    "test": {
+        "type": "sqlite",
+        "file": "test.db"
+    }
 }
 ```
+
+The database configuration file can contain multiple database configurations.  The default configuration to use is determined by the current `APPLICATION_ENV` environment variable.  If the `APPLICATION_ENV` environment variable is not set, the default configuration is `development`.
+
+```php
+$db = new Hazaar\DBI\Adapter();
+```
+
+Alternatively, you can specify the configuration to use by passing the name of the configuration to the `Hazaar\DBI\Adapter` constructor.
+
+```php
+$db = new Hazaar\DBI\Adapter('test');
+```
+
+Lastly, you can also specify the configuration as an array.  This is useful for quick testing or when you don't want to use a configuration file but is not recommended for production use.
+
+```php
+$db = new Hazaar\DBI\Adapter(array(
+    'type' => 'pgsql',
+    'host' => 'localhost',
+    'dbname' => 'test',
+    'user' => 'test',
+    'password' => 'test'
+));
+```
+
+
 
 ## PostgreSQL Replication
 

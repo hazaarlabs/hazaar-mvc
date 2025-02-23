@@ -15,7 +15,6 @@ use Hazaar\Application\FilePath;
 use Hazaar\DBI\Exception\ConnectionFailed;
 use Hazaar\DBI\Exception\DriverNotFound;
 use Hazaar\DBI\Exception\NotConfigured;
-use Hazaar\DBI\Schema\Manager;
 use Hazaar\Loader;
 
 /**
@@ -94,6 +93,12 @@ class Adapter implements Interface\API\Constraint, Interface\API\Extension, Inte
     private string $env = APPLICATION_ENV;
 
     /**
+     * @var array<LogEntry>
+     */
+    private array $eventLog = [];
+    private \Closure $__eventLogCallback;
+
+    /**
      * Hazaar DBI Constructor.
      *
      * @param array<mixed>|string $config An array of configuration options to instantiate the DBI Adapter.  This can
@@ -110,7 +115,7 @@ class Adapter implements Interface\API\Constraint, Interface\API\Extension, Inte
             }
             $config = $this->loadConfig($this->env)->toArray();
         }
-        if (!isset($config['driver'])) {
+        if (!isset($config['type'])) {
             throw new NotConfigured();
         }
         $this->config = $config;
@@ -137,6 +142,26 @@ class Adapter implements Interface\API\Constraint, Interface\API\Extension, Inte
         }
 
         return call_user_func_array([$this->driver, $method], $args);
+    }
+
+    /**
+     * Sets a callback function that can be used to process log messages as they are generated.
+     *
+     * The callback function provided must accept one argument.  `LogEvent $event`.
+     *
+     * Example, to simply echo formatted log data:
+     *
+     * '''php
+     * $manager->registerLogHandler(function(LogEvent $event){
+     *      echo $event->toString() . PHP_EOL;
+     * });
+     * '''
+     *
+     * @param \Closure $callback The 'callable' callback function.  See: is_callable();
+     */
+    public function registerLogHandler(\Closure $callback): void
+    {
+        $this->__eventLogCallback = $callback;
     }
 
     public function can(string $method): bool
@@ -641,13 +666,13 @@ class Adapter implements Interface\API\Constraint, Interface\API\Extension, Inte
         return $this->driver->describeFunction($name);
     }
 
-    public function createFunction($name, $spec): bool
+    public function createFunction(string $name, mixed $spec, bool $replace = false): bool
     {
         if (!$this->driver instanceof Interface\API\StoredFunction) {
             throw new \BadMethodCallException('Driver does not support stored functions');
         }
 
-        return $this->driver->createFunction($name, $spec);
+        return $this->driver->createFunction($name, $spec, $replace);
     }
 
     public function dropFunction(string $name, null|array|string $argTypes = null, bool $cascade = false, bool $ifExists = false): bool
@@ -893,13 +918,13 @@ class Adapter implements Interface\API\Constraint, Interface\API\Extension, Inte
         return $this->driver->describeView($name);
     }
 
-    public function createView(string $name, mixed $content): bool
+    public function createView(string $name, mixed $content, bool $replace = false): bool
     {
         if (!$this->driver instanceof Interface\API\View) {
             throw new \BadMethodCallException('Driver does not support views');
         }
 
-        return $this->driver->createView($name, $content);
+        return $this->driver->createView($name, $content, $replace);
     }
 
     public function dropView(string $name, bool $ifExists = false, bool $cascade = false): bool
@@ -920,6 +945,32 @@ class Adapter implements Interface\API\Constraint, Interface\API\Extension, Inte
         return $this->driver->prepare($sql);
     }
 
+    /**
+     * Logs a message to the migration log.
+     *
+     * @param string $msg The message to log
+     */
+    public function log(string $msg): void
+    {
+        $this->eventLog[] = new LogEntry($msg);
+        if (!isset($this->__eventLogCallback)) {
+            return;
+        }
+        while ($entry = array_shift($this->eventLog)) {
+            call_user_func($this->__eventLogCallback, $entry);
+        }
+    }
+
+    /**
+     * Returns the adapter event log.
+     *
+     * @return array<LogEntry>
+     */
+    public function getEventLog(): array
+    {
+        return $this->eventLog;
+    }
+
     private function getDriverClass(string $driver): string
     {
         return 'Hazaar\DBI\DBD\\'.ucfirst($driver);
@@ -927,12 +978,12 @@ class Adapter implements Interface\API\Constraint, Interface\API\Extension, Inte
 
     private function reconfigure(bool $reconnect = false): bool
     {
-        if (!$this->config['driver']) {
+        if (!$this->config['type']) {
             throw new \Exception('No DBI driver specified!');
         }
-        $driverClass = $this->getDriverClass($this->config['driver']);
+        $driverClass = $this->getDriverClass($this->config['type']);
         if (!class_exists($driverClass)) {
-            throw new DriverNotFound($this->config['driver']);
+            throw new DriverNotFound($this->config['type']);
         }
 
         try {
@@ -942,7 +993,7 @@ class Adapter implements Interface\API\Constraint, Interface\API\Extension, Inte
             }
         } catch (\PDOException $e) {
             if (7 === $e->getCode()) {
-                throw new ConnectionFailed($this->config['host']);
+                throw new ConnectionFailed($this->config['host'], [1, $e->getMessage()]);
             }
 
             throw $e;

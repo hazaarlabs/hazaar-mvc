@@ -90,6 +90,11 @@ class SQL implements QueryBuilder
         $this->schemaName = $schemaName;
     }
 
+    public function setReservedWords(array $words): void
+    {
+        $this->reservedWords = $words;
+    }
+
     public function getSchemaName(): ?string
     {
         return $this->schemaName;
@@ -123,13 +128,9 @@ class SQL implements QueryBuilder
         return $this->quoteSpecial($tableName).($alias ? ' '.$this->quoteSpecial($alias) : '');
     }
 
-    public function quote(mixed $string, int $type = \PDO::PARAM_STR): false|string
+    public function quote(string $string, bool $addSlashes = true): string
     {
-        if (is_string($string)) {
-            $string = '\''.addslashes($string).'\'';
-        }
-
-        return $string;
+        return '\''.($addSlashes ? addcslashes($string, "'") : $string).'\'';
     }
 
     public function quoteSpecial(mixed $value): mixed
@@ -145,7 +146,7 @@ class SQL implements QueryBuilder
         return implode('.', $parts);
     }
 
-    public function reset(): void
+    public function reset(): self
     {
         $this->selectGroups = [];
         $this->from = [];
@@ -162,6 +163,8 @@ class SQL implements QueryBuilder
         $this->distinct = false;
         $this->limit = null;
         $this->offset = null;
+
+        return $this;
     }
 
     public function create(string $name, string $type, bool $ifNotExists = false): string
@@ -185,7 +188,7 @@ class SQL implements QueryBuilder
     ): string {
         $sql = 'INSERT INTO '.$this->schemaName($tableName);
         if ($fields instanceof Model) {
-            $fields = $fields->toArray();
+            $fields = $fields->toArray('dbiWrite', 0);
         } elseif ($fields instanceof \stdClass) {
             $fields = (array) $fields;
         }
@@ -611,6 +614,8 @@ class SQL implements QueryBuilder
             $value = ($value ? 'TRUE' : 'FALSE');
         } elseif ($value instanceof \stdClass) {
             $value = $this->quote(json_encode($value));
+        } elseif ($value instanceof Model) {
+            $value = $this->quote((string) json_encode($value->toArray('dbiWrite')), false);
         } elseif (!is_int($value) && (':' !== substr($value, 0, 1) || ':' === substr($value, 1, 1))) {
             $value = $this->quote((string) $value);
         }
@@ -653,8 +658,7 @@ class SQL implements QueryBuilder
         ?string $bindType = null,
         ?string $tissue = null,
         ?string $parentRef = null,
-        null|int|string $optionalKey = null,
-        bool &$setKey = true
+        null|int|string $optionalKey = null
     ): string {
         if (!is_array($criteria)) {
             return $criteria;
@@ -678,7 +682,7 @@ class SQL implements QueryBuilder
             if (is_int($key) && is_string($value)) {
                 $parts[] = '('.$value.')';
             } elseif (!is_int($key) && '$' == substr($key, 0, 1)) {
-                if ($actionParts = $this->prepareCriteriaAction(strtolower(substr($key, 1)), $value, $tissue, $optionalKey, $setKey)) {
+                if ($actionParts = $this->prepareCriteriaAction(strtolower(substr($key, 1)), $value, $tissue, $optionalKey)) {
                     if (is_array($actionParts)) {
                         $parts = array_merge($parts, $actionParts);
                     } else {
@@ -688,15 +692,14 @@ class SQL implements QueryBuilder
                     $parts[] = ' '.$tissue.' '.$this->prepareCriteria($value, strtoupper(substr($key, 1)));
                 }
             } elseif (is_array($value)) {
-                $set = true;
-                $subValue = $this->prepareCriteria($value, $bindType, $tissue, $parentRef, $key, $set);
+                $subValue = $this->prepareCriteria($value, $bindType, $tissue, $parentRef, $key);
                 if (is_numeric($key)) {
                     $parts[] = $subValue;
                 } else {
                     if ($parentRef && false === strpos($key, '.')) {
                         $key = $parentRef.'.'.$key;
                     }
-                    $parts[] = ((true === $set) ? $this->field($key).' ' : '').$subValue;
+                    $parts[] = $this->field($key).' '.$tissue.' '.$subValue;
                 }
             } else {
                 if ($parentRef && false === strpos($key, '.')) {

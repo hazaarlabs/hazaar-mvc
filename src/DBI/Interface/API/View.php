@@ -33,7 +33,7 @@ interface View
      * @param string $name    The name of the view to create
      * @param mixed  $content The content of the view
      */
-    public function createView(string $name, mixed $content): bool;
+    public function createView(string $name, mixed $content, bool $replace = false): bool;
 
     /**
      * Drop a view.

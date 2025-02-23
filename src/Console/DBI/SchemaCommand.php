@@ -13,18 +13,20 @@ class SchemaCommand extends Command
     {
         $this->setName('schema')
             ->setDescription('Display the current database schema.')
+            ->addOption('all', 'a', 'Display the entire schema instead of just the applied schema.')
         ;
     }
 
     protected function execute(Input $input, Output $output): int
     {
+        $all = $input->getOption('all') ?: false;
         $manager = Adapter::getSchemaManagerInstance();
-        if ($schema = $manager->getSchema()) {
-            $output->write(json_encode($schema, JSON_PRETTY_PRINT));
-
-            return 0;
+        $schema = $manager->getSchema($all);
+        if (!$schema) {
+            return 1;
         }
+        $output->write(json_encode($schema, JSON_PRETTY_PRINT).PHP_EOL);
 
-        return 1;
+        return 0;
     }
 }

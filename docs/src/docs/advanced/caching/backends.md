@@ -50,7 +50,7 @@ The format of the array is dynamic. If no backend options are needed, then the m
 
 ```php
 $config = [
-    'driver'   =>   'pgsql',
+    'type'   =>   'pgsql',
     'host'     =>   'localhost',
     'dbname'   =>   'hazaar_test',
     'user'     =>   'hazaar',

@@ -26,7 +26,7 @@ class DBITest extends TestCase
      * @var array<string,string>
      */
     private array $config = [
-        'driver' => 'pgsql',
+        'type' => 'pgsql',
         'host' => 'localhost',
         'user' => 'postgres',
         'password' => 'pgmock',
@@ -42,7 +42,7 @@ class DBITest extends TestCase
     public function testDatabaseConfig(): void
     {
         $db = new Adapter($this->config);
-        $this->assertEquals('pgsql', $db->config['driver']);
+        $this->assertEquals('pgsql', $db->config['type']);
         $this->assertEquals([['name' => 'test_table', 'schema' => 'public']], $db->listTables());
     }
 

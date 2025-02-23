@@ -26,7 +26,7 @@ trait View
         return false;
     }
 
-    public function createView(string $name, mixed $content): bool
+    public function createView(string $name, mixed $content, bool $replace = false): bool
     {
         return false;
     }

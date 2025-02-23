@@ -8,6 +8,11 @@ use Hazaar\DBI\Table;
 
 interface QueryBuilder
 {
+    /**
+     * @param array<string> $words
+     */
+    public function setReservedWords(array $words): void;
+
     public function create(string $name, string $type, bool $ifNotExists = false): string;
 
     /**
@@ -129,9 +134,8 @@ interface QueryBuilder
         ?string $bindType = null,
         ?string $tissue = null,
         ?string $parentRef = null,
-        null|int|string $optionalKey = null,
-        bool &$setKey = true
+        null|int|string $optionalKey = null
     ): string;
 
-    public function reset(): void;
+    public function reset(): self;
 }

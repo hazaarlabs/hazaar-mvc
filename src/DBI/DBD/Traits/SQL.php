@@ -57,18 +57,15 @@ trait SQL
         return $value;
     }
 
-    /**
-     * @param array<string> $info
-     */
-    protected function type(array $info): string
+    protected function type(?string $dataType, ?int $length = null): string
     {
-        if (!($type = ake($info, 'data_type'))) {
+        if (!$dataType) {
             return 'character varying';
         }
-        if ($array = ('[]' === substr($type, -2))) {
-            $type = substr($type, 0, -2);
+        if ($array = ('[]' === substr($dataType, -2))) {
+            $dataType = substr($dataType, 0, -2);
         }
 
-        return $type.(ake($info, 'length') ? '('.$info['length'].')' : null).($array ? '[]' : '');
+        return $dataType.($length ? '('.$length.')' : null).($array ? '[]' : '');
     }
 }

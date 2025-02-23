@@ -91,12 +91,12 @@ trait PDO
      */
     protected function mkdsn(array $config): false|string
     {
-        $DBD = 'Hazaar\DBI\DBD\\'.ucfirst($config['driver']);
+        $DBD = 'Hazaar\DBI\DBD\\'.ucfirst($config['type']);
         if (!class_exists($DBD)) {
             return false;
         }
         $options = array_intersect_key($config, array_combine($DBD::$dsnElements, $DBD::$dsnElements));
 
-        return $config['driver'].':'.array_flatten($options, '=', ';');
+        return $config['type'].':'.array_flatten($options, '=', ';');
     }
 }
