@@ -58,19 +58,21 @@ class DateTime extends \DateTime implements \JsonSerializable, \DateTimeInterfac
     private string $instanceFormat;
 
     /**
-     * @detail The Date class constructor takes two values.
-     * A datetime declaration and a timezone. Both are
+     * Date constructor.
+     *
+     * The Date class constructor takes two values. A datetime declaration and a timezone. Both are
      * optional. If now datetime is specified then the current datetime is used. If no timezone is
      * specified then the default timezone will be used.
      *
-     * @param mixed                $datetime The datetime value you want to work with. This can be either an integer representing
-     *                                       the datetime Epoch value (seconds since 1970-01-01) or a string datetime description supported by the
-     *                                       PHP strtotime() function. This means that textual datetime descriptions such as 'now' and 'next
-     *                                       monday' will work. See the PHP documentation on
-     *                                       [[http://au1.php.net/manual/en/function.strtotime.php|strtotime()]] for more information on valid
-     *                                       formats. If the datetime value is not set, the current date and time will be used.
-     * @param \DateTimeZone|string $timezone The timezone for this datetime value. If no timezone is specified then the default
-     *                                       timezone is used.
+     * See the PHP documentation on [[http://au1.php.net/manual/en/function.strtotime.php|strtotime()]]
+     * for more information on valid date time formats. If the datetime value is not set, the current
+     * date and time will be used.  They can be either an integer representing the datetime Epoch
+     * value (seconds since 1970-01-01) or a string datetime description supported by the PHP strtotime()
+     * function. This means that textual datetime descriptions such as 'now' and 'next monday' will work.
+     *
+     * @param mixed                $datetime the datetime value you want to work with
+     * @param \DateTimeZone|string $timezone The timezone for this datetime value. If no timezone
+     *                                       is specified then the default timezone is used.
      */
     public function __construct(mixed $datetime = null, null|\DateTimeZone|string $timezone = null)
     {

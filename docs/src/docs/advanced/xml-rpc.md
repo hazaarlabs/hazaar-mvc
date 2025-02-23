@@ -11,7 +11,7 @@ The XML-RPC classes are there to make it incredibly easy to make RPC calls, or t
 Using a client is very simple. All you need to do it this:
 
 ```php
-$xml = new Hazaar\Xml\Rpc\Client('http://www.example.com/xmlrpc');
+$xml = new Hazaar\XML\RPC\Client('http://www.example.com/xmlrpc');
 $response = $xml->doTest();
 ```
 
@@ -44,4 +44,4 @@ class XMLRPCController extends Hazaar\Controller\XMLRPC {
 
 This will register two methods, `doTest` and `getMethodList`. It's that easy. If the client example above was used to call the `doTest` method we have just defined, the array with result and string will be returned.
 
-The Hazaar\Controller\XMLRPC class is an alias class to the Hazaar\Xml\Rpc\Server class that has been added to maintain a logical connection between the server and the controller. Using either class as the parent of the controller will work however.
+The Hazaar\Controller\XMLRPC class is an alias class to the Hazaar\XML\RPC\Server class that has been added to maintain a logical connection between the server and the controller. Using either class as the parent of the controller will work however.

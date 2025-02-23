@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Xml\Rpc;
+namespace Hazaar\XML\RPC;
 
 use Hazaar\HTTP\Request;
 use Hazaar\HTTP\URL;
