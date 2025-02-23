@@ -22,7 +22,7 @@ class Database extends Backend
         $this->setDefaultOption('write_timestamp', true);
         $this->setDefaultOption('write_uri', true);
         $config = [
-            'driver' => $this->getOption('driver'),
+            'type' => $this->getOption('type'),
             'host' => $this->getOption('host'),
             'dbname' => $this->getOption('database'),
         ];

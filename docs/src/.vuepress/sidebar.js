@@ -71,6 +71,7 @@ function sidebarGuide() {
             children: [
                 { text: 'Overview', link: '/docs/dbi/overview', },
                 { text: 'Configuration', link: '/docs/dbi/configure', },
+                { text: 'CRUD', link: '/docs/dbi/crud', },
                 { text: 'Schema Manager', link: '/docs/dbi/schema-manager', },
                 { text: 'Data Sync', link: '/docs/dbi/data-sync', },
                 { text: 'Encryption', link: '/docs/dbi/encryption', },

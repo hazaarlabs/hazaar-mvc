@@ -83,8 +83,11 @@ trait Trigger
             .' '.ake($spec, 'timing', 'BEFORE')
             .' '.implode(' OR ', ake($spec, 'events', ['INSERT']))
             .' ON '.$this->queryBuilder->schemaName($tableName)
-            .' FOR EACH '.ake($spec, 'orientation', 'ROW')
-            .' '.ake($spec, 'content', 'EXECUTE');
+            .' FOR EACH '.ake($spec, 'orientation', 'ROW');
+        $execute = preg_replace_callback('/FUNCTION\s+([^\s\(]+)/i', function ($match) {
+            return 'FUNCTION ' . $this->queryBuilder->schemaName($match[1]);
+        }, ake($spec, 'content', 'EXECUTE'));
+        $sql .= ' '.$execute;
 
         return false !== $this->exec($sql);
     }

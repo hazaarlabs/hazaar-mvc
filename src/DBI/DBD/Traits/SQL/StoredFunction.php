@@ -56,7 +56,7 @@ trait StoredFunction
      * @return array<int,array{
      *  name:string,
      *  return_type:string,
-     *  content:string,
+     *  body:string,
      *  parameters:?array<int,array{name:string,type:string,mode:string,ordinal_position:int}>,
      *  lang:string
      * }>|false
@@ -95,7 +95,7 @@ trait StoredFunction
                 $item = [
                     'name' => $row['routine_name'],
                     'return_type' => $row['return_type'],
-                    'content' => trim($routineDefinition),
+                    'body' => trim($routineDefinition),
                 ];
                 $item['parameters'] = [];
                 $item['lang'] = ('EXTERNAL' === strtoupper($row['routine_body']))
@@ -127,12 +127,12 @@ trait StoredFunction
     /**
      * Create a new database function.
      *
-     * @param mixed $name The name of the function to create
-     * @param mixed $spec A function specification.  This is basically the array returned from describeFunction()
+     * @param string $name The name of the function to create
+     * @param mixed  $spec A function specification.  This is basically the array returned from describeFunction()
      */
-    public function createFunction($name, $spec): bool
+    public function createFunction(string $name, mixed $spec, bool $replace = false): bool
     {
-        $sql = 'CREATE OR REPLACE FUNCTION '.$this->queryBuilder->schemaName($name).' (';
+        $sql = 'CREATE '.($replace ? 'OR REPLACE ' : '').'FUNCTION'.$this->queryBuilder->schemaName($name).' (';
         if ($params = ake($spec, 'parameters')) {
             $items = [];
             foreach ($params as $param) {
@@ -141,7 +141,7 @@ trait StoredFunction
             $sql .= implode(', ', $items);
         }
         $sql .= ') RETURNS '.ake($spec, 'return_type', 'TEXT').' LANGUAGE '.ake($spec, 'lang', 'SQL')." AS\n\$BODY$ ";
-        $sql .= ake($spec, 'content');
+        $sql .= ake($spec, 'body');
         $sql .= '$BODY$;';
 
         return false !== $this->exec($sql);

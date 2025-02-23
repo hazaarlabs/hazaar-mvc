@@ -407,14 +407,21 @@ class Table
     /**
      * @return array<mixed>|false
      */
-    public function fetchAll(): array|false
+    public function fetchAll(?string $keyColumn = null): array|false
     {
         $this->result = $this->adapter->query($this->queryBuilder->toString());
-        if (false !== $this->result) {
+        if (false === $this->result) {
+            return false;
+        }
+        if (null === $keyColumn) {
             return $this->result->fetchAll();
         }
+        $data = [];
+        while ($row = $this->result->fetch()) {
+            $data[$row[$keyColumn]] = $row;
+        }
 
-        return false;
+        return $data;
     }
 
     /**
@@ -444,9 +451,8 @@ class Table
      *
      * @throws \Exception if the specified model class does not exist or is not a subclass of Model
      */
-    public function fetchModel(
-        string $modelClass
-    ): false|Model {
+    public function fetchModel(string $modelClass): false|Model
+    {
         if (!class_exists($modelClass)) {
             throw new \Exception('Model class does not exist: '.$modelClass);
         }
@@ -459,6 +465,27 @@ class Table
         }
 
         return new $modelClass($rowData);
+    }
+
+    /**
+     * Fetches a collection of model instances of the specified class.
+     *
+     * @param string $modelClass the fully qualified class name of the model to fetch
+     *
+     * @return array<mixed> returns an array of model instances of the specified class populated with data from the database
+     */
+    public function fetchAllModel(string $modelClass, ?string $keyColumn = null): array
+    {
+        $models = [];
+        while ($model = $this->fetchModel($modelClass)) {
+            if ($keyColumn) {
+                $models[$model->get($keyColumn)] = $model;
+            } else {
+                $models[] = $model;
+            }
+        }
+
+        return $models;
     }
 
     /**
@@ -533,5 +560,28 @@ class Table
     public function execute(): false|int
     {
         return $this->result = $this->adapter->query($this->queryBuilder->toString());
+    }
+
+    public function create(mixed $columns): bool
+    {
+        return $this->adapter->createTable($this->table, $columns);
+    }
+
+    public function drop(): bool
+    {
+        return $this->adapter->dropTable($this->table);
+    }
+
+    /**
+     * @return array{name: string, table: string, column: string, type: string}|false
+     */
+    public function getPrimaryKey(): array|false
+    {
+        $constraints = $this->adapter->listConstraints($this->table, 'PRIMARY KEY');
+        if (0 === count($constraints)) {
+            return false;
+        }
+
+        return array_shift($constraints);
     }
 }

@@ -33,7 +33,7 @@ trait Sequence
      */
     public function describeSequence(string $name): array|false
     {
-        $sql = $this->queryBuilder->select('*')
+        $sql = $this->queryBuilder->reset()->select('*')
             ->from('information_schema.sequences')
             ->where(['sequence_name' => $name, 'sequence_schema' => $this->queryBuilder->getSchemaName()])
             ->toString()

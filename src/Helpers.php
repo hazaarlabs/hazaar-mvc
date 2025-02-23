@@ -897,9 +897,9 @@ function age(DateTime|int|string $date): int
  */
 function uptime(int $interval): string
 {
-    $d = floor(days($interval));
-    $h = (string) (floor(hours($interval)) - ($d * 24));
-    $m = (string) (floor(minutes($interval)) - (($h + ($d * 24)) * 60));
+    $d = floor(days((int) $interval));
+    $h = (string) (floor(hours((int) $interval)) - ($d * 24));
+    $m = (string) (floor(minutes((int) $interval)) - (($h + ($d * 24)) * 60));
     $s = (string) (floor($interval) - (($m + ($h + ($d * 24)) * 60) * 60));
     $o = '';
     if (1 == $d) {
@@ -921,27 +921,28 @@ function uptime(int $interval): string
  *
  * @return string a friendly string
  */
-function interval($seconds)
+function interval(mixed $seconds): string
 {
     if ($seconds < 1) {
-        return 'No time at all';
+        return abs($seconds - floor($seconds)) * 1000 .'ms';
     }
-    $o = [];
-    if (($d = floor(days($seconds))) > 0) {
-        $o[] = $d.' day'.(($d > 1) ? 's' : '');
-    }
-    if (($h = floor(hours($seconds)) - ($d * 24)) > 0) {
-        $o[] = $h.' hour'.(($h > 1) ? 's' : '');
-    }
-    if (($m = floor(minutes($seconds)) - (($h + ($d * 24)) * 60)) > 0) {
-        $o[] = $m.' minute'.(($m > 1) ? 's' : '');
-    }
-    $o = implode(', ', $o);
-    if (($s = floor(seconds($seconds)) - (($m + ($h + ($d * 24)) * 60) * 60)) > 0) {
-        $o .= ($o ? ' and ' : '').$s.' second'.(($s > 1) ? 's' : '');
+    $seconds = (int) $seconds;
+    $units = [
+        'day' => 86400,
+        'hour' => 3600,
+        'minute' => 60,
+        'second' => 1,
+    ];
+    $output = [];
+    foreach ($units as $name => $value) {
+        if ($seconds >= $value) {
+            $count = floor($seconds / $value);
+            $output[] = $count.' '.$name.($count > 1 ? 's' : '');
+            $seconds %= $value;
+        }
     }
 
-    return $o;
+    return implode(', ', $output);
 }
 
 /**
@@ -956,9 +957,9 @@ function interval($seconds)
  *
  * @param mixed $value the variable to type check and possibly fix
  *
- * @return mixed the fixed variable
+ * @return float|int the fixed variable
  */
-function str_fixtype(&$value)
+function str_fixtype(&$value): float|int
 {
     if (is_numeric($value)) {
         /*

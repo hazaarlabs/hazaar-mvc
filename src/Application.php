@@ -104,10 +104,6 @@ class Application
     public function __construct(string $env, ?string $path = null)
     {
         try {
-            set_error_handler([$this, 'errorHandler'], E_ERROR);
-            set_exception_handler([$this, 'exceptionHandler']);
-            register_shutdown_function([$this, 'shutdownHandler']);
-            register_shutdown_function([$this, 'shutdown']);
             Application::$instance = $this;
             $this->environment = $env;
             $this->path = self::findApplicationPath($path);
@@ -434,6 +430,10 @@ class Application
     public function bootstrap(): Application
     {
         $this->timer->start('boot');
+        set_error_handler([$this, 'errorHandler'], E_ERROR);
+        set_exception_handler([$this, 'exceptionHandler']);
+        register_shutdown_function([$this, 'shutdownHandler']);
+        register_shutdown_function([$this, 'shutdown']);
         $locale = null;
         if (isset($this->config['app']['locale'])) {
             $locale = $this->config['app']['locale'];

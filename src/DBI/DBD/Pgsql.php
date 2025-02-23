@@ -58,12 +58,120 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
     private array $config;
 
     /**
+     * @var array<string>
+     */
+    private static array $reservedWords = [
+        'ALL',
+        'ANALYSE',
+        'ANALYZE',
+        'AND',
+        'ANY',
+        'ARRAY',
+        'AS',
+        'ASC',
+        'ASYMMETRIC',
+        'AUTHORIZATION',
+        'BINARY',
+        'BOTH',
+        'CASE',
+        'CAST',
+        'CHECK',
+        'COLLATE',
+        'COLLATION',
+        'COLUMN',
+        'CONCURRENTLY',
+        'CONSTRAINT',
+        'CREATE',
+        'CROSS',
+        'CURRENT_CATALOG',
+        'CURRENT_DATE',
+        'CURRENT_ROLE',
+        'CURRENT_SCHEMA',
+        'CURRENT_TIME',
+        'CURRENT_TIMESTAMP',
+        'CURRENT_USER',
+        'DEFAULT',
+        'DEFERRABLE',
+        'DESC',
+        'DISTINCT',
+        'DO',
+        'ELSE',
+        'END',
+        'EXCEPT',
+        'FALSE',
+        'FETCH',
+        'FOR',
+        'FOREIGN',
+        'FREEZE',
+        'FROM',
+        'FULL',
+        'GRANT',
+        'GROUP',
+        'HAVING',
+        'ILIKE',
+        'IN',
+        'INITIALLY',
+        'INNER',
+        'INTERSECT',
+        'INTO',
+        'IS',
+        'ISNULL',
+        'JOIN',
+        'LATERAL',
+        'LEADING',
+        'LEFT',
+        'LIKE',
+        'LIMIT',
+        'LOCALTIME',
+        'LOCALTIMESTAMP',
+        'NATURAL',
+        'NOT',
+        'NOTNULL',
+        'NULL',
+        'OFFSET',
+        'ON',
+        'ONLY',
+        'OR',
+        'ORDER',
+        'OUTER',
+        'OVERLAPS',
+        'PLACING',
+        'PRIMARY',
+        'REFERENCES',
+        'RETURNING',
+        'RIGHT',
+        'SELECT',
+        'SESSION_USER',
+        'SIMILAR',
+        'SOME',
+        'SYMMETRIC',
+        'TABLE',
+        'TABLESAMPLE',
+        'THEN',
+        'TO',
+        'TRAILING',
+        'TRUE',
+        'UNION',
+        'UNIQUE',
+        'USER',
+        'USING',
+        'VARIADIC',
+        'VERBOSE',
+        'WHEN',
+        'WHERE',
+        'WINDOW',
+        'WITH',
+        'WITHIN',
+    ];
+
+    /**
      * @param array<mixed> $config
      */
     public function __construct(array $config)
     {
         $this->config = $config;
         $this->queryBuilder = $this->getQueryBuilder();
+        $this->queryBuilder->setReservedWords(self::$reservedWords);
         $driverOptions = [];
         if (isset($config['options'])) {
             $driverOptions = $config['options']->toArray();
@@ -200,6 +308,7 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
         $sql = "SELECT s.nspname, t.relname as table_name, i.relname as index_name, array_to_string(array_agg(a.attname), ', ') as column_names, ix.indisunique
             FROM pg_namespace s, pg_class t, pg_class i, pg_index ix, pg_attribute a
             WHERE s.oid = t.relnamespace
+                AND ix.indisprimary = FALSE
                 AND t.oid = ix.indrelid
                 AND i.oid = ix.indexrelid
                 AND a.attrelid = t.oid
@@ -216,6 +325,7 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
         $indexes = [];
         while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
             $indexes[$row['index_name']] = [
+                'name' => $row['index_name'],
                 'table' => $row['table_name'],
                 'columns' => array_map('trim', explode(',', $row['column_names'])),
                 'unique' => boolify($row['indisunique']),
@@ -251,7 +361,7 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
     public function describeView($name): array|false
     {
         list($schema, $name) = $this->queryBuilder->parseSchemaName($name);
-        $sql = 'SELECT table_name as name, trim(view_definition) as content FROM INFORMATION_SCHEMA.views WHERE table_schema='
+        $sql = 'SELECT table_name as name, trim(view_definition) as query FROM INFORMATION_SCHEMA.views WHERE table_schema='
             .$this->queryBuilder->prepareValue($schema).' AND table_name='.$this->queryBuilder->prepareValue($name);
         if ($result = $this->query($sql)) {
             return $result->fetch(\PDO::FETCH_ASSOC);
@@ -260,9 +370,11 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
         return false;
     }
 
-    public function createView(string $name, mixed $content): bool
+    public function createView(string $name, mixed $content, bool $replace = false): bool
     {
-        $sql = 'CREATE OR REPLACE VIEW '.$this->queryBuilder->schemaName($name).' AS '.rtrim($content, ' ;');
+        $sql = 'CREATE '
+            .($replace ? 'OR REPLACE ' : '')
+            .'VIEW '.$this->queryBuilder->schemaName($name).' AS '.rtrim($content, ' ;');
 
         return false !== $this->exec($sql);
     }

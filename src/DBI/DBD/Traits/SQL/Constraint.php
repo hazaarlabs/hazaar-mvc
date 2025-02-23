@@ -50,7 +50,7 @@ trait Constraint
                 AND kcu.table_schema = tc.table_schema
                 AND kcu.table_name = tc.table_name
             JOIN information_schema.constraint_column_usage AS ccu
-                ON ccu.constraint_name = tc.constraint_name
+                ON ccu.constraint_name = tc.constraint_name AND ccu.table_schema = tc.table_schema
             LEFT JOIN information_schema.referential_constraints rc ON tc.constraint_name = rc.constraint_name
             WHERE tc.CONSTRAINT_SCHEMA='{$schema}'";
         if ($table) {
@@ -71,6 +71,7 @@ trait Constraint
                     }
                 } else {
                     $constraint = [
+                        'name' => $row['name'],
                         'table' => $row['table'],
                         'column' => $row['column'],
                         'type' => $row['type'],
@@ -82,10 +83,16 @@ trait Constraint
                     }
                 }
                 if ('FOREIGN KEY' == $row['type'] && $row['foreign_table']) {
-                    $constraint['references'] = [
-                        'table' => $row['foreign_table'],
-                        'column' => $row['foreign_column'],
-                    ];
+                    if (isset($constraint['references'])) {
+                        if (!in_array($row['foreign_column'], $constraint['references']['column'])) {
+                            $constraint['references']['column'][] = $row['foreign_column'];
+                        }
+                    } else {
+                        $constraint['references'] = [
+                            'table' => $row['foreign_table'],
+                            'column' => $row['foreign_column'],
+                        ];
+                    }
                 }
                 $constraints[$row['name']] = $constraint;
             }
@@ -99,16 +106,16 @@ trait Constraint
     public function addConstraint(string $constraintName, array $info): bool
     {
         if (!array_key_exists('table', $info)) {
-            return false;
+            throw new \Exception("Create constraint '{$info['name']}' failed.  Missing table.");
         }
         if (!array_key_exists('type', $info) || !$info['type']) {
             if (array_key_exists('references', $info)) {
                 $info['type'] = 'FOREIGN KEY';
             } else {
-                return false;
+                throw new \Exception("Create constraint '{$info['name']}' failed.  Missing constraint type.");
             }
         }
-        if ('FOREIGN KEY' == $info['type']) {
+        if ('FOREIGN KEY' == strtoupper($info['type'])) {
             if (!array_key_exists('update_rule', $info)) {
                 $info['update_rule'] = 'NO ACTION';
             }
@@ -116,17 +123,22 @@ trait Constraint
                 $info['delete_rule'] = 'NO ACTION';
             }
         }
-        $column = $info['column'];
+        $column = $info['column'] ?? null;
         if (is_array($column)) {
             foreach ($column as &$col) {
                 $col = $this->queryBuilder->field($col);
             }
             $column = implode(', ', $column);
-        } else {
+        } elseif ($column) {
             $column = $this->queryBuilder->field($column);
+        } else {
+            throw new \Exception("Create constraint '{$info['name']}' failed.  Missing column.");
         }
         $sql = 'ALTER TABLE '.$this->queryBuilder->schemaName($info['table']).' ADD CONSTRAINT '.$this->queryBuilder->field($constraintName)." {$info['type']} (".$column.')';
         if (array_key_exists('references', $info)) {
+            if (!array_key_exists('table', $info['references']) || !array_key_exists('column', $info['references'])) {
+                throw new \Exception("Create constraint '{$info['name']}' failed.  Missing references table or column.");
+            }
             $sql .= ' REFERENCES '.$this->queryBuilder->schemaName($info['references']['table']).' ('.$this->queryBuilder->field($info['references']['column']).") ON UPDATE {$info['update_rule']} ON DELETE {$info['delete_rule']}";
         }
         $affected = $this->exec($sql);
@@ -137,7 +149,7 @@ trait Constraint
         return true;
     }
 
-    public function dropConstraint(string $constraintName, string $tableName, bool $cascade = false, bool $ifExists = false): bool
+    public function dropConstraint(string $constraintName, string $tableName, bool $ifExists = false, bool $cascade = false): bool
     {
         $sql = 'ALTER TABLE ';
         if (true === $ifExists) {
