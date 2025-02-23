@@ -19,7 +19,7 @@ The WebDAV class in Hazaar will perform the PROPFIND request on the target web s
 For example:
 
 ```php
-$dav = new \Hazaar\Http\WebDAV(['baseuri' => 'http://localhost/dav']);
+$dav = new \Hazaar\HTTP\WebDAV(['baseuri' => 'http://localhost/dav']);
 $dir = $dav->propfind('/', [
     'displayname',
     'creationdate',
@@ -36,7 +36,7 @@ The Hazaar WebDAV class also exposes the PROPPATCH method which is used to updat
 For example:
 
 ```php
-$dav = new \Hazaar\Http\WebDAV(['baseuri' => 'http://localhost/dav']);
+$dav = new \Hazaar\HTTP\WebDAV(['baseuri' => 'http://localhost/dav']);
 $dir = $dav->proppatch('/myimagefile.png', ['displayname' => 'My Image File']);
 This call will update the displayname property of the myimagefile.png resource.
 ```
@@ -46,7 +46,7 @@ This call will update the displayname property of the myimagefile.png resource.
 The MKCOL method is used to create collections, ie: directories. Once a collection has been created then resources can be stored inside the collection.
 
 ```php
-$dav = new \Hazaar\Http\WebDAV(['baseuri' => 'http://localhost/dav']);
+$dav = new \Hazaar\HTTP\WebDAV(['baseuri' => 'http://localhost/dav']);
 $dav->mkcol('/images');
 ```
 
@@ -57,7 +57,7 @@ This example creates an images collection on the root collection.
 The PUT method is used to create a new resource at the specified URI. This can be used to effectively 'upload' a file to the web server.
 
 ```php
-$dav = new \Hazaar\Http\WebDAV(['baseuri' => 'http://localhost/dav']);
+$dav = new \Hazaar\HTTP\WebDAV(['baseuri' => 'http://localhost/dav']);
 $file = file_get_contents('/path/to/imagefile.png');
 $dav->put('/images/myuploadedimage.png', $file, 'image/png');
 ```
@@ -67,7 +67,7 @@ In the above example we upload a file to the images collection that we previousl
 Alternatively, to simplify the process a little, the putFile() method has been provided to allow using a \Hazaar\File object. The advantage of this is that it takes care of reading the file contents and the content type argument.
 
 ```php
-$dav = new \Hazaar\Http\WebDAV(['baseuri' => 'http://localhost/dav']);
+$dav = new \Hazaar\HTTP\WebDAV(['baseuri' => 'http://localhost/dav']);
 $file = new \Hazaar\File('/path/to/imagefile.png');
 $dav->putFile('/images/myuploadedimage.png', $file);
 ```
@@ -81,7 +81,7 @@ The last method that is provided is the DELETE method which is used to, you gues
 So to delete the resource we just created you can do this:
 
 ```php
-$dav = new \Hazaar\Http\WebDAV(['baseuri' => 'http://localhost/dav']);
+$dav = new \Hazaar\HTTP\WebDAV(['baseuri' => 'http://localhost/dav']);
 $dav->delete('/images/myuploadedimage.png');
 ```
 
@@ -94,7 +94,7 @@ CalDAV is an extension of WebDAV that was created to work with calendaring resou
 For more information on CalDAV see [RFC 4791](https://tools.ietf.org/html/rfc4791)
 
 ```php
-$dav = new \Hazaar\Http\CalDAV(['baseuri' => 'http://localhost/caldav']);
+$dav = new \Hazaar\HTTP\CalDAV(['baseuri' => 'http://localhost/caldav']);
 $dav->getEvents('personal', [
     'time-range' => [
         'start' => new \Hazaar\Date('2013-10-01'),

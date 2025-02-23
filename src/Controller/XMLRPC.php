@@ -2,7 +2,7 @@
 
 namespace Hazaar\Controller;
 
-use Hazaar\Xml\Rpc\Server;
+use Hazaar\XML\RPC\Server;
 
 /**
  * Abstract class XMLRPC.

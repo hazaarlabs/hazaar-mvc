@@ -19,6 +19,8 @@ class Documentor
     private ?string $title;
     private ?\Closure $callback = null;
 
+    private ?\stdClass $index = null;
+
     public function __construct(int $outputFormat, ?string $title = null)
     {
         $this->outputFormat = $outputFormat;
@@ -43,7 +45,7 @@ class Documentor
             $files = $this->getFiles($path);
         }
         $PHPParser = new PHP();
-        $index = (object) [
+        $this->index = (object) [
             'project' => [
                 'title' => $this->title ?? 'API Documentation',
                 'description' => '',
@@ -63,7 +65,7 @@ class Documentor
                 if (null === $parsedFile) {
                     continue;
                 }
-                $this->updateIndex($index, $parsedFile);
+                $this->updateIndex($this->index, $parsedFile);
             } catch (\Exception $e) {
                 $this->log("Error parsing file: {$file}");
 
@@ -71,7 +73,7 @@ class Documentor
             }
         }
 
-        return $this->render($index, $outputPath);
+        return $this->render($this->index, $outputPath);
     }
 
     private function log(string $message): void
@@ -166,9 +168,8 @@ class Documentor
             }
             $template = new Smarty();
             $template->loadFromFile($file->getPathname());
-            $template->addFilter(function ($content) {
-                return preg_replace('/^\s+$/m', '', $content);
-            });
+            $template->addFilter($this->postProcessRemoveEmptyLines(...));
+            $template->addFilter($this->postProcessReplaceClassLinks(...));
             $templates[$file->getBasename('.tpl')] = $template;
         }
 
@@ -223,5 +224,46 @@ class Documentor
         }
 
         return $files;
+    }
+
+    private function postProcessRemoveEmptyLines(string $content): string
+    {
+        return preg_replace('/^\s+$/m', '', $content);
+    }
+
+    private function postProcessReplaceClassLinks(string $content): string
+    {
+        return preg_replace_callback('/\[\[(.+)\]\]/', function ($item) {
+            $pos = strrpos($item[1], '\\');
+            if (false === $pos) {
+                if (false === strpos($item[1], '|')) {
+                    return '['.$item[1].'](https://www.php.net/manual/en/class.'.strtolower($item[1]).'.php)';
+                }
+                list($link, $title) = explode('|', $item[1]);
+
+                return '['.$title.']('.$link.')';
+            }
+            $namespaceName = substr($item[1], 0, $pos);
+            if (!array_key_exists($namespaceName, $this->index->namespaces)) {
+                return $item[1];
+            }
+            $namespace = $this->index->namespaces[$namespaceName];
+            $itemName = '\\'.$item[1];
+            $extension = match ($this->outputFormat) {
+                self::DOC_OUTPUT_MARKDOWN => 'md',
+                default => 'html'
+            };
+            if (array_key_exists($itemName, $namespace->classes)) {
+                $type = 'class';
+            } elseif (array_key_exists($itemName, $namespace->interfaces)) {
+                $type = 'interface';
+            } elseif (array_key_exists($itemName, $namespace->traits)) {
+                $type = 'trait';
+            } else {
+                return $item[1];
+            }
+
+            return '['.$item[1].'](/api/'.$type.'/'.str_replace('\\', '/', $item[1]).'.'.$extension.')';
+        }, $content);
     }
 }
