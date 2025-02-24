@@ -13,10 +13,8 @@ trait Index
      *                            - 'table': The name of the table the index belongs to.
      *                            - 'columns': An array of column names that make up the index.
      *                            - 'unique': A boolean indicating whether the index is unique or not.
-     *
-     * @throws \Exception if the index list retrieval fails
      */
-    public function listIndexes(?string $tableName = null): array
+    public function listIndexes(?string $tableName = null): array|false
     {
         return [];
     }
