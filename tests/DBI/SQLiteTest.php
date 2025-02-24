@@ -69,4 +69,18 @@ class SQLiteTest extends TestCase
         $result = $table->findOne(['id' => $rowId]);
         $this->assertFalse($result);
     }
+
+    public function testTransaction(): void
+    {
+        $this->db->begin();
+        $this->db->exec('INSERT INTO test_table (name) VALUES ("test")');
+        $this->db->cancel();
+        $result = $this->db->query('SELECT * FROM test_table');
+        $this->assertFalse($result->fetch());
+        $this->db->begin();
+        $this->db->exec('INSERT INTO test_table (name) VALUES ("test")');
+        $this->db->commit();
+        $result = $this->db->query('SELECT * FROM test_table');
+        $this->assertIsArray($result->fetch());
+    }
 }

@@ -6,12 +6,14 @@ namespace Hazaar\DBI\DBD;
 
 use Hazaar\DBI\DBD\Interface\Driver;
 use Hazaar\DBI\Interface\API\SQL;
+use Hazaar\DBI\Interface\API\Transaction;
 
-class Sqlite implements Driver, SQL
+class Sqlite implements Driver, SQL, Transaction
 {
     use Traits\PDO {
         Traits\PDO::query as pdoQuery; // Alias the trait's query method to pdoQuery
     }
+    use Traits\PDO\Transaction;
     use Traits\SQL;
     use Traits\SQL\Table;
     use Traits\SQL\Index;
