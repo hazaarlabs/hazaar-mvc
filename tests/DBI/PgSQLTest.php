@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Tests;
+namespace Hazaar\Tests\DBI;
 
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\QueryBuilder\SQL;
@@ -20,7 +20,7 @@ class DBITestModel extends Model
 /**
  * @internal
  */
-class DBITest extends TestCase
+class PgSQLTest extends TestCase
 {
     /**
      * @var array<string,string>
@@ -169,5 +169,13 @@ class DBITest extends TestCase
         $sql = new SQL();
         $string = $sql->delete('test_table', ['id' => 1234]);
         $this->assertEquals('DELETE FROM "test_table" WHERE id = 1234', $string);
+    }
+
+    public function testSQLiteSELECT(): void
+    {
+        $db = new Adapter(['type' => 'sqlite', 'database' => ':memory:']);
+        $db->exec('CREATE TABLE test_table (id INTEGER PRIMARY KEY, name TEXT, stored BOOLEAN DEFAULT TRUE)');
+        $db->table('test_table')->insert(['id' => 1, 'name' => 'test']);
+        $this->assertEquals(1, $db->table('test_table')->find(['id' => 1])->fetch()['id']);
     }
 }
