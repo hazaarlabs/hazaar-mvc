@@ -63,7 +63,6 @@ class Adapter implements Interface\API\Constraint, Interface\API\Extension, Inte
             'cipher' => 'aes-256-ctr',
             'checkstring' => '!!',
         ],
-        'timezone' => 'UTC',
     ];
 
     /**
@@ -304,7 +303,6 @@ class Adapter implements Interface\API\Constraint, Interface\API\Extension, Inte
     {
         $configName ??= APPLICATION_ENV;
         if (!array_key_exists($configName, Adapter::$loadedConfigs)) {
-            self::$defaultConfig['timezone'] = date_default_timezone_get();
             if (!Config::$overridePaths) {
                 Config::$overridePaths = Application::getConfigOverridePaths();
             }

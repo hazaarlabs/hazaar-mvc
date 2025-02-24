@@ -170,7 +170,10 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
     public function __construct(array $config)
     {
         $this->config = $config;
-        $this->queryBuilder = $this->getQueryBuilder();
+        if (!array_key_exists('timezone', $config)) {
+            $config['timezone'] = date_default_timezone_get();
+        }
+        $this->initQueryBuilder($this->config['schema'] ?? 'public');
         $this->queryBuilder->setReservedWords(self::$reservedWords);
         $driverOptions = [];
         if (isset($config['options'])) {
@@ -398,6 +401,11 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
         }
 
         return false !== $this->exec($sql);
+    }
+
+    public function setTimezone(string $tz): bool
+    {
+        return false !== $this->exec('SET TIMEZONE TO \''.$tz.'\'');
     }
 
     public function repair(): bool
