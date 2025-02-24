@@ -7,8 +7,9 @@ namespace Hazaar\DBI\DBD;
 use Hazaar\DBI\DBD\Interface\Driver;
 use Hazaar\DBI\Interface\API\SQL;
 use Hazaar\DBI\Interface\API\Transaction;
+use Hazaar\DBI\Interface\API\Trigger;
 
-class Sqlite implements Driver, SQL, Transaction
+class Sqlite implements Driver, SQL, Transaction, Trigger
 {
     use Traits\PDO {
         Traits\PDO::query as pdoQuery; // Alias the trait's query method to pdoQuery
@@ -17,6 +18,7 @@ class Sqlite implements Driver, SQL, Transaction
     use Traits\SQL;
     use Traits\SQL\Table;
     use Traits\SQL\Index;
+    use Traits\SQL\Trigger;
 
     /**
      * @var array<string>
@@ -35,6 +37,13 @@ class Sqlite implements Driver, SQL, Transaction
             throw new \Exception('Database not specified in configuration');
         }
         $this->connect('sqlite:'.$config['database']);
+    }
+
+    public function dropTrigger(string $name, string $table, bool $ifExists = false, bool $cascade = false): bool
+    {
+        $sql = 'DROP TRIGGER '.($ifExists ? 'IF EXISTS ' : '').$name;
+
+        return false !== $this->exec($sql);
     }
 
     public function repair(): bool

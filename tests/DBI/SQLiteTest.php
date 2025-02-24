@@ -45,25 +45,25 @@ class SQLiteTest extends TestCase
 
     public function testTableQueries(): void
     {
-        //Setup
+        // Setup
         $table = $this->db->table('test_table');
         $this->assertInstanceOf('Hazaar\DBI\Table', $table);
         $this->assertEquals('test_table', $table->getName());
-        //Insert
+        // Insert
         $rowId = $table->insert(['name' => 'test'], 'id');
         $this->assertIsInt($rowId);
         $this->assertGreaterThan(0, $rowId);
-        //Select
+        // Select
         $result = $table->findOne(['id' => $rowId]);
         $this->assertIsArray($result);
         $this->assertEquals('test', $result['name']);
-        //Update
+        // Update
         $updated = $table->update(['name' => 'test2'], ['id' => $rowId]);
         $this->assertEquals(1, $updated);
         $result = $table->findOne(['id' => $rowId]);
         $this->assertIsArray($result);
         $this->assertEquals('test2', $result['name']);
-        //Delete
+        // Delete
         $deleted = $table->delete(['id' => $rowId]);
         $this->assertEquals(1, $deleted);
         $result = $table->findOne(['id' => $rowId]);
@@ -82,5 +82,25 @@ class SQLiteTest extends TestCase
         $this->db->commit();
         $result = $this->db->query('SELECT * FROM test_table');
         $this->assertIsArray($result->fetch());
+    }
+
+    public function testTriggers(): void
+    {
+        $spec = [
+            'timing' => 'BEFORE',
+            'events' => 'INSERT',
+            'content' => 'BEGIN INSERT INTO test_table (name) VALUES ("triggered"); END;',
+        ];
+        $result = $this->db->createTrigger('test_trigger', 'test_table', $spec);
+        $this->assertTrue($result);
+        $table = $this->db->table('test_table');
+        $rowId = $table->insert(['name' => 'test'], 'id');
+        $result = $table->findOne(['id' => $rowId]);
+        $this->assertIsArray($result);
+        $triggered = $table->findOne(['name' => 'triggered']);
+        $this->assertEquals('triggered', $triggered['name']);
+        $result = $this->db->dropTrigger('test_trigger', 'test_table', true);
+        $this->assertTrue($result);
+
     }
 }

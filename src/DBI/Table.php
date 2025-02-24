@@ -421,12 +421,12 @@ class Table
         if (null === $keyColumn) {
             return $this->result->fetchAll();
         }
-        $data = [];
+        $rows = [];
         while ($row = $this->result->fetch()) {
-            $data[$row[$keyColumn]] = $row;
+            $rows[$row[$keyColumn]] = $row;
         }
 
-        return $data;
+        return $rows;
     }
 
     /**
@@ -436,8 +436,11 @@ class Table
         string $columnName,
         mixed $fetchArgument = null,
         bool $clobberDupNamedCols = false
-    ): array {
+    ): array|false {
         $this->result = $this->adapter->query($this->queryBuilder->select($columnName)->from($this->name)->toString());
+        if (!$this->result) {
+            return false;
+        }
         $data = [];
         while ($row = $this->result->fetch()) {
             $data[] = $row[$columnName];
@@ -498,8 +501,11 @@ class Table
      */
     public function toArray(): array
     {
-        $this->result = $this->adapter->query($this->queryBuilder->toString());
         $rows = [];
+        $this->result = $this->adapter->query($this->queryBuilder->toString());
+        if (false === $this->result) {
+            return $rows;
+        }
         while ($row = $this->result->row()) {
             $rows[] = $row->toArray();
         }
