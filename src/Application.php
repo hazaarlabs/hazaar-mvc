@@ -33,29 +33,26 @@ define('HAZAAR_VERSION', '3.0');
 define('HAZAAR_START', microtime(true));
 
 // Constant containing the application environment current being used.
-defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV') ? getenv('APPLICATION_ENV') : 'development');
+defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV') ?: 'development');
 
 /**
  * The Application.
  *
- * The main application class is the core of the whole application and is responsible for routing actions
- * to controllers based on request objects extended extended from Hazaar\Application\Request.
- *
- * Supported request objects are:
- *
- * * Hazaar\Application\Request\Http - A standard HTTP request. This can be either GET or POST requests.
- * POST requests can optionally have a request body. In this case the Content-Type header will be checked
- * to see how to decode the request body. multipart/form-data and application/json are currently
+ * The main application class is the core of Hazaar and serves as the entry point to your application.  
+ * It is responsible for routing actions to controllers based on an HTTP request.  (CLI requests are
+ * handled by [[Hazaar\Console\Application]].)
+ * 
+ * The Application will manage access to a [[Hazaar\Application\Request]] object that can be used to 
+ * obtain information about the request. This request can be either a *GET* or *POST* request.
+ * 
+ * *POST* requests can optionally have a request body. In this case the `Content-Type` header will be checked
+ * to see how to decode the request body. `multipart/form-data` and `application/json` are currently
  * accepted.
- * * Hazaar\Application\Request\Cli - This is a special request type to allow Hazaar applications to
- * be executed from the command line. This is currently used by the config tool
- *
- * ### Example usage:
+ *  
+ * ### Example entry point usage:
  *
  * ```php
- * define('APPLICATION_ENV', 'development');
- * $config = 'application.ini';
- * $application = new Hazaar\Application(APPLICATION_ENV);
+ * $application = new Hazaar\Application();
  * $application->bootstrap()->run();
  * ```
  */
@@ -87,12 +84,11 @@ class Application
      *
      * The application is basically the center of the Hazaar universe. Everything hangs off of it
      * and controllers are executed within the context of the application. The main constructor prepares
-     * the application to begin processing and is the first piece of code executed within the Hazaar
+     * the application to begin processing and is the first bit of code executed within the Hazaar
      * environment.
      *
-     * Because of this is it responsible for setting up the class loader, starting
-     * code execution profiling timers, loading the application configuration and setting up the request
-     * object.
+     * The constructor is responsible for setting up the class loader, starting code execution profiling
+     * timers, loading the application configuration and setting up the router.
      *
      * Hazaar also has a 'run direct' function that allows Hazaar to execute special requests directly
      * without going through the normal application execution path. These requests are used so hazaar
@@ -419,10 +415,12 @@ class Application
     /**
      * Initialise the application ready for execution.
      *
-     * Bootstrap is the first step in running an application. It will run some checks to make sure
-     * sure the server has any required modules loaded as requested by the application (via the config). It
-     * will then execute the application bootstrap.php script within the context of the application. Once
-     * that step succeeds the requested (or the default) controller will be loaded and initialised so that
+     * Bootstrap is the first step in running an application. The process will set up error handling, register
+     * the configure locale and timezone, initialise the [[Hazaar\Application\Router]] and load any
+     * predefined routes (see: [Routing](https://hazaar.io/docs/basics/routing.html)).
+     * 
+     * Lastly it will then execute the application `bootstrap.php` script within the context of the application. 
+     * Once that step succeeds the requested (or the default) controller will be loaded and initialised so that
      * it is ready for execution by the application.
      *
      * @return Application Returns a reference to itself to allow chaining
@@ -469,15 +467,18 @@ class Application
     /**
      * Executes the application.
      *
-     * Once the application has been initialised and a controller loaded, it can be executed via
-     * the run() method. This will execute the loaded controller and check that it returns a
-     * valid [[Hazaar\Controller\Response]] object. ifa valid response is not returned an exception
+     * Once the application has been bootstrapped it is ready to run.  A [[Hazaar\Controller]] object
+     * can be passed as an argument or if omited the [[Hazaar\Application\Router]] will be used
+     * to evaluate the [[Hazaar\Application\Request]] to determine the controller to load and execute.  
+     * 
+     * The requested controller will be executed and the application will check that it returns a
+     * valid [[Hazaar\Controller\Response]] object. If a valid response is not returned an exception
      * will be raised.
      *
      * Once a valid response object is returned it will be used to write output back to the web server
      * to be returned to the user.
      *
-     * This method also has protection against error loops. ifan exception is thrown while processing
+     * This method also has protection against error loops. If an exception is thrown while processing
      * a [[Hazaar\Controller\Error]] controller object then a new exception will be thrown outside the
      * application context and will display basic fall-back error output.
      *
