@@ -18,7 +18,6 @@ use Hazaar\DBI\Interface\API\Transaction;
 use Hazaar\DBI\Interface\API\Trigger;
 use Hazaar\DBI\Interface\API\User;
 use Hazaar\DBI\Interface\API\View;
-use Hazaar\DBI\Interface\QueryBuilder;
 
 class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequence, SQL, StoredFunction, Table, Trigger, User, View, Transaction
 {
@@ -49,8 +48,6 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
         'user',
         'password',
     ];
-
-    private QueryBuilder $queryBuilder;
 
     /**
      * @var array<mixed>
