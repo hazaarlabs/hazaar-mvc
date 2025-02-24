@@ -12,18 +12,18 @@ class Table
 {
     private Adapter $adapter;
     private QueryBuilder $queryBuilder;
-    private string $table;
+    private string $name;
     private null|false|Result $result = null;
 
-    public function __construct(Adapter $adapter, string $table, ?string $alias = null)
+    public function __construct(Adapter $adapter, string $name, ?string $alias = null)
     {
-        $this->table = $table;
+        $this->name = $name;
         if (null !== $alias) {
-            $this->table .= ' '.$alias;
+            $this->name .= ' '.$alias;
         }
         $this->adapter = $adapter;
         $this->queryBuilder = $adapter->getQueryBuilder();
-        $this->queryBuilder->from($this->table);
+        $this->queryBuilder->from($this->name);
     }
 
     public function __toString(): string
@@ -36,12 +36,17 @@ class Table
         return $this->queryBuilder->toString();
     }
 
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
     public function exists(mixed $criteria = null): bool
     {
         if (null === $criteria) {
-            return $this->adapter->tableExists($this->table);
+            return $this->adapter->tableExists($this->name);
         }
-        $sql = $this->queryBuilder->exists($this->table, $criteria);
+        $sql = $this->queryBuilder->exists($this->name, $criteria);
 
         return $this->adapter->query($sql)->fetchColumn(0);
     }
@@ -210,7 +215,7 @@ class Table
         mixed $conflictUpdate = null,
         ?Table $table = null
     ): mixed {
-        $sqlString = $this->queryBuilder->insert($this->table, $values, $returning, $conflictTarget, $conflictUpdate, $table);
+        $sqlString = $this->queryBuilder->insert($this->name, $values, $returning, $conflictTarget, $conflictUpdate, $table);
         $result = $this->adapter->query($sqlString);
         if (!$result) {
             return false;
@@ -233,7 +238,7 @@ class Table
         $values = $model->toArray();
         // For efficiency, we only return the values that were not set by the model
         $returning = array_diff($model->keys(), array_keys($values));
-        $sqlString = $this->queryBuilder->insert($this->table, $values, $returning, $conflictTarget, $conflictUpdate);
+        $sqlString = $this->queryBuilder->insert($this->name, $values, $returning, $conflictTarget, $conflictUpdate);
         $result = $this->adapter->query($sqlString);
         if (!$result) {
             return false;
@@ -248,7 +253,7 @@ class Table
      */
     public function update(mixed $values, array|string $where = [], mixed $returning = null): mixed
     {
-        $result = $this->adapter->query($this->queryBuilder->update($this->table, $values, $where, [], $returning));
+        $result = $this->adapter->query($this->queryBuilder->update($this->name, $values, $where, [], $returning));
 
         return null === $returning
             ? $result->rowCount()
@@ -277,7 +282,7 @@ class Table
         }
         $values = $model->toArray();
         $returning = array_diff($model->keys(), array_keys($values));
-        $result = $this->adapter->query($this->queryBuilder->update($this->table, $values, $criteria, [], $returning));
+        $result = $this->adapter->query($this->queryBuilder->update($this->name, $values, $criteria, [], $returning));
         if (!$result) {
             return false;
         }
@@ -291,7 +296,7 @@ class Table
      */
     public function delete(array|string $where): false|int
     {
-        $result = $this->adapter->query($this->queryBuilder->delete($this->table, $where));
+        $result = $this->adapter->query($this->queryBuilder->delete($this->name, $where));
         if (false === $result) {
             return false;
         }
@@ -301,12 +306,12 @@ class Table
 
     public function deleteAll(): false|int
     {
-        return $this->adapter->exec($this->queryBuilder->delete($this->table, []));
+        return $this->adapter->exec($this->queryBuilder->delete($this->name, []));
     }
 
     public function truncate(bool $cascade = false): bool
     {
-        return false !== $this->adapter->exec($this->queryBuilder->truncate($this->table, $cascade));
+        return false !== $this->adapter->exec($this->queryBuilder->truncate($this->name, $cascade));
     }
 
     /**
@@ -432,7 +437,7 @@ class Table
         mixed $fetchArgument = null,
         bool $clobberDupNamedCols = false
     ): array {
-        $this->result = $this->adapter->query($this->queryBuilder->select($columnName)->from($this->table)->toString());
+        $this->result = $this->adapter->query($this->queryBuilder->select($columnName)->from($this->name)->toString());
         $data = [];
         while ($row = $this->result->fetch()) {
             $data[] = $row[$columnName];
@@ -529,7 +534,7 @@ class Table
      */
     public function describe(): array|false
     {
-        return $this->adapter->describeTable($this->table);
+        return $this->adapter->describeTable($this->name);
     }
 
     public function result(): Result
@@ -564,12 +569,12 @@ class Table
 
     public function create(mixed $columns): bool
     {
-        return $this->adapter->createTable($this->table, $columns);
+        return $this->adapter->createTable($this->name, $columns);
     }
 
     public function drop(): bool
     {
-        return $this->adapter->dropTable($this->table);
+        return $this->adapter->dropTable($this->name);
     }
 
     /**
@@ -577,7 +582,7 @@ class Table
      */
     public function getPrimaryKey(): array|false
     {
-        $constraints = $this->adapter->listConstraints($this->table, 'PRIMARY KEY');
+        $constraints = $this->adapter->listConstraints($this->name, 'PRIMARY KEY');
         if (0 === count($constraints)) {
             return false;
         }
