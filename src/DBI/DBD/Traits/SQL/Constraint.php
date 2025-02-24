@@ -103,6 +103,24 @@ trait Constraint
         return false;
     }
 
+    /**
+     * Adds a constraint to a table in the database.
+     *
+     * @param string       $constraintName the name of the constraint to add
+     * @param array<mixed> $info           An associative array containing information about the constraint.
+     *                                     - 'table' (string): The name of the table to which the constraint will be added.
+     *                                     - 'type' (string): The type of the constraint (e.g., 'FOREIGN KEY'). If not provided and 'references' is present, defaults to 'FOREIGN KEY'.
+     *                                     - 'column' (string|array): The column or columns to which the constraint applies.
+     *                                     - 'references' (array): An associative array containing information about the referenced table and column (for foreign key constraints).
+     *                                     - 'table' (string): The name of the referenced table.
+     *                                     - 'column' (string): The name of the referenced column.
+     *                                     - 'update_rule' (string): The action to take on update (for foreign key constraints). Defaults to 'NO ACTION'.
+     *                                     - 'delete_rule' (string): The action to take on delete (for foreign key constraints). Defaults to 'NO ACTION'.
+     *
+     * @return bool returns true on success, or false on failure
+     *
+     * @throws \Exception if required information is missing or an error occurs while creating the constraint
+     */
     public function addConstraint(string $constraintName, array $info): bool
     {
         if (!array_key_exists('table', $info)) {

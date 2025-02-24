@@ -46,7 +46,7 @@ trait PDO
 
     public function setTimezone(string $tz): bool
     {
-        return false !== $this->exec('SET TIMEZONE TO \''.$tz.'\'');
+        return false;
     }
 
     public function lastInsertId(): string

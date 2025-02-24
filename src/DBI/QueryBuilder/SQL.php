@@ -356,21 +356,21 @@ class SQL implements QueryBuilder
      */
     public function where(mixed ...$criteria): self
     {
-        $this->where = array_merge($this->where, $criteria);
+        $this->where = $criteria;
 
         return $this;
     }
 
     public function group(string ...$columns): self
     {
-        $this->group = array_merge($this->group, $columns);
+        $this->group = $columns;
 
         return $this;
     }
 
     public function having(string ...$columns): self
     {
-        $this->having = array_merge($this->having, $columns);
+        $this->having = $columns;
 
         return $this;
     }

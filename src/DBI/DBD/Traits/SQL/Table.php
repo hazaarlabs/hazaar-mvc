@@ -5,6 +5,8 @@ namespace Hazaar\DBI\DBD\Traits\SQL;
 trait Table
 {
     use Schema;
+    use Sequence;
+    use Constraint;
 
     /**
      * @return array{name:string,schema:string}
