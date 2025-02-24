@@ -79,13 +79,17 @@ trait Trigger
      */
     public function createTrigger(string $triggerName, string $tableName, mixed $spec = []): bool
     {
+        $events = ake($spec, 'events', ['INSERT']);
+        if (!is_array($events)) {
+            $events = [$events];
+        }
         $sql = 'CREATE TRIGGER '.$this->queryBuilder->field($triggerName)
             .' '.ake($spec, 'timing', 'BEFORE')
-            .' '.implode(' OR ', ake($spec, 'events', ['INSERT']))
+            .' '.implode(' OR ', $events)
             .' ON '.$this->queryBuilder->schemaName($tableName)
             .' FOR EACH '.ake($spec, 'orientation', 'ROW');
         $execute = preg_replace_callback('/FUNCTION\s+([^\s\(]+)/i', function ($match) {
-            return 'FUNCTION ' . $this->queryBuilder->schemaName($match[1]);
+            return 'FUNCTION '.$this->queryBuilder->schemaName($match[1]);
         }, ake($spec, 'content', 'EXECUTE'));
         $sql .= ' '.$execute;
 

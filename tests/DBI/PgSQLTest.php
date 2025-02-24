@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Tests;
+namespace Hazaar\Tests\DBI;
 
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\QueryBuilder\SQL;
@@ -20,7 +20,7 @@ class DBITestModel extends Model
 /**
  * @internal
  */
-class DBITest extends TestCase
+class PgSQLTest extends TestCase
 {
     /**
      * @var array<string,string>

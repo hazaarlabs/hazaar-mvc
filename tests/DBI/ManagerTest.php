@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Tests;
+namespace Hazaar\Tests\DBI;
 
 use Hazaar\DBI\Manager\Migration\Action;
 use Hazaar\DBI\Manager\Migration\Action\Table;
@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @internal
  */
-class DBIManagerTest extends TestCase
+class ManagerTest extends TestCase
 {
     public function testVersion(): void
     {

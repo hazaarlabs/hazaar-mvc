@@ -9,9 +9,20 @@ use Hazaar\DBI\QueryBuilder\SQL as SQLBuilder;
 
 trait SQL
 {
+    private QueryBuilder $queryBuilder;
+
+    public function initQueryBuilder(?string $schameName = null): void
+    {
+        $this->queryBuilder = new SQLBuilder($schameName);
+    }
+
     public function getQueryBuilder(): QueryBuilder
     {
-        return new SQLBuilder($this->config['schema'] ?? 'public');
+        if (!isset($this->queryBuilder)) {
+            throw new \Exception('Query builder not initialized');
+        }
+
+        return $this->queryBuilder;
     }
 
     public function createDatabase(string $name): bool
@@ -19,7 +30,7 @@ trait SQL
         $sql = 'CREATE DATABASE '.$this->queryBuilder->quoteSpecial($name).';';
         $result = $this->query($sql);
 
-        return true;
+        return false !== $result;
     }
 
     /**
