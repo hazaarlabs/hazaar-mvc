@@ -164,7 +164,7 @@ class Adapter implements \ArrayAccess
         if ($result && !$this->backend->can('store_objects')) {
             $result = unserialize($result);
         }
-        if (false === $result) {
+        if (null === $result) {
             if (true === $saveDefault) {
                 $this->set($key, $default, $timeout);
             }
