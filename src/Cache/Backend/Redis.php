@@ -37,17 +37,6 @@ class Redis extends Backend
     private string $buffer = '';
     private int $offset = 0;
     private string $delim = "\r\n";
-    private bool $updateExpire = false;
-
-    /**
-     * @var array<mixed>
-     */
-    private array $local = [];
-
-    /**
-     * @var array<string>
-     */
-    private array $garbage = []; // This keeps a list of keys that should be deleted on close because they have expired.
 
     public static function available(): bool
     {
@@ -62,7 +51,7 @@ class Redis extends Backend
             'port' => 6379,
             'dbIndex' => 0,
             'keepalive' => false,
-            'keeplocalcopy' => true,
+            'lifetime' => 0,
         ]);
         $this->socket = $this->connect($this->options['server'], $this->options['port']);
         if (isset($this->options['serverpass']) && ($serverpass = $this->options['serverpass'])) {
@@ -71,17 +60,12 @@ class Redis extends Backend
         $cmds = [
             ['SELECT', (string) $this->options['dbIndex']],
             ['ROLE'],
-            ['TTL', $this->namespace],
         ];
         $result = $this->cmd($cmds);
         if ('OK' !== $result[0]) {
             throw new \Exception('Redis: Unable to select DB index '.$this->options['dbIndex']);
         }
         $this->role = $result[1];
-        // Check that there is a TTL set when there is supposed to be.  Redis will return -1 for no TTL (-2 means keys doesn't exist).
-        if ($this->options['lifetime'] > 0 && -1 == $result[2]) {
-            $this->updateExpire = true;
-        }
     }
 
     /**
@@ -141,10 +125,6 @@ class Redis extends Backend
     public function close(): bool
     {
         if ($this->socket) {
-            if (true === $this->updateExpire) {
-                $this->cmd(['EXPIRE', $this->namespace, (string) $this->options['lifetime']]);
-            }
-
             return $this->socket->close();
         }
 
@@ -158,73 +138,65 @@ class Redis extends Backend
 
     public function get(string $key): mixed
     {
-        // This value is due to be deleted so just return null now.
-        if (in_array($key, $this->garbage)) {
+        $keyName = $this->namespace.':'.$key;
+        $cmds = [
+            ['TTL', $keyName],
+            ['HGETALL', $keyName],
+        ];
+        if ($this->options['keepalive'] && $this->options['lifetime'] > 0) {
+            $cmds[] = ['EXPIRE', $keyName, (string) $this->options['lifetime']];
+        }
+        $results = $this->cmd($cmds);
+        $rawValues = $results[1];
+        if (!$rawValues) {
             return null;
         }
-        $this->keepalive();
-        if (!array_key_exists($key, $this->local)) {
-            $serial = $this->cmd(['HGET', $this->namespace, $key]);
-            if (!($serial && is_string($serial) && ($data = unserialize($serial)))) {
-                return null;
-            }
-            if (array_key_exists('expire', $data) && time() > $data['expire']) {
-                $this->garbage[] = $key;
-
-                return null;
-            }
-            if (!$this->options['keeplocalcopy']) {
-                return $data['value'];
-            }
-            $this->local[$key] = $data['value'];
+        $value = $this->reconstructValue($rawValues);
+        if (1 === count($value) && isset($value['__value__'])) {
+            return $value['__value__'];
         }
 
-        return $this->local[$key];
+        return $value;
     }
 
-    public function set(string $key, mixed $value, int $timeout = 0): bool
+    public function set(string $key, mixed $value, ?int $timeout = null): bool
     {
-        // If this has expired and is being bined, recycle the garbage (see what I did there?).
-        if (($gkey = array_search($key, $this->garbage)) !== false) {
-            unset($this->garbage[$gkey]);
-        }
-        if ($this->options['keeplocalcopy']) {
-            $this->local[$key] = $value;
-        }
-        $data = [
-            'value' => $value,
-        ];
-        if ($timeout > 0) {
-            $data['expire'] = time() + $timeout;
-        }
-        // Pipelining!
         $cmds = [
             ['EXISTS', $this->namespace],
-            ['HSET', $this->namespace, $key, serialize($data)],
         ];
+        $keyName = $this->namespace.':'.$key;
+        if (!is_array($value)) {
+            $value = ['__value__' => $value];
+        }
+        if (is_array($value)) {
+            $hset = ['HSET', $keyName];
+            foreach ($value as $k => $v) {
+                $hset[] = $k;
+                $hset[] = $v;
+            }
+            $cmds[] = $hset;
+        }
+        if (null === $timeout) {
+            $timeout = $this->options['lifetime'];
+        }
+        if ($timeout > 0) {
+            $cmds[] = ['EXPIRE', $keyName, (string) $timeout];
+        }
         $result = $this->cmd($cmds, true);
-        $this->updateExpire = ($this->options['lifetime'] > 0 && !boolify($result[0]));
-        if (!(0 === $result[1] || 1 === $result[1])) {
+        if (count($value) !== $result[1]) {
             return false;
         }
-        $this->keepalive();
 
         return true;
     }
 
     public function remove(string $key): bool
     {
-        if (array_key_exists($key, $this->local)) {
-            unset($this->local[$key]);
-        }
-
         return boolify($this->cmd(['HDEL', $this->namespace, $key], true));
     }
 
     public function clear(): bool
     {
-        $this->local = [];
-
         return boolify($this->cmd(['DEL', $this->namespace], true));
     }
 
@@ -234,17 +206,19 @@ class Redis extends Backend
     public function toArray(): array
     {
         $array = [];
-        $items = $this->cmd(['HGETALL', $this->namespace]);
-        for ($i = 0; $i < count($items); $i += 2) {
-            if (!($data = unserialize($items[$i + 1]))) {
-                continue;
-            }
-            if (array_key_exists('expire', $data) && time() > $data['expire']) {
-                continue;
-            }
-            $array[$items[$i]] = $data['value'];
+        $keys = $this->cmd(['KEYS', $this->namespace.':*']);
+        $cmds = [];
+        foreach ($keys as $key) {
+            $cmds[] = ['HGETALL', $key];
         }
-        $this->local = $array;
+        $items = $this->cmd($cmds);
+        if (1 === count($items)) {
+            $items = [$items];
+        }
+        foreach ($items as $index => $item) {
+            list($namespace, $key) = explode(':', $keys[$index], 2);
+            $array[$key] = $this->reconstructValue($item);
+        }
 
         return $array;
     }
@@ -366,10 +340,14 @@ class Redis extends Backend
         return $packets;
     }
 
-    private function keepalive(): void
+    private function reconstructValue(array $rawValues): mixed
     {
-        if (true === $this->options['keepalive'] && $this->options['lifetime'] > 0) {
-            $this->updateExpire = true;
-        }
+        $values = [];
+        do {
+            $key = current($rawValues);
+            $values[$key] = next($rawValues);
+        } while (next($rawValues));
+
+        return $values;
     }
 }
