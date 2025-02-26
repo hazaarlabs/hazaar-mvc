@@ -107,13 +107,17 @@ Static Analysis:
 Unit Testing:
   stage: test
   image: $UNIT_TEST_IMAGE
+  services:
+    - postgres:15
   variables:
     APPLICATION_PATH: tests/application
+    POSTGRES_DB: hazaar_framework
+    POSTGRES_USER: phpunit
+    POSTGRES_PASSWORD: phpunit12345
+    POSTGRES_HOST_AUTH_METHOD: trust
   before_script:
     - composer install
-    - npm install --prefix tests/db
-    - nohup npm start --prefix tests/db > db.log 2>&1 &
-    - sleep 5
+    - psql -h postgres -U phpunit -c "CREATE DATABASE hazaar_framework;"
   script:
     - vendor/bin/phpunit
   artifacts:

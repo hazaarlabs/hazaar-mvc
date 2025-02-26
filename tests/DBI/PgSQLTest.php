@@ -27,9 +27,10 @@ class PgSQLTest extends TestCase
      */
     private array $config = [
         'type' => 'pgsql',
-        'host' => 'localhost',
-        'user' => 'postgres',
-        'password' => 'pgmock',
+        'host' => 'db.hazaar.io',
+        'user' => 'phpunit',
+        'password' => 'phpunit12345', //Insecure password for testing purposes
+        'dbname' => 'hazaar_framework',
     ];
 
     public function setUp(): void
