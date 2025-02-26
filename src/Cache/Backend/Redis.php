@@ -151,31 +151,17 @@ class Redis extends Backend
         if (!$rawValues) {
             return null;
         }
-        $value = $this->reconstructValue($rawValues);
-        if (1 === count($value) && isset($value['__value__'])) {
-            return $value['__value__'];
-        }
 
-        return $value;
+        return $this->reconstructValue($rawValues);
     }
 
     public function set(string $key, mixed $value, ?int $timeout = null): bool
     {
+        $keyName = $this->namespace.':'.$key;
         $cmds = [
             ['EXISTS', $this->namespace],
+            array_merge(['HSET', $keyName], $this->deconstructValue($value)),
         ];
-        $keyName = $this->namespace.':'.$key;
-        if (!is_array($value)) {
-            $value = ['__value__' => $value];
-        }
-        if (is_array($value)) {
-            $hset = ['HSET', $keyName];
-            foreach ($value as $k => $v) {
-                $hset[] = $k;
-                $hset[] = $v;
-            }
-            $cmds[] = $hset;
-        }
         if (null === $timeout) {
             $timeout = $this->options['lifetime'];
         }
@@ -183,7 +169,8 @@ class Redis extends Backend
             $cmds[] = ['EXPIRE', $keyName, (string) $timeout];
         }
         $result = $this->cmd($cmds, true);
-        if (count($value) !== $result[1]) {
+        if ((is_string($value) && 1 !== $result[1])
+            || (is_array($value) && count($value) !== $result[1])) {
             return false;
         }
 
@@ -323,16 +310,7 @@ class Redis extends Backend
         foreach ($data as &$command) {
             $packet = '*'.count($command)."\r\n";
             foreach ($command as $payload) {
-                if (is_array($payload)) {
-                    throw new Exception\RedisError('Storing arrays is not supported by the RESP protocol');
-                }
-                if (is_string($payload)) {
-                    $packet .= '$'.strlen($payload)."\r\n{$payload}\r\n";
-                } elseif (is_int($payload)) {
-                    $packet .= ':'.$payload."\r\n";
-                } else {
-                    throw new Exception\RedisError('Error setting unknown data type!');
-                }
+                $packet .= $this->encodeValue($payload);
             }
             $packets[] = $packet;
         }
@@ -340,12 +318,81 @@ class Redis extends Backend
         return $packets;
     }
 
+    private function encodeValue(mixed $value): string
+    {
+        if (is_string($value)) {
+            return '$'.strlen($value)."\r\n{$value}\r\n";
+        }
+        if (is_int($value)) {
+            return ':'.$value."\r\n";
+        }
+        if (is_bool($value)) {
+            return '#'.$value."\r\n";
+        }
+        if (is_array($value)) {
+            $encoded = '';
+            if (is_assoc($value)) {
+                $encoded = '%'.count($value)."\r\n";
+                foreach ($value as $key => $item) {
+                    $encoded .= $this->encodeValue($key).$this->encodeValue($item);
+                }
+            } else {
+                $encoded = '*'.count($value)."\r\n";
+                foreach ($value as $item) {
+                    $encoded .= $this->encodeValue($item);
+                }
+            }
+
+            return $encoded;
+        }
+
+        throw new Exception\RedisError('Error setting unknown data type!');
+    }
+
+    /**
+     * Deconstructs a value into an array of keys and values.
+     *
+     * @param mixed $value The value to deconstruct
+     *
+     * @return array<mixed> The deconstructed value
+     */
+    private function deconstructValue(mixed $value): array
+    {
+        if ($value instanceof \stdClass) {
+            $value = (array) $value;
+        }
+        if (!is_array($value)) {
+            return ['__value__', $value];
+        }
+        $values = [];
+        foreach ($value as $key => $item) {
+            $values[] = $key;
+            $values[] = is_string($item) ? $item : serialize($item);
+        }
+
+        return $values;
+    }
+
+    /**
+     * Reconstructs a value from an array of keys and values.
+     *
+     * @param array<mixed> $rawValues The raw values to reconstruct
+     *
+     * @return mixed The reconstructed value
+     */
     private function reconstructValue(array $rawValues): mixed
     {
         $values = [];
         do {
             $key = current($rawValues);
-            $values[$key] = next($rawValues);
+            $rawValue = next($rawValues);
+            if (!is_string($rawValue) || false === ($value = @unserialize($rawValue))) {
+                $value = $rawValue;
+            }
+            if ('__value__' === $key) {
+                return $value;
+            }
+            $values[$key] = $value;
         } while (next($rawValues));
 
         return $values;
