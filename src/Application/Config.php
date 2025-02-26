@@ -447,14 +447,20 @@ class Config implements \ArrayAccess, \Iterator
                     $this->loadConfigOptions($config, $options, $includeEnvironment);
                 }
             } elseif ('import' === $key) {
-                if (!is_array($values)) {
-                    $values = [$values];
-                }
-                if ($importFile = current($values)) {
+                $filesToImport = is_array($values) ? $values : [$values];
+                if ($importFile = current($filesToImport)) {
                     do {
+                        $importEnv = null;
+                        if (false !== strpos($importFile, ':')) {
+                            list($importFile, $importEnv) = explode(':', $importFile, 2);
+                        }
                         if (!($file = Loader::getFilePath(FilePath::CONFIG, $importFile))) {
                             continue;
                         }
+                        /*
+                         * Check if the file is a directory and append all files in the directory
+                         * to the files to import array so that they can be imported.
+                         */
                         if (is_dir($file)) {
                             $dirIterator = new \RecursiveDirectoryIterator($file);
                             $iterator = new \RecursiveIteratorIterator($dirIterator, \RecursiveIteratorIterator::SELF_FIRST);
@@ -462,15 +468,23 @@ class Config implements \ArrayAccess, \Iterator
                                 if ('.' === substr($importFile->getFileName(), 0, 1)) {
                                     continue;
                                 }
-                                array_push($values, $importFile->getRealPath());
+                                array_push($filesToImport, $importFile->getRealPath().($importEnv ? ':'.$importEnv : ''));
                             }
 
                             continue;
                         }
+                        /*
+                         * If the file is not a directory, load the file and merge the options with the
+                         * current configuration.
+                         */
                         if ($options = $this->loadSourceFile($file)) {
-                            $config = array_merge_recursive($config, $options);
+                            if (null === $importEnv) {
+                                $options = [$env => $options];
+                                $importEnv = $env;
+                            }
+                            $this->loadConfigOptions($config, $options, $importEnv);
                         }
-                    } while ($importFile = next($values));
+                    } while ($importFile = next($filesToImport));
                 }
             } else {
                 if (!array_key_exists($key, $config)) {
