@@ -80,9 +80,20 @@ class GeoData
             GeoData::$db->close();
         }
         $zip = new \ZipArchive();
-        $geodataFile = new File(Application::getInstance()->getRuntimePath(basename(GeoData::$sources['url'])));
+        $geodataFilename = Application::getInstance()->getRuntimePath(basename(GeoData::$sources['url']));
+        if (false === $geodataFilename) {
+            throw new \Exception('Unable to determine runtime path for GeoData file!');
+        }
+        if (!is_writable(dirname($geodataFilename))) {
+            throw new \Exception('GeoData file is not writable!');
+        }
+        $geodataFile = new File($geodataFilename);
         // Download the Hazaar GeoData file and check it's MD5 signature
-        $geodataFile->putContents(file_get_contents(GeoData::$sources['url']));
+        $geodataData = file_get_contents(GeoData::$sources['url']);
+        if (false === $geodataData) {
+            throw new \Exception('Unable to download GeoData source file!');
+        }
+        $geodataFile->putContents($geodataData);
         if (!$geodataFile->size() > 0) {
             throw new \Exception('Unable to download GeoData source file!');
         }
