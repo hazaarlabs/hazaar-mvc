@@ -38,17 +38,17 @@ defined('APPLICATION_ENV') || define('APPLICATION_ENV', getenv('APPLICATION_ENV'
 /**
  * The Application.
  *
- * The main application class is the core of Hazaar and serves as the entry point to your application.  
+ * The main application class is the core of Hazaar and serves as the entry point to your application.
  * It is responsible for routing actions to controllers based on an HTTP request.  (CLI requests are
  * handled by [[Hazaar\Console\Application]].)
- * 
- * The Application will manage access to a [[Hazaar\Application\Request]] object that can be used to 
+ *
+ * The Application will manage access to a [[Hazaar\Application\Request]] object that can be used to
  * obtain information about the request. This request can be either a *GET* or *POST* request.
- * 
+ *
  * *POST* requests can optionally have a request body. In this case the `Content-Type` header will be checked
  * to see how to decode the request body. `multipart/form-data` and `application/json` are currently
  * accepted.
- *  
+ *
  * ### Example entry point usage:
  *
  * ```php
@@ -320,7 +320,7 @@ class Application
      *
      * @return string The path to the runtime directory
      */
-    public function getRuntimePath($suffix = null, $createDir = false): string
+    public function getRuntimePath($suffix = null, $createDir = false): false|string
     {
         $path = $this->config['app']['runtimePath'] ?? '.runtime';
         if (!file_exists($path)) {
@@ -418,8 +418,8 @@ class Application
      * Bootstrap is the first step in running an application. The process will set up error handling, register
      * the configure locale and timezone, initialise the [[Hazaar\Application\Router]] and load any
      * predefined routes (see: [Routing](https://hazaar.io/docs/basics/routing.html)).
-     * 
-     * Lastly it will then execute the application `bootstrap.php` script within the context of the application. 
+     *
+     * Lastly it will then execute the application `bootstrap.php` script within the context of the application.
      * Once that step succeeds the requested (or the default) controller will be loaded and initialised so that
      * it is ready for execution by the application.
      *
@@ -469,8 +469,8 @@ class Application
      *
      * Once the application has been bootstrapped it is ready to run.  A [[Hazaar\Controller]] object
      * can be passed as an argument or if omited the [[Hazaar\Application\Router]] will be used
-     * to evaluate the [[Hazaar\Application\Request]] to determine the controller to load and execute.  
-     * 
+     * to evaluate the [[Hazaar\Application\Request]] to determine the controller to load and execute.
+     *
      * The requested controller will be executed and the application will check that it returns a
      * valid [[Hazaar\Controller\Response]] object. If a valid response is not returned an exception
      * will be raised.

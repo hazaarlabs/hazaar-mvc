@@ -26,3 +26,5 @@ docs/src/api
 .vscode/
 
 composer.lock
+
+tests/application/.runtime/
