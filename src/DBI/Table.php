@@ -326,8 +326,6 @@ class Table
         }
         $result = $this->adapter->query($this->queryBuilder->toString());
         if ($result) {
-            $this->queryBuilder->reset();
-
             return $result;
         }
 
@@ -357,8 +355,6 @@ class Table
         }
         $result = $this->adapter->query($this->queryBuilder->limit(1)->toString());
         if ($result) {
-            $this->queryBuilder->reset();
-
             return $result->fetch();
         }
 
@@ -395,8 +391,6 @@ class Table
         }
         $result = $this->adapter->query($this->queryBuilder->limit(1)->toString());
         if ($result) {
-            $this->queryBuilder->reset();
-
             return $result->row();
         }
 
@@ -412,7 +406,6 @@ class Table
         if (false === $result) {
             return false;
         }
-        $this->queryBuilder->reset();
         if (null === $keyColumn) {
             return $result->fetchAll();
         }
@@ -436,7 +429,6 @@ class Table
         if (!$result) {
             return false;
         }
-        $this->queryBuilder->reset();
         $data = [];
         while ($row = $result->fetch()) {
             $data[] = $row[$columnName];
@@ -455,7 +447,6 @@ class Table
         if (false === $result) {
             return $rows;
         }
-        $this->queryBuilder->reset();
         while ($row = $result->row()) {
             $rows[] = $row->toArray();
         }
@@ -495,7 +486,6 @@ class Table
         if (!$result) {
             return false;
         }
-        $this->queryBuilder->reset();
 
         return $result->fetchColumn(0);
     }

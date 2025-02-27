@@ -9,7 +9,7 @@ use Hazaar\DBI\QueryBuilder\SQL as SQLBuilder;
 
 trait SQL
 {
-    private ?string $schemaName;
+    private ?string $schemaName = null;
 
     public function initQueryBuilder(?string $schemaName = null): void
     {
@@ -18,9 +18,6 @@ trait SQL
 
     public function getQueryBuilder(): QueryBuilder
     {
-        if (!isset($this->schemaName)) {
-            throw new \Exception('Query builder not initialized');
-        }
         $queryBuilder = new SQLBuilder($this->schemaName);
         if (isset(self::$reservedWords)) {
             $queryBuilder->setReservedWords(self::$reservedWords);
