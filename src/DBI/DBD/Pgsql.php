@@ -18,6 +18,7 @@ use Hazaar\DBI\Interface\API\Transaction;
 use Hazaar\DBI\Interface\API\Trigger;
 use Hazaar\DBI\Interface\API\User;
 use Hazaar\DBI\Interface\API\View;
+use Hazaar\DBI\Interface\QueryBuilder;
 
 class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequence, SQL, StoredFunction, Table, Trigger, User, View, Transaction
 {
@@ -171,7 +172,6 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
             $config['timezone'] = date_default_timezone_get();
         }
         $this->initQueryBuilder($this->config['schema'] ?? 'public');
-        $this->queryBuilder->setReservedWords(self::$reservedWords);
         $driverOptions = [];
         if (isset($config['options'])) {
             $driverOptions = $config['options']->toArray();
@@ -193,9 +193,10 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
      */
     public function listExtensions(): array
     {
+        $queryBuilder = $this->getQueryBuilder();
         $results = $this->query('SELECT e.extname FROM pg_catalog.pg_extension e
             INNER JOIN pg_catalog.pg_namespace n ON e.extnamespace=n.oid
-            WHERE n.nspname=\''.$this->queryBuilder->getSchemaName().'\';')->fetchAll(\PDO::FETCH_NUM);
+            WHERE n.nspname=\''.$queryBuilder->getSchemaName().'\';')->fetchAll(\PDO::FETCH_NUM);
 
         return array_column($results, 0);
     }
@@ -209,7 +210,8 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
      */
     public function createExtension($name): bool
     {
-        $sql = 'CREATE EXTENSION IF NOT EXISTS '.$this->queryBuilder->quoteSpecial($name).';';
+        $queryBuilder = $this->getQueryBuilder();
+        $sql = 'CREATE EXTENSION IF NOT EXISTS '.$queryBuilder->quoteSpecial($name).';';
 
         return false !== $this->exec($sql);
     }
@@ -224,11 +226,12 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
      */
     public function dropExtension($name, $ifExists = false): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         $sql = 'DROP EXTENSION ';
         if (true === $ifExists) {
             $sql .= 'IF EXISTS ';
         }
-        $sql .= $this->queryBuilder->quoteSpecial($name).';';
+        $sql .= $queryBuilder->quoteSpecial($name).';';
 
         return false !== $this->exec($sql);
     }
@@ -242,11 +245,12 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
 
     public function createUser(string $name, ?string $password = null, array $privileges = []): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         $sql = 'CREATE ROLE '
-            .$this->queryBuilder->quoteSpecial($name)
+            .$queryBuilder->quoteSpecial($name)
             .' WITH LOGIN';
         if (null !== $password) {
-            $sql .= ' PASSWORD '.$this->queryBuilder->prepareValue($password);
+            $sql .= ' PASSWORD '.$queryBuilder->prepareValue($password);
         }
         if (!empty($privileges)) {
             $sql .= ' '.implode(' ', $privileges);
@@ -257,8 +261,9 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
 
     public function dropUser(string $name, bool $ifExists = false): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         $sql = 'DROP ROLE '.($ifExists ? 'IF EXISTS ' : '')
-            .$this->queryBuilder->quoteSpecial($name);
+            .$queryBuilder->quoteSpecial($name);
 
         return false !== $this->exec($sql);
     }
@@ -272,16 +277,18 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
 
     public function createGroup(string $name): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         $sql = 'CREATE ROLE '
-            .$this->queryBuilder->prepareValue($name);
+            .$queryBuilder->prepareValue($name);
 
         return false !== $this->exec($sql);
     }
 
     public function dropGroup(string $name, bool $ifExists = false): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         $sql = 'DROP ROLE '.($ifExists ? 'IF EXISTS ' : '')
-            .$this->queryBuilder->prepareValue($name);
+            .$queryBuilder->prepareValue($name);
 
         return false !== $this->exec($sql);
     }
@@ -300,10 +307,11 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
      */
     public function listIndexes(?string $table = null): array
     {
+        $queryBuilder = $this->getQueryBuilder();
         if ($table) {
-            list($schema, $table) = $this->queryBuilder->parseSchemaName($table);
+            list($schema, $table) = $queryBuilder->parseSchemaName($table);
         } else {
-            $schema = $this->queryBuilder->getSchemaName();
+            $schema = $queryBuilder->getSchemaName();
         }
         $sql = "SELECT s.nspname, t.relname as table_name, i.relname as index_name, array_to_string(array_agg(a.attname), ', ') as column_names, ix.indisunique
             FROM pg_namespace s, pg_class t, pg_class i, pg_index ix, pg_attribute a
@@ -337,9 +345,10 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
 
     public function listViews(): array
     {
+        $queryBuilder = $this->getQueryBuilder();
         $sql = 'SELECT table_schema as "schema", table_name as name FROM INFORMATION_SCHEMA.views WHERE ';
-        if ('public' != $this->queryBuilder->getSchemaName()) {
-            $sql .= "table_schema = '{$this->queryBuilder->getSchemaName()}'";
+        if ('public' != $queryBuilder->getSchemaName()) {
+            $sql .= "table_schema = '{$queryBuilder->getSchemaName()}'";
         } else {
             $sql .= "table_schema NOT IN ( 'information_schema', 'pg_catalog' )";
         }
@@ -360,9 +369,10 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
      */
     public function describeView($name): array|false
     {
-        list($schema, $name) = $this->queryBuilder->parseSchemaName($name);
+        $queryBuilder = $this->getQueryBuilder();
+        list($schema, $name) = $queryBuilder->parseSchemaName($name);
         $sql = 'SELECT table_name as name, trim(view_definition) as query FROM INFORMATION_SCHEMA.views WHERE table_schema='
-            .$this->queryBuilder->prepareValue($schema).' AND table_name='.$this->queryBuilder->prepareValue($name);
+            .$queryBuilder->prepareValue($schema).' AND table_name='.$queryBuilder->prepareValue($name);
         if ($result = $this->query($sql)) {
             return $result->fetch(\PDO::FETCH_ASSOC);
         }
@@ -372,9 +382,10 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
 
     public function createView(string $name, mixed $content, bool $replace = false): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         $sql = 'CREATE '
             .($replace ? 'OR REPLACE ' : '')
-            .'VIEW '.$this->queryBuilder->schemaName($name).' AS '.rtrim($content, ' ;');
+            .'VIEW '.$queryBuilder->schemaName($name).' AS '.rtrim($content, ' ;');
 
         return false !== $this->exec($sql);
     }
@@ -388,11 +399,12 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
 
     public function dropView(string $name, bool $cascade = false, bool $ifExists = false): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         $sql = 'DROP VIEW ';
         if (true === $ifExists) {
             $sql .= 'IF EXISTS ';
         }
-        $sql .= $this->queryBuilder->schemaName($name);
+        $sql .= $queryBuilder->schemaName($name);
         if (true === $cascade) {
             $sql .= ' CASCADE';
         }

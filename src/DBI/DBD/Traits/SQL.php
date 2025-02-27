@@ -9,25 +9,30 @@ use Hazaar\DBI\QueryBuilder\SQL as SQLBuilder;
 
 trait SQL
 {
-    private QueryBuilder $queryBuilder;
+    private ?string $schemaName;
 
-    public function initQueryBuilder(?string $schameName = null): void
+    public function initQueryBuilder(?string $schemaName = null): void
     {
-        $this->queryBuilder = new SQLBuilder($schameName);
+        $this->schemaName = $schemaName;
     }
 
     public function getQueryBuilder(): QueryBuilder
     {
-        if (!isset($this->queryBuilder)) {
+        if (!isset($this->schemaName)) {
             throw new \Exception('Query builder not initialized');
         }
+        $queryBuilder = new SQLBuilder($this->schemaName);
+        if (isset(self::$reservedWords)) {
+            $queryBuilder->setReservedWords(self::$reservedWords);
+        }
 
-        return $this->queryBuilder;
+        return $queryBuilder;
     }
 
     public function createDatabase(string $name): bool
     {
-        $sql = 'CREATE DATABASE '.$this->queryBuilder->quoteSpecial($name).';';
+        $queryBuilder = $this->getQueryBuilder();
+        $sql = 'CREATE DATABASE '.$queryBuilder->quoteSpecial($name).';';
         $result = $this->query($sql);
 
         return false !== $result;
@@ -38,12 +43,13 @@ trait SQL
      */
     public function grant(array|string $privilege, string $to, string $object): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         if (is_array($privilege)) {
             $privilege = implode(', ', $privilege);
         }
         $sql = 'GRANT '.$privilege
-            .' ON '.$this->queryBuilder->schemaName($object)
-            .' TO '.$this->queryBuilder->quoteSpecial($to);
+            .' ON '.$queryBuilder->schemaName($object)
+            .' TO '.$queryBuilder->quoteSpecial($to);
 
         return false !== $this->exec($sql);
     }
@@ -53,12 +59,13 @@ trait SQL
      */
     public function revoke(array|string $privilege, string $object, string $from): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         if (is_array($privilege)) {
             $privilege = implode(', ', $privilege);
         }
         $sql = 'REVOKE '.$privilege
-            .' ON '.$this->queryBuilder->schemaName($object)
-            .' FROM '.$this->queryBuilder->quoteSpecial($from);
+            .' ON '.$queryBuilder->schemaName($object)
+            .' FROM '.$queryBuilder->quoteSpecial($from);
 
         return false !== $this->exec($sql);
     }

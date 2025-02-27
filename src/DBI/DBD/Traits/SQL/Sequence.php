@@ -11,8 +11,10 @@ trait Sequence
      */
     public function listSequences(): array
     {
+        $queryBuilder = $this->getQueryBuilder();
+
         return array_column($this->listInformationSchema('sequences', ['sequence_name'], [
-            'sequence_schema' => $this->queryBuilder->getSchemaName(),
+            'sequence_schema' => $queryBuilder->getSchemaName(),
         ]), 'sequence_name');
     }
 
@@ -33,9 +35,10 @@ trait Sequence
      */
     public function describeSequence(string $name): array|false
     {
-        $sql = $this->queryBuilder->reset()->select('*')
+        $queryBuilder = $this->getQueryBuilder();
+        $sql = $queryBuilder->reset()->select('*')
             ->from('information_schema.sequences')
-            ->where(['sequence_name' => $name, 'sequence_schema' => $this->queryBuilder->getSchemaName()])
+            ->where(['sequence_name' => $name, 'sequence_schema' => $queryBuilder->getSchemaName()])
             ->toString()
         ;
         $result = $this->query($sql);
@@ -59,7 +62,8 @@ trait Sequence
      */
     public function createSequence(string $name, array $sequenceInfo, bool $ifNotExists = false): bool
     {
-        $sql = 'CREATE SEQUENCE'.($ifNotExists ? ' IF NOT EXISTS ' : ' ').$this->queryBuilder->field($name);
+        $queryBuilder = $this->getQueryBuilder();
+        $sql = 'CREATE SEQUENCE'.($ifNotExists ? ' IF NOT EXISTS ' : ' ').$queryBuilder->field($name);
         if (array_key_exists('type', $sequenceInfo)) {
             $sql .= ' AS '.$sequenceInfo['type'];
         }
@@ -81,14 +85,16 @@ trait Sequence
 
     public function dropSequence(string $name, bool $ifExists = false): bool
     {
-        $sql = 'DROP SEQUENCE '.($ifExists ? 'IF EXISTS ' : '').$this->queryBuilder->field($name);
+        $queryBuilder = $this->getQueryBuilder();
+        $sql = 'DROP SEQUENCE '.($ifExists ? 'IF EXISTS ' : '').$queryBuilder->field($name);
 
         return false !== $this->exec($sql);
     }
 
     public function nextSequenceValue(string $name): false|int
     {
-        $sql = 'SELECT NEXTVAL('.$this->queryBuilder->field($name).')';
+        $queryBuilder = $this->getQueryBuilder();
+        $sql = 'SELECT NEXTVAL('.$queryBuilder->field($name).')';
         $result = $this->query($sql);
         if (false === $result) {
             return false;
@@ -99,7 +105,8 @@ trait Sequence
 
     public function setSequenceValue(string $name, int $value): bool
     {
-        $sql = 'SELECT SETVAL('.$this->queryBuilder->field($name).', '.$value.')';
+        $queryBuilder = $this->getQueryBuilder();
+        $sql = 'SELECT SETVAL('.$queryBuilder->field($name).', '.$value.')';
 
         return false !== $this->exec($sql);
     }

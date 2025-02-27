@@ -13,7 +13,6 @@ class Table
     private Adapter $adapter;
     private QueryBuilder $queryBuilder;
     private string $name;
-    private null|false|Result $result = null;
 
     public function __construct(Adapter $adapter, string $name, ?string $alias = null)
     {
@@ -317,7 +316,7 @@ class Table
     /**
      * @param null|array<mixed>|string $columns
      */
-    public function find(mixed $where = null, null|array|string $columns = null): self
+    public function find(mixed $where = null, null|array|string $columns = null): false|Result
     {
         if (null !== $columns) {
             $this->select($columns);
@@ -325,8 +324,14 @@ class Table
         if (null !== $where) {
             $this->where($where);
         }
+        $result = $this->adapter->query($this->queryBuilder->toString());
+        if ($result) {
+            $this->queryBuilder->reset();
 
-        return $this;
+            return $result;
+        }
+
+        return false;
     }
 
     public function where(mixed $where = null): self
@@ -350,9 +355,11 @@ class Table
         if (null !== $columns) {
             $this->select($columns);
         }
-        $this->result = $this->adapter->query($this->queryBuilder->limit(1)->toString());
-        if ($this->result) {
-            return $this->result->fetch();
+        $result = $this->adapter->query($this->queryBuilder->limit(1)->toString());
+        if ($result) {
+            $this->queryBuilder->reset();
+
+            return $result->fetch();
         }
 
         return false;
@@ -386,24 +393,11 @@ class Table
         if (null !== $columns) {
             $this->select($columns);
         }
-        $this->result = $this->adapter->query($this->queryBuilder->limit(1)->toString());
-        if ($this->result) {
-            return $this->result->row();
-        }
+        $result = $this->adapter->query($this->queryBuilder->limit(1)->toString());
+        if ($result) {
+            $this->queryBuilder->reset();
 
-        return false;
-    }
-
-    /**
-     * @return array<mixed>|false
-     */
-    public function fetch(): array|false
-    {
-        if (null === $this->result) {
-            $this->result = $this->adapter->query($this->queryBuilder->toString());
-        }
-        if ($this->result instanceof Result) {
-            return $this->result->fetch();
+            return $result->row();
         }
 
         return false;
@@ -414,15 +408,16 @@ class Table
      */
     public function fetchAll(?string $keyColumn = null): array|false
     {
-        $this->result = $this->adapter->query($this->queryBuilder->toString());
-        if (false === $this->result) {
+        $result = $this->adapter->query($this->queryBuilder->toString());
+        if (false === $result) {
             return false;
         }
+        $this->queryBuilder->reset();
         if (null === $keyColumn) {
-            return $this->result->fetchAll();
+            return $result->fetchAll();
         }
         $rows = [];
-        while ($row = $this->result->fetch()) {
+        while ($row = $result->fetch()) {
             $rows[$row[$keyColumn]] = $row;
         }
 
@@ -437,63 +432,17 @@ class Table
         mixed $fetchArgument = null,
         bool $clobberDupNamedCols = false
     ): array|false {
-        $this->result = $this->adapter->query($this->queryBuilder->select($columnName)->from($this->name)->toString());
-        if (!$this->result) {
+        $result = $this->adapter->query($this->queryBuilder->select($columnName)->from($this->name)->toString());
+        if (!$result) {
             return false;
         }
+        $this->queryBuilder->reset();
         $data = [];
-        while ($row = $this->result->fetch()) {
+        while ($row = $result->fetch()) {
             $data[] = $row[$columnName];
         }
 
         return $data;
-    }
-
-    /**
-     * Fetches a model instance of the specified class.
-     *
-     * @param string $modelClass the fully qualified class name of the model to fetch
-     *
-     * @return false|Model returns an instance of the specified model class populated with data from the database,
-     *                     or false if no data is found
-     *
-     * @throws \Exception if the specified model class does not exist or is not a subclass of Model
-     */
-    public function fetchModel(string $modelClass): false|Model
-    {
-        if (!class_exists($modelClass)) {
-            throw new \Exception('Model class does not exist: '.$modelClass);
-        }
-        if (!is_subclass_of($modelClass, Model::class)) {
-            throw new \Exception('Model class must be a subclass of '.Model::class);
-        }
-        $rowData = $this->fetch();
-        if (false === $rowData) {
-            return false;
-        }
-
-        return new $modelClass($rowData);
-    }
-
-    /**
-     * Fetches a collection of model instances of the specified class.
-     *
-     * @param string $modelClass the fully qualified class name of the model to fetch
-     *
-     * @return array<mixed> returns an array of model instances of the specified class populated with data from the database
-     */
-    public function fetchAllModel(string $modelClass, ?string $keyColumn = null): array
-    {
-        $models = [];
-        while ($model = $this->fetchModel($modelClass)) {
-            if ($keyColumn) {
-                $models[$model->get($keyColumn)] = $model;
-            } else {
-                $models[] = $model;
-            }
-        }
-
-        return $models;
     }
 
     /**
@@ -502,27 +451,16 @@ class Table
     public function toArray(): array
     {
         $rows = [];
-        $this->result = $this->adapter->query($this->queryBuilder->toString());
-        if (false === $this->result) {
+        $result = $this->adapter->query($this->queryBuilder->toString());
+        if (false === $result) {
             return $rows;
         }
-        while ($row = $this->result->row()) {
+        $this->queryBuilder->reset();
+        while ($row = $result->row()) {
             $rows[] = $row->toArray();
         }
 
         return $rows;
-    }
-
-    public function row(): false|Row
-    {
-        if (null === $this->result) {
-            $this->result = $this->adapter->query($this->queryBuilder->toString());
-        }
-        if (false !== $this->result) {
-            return $this->result->row();
-        }
-
-        return false;
     }
 
     public function count(): int
@@ -543,15 +481,6 @@ class Table
         return $this->adapter->describeTable($this->name);
     }
 
-    public function result(): Result
-    {
-        if (null === $this->result) {
-            $this->result = $this->adapter->query($this->queryBuilder->toString());
-        }
-
-        return $this->result;
-    }
-
     /**
      * @return array<int,string>
      */
@@ -560,17 +489,15 @@ class Table
         return $this->adapter->errorInfo();
     }
 
-    public function reset(): bool
-    {
-        $this->queryBuilder->reset();
-        $this->result = null;
-
-        return true;
-    }
-
     public function execute(): false|int
     {
-        return $this->result = $this->adapter->query($this->queryBuilder->toString());
+        $result = $this->adapter->query($this->queryBuilder->toString());
+        if (!$result) {
+            return false;
+        }
+        $this->queryBuilder->reset();
+
+        return $result->fetchColumn(0);
     }
 
     public function create(mixed $columns): bool
@@ -594,5 +521,12 @@ class Table
         }
 
         return array_shift($constraints);
+    }
+
+    public function reset(): self
+    {
+        $this->queryBuilder->reset();
+
+        return $this;
     }
 }

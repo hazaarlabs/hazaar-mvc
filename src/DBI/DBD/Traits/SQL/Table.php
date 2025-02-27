@@ -13,34 +13,42 @@ trait Table
      */
     public function listTables(): array
     {
+        $queryBuilder = $this->getQueryBuilder();
+
         return $this->listInformationSchema('tables', [
             'name' => 'table_name',
             'schema' => 'table_schema',
         ], [
-            'table_schema' => $this->queryBuilder->getSchemaName(),
+            'table_schema' => $queryBuilder->getSchemaName(),
             'table_type' => 'BASE TABLE',
         ]);
     }
 
     public function tableExists(string $tableName): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         $criteria = [
             'table_name' => $tableName,
-            'table_schema' => $this->queryBuilder->getSchemaName(),
+            'table_schema' => $queryBuilder->getSchemaName(),
         ];
-        $sql = $this->queryBuilder->exists('information_schema.tables', $criteria);
+        $sql = $queryBuilder->exists('information_schema.tables', $criteria);
+        $result = $this->query($sql);
+        if (false === $result) {
+            return false;
+        }
 
-        return $this->query($sql)->fetchColumn(0);
+        return $result->fetchColumn(0);
     }
 
     public function createTable(string $tableName, mixed $columns): bool
     {
-        $sql = 'CREATE TABLE '.$this->queryBuilder->schemaName($tableName)." (\n";
+        $queryBuilder = $this->getQueryBuilder();
+        $sql = 'CREATE TABLE '.$queryBuilder->schemaName($tableName)." (\n";
         $coldefs = [];
         $constraints = [];
         foreach ($columns as $name => $info) {
             if (!is_array($info)) {
-                $coldefs[] = "\t".$this->queryBuilder->field($name).' '.$info;
+                $coldefs[] = "\t".$queryBuilder->field($name).' '.$info;
 
                 continue;
             }
@@ -53,7 +61,7 @@ trait Table
             if (!($type = $this->type($info['type']))) {
                 throw new \Exception("Column '{$name}' has no data type!");
             }
-            $def = $this->queryBuilder->field($name).' '.$type;
+            $def = $queryBuilder->field($name).' '.$type;
             if (array_key_exists('default', $info) && null !== $info['default']) {
                 $def .= ' DEFAULT '.$info['default'];
             }
@@ -63,7 +71,7 @@ trait Table
             if (array_key_exists('primarykey', $info) && $info['primarykey']) {
                 $driver = strtolower(basename(str_replace('\\', '/', get_class($this))));
                 if ('pgsql' == $driver) {
-                    $constraints[] = ' PRIMARY KEY('.$this->queryBuilder->field($name).')';
+                    $constraints[] = ' PRIMARY KEY('.$queryBuilder->field($name).')';
                 } else {
                     $def .= ' PRIMARY KEY';
                 }
@@ -88,12 +96,13 @@ trait Table
      */
     public function describeTable(string $tableName, ?string $sort = null): array|false
     {
+        $queryBuilder = $this->getQueryBuilder();
         if (!$sort) {
             $sort = 'ordinal_position';
         }
         $result = $this->query('SELECT * FROM information_schema.columns WHERE table_name='
             .$this->quote($tableName).' AND table_schema='
-            .$this->quote($this->queryBuilder->getSchemaName()).' ORDER BY '
+            .$this->quote($queryBuilder->getSchemaName()).' ORDER BY '
             .$sort);
         if (false === $result) {
             throw new \Exception(ake($this->errorInfo(), 2));
@@ -140,6 +149,7 @@ trait Table
 
     public function renameTable(string $fromName, string $toName): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         if (strpos($toName, '.')) {
             list($fromSchemaName, $fromName) = explode('.', $fromName);
             list($toSchemaName, $toName) = explode('.', $toName);
@@ -147,7 +157,7 @@ trait Table
                 throw new \Exception('You can not rename tables between schemas!');
             }
         }
-        $sql = 'ALTER TABLE '.$this->queryBuilder->schemaName($fromName).' RENAME TO '.$this->queryBuilder->field($toName).';';
+        $sql = 'ALTER TABLE '.$queryBuilder->schemaName($fromName).' RENAME TO '.$queryBuilder->field($toName).';';
         $affected = $this->exec($sql);
         if (false === $affected) {
             return false;
@@ -158,11 +168,12 @@ trait Table
 
     public function dropTable(string $name, bool $ifExists = false, bool $cascade = false): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         $sql = 'DROP TABLE ';
         if (true === $ifExists) {
             $sql .= 'IF EXISTS ';
         }
-        $sql .= $this->queryBuilder->schemaName($name).($cascade ? ' CASCADE' : '').';';
+        $sql .= $queryBuilder->schemaName($name).($cascade ? ' CASCADE' : '').';';
         $affected = $this->exec($sql);
         if (false === $affected) {
             return false;
@@ -179,9 +190,10 @@ trait Table
         if (!array_key_exists('type', $columnSpec)) {
             return false;
         }
+        $queryBuilder = $this->getQueryBuilder();
         $sql = 'ALTER TABLE '
-            .$this->queryBuilder->schemaName($tableName)
-            .' ADD COLUMN '.$this->queryBuilder->field($columnSpec['name'])
+            .$queryBuilder->schemaName($tableName)
+            .' ADD COLUMN '.$queryBuilder->field($columnSpec['name'])
             .' '.$this->type($columnSpec['type'], $columnSpec['length'] ?? null);
         if (array_key_exists('not_null', $columnSpec) && $columnSpec['not_null']) {
             $sql .= ' NOT NULL';
@@ -199,14 +211,18 @@ trait Table
 
     public function alterColumn(string $tableName, string $column, mixed $columnSpec): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         $sqls = [];
         // Check if the column is being renamed and update the name first.
         if (array_key_exists('name', $columnSpec)) {
-            $sql = 'ALTER TABLE '.$this->queryBuilder->schemaName($tableName).' RENAME COLUMN '.$this->queryBuilder->field($column).' TO '.$this->queryBuilder->field($columnSpec['name']);
+            $sql = 'ALTER TABLE '.$queryBuilder->schemaName($tableName)
+                .' RENAME COLUMN '.$queryBuilder->field($column)
+                .' TO '.$queryBuilder->field($columnSpec['name']);
             $this->exec($sql);
             $column = $columnSpec['name'];
         }
-        $prefix = 'ALTER TABLE '.$this->queryBuilder->schemaName($tableName).' ALTER COLUMN '.$this->queryBuilder->field($column);
+        $prefix = 'ALTER TABLE '.$queryBuilder->schemaName($tableName)
+            .' ALTER COLUMN '.$queryBuilder->field($column);
         if (array_key_exists('type', $columnSpec)) {
             $alterType = $prefix.' TYPE '.$this->type($columnSpec['type'], $columnSpec['length'] ?? null);
             if (array_key_exists('using', $columnSpec)) {
@@ -231,15 +247,16 @@ trait Table
 
     public function dropColumn(string $tableName, string $column, bool $ifExists = false): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         $sql = 'ALTER TABLE ';
         if (true === $ifExists) {
             $sql .= 'IF EXISTS ';
         }
-        $sql .= $this->queryBuilder->schemaName($tableName).' DROP COLUMN ';
+        $sql .= $queryBuilder->schemaName($tableName).' DROP COLUMN ';
         if (true === $ifExists) {
             $sql .= 'IF EXISTS ';
         }
-        $sql .= $this->queryBuilder->field($column).';';
+        $sql .= $queryBuilder->field($column).';';
         $affected = $this->exec($sql);
         if (false === $affected) {
             return false;
@@ -262,9 +279,14 @@ trait Table
      *                                to any tables added to the group due to CASCADE.  If FALSE, Refuse to truncate if any of the tables have
      *                                foreign-key references from tables that are not listed in the command. FALSE is the default.
      */
-    public function truncate(string $tableName, bool $only = false, bool $restartIdentity = false, bool $cascade = false): bool
-    {
-        $sql = 'TRUNCATE TABLE '.($only ? 'ONLY ' : '').$this->queryBuilder->schemaName($tableName);
+    public function truncate(
+        string $tableName,
+        bool $only = false,
+        bool $restartIdentity = false,
+        bool $cascade = false
+    ): bool {
+        $queryBuilder = $this->getQueryBuilder();
+        $sql = 'TRUNCATE TABLE '.($only ? 'ONLY ' : '').$queryBuilder->schemaName($tableName);
         $sql .= ' '.($restartIdentity ? 'RESTART IDENTITY' : 'CONTINUE IDENTITY');
         $sql .= ' '.($cascade ? 'CASCADE' : 'RESTRICT');
 

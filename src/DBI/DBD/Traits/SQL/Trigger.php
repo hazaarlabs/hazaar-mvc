@@ -11,11 +11,12 @@ trait Trigger
      */
     public function listTriggers(?string $tableName = null): array
     {
+        $queryBuilder = $this->getQueryBuilder();
         $sql = 'SELECT DISTINCT trigger_schema AS schema, trigger_name AS name
                     FROM INFORMATION_SCHEMA.triggers
-                    WHERE event_object_schema='.$this->queryBuilder->prepareValue($this->queryBuilder->getSchemaName());
+                    WHERE event_object_schema='.$queryBuilder->prepareValue($queryBuilder->getSchemaName());
         if (null !== $tableName) {
-            $sql .= ' AND event_object_table='.$this->queryBuilder->prepareValue($tableName);
+            $sql .= ' AND event_object_table='.$queryBuilder->prepareValue($tableName);
         }
         if ($result = $this->query($sql)) {
             return $result->fetchAll(\PDO::FETCH_ASSOC);
@@ -47,8 +48,9 @@ trait Trigger
      */
     public function describeTrigger(string $triggerName, ?string $schemaName = null): array|false
     {
+        $queryBuilder = $this->getQueryBuilder();
         if (null === $schemaName) {
-            $schemaName = $this->queryBuilder->getSchemaName();
+            $schemaName = $queryBuilder->getSchemaName();
         }
         $sql = 'SELECT trigger_name AS name,
                         event_manipulation AS events,
@@ -57,8 +59,8 @@ trait Trigger
                         action_orientation AS orientation,
                         action_timing AS timing
                     FROM INFORMATION_SCHEMA.triggers
-                    WHERE trigger_schema='.$this->queryBuilder->prepareValue($schemaName)
-                    .' AND trigger_name='.$this->queryBuilder->prepareValue($triggerName);
+                    WHERE trigger_schema='.$queryBuilder->prepareValue($schemaName)
+                    .' AND trigger_name='.$queryBuilder->prepareValue($triggerName);
         if (!($result = $this->query($sql))) {
             return false;
         }
@@ -79,17 +81,18 @@ trait Trigger
      */
     public function createTrigger(string $triggerName, string $tableName, mixed $spec = []): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         $events = ake($spec, 'events', ['INSERT']);
         if (!is_array($events)) {
             $events = [$events];
         }
-        $sql = 'CREATE TRIGGER '.$this->queryBuilder->field($triggerName)
+        $sql = 'CREATE TRIGGER '.$queryBuilder->field($triggerName)
             .' '.ake($spec, 'timing', 'BEFORE')
             .' '.implode(' OR ', $events)
-            .' ON '.$this->queryBuilder->schemaName($tableName)
+            .' ON '.$queryBuilder->schemaName($tableName)
             .' FOR EACH '.ake($spec, 'orientation', 'ROW');
-        $execute = preg_replace_callback('/FUNCTION\s+([^\s\(]+)/i', function ($match) {
-            return 'FUNCTION '.$this->queryBuilder->schemaName($match[1]);
+        $execute = preg_replace_callback('/FUNCTION\s+([^\s\(]+)/i', function ($match) use ($queryBuilder) {
+            return 'FUNCTION '.$queryBuilder->schemaName($match[1]);
         }, ake($spec, 'content', 'EXECUTE'));
         $sql .= ' '.$execute;
 
@@ -104,11 +107,12 @@ trait Trigger
      */
     public function dropTrigger(string $triggerName, string $tableName, bool $cascade = false, bool $ifExists = false): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         $sql = 'DROP TRIGGER ';
         if (true === $ifExists) {
             $sql .= 'IF EXISTS ';
         }
-        $sql .= $this->queryBuilder->field($triggerName).' ON '.$this->queryBuilder->schemaName($tableName);
+        $sql .= $queryBuilder->field($triggerName).' ON '.$queryBuilder->schemaName($tableName);
         $sql .= ' '.((true === $cascade) ? ' CASCADE' : ' RESTRICT');
 
         return false !== $this->exec($sql);

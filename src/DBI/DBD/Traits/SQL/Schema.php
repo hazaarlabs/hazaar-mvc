@@ -6,7 +6,7 @@ trait Schema
 {
     public function getSchemaName(): string
     {
-        return $this->queryBuilder->getSchemaName();
+        return $this->schemaName;
     }
 
     /**
@@ -18,10 +18,11 @@ trait Schema
      */
     public function schemaExists(?string $schemaName = null): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         if (!$schemaName) {
-            $schemaName = $this->queryBuilder->getSchemaName();
+            $schemaName = $this->getSchemaName();
         }
-        $sql = $this->queryBuilder->exists('information_schema.schemata', ['schema_name' => $schemaName]);
+        $sql = $queryBuilder->exists('information_schema.schemata', ['schema_name' => $schemaName]);
         if ($result = $this->query($sql)) {
             return boolify($result->fetchColumn(0));
         }
@@ -38,10 +39,11 @@ trait Schema
      */
     public function createSchema(?string $schemaName = null): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         if (!$schemaName) {
-            $schemaName = $this->queryBuilder->getSchemaName();
+            $schemaName = $this->getSchemaName();
         }
-        $sql = $this->queryBuilder->create($schemaName, 'schema', true);
+        $sql = $queryBuilder->create($schemaName, 'schema', true);
 
         return false !== $this->exec($sql);
     }

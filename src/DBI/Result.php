@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\DBI;
 
 use Hazaar\DateTime;
+use Hazaar\Model;
 
 abstract class Result implements Interface\Result, \Countable
 {
@@ -86,6 +87,53 @@ abstract class Result implements Interface\Result, \Countable
         }
 
         return null;
+    }
+
+    /**
+     * Fetches a model instance of the specified class.
+     *
+     * @param string $modelClass the fully qualified class name of the model to fetch
+     *
+     * @return false|Model returns an instance of the specified model class populated with data from the database,
+     *                     or false if no data is found
+     *
+     * @throws \Exception if the specified model class does not exist or is not a subclass of [[\Hazaar\Model]]
+     */
+    public function fetchModel(string $modelClass): false|Model
+    {
+        if (!class_exists($modelClass)) {
+            throw new \Exception('Model class does not exist: '.$modelClass);
+        }
+        if (!is_subclass_of($modelClass, Model::class)) {
+            throw new \Exception('Model class must be a subclass of '.Model::class);
+        }
+        $rowData = $this->fetch();
+        if (false === $rowData) {
+            return false;
+        }
+
+        return new $modelClass($rowData);
+    }
+
+    /**
+     * Fetches a collection of model instances of the specified class.
+     *
+     * @param string $modelClass the fully qualified class name of the model to fetch
+     *
+     * @return array<mixed> returns an array of model instances of the specified class populated with data from the database
+     */
+    public function fetchAllModel(string $modelClass, ?string $keyColumn = null): array
+    {
+        $models = [];
+        while ($model = $this->fetchModel($modelClass)) {
+            if ($keyColumn) {
+                $models[$model->get($keyColumn)] = $model;
+            } else {
+                $models[] = $model;
+            }
+        }
+
+        return $models;
     }
 
     /**

@@ -35,11 +35,12 @@ trait Index
         if (array_key_exists($indexName, $indexes)) {
             return true;
         }
+        $queryBuilder = $this->getQueryBuilder();
         $sql = 'CREATE';
         if (array_key_exists('unique', $idxInfo) && $idxInfo['unique']) {
             $sql .= ' UNIQUE';
         }
-        $sql .= ' INDEX '.$this->queryBuilder->field($indexName).' ON '.$this->queryBuilder->schemaName($tableName).' ('.implode(',', array_map([$this->queryBuilder, 'field'], $idxInfo['columns'])).')';
+        $sql .= ' INDEX '.$queryBuilder->field($indexName).' ON '.$queryBuilder->schemaName($tableName).' ('.implode(',', array_map([$queryBuilder, 'field'], $idxInfo['columns'])).')';
         if (array_key_exists('using', $idxInfo) && $idxInfo['using']) {
             $sql .= ' USING '.$idxInfo['using'];
         }
@@ -53,11 +54,12 @@ trait Index
 
     public function dropIndex(string $indexName, bool $ifExists = false): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         $sql = 'DROP INDEX ';
         if (true === $ifExists) {
             $sql .= 'IF EXISTS ';
         }
-        $sql .= $this->queryBuilder->field($indexName);
+        $sql .= $queryBuilder->field($indexName);
         $affected = $this->exec($sql);
         if (false === $affected) {
             return false;

@@ -174,7 +174,8 @@ class Manager
             $this->connect();
         }
         $versions = $this->getVersions();
-        $this->appliedVersions = $this->dbi->table(self::$schemaInfoTable)->fetchAllModel(Version::class, 'number');
+        $result = $this->dbi->table(self::$schemaInfoTable)->find();
+        $this->appliedVersions = $result->fetchAllModel(Version::class, 'number');
         array_walk($this->appliedVersions, function (Version $version) use ($versions) {
             if (!array_key_exists($version->number, $versions)) {
                 $version->valid = false;
@@ -226,7 +227,8 @@ class Manager
             $this->connect();
         }
         $versions = $this->getVersions();
-        $appliedVersions = $this->dbi->table(self::$schemaInfoTable)->fetchAllModel(Version::class, 'number');
+        $result = $this->dbi->table(self::$schemaInfoTable)->find();
+        $appliedVersions = $result->fetchAllModel(Version::class, 'number');
         $this->missingVersions = array_filter($versions, function ($value, $key) use ($appliedVersions) {
             return !array_key_exists($key, $appliedVersions);
         }, ARRAY_FILTER_USE_BOTH);
@@ -568,6 +570,11 @@ class Manager
         $env = $this->config['environment'];
         $this->dbi->log('APPLICATION_ENV: '.$env);
         $dataFile = $this->workDir.DIRECTORY_SEPARATOR.'data.json';
+        if (!file_exists($dataFile)) {
+            $this->dbi->log('No data file found.  Skipping data sync.');
+
+            return false;
+        }
 
         try {
             $sync = $dataSchema ? new Data($dataSchema) : Data::load($dataFile);

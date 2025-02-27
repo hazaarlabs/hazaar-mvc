@@ -25,17 +25,18 @@ trait Constraint
      */
     public function listConstraints($table = null, $type = null, $invertType = false): array|false
     {
+        $queryBuilder = $this->getQueryBuilder();
         if ($table) {
-            list($schema, $table) = $this->queryBuilder->parseSchemaName($table);
+            list($schema, $table) = $queryBuilder->parseSchemaName($table);
         } else {
-            $schema = $this->queryBuilder->getSchemaName();
+            $schema = $queryBuilder->getSchemaName();
         }
         $constraints = [];
         $sql = 'SELECT
                 tc.constraint_name as name,
-                tc.table_name as '.$this->queryBuilder->field('table').',
-                tc.table_schema as '.$this->queryBuilder->field('schema').',
-                kcu.column_name as '.$this->queryBuilder->field('column').",
+                tc.table_name as '.$queryBuilder->field('table').',
+                tc.table_schema as '.$queryBuilder->field('schema').',
+                kcu.column_name as '.$queryBuilder->field('column').",
                 ccu.table_schema AS foreign_schema,
                 ccu.table_name AS foreign_table,
                 ccu.column_name AS foreign_column,
@@ -123,6 +124,7 @@ trait Constraint
      */
     public function addConstraint(string $constraintName, array $info): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         if (!array_key_exists('table', $info)) {
             throw new \Exception("Create constraint '{$info['name']}' failed.  Missing table.");
         }
@@ -144,20 +146,20 @@ trait Constraint
         $column = $info['column'] ?? null;
         if (is_array($column)) {
             foreach ($column as &$col) {
-                $col = $this->queryBuilder->field($col);
+                $col = $queryBuilder->field($col);
             }
             $column = implode(', ', $column);
         } elseif ($column) {
-            $column = $this->queryBuilder->field($column);
+            $column = $queryBuilder->field($column);
         } else {
             throw new \Exception("Create constraint '{$info['name']}' failed.  Missing column.");
         }
-        $sql = 'ALTER TABLE '.$this->queryBuilder->schemaName($info['table']).' ADD CONSTRAINT '.$this->queryBuilder->field($constraintName)." {$info['type']} (".$column.')';
+        $sql = 'ALTER TABLE '.$queryBuilder->schemaName($info['table']).' ADD CONSTRAINT '.$queryBuilder->field($constraintName)." {$info['type']} (".$column.')';
         if (array_key_exists('references', $info)) {
             if (!array_key_exists('table', $info['references']) || !array_key_exists('column', $info['references'])) {
                 throw new \Exception("Create constraint '{$info['name']}' failed.  Missing references table or column.");
             }
-            $sql .= ' REFERENCES '.$this->queryBuilder->schemaName($info['references']['table']).' ('.$this->queryBuilder->field($info['references']['column']).") ON UPDATE {$info['update_rule']} ON DELETE {$info['delete_rule']}";
+            $sql .= ' REFERENCES '.$queryBuilder->schemaName($info['references']['table']).' ('.$queryBuilder->field($info['references']['column']).") ON UPDATE {$info['update_rule']} ON DELETE {$info['delete_rule']}";
         }
         $affected = $this->exec($sql);
         if (false === $affected) {
@@ -169,15 +171,16 @@ trait Constraint
 
     public function dropConstraint(string $constraintName, string $tableName, bool $ifExists = false, bool $cascade = false): bool
     {
+        $queryBuilder = $this->getQueryBuilder();
         $sql = 'ALTER TABLE ';
         if (true === $ifExists) {
             $sql .= 'IF EXISTS ';
         }
-        $sql .= $this->queryBuilder->schemaName($tableName).' DROP CONSTRAINT ';
+        $sql .= $queryBuilder->schemaName($tableName).' DROP CONSTRAINT ';
         if (true === $ifExists) {
             $sql .= 'IF EXISTS ';
         }
-        $sql .= $this->queryBuilder->field($constraintName).($cascade ? ' CASCADE' : '');
+        $sql .= $queryBuilder->field($constraintName).($cascade ? ' CASCADE' : '');
         $affected = $this->exec($sql);
         if (false === $affected) {
             return false;

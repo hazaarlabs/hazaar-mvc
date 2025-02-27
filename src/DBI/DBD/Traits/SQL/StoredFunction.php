@@ -11,7 +11,8 @@ trait StoredFunction
      */
     public function listFunctions(bool $includeParameters = false): array
     {
-        $schemaName = $this->queryBuilder->getSchemaName();
+        $queryBuilder = $this->getQueryBuilder();
+        $schemaName = $queryBuilder->getSchemaName();
         $sql = "SELECT r.specific_name, 
                 r.routine_schema, 
                 r.routine_name, 
@@ -19,7 +20,7 @@ trait StoredFunction
             FROM INFORMATION_SCHEMA.routines r 
             LEFT JOIN INFORMATION_SCHEMA.parameters p ON p.specific_name=r.specific_name
             WHERE r.routine_type='FUNCTION'
-            AND r.specific_schema=".$this->queryBuilder->prepareValue($schemaName)."
+            AND r.specific_schema=".$queryBuilder->prepareValue($schemaName)."
             AND NOT (r.routine_body='EXTERNAL' AND r.external_language='C')
             ORDER BY r.routine_name, p.ordinal_position;";
         $q = $this->query($sql);
@@ -63,8 +64,9 @@ trait StoredFunction
      */
     public function describeFunction(string $name, ?string $schemaName = null): array|false
     {
+        $queryBuilder = $this->getQueryBuilder();
         if (null === $schemaName) {
-            $schemaName = $this->queryBuilder->getSchemaName();
+            $schemaName = $queryBuilder->getSchemaName();
         }
         $sql = "SELECT r.specific_name,
                     r.routine_schema,
@@ -80,8 +82,8 @@ trait StoredFunction
                 FROM INFORMATION_SCHEMA.routines r
                 LEFT JOIN INFORMATION_SCHEMA.parameters p ON p.specific_name=r.specific_name
                 WHERE r.routine_type='FUNCTION'
-                AND r.routine_schema=".$this->queryBuilder->prepareValue($schemaName).'
-                AND r.routine_name='.$this->queryBuilder->prepareValue($name).'
+                AND r.routine_schema=".$queryBuilder->prepareValue($schemaName).'
+                AND r.routine_name='.$queryBuilder->prepareValue($name).'
                 ORDER BY r.routine_name, p.ordinal_position;';
         if (!($q = $this->query($sql))) {
             throw new \Exception($this->errorInfo()[2]);
@@ -132,7 +134,8 @@ trait StoredFunction
      */
     public function createFunction(string $name, mixed $spec, bool $replace = false): bool
     {
-        $sql = 'CREATE '.($replace ? 'OR REPLACE ' : '').'FUNCTION'.$this->queryBuilder->schemaName($name).' (';
+        $queryBuilder = $this->getQueryBuilder();
+        $sql = 'CREATE '.($replace ? 'OR REPLACE ' : '').'FUNCTION'.$queryBuilder->schemaName($name).' (';
         if ($params = ake($spec, 'parameters')) {
             $items = [];
             foreach ($params as $param) {
@@ -160,11 +163,12 @@ trait StoredFunction
         bool $cascade = false,
         bool $ifExists = false
     ): bool {
+        $queryBuilder = $this->getQueryBuilder();
         $sql = 'DROP FUNCTION ';
         if (true === $ifExists) {
             $sql .= 'IF EXISTS ';
         }
-        $sql .= $this->queryBuilder->schemaName($name);
+        $sql .= $queryBuilder->schemaName($name);
         if (null !== $argTypes) {
             $sql .= '('.(is_array($argTypes) ? implode(', ', $argTypes) : $argTypes).')';
         }

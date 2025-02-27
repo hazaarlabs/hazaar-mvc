@@ -28,6 +28,11 @@ class Sqlite implements Driver, SQL, Transaction, Trigger
     ];
 
     /**
+     * @var array<string>
+     */
+    private static array $reservedWords = [];
+
+    /**
      * @param array<mixed> $config
      */
     public function __construct(array $config)

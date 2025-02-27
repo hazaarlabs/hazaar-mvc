@@ -117,10 +117,11 @@ class DBI implements Interface\Backend, Interface\Driver
             ->having(['count(*)' => ['$gt' => 1]])
             ->find(['kind' => 'dir'], ['parent', 'filename'])
         ;
+        if (!$select) {
+            return false;
+        }
         $count = 0;
         while (true) {
-            $select->reset();
-            $select->execute();
             if (0 === $select->count()) {
                 break;
             }
@@ -140,8 +141,9 @@ class DBI implements Interface\Backend, Interface\Driver
         while ($row = $select->fetch()) {
             $copies = 0;
             // IMPORTANT: We sort by kind so that 'dir' is first.  This means it will end up being the master.
-            $dups = $this->db->table('hz_file')->find(['parent' => $row['parent'], 'filename' => $row['filename']])
+            $dups = $this->db->table('hz_file')
                 ->order(['kind' => 1, 'created_on' => 1])
+                ->find(['parent' => $row['parent'], 'filename' => $row['filename']])
                 ->fetchAll()
             ;
             $master = array_shift($dups);
@@ -892,7 +894,7 @@ class DBI implements Interface\Backend, Interface\Driver
 
     private function dedupDirectory(string $parent, string $filename): bool
     {
-        $q = $this->db->table('hz_file')->find(['parent' => $parent, 'filename' => $filename])->order('created_on');
+        $q = $this->db->table('hz_file')->order('created_on')->find(['parent' => $parent, 'filename' => $filename]);
         $dups = $q->fetchAll();
         if (count($dups) < 2) {
             return true;
