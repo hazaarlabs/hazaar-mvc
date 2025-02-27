@@ -1,0 +1,10 @@
+{
+    "development": {
+        "type": "pgsql",
+        "host": "localhost",
+        "port": 5432,
+        "dbname": "hazaar_framework",
+        "user": "phpunit",
+        "password": "phpunit12345"
+    }
+}

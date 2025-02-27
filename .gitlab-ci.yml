@@ -117,12 +117,9 @@ Unit Testing:
     POSTGRES_HOST_AUTH_METHOD: trust
   before_script:
     - composer install
-    - psql -h postgres -U phpunit -c "CREATE DATABASE hazaar_framework;"
   script:
-    - vendor/bin/phpunit
+    - vendor/bin/phpunit --debug
   artifacts:
-    paths:
-      - db.log
     reports:
       junit: phpunit-test-results.xml
 

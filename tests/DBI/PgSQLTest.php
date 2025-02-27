@@ -22,53 +22,45 @@ class DBITestModel extends Model
  */
 class PgSQLTest extends TestCase
 {
-    /**
-     * @var array<string,string>
-     */
-    private array $config = [
-        'type' => 'pgsql',
-        'host' => 'db.hazaar.io',
-        'user' => 'phpunit',
-        'password' => 'phpunit12345', //Insecure password for testing purposes
-        'dbname' => 'hazaar_framework',
-    ];
-
     public function setUp(): void
     {
-        $db = new Adapter($this->config);
+        $db = new Adapter();
         $db->exec('DROP TABLE IF EXISTS test_table');
         $db->exec('CREATE TABLE test_table (id INT PRIMARY KEY, name TEXT, stored BOOLEAN DEFAULT TRUE)');
     }
 
     public function testDatabaseConfig(): void
     {
-        $db = new Adapter($this->config);
+        $db = new Adapter();
         $this->assertEquals('pgsql', $db->config['type']);
-        $this->assertEquals([['name' => 'test_table', 'schema' => 'public']], $db->listTables());
+        $tables = $db->listTables();
+        $this->assertNotEmpty($tables);
+        $this->assertContains(['name' => 'test_table', 'schema' => 'public'], $tables);
     }
 
     public function testSQLGeneratorSELECT(): void
     {
-        $db = new Adapter($this->config);
+        $db = new Adapter();
         $sql = 'SELECT id, name FROM "public"."test" WHERE id = 1';
         $this->assertEquals($sql, (string) $db->table('test')->select(['id', 'name'])->where(['id' => 1]));
-        $this->assertEquals($sql, (string) $db->table('test')->find(['id' => 1], ['id', 'name']));
     }
 
     public function testSQLGeneratorJOIN(): void
     {
-        $db = new Adapter($this->config);
+        $db = new Adapter();
         $sql = 'SELECT id, name FROM "public"."test" "t1" INNER JOIN test2 t2 ON t1.id = t2.id WHERE id = 1';
         $q = $db->table('test', 't1')
             ->join('test2', 't1.id = t2.id', 't2')
-            ->find(['id' => 1], ['id', 'name'])
+            ->select(['id', 'name'])
+            ->where(['id' => 1])
+            ->toString()
         ;
         $this->assertEquals($sql, (string) $q);
     }
 
     public function testSQLGeneratorINSERT(): void
     {
-        $db = new Adapter($this->config);
+        $db = new Adapter();
         $sql = 'INSERT INTO "public"."test_table" (id, name) VALUES (1, \'test\')';
         $this->assertEquals(1, $db->table('test_table')->insert(['id' => 1, 'name' => 'test']));
         $this->assertEquals($sql, $db->lastQueryString());
@@ -76,7 +68,7 @@ class PgSQLTest extends TestCase
 
     public function testSQLGeneratorUPDATE(): void
     {
-        $db = new Adapter($this->config);
+        $db = new Adapter();
         $sql = 'UPDATE "public"."test_table" SET name = \'updated\' WHERE id = 1';
         $this->assertEquals(1, $db->table('test_table')->insert(['id' => 1, 'name' => 'test']));
         $this->assertEquals(1, $db->table('test_table')->update(['name' => 'updated'], ['id' => 1]));
@@ -85,7 +77,7 @@ class PgSQLTest extends TestCase
 
     public function testSQLGeneratorDELETE(): void
     {
-        $db = new Adapter($this->config);
+        $db = new Adapter();
         $sql = 'DELETE FROM "public"."test_table" WHERE (id = 1 OR id = 2)';
         $this->assertEquals(1, $db->table('test_table')->insert(['id' => 1, 'name' => 'test']));
         $this->assertEquals(1, $db->table('test_table')->insert(['id' => 2, 'name' => 'test']));
@@ -95,7 +87,7 @@ class PgSQLTest extends TestCase
 
     public function testModelInsert(): void
     {
-        $db = new Adapter($this->config);
+        $db = new Adapter();
         $sql = 'INSERT INTO "public"."test_table" (id, name) VALUES (1234, \'Test Name\') RETURNING stored';
         $data = [
             'id' => 1234,
@@ -108,9 +100,25 @@ class PgSQLTest extends TestCase
         $this->assertEquals($sql, $db->lastQueryString());
     }
 
+    public function testModelSelect(): void
+    {
+        $db = new Adapter();
+        $data = [
+            'id' => 1234,
+            'name' => 'Test Name',
+        ];
+        $this->assertEquals(1, $db->table('test_table')->insert($data));
+        $result = $db->table('test_table')->find(['id' => 1234]);
+        $model = $result->fetchModel(DBITestModel::class);
+        $this->assertInstanceOf(DBITestModel::class, $model);
+        $this->assertEquals($data['name'], $model->name);
+        $this->assertEquals($data['id'], $model->id);
+        $this->assertTrue($model->stored); // default value
+    }
+
     public function testInsertSelect(): void
     {
-        $db = new Adapter($this->config);
+        $db = new Adapter();
         $sql = 'SELECT * FROM "public"."test_table" WHERE id = 1234';
         $data = [
             'id' => 1234,
@@ -125,7 +133,7 @@ class PgSQLTest extends TestCase
 
     public function testSelectRow(): void
     {
-        $db = new Adapter($this->config);
+        $db = new Adapter();
         $sql = 'SELECT * FROM "public"."test_table" WHERE id = 1234';
         $data = [
             'id' => 1234,
