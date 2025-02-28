@@ -235,9 +235,16 @@ class Redis extends Backend
             $chunk = substr($this->buffer, $this->offset, $bytes);
             $this->offset += ($bytes + 2);
         } else {
+            while ($this->offset > strlen($this->buffer)) {
+                $this->buffer .= $socket->recv();
+            }
             // Keep receiving data from the socket if the current chunk is incomplete
             while (!($offset = strpos($this->buffer, $this->delim, $this->offset))) {
-                $this->buffer .= $socket->recv();
+                $buf = $socket->recv();
+                if (!$buf) {
+                    throw new Exception\RedisError('Error reading from socket!');
+                }
+                $this->buffer .= $buf;
             }
             $chunk = substr($this->buffer, $this->offset, $offset - $this->offset);
             $this->offset = $offset + 2;

@@ -326,18 +326,18 @@ class Response implements Interface\Response
      * specified in the `$this->headers` array. If the content length is not provided, it will be
      * determined by the `getContentLength` method.
      *
-     * @param null|int $content_length The length of the content. If null, it will be determined automatically.
+     * @param null|int $contentLength The length of the content. If null, it will be determined automatically.
      */
-    private function writeHeaders(?int $content_length = null): void
+    private function writeHeaders(?int $contentLength = null): void
     {
         http_response_code($this->statusCode);
         if ($contentType = $this->getContentType()) {
             header('Content-Type: '.$contentType);
         }
-        if (null === $content_length) {
-            $content_length = $this->getContentLength();
+        if (null === $contentLength) {
+            $contentLength = $this->getContentLength();
         }
-        header('Content-Length: '.$content_length);
+        header('Content-Length: '.$contentLength);
         foreach ($this->headers as $name => $header) {
             if (is_array($header)) {
                 foreach ($header as $value) {
