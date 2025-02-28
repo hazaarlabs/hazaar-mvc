@@ -17,14 +17,14 @@ use Hazaar\Loader;
 use Hazaar\Session;
 
 /**
- * @brief       Controller HTTP Request Class
+ * Application HTTP Request Class.
  *
- * @detail      The HTTP controller request class is a representational object for an HTTP request.  The Application
- *              object will create a HTTP request object upon each execution.  This object contains all details of
- *              the current request including request data, headers and any request body content.
+ * The HTTP request class is a representational object for an HTTP request.  The Application
+ * object will create a HTTP request object upon each execution.  This object contains all details of
+ * the current request including request data, headers and any request body content.
  *
- *              If you want to generate your own HTTP request object to pass to another method or function that requires
- *              one, see [[Hazaar\HTTP\Request]].
+ * If you want to generate your own HTTP request object to pass to another method or function that requires
+ * one, see [[Hazaar\HTTP\Request]].
  */
 class Request implements Interface\Request
 {
@@ -63,12 +63,11 @@ class Request implements Interface\Request
     /**
      * @detail      The HTTP request object constructor.
      *
-     * @param array<mixed> $request Optional reference to $_REQUEST
-     * @param array<mixed> $server  Optional reference to $_SERVER
+     * @param array<mixed> $server Optional reference to $_SERVER
      */
-    public function __construct(?array $server = null, ?array $request = null, bool $processRequestBody = false)
+    public function __construct(?array $server = null, bool $processRequestBody = false)
     {
-        $this->path = $this->init($server, $request, $processRequestBody);
+        $this->path = $this->init($server, $processRequestBody);
     }
 
     /**
@@ -96,19 +95,21 @@ class Request implements Interface\Request
     }
 
     /**
-     * @detail      The HTTP init method takes only a single optional argument which is the
-     *              request array provided by PHP ($_REQUEST).
+     * The Application HTTP request object initialisation method.
+     *
+     * This method is called by the constructor to initialise the request object.  It will parse the request URI
+     * and any request parameters and set them as properties of the object.
+     *
      *
      *              The constructor will also get all the request headers and the request content and
      *              from there will use the [[Hazaar\Application\Request]] parent class to determine the
      *              name of the Controller and Action that is being requested via it's evaluate() method.
      *
-     * @param array<mixed> $request Optional reference to $_REQUEST
-     * @param array<mixed> $server  Optional reference to $_SERVER
+     * @param array<mixed> $server Optional reference to $_SERVER
      */
-    public function init(?array $server = null, ?array $request = null, bool $processRequestBody = false): string
+    public function init(?array $server = null, bool $processRequestBody = false): string
     {
-        $request = $request ?: $_REQUEST;
+        $request = array_merge($_GET, $_POST);
         $server = $server ?: $_SERVER;
         $this->method = ake($server, 'REQUEST_METHOD', 'GET');
         if (function_exists('getallheaders')) {

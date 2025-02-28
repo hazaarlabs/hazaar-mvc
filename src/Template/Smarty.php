@@ -244,7 +244,6 @@ class Smarty
             $defaultParams['_ENV'] = $_ENV;
             $defaultParams['_GET'] = $_GET;
             $defaultParams['_POST'] = $_POST;
-            $defaultParams['_REQUEST'] = $_REQUEST;
             $defaultParams['_SERVER'] = $_SERVER;
         }
         $renderParameters = array_merge($defaultParams, (array) $params);
