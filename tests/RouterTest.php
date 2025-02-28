@@ -127,4 +127,16 @@ class RouterTest extends TestCase
         $this->assertEquals(['word' => 'hellothere'], $route->getActionArgs());
         $this->assertInstanceOf(Response::class, $controller->run($route));
     }
+
+    public function testNoneRouter(): void
+    {
+        $request = new Request([
+            'REQUEST_METHOD' => 'GET',
+            'REQUEST_URI' => '/test/hellothere',
+        ]);
+        $this->config['type'] = 'none';
+        $router = new Router($this->config);
+        $this->assertTrue($router->initialise());
+        $this->assertNull($router->evaluateRequest($request));
+    }
 }
