@@ -9,7 +9,15 @@ use Hazaar\Controller\Response;
 
 interface Controller
 {
-    public function run(?Route $route = null): Response;
+    /**
+     * Run the controller.
+     */
+    public function run(): Response;
+
+    /**
+     * Evaluate a route and run the controller.
+     */
+    public function runRoute(?Route $route = null): Response;
 
     /**
      * @param array<int|string,mixed> $actionArgs

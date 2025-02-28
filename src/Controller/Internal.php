@@ -27,7 +27,7 @@ class Internal extends Controller
      *
      * @throws \Exception if the support file specified by the route is not found
      */
-    public function run(?Route $route = null): Response
+    public function runRoute(?Route $route = null): Response
     {
         $response = $this->runAction($route->getAction(), $route->getActionArgs());
         if ($response instanceof Response) {

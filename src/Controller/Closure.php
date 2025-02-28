@@ -37,7 +37,7 @@ class Closure extends Controller
      *                  - If the closure returns an array or an object, it is wrapped in a JSON response.
      *                  - Otherwise, the response is wrapped in a Text response.
      */
-    public function run(?Route $route = null): Response
+    public function runRoute(?Route $route = null): Response
     {
         $boundClosure = $this->closure->bindTo($this, self::class);
         $response = call_user_func_array($boundClosure, $route->getActionArgs());

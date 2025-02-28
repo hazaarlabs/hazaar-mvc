@@ -82,11 +82,9 @@ class Diagnostic extends Action
      * or the existence of a 'run' method. If neither is found, it defaults to an HTML response.
      * The response is then wrapped in the appropriate Response object if it is not already an instance of Response.
      *
-     * @param null|Route $route the route object, which may be null
-     *
      * @return Response the response object, which can be of type JSON or HTML
      */
-    final public function run(?Route $route = null): Response
+    final public function run(): Response
     {
         if ($this->responseType && method_exists($this, $method = Response::getResponseTypeName($this->responseType))) {
             $response = call_user_func([$this, $method], $this->caller);

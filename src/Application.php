@@ -517,7 +517,7 @@ class Application
                 $controller = $route->getController();
                 $response = $controller->initialize($request);
                 if (null === $response) {
-                    $response = $controller->run($route);
+                    $response = $controller->runRoute($route);
                 }
             }
             if (count($this->outputFunctions) > 0) {

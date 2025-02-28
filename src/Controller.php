@@ -100,7 +100,25 @@ abstract class Controller implements Controller\Interface\Controller
         return null;
     }
 
-    public function run(?Route $route = null): Response
+    /**
+     * Directly run the controller.
+     *
+     * This method is called by the application to run the controller.  It is the main entry point for the controller
+     * when there is no route to run.  This is used by the Diagnostic controller to run the controller directly
+     * or by custom controllers that are not part of the normal routing system.
+     */
+    public function run(): Response
+    {
+        return new Response\HTTP\NotImplemented();
+    }
+
+    /**
+     * Run a route.
+     *
+     * This method is called by the application to run a route.  It is the main entry point for the controller
+     * when there is a route to run.  This is the standard way to run a controller when a route is defined.
+     */
+    public function runRoute(?Route $route = null): Response
     {
         if ($response = $this->getCachedResponse($route)) {
             return $response;

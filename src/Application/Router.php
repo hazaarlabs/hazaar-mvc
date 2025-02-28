@@ -94,7 +94,7 @@ class Router
         $path = $request->getPath();
         // Search for internal controllers
         if ($offset = strpos($path, '/', 1)) {
-            $route = substr($path, 0, $offset);
+            $route = substr($path, 1, $offset);
             if (array_key_exists($route, self::$internal)) {
                 $controller = self::$internal[$route];
                 $action = substr($path, $offset + 1);
