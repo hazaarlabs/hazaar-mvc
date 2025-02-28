@@ -9,7 +9,8 @@
         "name": "test"
       },
       "debug": true,
-      "defaultController": "Index"
+      "defaultController": "Index",
+      "runtimePath": "/var/hazaar"
     },
     "paths": {
       "model": "models",
