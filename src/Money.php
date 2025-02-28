@@ -247,7 +247,7 @@ class Money
             if (null === self::$cache) {
                 self::$cache = new Adapter(['apc', 'file']);
             }
-            $key = 'exchange_rate_'.$base;
+            $key = 'exchange:rate:'.$base;
             if (!(self::$exchangeRates[$base] = self::$cache->get($key))) {
                 $url = 'https://api.hazaar.io/api/money/latest?base='.$base;
                 $result = json_decode(file_get_contents($url), true);
