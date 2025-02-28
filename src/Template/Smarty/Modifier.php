@@ -25,7 +25,7 @@ class Modifier
     public function execute(string $name, mixed $value, mixed ...$args): mixed
     {
         if (array_key_exists($name, $this->loadedModifiers)) {
-            return $this->runWithArgs($name, $value, $args);
+            return $this->runWithArgs($name, $value, ...$args);
         }
         $className = 'Hazaar\Template\Smarty\Modifier\\'.str_replace(' ', '', ucwords(str_replace('_', ' ', $name)));
         if (is_reserved($name)) {
