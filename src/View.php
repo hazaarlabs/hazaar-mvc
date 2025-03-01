@@ -13,6 +13,7 @@ namespace Hazaar;
 
 use Hazaar\Application\FilePath;
 use Hazaar\Application\URL;
+use Hazaar\Template\Smarty;
 use Hazaar\View\Helper;
 
 /**
@@ -371,7 +372,8 @@ class View implements \ArrayAccess
         $output = '';
         $parts = pathinfo($this->viewFile);
         if ('tpl' == ake($parts, 'extension')) {
-            $template = new File\Template\Smarty($this->viewFile);
+            $template = new Smarty();
+            $template->loadFromFile($this->viewFile);
             $template->registerFunctionHandler($this);
             $output = $template->render($data ?? $this->data);
         } else {

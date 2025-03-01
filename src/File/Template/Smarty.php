@@ -12,7 +12,7 @@ use Hazaar\File\Template\Exception\SmartyRenderException;
 /**
  * The View\Template class.
  */
-class Smarty extends \Hazaar\Template\Smarty
+class SmartyOld extends \Hazaar\Template\Smarty
 {
     public static bool $cache_enabled = true;
     private bool $__cache_enabled = false;
@@ -32,16 +32,17 @@ class Smarty extends \Hazaar\Template\Smarty
 
     public function __destruct()
     {
-        if ($this->__cache_file) {
-            $header = "@{$this->__source_file}";
-            if (count($this->__includes) > 0) {
-                foreach ($this->__includes as &$include) {
-                    $include = $this->__source_file->relativepath($include);
-                }
-                $header .= ';'.implode(';', $this->__includes);
-            }
-            $this->__cache_file->putContents($header."\n".$this->__compiledContent);
+        if (!$this->__cache_file) {
+            return;
         }
+        $header = "@{$this->__source_file}";
+        if (count($this->__includes) > 0) {
+            foreach ($this->__includes as &$include) {
+                $include = $this->__source_file->relativepath($include);
+            }
+            $header .= ';'.implode(';', $this->__includes);
+        }
+        $this->__cache_file->putContents($header."\n".$this->__compiledContent);
     }
 
     public function loadFromFile(File|string $file): void

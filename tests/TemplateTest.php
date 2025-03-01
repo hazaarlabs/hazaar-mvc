@@ -241,4 +241,23 @@ class TemplateTest extends TestCase
         $smarty->loadFromString('Hello {$name|implode:" "}!');
         $this->assertEquals('Hello Hello World!', $smarty->render(['name' => ['Hello', 'World']]));
     }
+
+    public function testCanRenderSmartyTemplateFromFile(): void
+    {
+        $smarty = new \Hazaar\File\Template\Smarty(__DIR__.'/templates/hello.tpl');
+        $result = $smarty->render([
+            'userName' => 'John Doe',
+            'welcomeMessage' => 'Welcome to our Amazing Site',
+            'introText' => 'This is a personalized welcome message for our valued users.',
+            'items' => [
+                ['title' => 'First Item', 'description' => 'Description of the first item'],
+                ['title' => 'Second Item', 'description' => 'Description of the second item'],
+            ],
+        ]);
+        $this->assertStringContainsString('Welcome, John Doe', $result);
+        $this->assertStringContainsString('Welcome to our Amazing Site', $result);
+        $this->assertStringContainsString('<h3>First Item</h3>', $result);
+        $this->assertStringContainsString('<p>Description of the first item</p>', $result);
+        $this->assertStringContainsString('<h3>Second Item</h3>', $result);
+    }
 }
