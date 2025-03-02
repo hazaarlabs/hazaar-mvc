@@ -8,6 +8,7 @@ use Hazaar\Application\FilePath;
 use Hazaar\Console\Command;
 use Hazaar\Console\Input;
 use Hazaar\Console\Output;
+use Hazaar\File;
 use Hazaar\Template\Smarty;
 
 class CreateCommand extends Command
@@ -112,7 +113,7 @@ class CreateCommand extends Command
             $result = file_put_contents($targetFile, file_get_contents($sourceFile));
         } else {
             $sourceTemplate = new Smarty();
-            $sourceTemplate->loadFromFile($sourceFile);
+            $sourceTemplate->loadFromFile(new File($sourceFile));
             $result = file_put_contents($targetFile, "<?php\n\n".$sourceTemplate->render($params));
         }
 

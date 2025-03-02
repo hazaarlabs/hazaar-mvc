@@ -6,7 +6,7 @@ namespace Hazaar\File\Template\Exception;
 
 use Hazaar\File;
 
-class SmartyRenderException extends \Exception
+class RenderFailed extends \Exception
 {
     public function __construct(string $message, File $sourceFile, int $line = 0, ?\Throwable $previous = null)
     {

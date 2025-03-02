@@ -4,14 +4,25 @@ declare(strict_types=1);
 
 namespace Hazaar\Template\Smarty\Renderer;
 
+use Hazaar\Template\Exception\SmartyTemplateError;
 use Hazaar\Template\Smarty\Renderer;
 
 class Memory extends Renderer
 {
-    private string $compiledTemplate;
-
-    public function render(?string $file = null): string
+    public function render(string $id, string $code): object
     {
-        return $this->compiledTemplate;
+        $errors = error_reporting();
+        error_reporting(0);
+
+        try {
+            eval($code);
+        } catch (\Throwable $e) {
+            throw new SmartyTemplateError($e);
+        } finally {
+            error_clear_last();
+            error_reporting($errors);
+        }
+
+        return new $id();
     }
 }
