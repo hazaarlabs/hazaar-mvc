@@ -6,11 +6,13 @@ namespace Hazaar\File\Backend;
 
 use Hazaar\Cache\Adapter;
 use Hazaar\File\Backend\Exception\GoogleDriveError;
+use Hazaar\File\Interface\Backend as BackendInterface;
+use Hazaar\File\Interface\Driver as DriverInterface;
 use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 
-class GoogleDrive extends Client implements Interface\Backend, Interface\Driver
+class GoogleDrive extends Client implements BackendInterface, DriverInterface
 {
     public string $separator = '/';
 

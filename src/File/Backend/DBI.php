@@ -6,9 +6,11 @@ namespace Hazaar\File\Backend;
 
 use Hazaar\DateTime;
 use Hazaar\DBI\Adapter;
+use Hazaar\File\Interface\Backend as BackendInterface;
+use Hazaar\File\Interface\Driver as DriverInterface;
 use Hazaar\File\Manager;
 
-class DBI implements Interface\Backend, Interface\Driver
+class DBI implements BackendInterface, DriverInterface
 {
     public string $separator = '/';
     protected Manager $manager;

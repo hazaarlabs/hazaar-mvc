@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\File\Backend\Interface;
+namespace Hazaar\File\Interface;
 
 use Hazaar\File\Manager;
 

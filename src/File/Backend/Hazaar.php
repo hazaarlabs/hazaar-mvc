@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Hazaar\File\Backend;
 
+use Hazaar\File\Interface\Backend as BackendInterface;
+use Hazaar\File\Interface\Driver as DriverInterface;
 use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 use Hazaar\HTTP\URL;
-use Hazaar\Map;
 
-class Hazaar implements Interface\Backend, Interface\Driver
+class Hazaar implements BackendInterface, DriverInterface
 {
     public string $separator = '/';
     protected Manager $manager;

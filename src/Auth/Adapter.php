@@ -19,6 +19,7 @@ use Hazaar\Application\Request;
 use Hazaar\Application\Request\HTTP;
 use Hazaar\Auth\Adapter\Exception\Unauthorised;
 use Hazaar\Auth\Adapter\Exception\UnknownStorageAdapter;
+use Hazaar\Auth\Interface\Adapter as AdapterInterface;
 use Hazaar\Auth\Interface\Storage;
 
 /**
@@ -78,7 +79,7 @@ use Hazaar\Auth\Interface\Storage;
  *
  * @implements \ArrayAccess<string,mixed>
  */
-abstract class Adapter implements Interface\Adapter, \ArrayAccess
+abstract class Adapter implements AdapterInterface, \ArrayAccess
 {
     /**
      * The configuration options.

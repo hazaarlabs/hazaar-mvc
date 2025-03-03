@@ -6,11 +6,13 @@ namespace Hazaar\File\Backend;
 
 use Hazaar\Cache\Adapter;
 use Hazaar\File\Image;
+use Hazaar\File\Interface\Backend as BackendInterface;
+use Hazaar\File\Interface\Driver as DriverInterface;
 use Hazaar\File\Manager;
 use Hazaar\HTTP\Request;
 use Hazaar\HTTP\Response;
 
-class WebDAV extends \Hazaar\HTTP\WebDAV implements Interface\Backend, Interface\Driver
+class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInterface
 {
     public string $separator = '/';
     protected Manager $manager;

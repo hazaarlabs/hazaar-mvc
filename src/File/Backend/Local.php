@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Hazaar\File\Backend;
 
 use Hazaar\File\BTree;
+use Hazaar\File\Interface\Backend as BackendInterface;
+use Hazaar\File\Interface\Driver as DriverInterface;
 use Hazaar\File\Manager;
 
-class Local implements Interface\Backend, Interface\Driver
+class Local implements BackendInterface, DriverInterface
 {
     public string $separator = DIRECTORY_SEPARATOR;
     protected Manager $manager;
