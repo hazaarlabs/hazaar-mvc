@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace Hazaar\Template;
 
+use Hazaar\Application;
+use Hazaar\DateTime;
 use Hazaar\File;
+use Hazaar\Template\Exception\SmartyRendererTypeNotSupported;
 use Hazaar\Template\Exception\SmartyTemplateError;
 use Hazaar\Template\Smarty\Compiler;
+use Hazaar\Template\Smarty\Enum\RendererType;
 
 /**
  * Smarty 2.0 Templates.
@@ -26,6 +30,7 @@ class Smarty
 {
     public ?string $sourceFile = null;
     public ?string $cwd = null;
+    public bool $allowGlobals = true;
 
     /**
      * @var array<mixed>
@@ -60,6 +65,8 @@ class Smarty
      * @var array<mixed>
      */
     private array $functionHandlers = [];
+
+    private RendererType $rendererType = RendererType::AUTO;
 
     /**
      * Create a new Smarty template object.
@@ -195,29 +202,81 @@ class Smarty
      */
     public function render(array $params = []): string
     {
-        if (!$this->compiler->isCompiled()) {
-            $this->compiler->exec($this->content);
+        $app = Application::getInstance();
+        $defaultParams = [
+            'hazaar' => ['version' => HAZAAR_VERSION],
+            'application' => $app ?? null,
+            'smarty' => [
+                'now' => new DateTime(),
+                'const' => get_defined_constants(),
+                'capture' => [],
+                'config' => $app ? $app->config->toArray() : [],
+                'section' => [],
+                'foreach' => [],
+                'template' => null,
+                'version' => 2,
+            ],
+        ];
+        if ($this->allowGlobals) {
+            $defaultParams['_COOKIE'] = $_COOKIE;
+            $defaultParams['_ENV'] = $_ENV;
+            $defaultParams['_GET'] = $_GET;
+            $defaultParams['_POST'] = $_POST;
+            $defaultParams['_SERVER'] = $_SERVER;
         }
-
-        $id = '_template_'.md5(uniqid());
-        $code = $this->compiler->getCode($id);
-
+        $renderParameters = array_merge($defaultParams, (array) $params);
+        if (array_key_exists('*', $renderParameters)) {
+            $renderParameters['__DEFAULT_VAR__'] = $renderParameters['*'];
+            unset($params['*']);
+        } else {
+            $renderParameters['__DEFAULT_VAR__'] = '';
+        }
+        $templateId = '_smarty_template';
+        // Temporarily disable error reporting to prevent errors from being displayed
         $errors = error_reporting();
         error_reporting(0);
 
         try {
-            eval($code);
+            if (($this->sourceFile && RendererType::AUTO === $this->rendererType)
+                || RendererType::PHP === $this->rendererType) {
+                $templateId .= '_'.md5($this->sourceFile);
+                $templatePath = $app->getRuntimePath('templates');
+                if (!file_exists($templatePath)) {
+                    mkdir($templatePath, 0777, true);
+                }
+                $templateFile = $templatePath.DIRECTORY_SEPARATOR.$templateId.'.php';
+                if (!file_exists($templateFile) || filemtime($this->sourceFile) > filemtime($templateFile)) {
+                    if (!$this->compiler->isCompiled()) {
+                        $this->compiler->exec($this->content);
+                    }
+                    $code = $this->compiler->getCode($templateId);
+                    file_put_contents($templateFile, "<?php\n".$code);
+                }
+
+                include_once $templateFile;
+            } elseif ((!$this->sourceFile && RendererType::AUTO === $this->rendererType)
+            || RendererType::EVAL === $this->rendererType) {
+                if (!$this->compiler->isCompiled()) {
+                    $this->compiler->exec($this->content);
+                }
+                $templateId .= md5(uniqid());
+                $code = $this->compiler->getCode($templateId);
+                eval($code);
+            } else {
+                throw new SmartyRendererTypeNotSupported($this->rendererType);
+            }
             ob_start();
-            $obj = new $id();
+            $obj = new $templateId();
             $obj->functionHandlers = $this->functionHandlers;
             $obj->includeFuncs = $this->includeFuncs;
             $obj->functions = $this->customFunctions;
-            $obj->render($params);
+            $obj->render($renderParameters);
             // Merge the functions from the included templates
             $this->functions = array_merge($this->functions, $obj->functions);
         } catch (\Throwable $e) {
             throw new SmartyTemplateError($e);
         } finally {
+            // Restore error reporting
             error_clear_last();
             error_reporting($errors);
         }

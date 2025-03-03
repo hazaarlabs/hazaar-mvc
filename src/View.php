@@ -12,8 +12,8 @@ declare(strict_types=1);
 namespace Hazaar;
 
 use Hazaar\Application\FilePath;
-use Hazaar\Application\URL;
 use Hazaar\Template\Smarty;
+use Hazaar\View\FunctionHandler;
 use Hazaar\View\Helper;
 
 /**
@@ -56,10 +56,17 @@ class View implements \ArrayAccess
      */
     private $requiresParam = [];
 
-    public function __construct(string|View $view)
+    /**
+     * View constructor.
+     *
+     * @param string|View  $view     The name of the view to load or a View object to clone
+     * @param array<mixed> $viewData The data to pass to the view
+     */
+    public function __construct(string|View $view, array $viewData = [])
     {
         $this->load($view);
         $this->application = Application::getInstance();
+        $this->data = $viewData;
         // if (count($inithelpers) > 0) {
         //     foreach ($inithelpers as $helper) {
         //         $this->addHelper($helper);
@@ -374,8 +381,8 @@ class View implements \ArrayAccess
         if ('tpl' == ake($parts, 'extension')) {
             $template = new Smarty();
             $template->loadFromFile(new File($this->viewFile));
-            $template->registerFunctionHandler($this);
-            $output = $template->render($data ?? $this->data);
+            $template->registerFunctionHandler(new FunctionHandler($this->application));
+            $output = $template->render(array_merge($this->data, $data ?? []));
         } else {
             ob_start();
             if (!($file = $this->getViewFile()) || !file_exists($file)) {
@@ -480,67 +487,6 @@ class View implements \ArrayAccess
         }
 
         return $output;
-    }
-
-    /**
-     * Generates a URL based on the provided controller, action, parameters, and absolute flag.
-     *
-     * @param string       $controller the name of the controller
-     * @param string       $action     the name of the action
-     * @param array<mixed> $params     an array of parameters to be included in the URL
-     * @param bool         $absolute   determines whether the generated URL should be absolute or relative
-     *
-     * @return URL the generated URL
-     */
-    public function url(?string $controller = null, ?string $action = null, array $params = [], bool $absolute = false): URL
-    {
-        return $this->application->getURL($controller, $action, $params, $absolute);
-    }
-
-    /**
-     * Returns a date string formatted to the current set date format.
-     */
-    public function date(DateTime|string $date): string
-    {
-        if (!$date instanceof DateTime) {
-            $date = new DateTime($date);
-        }
-
-        return $date->date();
-    }
-
-    /**
-     * Return a date/time type as a timestamp string.
-     *
-     * This is for making it quick and easy to output consistent timestamp strings.
-     */
-    public static function timestamp(DateTime|string $value): string
-    {
-        if (!$value instanceof DateTime) {
-            $value = new DateTime($value);
-        }
-
-        return $value->timestamp();
-    }
-
-    /**
-     * Return a formatted date as a string.
-     *
-     * @param mixed  $value  This can be practically any date type.  Either a \Hazaar\DateTime object, epoch int, or even a string.
-     * @param string $format Optionally specify the format to display the date.  Otherwise the current default is used.
-     *
-     * @return string the nicely formatted datetime string
-     */
-    public static function datetime(mixed $value, ?string $format = null): string
-    {
-        if (!$value instanceof DateTime) {
-            $value = new DateTime($value);
-        }
-        if ($format) {
-            return $value->format($format);
-        }
-
-        return $value->datetime();
     }
 
     public function offsetExists(mixed $offset): bool

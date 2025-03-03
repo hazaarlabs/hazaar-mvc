@@ -7,6 +7,6 @@ namespace Hazaar\Template\Smarty\Enum;
 enum RendererType: string
 {
     case AUTO = 'auto';
-    case MEMORY = 'memory';
-    case FILE = 'file';
+    case EVAL = 'eval';
+    case PHP = 'php';
 }
