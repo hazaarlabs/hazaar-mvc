@@ -560,6 +560,9 @@ class Compiler
             && file_exists($file.'.tpl')) {
             $file .= '.tpl';
         }
+        if (!file_exists($file)) {
+            throw new IncludeFileNotFound($file);
+        }
         $this->includes[] = $file;
         $compiler = new self($this->ldelim, $this->rdelim);
         $compiler->setCWD(dirname($file));
