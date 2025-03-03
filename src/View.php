@@ -373,7 +373,7 @@ class View implements \ArrayAccess
         $parts = pathinfo($this->viewFile);
         if ('tpl' == ake($parts, 'extension')) {
             $template = new Smarty();
-            $template->loadFromFile($this->viewFile);
+            $template->loadFromFile(new File($this->viewFile));
             $template->registerFunctionHandler($this);
             $output = $template->render($data ?? $this->data);
         } else {

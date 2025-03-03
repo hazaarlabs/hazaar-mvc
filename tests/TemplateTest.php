@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Hazaar\Tests;
 
+use Hazaar\File;
 use Hazaar\Template\Smarty;
+use Hazaar\Template\Smarty\Compiler;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -23,10 +25,10 @@ class TemplateTest extends TestCase
     {
         $smarty = new Smarty();
         $params = ['name' => 'World'];
-        $smarty->setDelimiters('{{', '}}');
+        $smarty->compiler->setDelimiters('{{', '}}');
         $smarty->loadFromString('Hello {{$name}}!');
         $this->assertEquals('Hello World!', $smarty->render($params));
-        $smarty->setDelimiters('<', '>');
+        $smarty->compiler->setDelimiters('<', '>');
         $smarty->loadFromString('Hello <$name>!');
         $this->assertEquals('Hello World!', $smarty->render($params));
         // Test that the delimiters are not replaced in the template
@@ -244,7 +246,8 @@ class TemplateTest extends TestCase
 
     public function testCanRenderSmartyTemplateFromFile(): void
     {
-        $smarty = new \Hazaar\File\Template\Smarty(__DIR__.'/templates/hello.tpl');
+        $smarty = new Smarty();
+        $smarty->loadFromFile(new File(__DIR__.'/templates/hello.tpl'));
         $result = $smarty->render([
             'userName' => 'John Doe',
             'welcomeMessage' => 'Welcome to our Amazing Site',
@@ -259,5 +262,16 @@ class TemplateTest extends TestCase
         $this->assertStringContainsString('<h3>First Item</h3>', $result);
         $this->assertStringContainsString('<p>Description of the first item</p>', $result);
         $this->assertStringContainsString('<h3>Second Item</h3>', $result);
+    }
+
+    public function testCanCompileSmartyTemplate(): void
+    {
+        $smartyCompiler = new Compiler();
+        $result = $smartyCompiler->exec('Hello {$name}!');
+        $this->assertTrue($result);
+        $compiledContent = $smartyCompiler->getCompiledContent();
+        $this->assertStringContainsString('Hello <?php $this->write($name); ?>!', $compiledContent);
+        $compiled = $smartyCompiler->getCode('_test_template_');
+        $this->assertStringContainsString('class _test_template_', $compiled);
     }
 }

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Hazaar\Template;
 
 use Hazaar\File;
+use Hazaar\Template\Exception\SmartyTemplateError;
 use Hazaar\Template\Smarty\Compiler;
-use Hazaar\Template\Smarty\Enum\RendererType;
 
 /**
  * Smarty 2.0 Templates.
@@ -24,8 +24,6 @@ use Hazaar\Template\Smarty\Enum\RendererType;
  */
 class Smarty
 {
-    public string $ldelim = '{';
-    public string $rdelim = '}';
     public ?string $sourceFile = null;
     public ?string $cwd = null;
 
@@ -33,6 +31,8 @@ class Smarty
      * @var array<mixed>
      */
     public array $functions = [];
+
+    public Compiler $compiler;
 
     /**
      * @var array<string>
@@ -44,27 +44,22 @@ class Smarty
      */
     protected array $customFunctions = [];
 
-    /**
-     * @var array<string>
-     */
     protected string $content = '';
-    protected string $compiledContent = '';
 
     /**
      * @var array<string>
      */
     protected array $includes = [];
-    private RendererType $rendererType = RendererType::AUTO;
-
-    /**
-     * @var array<object>
-     */
-    private array $customFunctionHandlers = [];
 
     /**
      * @var array<\Closure>
      */
     private array $filters = [];
+
+    /**
+     * @var array<mixed>
+     */
+    private array $functionHandlers = [];
 
     /**
      * Create a new Smarty template object.
@@ -77,6 +72,7 @@ class Smarty
         ?array $customFunctions = null,
         ?array $includeFuncs = null
     ) {
+        $this->compiler = new Compiler();
         $this->customFunctions = $customFunctions ?? [];
         $this->includeFuncs = $includeFuncs ?? [];
         if ($content) {
@@ -92,8 +88,7 @@ class Smarty
     public function loadFromString(string $content): void
     {
         $this->content = (string) $content;
-        $this->compiledContent = '';
-        $this->rendererType = RendererType::MEMORY;
+        $this->compiler->reset();
     }
 
     /**
@@ -109,13 +104,7 @@ class Smarty
         $this->sourceFile = $file->fullpath();
         $this->cwd = $file->dirname();
         $this->content = $file->getContents();
-        $this->compiledContent = '';
-        $this->rendererType = RendererType::FILE;
-    }
-
-    public function registerFunctionHandler(object $object): void
-    {
-        $this->customFunctionHandlers[] = $object;
+        $this->compiler->reset();
     }
 
     /**
@@ -134,6 +123,24 @@ class Smarty
     public function registerFunction(string $functionName, callable $callback): void
     {
         $this->customFunctions[$functionName] = $callback;
+    }
+
+    /**
+     * Register a custom function handler.
+     *
+     * Customer function handlers are objects that can be used to handle custom functions in the template.  A custom
+     * function is a function that is not built-in and is defined in the template and can be called using the syntax:
+     *
+     * ```
+     * {$functionName param1="value" param2="value"}
+     * ```
+     *
+     * You can register multiple custom function handlers.  The first handler that contains a method with the same
+     * name as the function will be used to handle the function.
+     */
+    public function registerFunctionHandler(mixed $handler): void
+    {
+        $this->functionHandlers[] = $handler;
     }
 
     /**
@@ -188,16 +195,33 @@ class Smarty
      */
     public function render(array $params = []): string
     {
-        if (!$this->compiledContent) {
-            $compiler = new Compiler();
-            $this->compiledContent = $compiler->exec($this->content);
+        if (!$this->compiler->isCompiled()) {
+            $this->compiler->exec($this->content);
         }
-        $renderer = match ($this->rendererType) {
-            RendererType::MEMORY => new Smarty\Renderer\Memory($this->compiledContent, $this->customFunctions, $this->includeFuncs),
-            RendererType::FILE => new Smarty\Renderer\File($this->compiledContent, $this->customFunctions, $this->includeFuncs),
-            default => throw new Exception\SmartyRendererTypeNotSupported($this->rendererType),
-        };
-        $content = $renderer->exec($params);
+
+        $id = '_template_'.md5(uniqid());
+        $code = $this->compiler->getCode($id);
+
+        $errors = error_reporting();
+        error_reporting(0);
+
+        try {
+            eval($code);
+            ob_start();
+            $obj = new $id();
+            $obj->functionHandlers = $this->functionHandlers;
+            $obj->includeFuncs = $this->includeFuncs;
+            $obj->functions = $this->customFunctions;
+            $obj->render($params);
+            // Merge the functions from the included templates
+            $this->functions = array_merge($this->functions, $obj->functions);
+        } catch (\Throwable $e) {
+            throw new SmartyTemplateError($e);
+        } finally {
+            error_clear_last();
+            error_reporting($errors);
+        }
+        $content = ob_get_clean();
         if (count($this->filters) > 0) {
             foreach ($this->filters as $filter) {
                 $content = $filter($content);
@@ -205,21 +229,5 @@ class Smarty
         }
 
         return $content;
-    }
-
-    /**
-     * Compile the template ready for rendering.
-     *
-     * This will normally happen automatically when calling Hazaar\Template\Smarty::render() but can be called
-     * separately if needed.  The compiled template content is returned and can be stored externally.
-     */
-    public function compile(): string
-    {
-        if ($this->compiledContent) {
-            return $this->compiledContent;
-        }
-        $compiler = new Compiler($this->ldelim, $this->rdelim);
-
-        return $this->compiledContent = $compiler->exec($this->content);
     }
 }

@@ -4,10 +4,21 @@ declare(strict_types=1);
 
 namespace Hazaar\Template\Smarty;
 
+use Hazaar\DateTime;
+use Hazaar\File;
+use Hazaar\Template\Exception\IncludeFileNotFound;
 use Hazaar\Template\Smarty;
 
 class Compiler
 {
+    /**
+     * @var array<string>
+     */
+    public array $includes = [];
+
+    /**
+     * @var array<string>
+     */
     protected static array $tags = [
         'if',
         'elseif',
@@ -29,7 +40,7 @@ class Compiler
     ];
     private string $ldelim = '{';
     private string $rdelim = '}';
-    private string $compiledTemplate;
+    private ?string $cwd = null;
 
     /**
      * @var array<mixed>
@@ -46,20 +57,54 @@ class Compiler
      */
     private array $captureStack = [];
 
-    public function __construct(string $ldelim = '{', string $rdelim = '}')
+    /**
+     * @var array<mixed>
+     */
+    private array $functionHandlers = [];
+
+    /**
+     * @var array<mixed>
+     */
+    private array $includeFuncs = [];
+
+    private string $compiledContent;
+
+    /**
+     * @param array<mixed> $functionHandlers
+     */
+    public function __construct(string $ldelim = '{', string $rdelim = '}', array $functionHandlers = [])
+    {
+        $this->ldelim = $ldelim;
+        $this->rdelim = $rdelim;
+        $this->functionHandlers = $functionHandlers;
+    }
+
+    public function setCWD(string $cwd): void
+    {
+        $this->cwd = $cwd;
+    }
+
+    public function setDelimiters(string $ldelim, string $rdelim): void
     {
         $this->ldelim = $ldelim;
         $this->rdelim = $rdelim;
     }
 
-    public function exec(?string $content = null): string
+    public function reset(): void
+    {
+        $this->sectionStack = [];
+        $this->foreachStack = [];
+        $this->captureStack = [];
+        unset($this->compiledContent);
+    }
+
+    public function exec(?string $content = null): bool
     {
         $compiledContent = preg_replace(['/\<\?/', '/\?\>/'], ['&lt;?', '?&gt;'], $content);
         $regex = '/\\'.$this->ldelim.'([#\$\*][^\}]+|(\/?\w+)\s*([^\}]*))\\'.$this->rdelim.'(\r?\n)?/';
         $literal = false;
         $strip = false;
-
-        return $this->compiledTemplate = preg_replace_callback($regex, function ($matches) use (&$literal, &$strip) {
+        $this->compiledContent = preg_replace_callback($regex, function ($matches) use (&$literal, &$strip) {
             $replacement = '';
             if (preg_match('/(\/?)literal/', $matches[1], $literals)) {
                 $literal = ('/' !== $literals[1]);
@@ -73,12 +118,12 @@ class Compiler
                 $replacement = $this->replaceCONFIG_VAR(substr($matches[1], 1, -1));
             // Must be a function so we exec the internal function handler
             } elseif (('/' == substr($matches[2], 0, 1)
-                && in_array(substr($matches[2], 1), Smarty::$tags))
-                || in_array($matches[2], Smarty::$tags)) {
+                && in_array(substr($matches[2], 1), self::$tags))
+                || in_array($matches[2], self::$tags)) {
                 $func = 'compile'.str_replace('/', 'END', strtoupper($matches[2]));
                 $replacement = $this->{$func}($matches[3]);
-            } elseif (count($this->__customFunctionHandlers) > 0
-                && $custom_handler = current(array_filter($this->__customFunctionHandlers, function ($item, $index) use ($matches) {
+            } elseif (count($this->functionHandlers) > 0
+                && $custom_handler = current(array_filter($this->functionHandlers, function ($item, $index) use ($matches) {
                     if (!method_exists($item, $matches[2])) {
                         return false;
                     }
@@ -101,6 +146,52 @@ class Compiler
 
             return $replacement;
         }, $compiledContent);
+
+        return true;
+    }
+
+    public function getCompiledContent(): string
+    {
+        return $this->compiledContent ?? '';
+    }
+
+    public function isCompiled(): bool
+    {
+        return isset($this->compiledContent);
+    }
+
+    public function getCode(string $templateObjectId): string
+    {
+        return "class {$templateObjectId} {
+            private \$modify;
+            private \$variables = [];
+            private \$params = [];
+            public  \$functions = [];
+            public  \$functionHandlers = [];
+            public  \$includeFuncs = [];
+            function __construct(){ \$this->modify = new \\Hazaar\\Template\\Smarty\\Modifier; }
+            public function render(\$params){
+                extract(\$this->params = \$params, EXTR_REFS);
+                ?>{$this->compiledContent}<?php
+            }
+            private function url(){
+                if(\$customHandler = current(array_filter(\$this->functionHandlers, function(\$item){
+                    return method_exists(\$item, 'url');
+                })))
+                    return call_user_func_array([\$customHandler, 'url'], func_get_args());
+                return new \\Hazaar\\Application\\Url(urldecode(implode('/', func_get_args())));
+            }
+            private function write(\$var){
+                echo (\$var === null ? \$this->params['__DEFAULT_VAR__'] : @\$var);
+            }
+            private function include(\$hash, array \$params = []){
+                if(!isset(\$this->includeFuncs[\$hash])) return '';
+                \$i = \$this->includeFuncs[\$hash];
+                \$out = \$i->render(\$params??[]);
+                \$this->functions = array_merge(\$this->functions, \$i->functions);
+                return \$out;
+            }
+        }";
     }
 
     public function compilePHP(): string
@@ -292,7 +383,7 @@ class Compiler
         if (!(($name = ake($params, 'name')) && ($loop = ake($params, 'loop')))) {
             return '';
         }
-        $this->__sectionStack[] = ['name' => $name, 'else' => false];
+        $this->sectionStack[] = ['name' => $name, 'else' => false];
         $var = $this->compileVAR($loop);
         $index = '$smarty[\'section\'][\''.$name.'\'][\'index\']';
         $count = '$__count_'.$name;
@@ -310,15 +401,15 @@ class Compiler
 
     protected function compileSECTIONELSE(): string
     {
-        end($this->__sectionStack);
-        $this->__sectionStack[key($this->__sectionStack)]['else'] = true;
+        end($this->sectionStack);
+        $this->sectionStack[key($this->sectionStack)]['else'] = true;
 
         return '<?php endfor; else: ?>';
     }
 
     protected function compileENDSECTION(): string
     {
-        $section = array_pop($this->__sectionStack);
+        $section = array_pop($this->sectionStack);
         if (true === $section['else']) {
             return '<?php endif; ?>';
         }
@@ -351,7 +442,7 @@ class Compiler
         if (($from = ake($params, 'from')) && ($item = ake($params, 'item'))) {
             $name = ake($params, 'name', 'foreach_'.uniqid());
             $var = $this->compileVAR($from);
-            $this->__foreachStack[] = ['name' => $name, 'else' => false];
+            $this->foreachStack[] = ['name' => $name, 'else' => false];
             $target = (($key = ake($params, 'key')) ? '$'.$key.' => ' : '').'$'.$item;
             $code = "<?php \$smarty['foreach']['{$name}'] = ['index' => -1, 'total' => ((isset({$var}) && is_array({$var}))?count({$var}):0)]; ";
             $code .= "if(isset({$var}) && is_array({$var}) && count({$var}) > 0): ";
@@ -360,7 +451,7 @@ class Compiler
             $name = ake($params, 'name', 'foreach_'.uniqid());
             $var = $this->compileVAR(ake($params, 0));
             $target = $this->compileVAR(ake($params, 2));
-            $this->__foreachStack[] = ['name' => $name, 'else' => false];
+            $this->foreachStack[] = ['name' => $name, 'else' => false];
             $code = "<?php \$smarty['foreach']['{$name}'] = ['index' => -1, 'total' => ((isset({$var}) && is_array({$var}))?count({$var}):0)]; ";
             $code .= "if(isset({$var}) && is_array({$var}) && count({$var}) > 0): ";
             $code .= "foreach({$var} as {$target}): \$smarty['foreach']['{$name}']['index']++; ?>";
@@ -371,15 +462,15 @@ class Compiler
 
     protected function compileFOREACHELSE(): string
     {
-        end($this->__foreachStack);
-        $this->__foreachStack[key($this->__foreachStack)]['else'] = true;
+        end($this->foreachStack);
+        $this->foreachStack[key($this->foreachStack)]['else'] = true;
 
         return '<?php endforeach; else: ?>';
     }
 
     protected function compileENDFOREACH(): string
     {
-        $loop = array_pop($this->__foreachStack);
+        $loop = array_pop($this->foreachStack);
         if (true === $loop['else']) {
             return '<?php endif; ?>';
         }
@@ -403,14 +494,14 @@ class Compiler
         if (!array_key_exists('name', $params)) {
             return '';
         }
-        $this->__captureStack[] = $params;
+        $this->captureStack[] = $params;
 
         return '<?php ob_start(); ?>';
     }
 
     protected function compileENDCAPTURE(): string
     {
-        $params = array_pop($this->__captureStack);
+        $params = array_pop($this->captureStack);
         $code = '<?php $'.$this->compileVAR('smarty.capture.'.$params['name']);
         if (array_key_exists('assign', $params)) {
             $code .= ' = $'.$this->compileVAR($params['assign']);
@@ -501,7 +592,7 @@ class Compiler
         }
         $params = implode(', ', $func_params);
 
-        return "<?php echo call_user_func_array([\$this->customHandlers[{$index}], '{$method}'], [{$params}]); ?>";
+        return "<?php echo call_user_func_array([\$this->functionHandlers[{$index}], '{$method}'], [{$params}]); ?>";
     }
 
     protected function compileCALL(mixed $params): string
@@ -530,7 +621,7 @@ class Compiler
             $file = realpath($this->cwd ? rtrim($this->cwd, ' /') : getcwd()).DIRECTORY_SEPARATOR.$file;
         }
         if (!file_exists($file)) {
-            throw new Exception\IncludeFileNotFound($file);
+            throw new IncludeFileNotFound($file);
         }
         $info = pathinfo($file);
         if (!(array_key_exists('extension', $info) && $info['extension'])
@@ -538,11 +629,11 @@ class Compiler
             $file .= '.tpl';
         }
         $hash = hash('crc32b', $file);
-        if (!array_key_exists($hash, $this->__includeFuncs)) {
-            $this->__includes[] = $file;
-            $include = new Smarty(null, $this->__customFunctions, $this->__includeFuncs);
-            $include->loadFromFile($file);
-            $this->__includeFuncs[$hash] = $include;
+        if (!array_key_exists($hash, $this->includeFuncs)) {
+            $this->includes[] = $file;
+            $include = new Smarty(customFunctions: $this->functionHandlers, includeFuncs: $this->includeFuncs);
+            $include->loadFromFile(new File($file));
+            $this->includeFuncs[$hash] = $include;
         }
         $args = count($params) > 0
             ? '['.implode(', ', array_map(function ($item, $key) { return "'{$key}' => {$item}"; }, $params, array_keys($params))).']'
