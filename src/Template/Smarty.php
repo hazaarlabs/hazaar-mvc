@@ -70,19 +70,11 @@ class Smarty
 
     /**
      * Create a new Smarty template object.
-     *
-     * @param array<mixed> $customFunctions
-     * @param array<mixed> $includeFuncs
      */
-    public function __construct(
-        ?string $content = null,
-        ?array $customFunctions = null,
-        ?array $includeFuncs = null
-    ) {
-        $this->compiler = new Compiler();
-        $this->customFunctions = $customFunctions ?? [];
-        $this->includeFuncs = $includeFuncs ?? [];
-        if ($content) {
+    public function __construct(?string $content = null, ?Compiler $compiler = null)
+    {
+        $this->compiler = $compiler ?? new Compiler();
+        if (!empty($content)) {
             $this->loadFromString($content);
         }
     }

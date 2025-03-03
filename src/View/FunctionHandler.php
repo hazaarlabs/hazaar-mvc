@@ -43,6 +43,18 @@ class FunctionHandler
     }
 
     /**
+     * Returns a time string formatted to the current set time format.
+     */
+    public function time(DateTime|string $time): string
+    {
+        if (!$time instanceof DateTime) {
+            $time = new DateTime($time);
+        }
+
+        return $time->time();
+    }
+
+    /**
      * Return a date/time type as a timestamp string.
      *
      * This is for making it quick and easy to output consistent timestamp strings.

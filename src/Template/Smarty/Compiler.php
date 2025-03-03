@@ -25,7 +25,6 @@ class Compiler
         'else',
         'section',
         'sectionelse',
-        'url',
         'foreach',
         'foreachelse',
         'ldelim',
@@ -60,23 +59,14 @@ class Compiler
     /**
      * @var array<mixed>
      */
-    private array $functionHandlers = [];
-
-    /**
-     * @var array<mixed>
-     */
     private array $includeFuncs = [];
 
     private string $compiledContent;
 
-    /**
-     * @param array<mixed> $functionHandlers
-     */
-    public function __construct(string $ldelim = '{', string $rdelim = '}', array $functionHandlers = [])
+    public function __construct(string $ldelim = '{', string $rdelim = '}')
     {
         $this->ldelim = $ldelim;
         $this->rdelim = $rdelim;
-        $this->functionHandlers = $functionHandlers;
     }
 
     public function setCWD(string $cwd): void
@@ -122,21 +112,11 @@ class Compiler
                 || in_array($matches[2], self::$tags)) {
                 $func = 'compile'.str_replace('/', 'END', strtoupper($matches[2]));
                 $replacement = $this->{$func}($matches[3]);
-            } elseif (count($this->functionHandlers) > 0
-                && $custom_handler = current(array_filter($this->functionHandlers, function ($item, $index) use ($matches) {
-                    if (!method_exists($item, $matches[2])) {
-                        return false;
-                    }
-                    $item->__index = $index;
-
-                    return true;
-                }, ARRAY_FILTER_USE_BOTH))) {
-                $replacement = $this->compileCUSTOMHANDLERFUNC($custom_handler, $matches[2], $matches[3], $custom_handler->__index);
             } elseif (preg_match('/(\/?)strip/', $matches[1], $flags)) {
                 $strip = ('/' !== $flags[1]);
             } else {
                 // Anything else is considered a custom function.
-                $replacement = $this->compileCUSTOMFUNC($matches[2], $matches[3]);
+                $replacement = $this->compileFUNCTIONHANDLER($matches[2], $matches[3]);
             }
             if (true === $strip) {
                 $replacement = trim($replacement);
@@ -162,34 +142,11 @@ class Compiler
 
     public function getCode(string $templateObjectId): string
     {
-        return "class {$templateObjectId} {
-            private \$modify;
-            private \$variables = [];
-            private \$params = [];
-            public  \$functions = [];
-            public  \$functionHandlers = [];
-            public  \$includeFuncs = [];
-            function __construct(){ \$this->modify = new \\Hazaar\\Template\\Smarty\\Modifier; }
-            public function render(\$params){
-                extract(\$this->params = \$params, EXTR_REFS);
+        return "class {$templateObjectId} extends \\Hazaar\\Template\\Smarty\\Renderer {
+            function render(array \$params = []): void {
+                \$this->params = \$params;
+                extract(\$this->params, EXTR_REFS);
                 ?>{$this->compiledContent}<?php
-            }
-            private function url(){
-                if(\$customHandler = current(array_filter(\$this->functionHandlers, function(\$item){
-                    return method_exists(\$item, 'url');
-                })))
-                    return call_user_func_array([\$customHandler, 'url'], func_get_args());
-                return new \\Hazaar\\Application\\Url(urldecode(implode('/', func_get_args())));
-            }
-            private function write(\$var){
-                echo (\$var === null ? \$this->params['__DEFAULT_VAR__'] : @\$var);
-            }
-            private function include(\$hash, array \$params = []){
-                if(!isset(\$this->includeFuncs[\$hash])) return '';
-                \$i = \$this->includeFuncs[\$hash];
-                \$out = \$i->render(\$params??[]);
-                \$this->functions = array_merge(\$this->functions, \$i->functions);
-                return \$out;
             }
         }";
     }
@@ -224,28 +181,56 @@ class Compiler
     }
 
     /**
-     * @return array<string>
+     * @return array<mixed>
      */
     protected function parsePARAMS(string $params, bool $keep_quotes = true): array
     {
-        $parts = preg_split("/['\"][^'\"]*['\"](*SKIP)(*F)|\x20/", $params);
+        $parts = preg_split("/['\"][^'\"]*['\"](*SKIP)(*F)|\\[[^\\]]*\\](*SKIP)(*F)|\x20/", $params);
         $params = [];
         foreach ($parts as $part) {
-            $part_parts = explode('=', $part, 2);
-            if (count($part_parts) >= 2) {
-                list($left, $right) = $part_parts;
-                if (preg_match_all('/`(.*)`/', $right, $matches)) {
-                    foreach ($matches[0] as $id => $match) {
-                        $right = str_replace($match, '{'.$this->compileVAR($matches[1][$id]).'}', $right);
-                    }
-                }
-                $params[$left] = $right;
-            } else {
+            $partParts = explode('=', $part, 2);
+            if (1 === count($partParts)) {
                 $params[] = $part;
+
+                continue;
             }
+            list($left, $right) = $partParts;
+            $right = trim(preg_replace_callback('/`(.*)`/', function ($matches) {
+                return '{'.$this->compileVAR($matches[1]).'}';
+            }, $right));
+            $params[$left] = $this->parseArray($right);
         }
 
         return $params;
+    }
+
+    protected function parseArray(string $array): mixed
+    {
+        if (!('[' === substr($array, 0, 1) && ']' === substr($array, -1))) {
+            if (preg_match("/'(.*)'$/", $array, $matches)) {
+                return $matches[1];
+            }
+
+            return $array;
+        }
+        $compiledArray = [];
+        $array = preg_split('/\s*,\s*(?![^\[]*\])/', substr($array, 1, -1));
+        foreach ($array as &$item) {
+            if (strpos($item, '=>')) {
+                list($key, $value) = preg_split('/\s*=>\s*/', $item);
+                $key = $this->parseArray($key);
+                $value = $this->parseArray($value);
+            } else {
+                $key = $this->parseArray($item);
+                $value = null;
+            }
+            $compiledArray[$key] = $value;
+        }
+        if (1 === count($array)) {
+            return $array[0];
+        }
+
+        return $compiledArray;
     }
 
     protected function compileVAR(string $name): string
@@ -417,23 +402,6 @@ class Compiler
         return '<?php endfor; endif; array_pop($smarty[\'section\']); ?>';
     }
 
-    protected function compileURL(string $tag): string
-    {
-        $vars = '';
-        if ($tag) {
-            $nodes = [];
-            $tags = preg_split('/\s+/', $tag);
-            foreach ($tags as $tag) {
-                $nodes[] = "'".$this->compileVARS(trim($tag, "'"))."'";
-            }
-            $vars = implode(', ', $nodes);
-        } else {
-            $vars = "'".trim($tag, "'")."'";
-        }
-
-        return '<?php echo $this->url('.$vars.');?>';
-    }
-
     protected function compileFOREACH(mixed $params): string
     {
         $params = $this->parsePARAMS($params);
@@ -536,9 +504,12 @@ class Compiler
             return '';
         }
         unset($params['name']);
-        if (array_key_exists('params', $params)) {
-            $funcParams = eval('return '.$params['params'].';');
-            $compiledParams = implode(', ', array_map(function ($item) { return '&$'.$item; }, $funcParams));
+        if (array_key_exists('params', $params) && is_array($params['params'])) {
+            $compiledParams = implode(', ', array_map(function ($item, $key) {
+                $value = empty($item) ? 'null' : (is_string($item) ? "'{$item}'" : $item);
+
+                return '&$'.$key.'='.$value;
+            }, $params['params'], array_keys($params['params'])));
         } else {
             $compiledParams = '';
         }
@@ -551,48 +522,12 @@ class Compiler
         return '<?php })->bindTo($this); ?>';
     }
 
-    protected function compileCUSTOMFUNC(string $name, mixed $params): string
+    protected function compileFUNCTIONHANDLER(string $name, mixed $params): string
     {
-        $code = "<?php\n";
         $params = empty($params) ? [] : $this->parsePARAMS($params);
-        foreach ($params as &$value) {
-            if ('$' === substr($value, 0, 1)) {
-                continue;
-            }
-            $key = '$var_'.uniqid();
-            $code .= "{$key} = {$value};\n";
-            $value = $key;
-        }
-        $compiledParams = match (true) {
-            (count($params) > 0) => implode(', ', $params),
-            default => ''
-        };
-        $code .= "if(!isset(\$this->functions['{$name}'])) throw new \\Exception('Function \\'{$name}\\' not found');\n";
-        $code .= "echo \$this->functions['{$name}']({$compiledParams});\n?>";
+        $compiledParams = '['.implode(', ', $params).']';
 
-        return $code;
-    }
-
-    protected function compileCUSTOMHANDLERFUNC(object $handler, string $method, mixed $params, int $index): string
-    {
-        $params = $this->parsePARAMS($params);
-        $reflect = new \ReflectionMethod($handler, $method);
-        $func_params = [];
-        foreach ($reflect->getParameters() as $p) {
-            $name = $p->getName();
-            $value = 'null';
-            if (array_key_exists($name, $params) || array_key_exists($name = $p->getPosition(), $params)) {
-                $value = $this->compilePARAMS($params[$name]);
-            } elseif ($p->isDefaultValueAvailable()) {
-                $defaultValue = $p->getDefaultValue();
-                $value = ake($params, $p->getName(), $defaultValue);
-                $value = $this->compilePARAMS($value);
-            }
-            $func_params[$p->getPosition()] = $value;
-        }
-        $params = implode(', ', $func_params);
-
-        return "<?php echo call_user_func_array([\$this->functionHandlers[{$index}], '{$method}'], [{$params}]); ?>";
+        return "<?php\n echo \$this->callFunctionHandler('{$name}', {$compiledParams});\n?>";
     }
 
     protected function compileCALL(mixed $params): string
@@ -606,7 +541,7 @@ class Compiler
             return '';
         }
 
-        return $this->compileCUSTOMFUNC($call_params['name'], $params);
+        return $this->compileFUNCTIONHANDLER($call_params['name'], $params);
     }
 
     protected function compileINCLUDE(mixed $params): string
@@ -631,7 +566,7 @@ class Compiler
         $hash = hash('crc32b', $file);
         if (!array_key_exists($hash, $this->includeFuncs)) {
             $this->includes[] = $file;
-            $include = new Smarty(customFunctions: $this->functionHandlers, includeFuncs: $this->includeFuncs);
+            $include = new Smarty(compiler: $this);
             $include->loadFromFile(new File($file));
             $this->includeFuncs[$hash] = $include;
         }
