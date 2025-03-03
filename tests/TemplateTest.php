@@ -52,7 +52,7 @@ class TemplateTest extends TestCase
         $smarty = new Smarty();
         $params = ['name' => ['d' => 'World', 'a' => 'Hello']];
         $smarty->registerFunction('sort', function (&$items) {
-            ksort($items);
+            ksort($items, SORT_REGULAR);
         });
         $smarty->loadFromString('{sort items=$name}{$name|implode: }!');
         $this->assertEquals('Hello World!', $smarty->render($params));

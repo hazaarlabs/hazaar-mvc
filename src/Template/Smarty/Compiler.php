@@ -183,7 +183,7 @@ class Compiler
     /**
      * @return array<mixed>
      */
-    protected function parsePARAMS(string $params, bool $keep_quotes = true): array
+    protected function parsePARAMS(string $params): array
     {
         $parts = preg_split("/['\"][^'\"]*['\"](*SKIP)(*F)|\\[[^\\]]*\\](*SKIP)(*F)|\x20/", $params);
         $params = [];
@@ -525,9 +525,12 @@ class Compiler
     protected function compileFUNCTIONHANDLER(string $name, mixed $params): string
     {
         $params = empty($params) ? [] : $this->parsePARAMS($params);
-        $compiledParams = '['.implode(', ', $params).']';
+        array_walk($params, function (&$item) {
+            $item = '$' == substr($item, 0, 1) || is_numeric($item) ? '&'.$item : "'".trim($item, "'")."'";
+        });
+        $compiledParams = count($params) > 0 ? ', ['.implode(', ', $params).']' : '';
 
-        return "<?php\n echo \$this->callFunctionHandler('{$name}', {$compiledParams});\n?>";
+        return "<?php\n echo \$this->callFunctionHandler('{$name}'{$compiledParams});\n?>";
     }
 
     protected function compileCALL(mixed $params): string
