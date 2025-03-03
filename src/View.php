@@ -23,6 +23,8 @@ use Hazaar\View\Helper;
  */
 class View implements \ArrayAccess
 {
+    public Application $application;
+
     /**
      * @var array<mixed>
      */
@@ -35,8 +37,6 @@ class View implements \ArrayAccess
      */
     protected array $helpers = [];
 
-    protected Application $application;
-
     private ?string $viewFile = null;
 
     /**
@@ -45,16 +45,6 @@ class View implements \ArrayAccess
      * @var array<string>
      */
     private array $helpersInit = [];
-
-    /**
-     * @var array<string>
-     */
-    private array $prepared = [];
-
-    /**
-     * @var array<mixed>
-     */
-    private $requiresParam = [];
 
     /**
      * View constructor.
@@ -381,7 +371,7 @@ class View implements \ArrayAccess
         if ('tpl' == ake($parts, 'extension')) {
             $template = new Smarty();
             $template->loadFromFile(new File($this->viewFile));
-            $template->registerFunctionHandler(new FunctionHandler($this->application));
+            $template->registerFunctionHandler(new FunctionHandler($this));
             $output = $template->render(array_merge($this->data, $data ?? []));
         } else {
             ob_start();
@@ -392,98 +382,6 @@ class View implements \ArrayAccess
             include $file;
             $output = ob_get_contents();
             ob_end_clean();
-        }
-
-        return $output;
-    }
-
-    /**
-     * Render a partial view in the current view.
-     *
-     * This method can be called from inside a view source file to include another view source file.
-     *
-     * @param string            $view The name of the view to include, relative to the current view.  This means that if the view is in the same
-     *                                directory, it is possible to just name the view.  If it is in a sub directly, include the path relative
-     *                                to the current view.  Using parent references (..) will also work.
-     * @param array<mixed>|bool $data The data parameter can be either TRUE to indicate that all view data should be passed to the
-     *                                partial view, or an array of data to pass instead.  By default, no view data is passed to the partial view.
-     *
-     * @return string The rendered view output will be returned.  This can then be echo'd directly to the client.
-     */
-    public function partial(string $view, null|array|bool $data = null, bool $mergedata = false): string
-    {
-        if (array_key_exists($view, $this->prepared)) {
-            return $this->prepared[$view];
-        }
-        /*
-         * This converts "absolute paths" to paths that are relative to `\Hazaar\Application\FilePath::VIEW`.
-         *
-         * Relative paths are then made relative to the current view (using it's absolute path).
-         */
-        if ('/' === substr($view, 0, 1)) {
-            $view = substr($view, 1);
-        } else {
-            $view = dirname($this->viewFile).'/'.$view.'.phtml';
-        }
-        $output = '';
-        $partial = new View($view);
-        $partial->addHelper($this->helpers);
-        if (is_array($data)) {
-            $partial->extend($data);
-        } elseif (true === $data) {
-            $partial->extend($this->data);
-        }
-        $output = $partial->render();
-        if (true === $mergedata) {
-            $this->extend($partial->getData());
-        }
-
-        return $output;
-    }
-
-    /**
-     * Prepare a partial view for later rendering.
-     *
-     * This method is similar to the `partial` method, but instead of rendering the view immediately, it will prepare the view for rendering later.
-     *
-     * @param string            $view The name of the view to include, relative to the current view.  This means that if the view is in the same
-     *                                directory, it is possible to just name the view.  If it is in a sub directly, include the path relative
-     *                                to the current view.  Using parent references (..) will also work.
-     * @param array<mixed>|bool $data The data parameter can be either TRUE to indicate that all view data should be passed to the
-     */
-    public function preparePartial(string $view, null|array|bool $data = null): void
-    {
-        $content = $this->partial($view, $data, true);
-        $this->prepared[$view] = $content;
-    }
-
-    /**
-     * Add a required parameter to the view.
-     *
-     * This is used to add a required parameter to the view.  If the parameter is not set when the view is rendered, an exception will be thrown.
-     *
-     * @param array<mixed> $array an array of required parameter names
-     */
-    public function setRequiresParam(array $array): void
-    {
-        $this->requiresParam = array_merge($this->requiresParam, $array);
-    }
-
-    /**
-     * Render a partial view multiple times on an array.
-     *
-     * This basically calls `$this->partial` for each element in an array
-     *
-     * @param string       $view the partial view to render
-     * @param array<mixed> $data a data array, usually multi-dimensional, that each element will be passed to the partial view
-     *
-     * @return string the rendered view output
-     */
-    public function partialLoop(string $view, array $data): string
-    {
-        $output = '';
-        foreach ($data as $d) {
-            $output .= $this->partial($view, $d);
         }
 
         return $output;

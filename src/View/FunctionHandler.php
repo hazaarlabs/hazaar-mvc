@@ -2,17 +2,26 @@
 
 namespace Hazaar\View;
 
-use Hazaar\Application;
 use Hazaar\Application\URL;
 use Hazaar\DateTime;
+use Hazaar\View;
 
 class FunctionHandler
 {
-    private Application $application;
+    private View $view;
 
-    public function __construct(Application $application)
+    public function __construct(View $view)
     {
-        $this->application = $application;
+        $this->view = $view;
+    }
+
+    public function layout(): string
+    {
+        if (!$this->view instanceof Layout) {
+            return '';
+        }
+
+        return $this->view->layout();
     }
 
     /**
@@ -27,7 +36,7 @@ class FunctionHandler
      */
     public function url(?string $controller = null, ?string $action = null, array $params = [], bool $absolute = false): URL
     {
-        return $this->application->getURL($controller, $action, $params, $absolute);
+        return $this->view->application->getURL($controller, $action, $params, $absolute);
     }
 
     /**
