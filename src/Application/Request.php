@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Application;
 
+use Hazaar\Application\Interface\Request as RequestInterface;
 use Hazaar\Controller\Response;
 use Hazaar\HTTP\Client;
 use Hazaar\Loader;
@@ -26,7 +27,7 @@ use Hazaar\Session;
  * If you want to generate your own HTTP request object to pass to another method or function that requires
  * one, see [[Hazaar\HTTP\Request]].
  */
-class Request implements Interface\Request
+class Request implements RequestInterface
 {
     public static string $pathParam = 'hzpath';
     public static string $queryParam = 'hzqs';

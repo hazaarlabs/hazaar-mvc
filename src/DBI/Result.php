@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Hazaar\DBI;
 
 use Hazaar\DateTime;
+use Hazaar\DBI\Interface\Result as ResultInterface;
 use Hazaar\Model;
 
-abstract class Result implements Interface\Result, \Countable
+abstract class Result implements ResultInterface, \Countable
 {
     /**
      * @var array<string, array<string>>

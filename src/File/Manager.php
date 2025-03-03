@@ -8,7 +8,7 @@ use Hazaar\Application;
 use Hazaar\Application\FilePath;
 use Hazaar\File;
 use Hazaar\File\Backend\Exception\Offline;
-use Hazaar\File\Backend\Interface\Backend;
+use Hazaar\File\Interface\Backend;
 use Hazaar\HTTP\URL;
 use Hazaar\Loader;
 

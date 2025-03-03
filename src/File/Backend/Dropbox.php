@@ -7,11 +7,13 @@ namespace Hazaar\File\Backend;
 use Hazaar\Cache\Adapter;
 use Hazaar\File\Backend\Exception\DropboxError;
 use Hazaar\File\Image;
+use Hazaar\File\Interface\Backend as BackendInterface;
+use Hazaar\File\Interface\Driver as DriverInterface;
 use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 
-class Dropbox extends Client implements Interface\Backend, Interface\Driver
+class Dropbox extends Client implements BackendInterface, DriverInterface
 {
     public string $separator = '/';
     protected Manager $manager;

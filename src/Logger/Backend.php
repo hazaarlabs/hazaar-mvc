@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Hazaar\Logger;
 
-abstract class Backend implements Interface\Backend
+use Hazaar\Logger\Interface\Backend as BackendInterface;
+
+abstract class Backend implements BackendInterface
 {
     protected const LOG_LEVEL_PREFIX = 'LOG_';
 

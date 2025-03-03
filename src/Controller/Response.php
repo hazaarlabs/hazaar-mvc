@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Hazaar\Controller;
 
 use Hazaar\Controller\Exception\HeadersSent;
+use Hazaar\Controller\Interface\Response as ResponseInterface;
 use Hazaar\HTTP\Client;
 
-class Response implements Interface\Response
+class Response implements ResponseInterface
 {
     public const TYPE_HTML = 1;
     public const TYPE_JSON = 2;

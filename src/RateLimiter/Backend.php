@@ -2,7 +2,9 @@
 
 namespace Hazaar\RateLimiter;
 
-abstract class Backend implements Interface\Backend
+use Hazaar\RateLimiter\Interface\Backend as BackendInterface;
+
+abstract class Backend implements BackendInterface
 {
     protected int $windowLength;
     protected bool $commit = false;
