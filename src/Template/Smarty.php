@@ -29,7 +29,6 @@ use Hazaar\Template\Smarty\Enum\RendererType;
 class Smarty
 {
     public ?string $sourceFile = null;
-    public ?string $cwd = null;
     public bool $allowGlobals = true;
 
     /**
@@ -101,9 +100,9 @@ class Smarty
             throw new Exception\IncludeFileNotFound($file->fullpath());
         }
         $this->sourceFile = $file->fullpath();
-        $this->cwd = $file->dirname();
         $this->content = $file->getContents();
         $this->compiler->reset();
+        $this->compiler->setCWD($file->dirname());
     }
 
     /**

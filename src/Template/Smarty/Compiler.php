@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hazaar\Template\Smarty;
 
 use Hazaar\DateTime;
-use Hazaar\File;
 use Hazaar\Template\Exception\IncludeFileNotFound;
 use Hazaar\Template\Smarty;
 
@@ -55,11 +54,6 @@ class Compiler
      * @var array<mixed>
      */
     private array $captureStack = [];
-
-    /**
-     * @var array<mixed>
-     */
-    private array $includeFuncs = [];
 
     private string $compiledContent;
 
@@ -566,17 +560,14 @@ class Compiler
             && file_exists($file.'.tpl')) {
             $file .= '.tpl';
         }
-        $hash = hash('crc32b', $file);
-        if (!array_key_exists($hash, $this->includeFuncs)) {
-            $this->includes[] = $file;
-            $include = new Smarty(compiler: $this);
-            $include->loadFromFile(new File($file));
-            $this->includeFuncs[$hash] = $include;
-        }
-        $args = count($params) > 0
-            ? '['.implode(', ', array_map(function ($item, $key) { return "'{$key}' => {$item}"; }, $params, array_keys($params))).']'
-            : '';
+        $this->includes[] = $file;
+        $compiler = new self($this->ldelim, $this->rdelim);
+        $compiler->setCWD(dirname($file));
+        $compiler->exec(file_get_contents($file));
+        // $args = count($params) > 0
+        //     ? '['.implode(', ', array_map(function ($item, $key) { return "'{$key}' => {$item}"; }, $params, array_keys($params))).']'
+        //     : '';
 
-        return "<?php echo \$this->include('{$hash}'".($args ? ", {$args}" : '').'); ?>';
+        return $compiler->getCompiledContent();
     }
 }
