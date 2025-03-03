@@ -56,16 +56,14 @@ abstract class Renderer
     /**
      * @param array<mixed> $params
      */
-    public function include(string $hash, array $params = []): mixed
+    public function include(string $objectId, array $params = []): void
     {
-        if (!isset($this->includeFuncs[$hash])) {
-            return '';
+        if (!isset($this->includeFuncs[$objectId])) {
+            $this->includeFuncs[$objectId] = new $objectId();
         }
-        $i = $this->includeFuncs[$hash];
-        $out = $i->render($params);
-        $this->functions = array_merge($this->functions, $i->functions);
-
-        return $out;
+        $include = $this->includeFuncs[$objectId];
+        $include->render($params);
+        $this->functions = array_merge($this->functions, $include->functions);
     }
 
     /**

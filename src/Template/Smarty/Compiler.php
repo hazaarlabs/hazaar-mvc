@@ -57,6 +57,11 @@ class Compiler
 
     private string $compiledContent;
 
+    /**
+     * @var array<string>
+     */
+    private array $includeObjects = [];
+
     public function __construct(string $ldelim = '{', string $rdelim = '}')
     {
         $this->ldelim = $ldelim;
@@ -136,13 +141,20 @@ class Compiler
 
     public function getCode(string $templateObjectId): string
     {
-        return "class {$templateObjectId} extends \\Hazaar\\Template\\Smarty\\Renderer {
+        $code = '';
+        foreach ($this->includeObjects as $includeObject) {
+            $code .= $includeObject."\n\n";
+        }
+
+        $code .= "class {$templateObjectId} extends \\Hazaar\\Template\\Smarty\\Renderer {
             function render(array \$params = []): void {
                 \$this->params = \$params;
                 extract(\$this->params, EXTR_REFS);
                 ?>{$this->compiledContent}<?php
             }
         }";
+
+        return $code;
     }
 
     public function compilePHP(): string
@@ -182,9 +194,14 @@ class Compiler
         $parts = preg_split("/['\"][^'\"]*['\"](*SKIP)(*F)|\\[[^\\]]*\\](*SKIP)(*F)|\x20/", $params);
         $params = [];
         foreach ($parts as $part) {
-            $partParts = explode('=', $part, 2);
+            $partParts = preg_split('/=(?![^\[]*\])/', $part, 2);
             if (1 === count($partParts)) {
-                $params[] = $part;
+                $value = $this->parseVALUE($partParts[0]);
+                if (is_array($value)) {
+                    $params = array_merge($params, $value);
+                } else {
+                    $params[] = $value;
+                }
 
                 continue;
             }
@@ -192,13 +209,13 @@ class Compiler
             $right = trim(preg_replace_callback('/`(.*)`/', function ($matches) {
                 return '{'.$this->compileVAR($matches[1]).'}';
             }, $right));
-            $params[$left] = $this->parseArray($right);
+            $params[$left] = $this->parseVALUE($right);
         }
 
         return $params;
     }
 
-    protected function parseArray(string $array): mixed
+    protected function parseVALUE(string $array): mixed
     {
         if (!('[' === substr($array, 0, 1) && ']' === substr($array, -1))) {
             if (preg_match("/'(.*)'$/", $array, $matches)) {
@@ -212,16 +229,13 @@ class Compiler
         foreach ($array as &$item) {
             if (strpos($item, '=>')) {
                 list($key, $value) = preg_split('/\s*=>\s*/', $item);
-                $key = $this->parseArray($key);
-                $value = $this->parseArray($value);
+                $key = $this->parseVALUE($key);
+                $value = $this->parseVALUE($value);
             } else {
-                $key = $this->parseArray($item);
+                $key = $this->parseVALUE($item);
                 $value = null;
             }
             $compiledArray[$key] = $value;
-        }
-        if (1 === count($array)) {
-            return $array[0];
         }
 
         return $compiledArray;
@@ -329,6 +343,24 @@ class Compiler
         }
 
         return $params;
+    }
+
+    /**
+     * @param array<mixed> $array
+     */
+    protected function compileARRAY(array $array): string
+    {
+        $out = [];
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                $value = $this->compileARRAY($value);
+            } else {
+                $value = $this->compilePARAMS($value);
+            }
+            $out[] = "'{$key}' => ".$value;
+        }
+
+        return '['.implode(', ', $out).']';
     }
 
     protected function compileIF(mixed $params): string
@@ -567,10 +599,13 @@ class Compiler
         $compiler = new self($this->ldelim, $this->rdelim);
         $compiler->setCWD(dirname($file));
         $compiler->exec(file_get_contents($file));
-        // $args = count($params) > 0
-        //     ? '['.implode(', ', array_map(function ($item, $key) { return "'{$key}' => {$item}"; }, $params, array_keys($params))).']'
-        //     : '';
+        if (array_key_exists('params', $params)) {
+            $params = $params['params'];
+        }
+        $args = $this->compileARRAY($params);
+        $includeId = '_smarty_include_'.md5($file);
+        $this->includeObjects[] = $compiler->getCode($includeId);
 
-        return $compiler->getCompiledContent();
+        return "<?php \$this->include('{$includeId}', {$args}); ?>";
     }
 }
