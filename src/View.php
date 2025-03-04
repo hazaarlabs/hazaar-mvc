@@ -12,7 +12,8 @@ declare(strict_types=1);
 namespace Hazaar;
 
 use Hazaar\Application\FilePath;
-use Hazaar\Application\URL;
+use Hazaar\Template\Smarty;
+use Hazaar\View\FunctionHandler;
 use Hazaar\View\Helper;
 
 /**
@@ -22,6 +23,8 @@ use Hazaar\View\Helper;
  */
 class View implements \ArrayAccess
 {
+    public Application $application;
+
     /**
      * @var array<mixed>
      */
@@ -34,8 +37,6 @@ class View implements \ArrayAccess
      */
     protected array $helpers = [];
 
-    protected Application $application;
-
     private ?string $viewFile = null;
 
     /**
@@ -46,19 +47,16 @@ class View implements \ArrayAccess
     private array $helpersInit = [];
 
     /**
-     * @var array<string>
+     * View constructor.
+     *
+     * @param string|View  $view     The name of the view to load or a View object to clone
+     * @param array<mixed> $viewData The data to pass to the view
      */
-    private array $prepared = [];
-
-    /**
-     * @var array<mixed>
-     */
-    private $requiresParam = [];
-
-    public function __construct(string|View $view)
+    public function __construct(string|View $view, array $viewData = [])
     {
         $this->load($view);
         $this->application = Application::getInstance();
+        $this->data = $viewData;
         // if (count($inithelpers) > 0) {
         //     foreach ($inithelpers as $helper) {
         //         $this->addHelper($helper);
@@ -371,9 +369,10 @@ class View implements \ArrayAccess
         $output = '';
         $parts = pathinfo($this->viewFile);
         if ('tpl' == ake($parts, 'extension')) {
-            $template = new File\Template\Smarty($this->viewFile);
-            $template->registerFunctionHandler($this);
-            $output = $template->render($data ?? $this->data);
+            $template = new Smarty();
+            $template->loadFromFile(new File($this->viewFile));
+            $template->registerFunctionHandler(new FunctionHandler($this));
+            $output = $template->render(array_merge($this->data, $data ?? []));
         } else {
             ob_start();
             if (!($file = $this->getViewFile()) || !file_exists($file)) {
@@ -386,159 +385,6 @@ class View implements \ArrayAccess
         }
 
         return $output;
-    }
-
-    /**
-     * Render a partial view in the current view.
-     *
-     * This method can be called from inside a view source file to include another view source file.
-     *
-     * @param string            $view The name of the view to include, relative to the current view.  This means that if the view is in the same
-     *                                directory, it is possible to just name the view.  If it is in a sub directly, include the path relative
-     *                                to the current view.  Using parent references (..) will also work.
-     * @param array<mixed>|bool $data The data parameter can be either TRUE to indicate that all view data should be passed to the
-     *                                partial view, or an array of data to pass instead.  By default, no view data is passed to the partial view.
-     *
-     * @return string The rendered view output will be returned.  This can then be echo'd directly to the client.
-     */
-    public function partial(string $view, null|array|bool $data = null, bool $mergedata = false): string
-    {
-        if (array_key_exists($view, $this->prepared)) {
-            return $this->prepared[$view];
-        }
-        /*
-         * This converts "absolute paths" to paths that are relative to `\Hazaar\Application\FilePath::VIEW`.
-         *
-         * Relative paths are then made relative to the current view (using it's absolute path).
-         */
-        if ('/' === substr($view, 0, 1)) {
-            $view = substr($view, 1);
-        } else {
-            $view = dirname($this->viewFile).'/'.$view.'.phtml';
-        }
-        $output = '';
-        $partial = new View($view);
-        $partial->addHelper($this->helpers);
-        if (is_array($data)) {
-            $partial->extend($data);
-        } elseif (true === $data) {
-            $partial->extend($this->data);
-        }
-        $output = $partial->render();
-        if (true === $mergedata) {
-            $this->extend($partial->getData());
-        }
-
-        return $output;
-    }
-
-    /**
-     * Prepare a partial view for later rendering.
-     *
-     * This method is similar to the `partial` method, but instead of rendering the view immediately, it will prepare the view for rendering later.
-     *
-     * @param string            $view The name of the view to include, relative to the current view.  This means that if the view is in the same
-     *                                directory, it is possible to just name the view.  If it is in a sub directly, include the path relative
-     *                                to the current view.  Using parent references (..) will also work.
-     * @param array<mixed>|bool $data The data parameter can be either TRUE to indicate that all view data should be passed to the
-     */
-    public function preparePartial(string $view, null|array|bool $data = null): void
-    {
-        $content = $this->partial($view, $data, true);
-        $this->prepared[$view] = $content;
-    }
-
-    /**
-     * Add a required parameter to the view.
-     *
-     * This is used to add a required parameter to the view.  If the parameter is not set when the view is rendered, an exception will be thrown.
-     *
-     * @param array<mixed> $array an array of required parameter names
-     */
-    public function setRequiresParam(array $array): void
-    {
-        $this->requiresParam = array_merge($this->requiresParam, $array);
-    }
-
-    /**
-     * Render a partial view multiple times on an array.
-     *
-     * This basically calls `$this->partial` for each element in an array
-     *
-     * @param string       $view the partial view to render
-     * @param array<mixed> $data a data array, usually multi-dimensional, that each element will be passed to the partial view
-     *
-     * @return string the rendered view output
-     */
-    public function partialLoop(string $view, array $data): string
-    {
-        $output = '';
-        foreach ($data as $d) {
-            $output .= $this->partial($view, $d);
-        }
-
-        return $output;
-    }
-
-    /**
-     * Generates a URL based on the provided controller, action, parameters, and absolute flag.
-     *
-     * @param string       $controller the name of the controller
-     * @param string       $action     the name of the action
-     * @param array<mixed> $params     an array of parameters to be included in the URL
-     * @param bool         $absolute   determines whether the generated URL should be absolute or relative
-     *
-     * @return URL the generated URL
-     */
-    public function url(?string $controller = null, ?string $action = null, array $params = [], bool $absolute = false): URL
-    {
-        return $this->application->getURL($controller, $action, $params, $absolute);
-    }
-
-    /**
-     * Returns a date string formatted to the current set date format.
-     */
-    public function date(DateTime|string $date): string
-    {
-        if (!$date instanceof DateTime) {
-            $date = new DateTime($date);
-        }
-
-        return $date->date();
-    }
-
-    /**
-     * Return a date/time type as a timestamp string.
-     *
-     * This is for making it quick and easy to output consistent timestamp strings.
-     */
-    public static function timestamp(DateTime|string $value): string
-    {
-        if (!$value instanceof DateTime) {
-            $value = new DateTime($value);
-        }
-
-        return $value->timestamp();
-    }
-
-    /**
-     * Return a formatted date as a string.
-     *
-     * @param mixed  $value  This can be practically any date type.  Either a \Hazaar\DateTime object, epoch int, or even a string.
-     * @param string $format Optionally specify the format to display the date.  Otherwise the current default is used.
-     *
-     * @return string the nicely formatted datetime string
-     */
-    public static function datetime(mixed $value, ?string $format = null): string
-    {
-        if (!$value instanceof DateTime) {
-            $value = new DateTime($value);
-        }
-        if ($format) {
-            return $value->format($format);
-        }
-
-        return $value->datetime();
     }
 
     public function offsetExists(mixed $offset): bool

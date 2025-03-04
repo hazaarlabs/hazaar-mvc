@@ -481,8 +481,6 @@ class Application
      * This method also has protection against error loops. If an exception is thrown while processing
      * a [[Hazaar\Controller\Error]] controller object then a new exception will be thrown outside the
      * application context and will display basic fall-back error output.
-     *
-     * @exception Application\Exception\ResponseInvalid if the controller returns an invalid response object
      */
     public function run(?Controller $controller = null): int
     {

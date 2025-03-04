@@ -9,6 +9,7 @@ use Hazaar\Controller;
 use Hazaar\Controller\Response\JSON;
 use Hazaar\Controller\Response\Text;
 use Hazaar\File;
+use Hazaar\View;
 
 /**
  * Class Closure.
@@ -46,6 +47,9 @@ class Closure extends Controller
         }
         if ($response instanceof File) {
             return new Response\File($response);
+        }
+        if ($response instanceof View) {
+            return new Response\View($response);
         }
         if (is_array($response) || is_object($response)) {
             return new JSON($response);
