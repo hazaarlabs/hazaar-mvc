@@ -28,3 +28,5 @@ docs/src/api
 composer.lock
 
 tests/application/.runtime/
+
+tests/application/configs/local/
