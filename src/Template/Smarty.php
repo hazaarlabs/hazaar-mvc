@@ -7,10 +7,8 @@ namespace Hazaar\Template;
 use Hazaar\Application;
 use Hazaar\DateTime;
 use Hazaar\File;
-use Hazaar\Template\Exception\SmartyRendererTypeNotSupported;
 use Hazaar\Template\Exception\SmartyTemplateError;
 use Hazaar\Template\Smarty\Compiler;
-use Hazaar\Template\Smarty\Enum\RendererType;
 
 /**
  * Smarty 2.0 Templates.
@@ -60,8 +58,6 @@ class Smarty
      * @var array<mixed>
      */
     private array $functionHandlers = [];
-
-    private RendererType $rendererType = RendererType::AUTO;
 
     /**
      * Create a new Smarty template object.
@@ -254,14 +250,12 @@ class Smarty
      */
     private function prepareRendererClass(): string
     {
-        if (($this->sourceFile && RendererType::AUTO === $this->rendererType) || RendererType::PHP === $this->rendererType) {
+        $app = Application::getInstance();
+        if ($this->sourceFile && $app instanceof Application) {
             return $this->preparePHPRenderer();
         }
-        if ((!$this->sourceFile && RendererType::AUTO === $this->rendererType) || RendererType::EVAL === $this->rendererType) {
-            return $this->prepareEvalRenderer();
-        }
 
-        throw new SmartyRendererTypeNotSupported($this->rendererType);
+        return $this->prepareEvalRenderer();
     }
 
     private function prepareEvalRenderer(): string
