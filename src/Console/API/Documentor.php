@@ -240,7 +240,7 @@ class Documentor
                 if (false === strpos($item[1], '|')) {
                     return '['.$item[1].'](https://www.php.net/manual/en/class.'.strtolower($item[1]).'.php)';
                 }
-                list($link, $title) = explode('|', $item[1]);
+                [$link, $title] = explode('|', $item[1]);
 
                 return '['.$title.']('.$link.')';
             }

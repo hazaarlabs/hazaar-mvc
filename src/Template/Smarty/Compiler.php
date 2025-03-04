@@ -188,7 +188,7 @@ class Compiler
 
                 continue;
             }
-            list($left, $right) = $partParts;
+            [$left, $right] = $partParts;
             $right = trim(preg_replace_callback('/`(.*)`/', function ($matches) {
                 return '{'.$this->compileVAR($matches[1]).'}';
             }, $right));
@@ -211,7 +211,7 @@ class Compiler
         $array = preg_split('/\s*,\s*(?![^\[]*\])/', substr($array, 1, -1));
         foreach ($array as &$item) {
             if (strpos($item, '=>')) {
-                list($key, $value) = preg_split('/\s*=>\s*/', $item);
+                [$key, $value] = preg_split('/\s*=>\s*/', $item);
                 $key = $this->parseVALUE($key);
                 $value = $this->parseVALUE($value);
             } else {

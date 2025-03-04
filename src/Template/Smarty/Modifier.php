@@ -65,7 +65,7 @@ class Modifier
     public function runWithArgs(string $name, mixed $value, mixed ...$args): mixed
     {
         $args = array_merge([$value], $args);
-        list($callable, $argTypes) = $this->loadedModifiers[$name];
+        [$callable, $argTypes] = $this->loadedModifiers[$name];
         foreach ($argTypes as $index => $reflectionParameter) {
             if (!array_key_exists($index, $args)) {
                 if (!$reflectionParameter->isOptional()) {

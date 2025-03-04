@@ -673,7 +673,7 @@ class Element implements \ArrayAccess, \Iterator
                     if (count($parts) > 0) {
                         foreach ($parts as $attribute) {
                             if (strpos($attribute, '=')) {
-                                list($key, $value) = explode('=', $attribute);
+                                [$key, $value] = explode('=', $attribute);
                                 if ('xmlns:' == substr($key, 0, 6)) {
                                     $prefix = explode(':', $key)[1];
                                     $child->addNamespace($prefix, trim($value, '"'));

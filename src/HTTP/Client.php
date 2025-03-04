@@ -284,7 +284,7 @@ class Client
             return $cookies;
         }
         $parts = explode(';', $cookie);
-        list($name, $value) = explode('=', array_shift($parts), 2);
+        [$name, $value] = explode('=', array_shift($parts), 2);
         $data = [
             'name' => $name,
             'value' => $value,
@@ -296,7 +296,7 @@ class Client
         ];
         foreach ($parts as $part) {
             if (false !== strpos($part, '=')) {
-                list($arg_k, $arg_v) = explode('=', $part);
+                [$arg_k, $arg_v] = explode('=', $part);
                 $arg_k = strtolower(trim($arg_k));
                 if ('expires' === $arg_k) {
                     $arg_v = new DateTime($arg_v);

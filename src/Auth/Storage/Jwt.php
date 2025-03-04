@@ -204,7 +204,7 @@ class JWT implements Storage
         if (!$token || false === strpos($token, '.')) {
             return false;
         }
-        list($JWTHeader, $JWTBodyString, $tokenSignature) = explode('.', $token, 3);
+        [$JWTHeader, $JWTBodyString, $tokenSignature] = explode('.', $token, 3);
         $JWTHeader = json_decode(base64url_decode($JWTHeader), true);
         $JWTBody = json_decode(base64url_decode($JWTBodyString), true);
         if (!(is_array($JWTHeader)

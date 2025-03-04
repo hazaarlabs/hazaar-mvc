@@ -82,7 +82,7 @@ class Hazaar implements BackendInterface, DriverInterface
             ];
             if ($paths = $this->request('tree')) {
                 foreach ($paths as $p) {
-                    list($source, $base) = explode(':', base64url_decode($p['parent']), 2);
+                    [$source, $base] = explode(':', base64url_decode($p['parent']), 2);
                     if (!$base) {
                         $p['name'] = $source;
                         $p['parent'] = $this->pathCache['/']['id'];

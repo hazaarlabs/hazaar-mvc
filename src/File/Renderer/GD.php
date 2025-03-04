@@ -260,7 +260,7 @@ class GD extends BaseRenderer
                     break;
 
                 case 'h': // Hue
-                    list($red, $green, $blue) = $values;
+                    [$red, $green, $blue] = $values;
                     $ret = imagefilter($this->img, IMG_FILTER_COLORIZE, (int)$red, (int)$green, (int)$blue);
 
                     break;

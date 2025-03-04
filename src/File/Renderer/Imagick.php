@@ -252,7 +252,7 @@ class Imagick extends BaseRenderer
                     break;
 
                 case 'mod': // Brightness, Saturation & Hue
-                    list($brightness, $saturation, $hue) = $values;
+                    [$brightness, $saturation, $hue] = $values;
                     $this->dst->modulateImage(floatval($brightness), floatval($saturation), floatval($hue));
 
                     break;
@@ -331,7 +331,7 @@ class Imagick extends BaseRenderer
                     break;
 
                 case 'wave':  // Wave effect
-                    list($amp, $len) = $values;
+                    [$amp, $len] = $values;
                     $this->dst->waveImage(floatval($amp), floatval($len));
 
                     break;

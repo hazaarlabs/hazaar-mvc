@@ -391,7 +391,7 @@ class Config implements \ArrayAccess, \Iterator
                 if ($mtime > filemtime($source)) {
                     $cacheData = \apcu_fetch($cacheKey);
                     if (is_array($cacheData) && 2 === count($cacheData) && isset($cacheData[0], $cacheData[1])) {
-                        list($secureKeys, $source) = \apcu_fetch($cacheKey);
+                        [$secureKeys, $source] = \apcu_fetch($cacheKey);
                     }
                 }
             }
@@ -453,7 +453,7 @@ class Config implements \ArrayAccess, \Iterator
                     do {
                         $importEnv = null;
                         if (false !== strpos($importFile, ':')) {
-                            list($importFile, $importEnv) = explode(':', $importFile, 2);
+                            [$importFile, $importEnv] = explode(':', $importFile, 2);
                         }
                         if (!($file = Loader::getFilePath(FilePath::CONFIG, $importFile))) {
                             continue;

@@ -203,7 +203,7 @@ class Redis extends Backend
             $items = [$items];
         }
         foreach ($items as $index => $item) {
-            list($namespace, $key) = explode(':', $keys[$index], 2);
+            [$namespace, $key] = explode(':', $keys[$index], 2);
             $array[$key] = $this->reconstructValue($item);
         }
 

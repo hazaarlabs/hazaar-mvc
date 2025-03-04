@@ -60,7 +60,7 @@ class URL implements \JsonSerializable
             $part_parts = (false === strpos((string) $part, '/')) ? [$part] : explode('/', (string) $part);
             foreach ($part_parts as $part_part) {
                 if (false !== strpos((string) $part_part, '?')) {
-                    list($part_part, $part_params) = explode('?', $part_part, 2);
+                    [$part_part, $part_params] = explode('?', $part_part, 2);
                     parse_str($part_params, $part_params);
                     $params = array_merge($params, $part_params);
                 }

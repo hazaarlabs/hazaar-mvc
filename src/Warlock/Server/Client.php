@@ -606,7 +606,7 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
             $this->write($initFrame);
         }
         if (array_key_exists('authorization', $headers)) {
-            list($type, $key) = preg_split('/\s+/', $headers['authorization']);
+            [$type, $key] = preg_split('/\s+/', $headers['authorization']);
             if ('apikey' !== strtolower($type)) {
                 return false;
             }
@@ -641,7 +641,7 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
             if (!array_key_exists('authorization', $headers)) {
                 throw new \Exception('Unauthorised', 401);
             }
-            list($type, $key) = preg_split('/\s+/', $headers['authorization']);
+            [$type, $key] = preg_split('/\s+/', $headers['authorization']);
             if ('apikey' !== strtolower($type)) {
                 throw new \Exception('Unacceptable authorization type', 401);
             }

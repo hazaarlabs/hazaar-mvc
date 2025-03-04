@@ -152,7 +152,7 @@ class Route
                 return false;
             }
             if (false !== strpos($routePart, ':')) {
-                list($routeType, $actionArgName) = explode(':', substr($routePart, 1, -1));
+                [$routeType, $actionArgName] = explode(':', substr($routePart, 1, -1));
             } else {
                 $actionArgName = substr($routePart, 1, -1);
                 if (isset($this->callableParameters[$actionArgName])

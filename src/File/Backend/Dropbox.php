@@ -150,7 +150,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
             ];
         }
         foreach ($response['entries'] as $entry) {
-            list($path, $meta) = $entry->toArray();
+            [$path, $meta] = $entry->toArray();
             if ($meta) {
                 $this->meta[$path] = $meta;
             } elseif (array_key_exists($path, $this->meta)) {

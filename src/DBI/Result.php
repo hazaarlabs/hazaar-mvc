@@ -270,7 +270,7 @@ abstract class Result implements ResultInterface, \Countable
             if (false === $decryptedValue) {
                 continue;
             }
-            list($checkbit, $decryptedValue) = preg_split('/(?<=.{'.strlen($checkstring).'})/s', $decryptedValue, 2);
+            [$checkbit, $decryptedValue] = preg_split('/(?<=.{'.strlen($checkstring).'})/s', $decryptedValue, 2);
             if ($checkbit === $checkstring) {
                 $value = $decryptedValue;
             }

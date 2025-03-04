@@ -269,7 +269,7 @@ class BrowserConnector
 
     public function getFileByPath(string $path): false|File
     {
-        list($source, $path) = explode('/', $path, 2);
+        [$source, $path] = explode('/', $path, 2);
         if ($source = $this->source($source)) {
             return $source->get($path);
         }

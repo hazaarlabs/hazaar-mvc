@@ -107,7 +107,7 @@ class SQL implements QueryBuilder
     {
         $schemaName = $this->schemaName;
         if (false !== strpos($tableName, '.')) {
-            list($schema, $tableName) = explode('.', $tableName);
+            [$schema, $tableName] = explode('.', $tableName);
         }
 
         return [$schemaName, $tableName];
@@ -118,7 +118,7 @@ class SQL implements QueryBuilder
         $alias = null;
         // Check if there is an alias
         if (($pos = strpos($tableName, ' ')) !== false) {
-            list($tableName, $alias) = preg_split('/\s*(?<=.{'.$pos.'})\s*/', $tableName, 2);
+            [$tableName, $alias] = preg_split('/\s*(?<=.{'.$pos.'})\s*/', $tableName, 2);
         }
         // Check if we already have a schemaName defined
         if (null !== $this->schemaName && false === strpos($tableName, '.')) {

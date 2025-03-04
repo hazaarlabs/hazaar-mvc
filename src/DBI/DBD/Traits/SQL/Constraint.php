@@ -27,7 +27,7 @@ trait Constraint
     {
         $queryBuilder = $this->getQueryBuilder();
         if ($table) {
-            list($schema, $table) = $queryBuilder->parseSchemaName($table);
+            [$schema, $table] = $queryBuilder->parseSchemaName($table);
         } else {
             $schema = $queryBuilder->getSchemaName();
         }

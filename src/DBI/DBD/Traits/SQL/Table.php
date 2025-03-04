@@ -151,8 +151,8 @@ trait Table
     {
         $queryBuilder = $this->getQueryBuilder();
         if (strpos($toName, '.')) {
-            list($fromSchemaName, $fromName) = explode('.', $fromName);
-            list($toSchemaName, $toName) = explode('.', $toName);
+            [$fromSchemaName, $fromName] = explode('.', $fromName);
+            [$toSchemaName, $toName] = explode('.', $toName);
             if ($toSchemaName != $fromSchemaName) {
                 throw new \Exception('You can not rename tables between schemas!');
             }

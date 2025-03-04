@@ -48,7 +48,7 @@ abstract class Extender
                 $args = [$method, $args];
                 $method = '__call';
             }
-            list($class, $rm) = $this->methods[$method];
+            [$class, $rm] = $this->methods[$method];
 
             /**
              * Checks if the method is public, and if not, determines if the calling class is an instance of the current class.
@@ -104,7 +104,7 @@ abstract class Extender
     public function __get($property): mixed
     {
         if (array_key_exists($property, $this->properties)) {
-            list($class, $rp) = $this->properties[$property];
+            [$class, $rp] = $this->properties[$property];
             if (!($return = $rp->isPublic())) {
                 $trace = debug_backtrace();
                 if ($rp->isPrivate()) {
@@ -141,7 +141,7 @@ abstract class Extender
             $this->{$property} = $value;
         }
 
-        list($class, $rp) = $this->properties[$property];
+        [$class, $rp] = $this->properties[$property];
         if (!($set = $rp->isPublic())) {
             $trace = debug_backtrace();
             if ($rp->isPrivate()) {
