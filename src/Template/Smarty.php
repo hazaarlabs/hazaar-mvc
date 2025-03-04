@@ -28,6 +28,7 @@ use Hazaar\Template\Smarty\Enum\RendererType;
  */
 class Smarty
 {
+    public static string $templatePrefix = '_smarty_template_';
     public ?string $sourceFile = null;
     public bool $allowGlobals = true;
 
@@ -222,41 +223,14 @@ class Smarty
         } else {
             $renderParameters['__DEFAULT_VAR__'] = '';
         }
-        $templateId = '_smarty_template';
+
         // Temporarily disable error reporting to prevent errors from being displayed
         $errors = error_reporting();
         error_reporting(0);
+        ob_start();
 
         try {
-            if (($this->sourceFile && RendererType::AUTO === $this->rendererType)
-                || RendererType::PHP === $this->rendererType) {
-                $templateId .= '_'.md5($this->sourceFile);
-                $templatePath = $app->getRuntimePath('templates');
-                if (!file_exists($templatePath)) {
-                    mkdir($templatePath, 0777, true);
-                }
-                $templateFile = $templatePath.DIRECTORY_SEPARATOR.$templateId.'.php';
-                if (!file_exists($templateFile) || filemtime($this->sourceFile) > filemtime($templateFile)) {
-                    if (!$this->compiler->isCompiled()) {
-                        $this->compiler->exec($this->content);
-                    }
-                    $code = $this->compiler->getCode($templateId);
-                    file_put_contents($templateFile, "<?php\n".$code);
-                }
-
-                include_once $templateFile;
-            } elseif ((!$this->sourceFile && RendererType::AUTO === $this->rendererType)
-            || RendererType::EVAL === $this->rendererType) {
-                if (!$this->compiler->isCompiled()) {
-                    $this->compiler->exec($this->content);
-                }
-                $templateId .= md5(uniqid());
-                $code = $this->compiler->getCode($templateId);
-                eval($code);
-            } else {
-                throw new SmartyRendererTypeNotSupported($this->rendererType);
-            }
-            ob_start();
+            $templateId = $this->prepareRendererClass();
             $obj = new $templateId();
             $obj->functionHandlers = $this->functionHandlers;
             $obj->includeFuncs = $this->includeFuncs;
@@ -279,5 +253,60 @@ class Smarty
         }
 
         return $content;
+    }
+
+    /**
+     * Prepare the renderer class.
+     */
+    private function prepareRendererClass(): string
+    {
+        if (($this->sourceFile && RendererType::AUTO === $this->rendererType) || RendererType::PHP === $this->rendererType) {
+            return $this->preparePHPRenderer();
+        }
+        if ((!$this->sourceFile && RendererType::AUTO === $this->rendererType) || RendererType::EVAL === $this->rendererType) {
+            return $this->prepareEvalRenderer();
+        }
+
+        throw new SmartyRendererTypeNotSupported($this->rendererType);
+    }
+
+    private function prepareEvalRenderer(): string
+    {
+        $templateId = self::$templatePrefix.md5(uniqid());
+        if (class_exists($templateId)) {
+            return $templateId;
+        }
+        if (!$this->compiler->isCompiled()) {
+            $this->compiler->exec($this->content);
+        }
+        $code = $this->compiler->getCode($templateId);
+        eval($code);
+
+        return $templateId;
+    }
+
+    private function preparePHPRenderer(): string
+    {
+        $templateId = self::$templatePrefix.md5($this->sourceFile);
+        if (class_exists($templateId)) {
+            return $templateId;
+        }
+        $app = Application::getInstance();
+        $templatePath = $app->getRuntimePath('templates');
+        if (!file_exists($templatePath)) {
+            mkdir($templatePath, 0777, true);
+        }
+        $templateFile = $templatePath.DIRECTORY_SEPARATOR.$templateId.'.php';
+        if (!file_exists($templateFile) || filemtime($this->sourceFile) > filemtime($templateFile)) {
+            if (!$this->compiler->isCompiled()) {
+                $this->compiler->exec($this->content);
+            }
+            $code = $this->compiler->getCode($templateId);
+            file_put_contents($templateFile, "<?php\n".$code);
+        }
+
+        include_once $templateFile;
+
+        return $templateId;
     }
 }
