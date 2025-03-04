@@ -488,7 +488,7 @@ class Cron
             $low = $matches[1];
             $high = $matches[2];
             if ($low > $high) {
-                list($low, $high) = [$high, $low];
+                [$low, $high] = [$high, $low];
             }
             $step = isset($matches[4]) ? $matches[4] : 1;
             for ($i = $low; $i <= $high; $i += $step) {

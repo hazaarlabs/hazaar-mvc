@@ -27,7 +27,7 @@ trait Constraint
     {
         $queryBuilder = $this->getQueryBuilder();
         if ($table) {
-            list($schema, $table) = $queryBuilder->parseSchemaName($table);
+            [$schema, $table] = $queryBuilder->parseSchemaName($table);
         } else {
             $schema = $queryBuilder->getSchemaName();
         }
@@ -63,7 +63,7 @@ trait Constraint
         $sql .= ';';
         if ($result = $this->query($sql)) {
             while ($row = $result->fetch(\PDO::FETCH_ASSOC)) {
-                if ($constraint = ake($constraints, $row['name'])) {
+                if ($constraint = $constraints[$row['name']] ?? null) {
                     if (!is_array($constraint['column'])) {
                         $constraint['column'] = [$constraint['column']];
                     }

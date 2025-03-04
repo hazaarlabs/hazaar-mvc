@@ -41,7 +41,7 @@ class RateLimiter
         $this->windowLength = $options['window'] ?? 60;
         $this->requestLimit = $options['limit'] ?? 60;
         $this->requestMinimumPeriod = $options['minimum'] ?? 0;
-        $this->backend = $backend ?? match (ake($options, 'backend', 'cache')) {
+        $this->backend = $backend ?? match ($options['backend'] ?? 'cache') {
             'cache' => new Cache(['type' => 'shm']),
             'file' => new Backend\File(),
             default => throw new \Exception('Invalid rate limiter backend type!'),
@@ -126,7 +126,7 @@ class RateLimiter
         $headers = [];
         foreach ($this->headers as $key => $value) {
             $headers[$key] = preg_replace_callback('/{{(.*?)}}/', function ($matches) use ($info) {
-                return ake($info, $matches[1], '');
+                return $info[$matches[1]] ?? '';
             }, $value);
         }
 
@@ -137,6 +137,6 @@ class RateLimiter
     {
         $info = $this->backend->get($identifier);
 
-        return ake($info, 'last', 0);
+        return $info['last'];
     }
 }

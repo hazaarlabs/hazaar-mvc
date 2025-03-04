@@ -245,13 +245,13 @@ abstract class Task extends Process implements \Hazaar\Warlock\Interface\Task
                 return $this->commandUnsubscribe($payload->id);
 
             case 'TRIGGER' :
-                return $this->commandTrigger($payload->id, ake($payload, 'data'), ake($payload, 'echo', false));
+                return $this->commandTrigger($payload->id, $payload->data ?? null, $payload['echo'] ?? false);
 
             case 'LOG':
                 return $this->commandLog($payload);
 
             case 'DEBUG':
-                $this->log->write(W_DEBUG, ake($payload, 'data'), $this->name);
+                $this->log->write(W_DEBUG, $payload->data ?? null, $this->name);
 
                 return true;
 
@@ -276,14 +276,14 @@ abstract class Task extends Process implements \Hazaar\Warlock\Interface\Task
         if (!property_exists($payload, 'msg')) {
             throw new \Exception('Unable to write to log without a log message!');
         }
-        $level = ake($payload, 'level', W_INFO);
-        $name = ake($payload, 'name', $this->name);
+        $level = $payload->level ?? W_INFO;
+        $name = $payload->name ?? $this->name;
         if (is_array($payload->msg)) {
             foreach ($payload->msg as $msg) {
                 $this->commandLog((object) ['level' => $level, 'msg' => $msg, 'name' => $name]);
             }
         } else {
-            $this->log->write($level, ake($payload, 'msg', '--'), $name);
+            $this->log->write($level, $payload->msg ?? '--', $name);
         }
 
         return true;

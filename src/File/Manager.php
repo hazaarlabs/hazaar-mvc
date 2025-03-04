@@ -77,7 +77,7 @@ class Manager implements Backend
                 $backend_options = ['root' => '/'];
             }
         }
-        $backendClass = 'Hazaar\File\Backend\\'.ake(self::$backend_aliases, $backend, ucfirst($backend));
+        $backendClass = 'Hazaar\File\Backend\\'.(self::$backend_aliases[$backend] ?? ucfirst($backend));
         if (!class_exists($backendClass)) {
             throw new Exception\BackendNotFound($backend);
         }
@@ -118,7 +118,7 @@ class Manager implements Backend
             if ('.php' !== substr($file, -4) || '.' === substr($file, 0, 1) || '_' === substr($file, 0, 1)) {
                 continue;
             }
-            $source = ake(pathinfo($file), 'filename');
+            $source = pathinfo($file)['filename'];
             $class = 'Hazaar\File\Backend\\'.$source;
             if (!class_exists($class)) {
                 continue;
@@ -224,7 +224,7 @@ class Manager implements Backend
 
     public function getOption(string $name): mixed
     {
-        return ake($this->options, $name);
+        return $this->options[$name] ?? null;
     }
 
     public function fixPath(string $path, ?string $file = null): string
@@ -676,7 +676,7 @@ class Manager implements Backend
             return $type;
         }
         $info = pathinfo($path);
-        if ($extension = strtolower(ake($info, 'extension'))) {
+        if ($extension = strtolower($info['extension'] ?? '')) {
             return self::lookupContentType($extension);
         }
 
@@ -806,7 +806,7 @@ class Manager implements Backend
             fclose($h);
         }
 
-        return ake(self::$mime_types, strtolower($extension));
+        return self::$mime_types[strtolower($extension)] ?? null;
     }
 
     private function deepCopy(string $src, string $dst, Manager $srcManager, ?\Closure $progressCallback = null): bool

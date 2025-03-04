@@ -205,7 +205,7 @@ class BTree
                 if (empty($start)) {
                     $nodes[$k] = $v;
                 } else {
-                    list($nodeType, $node) = $this->node($v);
+                    [$nodeType, $node] = $this->node($v);
                     if (null === $nodeType || null === $node) {
                         return null;
                     }
@@ -272,7 +272,7 @@ class BTree
                         $sibling = [$k, $v];
                     } // right sibling
                     if (null !== $sibling[0]) {
-                        list($siblingType, $siblingNode) = $this->node($sibling[1]);
+                        [$siblingType, $siblingNode] = $this->node($sibling[1]);
                         if (null === $siblingType || null === $siblingNode) {
                             $this->file->truncate($pos);
                             $this->file->lock(LOCK_UN);
@@ -357,7 +357,7 @@ class BTree
         $keys = [];
         if (is_array($leaves = $this->leaves())) {
             foreach ($leaves as $p) {
-                list(, $leaf) = $this->node($p);
+                [, $leaf] = $this->node($p);
                 $keys = array_merge($keys, array_keys($leaf));
             }
         }
@@ -437,7 +437,7 @@ class BTree
             return false;
         }
         if (null === $nodeType || null === $node) {
-            list($nodeType, $node) = $this->root();
+            [$nodeType, $node] = $this->root();
         }
         if (null === $nodeType || null === $node) {
             return [null];
@@ -460,7 +460,7 @@ class BTree
                     }
                 }
                 $l = max(0, $l + ($l >= count($keys) ? -1 : (strcmp($keys[$l], $key) <= 0 ? 0 : -1)));
-                list($nodeType, $node) = $this->node($node[$keys[$l]]);
+                [$nodeType, $node] = $this->node($node[$keys[$l]]);
                 if (null === $nodeType || null === $node) {
                     return [null];
                 }
@@ -480,7 +480,7 @@ class BTree
      */
     private function leafHunt(int $p): ?array
     {
-        list($nodeType, $node) = $this->node($p);
+        [$nodeType, $node] = $this->node($p);
         if (null === $nodeType || null === $node) {
             return null;
         }
@@ -489,12 +489,12 @@ class BTree
         do {
             $newNodes = [];
             foreach ($nodes as $_) {
-                list($nodeType, $node, $p) = $_;
+                [$nodeType, $node, $p] = $_;
                 if (self::KVNODE === $nodeType) {
                     $ret[current(array_keys($node))] = $p;
                 } else {
                     foreach ($node as $i) {
-                        list($childType, $child) = $this->node($i);
+                        [$childType, $child] = $this->node($i);
                         if (null === $childType || null === $child) {
                             return null;
                         }
@@ -524,7 +524,7 @@ class BTree
     {
         $p = false;
         if (null === $nodeType || null === $node) {
-            list($nodeType, $node) = $this->root();
+            [$nodeType, $node] = $this->root();
         }
         if (null === $nodeType || null === $node) {
             return null;
@@ -536,12 +536,12 @@ class BTree
         }
         $stack = [[$nodeType, $node]];
         do {
-            list($nodeType, $node) = array_pop($stack);
+            [$nodeType, $node] = array_pop($stack);
             if (self::KPNODE === $nodeType) {
                 $pushed = false;
                 foreach ($node as $i) {
                     if (is_array($i)) {
-                        list($childType, $child) = $this->node($i[0]);
+                        [$childType, $child] = $this->node($i[0]);
                         if (null === $childType || null === $child) {
                             return null;
                         }
@@ -562,9 +562,9 @@ class BTree
                 }
             }
             if (!empty($stack)) {
-                list($upnodeType, $upnode) = array_pop($stack);
+                [$upnodeType, $upnode] = array_pop($stack);
             } else {
-                list($upnodeType, $upnode) = [null, []];
+                [$upnodeType, $upnode] = [null, []];
             }
             $serialized = self::serialize($nodeType, $node);
             $toWrite = pack('N', strlen($serialized)).$serialized;
@@ -637,7 +637,7 @@ class BTree
             }
         }
         // unpack root pointer
-        list(, $p) = unpack('N', $root);
+        [, $p] = unpack('N', $root);
 
         return $p;
     }
@@ -661,7 +661,7 @@ class BTree
             if (self::SIZEOF_INT !== strlen($data = $this->file->read(self::SIZEOF_INT))) {
                 return [null, null];
             }
-            list(, $n) = unpack('N', $data);
+            [, $n] = unpack('N', $data);
             if (strlen($node = $this->file->read($n)) !== $n) {
                 return [null, null];
             }

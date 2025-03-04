@@ -62,7 +62,7 @@ class File extends Backend
         if (!$this->hLog) {
             return;
         }
-        $remote = ake($_SERVER, 'REMOTE_ADDR', '--');
+        $remote = $_SERVER['REMOTE_ADDR'] ?? '--';
         $line = [];
         if ($this->getOption('write_ip')) {
             $line[] = $remote;

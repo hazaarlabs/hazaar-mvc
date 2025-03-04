@@ -72,7 +72,7 @@ class BrowserConnector
 
     public function authorise(string $sourceName, ?string $redirect_uri = null): bool
     {
-        if (!($source = ake($this->sources, $sourceName))) {
+        if (!($source = ($this->sources[$sourceName] ?? null))) {
             return false;
         }
 
@@ -91,7 +91,7 @@ class BrowserConnector
             $source = $raw;
         }
 
-        return ake($this->sources, $source, false);
+        return $this->sources[$source] ?? false;
     }
 
     public function path(string $target): false|string
@@ -269,7 +269,7 @@ class BrowserConnector
 
     public function getFileByPath(string $path): false|File
     {
-        list($source, $path) = explode('/', $path, 2);
+        [$source, $path] = explode('/', $path, 2);
         if ($source = $this->source($source)) {
             return $source->get($path);
         }

@@ -122,7 +122,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
 
     public function authorise(?string $redirect_uri = null): bool
     {
-        if (($code = ake($_REQUEST, 'code')) && ($state = ake($_REQUEST, 'state'))) {
+        if (($code = $_REQUEST['code'] ?? null) && ($state = $_REQUEST['state'] ?? null)) {
             if ($state != $this->cache->pull('oauth2_state')) {
                 throw new \Exception('Bad state!');
             }
@@ -258,7 +258,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
     public function exists(string $path): bool
     {
         if ($item = $this->resolvePath($path)) {
-            return !ake($item['labels'], 'trashed', false);
+            return !($item['labels']['trashed'] ?? false);
         }
 
         return false;
@@ -275,7 +275,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return ake($item, 'copyable', false);
+        return $item['copyable'] ?? false;
     }
 
     public function isWritable(string $path): bool
@@ -284,7 +284,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return ake($item, 'editable', false);
+        return $item['editable'] ?? false;
     }
 
     // TRUE if path is a directory
@@ -366,7 +366,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return ake($item, 'fileSize', 0);
+        return $item['fileSize'] ?? 0;
     }
 
     public function fileperms(string $path): false|int
@@ -420,7 +420,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             return null;
         }
 
-        return ake($item, 'mimeType');
+        return $item['mimeType'] ?? null;
     }
 
     public function md5Checksum(string $path): ?string
@@ -429,7 +429,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             return null;
         }
 
-        return ake($item, 'md5Checksum');
+        return $item['md5Checksum'] ?? null;
     }
 
     // Create a directory
@@ -544,8 +544,8 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         if (!($item = $this->resolvePath($path))) {
             return false;
         }
-        if (!($downloadUrl = ake($item, 'downloadUrl'))) {
-            if ($exportLinks = ake($item, 'exportLinks')) {
+        if (!($downloadUrl = $item['downloadUrl'] ?? null)) {
+            if ($exportLinks = $item['exportLinks'] ?? null) {
                 if (array_key_exists('application/rtf', $exportLinks)) {
                     $downloadUrl = $exportLinks['application/rtf'];
                 } elseif (array_key_exists('application/pdf', $exportLinks)) {
@@ -587,7 +587,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
      */
     public function upload(string $path, array $file, bool $overwrite = true): bool
     {
-        if (!(($srcFile = ake($file, 'tmp_name')) && $filetype = ake($file, 'type'))) {
+        if (!($srcFile = $file['tmp_name'] ?? null) || !($filetype = $file['type'] ?? null)) {
             return false;
         }
         $fullPath = rtrim($path, '/').'/'.$file['name'];
@@ -616,7 +616,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         if (!($item = $this->resolvePath($path))) {
             return false;
         }
-        if (!($link = ake($item, 'thumbnailLink'))) {
+        if (!($link = $item['thumbnailLink'] ?? null)) {
             return false;
         }
         if (($pos = strrpos($link, '=')) > 0) {
@@ -633,7 +633,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return str_replace('&export=download', '', ake($item, 'webContentLink'));
+        return str_replace('&export=download', '', $item['webContentLink'] ?? null);
     }
 
     public function thumbnailURL(string $path, int $width = 100, int $height = 100, string $format = 'jpeg', array $params = []): false|string
@@ -844,25 +844,24 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
     }
 
     /**
-     * @param array<string,int|string> $item
+     * @param array<mixed> $item
      *
      * @return array<string>
      */
     private function resolveItem(array $item): array
     {
+        if (!($parents = $item['parents'] ?? null)) {
+            return ['/'];
+        }
         $path = [];
-        if ($parents = ake($item, 'parents')) {
-            foreach ($parents as $parentRef) {
-                if (!($parent = ake($this->meta, $parentRef['id']))) {
-                    continue;
-                }
-                $parentPaths = $this->resolveItem($parent);
-                foreach ($parentPaths as $index => $value) {
-                    $path[] = rtrim($value, '/').'/'.$item['title'];
-                }
+        foreach ($parents as $parentRef) {
+            if (!($parent = $this->meta[$parentRef['id']] ?? null)) {
+                continue;
             }
-        } else {
-            $path[] = '/';
+            $parentPaths = $this->resolveItem($parent);
+            foreach ($parentPaths as $index => $value) {
+                $path[] = rtrim($value, '/').'/'.$item['title'];
+            }
         }
 
         return $path;

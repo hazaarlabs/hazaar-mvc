@@ -105,7 +105,7 @@ trait Table
             .$this->quote($queryBuilder->getSchemaName()).' ORDER BY '
             .$sort);
         if (false === $result) {
-            throw new \Exception(ake($this->errorInfo(), 2));
+            throw new \Exception($this->errorInfo()[2] ?: 'Could not describe table!');
         }
         $primaryKeyColumn = ($primaryKeyConstraint = $this->listConstraints($tableName, 'PRIMARY KEY'))
             ? array_shift($primaryKeyConstraint)['column'] : null;
@@ -123,7 +123,7 @@ trait Table
             }
             // Fixed array types to their actual SQL array data type
             if ('ARRAY' == $col['data_type']
-                && ($udtName = ake($col, 'udt_name'))) {
+                && ($udtName = $col['udt_name'] ?? null)) {
                 if ('_' == $udtName[0]) {
                     $col['data_type'] = substr($udtName, 1).'[]';
                 }
@@ -151,8 +151,8 @@ trait Table
     {
         $queryBuilder = $this->getQueryBuilder();
         if (strpos($toName, '.')) {
-            list($fromSchemaName, $fromName) = explode('.', $fromName);
-            list($toSchemaName, $toName) = explode('.', $toName);
+            [$fromSchemaName, $fromName] = explode('.', $fromName);
+            [$toSchemaName, $toName] = explode('.', $toName);
             if ($toSchemaName != $fromSchemaName) {
                 throw new \Exception('You can not rename tables between schemas!');
             }

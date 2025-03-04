@@ -309,7 +309,7 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
     {
         $queryBuilder = $this->getQueryBuilder();
         if ($table) {
-            list($schema, $table) = $queryBuilder->parseSchemaName($table);
+            [$schema, $table] = $queryBuilder->parseSchemaName($table);
         } else {
             $schema = $queryBuilder->getSchemaName();
         }
@@ -370,7 +370,7 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
     public function describeView($name): array|false
     {
         $queryBuilder = $this->getQueryBuilder();
-        list($schema, $name) = $queryBuilder->parseSchemaName($name);
+        [$schema, $name] = $queryBuilder->parseSchemaName($name);
         $sql = 'SELECT table_name as name, trim(view_definition) as query FROM INFORMATION_SCHEMA.views WHERE table_schema='
             .$queryBuilder->prepareValue($schema).' AND table_name='.$queryBuilder->prepareValue($name);
         if ($result = $this->query($sql)) {

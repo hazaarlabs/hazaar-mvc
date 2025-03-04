@@ -56,7 +56,7 @@ class Local extends Transport
         if (!$ret) {
             $error = error_get_last();
 
-            throw new Exception\FailConnect(ake($error, 'message'), ake($error, 'type'));
+            throw new Exception\FailConnect($error['message'] ?? '', $error['type'] ?? 0);
         }
 
         return $ret;

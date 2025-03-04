@@ -74,12 +74,12 @@ class OpenID extends OAuth2
      */
     public function logout(?string $redirect_url = null): bool|URL
     {
-        if (!($url = ake($this->metadata, 'end_session_endpoint'))) {
+        if (!($url = $this->metadata['end_session_endpoint'] ?? false)) {
             return false;
         }
         $endpoint = new URL($url);
         $endpoint['clientID'] = $this->clientID;
-        $endpoint['id_token_hint'] = ake($this->storage['oauth2_data'], 'id_token');
+        $endpoint['id_token_hint'] = $this->storage['oauth2_data']['id_token'] ?? null;
         if ($redirect_url) {
             $endpoint['post_logout_redirect_uri'] = (string) $redirect_url;
         }

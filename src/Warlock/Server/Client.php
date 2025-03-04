@@ -85,8 +85,8 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
             }
             $this->lastContact = time();
         }
-        $this->ping['wait'] = ake($options, 'pingWait', 15);
-        $this->ping['pings'] = ake($options, 'pingCount', 5);
+        $this->ping['wait'] = $options['pingWait'] ?? 15;
+        $this->ping['pings'] = $options['pingCount'] ?? 5;
     }
 
     public function __destruct()
@@ -463,7 +463,7 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
                 return $this->commandUnsubscribe($payload->id);
 
             case 'TRIGGER' :
-                return $this->commandTrigger($payload->id, ake($payload, 'data'), ake($payload, 'echo', false));
+                return $this->commandTrigger($payload->id, $payload->data ?? null, $payload->echo ?? false);
 
             case 'PING' :
                 return $this->send('pong', $payload);
@@ -482,7 +482,7 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
                 return $this->commandLog($payload);
 
             case 'DEBUG':
-                $this->log->write(W_DEBUG, ake($payload, 'type', 'Client').': '.ake($payload, 'data', 'NO DATA'), $this->name);
+                $this->log->write(W_DEBUG, ($payload->type ?? 'Client').': '.($payload->data ?? 'NO DATA'), $this->name);
 
                 return true;
 
@@ -548,14 +548,14 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
         if (!property_exists($payload, 'msg')) {
             throw new \Exception('Unable to write to log without a log message!');
         }
-        $level = ake($payload, 'level', W_INFO);
-        $name = ake($payload, 'name', $this->name);
+        $level = $payload->level ?? W_INFO;
+        $name = $payload->name ?? $this->name;
         if (is_array($payload->msg)) {
             foreach ($payload->msg as $msg) {
                 $this->commandLog((object) ['level' => $level, 'msg' => $msg, 'name' => $name]);
             }
         } else {
-            $this->log->write($level, ake($payload, 'msg', '--'), $name);
+            $this->log->write($level, $payload->msg ?? '--', $name);
         }
 
         return true;
@@ -606,13 +606,13 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
             $this->write($initFrame);
         }
         if (array_key_exists('authorization', $headers)) {
-            list($type, $key) = preg_split('/\s+/', $headers['authorization']);
+            [$type, $key] = preg_split('/\s+/', $headers['authorization']);
             if ('apikey' !== strtolower($type)) {
                 return false;
             }
             $payload = (object) [
                 'client_id' => $this->id,
-                'type' => $type = ake($headers, 'x-warlock-client-type', 'admin'),
+                'type' => $type = $headers['x-warlock-client-type'] ?? 'admin',
                 'access_key' => base64_decode($key),
             ];
             if (!$this->commandAuthorise($payload, 'service' === $type)) {
@@ -641,7 +641,7 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
             if (!array_key_exists('authorization', $headers)) {
                 throw new \Exception('Unauthorised', 401);
             }
-            list($type, $key) = preg_split('/\s+/', $headers['authorization']);
+            [$type, $key] = preg_split('/\s+/', $headers['authorization']);
             if ('apikey' !== strtolower($type)) {
                 throw new \Exception('Unacceptable authorization type', 401);
             }
@@ -669,7 +669,7 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
             if (!property_exists($payload, 'id')) {
                 throw new \Exception('No event ID specified for TRIGGER command');
             }
-            if ($this->commandTrigger($payload->id, ake($payload, 'data'), ake($payload, 'echo', false))) {
+            if ($this->commandTrigger($payload->id, $payload->data ?? null, $payload->echo ?? false)) {
                 $response = $this->httpResponse(200, 'OK');
             } else {
                 throw new \Exception('Bad trigger data', 400);

@@ -72,7 +72,7 @@ class File extends OK
     public function initialiseCacheControl(): bool
     {
         $cacheConfig = Application::getInstance()->config->http->cacheControl ?? self::$__defaultCacheControlDirectives;
-        if ($cacheControlHeader = ake(apache_request_headers(), 'Cache-Control')) {
+        if ($cacheControlHeader = (apache_request_headers()['Cache-Control'] ?? null)) {
             $replyable = ['no-cache', 'no-store', 'no-transform'];
             $parts = explode(',', $cacheControlHeader);
             foreach ($parts as $part) {

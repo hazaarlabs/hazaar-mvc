@@ -94,7 +94,7 @@ abstract class Service extends Process
             ],
         ];
         $config = Application\Config::getInstance('service', APPLICATION_ENV, $defaults);
-        if (!($this->config = ake($config, $this->name))) {
+        if (!($this->config = ($config[$this->name] ?? null))) {
             throw new \Exception("Service '{$this->name}' is not configured!");
         }
         $consts = get_defined_constants(true);
@@ -217,7 +217,7 @@ abstract class Service extends Process
                 try {
                     if (is_callable($exec['callback'])) {
                         $this->log(W_DEBUG, "RUN: ACTION={$exec['label']}");
-                        call_user_func_array($exec['callback'], ake($exec, 'args', [], true));
+                        call_user_func_array($exec['callback'], $exec['args'] ?? []);
                     } else {
                         $this->log(W_ERR, "Scheduled action {$exec['label']} is not callable!");
                     }
@@ -317,7 +317,7 @@ abstract class Service extends Process
         }
         if (is_resource($this->__log)) {
             if ($level <= $this->__localLogLevel) {
-                $label = ake($this->__logLevels, $level, 'NONE');
+                $label = $this->__logLevels[$level] ?? 'NONE';
                 if (!is_array($message)) {
                     $message = [$message];
                 }
@@ -352,8 +352,8 @@ abstract class Service extends Process
         $this->log(W_LOCAL, 'Service started');
         $this->state = HAZAAR_SERVICE_INIT;
         if (true === $this->config['log']['rotate']) {
-            $when = ake($this->config['log'], 'rotateAt', '0 0 * * * *');
-            $logfiles = ake($this->config['log'], 'logfiles');
+            $when = $this->config['log']['rotateAt'] ?? '0 0 * * * *';
+            $logfiles = $this->config['log']['logfiles'] ?? 5;
             $this->log(W_LOCAL, "Log rotation is enabled. WHEN={$when} LOGFILES={$logfiles}");
             $this->cron($when, '__rotateLogFiles', [$logfiles]);
         }
@@ -700,7 +700,7 @@ abstract class Service extends Process
         $args = [];
         $initMethod = new \ReflectionMethod($this, $method);
         foreach ($initMethod->getParameters() as $parameter) {
-            if (!($value = ake($arguments, $parameter->getName()))) {
+            if (!($value = ($arguments[$parameter->getName()] ?? null))) {
                 $value = $parameter->getDefaultValue();
             }
             $args[$parameter->getPosition()] = $value;
@@ -716,10 +716,10 @@ abstract class Service extends Process
         if (is_array($events)) {
             foreach ($events as $event_name => $event) {
                 if (is_array($event)) {
-                    if (!($action = ake($event, 'action'))) {
+                    if (!($action = $event['action'] ?? null)) {
                         continue;
                     }
-                    $this->subscribe($event_name, $action, ake($event, 'filter'));
+                    $this->subscribe($event_name, $action, $event['filter'] ?? null);
                 } else {
                     $this->subscribe($event_name, $event);
                 }
@@ -732,13 +732,13 @@ abstract class Service extends Process
                     continue;
                 }
                 if (isset($item['interval'])) {
-                    $this->interval(ake($item, 'interval'), ake($item, 'action'), ake($item, 'args'));
+                    $this->interval($item['interval'], $item['action'], $item['args'] ?? null);
                 }
                 if (isset($item['delay'])) {
-                    $this->delay(ake($item, 'delay'), ake($item, 'action'), ake($item, 'args'));
+                    $this->delay($item['delay'], $item['action'], $item['args'] ?? null);
                 }
                 if (isset($item['when'])) {
-                    $this->cron(ake($item, 'when'), ake($item, 'action'), ake($item, 'args'));
+                    $this->cron($item['when'], $item['action'], $item['args'] ?? null);
                 }
             }
         }

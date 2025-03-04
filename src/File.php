@@ -118,7 +118,7 @@ class File implements \JsonSerializable
             return false;
         }
         if ($disposition = $response->getHeader('content-disposition')) {
-            list($type, $raw_params) = explode(';', $disposition);
+            [$type, $raw_params] = explode(';', $disposition);
             $params = array_map(function ($value) {
                 return trim($value ?? '', '"');
             }, array_unflatten(trim($raw_params)));
@@ -474,7 +474,7 @@ class File implements \JsonSerializable
             if (!(count($info) >= 2)) {
                 return false;
             }
-            list($header, $contentType) = explode(':', array_shift($info));
+            [$header, $contentType] = explode(':', array_shift($info));
             if (!('data' === $header && $contentType)) {
                 return false;
             }

@@ -95,7 +95,7 @@ abstract class Renderer
                         $parameterValue = $params[$parameterName];
                     } elseif ($reflectionParameter->isDefaultValueAvailable()) {
                         $defaultValue = $reflectionParameter->getDefaultValue();
-                        $parameterValue = ake($params, $reflectionParameter->getName(), $defaultValue);
+                        $parameterValue = $params[$reflectionParameter->getName()] ?? $defaultValue;
                     }
                     $funcParams[$reflectionParameter->getPosition()] = $parameterValue;
                 }

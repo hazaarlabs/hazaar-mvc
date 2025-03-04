@@ -444,7 +444,7 @@ class Local implements BackendInterface, DriverInterface
         $db = $this->meta($fullpath);
         $meta = $db->get($fullpath);
         if ($key) {
-            return ake($meta, $key);
+            return $meta[$key] ?? '';
         }
 
         return $meta;
@@ -598,8 +598,8 @@ class Local implements BackendInterface, DriverInterface
                 $size = getimagesize($fullpath);
                 $meta['width'] = $size[0];
                 $meta['height'] = $size[1];
-                $meta['bits'] = ake($size, 'bits');
-                $meta['channels'] = ake($size, 'channels');
+                $meta['bits'] = $size['bits'] ?? null;
+                $meta['channels'] = $size['channels'] ?? null;
             }
             $db->set($fullpath, $meta);
         }

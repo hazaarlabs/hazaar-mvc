@@ -309,7 +309,7 @@ class WebDAV extends Client
             }
             $propstat = $response->child('propstat');
             $status = $propstat->child('status')->value();
-            list($ver, $status, $message) = explode(' ', $status, 3);
+            [$ver, $status, $message] = explode(' ', $status, 3);
             settype($status, 'int');
             $result[$href][$status] = $this->parseProperties($propstat->child('prop'));
         }

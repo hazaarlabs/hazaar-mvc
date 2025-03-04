@@ -174,11 +174,11 @@ class DateTime extends \DateTime implements \JsonSerializable, \DateTimeInterfac
         if (null === $timezone) {
             $timezone = date_default_timezone_get();
         }
-        if (is_numeric($timezone) && ($tz = ake(timezone_identifiers_list(), (int) $timezone))) {
+        if (is_numeric($timezone) && ($tz = (timezone_identifiers_list()[(int) $timezone] ?? 'UTC'))) {
             $timezone = $tz;
         }
         if (!$timezone instanceof \DateTimeZone) {
-            if (is_numeric($timezone) && ($tz = timezone_name_from_abbr('', $timezone, -1))) {
+            if (is_numeric($timezone) && ($tz = timezone_name_from_abbr('', (int) $timezone, -1))) {
                 $timezone = $tz;
             } elseif (preg_match('/([+-])?(\d+):(\d+)/', $timezone, $matches)) {
                 if (!$matches[1]) {

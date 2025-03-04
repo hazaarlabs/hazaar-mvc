@@ -215,7 +215,7 @@ class DBI implements BackendInterface, DriverInterface
     public function isDir(string $path): bool
     {
         if ($info = $this->info($path)) {
-            return 'dir' == ake($info, 'kind');
+            return 'dir' == ($info['kind'] ?? null);
         }
 
         return false;
@@ -231,7 +231,7 @@ class DBI implements BackendInterface, DriverInterface
     public function isFile(string $path): bool
     {
         if ($info = $this->info($path)) {
-            return 'file' == ake($info, 'kind', 'file');
+            return 'file' == ($info['kind'] ?? 'file');
         }
 
         return false;
@@ -241,7 +241,7 @@ class DBI implements BackendInterface, DriverInterface
     public function filetype(string $path): false|string
     {
         if ($info = $this->info($path)) {
-            return ake($info, 'kind', 'file');
+            return $info['kind'] ?? 'file';
         }
 
         return false;
@@ -251,7 +251,7 @@ class DBI implements BackendInterface, DriverInterface
     public function filectime(string $path): false|int
     {
         if ($info = $this->info($path)) {
-            return strtotime(ake($info, 'created_on'));
+            return strtotime($info['created_on'] ?? '');
         }
 
         return false;
@@ -261,7 +261,7 @@ class DBI implements BackendInterface, DriverInterface
     public function filemtime(string $path): false|int
     {
         if ($info = $this->info($path)) {
-            return strtotime(ake($info, 'modified_on', $info['created_on'], true));
+            return strtotime($info['modified_on'] ?? $info['created_on']);
         }
 
         return false;
@@ -294,7 +294,7 @@ class DBI implements BackendInterface, DriverInterface
             return false;
         }
 
-        return ake($info, 'length', 0);
+        return $info['length'] ?? 0;
     }
 
     public function fileperms(string $path): false|int
@@ -303,13 +303,13 @@ class DBI implements BackendInterface, DriverInterface
             return false;
         }
 
-        return ake($info, 'mode');
+        return $info['mode'] ?? null;
     }
 
     public function mimeContentType(string $path): ?string
     {
         if ($info = $this->info($path)) {
-            return ake($info, 'mime_type', false);
+            return $info['mime_type'] ?? null;
         }
 
         return null;
@@ -318,7 +318,7 @@ class DBI implements BackendInterface, DriverInterface
     public function md5Checksum(string $path): ?string
     {
         if ($info = $this->info($path)) {
-            return ake($info, 'md5');
+            return $info['md5'] ?? null;
         }
 
         return null;
@@ -698,7 +698,7 @@ class DBI implements BackendInterface, DriverInterface
         }
         if (array_key_exists('metadata', $info)) {
             if ($key) {
-                return ake($info['metadata'], $key);
+                return $info['metadata'][$key] ?? null;
             }
 
             return $info['metadata'];

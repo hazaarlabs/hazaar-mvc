@@ -69,8 +69,8 @@ class Apc extends Backend
     {
         $result = \apcu_fetch($this->key($key));
         if ($result
-            && ake($this->options, 'keepalive', false)
-            && ake($this->options, 'lifetime', 0) > 0) {
+            && ($this->options['keepalive'] ?? false)
+            && ($this->options['lifetime'] ?? 0) > 0) {
             $this->refresh[$key] = $result;
         }
 
@@ -79,7 +79,7 @@ class Apc extends Backend
 
     public function set(string $key, mixed $value, int $timeout = 0): bool
     {
-        if (!$timeout && ake($this->options, 'lifetime', 0) > 0) {
+        if (!$timeout && ($this->options['lifetime'] ?? 0) > 0) {
             $timeout = $this->options['lifetime'];
         }
         if (array_key_exists($key, $this->refresh)) {

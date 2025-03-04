@@ -69,14 +69,14 @@ abstract class Process
                 }
                 if (is_callable($func)) {
                     $process = true;
-                    if (is_object($obj = ake($func, 0))
+                    if (is_object($obj = $func[0] ?? null)
                         && method_exists($obj, 'beforeEvent')) {
                         $process = $obj->beforeEvent($payload);
                     }
                     if (false !== $process) {
-                        $result = call_user_func_array($func, [ake($payload, 'data'), $payload]);
+                        $result = call_user_func_array($func, [$payload['data'] ?? null, $payload]);
                         if (false !== $result
-                            && is_object($obj = ake($func, 0))
+                            && is_object($obj = $func[0] ?? null)
                             && method_exists($obj, 'afterEvent')) {
                             $obj->afterEvent($payload);
                         }
@@ -115,7 +115,7 @@ abstract class Process
         if (!$this->send($command, $data)) {
             return false;
         }
-        $payload = null;
+        $payload = false;
         if (($ret = $this->recv($payload)) !== $command) {
             $msg = "KVSTORE: Invalid response to command {$command} from server: ".var_export($ret, true);
             if (is_object($payload) && property_exists($payload, 'reason')) {
@@ -491,7 +491,7 @@ abstract class Process
     {
         posix_setsid();
         $options = self::getopt();
-        $serviceName = ake($options, 'serviceName', null);
+        $serviceName = $options['serviceName'] ?? null;
         if (!class_exists('\Hazaar\Warlock\Config')) {
             throw new \Exception('Could not find default warlock config.  How is this even working!!?');
         }
@@ -511,10 +511,10 @@ abstract class Process
                         throw new \Exception('Got Hazaar protocol packet without payload!');
                     }
                     // Synchronise the timezone with the server
-                    if ($tz = ake($payload, 'timezone')) {
+                    if ($tz = $payload->timezone ?? null) {
                         \date_default_timezone_set($tz);
                     }
-                    if ($config = ake($payload, 'config')) {
+                    if ($config = $payload->config ?? null) {
                         $application->config->extend($config);
                     }
 
@@ -545,7 +545,7 @@ abstract class Process
                             }
                             if (is_string($code)) {
                                 $container = new Container($application, $protocol);
-                                $exitcode = $container->exec($code, ake($payload, 'params'));
+                                $exitcode = $container->exec($code, $payload->params ?? null);
                             } elseif ($class instanceof \ReflectionClass
                                 && $method instanceof \ReflectionMethod
                                 && $class->isInstantiable()
@@ -556,7 +556,7 @@ abstract class Process
                                 if ($class->isSubclassOf('Hazaar\Warlock\Service')) {
                                     $process->state = HAZAAR_SERVICE_RUNNING;
                                 }
-                                $method->invokeArgs($process, ake($payload, 'params', []));
+                                $method->invokeArgs($process, $payload->params ?? []);
                                 $exitcode = 0;
                             } else {
                                 throw new \Exception('Method can not be executed.');
@@ -572,7 +572,7 @@ abstract class Process
                             }
                             $service = self::getServiceClass($payload->name, $application, $protocol, false);
                             if ($service instanceof Service) {
-                                $exitcode = call_user_func([$service, 'main'], ake($payload, 'params'), ake($payload, 'dynamic', false));
+                                $exitcode = call_user_func([$service, 'main'], $payload->params ?? null, $payload->dynamic ?? false);
                             } else {
                                 $exitcode = 3;
                             }
@@ -742,10 +742,10 @@ abstract class Process
             $s = $l = false;
             $sk = $lk = null;
             if (($o[0] && ($s = array_key_exists($sk = rtrim($o[0], ':'), $ops))) || ($o[1] && ($l = array_key_exists($lk = rtrim($o[1], ':'), $ops)))) {
-                $options[$name] = ($s ? $ops[$sk] : $ops[$lk]);
+                $options[$name] = $s ? $ops[$sk] : $ops[$lk];
             }
         }
-        if (true === ake($options, 'help')) {
+        if ($options['help'] ?? false) {
             return self::showHelp();
         }
 

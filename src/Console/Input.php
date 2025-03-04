@@ -89,7 +89,7 @@ class Input
 
     public function getGlobalOption(string $name): mixed
     {
-        return ake($this->globalOptions, $name);
+        return $this->globalOptions[$name] ?? null;
     }
 
     public function getCommandObject(): ?Command
@@ -109,12 +109,12 @@ class Input
 
     public function getArgument(string $name): ?string
     {
-        return ake($this->args, $name);
+        return $this->args[$name] ?? null;
     }
 
     public function getOption(string $name): mixed
     {
-        return ake($this->options, $name);
+        return $this->options[$name] ?? null;
     }
 
     /**
