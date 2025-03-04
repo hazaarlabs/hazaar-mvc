@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Console\API;
 
+use Hazaar\File;
 use Hazaar\Parser\PHP;
 use Hazaar\Parser\PHP\ParserFile;
 use Hazaar\Parser\PHP\ParserNamespace;
@@ -167,7 +168,7 @@ class Documentor
                 continue;
             }
             $template = new Smarty();
-            $template->loadFromFile($file->getPathname());
+            $template->loadFromFile(new File($file->getPathname()));
             $template->addFilter($this->postProcessRemoveEmptyLines(...));
             $template->addFilter($this->postProcessReplaceClassLinks(...));
             $templates[$file->getBasename('.tpl')] = $template;

@@ -306,7 +306,7 @@ class Adapter
     public function loadTemplate(string $filename): void
     {
         $template = new Template();
-        $template->loadFromFile($filename);
+        $template->loadFromFile(new File($filename));
         $this->body = $template;
     }
 
@@ -318,7 +318,7 @@ class Adapter
     public function loadHTMLTemplate(string $filename): void
     {
         $template = new Template();
-        $template->loadFromFile($filename);
+        $template->loadFromFile(new File($filename));
         $this->body = new Mime\Html($template);
     }
 
