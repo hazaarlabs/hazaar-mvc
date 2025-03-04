@@ -47,6 +47,8 @@ $dumpLog = [];
  *
  * @return mixed The value if it exists in the array. Returns the default if it does not. Default is null
  *               if no other default is specified.
+ *
+ * @deprecated deprecated in favour of PHP native ?? operator
  */
 function ake(mixed $array, mixed $key, mixed $default = null, bool $non_empty = false): mixed
 {
@@ -86,7 +88,7 @@ function ake(mixed $array, mixed $key, mixed $default = null, bool $non_empty = 
                         }
                         $array = $array[$item];
                     } else {
-                        list($item, $criteria) = explode('=', $matches[3]);
+                        [$item, $criteria] = explode('=', $matches[3]);
                         if (('"' === $criteria[0] || "'" === $criteria[0]) && $criteria[0] === substr($criteria, -1)) {
                             $criteria = trim($criteria, '"\'');
                         } elseif (strpos($criteria, '.')) {
@@ -118,6 +120,82 @@ function ake(mixed $array, mixed $key, mixed $default = null, bool $non_empty = 
     }
 
     return is_callable($default) ? $default($key) : $default;
+}
+
+/**
+ * Get a value from an array or object with advanced search capabilities.
+ *
+ * Returns a value from an array or a property from an object, if it exists, using advanced search capabilities
+ * such as dot-notation and search parameters.
+ *
+ * Keys may be specified using dot-notation.  This allows `array_get()` to be called only once instead of for each
+ * element in a reference chain.  For example, you can call `array_get($myarray, 'object.child.other');` and each
+ * reference will be recursed into if it exists.  If at any step the child does not exist then execution will stop
+ * and return null.
+ *
+ * If the key contains round or square brackets, then this is taken as a search parameter, allowing the specified
+ * element to be search for child elements that match the search criteria.  This search parameter can, and is
+ * actually designed to, be used with dot-notation.  So for example, you can call `array_get($myarray, 'items(type.id=1).name')`
+ * to find an element in the `items` sub-element of `$myarray` that has it's own `type` element with another
+ * sub-element of `id` with a value that matches `1`.  As you can imagine, this allows quite a powerful way of accessing
+ * sub-elements of arrays/objects using a simple dot-notation search parameter.
+ *
+ * If the key contains square brackets, then this is taken as an indexed array search parameter and the value will be
+ * accessed using it's numeric index.  For example: `array_get($myarray, 'items[0].name')` will return the name of the
+ * first item in the `items` array.
+ *
+ * @param array<mixed>|\ArrayAccess<string,mixed> $array The array to search.  Objects with public properties are also supported.
+ * @param string                                  $key   The array key or object property name to look for.  The following key specifications
+ *                                                       are supported:
+ *                                                       * _string_ - Single key.
+ *                                                       * _string_ - Dot notation key for decending into multi-dimensional arrays/objects, including search parameters.
+ *
+ * @return mixed The value if it exists in the array. Returns the default if it does not. Default is null
+ *               if no other default is specified.
+ */
+function array_get(array|ArrayAccess $array, string $key): mixed
+{
+    if (!preg_match('/[.\[\(]/', $key)) {
+        return $array[$key] ?? null;
+    }
+    $parts = preg_split('/\.(?![^([]*[\)\]])/', $key);
+    foreach ($parts as $part) {
+        if (!preg_match('/^(\w+)([\(\[])([\w\d.=\s"\']+)[\)\]]$/', $part, $matches)) {
+            $array = $array[$part] ?? null;
+
+            continue;
+        }
+        if (!(($array = $array[$matches[1]] ?? null)
+            && (is_array($array) || $array instanceof stdClass || $array instanceof ArrayAccess))) {
+            break;
+        }
+        if (false === strpos($matches[3], '=')) {
+            $item = is_numeric($matches[3]) ? (int) $matches[3] : $matches[3];
+            if (!array_key_exists($item, $array)) {
+                break;
+            }
+            $array = $array[$item];
+        } else {
+            [$item, $criteria] = explode('=', $matches[3]);
+            if (('"' === $criteria[0] || "'" === $criteria[0]) && $criteria[0] === substr($criteria, -1)) {
+                $criteria = trim($criteria, '"\'');
+            } elseif (strpos($criteria, '.')) {
+                $criteria = floatval($criteria);
+            } elseif (is_numeric($criteria)) {
+                $criteria = (int) $criteria;
+            }
+            foreach ($array as $elem) {
+                $matchValue = array_get($elem, $item);
+                if ($criteria === $matchValue) {
+                    $array = $elem;
+
+                    break;
+                }
+            }
+        }
+    }
+
+    return $array;
 }
 
 /**
@@ -249,6 +327,8 @@ function yn(mixed $value, string $true_val = 'Yes', string $false_val = 'No'): s
  * Takes a variable list of arguments and returns the first non-null value.
  *
  * @return mixed the first non-NULL argument value, or NULL if all values are NULL
+ *
+ * @deprecated deprecated in favour of PHP native ?? operator
  */
 function coalesce(): mixed
 {
@@ -329,7 +409,7 @@ function array_unflatten(array|string $items, $delim = '=', $section_delim = ';'
     foreach ($items as $item) {
         $parts = preg_split("/\\s*\\{$delim}\\s*/", $item, 2);
         if (count($parts) > 1) {
-            list($key, $value) = $parts;
+            [$key, $value] = $parts;
             $result[$key] = trim($value);
         } else {
             $result[] = trim($parts[0]);
@@ -358,7 +438,7 @@ function array_collate(array $array, bool|int|string $key_item, null|int|string 
     foreach ($array as $key => $item) {
         if (is_array($item) || $item instanceof ArrayAccess) {
             if (true === $key_item) {
-                $result[$key] = ake($item, $value_item);
+                $result[$key] = $item[$value_item] ?? null;
 
                 continue;
             }
@@ -366,13 +446,13 @@ function array_collate(array $array, bool|int|string $key_item, null|int|string 
                 continue;
             }
             if (null !== $group_item) {
-                $result[ake($item, $group_item)][$item[$key_item]] = ake($item, $value_item);
+                $result[$item[$group_item] ?? null][$item[$key_item]] = $item[$value_item] ?? null;
             } else {
-                $result[$item[$key_item]] = (null === $value_item) ? $item : ake($item, $value_item);
+                $result[$item[$key_item]] = (null === $value_item) ? $item : $item[$value_item] ?? null;
             }
         } elseif ($item instanceof stdClass) {
             if (true === $key_item) {
-                $result[$key] = ake($item, $value_item);
+                $result[$key] = $item[$value_item] ?? null;
 
                 continue;
             }
@@ -380,9 +460,9 @@ function array_collate(array $array, bool|int|string $key_item, null|int|string 
                 continue;
             }
             if (null !== $group_item) {
-                $result[ake($item, $group_item)][$item->{$key_item}] = ake($item, $value_item);
+                $result[$item[$group_item] ?? null][$item->{$key_item}] = $item[$value_item] ?? null;
             } else {
-                $result[$item->{$key_item}] = (null === $value_item) ? $item : ake($item, $value_item);
+                $result[$item->{$key_item}] = (null === $value_item) ? $item : $item[$value_item] ?? null;
             }
         }
     }
@@ -537,11 +617,33 @@ function array_enhance(array $targetArray, array $sourceArray): array
     return array_merge($targetArray, array_diff_key($sourceArray, $targetArray));
 }
 
+/**
+ * Encodes data to a Base64 URL-safe string.
+ *
+ * This function encodes the given data using Base64 encoding and then makes the
+ * encoded string URL-safe by replacing '+' with '-' and '/' with '_'. It also
+ * removes any trailing '=' characters.
+ *
+ * @param string $data the data to be encoded
+ *
+ * @return string the Base64 URL-safe encoded string
+ */
 function base64url_encode(string $data): string
 {
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
 }
 
+/**
+ * Decodes a base64 URL encoded string.
+ *
+ * This function takes a base64 URL encoded string and decodes it back to its original form.
+ * It replaces URL-safe characters ('-' and '_') with standard base64 characters ('+' and '/'),
+ * and pads the string with '=' characters to ensure its length is a multiple of 4.
+ *
+ * @param string $data the base64 URL encoded string to decode
+ *
+ * @return string the decoded string
+ */
 function base64url_decode(string $data): string
 {
     return base64_decode(str_pad(strtr($data, '-_', '+/'), strlen($data) + (4 - (strlen($data) % 4) % 4), '=', STR_PAD_RIGHT));
@@ -1139,7 +1241,7 @@ if (!function_exists('money_format')) {
     function money_format(string $format, float|int $number): string
     {
         $regex = '/%((?:[\^!\-]|\+|\(|\=.)*)([0-9]+)?(?:#([0-9]+))?(?:\.([0-9]+))?([in%])/';
-        if ('C' == setlocale(LC_MONETARY, null)) {
+        if ('C' == setlocale(LC_MONETARY, '')) {
             setlocale(LC_MONETARY, '');
         }
         $locale = localeconv();
@@ -1280,14 +1382,14 @@ function replace_recursive(mixed ...$items): mixed
                 if (array_key_exists($key, $target)
                     && ((is_array($target[$key]) || $target[$key] instanceof stdClass)
                         && (is_array($value) || $value instanceof stdClass))) {
-                    $target[$key] = replace_recursive(ake($target, $key), $value);
+                    $target[$key] = replace_recursive($target[$key] ?? null, $value);
                 } else {
                     $target[$key] = $value;
                 }
             } elseif ($target instanceof stdClass) {
                 // To recurse, both the source and target have to be an array/object, otherwise target is replaced.
                 if (property_exists($target, $key)
-                    && ((is_array(ake($target, $key)) || $target->{$key} instanceof stdClass)
+                    && ((is_array($target[$key] ?? null) || $target->{$key} instanceof stdClass)
                         && (is_array($value) || $value instanceof stdClass))) {
                     $target->{$key} = replace_recursive($target->{$key}, $value);
                 } else {
@@ -1381,11 +1483,11 @@ function array_diff_assoc_recursive(mixed ...$arrays): array
                 || ($array_compare instanceof stdClass && !property_exists($array_compare, $key))) {
                 continue;
             }
-            if (!(is_array($value) || $value instanceof stdClass) && $value !== ake($array_compare, $key)) {
+            if (!(is_array($value) || $value instanceof stdClass) && $value !== ($array_compare[$key] ?? null)) {
                 continue;
             }
             if (is_array($value) || $value instanceof stdClass) {
-                $compare_value = ake($array_compare, $key);
+                $compare_value = $array_compare[$key] ?? null;
                 if (!(is_array($compare_value) || $compare_value instanceof stdClass)) {
                     break;
                 }
@@ -1650,14 +1752,14 @@ function match_replace(string $string, $data, $strict = false)
             $value = '';
             $key = null;
             if ('?' === substr($match[1], 0, 1)) {
-                list($test, $output) = explode(':', substr($match[1], 1), 2);
+                [$test, $output] = explode(':', substr($match[1], 1), 2);
                 if ('!' === substr($test, 0, 1)) {
                     $eval = false;
                     $test = substr($test, 1);
                 } else {
                     $eval = true;
                 }
-                if (empty(ake($data, $test, null, true)) !== $eval) {
+                if (empty($data[$test] ?? null) !== $eval) {
                     $key = $output;
                 }
             } else {
@@ -1667,7 +1769,7 @@ function match_replace(string $string, $data, $strict = false)
                 if ('>' === substr($key, 0, 1)) {
                     $value = substr($key, 1);
                 } else {
-                    $value = ake($data, $key);
+                    $value = $data[$key] ?? null;
                 }
                 if (true === $strict && null === $value) {
                     throw new MatchReplaceException();

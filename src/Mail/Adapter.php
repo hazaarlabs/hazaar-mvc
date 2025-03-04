@@ -474,11 +474,11 @@ class Adapter
     protected static function encodeEmailAddress(array|string $email, ?string $name = null): array
     {
         if (is_array($email)) {
-            $name = ake($email, 'name');
-            $email = ake($email, 'email');
+            $name = $email['name'] ?? '';
+            $email = $email['email'] ?? '';
         }
-        $email = trim($email ?? '');
-        $name = trim($name ?? '');
+        $email = trim($email);
+        $name = trim($name);
 
         return ['email' => $email, 'name' => $name];
     }

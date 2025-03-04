@@ -44,13 +44,13 @@ class Logger
     }
 
     /**
-     * @param array<string>|\stdClass $message
+     * @param array<string>|\stdClass|string $message
      */
     public function write(int $level, array|\stdClass|string $message, ?string $task = null): void
     {
         if ($level <= $this->__logLevel) {
             echo date('Y-m-d H:i:s').' - ';
-            $label = ake($this->__levels, $level, 'NONE');
+            $label = $this->__levels[$level] ?? 'NONE';
             if (is_array($message) || $message instanceof \stdClass) {
                 $message = 'Received '.gettype($message)."\n".print_r($message, true);
             }
@@ -76,6 +76,6 @@ class Logger
 
     public function getLevelName(): string
     {
-        return ake($this->__levels, $this->__logLevel, 'NONE');
+        return $this->__levels[$this->__logLevel] ?? 'NONE';
     }
 }

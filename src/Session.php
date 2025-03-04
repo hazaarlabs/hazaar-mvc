@@ -41,7 +41,7 @@ class Session extends Adapter
         if (isset($options['session_id'])) {
             $this->session_id = $options['session_id'];
         }
-        if (!($this->session_id || ($this->session_id = ake($_COOKIE, $this->session_name)))) {
+        if (!($this->session_id || ($this->session_id = ($_COOKIE[$this->session_name] ?? null)))) {
             $this->session_id = null !== $options['session_id'] ? $options['session_id'] : hash($options['hash_algorithm'], uniqid());
         } else {
             $this->session_init = true;
@@ -67,7 +67,7 @@ class Session extends Adapter
     public function clear(): void
     {
         parent::clear();
-        if (ake($_COOKIE, $this->session_name) === $this->session_id) {
+        if (($_COOKIE[$this->session_name] ?? null) === $this->session_id) {
             setcookie($this->session_name, '', time() - 3600, Application::getPath());
         }
     }

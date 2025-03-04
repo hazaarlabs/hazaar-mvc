@@ -211,9 +211,9 @@ class OAuth2 extends Adapter
     {
         if ($this->storage->has('oauth2_data')
             && ($this->storage->has('oauth2_expiry') && $this->storage->get('oauth2_expiry') > time())) {
-            return '' !== ake($this->storage->get('oauth2_data'), 'access_token', '');
+            return ($this->storage->get('oauth2_data')['access_token'] ?? '') !== '';
         }
-        if ($refresh_token = ake($this->storage->get('oauth2_data'), 'refresh_token')) {
+        if ($refresh_token = ($this->storage->get('oauth2_data')['refresh_token'] ?? null)) {
             return $this->refresh($refresh_token);
         }
 
@@ -309,7 +309,7 @@ class OAuth2 extends Adapter
                 return false;
             }
         }
-        if (!($uri = ake($this->metadata, 'token_endpoint'))) {
+        if (!($uri = ($this->metadata['token_endpoint'] ?? null))) {
             throw new \Exception('There is no token endpoint set for this auth adapter!');
         }
         $request = new Request($uri, 'POST');
@@ -349,7 +349,7 @@ class OAuth2 extends Adapter
     public function getAccessToken(): bool|string
     {
         if ($this->has('oauth2_data')) {
-            return ake($this->storage['oauth2_data'], 'access_token');
+            return $this->storage['oauth2_data']['access_token'] ?? false;
         }
 
         return false;
@@ -367,7 +367,7 @@ class OAuth2 extends Adapter
     public function getRefreshToken(): bool|string
     {
         if ($this->has('oauth2_data')) {
-            return ake($this->storage['oauth2_data'], 'refresh_token', false);
+            return $this->storage['oauth2_data']['refresh_token'] ?? false;
         }
 
         return false;
@@ -394,7 +394,7 @@ class OAuth2 extends Adapter
      */
     public function getToken(): ?array
     {
-        return ['token' => ake($this->storage['oauth2_data'], 'access_token')];
+        return ['token' => $this->storage['oauth2_data']['access_token'] ?? null];
     }
 
     /**
@@ -408,7 +408,7 @@ class OAuth2 extends Adapter
      */
     public function getTokenType(): string
     {
-        return ake($this->storage['oauth2_data'], 'token_type', 'Bearer');
+        return $this->storage['oauth2_data']['token_type'] ?? 'Bearer';
     }
 
     /**
@@ -421,13 +421,13 @@ class OAuth2 extends Adapter
      */
     public function introspect(?string $token = null, string $token_type = 'access_token'): bool|string
     {
-        if (!($uri = ake($this->metadata, 'introspection_endpoint'))) {
+        if (!($uri = $this->metadata['introspection_endpoint'] ?? null)) {
             return false;
         }
         $request = new Request($uri, 'POST');
         $request['clientID'] = $this->clientID;
         $request['clientSecret'] = $this->clientSecret;
-        $request['token = $token'] ? $token : ake($this->storage['oauth2_data'], 'access_token');
+        $request['token'] = $token ?? ($this->storage['oauth2_data']['access_token'] ?? null);
         $request['token_type_hint'] = $token_type;
         $response = $this->httpClient->send($request);
 
@@ -446,16 +446,16 @@ class OAuth2 extends Adapter
      */
     public function revoke(): bool|string
     {
-        if (!($uri = ake($this->metadata, 'revocation_endpoint'))) {
+        if (!($uri = $this->metadata['revocation_endpoint'] ?? null)) {
             return false;
         }
         $request = new Request($uri, 'POST');
         $request['clientID'] = $this->clientID;
         $request['token_type_hint'] = 'access_token';
-        $request['token'] = ake($this->storage['oauth2_data'], 'access_token');
+        $request['token'] = $this->storage['oauth2_data']['access_token'] ?? null;
         $response = $this->httpClient->send($request);
 
-        return ake($response->body(), 'result', false);
+        return $response->body()['result'] ?? false;
     }
 
     /**
@@ -469,7 +469,7 @@ class OAuth2 extends Adapter
      */
     public function userinfo(): bool|string
     {
-        if (!($uri = ake($this->metadata, 'user_info_endpoint'))) {
+        if (!($uri = $this->metadata['user_info_endpoint'] ?? null)) {
             return false;
         }
         $request = new Request($uri, 'GET');
@@ -495,7 +495,7 @@ class OAuth2 extends Adapter
             && \property_exists($data, 'expires_in'))) {
             return false;
         }
-        $this->storage['oauth2_expiry'] = time() + ake($data, 'expires_in');
+        $this->storage['oauth2_expiry'] = time() + ($data->expires_in ?? 0);
         $this->storage['oauth2_data'] = $data;
 
         return true;
@@ -517,10 +517,10 @@ class OAuth2 extends Adapter
         string $grantType = 'password',
         ?string $scope = null
     ): bool|\stdClass {
-        if (!($token_endpoint = ake($this->metadata, 'token_endpoint'))) {
+        if (!($token_endpoint = $this->metadata['token_endpoint'] ?? null)) {
             return false;
         }
-        $target_url = (is_array($token_endpoint) ? ake($token_endpoint, 1, ake($token_endpoint, 0)) : $token_endpoint);
+        $target_url = (is_array($token_endpoint) ? ($token_endpoint[1] ?? $token_endpoint[0] ?? null) : $token_endpoint);
         $request = new Request($target_url, 'POST');
         $request['grantType'] = $grantType;
         $request['clientID'] = $this->clientID;
@@ -558,11 +558,11 @@ class OAuth2 extends Adapter
      */
     private function authenticateCode(): bool|\stdClass
     {
-        if ($code = ake($_REQUEST, 'code')) {
-            if (ake($_REQUEST, 'state') !== $this->storage['state']) {
+        if ($code = ($_REQUEST['code'] ?? null)) {
+            if (($_REQUEST['state'] ?? null) !== $this->storage['state']) {
                 throw new \Exception('Invalid state code', 400);
             }
-            $request = new Request(ake($this->metadata, 'token_endpoint'), 'POST');
+            $request = new Request($this->metadata['token_endpoint'] ?? null, 'POST');
             $request['clientID'] = $this->clientID;
             $request['clientSecret'] = $this->clientSecret;
             $request['grantType'] = 'authorization_code';
@@ -579,10 +579,10 @@ class OAuth2 extends Adapter
 
             return false;
         }
-        if (array_key_exists('access_token', $_REQUEST) && ake($_REQUEST, 'state') === $this->storage['state']) {
+        if (array_key_exists('access_token', $_REQUEST) && ($_REQUEST['state'] ?? null) === $this->storage['state']) {
             return array_to_object($_REQUEST);
         }
-        if ('implicit' == ake($_REQUEST, 'grantType')) {
+        if ('implicit' == ($_REQUEST['grantType'] ?? null)) {
             // Some JavaScript magic to turn a hash response into a normal query response.
             $code = 'var uri = document.location.hash.substr(1);
                 history.pushState("", document.title, window.location.pathname + window.location.search);
@@ -593,7 +593,7 @@ class OAuth2 extends Adapter
 
             exit;
         }
-        if (!ake($this->metadata, 'authorization_endpoint')) {
+        if (!($this->metadata['authorization_endpoint'] ?? null)) {
             throw new \Exception('There is no authorization endpoint set for this auth adapter!');
         }
         $this->storage['state'] = hash('sha1', uniqid());
@@ -612,7 +612,7 @@ class OAuth2 extends Adapter
         if (count($this->scopes) > 0) {
             $params['scope'] = implode(' ', $this->scopes);
         }
-        $url = ake($this->metadata, 'authorization_endpoint').'?'.array_flatten($params, '=', '&');
+        $url = $this->metadata['authorization_endpoint'].'?'.array_flatten($params, '=', '&');
         header('Location: '.$url);
 
         exit;

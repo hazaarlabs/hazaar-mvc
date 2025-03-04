@@ -8,7 +8,6 @@ use Exception;
 use Hazaar\Application;
 use Hazaar\File\Metric;
 use Hazaar\File\RRD;
-use Hazaar\Map;
 use Hazaar\Warlock\Config;
 use Hazaar\Warlock\Interface\Client as ClientInterface;
 use Hazaar\Warlock\Protocol;
@@ -219,7 +218,7 @@ class Master
         global $STDOUT;
         global $STDERR;
         $app = Application::getInstance();
-        Application\Config::$overridePaths = ['host'.DIRECTORY_SEPARATOR.ake($_SERVER, 'SERVER_NAME'), 'local'];
+        Application\Config::$overridePaths = ['host'.DIRECTORY_SEPARATOR.$_SERVER['SERVER_NAME'], 'local'];
         $this->silent = $silent;
         self::$config = new Config([], $env);
         if (!defined('RUNTIME_PATH')) {
@@ -301,10 +300,10 @@ class Master
         }
         if (true === self::$config['log']['rotate']) {
             $process = new Task\Internal([
-                'when' => ake(self::$config['log'], 'rotateAt', '0 0 * * *'),
+                'when' => self::$config['log']['rotateAt'] ?? '0 0 * * *',
                 'exec' => (object) [
                     'callable' => [$this, 'rotateLogFiles'],
-                    'params' => [ake(self::$config['log'], 'logfiles')],
+                    'params' => [self::$config['log']['logfiles'] ?? null],
                 ],
             ], self::$config);
             $this->taskQueueAdd($process);
@@ -547,20 +546,20 @@ class Master
                     'path' => APPLICATION_PATH,
                     'env' => APPLICATION_ENV,
                 ]);
-                if (!($callable = $this->callable(ake($task, 'action')))) {
+                if (!($callable = $this->callable($task['action'] ?? null))) {
                     $this->log->write(W_ERR, 'Warlock schedule config contains invalid callable.');
 
                     continue;
                 }
                 $exec = (object) ['callable' => $callable];
-                if ($args = ake($task, 'args')) {
+                if ($args = $task['args'] ?? null) {
                     $exec->params = $args->toArray();
                 }
-                $when = ake($task, 'when');
+                $when = $task['when'] ?? null;
                 if ('@reboot' === strtolower($when)) {
                     $when = time() + self::$config['task']['boot_delay'];
                 }
-                $this->scheduleRunner($when, $exec, $application, ake($task, 'tag', uniqid()), ake($task, 'overwrite', false));
+                $this->scheduleRunner($when, $exec, $application, $task['tag'] ?? uniqid(), $task['overwrite'] ?? false);
             }
         }
         if (isset(self::$config['subscribe'])) {
@@ -730,7 +729,7 @@ class Master
 
         switch ($command) {
             case 'SHUTDOWN':
-                $delay = ake($payload, 'delay', 0);
+                $delay = $payload['delay'] ?? 0;
                 $this->log->write(W_NOTICE, "Shutdown requested (Delay: {$delay})");
                 if (!$this->shutdown($delay)) {
                     throw new \Exception('Unable to initiate shutdown!');
@@ -740,7 +739,7 @@ class Master
                 break;
 
             case 'DELAY' :
-                $payload->when = time() + ake($payload, 'value', 0);
+                $payload->when = time() + $payload['value'];
                 $this->log->write(W_DEBUG, "TASK->DELAY: INTERVAL={$payload->value}");
 
                 // no break
@@ -752,8 +751,8 @@ class Master
                     $payload->when,
                     $payload->exec,
                     new Struct\Application($payload->application),
-                    ake($payload, 'tag'),
-                    ake($payload, 'overwrite', false)
+                    $payload['tag'] ?? null,
+                    $payload['overwrite'] ?? false
                 ))) {
                     throw new \Exception('Could not schedule delayed function');
                 }
@@ -804,7 +803,7 @@ class Master
                 break;
 
             case 'SPAWN':
-                if (!($name = ake($payload, 'name'))) {
+                if (!($name = $payload['name'] ?? null)) {
                     throw new \Exception('Unable to spawn a service without a service name!');
                 }
                 if (!($id = $this->spawn($client, $name, $payload))) {
@@ -815,7 +814,7 @@ class Master
                 break;
 
             case 'KILL':
-                if (!($name = ake($payload, 'name'))) {
+                if (!($name = $payload['name'] ?? null)) {
                     throw new \Exception('Can not kill dynamic service without a name!');
                 }
                 if (!$this->kill($client, $name)) {
@@ -826,14 +825,14 @@ class Master
                 break;
 
             case 'SIGNAL':
-                if (!($eventID = ake($payload, 'id'))) {
+                if (!($eventID = $payload['id'] ?? null)) {
                     return false;
                 }
                 // Otherwise, send this signal to any child services for the requested type
-                if (!($service = ake($payload, 'service'))) {
+                if (!($service = $payload['service'] ?? null)) {
                     return false;
                 }
-                if (!$this->signal($client, $eventID, $service, ake($payload, 'data'))) {
+                if (!$this->signal($client, $eventID, $service, $payload['data'] ?? null)) {
                     throw new \Exception('Unable to signal dynamic service');
                 }
                 $client->send('OK', ['command' => $command, 'name' => $payload]);
@@ -1185,10 +1184,10 @@ class Master
             'tag' => $name,
             'enabled' => true,
             'dynamic' => true,
-            'detach' => ake($options, 'detach', false),
+            'detach' => $options['detach'] ?? false,
             'respawn' => false,
             'client' => $client,
-            'params' => ake($options, 'params'),
+            'params' => $options['params'] ?? null,
             'loglevel' => $service->loglevel,
         ]);
         $this->log->write(W_NOTICE, 'Spawning dynamic service: '.$name, $task->id);
@@ -1277,7 +1276,7 @@ class Master
             'start' => $start,
             'application' => $application,
             'exec' => $exec->callable,
-            'params' => ake($exec, 'params', []),
+            'params' => $exec->params ?? [],
             'timeout' => self::$config['process']['timeout'],
         ]);
         $this->log->write(W_DEBUG, "TASK: ID={$task->id}");
@@ -1458,7 +1457,7 @@ class Master
                 $this->log->write(W_DEBUG, "SERVICE={$name} EXIT={$status['exitcode']}");
                 if (0 !== $status['exitcode'] && TASK_CANCELLED !== $task->status) {
                     $this->log->write(W_NOTICE, "Service returned status code {$status['exitcode']}", $name);
-                    if (!($ec = ake($this->exitCodes, $status['exitcode']))) {
+                    if (!($ec = $this->exitCodes[$status['exitcode']] ?? null)) {
                         $ec = [
                             'lvl' => W_WARN,
                             'msg' => 'Service exited unexpectedly.',
@@ -1466,13 +1465,13 @@ class Master
                         ];
                     }
                     $this->log->write($ec['lvl'], $ec['msg'], $name);
-                    if (true !== ake($ec, 'restart', false)) {
+                    if (true !== ($ec['restart'] ?? false)) {
                         $this->log->write(W_ERR, 'Disabling the service.', $name);
                         $task->status = TASK_ERROR;
 
                         // break;
                     }
-                    if (true === ake($ec, 'reset', false)) {
+                    if (true === ($ec['reset'] ?? false)) {
                         $task->retries = 0;
                     }
                     if ($task->retries > self::$config['service']['restarts']) {

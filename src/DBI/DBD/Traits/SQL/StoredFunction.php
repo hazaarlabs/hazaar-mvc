@@ -91,7 +91,7 @@ trait StoredFunction
         $info = [];
         while ($row = $q->fetch(\PDO::FETCH_ASSOC)) {
             if (!array_key_exists($row['specific_name'], $info)) {
-                if (!($routineDefinition = ake($row, 'routine_definition'))) {
+                if (!($routineDefinition = $row['routine_definition'] ?? null)) {
                     continue;
                 }
                 $item = [
@@ -136,15 +136,15 @@ trait StoredFunction
     {
         $queryBuilder = $this->getQueryBuilder();
         $sql = 'CREATE '.($replace ? 'OR REPLACE ' : '').'FUNCTION'.$queryBuilder->schemaName($name).' (';
-        if ($params = ake($spec, 'parameters')) {
+        if ($params = $spec['parameters'] ?? null) {
             $items = [];
             foreach ($params as $param) {
-                $items[] = ake($param, 'mode', 'IN').' '.ake($param, 'name').' '.ake($param, 'type');
+                $items[] = ($param['mode'] ?? 'IN').' '.($param['name'] ?? '').' '.($param['type'] ?? '');
             }
             $sql .= implode(', ', $items);
         }
-        $sql .= ') RETURNS '.ake($spec, 'return_type', 'TEXT').' LANGUAGE '.ake($spec, 'lang', 'SQL')." AS\n\$BODY$ ";
-        $sql .= ake($spec, 'body');
+        $sql .= ') RETURNS '.($spec['return_type'] ?? 'TEXT').' LANGUAGE '.($spec['lang'] ?? 'SQL')." AS\n\$BODY$ ";
+        $sql .= $spec['body'] ?? '';
         $sql .= '$BODY$;';
 
         return false !== $this->exec($sql);

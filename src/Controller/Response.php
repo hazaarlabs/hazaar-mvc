@@ -165,7 +165,7 @@ class Response implements ResponseInterface
      */
     public function &getHeader(string $key): null|array|string
     {
-        if ($header = ake($this->headers, $key)) {
+        if ($header = ($this->headers[$key] ?? null)) {
             if (is_array($header)) {
                 return $header[0];
             }

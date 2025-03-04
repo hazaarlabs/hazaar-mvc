@@ -84,7 +84,7 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
         if (!array_key_exists($path, $this->meta) || false == $this->meta[$path]['scanned']) {
             $this->updateMeta($path);
         }
-        if (!($pathMeta = ake($this->meta, $path))) {
+        if (!($pathMeta = $this->meta[$path] ?? null)) {
             return false;
         }
         if (!(is_array($pathMeta['resourcetype']) && array_key_exists('collection', $pathMeta['resourcetype']))) {
@@ -122,7 +122,7 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
             return false;
         }
 
-        return in_array('R', str_split(ake($info, 'permissions')));
+        return in_array('R', str_split($info['permissions'] ?? ''));
     }
 
     public function isWritable(string $path): bool
@@ -131,7 +131,7 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
             return false;
         }
 
-        return in_array('W', str_split(ake($info, 'permissions')));
+        return in_array('W', str_split($info['permissions'] ?? ''));
     }
 
     // TRUE if path is a directory
@@ -176,7 +176,7 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
             return false;
         }
 
-        return strtotime(ake($info, 'getcreated'));
+        return strtotime($info['getcreated'] ?? '');
     }
 
     // Returns the file modification time
@@ -186,7 +186,7 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
             return false;
         }
 
-        return strtotime(ake($info, 'getlastmodified'));
+        return strtotime($info['getlastmodified'] ?? '');
     }
 
     public function touch(string $path): bool
@@ -206,10 +206,10 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
             return false;
         }
         if ($this->isDir($path)) {
-            return (int) ake($info, 'size');
+            return (int) ($info['size'] ?? 0);
         }
 
-        return (int) ake($info, 'getcontentlength');
+        return (int) ($info['getcontentlength'] ?? 0);
     }
 
     public function fileperms(string $path): false|int
@@ -248,7 +248,7 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
             return null;
         }
 
-        return ake($info, 'getcontenttype');
+        return $info['getcontenttype'] ?? null;
     }
 
     public function md5Checksum(string $path): ?string
@@ -402,7 +402,7 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
      */
     public function upload(string $path, array $file, bool $overwrite = true): bool
     {
-        if (!(($srcFile = ake($file, 'tmp_name')) && $filetype = ake($file, 'type'))) {
+        if (!(($srcFile = $file['tmp_name'] ?? null) && $filetype = $file['type'] ?? null)) {
             return false;
         }
         $fullPath = rtrim($path, '/').'/'.$file['name'];
@@ -416,7 +416,7 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
             return false;
         }
         if (null !== $key) {
-            return ake($meta, $key);
+            return $meta[$key] ?? false;
         }
 
         return $meta;
@@ -567,14 +567,14 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
     private function info(string $path): array|false
     {
         $path = '/'.trim($path, '/');
-        if ($meta = ake($this->meta, $path)) {
+        if ($meta = $this->meta[$path] ?? null) {
             return $meta;
         }
         if (!$this->updateMeta($path)) {
             return false;
         }
 
-        return ake($this->meta, $path, false);
+        return $this->meta[$path] ?? false;
     }
 
     private function updateMeta(string $path): bool

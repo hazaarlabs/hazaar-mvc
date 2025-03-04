@@ -47,7 +47,7 @@ class HTPasswd extends Adapter
             if (!$line) {
                 continue;
             }
-            list($userIdentity, $userHash) = explode(':', $line);
+            [$userIdentity, $userHash] = explode(':', $line);
             if ($userIdentity === $identity) {
                 $this->userHash = $userHash;
 
@@ -125,7 +125,7 @@ class HTPasswd extends Adapter
             if (!$line) {
                 continue;
             }
-            list($userIdentity, $userHash) = explode(':', $line);
+            [$userIdentity, $userHash] = explode(':', $line);
             if ($userIdentity === $identity) {
                 return false;
             }
@@ -146,7 +146,7 @@ class HTPasswd extends Adapter
             if (!$line) {
                 continue;
             }
-            list($userIdentity, $userHash) = explode(':', $line);
+            [$userIdentity, $userHash] = explode(':', $line);
             if ($userIdentity === $identity) {
                 $lines[$index] = $identity.':'.$hash;
 
@@ -167,7 +167,7 @@ class HTPasswd extends Adapter
             if (!$line) {
                 continue;
             }
-            list($userIdentity, $userHash) = explode(':', $line);
+            [$userIdentity, $userHash] = explode(':', $line);
             if ($userIdentity === $identity) {
                 unset($lines[$index]);
 

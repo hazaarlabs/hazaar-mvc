@@ -263,7 +263,7 @@ class Request implements \ArrayAccess
      */
     public function getHeader(string $key): string
     {
-        return ake($this->headers, $key);
+        return $this->headers[$key] ?? '';
     }
 
     /**
@@ -312,7 +312,7 @@ class Request implements \ArrayAccess
                     if (!is_array($part[0])) {
                         $part[0] = ['Content-Type' => $part[0]];
                     }
-                    if ($content_type = ake($part[0], 'Content-Type')) {
+                    if ($content_type = $part[0]['Content-Type'] ?? null) {
                         if (($pos = strpos($content_type, ';')) > 0) {
                             $content_type = substr($content_type, 0, $pos);
                         }
@@ -545,7 +545,7 @@ class Request implements \ArrayAccess
 
     public function offsetGet(mixed $offset): mixed
     {
-        return ake($this->data, $offset);
+        return $this->data[$offset] ?? null;
     }
 
     public function offsetSet(mixed $offset, mixed $value): void

@@ -46,7 +46,7 @@ class Cluster
                 if (false === strpos(':', $peerConfig)) {
                     $peerConfig .= ':8000';
                 }
-                list($address, $port) = explode(':', $peerConfig);
+                [$address, $port] = explode(':', $peerConfig);
                 if (false === is_numeric($port)) {
                     $port = 8000;
                 }

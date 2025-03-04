@@ -190,7 +190,7 @@ class Annotated extends Advanced
                     foreach ($parts as $part) {
                         // If there is no equals sign, skip this one.
                         if (strpos($part, '=') > 0) {
-                            list($key, $value) = explode('=', $part, 2);
+                            [$key, $value] = explode('=', $part, 2);
                             if (($value = json_decode(str_replace(["'", '{', '}'], ['"', '[', ']'], $value), true)) === null) {
                                 throw new \Exception('Invalid JSON parameter for: '.$key);
                             }

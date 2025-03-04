@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hazaar\File;
 
-use Hazaar\Exception;
 use Hazaar\File;
 
 /**
@@ -47,7 +46,7 @@ class Upload
     /**
      * The uploaded files array.
      *
-     * @var array<string, array<string,string>>
+     * @var array<mixed>
      */
     private array $files = [];
 
@@ -74,19 +73,19 @@ class Upload
     /**
      * Check to see if there are any files that have uploaded as part of the current request.
      *
-     * @param mixed $op_keys A key, or array of keys to check for.  If any of the supplied keys do not exist then the
-     *                       method will return false.  If this parameter is not supplied this method will return true
-     *                       if ANY file has been uploaded.
+     * @param null|array<string>|string $opKeys A key, or array of keys to check for.  If any of the supplied keys do not exist then the
+     *                                          method will return false.  If this parameter is not supplied this method will return true
+     *                                          if ANY file has been uploaded.
      *
      * @return bool
      */
-    public function uploaded($op_keys = null)
+    public function uploaded(null|array|string $opKeys = null)
     {
-        if ($op_keys && !is_array($op_keys)) {
-            $op_keys = [$op_keys];
+        if ($opKeys && !is_array($opKeys)) {
+            $opKeys = [$opKeys];
         }
-        if ($op_keys) {
-            foreach ($op_keys as $key) {
+        if ($opKeys) {
+            foreach ($opKeys as $key) {
                 if (!array_key_exists($key, $this->files) || !$this->files[$key]['tmp_name']) {
                     return false;
                 }
@@ -147,26 +146,25 @@ class Upload
             return $files;
         }
         if (($pos = strpos($key, '.')) > 0) {
-            $sub_key = substr($key, $pos + 1);
-            $files = array_to_dot_notation($this->get(substr($key, 0, $pos)), '.', substr_count($sub_key, '.') + 1);
+            $subKey = substr($key, $pos + 1);
+            $files = array_to_dot_notation($this->get(substr($key, 0, $pos)), '.', substr_count($subKey, '.') + 1);
 
-            return ake($files, $sub_key);
+            return $files[$subKey] ?? [];
         }
-        if ($info = ake($this->files, $key)) {
-            if (!is_array($info['name'])) {
-                return $info;
+        if (!($info = $this->files[$key] ?? null)) {
+            return null;
+        }
+        if (!is_array($info['name'])) {
+            return $info;
+        }
+        $files = [];
+        foreach ($info as $item => $itemInfo) {
+            foreach (array_to_dot_notation($itemInfo) as $name => $data) {
+                $files[$name.'.'.$item] = $data;
             }
-            $files = [];
-            foreach ($info as $item => $item_info) {
-                foreach (array_to_dot_notation($item_info) as $name => $data) {
-                    $files[$name.'.'.$item] = $data;
-                }
-            }
-
-            return array_from_dot_notation($files);
         }
 
-        return null;
+        return array_from_dot_notation($files);
     }
 
     /**

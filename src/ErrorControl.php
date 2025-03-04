@@ -14,7 +14,7 @@ function errorAndDie(): void
     $app = Application::getInstance();
     $headers = array_unflatten(headers_list(), ':', "\n");
     $args = func_get_args();
-    if ('stream' == ake($headers, 'X-Response-Type')) {
+    if ('stream' == ($headers['X-Response-Type'] ?? null)) {
         $stream = new Stream($args[0]);
         $stream->writeOutput();
     } elseif ($app instanceof Application && isset($app->router)) {

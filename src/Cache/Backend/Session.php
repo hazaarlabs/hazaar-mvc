@@ -223,11 +223,11 @@ class Session extends Backend
     {
         $value = "\0";
         if (array_key_exists($key, $this->values)) {
-            $expire = ake($this->values[$key], 'expire');
+            $expire = $this->values[$key]['expire'] ?? null;
             if (null !== $expire && $expire < time()) {
                 unset($this->values[$key]);
             } else {
-                $value = ake($this->values[$key], 'data');
+                $value = $this->values[$key]['data'] ?? null;
             }
         }
 

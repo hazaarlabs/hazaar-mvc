@@ -129,7 +129,7 @@ class GeoData
             if ('__' == substr($code, 0, 2)) {
                 continue;
             }
-            $list[$code] = $field ? ake($info, $field) : $info;
+            $list[$code] = $field ? $info[$field] ?? null : $info;
         }
         asort($list);
 
@@ -202,7 +202,7 @@ class GeoData
     {
         $list = [];
         if ($country = GeoData::$db->get(strtoupper($country_code))) {
-            foreach (ake($country, 'states') as $code => $state) {
+            foreach ($country['states'] as $state) {
                 $list[$state['code']] = $state['name'];
             }
             asort($list);
@@ -226,7 +226,7 @@ class GeoData
     {
         $list = [];
         if ($country = GeoData::$db->get(strtoupper($country_code))) {
-            $cities = ake(ake(ake($country, 'states'), $state_code), 'cities', []);
+            $cities = ($country['states'][$state_code]['cities'] ?? []);
             foreach ($cities as $id) {
                 if (!($city = $country['cities'][$id])) {
                     continue;
@@ -248,7 +248,7 @@ class GeoData
     {
         $info = $this->countryInfo($country_code);
 
-        return ake($info, 'name');
+        return $info['name'] ?? '';
     }
 
     /**
@@ -282,7 +282,7 @@ class GeoData
     {
         $info = $this->countryInfo($country_code);
 
-        return ake($info, 'continent');
+        return $info['continent'] ?? null;
     }
 
     /**
@@ -296,7 +296,7 @@ class GeoData
     {
         $info = $this->countryInfo($country_code);
 
-        return ake($info, 'languages');
+        return $info['languages'] ?? [];
     }
 
     /**
@@ -308,7 +308,7 @@ class GeoData
     {
         $info = $this->countryInfo($country_code);
 
-        return ake($info, 'phone_code');
+        return $info['phone_code'] ?? 0;
     }
 
     /**
@@ -320,7 +320,7 @@ class GeoData
     {
         $info = $this->countryInfo($country_code);
 
-        return ake($info, 'capital');
+        return $info['capital'] ?? '';
     }
 
     /**
@@ -332,7 +332,7 @@ class GeoData
     {
         $info = $this->countryInfo($country_code);
 
-        return ake($info, 'capital_timezone');
+        return $info['capital_timezone'] ?? '';
     }
 
     /**
@@ -344,7 +344,7 @@ class GeoData
     {
         $info = $this->countryInfo($country_code);
 
-        return ake($info, 'area');
+        return $info['area'] ?? 0;
     }
 
     /**
@@ -356,7 +356,7 @@ class GeoData
     {
         $info = $this->countryInfo($country_code);
 
-        return ake($info, 'hosts');
+        return $info['hosts'] ?? 0;
     }
 
     /**
@@ -368,6 +368,6 @@ class GeoData
     {
         $info = $this->countryInfo($country_code);
 
-        return ake($info, 'users');
+        return $info['users'] ?? 0;
     }
 }

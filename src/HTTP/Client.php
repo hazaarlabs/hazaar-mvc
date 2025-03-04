@@ -284,7 +284,7 @@ class Client
             return $cookies;
         }
         $parts = explode(';', $cookie);
-        list($name, $value) = explode('=', array_shift($parts), 2);
+        [$name, $value] = explode('=', array_shift($parts), 2);
         $data = [
             'name' => $name,
             'value' => $value,
@@ -296,7 +296,7 @@ class Client
         ];
         foreach ($parts as $part) {
             if (false !== strpos($part, '=')) {
-                list($arg_k, $arg_v) = explode('=', $part);
+                [$arg_k, $arg_v] = explode('=', $part);
                 $arg_k = strtolower(trim($arg_k));
                 if ('expires' === $arg_k) {
                     $arg_v = new DateTime($arg_v);
@@ -308,7 +308,7 @@ class Client
                 $data[strtolower(trim($part))] = true;
             }
         }
-        $key = md5($name.ake($data, 'domain').ake($data, 'path'));
+        $key = md5($name.$data['domain'].$data['path']);
 
         return $this->cookies[$key] = $data;
     }
@@ -382,14 +382,14 @@ class Client
         $path = explode('/', trim($url->path(), '/'));
         $cookies = [];
         foreach ($this->cookies as $cookie_key => $cookieData) {
-            if ($expires = ake($cookieData, 'expires', null, true)) {
+            if ($expires = $cookieData['expires'] ?? null) {
                 if ($expires->getTimestamp() < time()) {
                     unset($this->cookies[$cookie_key]);
 
                     continue;
                 }
             }
-            if ($domain = ake($cookieData, 'domain')) {
+            if ($domain = $cookieData['domain'] ?? null) {
                 $domain = array_reverse(explode('.', $domain));
                 if (!(array_slice(array_reverse(explode('.', $url->host())), 0, count($domain)) === $domain)) {
                     continue;
@@ -406,7 +406,7 @@ class Client
             if (true === $cookieData['secure'] && 'https' !== $url->scheme()) {
                 continue;
             }
-            $cookies[] = $cookieData['name'].'='.ake($cookieData, 'value');
+            $cookies[] = $cookieData['name'].'='.$cookieData['value'];
         }
         $request->setHeader('Cookie', implode(';', $cookies), false);
 

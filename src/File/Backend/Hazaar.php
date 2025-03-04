@@ -82,7 +82,7 @@ class Hazaar implements BackendInterface, DriverInterface
             ];
             if ($paths = $this->request('tree')) {
                 foreach ($paths as $p) {
-                    list($source, $base) = explode(':', base64url_decode($p['parent']), 2);
+                    [$source, $base] = explode(':', base64url_decode($p['parent']), 2);
                     if (!$base) {
                         $p['name'] = $source;
                         $p['parent'] = $this->pathCache['/']['id'];
@@ -134,7 +134,7 @@ class Hazaar implements BackendInterface, DriverInterface
     public function isReadable(string $path): bool
     {
         if ($info = $this->info($path)) {
-            return ake($info, 'read', false);
+            return $info['read'] ?? false;
         }
 
         return false;
@@ -143,7 +143,7 @@ class Hazaar implements BackendInterface, DriverInterface
     public function isWritable(string $path): bool
     {
         if ($info = $this->info($path)) {
-            return ake($info, 'write', false);
+            return $info['write'] ?? false;
         }
 
         return false;
@@ -153,7 +153,7 @@ class Hazaar implements BackendInterface, DriverInterface
     public function isDir(string $path): bool
     {
         if ($info = $this->info($path)) {
-            return 'dir' == ake($info, 'kind');
+            return 'dir' == ($info['kind'] ?? 'file');
         }
 
         return false;
@@ -169,7 +169,7 @@ class Hazaar implements BackendInterface, DriverInterface
     public function isFile(string $path): bool
     {
         if ($info = $this->info($path)) {
-            return 'file' == ake($info, 'kind', 'file');
+            return 'file' == ($info['kind'] ?? 'file');
         }
 
         return false;
@@ -179,7 +179,7 @@ class Hazaar implements BackendInterface, DriverInterface
     public function filetype(string $path): false|string
     {
         if ($info = $this->info($path)) {
-            return ake($info, 'kind', 'file');
+            return $info['kind'] ?? 'file';
         }
 
         return false;
@@ -189,7 +189,7 @@ class Hazaar implements BackendInterface, DriverInterface
     public function filectime(string $path): false|int
     {
         if ($info = $this->info($path)) {
-            return ake($info, 'created');
+            return $info['created'] ?? false;
         }
 
         return false;
@@ -199,7 +199,7 @@ class Hazaar implements BackendInterface, DriverInterface
     public function filemtime(string $path): false|int
     {
         if ($info = $this->info($path)) {
-            return ake($info, 'modified');
+            return $info['modified'] ?? false;
         }
 
         return false;
@@ -214,7 +214,7 @@ class Hazaar implements BackendInterface, DriverInterface
     public function filesize(string $path): false|int
     {
         if ($info = $this->info($path)) {
-            return ake($info, 'size', 0);
+            return $info['size'] ?? 0;
         }
 
         return false;
@@ -245,7 +245,7 @@ class Hazaar implements BackendInterface, DriverInterface
     public function mimeContentType(string $path): ?string
     {
         if ($info = $this->info($path)) {
-            return ake($info, 'mime', false);
+            return $info['mime'] ?? false;
         }
 
         return null;
@@ -261,7 +261,7 @@ class Hazaar implements BackendInterface, DriverInterface
      */
     public function thumbnail(string $path, array $params = []): false|string
     {
-        if ($link = ake($this->info($path), 'link')) {
+        if ($link = $this->info($path)['link'] ?? null) {
             $uri = new URL($link);
             $uri->setParams($params);
 
@@ -279,11 +279,11 @@ class Hazaar implements BackendInterface, DriverInterface
         $is_dir = $this->scandir($path);
         if (false === $is_dir) {
             $dir = $this->info(dirname($path));
-            if ($info = ake(ake($dir, 'files'), basename($path))) {
+            if ($info = $dir['files'][basename($path)] ?? null) {
                 return $info;
             }
         } else {
-            if ($info = ake($this->pathCache, $path)) {
+            if ($info = $this->pathCache[$path] ?? null) {
                 return $info;
             }
         }
@@ -295,7 +295,7 @@ class Hazaar implements BackendInterface, DriverInterface
     {
         $parent = $this->info(dirname($path));
         $result = $this->request('mkdir', ['parent' => $parent['id'], 'name' => basename($path)]);
-        if ($tree = ake($result, 'tree')) {
+        if ($tree = $result['tree'] ?? null) {
             foreach ($tree as $d) {
                 $source = explode(':', base64url_decode($d['id']), 2)[0];
                 $source_path = '/'.$source.$d['path'];
@@ -310,12 +310,12 @@ class Hazaar implements BackendInterface, DriverInterface
 
     public function rmdir(string $path, bool $recurse = false): bool
     {
-        $info = ake($this->pathCache, $path);
+        $info = $this->pathCache[$path] ?? null;
         if ('dir' == !$info['kind']) {
             return false;
         }
         $result = $this->request('rmdir', ['target' => $info['id']]);
-        if (ake($result, 'ok', false)) {
+        if ($result['ok'] ?? false) {
             unset($this->pathCache[$path]);
 
             return true;
@@ -347,8 +347,8 @@ class Hazaar implements BackendInterface, DriverInterface
         ]];
         $info = $this->request('upload', ['parent' => $parent['id'], 'overwrite' => $overwrite], [$content]);
         if ($info) {
-            if ($fileInfo = ake($info, 'file')) {
-                if ($meta = ake($this->meta, $path)) {
+            if ($fileInfo = $info['file'] ?? null) {
+                if ($meta = $this->meta[$path] ?? null) {
                     $this->request('set_meta', ['target' => $fileInfo['id'], 'values' => $meta]);
                 }
                 $source_path = '/'.explode(':', base64url_decode($fileInfo['parent']), 2)[0];
@@ -401,7 +401,7 @@ class Hazaar implements BackendInterface, DriverInterface
             return false;
         }
 
-        return ake($info, 'mode');
+        return $info['mode'] ?? null;
     }
 
     public function chmod(string $path, int $mode): bool
@@ -430,11 +430,11 @@ class Hazaar implements BackendInterface, DriverInterface
     public function setMeta(string $path, array $values): bool
     {
         if ($info = &$this->info($path)) {
-            $info['meta'] = array_merge(ake($info, 'meta'), $values);
+            $info['meta'] = array_merge($info['meta'] ?? [], $values);
 
             return $this->request('set_meta', ['target' => $info['_id'], 'values' => $values]);
         }
-        $this->meta[$path] = array_merge(ake($this->meta, $path, []), $values);
+        $this->meta[$path] = array_merge($this->meta[$path] ?? [], $values);
 
         return true;
     }
@@ -442,7 +442,7 @@ class Hazaar implements BackendInterface, DriverInterface
     public function getMeta(string $path, ?string $key = null): array|false|string
     {
         if ($info = $this->info($path)) {
-            return $key ? ake(ake($info, 'meta'), $key) : ake($info, 'meta');
+            return $key ? ($info['meta'][$key] ?? null) : ($info['meta'] ?? null);
         }
 
         return false;
@@ -451,7 +451,7 @@ class Hazaar implements BackendInterface, DriverInterface
     public function preview_uri(string $path): false|string
     {
         if ($info = $this->info($path)) {
-            return ake($info, 'previewLink');
+            return $info['previewLink'] ?? null;
         }
 
         return false;
@@ -460,7 +460,7 @@ class Hazaar implements BackendInterface, DriverInterface
     public function directURL(string $path): false|string
     {
         if ($info = $this->info($path)) {
-            return ake($info, 'link');
+            return $info['link'] ?? null;
         }
 
         return false;

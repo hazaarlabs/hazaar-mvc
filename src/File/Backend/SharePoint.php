@@ -135,7 +135,7 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return ake($info, 'Exists', false);
+        return $info['Exists'] ?? false;
     }
 
     public function realpath(string $path): ?string
@@ -199,7 +199,7 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
         }
         $types = ['SP.Folder' => 'dir', 'SP.File' => 'file'];
 
-        return ake($types, $info->__metadata->type, false);
+        return $types[$info->__metadata->type] ?? false;
     }
 
     // Returns the file modification time
@@ -239,7 +239,7 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return (int) ake($info, 'Length', 0);
+        return (int) ($info['Length'] ?? 0);
     }
 
     public function fileperms(string $path): false|int
@@ -336,7 +336,7 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
     {
         $dstInfo = $this->info($dst);
         $dst = parse_url($this->options['webURL'], PHP_URL_PATH).'/'.$this->resolvePath($dst);
-        if ('SP.Folder' === ake($dstInfo, '__metadata.type')) {
+        if ('SP.Folder' === ($dstInfo['__metadata.type'] ?? null)) {
             $dst .= '/'.$this->encodePath($src);
         }
         $url = $this->_objectURL($src)."/moveTo('{$dst}')";
@@ -378,7 +378,11 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
 
     public function getMeta(string $path, ?string $key = null): array|false|string
     {
-        return false;
+        if (!($info = $this->info($path))) {
+            return false;
+        }
+
+        return $key ? ($info['meta'][$key] ?? null) : ($info['meta'] ?? null);
     }
 
     /**
@@ -386,7 +390,11 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
      */
     public function previewURL(string $path, array $params = []): false|string
     {
-        return false;
+        if (!($info = $this->info($path))) {
+            return false;
+        }
+
+        return $info['previewLink'] ?? null;
     }
 
     public function directURL(string $path): false|string
@@ -398,7 +406,7 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return $info->LinkingUri;
+        return $info['link'] ?? null;
     }
 
     public function buildAuthURL(?string $callback_url = null): ?string
@@ -575,7 +583,7 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
             $request = new Request($this->options['webURL'].'/_api/contextinfo', 'POST');
             $request->setHeader('Accept', 'application/json; OData=verbose');
             $response = $this->send($request);
-            $this->requestFormDigest = ake($response->body(), 'd.GetContextWebInformation.FormDigestValue');
+            $this->requestFormDigest = $response->body()['d']['GetContextWebInformation']['FormDigestValue'] ?? null;
         }
 
         return $this->requestFormDigest;
@@ -630,9 +638,11 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
             if (500 === $response->status) {
                 return false;
             }
-            $exception_message = ($error = ake($response->body(), 'error'))
-                ? 'Invalid response ('.$response->status.') from SharePoint: code='.$error->code.' message='.$error->message->value
-                : 'Unknown response: '.$response->body();
+            if ($error = $response->body()['error'] ?? null) {
+                $exception_message = 'Invalid response (' . $response->status . '): code=' . $error->code . ' message=' . $error->message->value;
+            } else {
+                $exception_message = 'Unknown response: ' . $response->body();
+            }
 
             throw new Exception\SharePointError($exception_message, $response);
         }
@@ -675,7 +685,7 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
         $parts = explode('/', trim($path, ' /'));
         // If there's no item, we're loading the root, so query for the root
         if (!($item = array_pop($parts)) && !property_exists($folder, 'Name')) {
-            if (!($folder = ake($this->_query($this->_folder('/')), 'd'))) {
+            if (!($folder = $this->_query($this->_folder('/'))['d'] ?? null)) {
                 if (!$this->mkdir('/')) {
                     throw new Exception\SharePointError('Root folder does not exist and could not be created automatically!');
                 }
@@ -697,9 +707,9 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
 
         try {
             if (!($folder instanceof \stdClass && property_exists($folder, 'Exists'))) {
-                $folder = (object) array_merge((array) ake($this->_query($this->_folder(implode('/', $parts))), 'd'), (array) $folder);
+                $folder = (object) array_merge(($this->_query($this->_folder(implode('/', $parts)))['d'] ?? []), (array) $folder);
             }
-            if (ake($folder, 'Exists')) {
+            if ($folder['Exists'] ?? false) {
                 if (!property_exists($folder, 'items')) {
                     $folder->items = $this->load(implode('/', $parts));
                 }
@@ -795,8 +805,8 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
                 $response->read($value['body']);
                 $value = $response;
             });
-            $folders = ake($responses[0]->body(), 'd.results', [], true);
-            $files = ake($responses[1]->body(), 'd.results', [], true);
+            $folders = $responses[0]->body()['d']['results'] ?? [];
+            $files = $responses[1]->body()['d']['results'] ?? [];
             $sort = function ($a, $b) {
                 if ($a->Name === $b->Name) {
                     return 0;

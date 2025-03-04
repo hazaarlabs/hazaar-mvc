@@ -112,7 +112,7 @@ class Request implements RequestInterface
     {
         $request = array_merge($_GET, $_POST);
         $server = $server ?: $_SERVER;
-        $this->method = ake($server, 'REQUEST_METHOD', 'GET');
+        $this->method = $server['REQUEST_METHOD'] ?? 'GET';
         if (function_exists('getallheaders')) {
             $this->headers = getallheaders();
         }
@@ -169,12 +169,12 @@ class Request implements RequestInterface
         if (array_key_exists(self::$pathParam, $this->params)) {
             return trim($this->params[self::$pathParam], '/');
         }
-        $requestURI = urldecode(ake($server, 'REQUEST_URI', '/'));
+        $requestURI = urldecode($server['REQUEST_URI'] ?? '/');
         // Figure out the PHP environment variables to use to find the controller that's being called
         if ($pos = strpos($requestURI, '?')) {
             $requestURI = substr($requestURI, 0, $pos);
         }
-        $path = pathinfo(ake($server, 'SCRIPT_NAME', ''));
+        $path = pathinfo($server['SCRIPT_NAME'] ?? '');
         if ('index.php' === $path['basename']) {
             // If we are hosted in a sub-directory we need to rip off the base dir to find our relative target
             if (($len = strlen($path['dirname'])) > 1) {
@@ -260,7 +260,7 @@ class Request implements RequestInterface
      */
     public function getHeader(string $header): string
     {
-        return ake($this->headers, $header, '');
+        return $this->headers[$header] ?? '';
     }
 
     /**
@@ -381,7 +381,7 @@ class Request implements RequestInterface
      */
     public function referer(): ?string
     {
-        return ake($_SERVER, 'HTTP_REFERER');
+        return $_SERVER['HTTP_REFERER'] ?? null;
     }
 
     /**
@@ -433,7 +433,7 @@ class Request implements RequestInterface
      */
     public function get(string $key, mixed $default = null): mixed
     {
-        if (($value = ake($this->params, $key)) !== null) {
+        if (($value = ($this->params[$key] ?? null)) !== null) {
             if ('null' === $value) {
                 $value = null;
             } elseif ('true' == $value || 'false' == $value) {

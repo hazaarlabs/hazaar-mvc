@@ -252,7 +252,7 @@ class Imagick extends BaseRenderer
                     break;
 
                 case 'mod': // Brightness, Saturation & Hue
-                    list($brightness, $saturation, $hue) = $values;
+                    [$brightness, $saturation, $hue] = $values;
                     $this->dst->modulateImage(floatval($brightness), floatval($saturation), floatval($hue));
 
                     break;
@@ -267,7 +267,7 @@ class Imagick extends BaseRenderer
 
                 case 'border': // Add a border
                     $width = (int)$values[0];
-                    $color = ake($values, 1, 'black');
+                    $color = $values[1] ?? 'black';
                     $this->dst->borderImage($color, $width, $width);
 
                     break;
@@ -323,15 +323,15 @@ class Imagick extends BaseRenderer
                     break;
 
                 case 'vignette':  // Add a vignette
-                    $value = ake($values, 0);
-                    $offset = ake($values, 1, 0);
+                    $value = $values[0] ?? 0;
+                    $offset = $values[1] ?? 0;
                     $this->dst->setImageBackgroundColor('black');
                     $this->dst->vignetteImage(0, $value, $offset, $offset);
 
                     break;
 
                 case 'wave':  // Wave effect
-                    list($amp, $len) = $values;
+                    [$amp, $len] = $values;
                     $this->dst->waveImage(floatval($amp), floatval($len));
 
                     break;

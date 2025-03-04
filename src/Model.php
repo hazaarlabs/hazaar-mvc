@@ -670,7 +670,7 @@ abstract class Model implements \jsonSerializable, \Iterator
                     if (false === strpos($matches[1], ',')) {
                         $matches[1] = 'int,'.$matches[1];
                     }
-                    list($propertyKeyType, $propertyArrayType) = explode(',', $matches[1], 2);
+                    [$propertyKeyType, $propertyArrayType] = explode(',', $matches[1], 2);
                     if (!in_array($propertyArrayType, self::$allowTypes, true)) {
                         if (false !== strpos($propertyArrayType, '|')) {
                             throw new \Exception("Implicit conversion of unsupported type '{$propertyArrayType}'.  Type must be a single subclass of 'Hazaar\\Model'");

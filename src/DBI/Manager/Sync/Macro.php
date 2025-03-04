@@ -82,7 +82,7 @@ class Macro extends Model
     private static function prepareCriteriaItem(string $criteria): array
     {
         // Split string at = with no whitespace
-        list($field, $value) = preg_split('/\s*=\s*/', $criteria);
+        [$field, $value] = preg_split('/\s*=\s*/', $criteria);
         // Remove quotes from value
         $firstChar = substr($value, 0, 1);
         if (('"' === $firstChar || "'" === $firstChar) && substr($value, -1) === $firstChar) {

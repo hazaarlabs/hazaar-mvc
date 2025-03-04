@@ -82,18 +82,18 @@ trait Trigger
     public function createTrigger(string $triggerName, string $tableName, mixed $spec = []): bool
     {
         $queryBuilder = $this->getQueryBuilder();
-        $events = ake($spec, 'events', ['INSERT']);
+        $events = $spec['events'] ?? ['INSERT'];
         if (!is_array($events)) {
             $events = [$events];
         }
         $sql = 'CREATE TRIGGER '.$queryBuilder->field($triggerName)
-            .' '.ake($spec, 'timing', 'BEFORE')
+            .' '.($spec['timing'] ?? 'BEFORE')
             .' '.implode(' OR ', $events)
             .' ON '.$queryBuilder->schemaName($tableName)
-            .' FOR EACH '.ake($spec, 'orientation', 'ROW');
+            .' FOR EACH '.($spec['orientation'] ?? 'ROW');
         $execute = preg_replace_callback('/FUNCTION\s+([^\s\(]+)/i', function ($match) use ($queryBuilder) {
             return 'FUNCTION '.$queryBuilder->schemaName($match[1]);
-        }, ake($spec, 'content', 'EXECUTE'));
+        }, $spec['content'] ?? 'EXECUTE');
         $sql .= ' '.$execute;
 
         return false !== $this->exec($sql);
