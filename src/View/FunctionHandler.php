@@ -42,7 +42,7 @@ class FunctionHandler
     /**
      * Returns a date string formatted to the current set date format.
      */
-    public function date(DateTime|string $date): string
+    public function date(DateTime|string $date = 'now'): string
     {
         if (!$date instanceof DateTime) {
             $date = new DateTime($date);
@@ -54,7 +54,7 @@ class FunctionHandler
     /**
      * Returns a time string formatted to the current set time format.
      */
-    public function time(DateTime|string $time): string
+    public function time(DateTime|string $time = 'now'): string
     {
         if (!$time instanceof DateTime) {
             $time = new DateTime($time);
@@ -68,7 +68,7 @@ class FunctionHandler
      *
      * This is for making it quick and easy to output consistent timestamp strings.
      */
-    public static function timestamp(DateTime|string $value): string
+    public static function timestamp(DateTime|string $value = 'now'): string
     {
         if (!$value instanceof DateTime) {
             $value = new DateTime($value);
@@ -85,7 +85,7 @@ class FunctionHandler
      *
      * @return string the nicely formatted datetime string
      */
-    public static function datetime(mixed $value, ?string $format = null): string
+    public static function datetime(mixed $value = 'now', ?string $format = null): string
     {
         if (!$value instanceof DateTime) {
             $value = new DateTime($value);
