@@ -88,7 +88,7 @@ function ake(mixed $array, mixed $key, mixed $default = null, bool $non_empty = 
                         }
                         $array = $array[$item];
                     } else {
-                        list($item, $criteria) = explode('=', $matches[3]);
+                        [$item, $criteria] = explode('=', $matches[3]);
                         if (('"' === $criteria[0] || "'" === $criteria[0]) && $criteria[0] === substr($criteria, -1)) {
                             $criteria = trim($criteria, '"\'');
                         } elseif (strpos($criteria, '.')) {
@@ -122,9 +122,80 @@ function ake(mixed $array, mixed $key, mixed $default = null, bool $non_empty = 
     return is_callable($default) ? $default($key) : $default;
 }
 
-function array_get(mixed $array, mixed $key, mixed $default = null, bool $non_empty = false): mixed
+/**
+ * Get a value from an array or object with advanced search capabilities.
+ *
+ * Returns a value from an array or a property from an object, if it exists, using advanced search capabilities
+ * such as dot-notation and search parameters.
+ *
+ * Keys may be specified using dot-notation.  This allows `array_get()` to be called only once instead of for each
+ * element in a reference chain.  For example, you can call `array_get($myarray, 'object.child.other');` and each
+ * reference will be recursed into if it exists.  If at any step the child does not exist then execution will stop
+ * and return null.
+ *
+ * If the key contains round or square brackets, then this is taken as a search parameter, allowing the specified
+ * element to be search for child elements that match the search criteria.  This search parameter can, and is
+ * actually designed to, be used with dot-notation.  So for example, you can call `array_get($myarray, 'items(type.id=1).name')`
+ * to find an element in the `items` sub-element of `$myarray` that has it's own `type` element with another
+ * sub-element of `id` with a value that matches `1`.  As you can imagine, this allows quite a powerful way of accessing
+ * sub-elements of arrays/objects using a simple dot-notation search parameter.
+ *
+ * If the key contains square brackets, then this is taken as an indexed array search parameter and the value will be
+ * accessed using it's numeric index.  For example: `array_get($myarray, 'items[0].name')` will return the name of the
+ * first item in the `items` array.
+ *
+ * @param array<mixed>|\ArrayAccess $array The array to search.  Objects with public properties are also supported.
+ * @param string                    $key   The array key or object property name to look for.  The following key specifications
+ *                                         are supported:
+ *                                         * _string_ - Single key.
+ *                                         * _string_ - Dot notation key for decending into multi-dimensional arrays/objects, including search parameters.
+ *
+ * @return mixed The value if it exists in the array. Returns the default if it does not. Default is null
+ *               if no other default is specified.
+ */
+function array_get(array|ArrayAccess $array, string $key): mixed
 {
-    return ake($array, $key, $default, $non_empty);
+    if (!preg_match('/[.\[\(]/', $key)) {
+        return $array[$key] ?? null;
+    }
+    $parts = preg_split('/\.(?![^([]*[\)\]])/', $key);
+    foreach ($parts as $part) {
+        if (!preg_match('/^(\w+)([\(\[])([\w\d.=\s"\']+)[\)\]]$/', $part, $matches)) {
+            $array = $array[$part] ?? null;
+
+            continue;
+        }
+        if (!(($array = $array[$matches[1]] ?? null)
+            && (is_array($array) || $array instanceof stdClass || $array instanceof ArrayAccess))) {
+            break;
+        }
+        if (false === strpos($matches[3], '=')) {
+            $item = is_numeric($matches[3]) ? (int) $matches[3] : $matches[3];
+            if (!array_key_exists($item, $array)) {
+                break;
+            }
+            $array = $array[$item];
+        } else {
+            [$item, $criteria] = explode('=', $matches[3]);
+            if (('"' === $criteria[0] || "'" === $criteria[0]) && $criteria[0] === substr($criteria, -1)) {
+                $criteria = trim($criteria, '"\'');
+            } elseif (strpos($criteria, '.')) {
+                $criteria = floatval($criteria);
+            } elseif (is_numeric($criteria)) {
+                $criteria = (int) $criteria;
+            }
+            foreach ($array as $elem) {
+                $matchValue = array_get($elem, $item);
+                if ($criteria === $matchValue) {
+                    $array = $elem;
+
+                    break;
+                }
+            }
+        }
+    }
+
+    return $array;
 }
 
 /**
@@ -338,7 +409,7 @@ function array_unflatten(array|string $items, $delim = '=', $section_delim = ';'
     foreach ($items as $item) {
         $parts = preg_split("/\\s*\\{$delim}\\s*/", $item, 2);
         if (count($parts) > 1) {
-            list($key, $value) = $parts;
+            [$key, $value] = $parts;
             $result[$key] = trim($value);
         } else {
             $result[] = trim($parts[0]);
@@ -1170,7 +1241,7 @@ if (!function_exists('money_format')) {
     function money_format(string $format, float|int $number): string
     {
         $regex = '/%((?:[\^!\-]|\+|\(|\=.)*)([0-9]+)?(?:#([0-9]+))?(?:\.([0-9]+))?([in%])/';
-        if ('C' == setlocale(LC_MONETARY, null)) {
+        if ('C' == setlocale(LC_MONETARY, '')) {
             setlocale(LC_MONETARY, '');
         }
         $locale = localeconv();
@@ -1681,7 +1752,7 @@ function match_replace(string $string, $data, $strict = false)
             $value = '';
             $key = null;
             if ('?' === substr($match[1], 0, 1)) {
-                list($test, $output) = explode(':', substr($match[1], 1), 2);
+                [$test, $output] = explode(':', substr($match[1], 1), 2);
                 if ('!' === substr($test, 0, 1)) {
                     $eval = false;
                     $test = substr($test, 1);

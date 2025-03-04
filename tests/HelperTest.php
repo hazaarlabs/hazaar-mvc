@@ -65,8 +65,18 @@ class HelperTest extends TestCase
 
     public function testAKEFunctionWithDotNotation(): void
     {
-        $array = ['key' => ['subkey' => 'value']];
+        $array = [
+            'key' => ['subkey' => 'value'],
+            'items' => [
+                ['name' => 'item1', 'type' => ['id' => 1, 'name' => 'type1']],
+                ['name' => 'item2', 'type' => ['id' => 2, 'name' => 'type2']],
+                ['name' => 'item3', 'type' => ['id' => 3, 'name' => 'type3']],
+            ],
+        ];
         $this->assertEquals('value', array_get($array, 'key.subkey'));
-        $this->assertEquals('default', array_get($array, 'key.missing', 'default'));
+        $this->assertNull(array_get($array, 'key.missing'));
+        $this->assertEquals('item2', array_get($array, 'items[1].name'));
+        $this->assertEquals('item3', array_get($array, 'items(type.id=3).name'));
+        $this->assertEquals('type2', array_get($array, 'items(name=item2).type.name'));
     }
 }
