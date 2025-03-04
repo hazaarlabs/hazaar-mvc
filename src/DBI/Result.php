@@ -204,11 +204,11 @@ abstract class Result implements ResultInterface, \Countable
                     $meta = [];
                     foreach ($this->meta[$name] as $col) {
                         $meta[] = $col;
-                        $aliases[] = ake($col, 'table');
+                        $aliases[] = $col['table'] ?? null;
                     }
                 } else {
                     $meta = $this->meta[$name];
-                    if (!($alias = ake($meta, 'table'))) {
+                    if (!($alias = $meta['table'] ?? null)) {
                         continue;
                     }
                     $aliases[] = $alias;
@@ -250,13 +250,13 @@ abstract class Result implements ResultInterface, \Countable
             if (!array_key_exists($column, $this->meta)) {
                 continue;
             }
-            $table = ake($this->meta[$column], 'table');
-            if (!array_key_exists($table, $encryptedFields)) {
-                $encryptedFields[$table] = ake($this->encrypt['table'], $table, []);
+            $table = $this->meta[$column]['table'] ?? null;
+            if (!($table || array_key_exists($table, $encryptedFields))) {
+                $encryptedFields[$table] = $this->encrypt['table'][$table] ?? [];
             }
             if ((!in_array($column, $encryptedFields[$table])
                 && true !== $encryptedFields[$table])
-                || 'string' !== ake($this->meta[$column], 'type')) {
+                || 'string' !== $this->meta[$column]['type']) {
                 continue;
             }
             if (null === $value) {

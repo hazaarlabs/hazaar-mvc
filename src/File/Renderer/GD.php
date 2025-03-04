@@ -224,7 +224,7 @@ class GD extends BaseRenderer
 
             switch ($filter) {
                 case 'blur':  // Blur
-                    $value = (int) ake($values, 0, 1);
+                    $value = (int) ($values[0] ?? 1);
                     for ($i = 0; $i < $value; ++$i) {
                         if (!($ret = imagefilter($this->img, IMG_FILTER_GAUSSIAN_BLUR))) {
                             break;
@@ -234,7 +234,7 @@ class GD extends BaseRenderer
                     break;
 
                 case 'sharpen': // Sharpen
-                    $value = (int) ake($values, 0, 1);
+                    $value = (int) ($values[0] ?? 1);
                     for ($i = 0; $i < $value; ++$i) {
                         if (!($ret = imagefilter($this->img, IMG_FILTER_SMOOTH, -10))) {
                             break;
@@ -244,17 +244,17 @@ class GD extends BaseRenderer
                     break;
 
                 case 'c': // Contrast
-                    $ret = imagefilter($this->img, IMG_FILTER_CONTRAST, (int) ake($values, 0, 1));
+                    $ret = imagefilter($this->img, IMG_FILTER_CONTRAST, (int) ($values[0] ?? 1));
 
                     break;
 
                 case 'b': // Brightness
-                    $ret = imagefilter($this->img, IMG_FILTER_BRIGHTNESS, (int) ake($values, 0, 1));
+                    $ret = imagefilter($this->img, IMG_FILTER_BRIGHTNESS, (int) ($values[0] ?? 1));
 
                     break;
 
                 case 's': // Saturation
-                    $value = (int) ake($values, 0, 1);
+                    $value = (int) ($values[0] ?? 1);
                     $ret = imagefilter($this->img, IMG_FILTER_COLORIZE, -$value, -$value, -$value);
 
                     break;

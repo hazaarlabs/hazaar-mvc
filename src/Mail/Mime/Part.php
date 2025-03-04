@@ -44,7 +44,7 @@ class Part implements \JsonSerializable
 
     public function getHeader(string $header): string
     {
-        return ake($this->headers, $header);
+        return $this->headers[$header] ?? '';
     }
 
     public function setContentType(string $type): void
@@ -54,7 +54,7 @@ class Part implements \JsonSerializable
 
     public function getContentType(): string
     {
-        return ake($this->headers, 'Content-Type');
+        return $this->headers['Content-Type'] ?? '';
     }
 
     public function setDescription(string $text): void
@@ -108,7 +108,7 @@ class Part implements \JsonSerializable
         $headers = Message::parseMessageHeaders(substr($data, 0, $pos));
         $content = substr($data, $pos + 2);
 
-        return new Part($content, ake($headers, 'Content-Type'), $headers);
+        return new Part($content, $headers['Content-Type'] ?? '', $headers);
     }
 
     public function jsonSerialize(): mixed

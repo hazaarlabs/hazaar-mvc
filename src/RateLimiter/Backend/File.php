@@ -27,11 +27,11 @@ class File extends Backend
         if (!($app = Application::getInstance())) {
             throw new \Exception('Application not initialized!');
         }
-        $this->db = new BTree($app->getRuntimePath(ake($options, 'file', 'rate_limiter.db')));
+        $this->db = new BTree($app->getRuntimePath($options['file'] ?? 'rate_limiter.db'));
         if (!($this->created = $this->db->get('created'))) {
             $this->db->set('created', $this->created = time());
         }
-        $this->compactInterval = ake($options, 'compactInterval', $this->compactInterval);
+        $this->compactInterval = $options['compactInterval'] ?? $this->compactInterval;
     }
 
     public function shutdown(): void

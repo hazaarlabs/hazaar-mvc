@@ -56,7 +56,6 @@ class HelperTest extends TestCase
         $this->assertEquals('1 day 10:17:36', uptime(123456));
         $this->assertEquals('7 days 13:45:21', uptime(654321));
         $this->assertEquals('365 days 0:31:30', uptime(31537890));
-
     }
 
     public function testAgeFunction(): void
@@ -64,17 +63,10 @@ class HelperTest extends TestCase
         $this->assertEquals(46, age('1978-12-13'));
     }
 
-    public function testAKEFunction(): void
-    {
-        $array = ['key' => 'value'];
-        $this->assertEquals('value', ake($array, 'key'));
-        $this->assertEquals('default', ake($array, 'missing', 'default'));
-    }
-
     public function testAKEFunctionWithDotNotation(): void
     {
         $array = ['key' => ['subkey' => 'value']];
-        $this->assertEquals('value', ake($array, 'key.subkey'));
-        $this->assertEquals('default', ake($array, 'key.missing', 'default'));
+        $this->assertEquals('value', array_get($array, 'key.subkey'));
+        $this->assertEquals('default', array_get($array, 'key.missing', 'default'));
     }
 }

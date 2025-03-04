@@ -316,7 +316,7 @@ class Element implements \ArrayAccess, \Iterator
      */
     public function getAttr(string $name): string
     {
-        return ake($this->__attributes, $name);
+        return $this->__attributes[$name] ?? '';
     }
 
     /**
@@ -730,16 +730,17 @@ class Element implements \ArrayAccess, \Iterator
      */
     public function find(array $criteria, ?string $name = null): ?Element
     {
-        if ($this->count() > 0) {
-            foreach (ake($this->__children_index, $name, []) as $nodeName => $child) {
-                foreach ($criteria as $key => $value) {
-                    if (!($child->hasAttr($key) && $child[$key] == $value)) {
-                        continue 2;
-                    }
+        if (0 === $this->count()) {
+            return null;
+        }
+        foreach (($this->__children_index[$name] ?? []) as $child) {
+            foreach ($criteria as $key => $value) {
+                if (!($child->hasAttr($key) && $child[$key] == $value)) {
+                    continue 2;
                 }
-
-                return $child;
             }
+
+            return $child;
         }
 
         return null;
@@ -777,7 +778,7 @@ class Element implements \ArrayAccess, \Iterator
      */
     public function offsetGet(mixed $name): mixed
     {
-        return ake($this->__attributes, $name);
+        return $this->__attributes[$name] ?? null;
     }
 
     /**
@@ -869,7 +870,7 @@ class Element implements \ArrayAccess, \Iterator
      */
     public function getIndex(int $index): mixed
     {
-        return ake($this->__children, $index);
+        return $this->__children[$index] ?? null;
     }
 
     /**

@@ -769,7 +769,7 @@ class Manager
             }
             $this->dbi->log("Connected to database '{$this->config['dbname']}' on host '{$config['host']}'");
         } catch (ConnectionFailed $e) {
-            if (7 !== $e->getCode() || true !== ake($config, 'createDatabase')) {
+            if (7 !== $e->getCode() || true !== ($config['createDatabase'] ?? null)) {
                 throw $e;
             }
             $this->dbi->log('Database does not exist.  Attempting to create it as requested.');

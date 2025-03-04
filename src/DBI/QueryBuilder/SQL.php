@@ -558,7 +558,7 @@ class SQL implements QueryBuilder
                 foreach ($fieldMap as $alias => $field) {
                     if (preg_match('/^((\w+)\.)?\*$/', trim($field), $matches) > 0) {
                         if (count($matches) > 1) {
-                            $alias = ake($tables, $matches[2]);
+                            $alias = $tables[$matches[2]] ?? null;
                         } else {
                             $alias = reset($tables);
                             $value = key($tables).'.*';
@@ -575,7 +575,7 @@ class SQL implements QueryBuilder
                 $fieldDef[] = $this->prepareFields($fields, [], $tables);
             } elseif (preg_match('/^((\w+)\.)?\*$/', trim($value), $matches) > 0) {
                 if (count($matches) > 1) {
-                    $alias = ake($tables, $matches[2]);
+                    $alias = $tables[$matches[2]] ?? null;
                 } else {
                     $alias = reset($tables);
                     $value = key($tables).'.*';
@@ -866,13 +866,13 @@ class SQL implements QueryBuilder
             $order[] = $orderDefinition;
         } elseif (is_array($orderDefinition)) {
             foreach ($orderDefinition as $field => $mode) {
-                $name = ake($this->selectGroups, $this->from[0], $this->from[0]).'.'.$field;
+                $name = $this->selectGroups[$this->from[0]] ?? $this->from[0].'.'.$field;
                 if ($key = array_search($name, $this->selectGroups)) {
                     $field = $key;
                 }
                 if (is_array($mode)) {
-                    $nulls = ake($mode, '$nulls', 0);
-                    $mode = ake($mode, '$dir', 1);
+                    $nulls = $mode['$nulls'] ?? 0;
+                    $mode = $mode['$dir'] ?? 1;
                 } else {
                     $nulls = 0;
                 }

@@ -14,16 +14,8 @@ if (!defined('SERVER_PATH')) {
 abstract class Process extends Model
 {
     public Struct\Application $application;
-    protected int $pid = -1;
-    protected int $exitcode = -1;
     public string $id;
     public ?string $tag = null;
-
-    /**
-     * @var array<resource>
-     */
-    protected array $pipes;
-    protected Logger $log;
 
     /**
      * @var array<string,mixed>
@@ -32,6 +24,14 @@ abstract class Process extends Model
         'pid' => -1,
         'running' => false,
     ];
+    protected int $pid = -1;
+    protected int $exitcode = -1;
+
+    /**
+     * @var array<resource>
+     */
+    protected array $pipes;
+    protected Logger $log;
 
     /**
      * @var ?resource
@@ -47,7 +47,7 @@ abstract class Process extends Model
     {
         $procStatus = $this->get('procStatus');
 
-        return ake($procStatus, 'running', false);
+        return $procStatus['running'] ?? false;
     }
 
     /**
@@ -237,10 +237,10 @@ abstract class Process extends Model
     {
         $this->id = $this->getProcessID();
         $this->defineEventHook('read', 'pid', function () {
-            return ake($this->get('procStatus'), 'pid');
+            return $this->get('procStatus')['pid'] ?? null;
         });
         $this->defineEventHook('read', 'exitcode', function () {
-            return ake($this->get('procStatus'), 'exitcode');
+            return $this->get('procStatus')['exitcode'] ?? null;
         });
         $this->defineEventHook('read', 'procStatus', function () {
             if (!is_resource($this->process)) {

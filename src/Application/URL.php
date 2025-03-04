@@ -127,7 +127,7 @@ class URL implements \JsonSerializable
         $params = [];
         foreach ($this->params as $key => $value) {
             if (preg_match('/\$(\w+)/', $value, $matches)) {
-                $value = ake($values, $matches[1]);
+                $value = $values[$matches[1]] ?? null;
             }
             $params[$key] = $value;
         }
@@ -219,14 +219,14 @@ class URL implements \JsonSerializable
             $url = rtrim(trim(URL::$baseURL), '/').'/'.$path;
         } else {
             // Figure out the hostname and protocol
-            $host = ake($_SERVER, 'HTTP_HOST', 'localhost');
+            $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
             if (false === strpos($host, ':')
                 && array_key_exists('SERVER_PORT', $_SERVER)
                 && 80 != $_SERVER['SERVER_PORT']
                 && 443 != $_SERVER['SERVER_PORT']) {
                 $host .= ':'.$_SERVER['SERVER_PORT'];
             }
-            $proto = ((443 == ake($_SERVER, 'SERVER_PORT')) ? 'https' : 'http');
+            $proto = ((443 == ($_SERVER['SERVER_PORT'] ?? null)) ? 'https' : 'http');
             $url = $proto.'://'.$host.Application::getPath($path);
         }
         if (count($params) > 0) {

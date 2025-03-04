@@ -76,7 +76,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
 
     public function authorise(?string $redirect_uri = null): bool
     {
-        if (($code = ake($_REQUEST, 'code')) && ($state = ake($_REQUEST, 'state'))) {
+        if (($code = $_REQUEST['code'] ?? null) && ($state = $_REQUEST['state'] ?? null)) {
             if ($state != $this->cache->pull('oauth2_state')) {
                 throw new \Exception('Bad state!');
             }
@@ -174,7 +174,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
             return false;
         }
         $path = strtolower('/'.ltrim($path, '/'));
-        if (!($pathMeta = ake($this->meta, $path))) {
+        if (!($pathMeta = $this->meta[$path] ?? null)) {
             return false;
         }
         if (!$pathMeta['is_dir']) {
@@ -199,7 +199,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         if (!$this->cursor) {
             $this->refresh();
         }
-        if (!($meta = ake($this->meta, strtolower($path)))) {
+        if (!($meta = $this->meta[strtolower($path)] ?? null)) {
             return false;
         }
 
@@ -546,7 +546,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
      */
     public function upload(string $path, array $file, bool $overwrite = true): bool
     {
-        if (!(($srcFile = ake($file, 'tmp_name')) && $filetype = ake($file, 'type'))) {
+        if (!(($srcFile = $file['tmp_name'] ?? null) && $filetype = $file['type'] ?? null)) {
             return false;
         }
         $fullPath = rtrim($path, '/').'/'.$file['name'];
@@ -560,7 +560,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
     public function getMeta(string $path, ?string $key = null): array|false|string
     {
         if ($meta = $this->cache->get($this->options['app_key'].'::'.strtolower($path))) {
-            return ake($meta, $key);
+            return $key !== null ? ($meta[$key] ?? null) : $meta;
         }
 
         return false;
@@ -585,7 +585,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
      */
     public function previewURL(string $path, array $params = []): string
     {
-        $width = (int) ake($params, 'width', ake($params, 'height', 64));
+        $width = (int) ($params['width'] ?? $params['height'] ?? 64);
         if ($width >= 1024) {
             $size = 'w1024h768';
         } elseif ($width >= 640) {
@@ -614,7 +614,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         if ($info['is_dir']) {
             return false;
         }
-        if (($media = ake($info, 'media')) && strtotime($media['expires']) > time()) {
+        if (($media = $info['media'] ?? null) && strtotime($media['expires']) > time()) {
             return $media['url'];
         }
         $request = new Request('https://api.dropbox.com/1/media/auto'.$path, 'POST');

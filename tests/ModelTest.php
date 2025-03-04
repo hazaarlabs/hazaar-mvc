@@ -234,7 +234,7 @@ class ModelTest extends TestCase
     {
         $model = new TestModel($this->data);
         $model->set('name', 'Jane Doe');
-        $this->assertEquals('Jane Doe!!!', ake($model, 'name'));
+        $this->assertEquals('Jane Doe!!!', $model->name);
     }
 
     public function testDynamicProperties(): void

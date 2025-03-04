@@ -67,7 +67,7 @@ class URL implements \ArrayAccess
     public function scheme(?string $value = null): string
     {
         if (null === $value) {
-            return ake($this->parts, 'scheme', 'http');
+            return $this->parts['scheme'] ?? 'http';
         }
 
         return $this->parts['scheme'] = $value;
@@ -76,7 +76,7 @@ class URL implements \ArrayAccess
     public function host(?string $value = null): string
     {
         if (null === $value) {
-            return ake($this->parts, 'host');
+            return $this->parts['host'] ?? '';
         }
 
         return $this->parts['host'] = $value;
@@ -94,7 +94,7 @@ class URL implements \ArrayAccess
                 $this->parts['port'] = $this->lookupPort($scheme);
             }
 
-            return ake($this->parts, 'port');
+            return $this->parts['port'] ?? 0;
         }
 
         return $this->parts['port'] = (int) $value;
@@ -102,7 +102,7 @@ class URL implements \ArrayAccess
 
     public function lookupPort(string $scheme): ?int
     {
-        if ($port = ake($this->common_ports, $scheme)) {
+        if ($port = ($this->common_ports[$scheme] ?? null)) {
             return $port;
         }
         $services_file = DIRECTORY_SEPARATOR.'etc'.DIRECTORY_SEPARATOR.'services';
@@ -119,7 +119,7 @@ class URL implements \ArrayAccess
     public function user(): string
     {
         if (0 == func_num_args()) {
-            return ake($this->parts, 'user');
+            return $this->parts['user'] ?? '';
         }
 
         return $this->parts['user'] = func_get_arg(0);
@@ -128,7 +128,7 @@ class URL implements \ArrayAccess
     public function pass(): string
     {
         if (0 == func_num_args()) {
-            return ake($this->parts, 'pass');
+            return $this->parts['pass'] ?? '';
         }
 
         return $this->parts['pass'] = func_get_arg(0);
@@ -137,7 +137,7 @@ class URL implements \ArrayAccess
     public function path(): string
     {
         if (0 == func_num_args()) {
-            return ake($this->parts, 'path', '/');
+            return $this->parts['path'] ?? '/';
         }
 
         return $this->parts['path'] = func_get_arg(0);
@@ -149,7 +149,7 @@ class URL implements \ArrayAccess
     public function params(): array
     {
         if (0 == func_num_args()) {
-            return ake($this->parts, 'query');
+            return $this->parts['query'] ?? [];
         }
 
         return $this->parts['query'] = func_get_arg(0);
@@ -158,7 +158,7 @@ class URL implements \ArrayAccess
     public function hash(): string
     {
         if (0 == func_num_args()) {
-            return ake($this->parts, 'fragment');
+            return $this->parts['fragment'] ?? '';
         }
 
         return $this->parts['fragment'] = func_get_arg(0);
@@ -166,7 +166,7 @@ class URL implements \ArrayAccess
 
     public function get(string $key): int|string
     {
-        return ake($this->params, $key);
+        return $this->params[$key] ?? '';
     }
 
     public function set(string $key, int|string $value): void
@@ -212,7 +212,7 @@ class URL implements \ArrayAccess
         $scheme = $this->scheme();
         $port = $this->port();
 
-        return $scheme.'://'.(ake($this->parts, 'user') ? $this->parts['user'].(ake($this->parts, 'pass') ? ':'.$this->parts['pass'] : null).'@' : null)
+        return $scheme.'://'.(($this->parts['user'] ?? false) ? $this->parts['user'].(($this->parts['pass'] ?? false) ? ':'.$this->parts['pass'] : null).'@' : null)
             .$this->host()
             .(($port === $this->lookupPort($scheme)) ? null : ':'.$port)
             .$this->path()

@@ -184,7 +184,7 @@ class KVStore
                     unset($this->kvExpire[$namespace][$e][$key]);
                 }
             }
-            $slot = ['v' => ake($payload, 'v')];
+            $slot = ['v' => $payload->v ?? null];
             if (property_exists($payload, 't')) {
                 $slot['t'] = $payload->t;
                 $slot['e'] = time() + $payload->t;

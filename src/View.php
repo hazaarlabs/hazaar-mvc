@@ -368,7 +368,7 @@ class View implements \ArrayAccess
     {
         $output = '';
         $parts = pathinfo($this->viewFile);
-        if ('tpl' == ake($parts, 'extension')) {
+        if ('tpl' == ($parts['extension'] ?? null)) {
             $template = new Smarty();
             $template->loadFromFile(new File($this->viewFile));
             $template->registerFunctionHandler(new FunctionHandler($this));

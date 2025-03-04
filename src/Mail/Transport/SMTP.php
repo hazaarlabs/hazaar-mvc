@@ -77,7 +77,7 @@ class SMTP extends Transport
                 stream_context_set_option($this->socket, 'ssl', 'verify_peer_name', false);
             }
             if (!@stream_socket_enable_crypto($this->socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
-                throw new \Exception(ake(\error_get_last(), 'message'));
+                throw new \Exception(\error_get_last()['message'] ?? 'Unknown error enabling TLS');
             }
         } elseif (true === $this->options['starttls']) {
             throw new \Exception('STARTTLS is required but server does not support it.');

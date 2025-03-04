@@ -87,7 +87,7 @@ class Money
     public function __construct(float $value = 0, ?string $currency = null)
     {
         if (null === self::$default_currency) {
-            self::$default_currency = trim(ake(localeconv(), 'int_curr_symbol'));
+            self::$default_currency = trim(localeconv()['int_curr_symbol'] ?? '');
         }
         if (null === $currency) {
             $currency = self::$default_currency;
@@ -203,10 +203,10 @@ class Money
             }
             $info = self::$db->get($country);
 
-            return ake($info, 'currencycode');
+            return $info['currencycode'] ?? '';
         }
 
-        return ake($this->localCurrency, 'currencycode');
+        return $this->localCurrency['currencycode'] ?? '';
     }
 
     /**
@@ -218,7 +218,7 @@ class Money
      */
     public function getCurrencySymbol(): string
     {
-        return ake($this->localCurrency, 'symbol', '$');
+        return $this->localCurrency['symbol'] ?? '$';
     }
 
     /**
@@ -243,7 +243,7 @@ class Money
         }
         $base = strtoupper(trim($this->localCurrency['currencycode'] ?? ''));
         $foreignCurrency = strtoupper(trim($foreignCurrency));
-        if (!ake(self::$exchangeRates, $base)) {
+        if (!(self::$exchangeRates[$base] ?? false)) {
             if (null === self::$cache) {
                 self::$cache = new Adapter(['apc', 'file']);
             }
@@ -256,7 +256,7 @@ class Money
             }
         }
 
-        return ake(self::$exchangeRates[$base]['rates'], $foreignCurrency);
+        return self::$exchangeRates[$base]['rates'][$foreignCurrency] ?? 0;
     }
 
     /**
@@ -382,7 +382,7 @@ class Money
             $value = trim($value);
             if (preg_match('/^(\D*)([\d\.,]+)(\D*)/', $value, $matches)) {
                 $this->value = floatval(str_replace(',', '', $matches[2]));
-                $currency = ake($matches, 3, null, true);
+                $currency = $matches[3];
             } else {
                 $this->value = floatval(substr($value, 1));
             }
@@ -400,6 +400,6 @@ class Money
      */
     public function getCurrencyName(): string
     {
-        return ake($this->localCurrency, 'name');
+        return $this->localCurrency['name'] ?? '';
     }
 }

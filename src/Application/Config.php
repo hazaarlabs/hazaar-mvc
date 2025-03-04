@@ -170,8 +170,9 @@ class Config implements \ArrayAccess, \Iterator
         }
         foreach ($sources as &$sourceInfo) {
             $sourceFile = null;
+            $pathInfo = pathinfo($sourceInfo['name']);
             // If we have an extension, just use that file.
-            if (false !== ake(pathinfo($sourceInfo['name']), 'extension', false)) {
+            if (false !== ($pathInfo['extension'] ?? false)) {
                 $sourceFile = Loader::getFilePath(FilePath::CONFIG, $sourceInfo['name']);
             } else { // Otherwise, search for files with supported extensions
                 $extensions = ['json', 'ini']; // Ordered by preference
@@ -195,7 +196,7 @@ class Config implements \ArrayAccess, \Iterator
         if (count($options) > 0) {
             $this->global = [];
             foreach ($options as $o) {
-                if (true === ake($this->global, 'final')) {
+                if (true === ($this->global['final'] ?? false)) {
                     break;
                 }
                 $this->global = array_replace_recursive($this->global, $o);
@@ -230,7 +231,7 @@ class Config implements \ArrayAccess, \Iterator
             $env = $this->env;
         }
 
-        return ake($this->global, $env);
+        return $this->global[$env] ?? [];
     }
 
     /**
@@ -382,7 +383,7 @@ class Config implements \ArrayAccess, \Iterator
                 $mtime = 0;
                 foreach ($cacheInfo['cache_list'] as $cache) {
                     if (array_key_exists('info', $cache) && $cache['info'] == $cacheKey) {
-                        $mtime = ake($cache, 'mtime');
+                        $mtime = $cache['mtime'] ?? 0;
 
                         break;
                     }

@@ -142,7 +142,7 @@ class Application
         if (!$this->config) {
             return;
         }
-        $shutdown = $this->path.DIRECTORY_SEPARATOR.ake($this->config, 'app.files.shutdown', 'shutdown.php');
+        $shutdown = $this->path.DIRECTORY_SEPARATOR.(array_get($this->config, 'app.files.shutdown') ?? 'shutdown.php');
         if (file_exists($shutdown)) {
             include $shutdown;
         }
@@ -177,8 +177,8 @@ class Application
     public static function getConfigOverridePaths(): array
     {
         $paths = [
-            'server'.DIRECTORY_SEPARATOR.ake($_SERVER, 'SERVER_NAME'),
-            'host'.DIRECTORY_SEPARATOR.ake($_SERVER, 'HTTP_HOST'),
+            'server'.DIRECTORY_SEPARATOR.($_SERVER['SERVER_NAME'] ?? 'localhost'),
+            'host'.DIRECTORY_SEPARATOR.($_SERVER['HTTP_HOST'] ?? 'localhost'),
             // 'user'.DIRECTORY_SEPARATOR.APPLICATION_USER,
             'local',
         ];
@@ -450,7 +450,7 @@ class Application
         // Check for an application bootstrap file and execute it
         $bootstrapFile = $this->path
             .DIRECTORY_SEPARATOR
-            .ake($this->config, 'app.files.bootstrap', 'bootstrap.php');
+            .(array_get($this->config, 'app.files.bootstrap') ?? 'bootstrap.php');
         if (file_exists($bootstrapFile)) {
             $config = $this->config;
             $router = $this->router;
@@ -493,7 +493,7 @@ class Application
             $request = new Request($_SERVER);
             $requestFile = $this->path
                 .DIRECTORY_SEPARATOR
-                .ake($this->config, 'app.files.request', 'request.php');
+                .(array_get($this->config, 'app.files.request') ?? 'request.php');
             if (file_exists($requestFile)) {
                 ob_start();
                 // @phpstan-ignore-next-line
@@ -533,7 +533,7 @@ class Application
             ob_end_flush();
             $completeFile = $this->path
                 .DIRECTORY_SEPARATOR
-                .ake($this->config, 'app.files.complete', 'complete.php');
+                .(array_get($this->config, 'app.files.complete') ?? 'complete.php');
             if (file_exists($completeFile)) {
                 ob_start();
                 $timer = $this->timer;

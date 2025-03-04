@@ -239,7 +239,7 @@ class Compiler
                 if (!$part || '.' == $part || '->' == $part || '[' == $part) {
                     continue;
                 }
-                if ('->' == ake($parts, $idx - 1)) {
+                if ('->' == ($parts[$idx - 1] ?? null)) {
                     $name .= '->'.$part;
                 } elseif ('$' == substr($part, 0, 1)) {
                     $name .= "[{$part}]";
@@ -361,7 +361,7 @@ class Compiler
             $params += array_unflatten($part);
         }
         // Make sure we have the name and loop required parameters.
-        if (!(($name = ake($params, 'name')) && ($loop = ake($params, 'loop')))) {
+        if (!(($name = $params['name'] ?? null) && ($loop = $params['loop'] ?? null))) {
             return '';
         }
         $this->sectionStack[] = ['name' => $name, 'else' => false];
@@ -369,10 +369,10 @@ class Compiler
         $index = '$smarty[\'section\'][\''.$name.'\'][\'index\']';
         $count = '$__count_'.$name;
         $code = "<?php \$smarty['section']['{$name}'] = []; if(is_array({$var}) && count({$var})>0): ";
-        $code .= "for({$count}=1, {$index}=".ake($params, 'start', 0).'; ';
+        $code .= "for({$count}=1, {$index}=".($params['start'] ?? '0').'; ';
         $code .= "{$index}<".(is_numeric($loop) ? $loop : 'count('.$this->compileVAR($loop).')').'; ';
-        $code .= "{$count}++, {$index}+=".ake($params, 'step', 1).'): ';
-        if ($max = ake($params, 'max')) {
+        $code .= "{$count}++, {$index}+=".($params['step'] ?? '1').'): ';
+        if ($max = $params['max'] ?? null) {
             $code .= 'if('.$count.'>'.$max.') break; ';
         }
         $code .= '?>';
@@ -403,14 +403,14 @@ class Compiler
         $params = $this->parsePARAMS($params);
         $code = '';
         // Make sure we have the name and loop required parameters.
-        if (($from = ake($params, 'from')) && ($item = ake($params, 'item'))) {
-            $name = ake($params, 'name', 'foreach_'.uniqid());
+        if (($from = ($params['from'] ?? null)) && ($item = ($params['item'] ?? null))) {
+            $name = $params['name'] ?? 'foreach_'.uniqid();
             $var = $this->compileVAR($from);
             $this->foreachStack[] = ['name' => $name, 'else' => false];
-            $target = (($key = ake($params, 'key')) ? '$'.$key.' => ' : '').'$'.$item;
-        } elseif ('as' === ake($params, 1)) { // Smarty 3 support
-            $name = ake($params, 'name', 'foreach_'.uniqid());
-            $var = $this->compileVAR(ake($params, 0));
+            $target = (($key = ($params['key'] ?? null)) ? '$'.$key.' => ' : '').'$'.$item;
+        } elseif ('as' === ($params[1] ?? null)) { // Smarty 3 support
+            $name = $params['name'] ?? 'foreach_'.uniqid();
+            $var = $this->compileVAR($params[0] ?? '');
             $target = $params[2] ?? '$item';
             $this->foreachStack[] = ['name' => $name, 'else' => false];
         } else {
@@ -495,7 +495,7 @@ class Compiler
     protected function compileFUNCTION(mixed $params): string
     {
         $params = $this->parsePARAMS($params);
-        if (!($name = trim(ake($params, 'name'), '\'"'))) {
+        if (!($name = trim($params['name'] ?? '', '\'"'))) {
             return '';
         }
         unset($params['name']);

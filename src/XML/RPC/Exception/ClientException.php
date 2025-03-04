@@ -11,11 +11,11 @@ class ClientException extends \Exception
      */
     public function __construct(array $xmlrpc_fault)
     {
-        parent::__construct(ake($xmlrpc_fault, 'faultString'), ake($xmlrpc_fault, 'faultCode'));
-        if ($file = ake($xmlrpc_fault, 'faultFile')) {
+        parent::__construct($xmlrpc_fault['faultString'] ?? 'Unknown', $xmlrpc_fault['faultCode'] ?? 0);
+        if ($file = ($xmlrpc_fault['faultFile'] ?? null)) {
             $this->file = $file;
         }
-        if ($line = ake($xmlrpc_fault, 'faultLine')) {
+        if ($line = ($xmlrpc_fault['faultLine'] ?? null)) {
             $this->line = $line;
         }
     }

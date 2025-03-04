@@ -6,13 +6,13 @@ class Message implements \JsonSerializable
 {
     protected string $crlf = "\r\n";
 
-    /** 
-     * @var Part[] 
+    /**
+     * @var Part[]
      */
     private array $parts;
 
-    /** 
-     * @var array<string> 
+    /**
+     * @var array<string>
      */
     private array $headers = [];
     private string $msgid;
@@ -28,9 +28,9 @@ class Message implements \JsonSerializable
             if (!$part instanceof Part) {
                 if (is_array($part) && array_key_exists('content', $part)) {
                     if (isset($part['type']) && 'html' === $part['type']) {
-                        $part = new Html($part['content'], ake($part, 'headers'));
+                        $part = new Html($part['content'], $part['headers'] ?? []);
                     } else {
-                        $part = new Part($part['content'], '', ake($part, 'headers'));
+                        $part = new Part($part['content'], '', $part['headers'] ?? []);
                     }
                 } else {
                     $part = new Part($part['content'], '', $part['headers']);
@@ -78,7 +78,7 @@ class Message implements \JsonSerializable
 
     public function getHeader(string $name): string
     {
-        return ake($this->headers, $name, false);
+        return $this->headers[$name] ?? '';
     }
 
     /**
@@ -124,11 +124,11 @@ class Message implements \JsonSerializable
         $pos = strpos($data, "\n\n");
         $headers = Message::parseMessageHeaders(substr($data, 0, $pos));
         $content = substr($data, $pos + 2);
-        if (($content_type = ake($headers, 'Content-Type')) && 'multipart' === substr($content_type, 0, 9)) {
+        if (($content_type = $headers['Content-Type'] ?? null) && 'multipart' === substr($content_type, 0, 9)) {
             $content_type_parts = array_map(function ($value) {
                 return trim($value, '"');
             }, array_unflatten($content_type));
-            if ($boundary = ake($content_type_parts, 'boundary')) {
+            if ($boundary = $content_type_parts['boundary'] ?? null) {
                 $parts = explode('--'.$boundary."\n", $content);
                 array_shift($parts);
                 $content = [];

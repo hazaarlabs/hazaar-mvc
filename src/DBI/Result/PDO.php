@@ -124,7 +124,7 @@ class PDO extends Result
                 $this->arrayColumns[$meta['name']][] = substr($meta['native_type'], 1);
                 $type = substr($meta['native_type'], 1);
                 $def['type'] = 'array';
-                $def['arrayOf'] = ake($this->typeMap, $type, 'string');
+                $def['arrayOf'] = $this->typeMap[$type] ?? 'string';
                 $def['prepare'] = function ($value) {
                     if (is_string($value)) {
                         return explode(',', trim($value, '{}'));
@@ -132,8 +132,8 @@ class PDO extends Result
 
                     return $value;
                 };
-            } elseif (\PDO::PARAM_STR == $meta['pdo_type'] && ('json' == substr(ake($meta, 'native_type'), 0, 4)
-                    || (!array_key_exists('native_type', $meta) && in_array('blob', ake($meta, 'flags'))))) {
+            } elseif (\PDO::PARAM_STR == $meta['pdo_type'] && ('json' == substr($meta['native_type'] ?? null, 0, 4)
+                    || (!array_key_exists('native_type', $meta) && in_array('blob', $meta['flags'])))) {
                 if (!array_key_exists($meta['name'], $this->arrayColumns)) {
                     $this->arrayColumns[$meta['name']] = [];
                 }
@@ -153,7 +153,7 @@ class PDO extends Result
 
                 $this->arrayColumns[$meta['name']][] = 'record';
             } else {
-                $typeMap = ake($this->typeMap, $meta['native_type'], 'string');
+                $typeMap = $this->typeMap[$meta['native_type']] ?? 'string';
                 $extra = is_array($typeMap) ? $typeMap[1] : [];
                 $typeMap = is_array($typeMap) ? $typeMap[0] : $typeMap;
                 $def = array_merge($def, ['type' => $typeMap], $extra);

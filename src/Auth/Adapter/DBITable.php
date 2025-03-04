@@ -71,7 +71,7 @@ class DBITable extends Adapter implements \Hazaar\Auth\Interface\Adapter
         );
 
         if (!(is_int($result) && $result > 0)) {
-            throw new \Exception(ake($this->table->errorInfo(), 2, 'Unknown error updating user password'), 1);
+            throw new \Exception($this->table->errorInfo()[2] ?? 'Unknown error updating user password', 1);
         }
 
         return true;
@@ -90,7 +90,7 @@ class DBITable extends Adapter implements \Hazaar\Auth\Interface\Adapter
         );
 
         if (!(is_int($result) && $result > 0)) {
-            throw new \Exception(ake($this->table->errorInfo(), 2, 'Unknown error updating user password'), 1);
+            throw new \Exception($this->table->errorInfo()[2] ?? 'Unknown error updating user password', 1);
         }
 
         return true;
@@ -105,7 +105,7 @@ class DBITable extends Adapter implements \Hazaar\Auth\Interface\Adapter
         );
 
         if (!(is_int($result) && $result > 0)) {
-            throw new \Exception(ake($this->table->errorInfo(), 2, 'Unknown error updating user password'), 1);
+            throw new \Exception($this->table->errorInfo()[2] ?? 'Unknown error updating user password', 1);
         }
 
         return true;

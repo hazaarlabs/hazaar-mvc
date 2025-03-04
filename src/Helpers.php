@@ -47,6 +47,8 @@ $dumpLog = [];
  *
  * @return mixed The value if it exists in the array. Returns the default if it does not. Default is null
  *               if no other default is specified.
+ *
+ * @deprecated deprecated in favour of PHP native ?? operator
  */
 function ake(mixed $array, mixed $key, mixed $default = null, bool $non_empty = false): mixed
 {
@@ -118,6 +120,11 @@ function ake(mixed $array, mixed $key, mixed $default = null, bool $non_empty = 
     }
 
     return is_callable($default) ? $default($key) : $default;
+}
+
+function array_get(mixed $array, mixed $key, mixed $default = null, bool $non_empty = false): mixed
+{
+    return ake($array, $key, $default, $non_empty);
 }
 
 /**
@@ -249,6 +256,8 @@ function yn(mixed $value, string $true_val = 'Yes', string $false_val = 'No'): s
  * Takes a variable list of arguments and returns the first non-null value.
  *
  * @return mixed the first non-NULL argument value, or NULL if all values are NULL
+ *
+ * @deprecated deprecated in favour of PHP native ?? operator
  */
 function coalesce(): mixed
 {
@@ -358,7 +367,7 @@ function array_collate(array $array, bool|int|string $key_item, null|int|string 
     foreach ($array as $key => $item) {
         if (is_array($item) || $item instanceof ArrayAccess) {
             if (true === $key_item) {
-                $result[$key] = ake($item, $value_item);
+                $result[$key] = $item[$value_item] ?? null;
 
                 continue;
             }
@@ -366,13 +375,13 @@ function array_collate(array $array, bool|int|string $key_item, null|int|string 
                 continue;
             }
             if (null !== $group_item) {
-                $result[ake($item, $group_item)][$item[$key_item]] = ake($item, $value_item);
+                $result[$item[$group_item] ?? null][$item[$key_item]] = $item[$value_item] ?? null;
             } else {
-                $result[$item[$key_item]] = (null === $value_item) ? $item : ake($item, $value_item);
+                $result[$item[$key_item]] = (null === $value_item) ? $item : $item[$value_item] ?? null;
             }
         } elseif ($item instanceof stdClass) {
             if (true === $key_item) {
-                $result[$key] = ake($item, $value_item);
+                $result[$key] = $item[$value_item] ?? null;
 
                 continue;
             }
@@ -380,9 +389,9 @@ function array_collate(array $array, bool|int|string $key_item, null|int|string 
                 continue;
             }
             if (null !== $group_item) {
-                $result[ake($item, $group_item)][$item->{$key_item}] = ake($item, $value_item);
+                $result[$item[$group_item] ?? null][$item->{$key_item}] = $item[$value_item] ?? null;
             } else {
-                $result[$item->{$key_item}] = (null === $value_item) ? $item : ake($item, $value_item);
+                $result[$item->{$key_item}] = (null === $value_item) ? $item : $item[$value_item] ?? null;
             }
         }
     }
@@ -537,11 +546,33 @@ function array_enhance(array $targetArray, array $sourceArray): array
     return array_merge($targetArray, array_diff_key($sourceArray, $targetArray));
 }
 
+/**
+ * Encodes data to a Base64 URL-safe string.
+ *
+ * This function encodes the given data using Base64 encoding and then makes the
+ * encoded string URL-safe by replacing '+' with '-' and '/' with '_'. It also
+ * removes any trailing '=' characters.
+ *
+ * @param string $data the data to be encoded
+ *
+ * @return string the Base64 URL-safe encoded string
+ */
 function base64url_encode(string $data): string
 {
     return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
 }
 
+/**
+ * Decodes a base64 URL encoded string.
+ *
+ * This function takes a base64 URL encoded string and decodes it back to its original form.
+ * It replaces URL-safe characters ('-' and '_') with standard base64 characters ('+' and '/'),
+ * and pads the string with '=' characters to ensure its length is a multiple of 4.
+ *
+ * @param string $data the base64 URL encoded string to decode
+ *
+ * @return string the decoded string
+ */
 function base64url_decode(string $data): string
 {
     return base64_decode(str_pad(strtr($data, '-_', '+/'), strlen($data) + (4 - (strlen($data) % 4) % 4), '=', STR_PAD_RIGHT));
@@ -1280,14 +1311,14 @@ function replace_recursive(mixed ...$items): mixed
                 if (array_key_exists($key, $target)
                     && ((is_array($target[$key]) || $target[$key] instanceof stdClass)
                         && (is_array($value) || $value instanceof stdClass))) {
-                    $target[$key] = replace_recursive(ake($target, $key), $value);
+                    $target[$key] = replace_recursive($target[$key] ?? null, $value);
                 } else {
                     $target[$key] = $value;
                 }
             } elseif ($target instanceof stdClass) {
                 // To recurse, both the source and target have to be an array/object, otherwise target is replaced.
                 if (property_exists($target, $key)
-                    && ((is_array(ake($target, $key)) || $target->{$key} instanceof stdClass)
+                    && ((is_array($target[$key] ?? null) || $target->{$key} instanceof stdClass)
                         && (is_array($value) || $value instanceof stdClass))) {
                     $target->{$key} = replace_recursive($target->{$key}, $value);
                 } else {
@@ -1381,11 +1412,11 @@ function array_diff_assoc_recursive(mixed ...$arrays): array
                 || ($array_compare instanceof stdClass && !property_exists($array_compare, $key))) {
                 continue;
             }
-            if (!(is_array($value) || $value instanceof stdClass) && $value !== ake($array_compare, $key)) {
+            if (!(is_array($value) || $value instanceof stdClass) && $value !== ($array_compare[$key] ?? null)) {
                 continue;
             }
             if (is_array($value) || $value instanceof stdClass) {
-                $compare_value = ake($array_compare, $key);
+                $compare_value = $array_compare[$key] ?? null;
                 if (!(is_array($compare_value) || $compare_value instanceof stdClass)) {
                     break;
                 }
@@ -1657,7 +1688,7 @@ function match_replace(string $string, $data, $strict = false)
                 } else {
                     $eval = true;
                 }
-                if (empty(ake($data, $test, null, true)) !== $eval) {
+                if (empty($data[$test] ?? null) !== $eval) {
                     $key = $output;
                 }
             } else {
@@ -1667,7 +1698,7 @@ function match_replace(string $string, $data, $strict = false)
                 if ('>' === substr($key, 0, 1)) {
                     $value = substr($key, 1);
                 } else {
-                    $value = ake($data, $key);
+                    $value = $data[$key] ?? null;
                 }
                 if (true === $strict && null === $value) {
                     throw new MatchReplaceException();

@@ -22,12 +22,12 @@ class Cache extends Backend
      */
     public function __construct(array $options = [])
     {
-        $this->cache = new Adapter(ake($options, 'type'), ake($options, 'cacheOptions', []));
+        $this->cache = new Adapter($options['type'] ?? null, $options['cacheOptions'] ?? []);
         $this->cache->on(); // Force cache on even if no_pragma is set
         if (!$this->cache->can('lock')) {
             throw new \Exception('Cache backend does not support locking!');
         }
-        $this->prefix = ake($options, 'prefix', $this->prefix);
+        $this->prefix = $options['prefix'] ?? $this->prefix;
     }
 
     public function shutdown(): void

@@ -232,15 +232,9 @@ abstract class Controller implements Controller\Interface\Controller
     {
         if (array_key_exists(self::$redirectCookieName, $_COOKIE)) {
             $data = unserialize(base64_decode($_COOKIE[self::$redirectCookieName]));
-            if ($uri = ake($data, 'URI')) {
-                if ('POST' === ake($data, 'METHOD')) {
-                    if ('?' !== substr($uri, -1, 1)) {
-                        $uri .= '?';
-                    } else {
-                        $uri .= '&';
-                    }
-                    $uri .= http_build_query(ake($data, 'POST'));
-                }
+            if (($uri = $data['URI'] ?? null) && 'POST' === ($data['METHOD'] ?? null)) {
+                $uri .= '?' !== substr($uri, -1, 1) ? '?' : '&';
+                $uri .= http_build_query($data['POST']);
             }
             setcookie(self::$redirectCookieName, '', time() - 3600, '/');
         } else {

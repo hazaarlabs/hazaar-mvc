@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Hazaar\Cache;
 
-use Hazaar\Cache;
-
 class Benchmark
 {
     /**
@@ -60,7 +58,7 @@ class Benchmark
         foreach ($this->backends as $backend) {
             try {
                 $tests = [];
-                $cache = new Adapter($backend, ake($this->configs, $backend));
+                $cache = new Adapter($backend, $this->configs[$backend] ?? []);
                 for ($i = $start; $i <= $end; $i = $i * 2) {
                     $w_bytes = str_repeat('.', $i);
                     // Test write speed
