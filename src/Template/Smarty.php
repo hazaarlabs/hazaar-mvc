@@ -188,8 +188,8 @@ class Smarty
         $defaultParams = [
             'hazaar' => ['version' => HAZAAR_VERSION],
             'application' => $app ?? null,
+            'now' => time(),
             'smarty' => [
-                'now' => time(),
                 'capture' => [],
                 'section' => [],
                 'foreach' => [],
@@ -205,10 +205,6 @@ class Smarty
             $renderParameters['__DEFAULT_VAR__'] = '';
         }
 
-        // Temporarily disable error reporting to prevent errors from being displayed
-        $errors = error_reporting();
-        error_reporting(0);
-
         try {
             $templateId = $this->prepareRendererClass();
             $obj = new $templateId();
@@ -220,9 +216,7 @@ class Smarty
         } catch (\Throwable $e) {
             throw new SmartyTemplateError($e);
         } finally {
-            // Restore error reporting
             error_clear_last();
-            error_reporting($errors);
         }
         if (count($this->filters) > 0) {
             foreach ($this->filters as $filter) {

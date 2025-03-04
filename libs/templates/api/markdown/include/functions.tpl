@@ -43,7 +43,7 @@
     foreach($params as $param){
         $item = ($param->isNullable ? '?' : '')
             . $param->type.' $'.$param->name;
-        if(isset($param->default)){
+        if($param->default){
             $type = gettype($param->default);
             $item .= ' = ' . match($type){
                 'boolean' => $param->default ? 'true' : 'false',

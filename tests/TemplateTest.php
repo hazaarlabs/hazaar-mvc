@@ -270,7 +270,7 @@ class TemplateTest extends TestCase
         $result = $smartyCompiler->exec('Hello {$name}!');
         $this->assertTrue($result);
         $compiledContent = $smartyCompiler->getCompiledContent();
-        $this->assertStringContainsString('Hello <?php $this->write($name); ?>!', $compiledContent);
+        $this->assertStringContainsString('Hello <?php $this->write($name??null); ?>!', $compiledContent);
         $compiled = $smartyCompiler->getCode('_test_template_');
         $this->assertStringContainsString('class _test_template_', $compiled);
     }

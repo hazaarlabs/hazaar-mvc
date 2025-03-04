@@ -228,21 +228,8 @@ class Compiler
     {
         $modifiers = [];
         if (false !== strpos($name, '|')) {
-            $c_part = '';
-            $quote = null;
-            for ($i = 0; $i < strlen($name); ++$i) {
-                if ('|' === $name[$i] && null === $quote) {
-                    $modifiers[] = $c_part;
-                    $c_part = '';
-
-                    continue;
-                }
-                if ('"' === $name[$i] || "'" == $name[$i]) {
-                    $quote = ($quote == $name[$i]) ? null : $name[$i];
-                }
-                $c_part .= $name[$i];
-            }
-            $modifiers[] = $c_part;
+            // Split on '|' not inside quotes
+            $modifiers = preg_split('/\|(?=(?:[^"\']|"[^"]*"|\'[^\']*\')*$)/', $name);
             $name = array_shift($modifiers);
         }
         $parts = preg_split('/(\.|->|\[)/', $name, -1, PREG_SPLIT_DELIM_CAPTURE);
@@ -267,6 +254,7 @@ class Compiler
                 }
             }
         }
+        $name .= '??null';
         if (count($modifiers) > 0) {
             foreach ($modifiers as $modifier) {
                 $params = str_getcsv($modifier, ':', '"', '\\');
@@ -280,7 +268,7 @@ class Compiler
 
     protected function compileVARS(string $string): string
     {
-        if (preg_match_all('/\$[\w\.\[\]]+/', $string, $matches)) {
+        if (preg_match_all('/\$\w[\w\.\->]+/', $string, $matches)) {
             foreach ($matches[0] as $match) {
                 $string = str_replace($match, '\' . '.$this->compileVAR($match).' . \'', $string);
             }
@@ -312,12 +300,11 @@ class Compiler
             return implode(', ', $out);
         }
         if (is_string($params)) {
-            if (preg_match_all('/\$\w[\w\.\$\-]+/', $params, $matches)) {
-                foreach ($matches[0] as $match) {
-                    $params = str_replace($match, $this->compileVAR($match), $params);
-                }
-            } else {
-                $params = "'{$params}'";
+            if (!preg_match_all('/\$[^\d][\w]*(?:(?:\.|->)\w+|\[[^\]]+\])*/', $params, $matches)) {
+                return "'{$params}'";
+            }
+            foreach ($matches[0] as $match) {
+                $params = str_replace($match, $this->compileVAR($match), $params);
             }
         } elseif (is_int($params) || is_float($params)) {
             $params = (string) $params;
@@ -421,18 +408,17 @@ class Compiler
             $var = $this->compileVAR($from);
             $this->foreachStack[] = ['name' => $name, 'else' => false];
             $target = (($key = ake($params, 'key')) ? '$'.$key.' => ' : '').'$'.$item;
-            $code = "<?php \$smarty['foreach']['{$name}'] = ['index' => -1, 'total' => ((isset({$var}) && is_array({$var}))?count({$var}):0)]; ";
-            $code .= "if(isset({$var}) && is_array({$var}) && count({$var}) > 0): ";
-            $code .= "foreach({$var} as {$target}): \$smarty['foreach']['{$name}']['index']++; ?>";
         } elseif ('as' === ake($params, 1)) { // Smarty 3 support
             $name = ake($params, 'name', 'foreach_'.uniqid());
             $var = $this->compileVAR(ake($params, 0));
-            $target = $this->compileVAR(ake($params, 2));
+            $target = $params[2] ?? '$item';
             $this->foreachStack[] = ['name' => $name, 'else' => false];
-            $code = "<?php \$smarty['foreach']['{$name}'] = ['index' => -1, 'total' => ((isset({$var}) && is_array({$var}))?count({$var}):0)]; ";
-            $code .= "if(isset({$var}) && is_array({$var}) && count({$var}) > 0): ";
-            $code .= "foreach({$var} as {$target}): \$smarty['foreach']['{$name}']['index']++; ?>";
+        } else {
+            return '';
         }
+        $code = "<?php \$smarty['foreach']['{$name}'] = ['index' => -1, 'total' => (({$var} && is_array({$var}))?count({$var}):0)]; ";
+        $code .= "if({$var} && is_array({$var}) && count({$var}) > 0): ";
+        $code .= "foreach({$var} as {$target}): \$smarty['foreach']['{$name}']['index']++; ?>";
 
         return $code;
     }
@@ -539,7 +525,7 @@ class Compiler
         });
         $compiledParams = count($params) > 0 ? ', ['.implode(', ', $params).']' : '';
 
-        return "<?php\n echo \$this->callFunctionHandler('{$name}'{$compiledParams});\n?>";
+        return "<?php echo \$this->callFunctionHandler('{$name}'{$compiledParams}); ?>";
     }
 
     protected function compileCALL(mixed $params): string
