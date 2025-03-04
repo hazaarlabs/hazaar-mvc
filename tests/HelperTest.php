@@ -34,6 +34,8 @@ class HelperTest extends TestCase
         $this->assertArrayHasKey('child1', $result['root']);
         $this->assertIsArray($result['root']['child1']);
         $this->assertArrayHasKey('child7', $result['root']['child6']);
+        $dot_notation_from_array = array_to_dot_notation($result);
+        $this->assertEquals($dot_notation, $dot_notation_from_array);
     }
 
     public function testBTreeFile(): void
@@ -46,14 +48,33 @@ class HelperTest extends TestCase
         $this->assertTrue($btree->compact());
     }
 
-    public function testUptime(): void
+    public function testUptimeFunction(): void
     {
-        $interval = 12240;
-        $this->assertEquals('3:24:00', uptime($interval));
+        $this->assertEquals('3:24:12', uptime(12252));
+        $this->assertEquals('0:00:00', uptime(0));
+        $this->assertEquals('1 day 0:00:00', uptime(86400));
+        $this->assertEquals('1 day 10:17:36', uptime(123456));
+        $this->assertEquals('7 days 13:45:21', uptime(654321));
+        $this->assertEquals('365 days 0:31:30', uptime(31537890));
+
     }
 
-    public function testAge(): void
+    public function testAgeFunction(): void
     {
         $this->assertEquals(46, age('1978-12-13'));
+    }
+
+    public function testAKEFunction(): void
+    {
+        $array = ['key' => 'value'];
+        $this->assertEquals('value', ake($array, 'key'));
+        $this->assertEquals('default', ake($array, 'missing', 'default'));
+    }
+
+    public function testAKEFunctionWithDotNotation(): void
+    {
+        $array = ['key' => ['subkey' => 'value']];
+        $this->assertEquals('value', ake($array, 'key.subkey'));
+        $this->assertEquals('default', ake($array, 'key.missing', 'default'));
     }
 }
