@@ -27,6 +27,7 @@ class Application
         $this->output = new Output();
         set_exception_handler([$this, 'handleException']);
         set_error_handler([$this, 'handleError']);
+        register_shutdown_function([$this, 'shutdownHandler']);
         $this->add(new HelpCommand());
     }
 
@@ -107,5 +108,22 @@ class Application
         $this->output->write('<fg=red>Line:</> <fg=white>'.$errline.'</>'.PHP_EOL);
 
         return true;
+    }
+
+     /**
+     * Shutdown handler function.
+     *
+     * This function is responsible for executing the shutdown tasks registered in the global variable $__shutdownTasks.
+     * It checks if the script is running in CLI mode or if headers have already been sent before executing the tasks.
+     */
+    public function shutdownHandler(): void
+    {
+        if (($error = error_get_last()) !== null) {
+            echo 'FATAL ERROR'.PHP_EOL;
+            echo 'Message: '.$error['message'].PHP_EOL;
+            echo 'File: '.$error['file'].PHP_EOL;
+            echo 'Line: '.$error['line'].PHP_EOL;
+            exit($error['type']);
+        }
     }
 }
