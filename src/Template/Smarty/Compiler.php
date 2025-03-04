@@ -132,7 +132,7 @@ class Compiler
     public function getCode(string $templateObjectId): string
     {
         return "class {$templateObjectId} extends \\Hazaar\\Template\\Smarty\\Renderer {
-            function render(array \$params = []): void {
+            function renderContent(array &\$params = []): void {
                 \$this->params = \$params;
                 extract(\$this->params, EXTR_REFS);
                 ?>{$this->compiledContent}<?php

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hazaar\Template;
 
 use Hazaar\Application;
-use Hazaar\DateTime;
 use Hazaar\File;
 use Hazaar\Template\Exception\SmartyTemplateError;
 use Hazaar\Template\Smarty\Compiler;
@@ -190,23 +189,14 @@ class Smarty
             'hazaar' => ['version' => HAZAAR_VERSION],
             'application' => $app ?? null,
             'smarty' => [
-                'now' => new DateTime(),
-                'const' => get_defined_constants(),
+                'now' => time(),
                 'capture' => [],
-                'config' => $app ? $app->config->toArray() : [],
                 'section' => [],
                 'foreach' => [],
                 'template' => null,
                 'version' => 2,
             ],
         ];
-        if ($this->allowGlobals) {
-            $defaultParams['_COOKIE'] = $_COOKIE;
-            $defaultParams['_ENV'] = $_ENV;
-            $defaultParams['_GET'] = $_GET;
-            $defaultParams['_POST'] = $_POST;
-            $defaultParams['_SERVER'] = $_SERVER;
-        }
         $renderParameters = array_merge($defaultParams, (array) $params);
         if (array_key_exists('*', $renderParameters)) {
             $renderParameters['__DEFAULT_VAR__'] = $renderParameters['*'];
@@ -218,14 +208,13 @@ class Smarty
         // Temporarily disable error reporting to prevent errors from being displayed
         $errors = error_reporting();
         error_reporting(0);
-        ob_start();
 
         try {
             $templateId = $this->prepareRendererClass();
             $obj = new $templateId();
             $obj->functionHandlers = $this->functionHandlers;
             $obj->functions = $this->customFunctions;
-            $obj->render($renderParameters);
+            $content = $obj->render($renderParameters);
             // Merge the functions from the included templates
             $this->functions = array_merge($this->functions, $obj->functions);
         } catch (\Throwable $e) {
@@ -235,7 +224,6 @@ class Smarty
             error_clear_last();
             error_reporting($errors);
         }
-        $content = ob_get_clean();
         if (count($this->filters) > 0) {
             foreach ($this->filters as $filter) {
                 $content = $filter($content);

@@ -40,9 +40,20 @@ abstract class Renderer
     /**
      * @param array<mixed> $params
      */
-    public function render(array $params): void
+    public function render(array &$params): string
     {
-        echo 'no content';
+        ob_start();
+
+        try {
+            $this->renderContent($params);
+            $content = ob_get_clean();
+        } catch (\Throwable $e) {
+            ob_end_clean();
+
+            throw $e;
+        }
+
+        return $content;
     }
 
     public function write(mixed $var): void
@@ -99,4 +110,9 @@ abstract class Renderer
 
         throw new SmartyTemplateFunctionNotFound($name);
     }
+
+    /**
+     * @param array<mixed> $params
+     */
+    protected function renderContent(array &$params = []): void {}
 }
