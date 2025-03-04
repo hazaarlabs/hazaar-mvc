@@ -297,7 +297,18 @@ class Smarty
             mkdir($templatePath, 0777, true);
         }
         $templateFile = $templatePath.DIRECTORY_SEPARATOR.$templateId.'.php';
-        if (!file_exists($templateFile) || filemtime($this->sourceFile) > filemtime($templateFile)) {
+        /*
+         * Watch the source file and the renderer files for changes
+         * We need to watch the compiler and renderer class files as well because they are referenced
+         * in the compiled template so if they change we need to recompile the template.
+         */
+        $watchFiles = [
+            $this->sourceFile,
+            __FILE__,
+            __DIR__.DIRECTORY_SEPARATOR.'Smarty'.DIRECTORY_SEPARATOR.'Compiler.php',
+            __DIR__.DIRECTORY_SEPARATOR.'Smarty'.DIRECTORY_SEPARATOR.'Renderer.php',
+        ];
+        if (!file_exists($templateFile) || $this->checkFilesChanged($watchFiles, filemtime($templateFile))) {
             if (!$this->compiler->isCompiled()) {
                 $this->compiler->exec($this->content);
             }
@@ -308,5 +319,22 @@ class Smarty
         include_once $templateFile;
 
         return $templateId;
+    }
+
+    /**
+     * Check if any of the files have changed sinace the template was last compiled.
+     *
+     * @param array<string> $watchFiles The files to check for changes
+     * @param int           $timestamp  The timestamp of the template file
+     */
+    private function checkFilesChanged(array $watchFiles, int $timestamp): bool
+    {
+        foreach ($watchFiles as $file) {
+            if (filemtime($file) > $timestamp) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
