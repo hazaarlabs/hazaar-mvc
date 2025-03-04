@@ -13,11 +13,6 @@ class Compiler
     /**
      * @var array<string>
      */
-    public array $includes = [];
-
-    /**
-     * @var array<string>
-     */
     protected static array $tags = [
         'if',
         'elseif',
@@ -56,11 +51,6 @@ class Compiler
     private array $captureStack = [];
 
     private string $compiledContent;
-
-    /**
-     * @var array<string>
-     */
-    private array $includeObjects = [];
 
     public function __construct(string $ldelim = '{', string $rdelim = '}')
     {
@@ -141,20 +131,13 @@ class Compiler
 
     public function getCode(string $templateObjectId): string
     {
-        $code = '';
-        foreach ($this->includeObjects as $includeObject) {
-            $code .= $includeObject."\n\n";
-        }
-
-        $code .= "class {$templateObjectId} extends \\Hazaar\\Template\\Smarty\\Renderer {
+        return "class {$templateObjectId} extends \\Hazaar\\Template\\Smarty\\Renderer {
             function render(array \$params = []): void {
                 \$this->params = \$params;
                 extract(\$this->params, EXTR_REFS);
                 ?>{$this->compiledContent}<?php
             }
         }";
-
-        return $code;
     }
 
     public function compilePHP(): string
@@ -595,17 +578,8 @@ class Compiler
         if (!file_exists($file)) {
             throw new IncludeFileNotFound($file);
         }
-        $this->includes[] = $file;
-        $compiler = new self($this->ldelim, $this->rdelim);
-        $compiler->setCWD(dirname($file));
-        $compiler->exec(file_get_contents($file));
-        if (array_key_exists('params', $params)) {
-            $params = $params['params'];
-        }
         $args = $this->compileARRAY($params);
-        $includeId = '_smarty_include_'.md5($file);
-        $this->includeObjects[] = $compiler->getCode($includeId);
 
-        return "<?php \$this->include('{$includeId}', {$args}); ?>";
+        return "<?php \$this->include('{$file}', {$args}, '{$this->ldelim}', '{$this->rdelim}'); ?>";
     }
 }

@@ -40,11 +40,6 @@ class Smarty
     public Compiler $compiler;
 
     /**
-     * @var array<string>
-     */
-    protected array $includeFuncs = [];
-
-    /**
      * @var array<mixed>
      */
     protected array $customFunctions = [];
@@ -233,7 +228,6 @@ class Smarty
             $templateId = $this->prepareRendererClass();
             $obj = new $templateId();
             $obj->functionHandlers = $this->functionHandlers;
-            $obj->includeFuncs = $this->includeFuncs;
             $obj->functions = $this->customFunctions;
             $obj->render($renderParameters);
             // Merge the functions from the included templates

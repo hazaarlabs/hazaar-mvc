@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Hazaar\Template\Smarty;
 
 use Hazaar\Application\URL;
+use Hazaar\File;
 use Hazaar\Template\Exception\SmartyTemplateFunctionNotFound;
+use Hazaar\Template\Smarty;
 
 abstract class Renderer
 {
@@ -18,11 +20,6 @@ abstract class Renderer
      * @var array<mixed>
      */
     public array $functionHandlers = [];
-
-    /**
-     * @var array<mixed>
-     */
-    public array $includeFuncs = [];
 
     /**
      * @var array<mixed>
@@ -56,13 +53,12 @@ abstract class Renderer
     /**
      * @param array<mixed> $params
      */
-    public function include(string $objectId, array $params = []): void
+    public function include(string $file, array $params = [], string $ldelim = '{', string $rdelim = '}'): void
     {
-        if (!isset($this->includeFuncs[$objectId])) {
-            $this->includeFuncs[$objectId] = new $objectId();
-        }
-        $include = $this->includeFuncs[$objectId];
-        $include->render($params);
+        $include = new Smarty();
+        $include->compiler->setDelimiters($ldelim, $rdelim);
+        $include->loadFromFile(new File($file));
+        echo $include->render($params);
         $this->functions = array_merge($this->functions, $include->functions);
     }
 
