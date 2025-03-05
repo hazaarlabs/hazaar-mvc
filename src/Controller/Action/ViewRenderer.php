@@ -24,6 +24,12 @@ class ViewRenderer implements \ArrayAccess
      */
     private array $_data = [];
 
+    /**
+     * @var array<mixed>
+     */
+    private array $functionHandlers = [];
+
+
     public function __set(string $key, mixed $value)
     {
         $this->_data[$key] = $value;
@@ -192,17 +198,6 @@ class ViewRenderer implements \ArrayAccess
         $this->populate($data);
     }
 
-    /*
-     * Render the view/layout.
-     *
-     * - Supports layout views and renders all views inside the layout.
-     * - Renders to the output buffer, then grabs the buffer and returns it.
-     */
-    public function render(?View $view = null): string
-    {
-        return $this->renderView($view);
-    }
-
     public function offsetExists(mixed $offset): bool
     {
         return isset($this->_data[$offset]);
@@ -223,6 +218,11 @@ class ViewRenderer implements \ArrayAccess
         unset($this->_data[$offset]);
     }
 
+    public function registerFunctionHandler(mixed $handler): void
+    {
+        $this->functionHandlers[] = $handler;
+    }
+
     /**
      * Renders a view and returns the rendered output as a string.
      *
@@ -230,12 +230,13 @@ class ViewRenderer implements \ArrayAccess
      *
      * @return string the rendered output of the view
      */
-    private function renderView(View $view): string
+    private function render(View $view): string
     {
-        $view->extend($this->_data);
         $view->initHelpers();
         $view->runHelpers();
+        $view->setFunctionHandlers($this->functionHandlers);
+        $view->setFunctions($this->functions);
 
-        return $view->render();
+        return $view->render($this->_data);
     }
 }

@@ -23,9 +23,14 @@ use Hazaar\View\Helper;
  */
 class View implements \ArrayAccess
 {
+    /**
+     * The application object.
+     */
     public Application $application;
 
     /**
+     * View data.
+     *
      * @var array<mixed>
      */
     protected array $data = [];
@@ -36,6 +41,13 @@ class View implements \ArrayAccess
      * @var array<Helper>
      */
     protected array $helpers = [];
+
+    /**
+     * Array of function handlers.  These can be either closures or objects that provide public methods.
+     *
+     * @var array<mixed>
+     */
+    protected array $functionHandlers = [];
 
     private ?string $viewFile = null;
 
@@ -85,6 +97,21 @@ class View implements \ArrayAccess
     }
 
     /**
+     * @param string       $method The name of the method to call
+     * @param array<mixed> $args   The arguments to pass to the method
+     */
+    public function __call(string $method, array $args): mixed
+    {
+        foreach ($this->functionHandlers as $handler) {
+            if (method_exists($handler, $method)) {
+                return $handler->{$method}(...$args);
+            }
+        }
+
+        throw new \BadFunctionCallException("Method '{$method}' does not exist in any function handlers.");
+    }
+
+    /**
      * Returns the path to a view file.
      *
      * This method will search for a view file in the application view path and the support view path.
@@ -115,7 +142,7 @@ class View implements \ArrayAccess
         if (array_key_exists('extension', $parts)) {
             $viewfile = Loader::getFilePath($type, $view.'.'.$parts['extension']);
         } else {
-            $extensions = ['phtml', 'tpl'];
+            $extensions = ['tpl', 'phtml', 'php'];
             foreach ($extensions as $extension) {
                 if ($viewfile = Loader::getFilePath($type, $view.'.'.$extension)) {
                     break;
@@ -371,6 +398,9 @@ class View implements \ArrayAccess
         if ('tpl' == ($parts['extension'] ?? null)) {
             $template = new Smarty();
             $template->loadFromFile(new File($this->viewFile));
+            foreach ($this->functionHandlers as $handler) {
+                $template->registerFunctionHandler($handler);
+            }
             $template->registerFunctionHandler(new FunctionHandler($this));
             $output = $template->render(array_merge($this->data, $data ?? []));
         } else {
@@ -409,6 +439,26 @@ class View implements \ArrayAccess
     public function offsetUnset(mixed $offset): void
     {
         unset($this->data[$offset]);
+    }
+
+    /**
+     * Register a function handler.
+     *
+     * Function handlers are used to handle custom functions in the view template.
+     */
+    public function registerFunctionHandler(mixed $handler): void
+    {
+        $this->functionHandlers[] = $handler;
+    }
+
+    /**
+     * Sets the function handlers, overwriting any existing handlers.
+     *
+     * @param array<mixed> $handlers
+     */
+    public function setFunctionHandlers(array $handlers): void
+    {
+        $this->functionHandlers = $handlers;
     }
 
     /**
