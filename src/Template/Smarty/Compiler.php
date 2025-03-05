@@ -289,7 +289,10 @@ class Compiler
         return $this->replaceVAR("\$this->variables['{$name}']");
     }
 
-    protected function compilePARAMS(mixed $params): string
+    /**
+     * @param array<mixed>|string $params
+     */
+    protected function compilePARAMS(array|string $params): string
     {
         if (is_array($params)) {
             $out = [];
@@ -299,17 +302,17 @@ class Compiler
 
             return implode(', ', $out);
         }
-        if (is_string($params)) {
-            if (!preg_match_all('/\$[^\d][\w]*(?:(?:\.|->)\w+|\[[^\]]+\])*/', $params, $matches)) {
-                return "'{$params}'";
+        if (!preg_match_all('/\$[^\d][\w]*(?:(?:\.|->)\w+|\[[^\]]+\])*/', $params, $matches)) {
+            if (is_numeric($params)) {
+                $params += 0;
+            } elseif (!is_boolean($params)) {
+                $params = "'{$params}'";
             }
-            foreach ($matches[0] as $match) {
-                $params = str_replace($match, $this->compileVAR($match), $params);
-            }
-        } elseif (is_int($params) || is_float($params)) {
-            $params = (string) $params;
-        } elseif (is_bool($params)) {
-            $params = $params ? 'true' : 'false';
+
+            return $params;
+        }
+        foreach ($matches[0] as $match) {
+            $params = str_replace($match, $this->compileVAR($match), $params);
         }
 
         return $params;
@@ -333,17 +336,17 @@ class Compiler
         return '['.implode(', ', $out).']';
     }
 
-    protected function compileIF(mixed $params): string
+    protected function compileIF(string $params): string
     {
-        return '<?php if(@'.$this->compilePARAMS($params).'): ?>';
+        return '<?php if('.$this->compilePARAMS($params).'): ?>';
     }
 
-    protected function compileELSEIF(mixed $params): string
+    protected function compileELSEIF(string $params): string
     {
-        return '<?php elseif(@'.$this->compilePARAMS($params).'): ?>';
+        return '<?php elseif('.$this->compilePARAMS($params).'): ?>';
     }
 
-    protected function compileELSE(mixed $params): string
+    protected function compileELSE(): string
     {
         return '<?php else: ?>';
     }
@@ -353,7 +356,7 @@ class Compiler
         return '<?php endif; ?>';
     }
 
-    protected function compileSECTION(mixed $params): string
+    protected function compileSECTION(string $params): string
     {
         $parts = preg_split('/\s+/', $params);
         $params = [];
@@ -398,7 +401,7 @@ class Compiler
         return '<?php endfor; endif; array_pop($smarty[\'section\']); ?>';
     }
 
-    protected function compileFOREACH(mixed $params): string
+    protected function compileFOREACH(string $params): string
     {
         $params = $this->parsePARAMS($params);
         $code = '';
@@ -451,7 +454,7 @@ class Compiler
         return $this->rdelim;
     }
 
-    protected function compileCAPTURE(mixed $params): string
+    protected function compileCAPTURE(string $params): string
     {
         $params = $this->parsePARAMS($params);
         if (!array_key_exists('name', $params)) {
@@ -473,7 +476,7 @@ class Compiler
         return $code.' = ob_get_clean(); ?>';
     }
 
-    protected function compileASSIGN(mixed $params): string
+    protected function compileASSIGN(string $params): string
     {
         if ('var' === substr($params, 0, 3)) {
             $params = $this->parsePARAMS($params);
@@ -489,10 +492,10 @@ class Compiler
         }
         $value = preg_match('/(.+)/', $params['value'], $matches) ? $matches[1] : 'null';
 
-        return '<?php @$'.trim($params['var'], '"\'')."={$value};?>";
+        return '<?php $'.trim($params['var'], '"\'')."={$value};?>";
     }
 
-    protected function compileFUNCTION(mixed $params): string
+    protected function compileFUNCTION(string $params): string
     {
         $params = $this->parsePARAMS($params);
         if (!($name = trim($params['name'] ?? '', '\'"'))) {
@@ -528,7 +531,7 @@ class Compiler
         return "<?php echo \$this->callFunctionHandler('{$name}'{$compiledParams}); ?>";
     }
 
-    protected function compileCALL(mixed $params): string
+    protected function compileCALL(string $params): string
     {
         $call_params = $this->parsePARAMS($params);
         if (isset($call_params[0])) {
@@ -542,7 +545,7 @@ class Compiler
         return $this->compileFUNCTIONHANDLER($call_params['name'], $params);
     }
 
-    protected function compileINCLUDE(mixed $params): string
+    protected function compileINCLUDE(string $params): string
     {
         $params = $this->parsePARAMS($params);
         if (!array_key_exists('file', $params)) {
