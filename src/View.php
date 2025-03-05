@@ -29,7 +29,7 @@ class View implements \ArrayAccess
     public Application $application;
 
     /**
-     * View data.
+     * Data that is accessible from the view.
      *
      * @var array<mixed>
      */
@@ -76,28 +76,42 @@ class View implements \ArrayAccess
         $this->load($view);
         $this->application = Application::getInstance();
         $this->data = $viewData;
-        // if (count($inithelpers) > 0) {
-        //     foreach ($inithelpers as $helper) {
-        //         $this->addHelper($helper);
-        //     }
-        // }
     }
 
+    /**
+     * Magic method to get view data.
+     */
     public function __get(string $helper): mixed
     {
         return $this->get($helper);
     }
 
+    /**
+     * Magic method to set view data.
+     *
+     * @param string $key   The name of the view data
+     * @param mixed  $value The value to set on the view data.  Can be anything including strings, integers, arrays or objects.
+     */
     public function __set(string $key, mixed $value): void
     {
         $this->set($key, $value);
     }
 
+    /**
+     * Magic method to test if view data is set.
+     *
+     * @param string $key The name of the view data to look for
+     */
     public function __isset(string $key): bool
     {
         return $this->has($key);
     }
 
+    /**
+     * Magic method to remove view data.
+     *
+     * @param string $key the name of the view data to remove
+     */
     public function __unset(string $key): void
     {
         $this->remove($key);
@@ -168,6 +182,15 @@ class View implements \ArrayAccess
         return $viewfile;
     }
 
+    /**
+     * Load a view file.
+     *
+     * This method will load a view file from disk.  The view file can be either a PHP file or a Smarty template file.
+     *
+     * @param string $view the name of the view to load
+     *
+     * @throws \Exception
+     */
     public function load(string $view): void
     {
         if (Loader::isAbsolutePath($view)) {

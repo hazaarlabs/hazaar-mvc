@@ -17,14 +17,22 @@ use Hazaar\View\Layout;
  */
 class ViewRenderer implements \ArrayAccess
 {
+    /**
+     * The top level view object.
+     */
     private ?View $view = null;
 
     /**
+     * The data to pass to the view.
+     *
      * @var array<string, mixed>
      */
-    private array $_data = [];
+    private array $data = [];
 
     /**
+     * The function handlers that are registered with the view renderer and
+     * can be called from the view template.
+     *
      * @var array<mixed>
      */
     private array $functionHandlers = [];
@@ -37,22 +45,35 @@ class ViewRenderer implements \ArrayAccess
      */
     private array $functions = [];
 
+    /**
+     * Magic method to set the value of a data property.
+     */
     public function __set(string $key, mixed $value)
     {
-        $this->_data[$key] = $value;
+        $this->data[$key] = $value;
     }
 
+    /**
+     * Magic method to check if a property is set.
+     */
     public function __isset(string $name): bool
     {
-        return isset($this->_data[$name]);
+        return isset($this->data[$name]);
     }
 
+    /**
+     * Magic method to unset a property.
+     */
     public function __unset(string $name): void
     {
-        unset($this->_data[$name]);
+        unset($this->data[$name]);
     }
 
-    // Helper execution call.  This renders the layout file.
+    /**
+     * Executes the view renderer.
+     *
+     * @throws NoContent
+     */
     public function exec(HTML $response): void
     {
         $content = $this->render($this->view);
@@ -119,7 +140,7 @@ class ViewRenderer implements \ArrayAccess
             return $this->view->getHelper($key);
         }
 
-        return $this->_data[$key];
+        return $this->data[$key];
     }
 
     /**
@@ -129,7 +150,7 @@ class ViewRenderer implements \ArrayAccess
      */
     public function populate(array $array): void
     {
-        $this->_data = $array;
+        $this->data = $array;
     }
 
     /**
@@ -139,7 +160,7 @@ class ViewRenderer implements \ArrayAccess
      */
     public function extend(array $array): void
     {
-        $this->_data = array_merge($this->_data, $array);
+        $this->data = array_merge($this->data, $array);
     }
 
     /**
@@ -207,22 +228,22 @@ class ViewRenderer implements \ArrayAccess
 
     public function offsetExists(mixed $offset): bool
     {
-        return isset($this->_data[$offset]);
+        return isset($this->data[$offset]);
     }
 
     public function offsetGet(mixed $offset): mixed
     {
-        return $this->_data[$offset];
+        return $this->data[$offset];
     }
 
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        $this->_data[$offset] = $value;
+        $this->data[$offset] = $value;
     }
 
     public function offsetUnset(mixed $offset): void
     {
-        unset($this->_data[$offset]);
+        unset($this->data[$offset]);
     }
 
     /**
@@ -293,6 +314,6 @@ class ViewRenderer implements \ArrayAccess
         $view->setFunctionHandlers($this->functionHandlers);
         $view->setFunctions($this->functions);
 
-        return $view->render($this->_data);
+        return $view->render($this->data);
     }
 }
