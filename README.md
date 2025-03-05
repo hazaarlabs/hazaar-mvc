@@ -45,8 +45,6 @@ according to the project requirements.
 Composer runs on any system that supports PHP.  Please see the composer documentation at
 http://www.getcomposer.org for details on how to install composer on your system.
 
-
-
 To test your installation you can run the composer command from your command line:
 
 ```
