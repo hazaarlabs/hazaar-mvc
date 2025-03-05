@@ -254,7 +254,7 @@ class Compiler
                 }
             }
         }
-        $name .= '??null';
+        $name = "({$name}??null)";
         if (count($modifiers) > 0) {
             foreach ($modifiers as $modifier) {
                 $params = str_getcsv($modifier, ':', '"', '\\');
@@ -302,20 +302,23 @@ class Compiler
 
             return implode(', ', $out);
         }
-        if (!preg_match_all('/\$[^\d][\w]*(?:(?:\.|->)\w+|\[[^\]]+\])*/', $params, $matches)) {
-            if (is_numeric($params)) {
-                $params += 0;
-            } elseif (!is_boolean($params)) {
-                $params = "'{$params}'";
+        $params = preg_split(pattern: '/\s*([|&]{2})\s*/', subject: $params, flags: PREG_SPLIT_DELIM_CAPTURE);
+        foreach ($params as &$param) {
+            if ('||' === $param || '&&' === $param) {
+                continue;
             }
-
-            return $params;
+            if (preg_match_all('/\$[^\d][\w]*(?:(?:\.|->)\w+|\[[^\]]+\])*/', $param, $matches)) {
+                foreach ($matches[0] as $match) {
+                    $param = str_replace($match, $this->compileVAR($match), $param);
+                }
+            } elseif (is_numeric($param)) {
+                $param += 0;
+            } elseif (!is_boolean($param)) {
+                $param = "'{$param}'";
+            }
         }
-        foreach ($matches[0] as $match) {
-            $params = str_replace($match, $this->compileVAR($match), $params);
-        }
 
-        return $params;
+        return implode(' ', $params);
     }
 
     /**

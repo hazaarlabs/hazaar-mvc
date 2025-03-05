@@ -1,6 +1,6 @@
 {include file="include/functions.tpl"}
 
-{if $header !== false}### [{$method->name}](#{$method->name}){/if}
+{if $header || $header !== false}### [{$method->name}](#{$method->name}){/if}
 {if $method->brief}{$method->brief}{/if}
 ```php
 {$method->access} {$method->name}({params $method->params}): {return $method->returns}
