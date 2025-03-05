@@ -60,11 +60,9 @@ class Layout extends View
         $this->renderedViews = '';
         foreach ($this->views as $view) {
             $view->addHelper($this->helpers);
-            $view->extend($this->data);
-            $this->renderedViews .= $view->render();
-            if ($merge_data) {
-                $this->extend($view->getData());
-            }
+            $view->setFunctionHandlers($this->functionHandlers);
+            $view->setFunctions($this->functions);
+            $this->renderedViews .= $view->render($this->data);
         }
 
         return true;

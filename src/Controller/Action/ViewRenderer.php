@@ -29,6 +29,13 @@ class ViewRenderer implements \ArrayAccess
      */
     private array $functionHandlers = [];
 
+    /**
+     * The custom functions that are registered with the view renderer and
+     * can be called from the view template.
+     *
+     * @var array<string, callable>
+     */
+    private array $functions = [];
 
     public function __set(string $key, mixed $value)
     {
@@ -218,9 +225,58 @@ class ViewRenderer implements \ArrayAccess
         unset($this->_data[$offset]);
     }
 
+    /**
+     * Register a function handler.
+     *
+     * Function handlers are used to handle custom functions in the view template.  Unlike
+     * custom functions, function handlers are objects that provide public methods that can be
+     * called from the view template.
+     *
+     * ### Smarty:
+     * ```
+     * {$functionName param1="value" param2="value"}
+     * ```
+     *
+     * ### PHP:
+     * ```
+     * <?php $this->functionName('param1') ?>
+     * ```
+     *
+     * The function will be called with the parameters as an array.  The function must return a string
+     * which will be inserted into the view at the point the function was called.
+     *
+     * @param mixed $handler The function handler object to register
+     */
     public function registerFunctionHandler(mixed $handler): void
     {
         $this->functionHandlers[] = $handler;
+    }
+
+    /**
+     * Register a custom function with the view.
+     *
+     * Custom functions are functions that can be called from within the view.  The function
+     * can be called using the syntax:
+     *
+     * ### Smarty:
+     * ```
+     * {$functionName param1="value" param2="value"}
+     * ```
+     *
+     * ### PHP:
+     * ```
+     * <?php $this->functionName('param1') ?>
+     * ```
+     *
+     * The function will be called with the parameters as an array.  The function must return a string
+     * which will be inserted into the view at the point the function was called.
+     *
+     * @param string   $name     The name of the function to register
+     * @param callable $function The function to call when the function is called in the view
+     */
+    public function registerFunction(string $name, callable $function): void
+    {
+        $this->functions[$name] = $function;
     }
 
     /**

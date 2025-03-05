@@ -49,6 +49,13 @@ class View implements \ArrayAccess
      */
     protected array $functionHandlers = [];
 
+    /**
+     * Array of functions that can be called from the view.
+     *
+     * @var array<string,callable>
+     */
+    protected array $functions = [];
+
     private ?string $viewFile = null;
 
     /**
@@ -97,11 +104,19 @@ class View implements \ArrayAccess
     }
 
     /**
+     * Magic method to call a function from the view.
+     *
+     * This method will call a function from the view.  The function must be registered with the view using the
+     * `registerFunction` or `registerFunctionHandler` methods.
+     *
      * @param string       $method The name of the method to call
      * @param array<mixed> $args   The arguments to pass to the method
      */
     public function __call(string $method, array $args): mixed
     {
+        if (array_key_exists($method, $this->functions)) {
+            return $this->functions[$method](...$args);
+        }
         foreach ($this->functionHandlers as $handler) {
             if (method_exists($handler, $method)) {
                 return $handler->{$method}(...$args);
@@ -398,6 +413,9 @@ class View implements \ArrayAccess
         if ('tpl' == ($parts['extension'] ?? null)) {
             $template = new Smarty();
             $template->loadFromFile(new File($this->viewFile));
+            foreach ($this->functions as $name => $function) {
+                $template->registerFunction($name, $function);
+            }
             foreach ($this->functionHandlers as $handler) {
                 $template->registerFunctionHandler($handler);
             }
@@ -444,7 +462,24 @@ class View implements \ArrayAccess
     /**
      * Register a function handler.
      *
-     * Function handlers are used to handle custom functions in the view template.
+     * Function handlers are used to handle custom functions in the view template.  Unlike
+     * custom functions, function handlers are objects that provide public methods that can be
+     * called from the view template.
+     *
+     * ### Smarty:
+     * ```
+     * {$functionName param1="value" param2="value"}
+     * ```
+     *
+     * ### PHP:
+     * ```
+     * <?php $this->functionName('param1') ?>
+     * ```
+     *
+     * The function will be called with the parameters as an array.  The function must return a string
+     * which will be inserted into the view at the point the function was called.
+     *
+     * @param mixed $handler The function handler object to register
      */
     public function registerFunctionHandler(mixed $handler): void
     {
@@ -452,13 +487,54 @@ class View implements \ArrayAccess
     }
 
     /**
+     * Register a custom function with the view.
+     *
+     * Custom functions are functions that can be called from within the view.  The function
+     * can be called using the syntax:
+     *
+     * ### Smarty:
+     * ```
+     * {$functionName param1="value" param2="value"}
+     * ```
+     *
+     * ### PHP:
+     * ```
+     * <?php $this->functionName('param1') ?>
+     * ```
+     *
+     * The function will be called with the parameters as an array.  The function must return a string
+     * which will be inserted into the view at the point the function was called.
+     *
+     * @param string   $name     The name of the function to register
+     * @param callable $function The function to call when the function is called in the view
+     */
+    public function registerFunction(string $name, callable $function): void
+    {
+        $this->functions[$name] = $function;
+    }
+
+    /**
      * Sets the function handlers, overwriting any existing handlers.
      *
      * @param array<mixed> $handlers
+     *
+     * @internal this method is used to set the function handlers from a parent view object
      */
     public function setFunctionHandlers(array $handlers): void
     {
         $this->functionHandlers = $handlers;
+    }
+
+    /**
+     * Sets the functions, overwriting any existing functions.
+     *
+     * @param array<string,callable> $functions The functions to set
+     *
+     * @internal this method is used to set the functions from a parent view object
+     */
+    public function setFunctions(array $functions): void
+    {
+        $this->functions = $functions;
     }
 
     /**
