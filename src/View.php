@@ -23,9 +23,14 @@ use Hazaar\View\Helper;
  */
 class View implements \ArrayAccess
 {
+    /**
+     * The application object.
+     */
     public Application $application;
 
     /**
+     * Data that is accessible from the view.
+     *
      * @var array<mixed>
      */
     protected array $data = [];
@@ -36,6 +41,20 @@ class View implements \ArrayAccess
      * @var array<Helper>
      */
     protected array $helpers = [];
+
+    /**
+     * Array of function handlers.  These can be either closures or objects that provide public methods.
+     *
+     * @var array<mixed>
+     */
+    protected array $functionHandlers = [];
+
+    /**
+     * Array of functions that can be called from the view.
+     *
+     * @var array<string,callable>
+     */
+    protected array $functions = [];
 
     private ?string $viewFile = null;
 
@@ -57,31 +76,68 @@ class View implements \ArrayAccess
         $this->load($view);
         $this->application = Application::getInstance();
         $this->data = $viewData;
-        // if (count($inithelpers) > 0) {
-        //     foreach ($inithelpers as $helper) {
-        //         $this->addHelper($helper);
-        //     }
-        // }
     }
 
+    /**
+     * Magic method to get view data.
+     */
     public function __get(string $helper): mixed
     {
         return $this->get($helper);
     }
 
+    /**
+     * Magic method to set view data.
+     *
+     * @param string $key   The name of the view data
+     * @param mixed  $value The value to set on the view data.  Can be anything including strings, integers, arrays or objects.
+     */
     public function __set(string $key, mixed $value): void
     {
         $this->set($key, $value);
     }
 
+    /**
+     * Magic method to test if view data is set.
+     *
+     * @param string $key The name of the view data to look for
+     */
     public function __isset(string $key): bool
     {
         return $this->has($key);
     }
 
+    /**
+     * Magic method to remove view data.
+     *
+     * @param string $key the name of the view data to remove
+     */
     public function __unset(string $key): void
     {
         $this->remove($key);
+    }
+
+    /**
+     * Magic method to call a function from the view.
+     *
+     * This method will call a function from the view.  The function must be registered with the view using the
+     * `registerFunction` or `registerFunctionHandler` methods.
+     *
+     * @param string       $method The name of the method to call
+     * @param array<mixed> $args   The arguments to pass to the method
+     */
+    public function __call(string $method, array $args): mixed
+    {
+        if (array_key_exists($method, $this->functions)) {
+            return $this->functions[$method](...$args);
+        }
+        foreach ($this->functionHandlers as $handler) {
+            if (method_exists($handler, $method)) {
+                return $handler->{$method}(...$args);
+            }
+        }
+
+        throw new \BadFunctionCallException("Method '{$method}' does not exist in any function handlers.");
     }
 
     /**
@@ -115,7 +171,7 @@ class View implements \ArrayAccess
         if (array_key_exists('extension', $parts)) {
             $viewfile = Loader::getFilePath($type, $view.'.'.$parts['extension']);
         } else {
-            $extensions = ['phtml', 'tpl'];
+            $extensions = ['tpl', 'phtml', 'php'];
             foreach ($extensions as $extension) {
                 if ($viewfile = Loader::getFilePath($type, $view.'.'.$extension)) {
                     break;
@@ -126,6 +182,15 @@ class View implements \ArrayAccess
         return $viewfile;
     }
 
+    /**
+     * Load a view file.
+     *
+     * This method will load a view file from disk.  The view file can be either a PHP file or a Smarty template file.
+     *
+     * @param string $view the name of the view to load
+     *
+     * @throws \Exception
+     */
     public function load(string $view): void
     {
         if (Loader::isAbsolutePath($view)) {
@@ -371,6 +436,12 @@ class View implements \ArrayAccess
         if ('tpl' == ($parts['extension'] ?? null)) {
             $template = new Smarty();
             $template->loadFromFile(new File($this->viewFile));
+            foreach ($this->functions as $name => $function) {
+                $template->registerFunction($name, $function);
+            }
+            foreach ($this->functionHandlers as $handler) {
+                $template->registerFunctionHandler($handler);
+            }
             $template->registerFunctionHandler(new FunctionHandler($this));
             $output = $template->render(array_merge($this->data, $data ?? []));
         } else {
@@ -409,6 +480,84 @@ class View implements \ArrayAccess
     public function offsetUnset(mixed $offset): void
     {
         unset($this->data[$offset]);
+    }
+
+    /**
+     * Register a function handler.
+     *
+     * Function handlers are used to handle custom functions in the view template.  Unlike
+     * custom functions, function handlers are objects that provide public methods that can be
+     * called from the view template.
+     *
+     * ### Smarty:
+     * ```
+     * {$functionName param1="value" param2="value"}
+     * ```
+     *
+     * ### PHP:
+     * ```
+     * <?php $this->functionName('param1') ?>
+     * ```
+     *
+     * The function will be called with the parameters as an array.  The function must return a string
+     * which will be inserted into the view at the point the function was called.
+     *
+     * @param mixed $handler The function handler object to register
+     */
+    public function registerFunctionHandler(mixed $handler): void
+    {
+        $this->functionHandlers[] = $handler;
+    }
+
+    /**
+     * Register a custom function with the view.
+     *
+     * Custom functions are functions that can be called from within the view.  The function
+     * can be called using the syntax:
+     *
+     * ### Smarty:
+     * ```
+     * {$functionName param1="value" param2="value"}
+     * ```
+     *
+     * ### PHP:
+     * ```
+     * <?php $this->functionName('param1') ?>
+     * ```
+     *
+     * The function will be called with the parameters as an array.  The function must return a string
+     * which will be inserted into the view at the point the function was called.
+     *
+     * @param string   $name     The name of the function to register
+     * @param callable $function The function to call when the function is called in the view
+     */
+    public function registerFunction(string $name, callable $function): void
+    {
+        $this->functions[$name] = $function;
+    }
+
+    /**
+     * Sets the function handlers, overwriting any existing handlers.
+     *
+     * @param array<mixed> $handlers
+     *
+     * @internal this method is used to set the function handlers from a parent view object
+     */
+    public function setFunctionHandlers(array $handlers): void
+    {
+        $this->functionHandlers = $handlers;
+    }
+
+    /**
+     * Sets the functions, overwriting any existing functions.
+     *
+     * @param array<string,callable> $functions The functions to set
+     *
+     * @internal this method is used to set the functions from a parent view object
+     */
+    public function setFunctions(array $functions): void
+    {
+        $this->functions = $functions;
     }
 
     /**

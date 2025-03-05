@@ -87,6 +87,9 @@ abstract class Renderer
                     continue;
                 }
                 $reflect = new \ReflectionMethod($handler, $name);
+                if (!$reflect->isPublic()) {
+                    continue;
+                }
                 $funcParams = [];
                 foreach ($reflect->getParameters() as $reflectionParameter) {
                     $parameterName = $reflectionParameter->getName();

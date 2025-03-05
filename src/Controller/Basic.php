@@ -14,6 +14,7 @@ namespace Hazaar\Controller;
 use Hazaar\Application\Request;
 use Hazaar\Cache;
 use Hazaar\Controller;
+use Hazaar\View;
 
 /**
  * @brief       Basic controller class
@@ -104,6 +105,8 @@ abstract class Basic extends Controller
             $response = new Response\JSON($response);
         } elseif (is_string($response) || is_numeric($response)) {
             $response = new Response\Text($response);
+        } elseif ($response instanceof View) {
+            $response = new Response\View($response);
         } elseif (!$response instanceof Response) {
             $response = new Response\HTTP\NoContent();
         }
