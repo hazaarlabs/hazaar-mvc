@@ -316,9 +316,9 @@ function is_boolean(mixed $value)
  *
  * Simply returns Yes or No based on a boolean value.
  */
-function yn(mixed $value, string $true_val = 'Yes', string $false_val = 'No'): string
+function yn(mixed $value, string $trueValue = 'Yes', string $falseValue = 'No'): string
 {
-    return boolify($value) ? $true_val : $false_val;
+    return boolify($value) ? $trueValue : $falseValue;
 }
 
 /**
