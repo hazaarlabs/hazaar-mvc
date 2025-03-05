@@ -154,8 +154,16 @@ class TestClass extends BaseClass implements TestInterface
 
     /**
      * This is also a test method.
+     *
+     * Possible values for `$type` are:
+     * * 0: Normal text
+     * * 1: Bold text
+     * * 2: Italic text
+     *
+     * @param string $text The text to display
+     * @param int    $type The type of text
      */
-    public function testMethod2(string $text = 'Hello World'): ?string
+    public function testMethod2(string $text = 'Hello World', int $type = 0): ?string
     {
         return $text;
     }

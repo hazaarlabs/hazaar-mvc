@@ -144,11 +144,12 @@ function ake(mixed $array, mixed $key, mixed $default = null, bool $non_empty = 
  * accessed using it's numeric index.  For example: `array_get($myarray, 'items[0].name')` will return the name of the
  * first item in the `items` array.
  *
+ * Support types for `$key` parameter:
+ * * _string_ - Single key.
+ * * _string_ - Dot notation key for decending into multi-dimensional arrays/objects, including search parameters.
+ *
  * @param array<mixed>|\ArrayAccess<string,mixed> $array The array to search.  Objects with public properties are also supported.
- * @param string                                  $key   The array key or object property name to look for.  The following key specifications
- *                                                       are supported:
- *                                                       * _string_ - Single key.
- *                                                       * _string_ - Dot notation key for decending into multi-dimensional arrays/objects, including search parameters.
+ * @param string                                  $key   the array key or object property name to look for
  *
  * @return mixed The value if it exists in the array. Returns the default if it does not. Default is null
  *               if no other default is specified.
