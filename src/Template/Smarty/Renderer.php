@@ -32,6 +32,11 @@ abstract class Renderer
     public array $params = [];
     public Modifier $modify;
 
+    /**
+     * @var array<string,Smarty>
+     */
+    private static $includes = [];
+
     public function __construct()
     {
         $this->modify = new Modifier();
@@ -66,9 +71,14 @@ abstract class Renderer
      */
     public function include(string $file, array $params = [], string $ldelim = '{', string $rdelim = '}'): void
     {
-        $include = new Smarty();
-        $include->compiler->setDelimiters($ldelim, $rdelim);
-        $include->loadFromFile(new File($file));
+        if (array_key_exists($file, self::$includes)) {
+            $include = self::$includes[$file];
+        } else {
+            $include = new Smarty();
+            $include->compiler->setDelimiters($ldelim, $rdelim);
+            $include->loadFromFile(new File($file));
+            self::$includes[$file] = $include;
+        }
         echo $include->render($params);
         $this->functions = array_merge($this->functions, $include->functions);
     }
