@@ -10,6 +10,7 @@ use Hazaar\Parser\PHP\ParserFile;
 use Hazaar\Parser\PHP\ParserNamespace;
 use Hazaar\Parser\PHP\TokenParser;
 use Hazaar\Template\Smarty;
+use Hazaar\Timer;
 
 class Documentor
 {
@@ -38,6 +39,8 @@ class Documentor
         if (!file_exists($path)) {
             return false;
         }
+        $timer = new Timer();
+        $timer->start('scan');
         $path = realpath($path);
         $files = [];
         if (!is_dir($path)) {
@@ -73,8 +76,13 @@ class Documentor
                 continue;
             }
         }
+        $this->log('Scan completed in '.interval($timer->stop('scan') / 1000));
+        $timer->start('render');
+        $result = $this->render($this->index, $outputPath);
+        $this->log('Rendered in '.interval($timer->stop('render') / 1000));
+        $this->log('Total time: '.interval($timer->get('total') / 1000));
 
-        return $this->render($this->index, $outputPath);
+        return $result;
     }
 
     private function log(string $message): void
@@ -142,7 +150,8 @@ class Documentor
                     if (!file_exists($dirname = dirname($output))) {
                         mkdir($dirname, 0777, true);
                     }
-                    file_put_contents($output.'.md', $template[$name]->render([$name => $item]));
+                    $content = $template[$name]->render([$name => $item]);
+                    file_put_contents($output.'.md', $content);
                 } catch (\Throwable $e) {
                     $this->log("Processing: {$item->name}".PHP_EOL.$e->getMessage());
                 }
