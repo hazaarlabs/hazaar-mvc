@@ -17,29 +17,63 @@ use Hazaar\View\Layout;
  */
 class ViewRenderer implements \ArrayAccess
 {
+    /**
+     * The top level view object.
+     */
     private ?View $view = null;
 
     /**
+     * The data to pass to the view.
+     *
      * @var array<string, mixed>
      */
-    private array $_data = [];
+    private array $data = [];
 
+    /**
+     * The function handlers that are registered with the view renderer and
+     * can be called from the view template.
+     *
+     * @var array<mixed>
+     */
+    private array $functionHandlers = [];
+
+    /**
+     * The custom functions that are registered with the view renderer and
+     * can be called from the view template.
+     *
+     * @var array<string, callable>
+     */
+    private array $functions = [];
+
+    /**
+     * Magic method to set the value of a data property.
+     */
     public function __set(string $key, mixed $value)
     {
-        $this->_data[$key] = $value;
+        $this->data[$key] = $value;
     }
 
+    /**
+     * Magic method to check if a property is set.
+     */
     public function __isset(string $name): bool
     {
-        return isset($this->_data[$name]);
+        return isset($this->data[$name]);
     }
 
+    /**
+     * Magic method to unset a property.
+     */
     public function __unset(string $name): void
     {
-        unset($this->_data[$name]);
+        unset($this->data[$name]);
     }
 
-    // Helper execution call.  This renders the layout file.
+    /**
+     * Executes the view renderer.
+     *
+     * @throws NoContent
+     */
     public function exec(HTML $response): void
     {
         $content = $this->render($this->view);
@@ -106,7 +140,7 @@ class ViewRenderer implements \ArrayAccess
             return $this->view->getHelper($key);
         }
 
-        return $this->_data[$key];
+        return $this->data[$key];
     }
 
     /**
@@ -116,7 +150,7 @@ class ViewRenderer implements \ArrayAccess
      */
     public function populate(array $array): void
     {
-        $this->_data = $array;
+        $this->data = $array;
     }
 
     /**
@@ -126,7 +160,7 @@ class ViewRenderer implements \ArrayAccess
      */
     public function extend(array $array): void
     {
-        $this->_data = array_merge($this->_data, $array);
+        $this->data = array_merge($this->data, $array);
     }
 
     /**
@@ -192,35 +226,78 @@ class ViewRenderer implements \ArrayAccess
         $this->populate($data);
     }
 
-    /*
-     * Render the view/layout.
-     *
-     * - Supports layout views and renders all views inside the layout.
-     * - Renders to the output buffer, then grabs the buffer and returns it.
-     */
-    public function render(?View $view = null): string
-    {
-        return $this->renderView($view);
-    }
-
     public function offsetExists(mixed $offset): bool
     {
-        return isset($this->_data[$offset]);
+        return isset($this->data[$offset]);
     }
 
     public function offsetGet(mixed $offset): mixed
     {
-        return $this->_data[$offset];
+        return $this->data[$offset];
     }
 
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        $this->_data[$offset] = $value;
+        $this->data[$offset] = $value;
     }
 
     public function offsetUnset(mixed $offset): void
     {
-        unset($this->_data[$offset]);
+        unset($this->data[$offset]);
+    }
+
+    /**
+     * Register a function handler.
+     *
+     * Function handlers are used to handle custom functions in the view template.  Unlike
+     * custom functions, function handlers are objects that provide public methods that can be
+     * called from the view template.
+     *
+     * ### Smarty:
+     * ```
+     * {$functionName param1="value" param2="value"}
+     * ```
+     *
+     * ### PHP:
+     * ```
+     * <?php $this->functionName('param1') ?>
+     * ```
+     *
+     * The function will be called with the parameters as an array.  The function must return a string
+     * which will be inserted into the view at the point the function was called.
+     *
+     * @param mixed $handler The function handler object to register
+     */
+    public function registerFunctionHandler(mixed $handler): void
+    {
+        $this->functionHandlers[] = $handler;
+    }
+
+    /**
+     * Register a custom function with the view.
+     *
+     * Custom functions are functions that can be called from within the view.  The function
+     * can be called using the syntax:
+     *
+     * ### Smarty:
+     * ```
+     * {$functionName param1="value" param2="value"}
+     * ```
+     *
+     * ### PHP:
+     * ```
+     * <?php $this->functionName('param1') ?>
+     * ```
+     *
+     * The function will be called with the parameters as an array.  The function must return a string
+     * which will be inserted into the view at the point the function was called.
+     *
+     * @param string   $name     The name of the function to register
+     * @param callable $function The function to call when the function is called in the view
+     */
+    public function registerFunction(string $name, callable $function): void
+    {
+        $this->functions[$name] = $function;
     }
 
     /**
@@ -230,12 +307,13 @@ class ViewRenderer implements \ArrayAccess
      *
      * @return string the rendered output of the view
      */
-    private function renderView(View $view): string
+    private function render(View $view): string
     {
-        $view->extend($this->_data);
         $view->initHelpers();
         $view->runHelpers();
+        $view->setFunctionHandlers($this->functionHandlers);
+        $view->setFunctions($this->functions);
 
-        return $view->render();
+        return $view->render($this->data);
     }
 }
