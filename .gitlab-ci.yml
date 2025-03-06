@@ -25,6 +25,7 @@ variables:
   script:
     - mkdir -p docs/src/api
     - bin/hztool doc --scan=src --title="API Reference" docs/src/api
+    - bin/hztool index --scan=src docs/src/.vuepress/api_sidebar.js
   artifacts:
     paths:
       - docs/src/api

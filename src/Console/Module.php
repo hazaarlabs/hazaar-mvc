@@ -37,8 +37,6 @@ abstract class Module
         return $this->commands[$name] ?? null;
     }
 
-    public function prepare(Input $input, Output $output): void {}
-
     public function run(string $command): int
     {
         if (!isset($this->commands[$command])) {
@@ -51,6 +49,8 @@ abstract class Module
 
         return $callable($this->input, $this->output);
     }
+
+    protected function prepare(Input $input, Output $output): void {}
 
     /**
      * @param array{object,string} $callback

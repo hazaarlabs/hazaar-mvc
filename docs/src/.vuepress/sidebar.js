@@ -1,7 +1,8 @@
+import api from './api_sidebar';
 export default {
     '/docs/': sidebarGuide(),
     '/examples/': sidebarExamples(),
-    '/api/': 'structure'
+    '/api/': api
 }
 
 function sidebarGuide() {
