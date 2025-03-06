@@ -132,10 +132,11 @@ interface QueryBuilder
      */
     public function prepareCriteria(
         array|string $criteria,
-        ?string $bindType = null,
-        ?string $tissue = null,
+        string $bindType = 'AND',
+        string $tissue = '=',
         ?string $parentRef = null,
-        null|int|string $optionalKey = null
+        null|int|string $optionalKey = null,
+        bool &$setKey = true
     ): string;
 
     public function reset(): self;

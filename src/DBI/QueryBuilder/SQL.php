@@ -443,7 +443,7 @@ class SQL implements QueryBuilder
     /**
      * Return the current selection as a valid SQL string.
      */
-    public function toString(bool $terminateWith_colon = false, bool $untable = false): string
+    public function toString(bool $terminateWithColon = false, bool $untable = false): string
     {
         $sql = 'SELECT';
         if (is_array($this->distinct) && count($this->distinct) > 0) {
@@ -508,7 +508,6 @@ class SQL implements QueryBuilder
         // FETCH
         if (array_key_exists('which', $this->fetch)) {
             $sql .= ' FETCH';
-
             if (array_key_exists('which', $this->fetch)) {
                 $sql .= ' '.strtoupper($this->fetch['which']);
             }
@@ -521,7 +520,7 @@ class SQL implements QueryBuilder
         if (2 === count($this->combine)) {
             $sql .= "\n".$this->combine[0]."\n".$this->combine[1];
         }
-        if ($terminateWith_colon) {
+        if ($terminateWithColon) {
             $sql .= ';';
         }
 
@@ -605,7 +604,7 @@ class SQL implements QueryBuilder
     public function prepareValue(mixed $value, ?string $key = null): mixed
     {
         if (is_array($value) && count($value) > 0) {
-            $value = $this->prepareCriteria($value, null, null, null, $key);
+            $value = $this->prepareCriteria(criteria: $value, optionalKey: $key);
         } elseif ($value instanceof DateTime) {
             $value = $this->quote($value->format('Y-m-d H:i:s'));
         } elseif (is_null($value) || (is_array($value) && 0 === count($value))) {
@@ -655,10 +654,11 @@ class SQL implements QueryBuilder
      */
     public function prepareCriteria(
         array|string $criteria,
-        ?string $bindType = null,
-        ?string $tissue = null,
+        string $bindType = 'AND',
+        string $tissue = '=',
         ?string $parentRef = null,
-        null|int|string $optionalKey = null
+        null|int|string $optionalKey = null,
+        bool &$setKey = true
     ): string {
         if (!is_array($criteria)) {
             return $criteria;
@@ -667,22 +667,14 @@ class SQL implements QueryBuilder
         if (0 === count($criteria)) {
             return 'TRUE';
         }
-        if (null === $bindType) {
-            $bindType = 'AND';
-        }
-        if (null === $tissue) {
-            $tissue = '=';
-        }
         foreach ($criteria as $key => $value) {
-            $prepareValue = true;
             if ($value instanceof Table) {
                 $value = '('.$value->toString().' )';
-                $prepareValue = false;
             }
             if (is_int($key) && is_string($value)) {
-                $parts[] = '('.$value.')';
-            } elseif (!is_int($key) && '$' == substr($key, 0, 1)) {
-                if ($actionParts = $this->prepareCriteriaAction(strtolower(substr($key, 1)), $value, $tissue, $optionalKey)) {
+                $parts[] = '( '.$value.' )';
+            } elseif (is_string($key) && '$' == substr($key, 0, 1)) {
+                if ($actionParts = $this->prepareCriteriaAction(strtolower(substr($key, 1)), $value, $tissue, $optionalKey, $setKey)) {
                     if (is_array($actionParts)) {
                         $parts = array_merge($parts, $actionParts);
                     } else {
@@ -692,14 +684,15 @@ class SQL implements QueryBuilder
                     $parts[] = ' '.$tissue.' '.$this->prepareCriteria($value, strtoupper(substr($key, 1)));
                 }
             } elseif (is_array($value)) {
-                $subValue = $this->prepareCriteria($value, $bindType, $tissue, $parentRef, $key);
+                $set = true;
+                $subValue = $this->prepareCriteria($value, $bindType, $tissue, $parentRef, $key, $set);
                 if (is_numeric($key)) {
                     $parts[] = $subValue;
                 } else {
                     if ($parentRef && false === strpos($key, '.')) {
                         $key = $parentRef.'.'.$key;
                     }
-                    $parts[] = $this->field($key).' '.$tissue.' '.$subValue;
+                    $parts[] = ((true === $set) ? $key.' ' : '').$subValue;
                 }
             } else {
                 if ($parentRef && false === strpos($key, '.')) {
@@ -710,14 +703,10 @@ class SQL implements QueryBuilder
                 } else {
                     $joiner = $tissue;
                 }
-                $parts[] = $this->field($key).' '.$joiner.' '.($prepareValue ? $this->prepareValue($value) : $value);
+                $parts[] = $this->field($key).' '.$joiner.' '.$this->prepareValue($value);
             }
         }
-        $sql = '';
-        // @phpstan-ignore-next-line
-        if (count($parts) > 0) {
-            $sql = ((count($parts) > 1) ? '(' : null).implode(" {$bindType} ", $parts).((count($parts) > 1) ? ')' : null);
-        }
+        $sql = ((count($parts) > 1) ? '( ' : null).implode(" {$bindType} ", $parts).((count($parts) > 1) ? ' )' : null);
 
         return $sql;
     }
@@ -728,8 +717,8 @@ class SQL implements QueryBuilder
     private function prepareCriteriaAction(
         string $action,
         mixed $value,
-        string $tissue = '=',
-        ?string $key = null,
+        ?string $tissue = '=',
+        null|int|string $key = null,
         bool &$setKey = true
     ): null|array|string {
         switch ($action) {
