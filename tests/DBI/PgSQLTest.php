@@ -41,6 +41,32 @@ class PgSQLTest extends TestCase
     public function testTables(): void
     {
         $this->assertTrue($this->db->table('test_table')->exists());
+        $this->assertContains(['name' => 'test_table', 'schema' => 'public'], $this->db->listTables());
+        $columns = [
+            [
+                'name' => 'id',
+                'default' => null,
+                'not_null' => true,
+                'type' => 'integer',
+                'length' => null,
+                'primarykey' => true,
+            ],
+            [
+                'name' => 'name',
+                'default' => null,
+                'not_null' => false,
+                'type' => 'text',
+                'length' => null,
+            ],
+            [
+                'name' => 'stored',
+                'default' => 'true',
+                'not_null' => false,
+                'type' => 'boolean',
+                'length' => null,
+            ],
+        ];
+        $this->assertEquals($columns, $this->db->describeTable('test_table'));
     }
 
     public function testModelInsert(): void
