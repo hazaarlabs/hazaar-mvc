@@ -206,12 +206,13 @@ class Table
     /**
      * @param null|array<mixed>|string $returning
      * @param array<mixed>             $conflictTarget
+     * @param array<string>|bool       $conflictUpdate
      */
     public function insert(
         mixed $values,
         null|array|string $returning = null,
         null|array|string $conflictTarget = null,
-        mixed $conflictUpdate = null,
+        null|array|bool $conflictUpdate = null,
         ?Table $table = null
     ): mixed {
         $sqlString = $this->queryBuilder->insert($this->name, $values, $returning, $conflictTarget, $conflictUpdate, $table);

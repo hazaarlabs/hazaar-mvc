@@ -6,10 +6,11 @@ namespace Hazaar\DBI\DBD;
 
 use Hazaar\DBI\DBD\Interface\Driver;
 use Hazaar\DBI\Interface\API\SQL;
+use Hazaar\DBI\Interface\API\Table;
 use Hazaar\DBI\Interface\API\Transaction;
 use Hazaar\DBI\Interface\API\Trigger;
 
-class Sqlite implements Driver, SQL, Transaction, Trigger
+class Sqlite implements Driver, SQL, Table, Transaction, Trigger
 {
     use Traits\PDO {
         Traits\PDO::query as pdoQuery; // Alias the trait's query method to pdoQuery
@@ -56,5 +57,46 @@ class Sqlite implements Driver, SQL, Transaction, Trigger
         $sql = 'VACUUM ANALYZE';
 
         return false !== $this->exec($sql);
+    }
+
+    public function listTables(): array
+    {
+        $sql = 'SELECT name FROM sqlite_master WHERE type = \'table\'';
+
+        return $this->query($sql)->fetchAll();
+    }
+
+    public function tableExists(string $name): bool
+    {
+        $sql = 'SELECT name FROM sqlite_master WHERE type = \'table\' AND name = ?';
+
+        return false !== $this->query($sql, [$name])->fetch();
+    }
+
+    public function describeTable(string $tableName, ?string $sort = null): array|false
+    {
+        $sql = 'PRAGMA table_info('.$tableName.')';
+        $info = $this->query($sql)->fetchAll();
+        $columns = [];
+        foreach ($info as &$row) {
+            $default = null;
+            if (is_string($row['dflt_value'])) {
+                $default = trim($row['dflt_value']);
+                $default = "'" !== substr($default, 0, 1) ? strtolower($default) : $default;
+            }
+            $column = [
+                'name' => $row['name'],
+                'default' => $default,
+                'not_null' => boolify($row['notnull']),
+                'type' => strtolower($row['type']),
+                'length' => null,
+            ];
+            if (1 == $row['pk']) {
+                $column['primarykey'] = true;
+            }
+            $columns[] = $column;
+        }
+
+        return $columns;
     }
 }

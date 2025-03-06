@@ -24,15 +24,25 @@ trait PDO
         return $this->pdo->exec($sql);
     }
 
-    public function query(string $sql): false|Result
+    /**
+     * @param array<mixed> $parameters
+     */
+    public function query(string $sql, array $parameters = []): false|Result
     {
         $this->lastQueryString = $sql;
-        $result = $this->pdo->query($sql);
-        if ($result instanceof \PDOStatement) {
-            return new PDOResult($result);
+        $stmt = $this->pdo->prepare($sql);
+        if (false === $stmt) {
+            return false;
+        }
+        foreach ($parameters as $key => $value) {
+            $stmt->bindValue($key + 1, $value);
+        }
+        $result = $stmt->execute();
+        if (false === $result) {
+            return false;
         }
 
-        return false;
+        return new PDOResult($stmt);
     }
 
     public function quote(mixed $string, int $type = \PDO::PARAM_STR): false|string
