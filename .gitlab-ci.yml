@@ -72,8 +72,6 @@ Build Unit Test Image:
     - docker build --network host --pull --rm -f "Dockerfile" -t $UNIT_TEST_IMAGE .
     - docker push --all-tags $CI_REGISTRY_IMAGE
   only:
-    refs:
-    - master
     changes:
     - Dockerfile
 

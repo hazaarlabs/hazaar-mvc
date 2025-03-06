@@ -7,7 +7,7 @@ ENV MUSL_LOCPATH /usr/share/i18n/locales/musl
 ENV LANG en_AU.UTF-8  
 ENV LANGUAGE en_AU:en  
 ENV LC_ALL en_AU.UTF-8   
-RUN docker-php-ext-install intl gd sockets zip pdo_pgsql xml sysvshm
+RUN docker-php-ext-install intl gd sockets zip pdo_pgsql xml sysvshm sysvsem
 RUN pecl install apcu xdebug; \
     docker-php-ext-enable apcu; \
     docker-php-ext-enable xdebug; \
