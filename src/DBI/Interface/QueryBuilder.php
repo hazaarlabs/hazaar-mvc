@@ -18,13 +18,14 @@ interface QueryBuilder
     /**
      * @param array<string>|string $returning
      * @param array<mixed>         $conflictTarget
+     * @param array<string>|bool   $conflictUpdate
      */
     public function insert(
         string $tableName,
         mixed $fields,
         null|array|string $returning = null,
         null|array|string $conflictTarget = null,
-        mixed $conflictUpdate = null,
+        null|array|bool $conflictUpdate = null,
         ?Table $table = null
     ): string;
 
@@ -131,10 +132,11 @@ interface QueryBuilder
      */
     public function prepareCriteria(
         array|string $criteria,
-        ?string $bindType = null,
-        ?string $tissue = null,
+        string $bindType = 'AND',
+        string $tissue = '=',
         ?string $parentRef = null,
-        null|int|string $optionalKey = null
+        null|int|string $optionalKey = null,
+        bool &$setKey = true
     ): string;
 
     public function reset(): self;

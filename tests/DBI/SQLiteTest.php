@@ -18,7 +18,7 @@ class SQLiteTest extends TestCase
     public function setUp(): void
     {
         $this->db = new Adapter(['type' => 'sqlite', 'database' => ':memory:']);
-        $this->db->exec('CREATE TABLE IF NOT EXISTS test_table (id INTEGER PRIMARY KEY, name TEXT, stored BOOLEAN DEFAULT TRUE)');
+        $this->db->exec('CREATE TABLE IF NOT EXISTS test_table (id INTEGER NOT NULL PRIMARY KEY, name TEXT DEFAULT \'none\', stored BOOLEAN DEFAULT TRUE)');
     }
 
     // teardown
@@ -28,13 +28,42 @@ class SQLiteTest extends TestCase
         unset($this->db);
     }
 
+    public function testTables(): void
+    {
+        $this->assertTrue($this->db->table('test_table')->exists());
+        $this->assertEquals([['name' => 'test_table']], $this->db->listTables());
+        $columns = [
+            [
+                'name' => 'id',
+                'default' => null,
+                'not_null' => true,
+                'type' => 'integer',
+                'length' => null,
+                'primarykey' => true,
+            ],
+            [
+                'name' => 'name',
+                'default' => "'none'",
+                'not_null' => false,
+                'type' => 'text',
+                'length' => null,
+            ],
+            [
+                'name' => 'stored',
+                'default' => 'true',
+                'not_null' => false,
+                'type' => 'boolean',
+                'length' => null,
+            ],
+        ];
+        $this->assertEquals($columns, $this->db->describeTable('test_table'));
+    }
+
     public function testRawSQL(): void
     {
-        $db = new Adapter(['type' => 'sqlite', 'database' => ':memory:']);
-        $db->exec('CREATE TABLE test_table (id INTEGER PRIMARY KEY, name TEXT, stored BOOLEAN DEFAULT TRUE)');
-        $inserted = $db->exec('INSERT INTO test_table (name) VALUES ("test")');
+        $inserted = $this->db->exec('INSERT INTO test_table (name) VALUES ("test")');
         $this->assertEquals(1, $inserted);
-        $result = $db->query('SELECT * FROM test_table');
+        $result = $this->db->query('SELECT * FROM test_table');
         $this->assertIsObject($result);
         // $this->assertEquals(1, $result->count());
         $row = $result->fetch();
@@ -70,6 +99,20 @@ class SQLiteTest extends TestCase
         $this->assertFalse($result);
     }
 
+    public function testInsertSelect(): void
+    {
+        $sql = 'SELECT * FROM "test_table" WHERE id = 1234';
+        $data = [
+            'id' => 1234,
+            'name' => 'Test Name',
+            'stored' => true,
+        ];
+        $this->assertEquals(1, $this->db->table('test_table')->insert($data));
+        $statement = $this->db->table('test_table')->find(['id' => 1234]);
+        $this->assertEquals($sql, (string) $statement);
+        $this->assertEquals($data, $statement->fetch());
+    }
+
     public function testTransaction(): void
     {
         $this->db->begin();
@@ -101,6 +144,5 @@ class SQLiteTest extends TestCase
         $this->assertEquals('triggered', $triggered['name']);
         $result = $this->db->dropTrigger('test_trigger', 'test_table', true);
         $this->assertTrue($result);
-
     }
 }

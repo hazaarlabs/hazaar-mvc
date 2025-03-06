@@ -58,4 +58,18 @@ class CacheTest extends TestCase
         $this->assertTrue($cache->set('test', 'value'));
         $this->assertEquals('value', $cache->get('test'));
     }
+
+    public function testDBICached(): void
+    {
+        $options = [
+            'type' => 'sqlite',
+            'database' => ':memory:',
+        ];
+        $cache = new Adapter('dbi', $options);
+        $this->assertTrue($cache->set('test', 'value'));
+        $this->assertTrue($cache->has('test'));
+        $this->assertEquals('value', $cache->get('test'));
+        $this->assertTrue($cache->set('options', $options));
+        $this->assertEquals($options, $cache->get('options'));
+    }
 }

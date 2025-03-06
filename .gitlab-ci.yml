@@ -104,7 +104,9 @@ Static Analysis:
 
 Unit Testing:
   stage: test
-  image: $UNIT_TEST_IMAGE
+  image: 
+    name: $UNIT_TEST_IMAGE
+    pull_policy: always
   services:
     - postgres:15
   variables:
