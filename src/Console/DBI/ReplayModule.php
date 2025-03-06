@@ -2,19 +2,19 @@
 
 namespace Hazaar\Console\DBI;
 
-use Hazaar\Console\Command;
+use Hazaar\Console\Module;
 use Hazaar\Console\Input;
 use Hazaar\Console\Output;
 use Hazaar\DBI\Adapter;
 
-class CheckpointCommand extends Command
+class ReplayModule extends Module
 {
     protected function configure(): void
     {
-        $this->setName('checkpoint')
-            ->setDescription('Checkpoints the database schema.')
-            ->setHelp('This command will checkpoint the database schema by consolidating all changes into a single migration file.')
-            ->addArgument('comment', 'Add a comment to the checkpoint')
+        $this->addCommand('replay')
+            ->setDescription('Replay the database schema.')
+            ->setHelp('This command will replay the database schema to a specific version.')
+            ->addArgument('version', 'The version to rollback to.')
         ;
     }
 
@@ -24,7 +24,10 @@ class CheckpointCommand extends Command
         $manager->registerLogHandler(function ($message) use ($output) {
             $output->write($message.PHP_EOL);
         });
-        if (!$manager->checkpoint($input->getArgument('comment'))) {
+        if ($version = $input->getArgument('version')) {
+            settype($version, 'int');
+        }
+        if (!$manager->replay($version)) {
             return 1;
         }
 

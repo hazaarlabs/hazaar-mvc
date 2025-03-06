@@ -112,9 +112,9 @@ class Input
         return $this->args[$name] ?? null;
     }
 
-    public function getOption(string $name): mixed
+    public function getOption(string $name, ?string $default = null): mixed
     {
-        return $this->options[$name] ?? null;
+        return $this->options[$name] ?? $default;
     }
 
     /**

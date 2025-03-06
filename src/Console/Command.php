@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace Hazaar\Console;
 
-abstract class Command
+class Command
 {
     /**
      * @var array<array{long: string, short: null|string, description: null|string, required: bool}>
      */
     public static array $globalOptions = [];
-
     protected Application $application;
     private string $name;
     private string $description;
@@ -25,22 +24,23 @@ abstract class Command
      */
     private array $arguments = [];
 
-    private Input $input;
-    private Output $output;
+    private mixed $callback;
 
-    public function initialise(Input $input, Output $output): void
+    /**
+     * @param array{object,string} $callback
+     */
+    final public function __construct(string $name, array $callback)
     {
-        $this->input = $input;
-        $this->output = $output;
-        $this->configure();
+        $this->name = $name;
+        $this->callback = $callback;
     }
 
-    public function run(Application $application): int
+    /**
+     * @return array{object,string}
+     */
+    public function getCallable(): array
     {
-        $this->application = $application;
-        $this->prepare($this->input, $this->output);
-
-        return $this->execute($this->input, $this->output);
+        return $this->callback;
     }
 
     public function getName(): string
@@ -69,48 +69,31 @@ abstract class Command
         return $this->arguments;
     }
 
-    protected function configure(): void {}
-
-    protected function prepare(Input $input, Output $output): void {}
-
-    protected function execute(Input $input, Output $output): int
-    {
-        return 0;
-    }
-
-    protected function setName(string $name): self
+    public function setName(string $name): self
     {
         $this->name = $name;
 
         return $this;
     }
 
-    protected function setDescription(string $description): self
+    public function setDescription(string $description): self
     {
         $this->description = $description;
 
         return $this;
     }
 
-    protected function setHelp(string $help): self
+    public function setHelp(string $help): self
     {
         return $this;
     }
 
-    protected function addGlobalOption(string $long, ?string $short, ?string $description, bool $required = false): self
-    {
-        self::$globalOptions[] = [
-            'long' => $long,
-            'short' => $short,
-            'description' => $description,
-            'required' => $required,
-        ];
-
-        return $this;
-    }
-
-    protected function addOption(string $long, ?string $short, ?string $description, bool $required = false): self
-    {
+    public function addOption(
+        string $long,
+        ?string $short = null,
+        ?string $description = null,
+        bool $required = false
+    ): self {
         $this->options[] = [
             'long' => $long,
             'short' => $short,
@@ -121,10 +104,29 @@ abstract class Command
         return $this;
     }
 
-    protected function addArgument(string $name, string $description, bool $required = false): self
-    {
+    public function addArgument(
+        string $name,
+        ?string $description = null,
+        bool $required = false
+    ): self {
         $this->arguments[] = [
             'name' => $name,
+            'description' => $description,
+            'required' => $required,
+        ];
+
+        return $this;
+    }
+
+    public function addGlobalOption(
+        string $long,
+        ?string $short = null,
+        ?string $description = null,
+        bool $required = false
+    ): self {
+        self::$globalOptions[] = [
+            'long' => $long,
+            'short' => $short,
             'description' => $description,
             'required' => $required,
         ];

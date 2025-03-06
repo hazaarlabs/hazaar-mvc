@@ -85,6 +85,19 @@ class Documentor
         return $result;
     }
 
+    public function generateIndex(string $path, string $outputPath, string $style = 'vuepress'): bool
+    {
+        if (null === $this->index) {
+            return false;
+        }
+        $templates = $this->loadTemplates(__DIR__.'/../../../libs/templates/api');
+        $output = $outputPath.'/home';
+        $this->log('Rendering index');
+        file_put_contents($output.'.md', $templates['index']->render((array) $this->index));
+
+        return true;
+    }
+
     private function log(string $message): void
     {
         if ($this->callback) {

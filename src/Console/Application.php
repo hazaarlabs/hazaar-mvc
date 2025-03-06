@@ -4,17 +4,24 @@ declare(strict_types=1);
 
 namespace Hazaar\Console;
 
+use Hazaar\Console\Modules\HelpModule;
+
 class Application
 {
     private string $name;
     private string $version;
 
     /**
-     * A list of commands.
+     * A list of commands registered with the application by modules.
      *
-     * @var array<Command>
+     * @var array<Module>
      */
     private array $commands = [];
+
+    /**
+     * @var array<Module>
+     */
+    private array $modules = [];
 
     private Input $input;
     private Output $output;
@@ -28,17 +35,21 @@ class Application
         set_exception_handler([$this, 'handleException']);
         set_error_handler([$this, 'handleError']);
         register_shutdown_function([$this, 'shutdownHandler']);
-        $this->add(new HelpCommand());
+        $this->add(new HelpModule());
     }
 
-    public function add(Command $command): void
+    public function add(Module $module): void
     {
-        $command->initialise($this->input, $this->output);
-        $this->commands[$command->getName()] = $command;
+        $this->modules[] = $module;
     }
 
     public function run(): int
     {
+        foreach ($this->modules as $module) {
+            $module->initialise($this, $this->input, $this->output);
+            $modules = array_fill(0, count($module->getCommands()), $module);
+            $this->commands = array_merge($this->commands, array_combine(array_keys($module->getCommands()), $modules));
+        }
         $this->input->initialise((array) $_SERVER['argv']);
         $this->output->write('<fg=green>'.$this->name.' v'.$this->version.'</>'.PHP_EOL);
         define('APPLICATION_ENV', $this->input->getGlobalOption('env') ?? getenv('APPLICATION_ENV') ?: 'development');
@@ -49,9 +60,8 @@ class Application
 
             return 1;
         }
-        $command = $this->commands[$commandName];
-        $this->input->run($command);
-        $code = $command->run($this);
+        $module = $this->commands[$commandName];
+        $code = $module->run($commandName);
         if (-1 === $code) {
             $this->writeHelp($this->output);
             $code = 1;
@@ -81,12 +91,18 @@ class Application
             $output->write(PHP_EOL);
         }
         $output->write('<fg=green>Commands:</>'.PHP_EOL);
-        foreach ($this->commands as $command) {
-            $output->write('  '.$command->getName().' - '.$command->getDescription().PHP_EOL);
+        $list = [];
+        foreach ($this->commands as $module) {
+            foreach ($module->getCommands() as $command) {
+                $name = $command->getName();
+                $list[$name] = '  '.$name.' - '.$command->getDescription();
+            }
         }
+        ksort(array: $list);
+        $output->write(implode(PHP_EOL, $list).PHP_EOL);
     }
 
-    public function getCommandObject(string $command): ?Command
+    public function getCommandModule(string $command): ?Module
     {
         return $this->commands[$command] ?? null;
     }
@@ -110,7 +126,7 @@ class Application
         return true;
     }
 
-     /**
+    /**
      * Shutdown handler function.
      *
      * This function is responsible for executing the shutdown tasks registered in the global variable $__shutdownTasks.
@@ -123,6 +139,7 @@ class Application
             echo 'Message: '.$error['message'].PHP_EOL;
             echo 'File: '.$error['file'].PHP_EOL;
             echo 'Line: '.$error['line'].PHP_EOL;
+
             exit($error['type']);
         }
     }
