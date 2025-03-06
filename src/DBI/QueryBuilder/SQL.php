@@ -183,7 +183,7 @@ class SQL implements QueryBuilder
         mixed $fields,
         null|array|string $returning = null,
         null|array|string $conflictTarget = null,
-        mixed $conflictUpdate = null,
+        null|array|bool $conflictUpdate = null,
         ?Table $table = null
     ): string {
         $sql = 'INSERT INTO '.$this->schemaName($tableName);
@@ -462,7 +462,7 @@ class SQL implements QueryBuilder
         }
         if (count($this->joins) > 0) {
             foreach ($this->joins as $join) {
-                $sql .= ' '.$join['type'].' JOIN '.$this->field($join['ref']);
+                $sql .= ' '.$join['type'].' JOIN '.$this->quoteSpecial($join['ref']);
                 if ($join['alias']) {
                     $sql .= ' '.$join['alias'];
                 }

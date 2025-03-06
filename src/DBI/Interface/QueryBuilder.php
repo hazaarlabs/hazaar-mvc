@@ -18,13 +18,14 @@ interface QueryBuilder
     /**
      * @param array<string>|string $returning
      * @param array<mixed>         $conflictTarget
+     * @param array<string>|bool   $conflictUpdate
      */
     public function insert(
         string $tableName,
         mixed $fields,
         null|array|string $returning = null,
         null|array|string $conflictTarget = null,
-        mixed $conflictUpdate = null,
+        null|array|bool $conflictUpdate = null,
         ?Table $table = null
     ): string;
 
