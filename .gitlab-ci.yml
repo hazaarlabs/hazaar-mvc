@@ -124,11 +124,8 @@ Unit Testing:
     reports:
       junit: phpunit-test-results.xml
 
-Build Production Documentation:
+Build Documentation:
   extends: .Build Docs
-  environment: production
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
 
 Build Production Image:
   extends: .Build Image
