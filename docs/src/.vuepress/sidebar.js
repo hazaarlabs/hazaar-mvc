@@ -10,6 +10,7 @@ function sidebarGuide() {
         {
             text: 'Getting Started',
             collapsible: true,
+            icon: 'ic:baseline-add-location',
             children: [
                 {
                     text: 'Installation', link: '/docs/start/installoverview',

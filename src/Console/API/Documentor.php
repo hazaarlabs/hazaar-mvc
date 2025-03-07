@@ -83,8 +83,12 @@ class Documentor
         $timer = new Timer();
         $timer->start('scan');
         $this->scan();
-        $timer->checkpoint('render');
+        $timer->checkpoint('sort');
         $this->log('Scan completed in '.interval($timer->get('scan') / 1000));
+        $this->log('Sorting index');
+        $this->createNamespaceHierarchy($this->index);
+        $timer->checkpoint('render');
+        $this->log('Sort completed in '.interval($timer->get('scan') / 1000));
         $templates = $this->loadTemplates(__DIR__.'/../../../libs/templates/api', self::DOC_OUTPUT_INDEX);
         if (!array_key_exists($style, $templates)) {
             throw new \Exception('Invalid index style: '.$style);
@@ -332,6 +336,49 @@ class Documentor
     {
         if ($this->callback) {
             ($this->callback)($message);
+        }
+    }
+
+    private function createNamespaceHierarchy(\stdClass &$item): void
+    {
+        $namespaces = $item->namespaces;
+        $item->namespaces = [];
+
+        // Sort namespace keys to ensure proper hierarchy
+        $keys = array_keys((array) $namespaces);
+        sort($keys);
+
+        foreach ($keys as $ns) {
+            $parts = explode('\\', trim($ns, '\\'));
+            $current = &$item->namespaces;
+            $fullPath = '';
+
+            foreach ($parts as $part) {
+                $fullPath = trim($fullPath.'\\'.$part, '\\');
+                // @phpstan-ignore isset.offset
+                if (!isset($current[$part])) {
+                    $current[$part] = (object) [
+                        'name' => $part,
+                        'fullName' => $fullPath,
+                        'namespaces' => [],
+                        'classes' => [],
+                        'interfaces' => [],
+                        'traits' => [],
+                        'functions' => [],
+                        'constants' => [],
+                    ];
+                }
+                // If this is the last part, merge the original namespace data
+                if ($fullPath === $ns) {
+                    $original = $namespaces[$ns];
+                    $current[$part]->classes = $original->classes;
+                    $current[$part]->interfaces = $original->interfaces;
+                    $current[$part]->traits = $original->traits;
+                    $current[$part]->functions = $original->functions;
+                    $current[$part]->constants = $original->constants;
+                }
+                $current = &$current[$part]->namespaces;
+            }
         }
     }
 }

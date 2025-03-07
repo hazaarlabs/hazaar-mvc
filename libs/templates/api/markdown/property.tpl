@@ -1,4 +1,4 @@
-{include file="include/functions.tpl"}
+{include file="../include/functions.tpl"}
 
 ### [{$property->name}](#{$property->name})
 {if $property->brief}{$property->brief}{/if}

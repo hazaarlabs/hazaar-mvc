@@ -570,6 +570,9 @@ function array_from_dot_notation(array $array): array
         $parts = explode('.', $idx);
         $cur = &$new;
         foreach ($parts as $part) {
+            if (!is_array($cur)) {
+                throw new Exception('Invalid array structure');
+            }
             if (']' === substr($part, -1) && ($pos = strpos($part, '[')) > 0) {
                 if (!preg_match_all('/\[([\w\d]+)\]/', substr($part, $pos), $matches)) {
                     continue;

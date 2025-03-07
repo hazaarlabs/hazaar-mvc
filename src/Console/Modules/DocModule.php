@@ -21,7 +21,7 @@ class DocModule extends Module
             ->addArgument(name: 'output', description: 'The output path for the documentation')
         ;
 
-        $this->addCommand('index', [$this, 'index'])
+        $this->addCommand('docindex', [$this, 'index'])
             ->setDescription('Generate an API documentation index')
             ->addOption(long: 'title', description: 'The title of the documentation')
             ->addOption(long: 'scan', description: 'The path to scan for classes')

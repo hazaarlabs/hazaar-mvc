@@ -1,13 +1,7 @@
 export default [
     {
-        text: "Functions",
-        collapsable: true,
-        children: [
-{foreach $functions as $function}            {
-                text: "{$function->name}",
-                link: "/api/function/{$function->name}"
-            },
-{/foreach}
-        ]
-    }
+        text: "{$project.title}",
+        link: "/api/home.md"
+    },
+    {include file="namespace.tpl" namespaces=$namespaces functions=$functions interfaces=$interfaces traits=$traits classes=$classes}
 ]
