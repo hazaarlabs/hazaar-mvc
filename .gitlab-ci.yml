@@ -29,6 +29,7 @@ variables:
   artifacts:
     paths:
       - docs/src/api
+      - docs/src/.vuepress/api_sidebar.js
 
 .Build Image:
   stage: package
