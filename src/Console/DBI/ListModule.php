@@ -2,16 +2,16 @@
 
 namespace Hazaar\Console\DBI;
 
-use Hazaar\Console\Command;
 use Hazaar\Console\Input;
+use Hazaar\Console\Module;
 use Hazaar\Console\Output;
 use Hazaar\DBI\Adapter;
 
-class ListCommand extends Command
+class ListModule extends Module
 {
     protected function configure(): void
     {
-        $this->setName('list')
+        $this->addCommand('list')
             ->setDescription('List database versions')
             ->setHelp('This command allows you to list the database schema versions.')
             ->addOption('applied', null, 'List applied versions only')

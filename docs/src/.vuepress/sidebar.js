@@ -1,7 +1,8 @@
+import api from './api_sidebar';
 export default {
     '/docs/': sidebarGuide(),
     '/examples/': sidebarExamples(),
-    '/api/': 'structure'
+    '/api/': api
 }
 
 function sidebarGuide() {
@@ -9,6 +10,7 @@ function sidebarGuide() {
         {
             text: 'Getting Started',
             collapsible: true,
+            icon: 'ic:baseline-add-location',
             children: [
                 {
                     text: 'Installation', link: '/docs/start/installoverview',
