@@ -1,6 +1,6 @@
-{include file="include/functions.tpl"}
+{include file="../include/functions.tpl"}
 
-{include file="include/header.tpl"}
+{include file="../include/header.tpl"}
 
 # {$project.title}
 
@@ -108,4 +108,4 @@ This is an automatically generated documentation for **{$project.title}**.
 {/foreach}
 {/if}
 
-{include file="include/footer.tpl"}
+{include file="../include/footer.tpl"}

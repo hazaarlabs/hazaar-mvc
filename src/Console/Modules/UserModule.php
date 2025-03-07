@@ -1,20 +1,20 @@
 <?php
 
-namespace Hazaar\Console\Tool;
+namespace Hazaar\Console\Modules;
 
 use Hazaar\Application\Config;
 use Hazaar\Auth\Adapter\DBITable;
 use Hazaar\Auth\Adapter\HTPasswd;
-use Hazaar\Console\Command;
 use Hazaar\Console\Input;
+use Hazaar\Console\Module;
 use Hazaar\Console\Output;
 use Hazaar\DBI\Adapter;
 
-class ToolCommand extends Command
+class UserModule extends Module
 {
     protected function configure(): void
     {
-        $this->setName('user')
+        $this->addCommand('user')
             ->setDescription('Run a tool command')
             ->addArgument('command', 'The tool command to run')
             ->addArgument('user', 'The user to operate on')

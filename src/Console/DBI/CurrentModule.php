@@ -2,16 +2,16 @@
 
 namespace Hazaar\Console\DBI;
 
-use Hazaar\Console\Command;
 use Hazaar\Console\Input;
+use Hazaar\Console\Module;
 use Hazaar\Console\Output;
 use Hazaar\DBI\Adapter;
 
-class CurrentCommand extends Command
+class CurrentModule extends Module
 {
     protected function configure(): void
     {
-        $this->setName('current')
+        $this->addCommand('current')
             ->setDescription('Get the current database schema version.')
         ;
     }

@@ -2,19 +2,20 @@
 
 namespace Hazaar\Console\DBI;
 
-use Hazaar\Console\Command;
 use Hazaar\Console\Input;
+use Hazaar\Console\Module;
 use Hazaar\Console\Output;
 use Hazaar\DBI\Adapter;
 
-class ReplayCommand extends Command
+class RollbackModule extends Module
 {
     protected function configure(): void
     {
-        $this->setName('replay')
-            ->setDescription('Replay the database schema.')
-            ->setHelp('This command will replay the database schema to a specific version.')
+        $this->addCommand('rollback')
+            ->setDescription('Rollback the database schema.')
+            ->setHelp('This command will rollback the database schema to a specific version.')
             ->addArgument('version', 'The version to rollback to.')
+            ->addOption('test', 't', 'Enable test mode.  Any write actions will be simulated but not applied to the database.')
         ;
     }
 
@@ -27,7 +28,7 @@ class ReplayCommand extends Command
         if ($version = $input->getArgument('version')) {
             settype($version, 'int');
         }
-        if (!$manager->replay($version)) {
+        if (!$manager->rollback($version)) {
             return 1;
         }
 

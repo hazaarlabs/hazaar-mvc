@@ -2,17 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Console;
+namespace Hazaar\Console\Modules;
 
-class HelpCommand extends Command
+use Hazaar\Console\Input;
+use Hazaar\Console\Module;
+use Hazaar\Console\Output;
+
+class HelpModule extends Module
 {
     protected function configure(): void
     {
-        $this
-            ->setName('help')
+        $this->addCommand('help')
             ->setDescription('Display help information for a command.')
             ->addArgument('command', 'The command to display help for.')
-            ->addGlobalOption('env', 'e', 'The environment to use.  Overrides the APPLICATION_ENV environment variable.');
+            ->addGlobalOption('env', 'e', 'The environment to use.  Overrides the APPLICATION_ENV environment variable.')
         ;
     }
 
@@ -22,7 +25,11 @@ class HelpCommand extends Command
         if (null === $command) {
             return -1;
         }
-        $command = $this->application->getCommandObject($command);
+        $module = $this->application->getCommandModule($command);
+        if (null === $module) {
+            return -1;
+        }
+        $command = $module->getCommand($command);
         if (null === $command) {
             return -1;
         }

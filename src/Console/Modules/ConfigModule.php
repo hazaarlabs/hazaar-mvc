@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Console\Tool;
+namespace Hazaar\Console\Modules;
 
 use Hazaar\Application\Config;
-use Hazaar\Console\Command;
 use Hazaar\Console\Input;
+use Hazaar\Console\Module;
 use Hazaar\Console\Output;
 
-class ConfigCommand extends Command
+class ConfigModule extends Module
 {
     protected function configure(): void
     {
-        $this->setName('config')
+        $this->addCommand('config')
             ->setDescription('Run a tool command')
             ->addArgument('command', 'The tool command to run')
             ->addArgument('args', 'Arguments to pass to the tool command', true)
