@@ -259,6 +259,9 @@ class Compiler
             foreach ($modifiers as $modifier) {
                 $params = str_getcsv($modifier, ':', '"', '\\');
                 $func = array_shift($params);
+                foreach ($params as &$param) {
+                    $param = $this->parseValue($param);
+                }
                 $name = '$this->modify->execute("'.$func.'", '.$name.((count($params) > 0) ? ', "'.implode('", "', $params).'"' : '').')';
             }
         }
