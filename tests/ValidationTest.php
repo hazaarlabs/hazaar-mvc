@@ -130,6 +130,13 @@ class ValidationTest extends TestCase
         Assert::that('test')->numeric();
     }
 
+    public function testAssertIsNotNumeric(): void
+    {
+        $this->assertTrue(Assert::that('test')->notNumeric()->verify());
+        $this->expectException(\InvalidArgumentException::class);
+        Assert::that('1')->notNumeric();
+    }
+
     public function testAssertIsArray(): void
     {
         $this->assertTrue(Assert::that([])->array()->verify());
@@ -148,5 +155,12 @@ class ValidationTest extends TestCase
     {
         $this->expectException(\InvalidArgumentException::class);
         Assert::that('test')->matchesRegex('/[0-9]/');
+    }
+
+    public function testAssertIsScalar(): void
+    {
+        $this->assertTrue(Assert::that(1)->scalar()->verify());
+        $this->expectException(\InvalidArgumentException::class);
+        Assert::that([])->scalar();
     }
 }
