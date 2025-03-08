@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Tests;
 
 use Hazaar\Validation\Assert;
+use Hazaar\Validation\ValidationException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -22,7 +23,7 @@ class ValidationTest extends TestCase
     {
         $assert = Assert::that(null)->lazy()->notEmpty();
         $this->assertInstanceOf(Assert::class, $assert);
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(ValidationException::class);
         $assert->verify();
     }
 
@@ -172,7 +173,7 @@ class ValidationTest extends TestCase
 
     public function testAssertNotBigLazyChain(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(ValidationException::class);
         Assert::that(1)->lazy()->integer()->min(2)->max(1)->verify();
     }
 }

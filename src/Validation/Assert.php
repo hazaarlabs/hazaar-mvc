@@ -249,7 +249,7 @@ class Assert
     public function verify(): bool
     {
         if (!empty($this->errors)) {
-            throw new \InvalidArgumentException(implode(', ', $this->errors));
+            throw new ValidationException($this->errors);
         }
 
         return true;
