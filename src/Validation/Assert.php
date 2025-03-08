@@ -87,6 +87,24 @@ class Assert
         return $this;
     }
 
+    public function notNumeric(string $message = 'Value is numeric'): self
+    {
+        if (is_numeric($this->value)) {
+            $this->except($message);
+        }
+
+        return $this;
+    }
+
+    public function scalar(string $message = 'Value is not a scalar'): self
+    {
+        if (!is_scalar($this->value)) {
+            $this->except($message);
+        }
+
+        return $this;
+    }
+
     public function email(string $message = 'Value is not a valid email address'): self
     {
         if (!filter_var($this->value, FILTER_VALIDATE_EMAIL)) {
