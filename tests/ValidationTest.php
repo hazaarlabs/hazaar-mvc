@@ -163,4 +163,16 @@ class ValidationTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         Assert::that([])->scalar();
     }
+
+    public function testAssertBigLazyChain(): void
+    {
+        $assert = Assert::that(1)->lazy()->integer()->min(1)->max(2)->verify();
+        $this->assertTrue($assert);
+    }
+
+    public function testAssertNotBigLazyChain(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        Assert::that(1)->lazy()->integer()->min(2)->max(1)->verify();
+    }
 }
