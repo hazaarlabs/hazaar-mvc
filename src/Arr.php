@@ -86,23 +86,23 @@ class Arr
     /**
      * Array Key Rename.
      *
-     * Rename a key in an array to something else.
+     * Rename a key in an array to something else, maintaining the value.
      *
-     * @param array<mixed>|object $array    the array to work on
-     * @param mixed               $key_from the key name to rename
-     * @param mixed               $key_to   the key name to change to
+     * @param array<mixed>|object $array   the array to work on
+     * @param mixed               $keyFrom the key name to rename
+     * @param mixed               $keyTo   the key name to change to
      */
-    public static function replaceKey(array|object &$array, mixed $key_from, mixed $key_to): mixed
+    public static function replaceKey(array|object &$array, mixed $keyFrom, mixed $keyTo): mixed
     {
         if (is_array($array)) {
-            if (array_key_exists($key_from, $array)) {
-                $array[$key_to] = $array[$key_from];
-                unset($array[$key_from]);
+            if (array_key_exists($keyFrom, $array)) {
+                $array[$keyTo] = $array[$keyFrom];
+                unset($array[$keyFrom]);
             }
         } elseif (is_object($array)) {
-            if (property_exists($array, $key_from)) {
-                $array->{$key_to} = $array->{$key_from};
-                unset($array->{$key_from});
+            if (property_exists($array, $keyFrom)) {
+                $array->{$keyTo } = $array->{$keyFrom };
+                unset($array->{$keyFrom });
             }
         }
 
@@ -143,35 +143,44 @@ class Arr
     /**
      * Flattens a multidimensional array into a string representation.
      *
-     * @param array<mixed> $array         the array to flatten
-     * @param string       $delim         The delimiter to use between the key and value of each item. Default is '='.
-     * @param string       $section_delim The delimiter to use between each item. Default is ';'.
+     * This method will convert an array into a string representation of the array.  This is useful for storing
+     * arrays in a database or other storage where the array needs to be stored as a string.
+     *
+     * Use the `Arr::unflatten()` method to convert the string back into an array.
+     *
+     * @param array<mixed> $array        the array to flatten
+     * @param string       $delim        The delimiter to use between the key and value of each item. Default is '='.
+     * @param string       $sectionDelim The delimiter to use between each item. Default is ';'.
      *
      * @return string the flattened string representation of the array, or null if the input is not an array
      */
-    public static function flatten(array $array, string $delim = '=', string $section_delim = ';'): string
+    public static function flatten(array $array, string $delim = '=', string $sectionDelim = ';'): string
     {
         $items = [];
         foreach ($array as $key => $value) {
             $items[] = $key.$delim.$value;
         }
 
-        return implode($section_delim, $items);
+        return implode($sectionDelim, $items);
     }
 
     /**
      * Converts a flattened string or array into a multidimensional array.
      *
-     * @param array<mixed>|string $items         The flattened string to be converted
-     * @param string              $delim         The delimiter used to separate the key-value pairs in the flattened string. Default is '='.
-     * @param string              $section_delim The delimiter used to separate multiple key-value pairs in the flattened string. Default is ';'.
+     * This method will convert a string representation of an array into an array.  It is normally used in conjunction
+     * with the `Arr::flatten()` method to convert the string back into an array, but can also be used to convert a
+     * string that contains key-value pairs into an array.
+     *
+     * @param array<mixed>|string $items        The flattened string to be converted
+     * @param string              $delim        The delimiter used to separate the key-value pairs in the flattened string. Default is '='.
+     * @param string              $sectionDelim The delimiter used to separate multiple key-value pairs in the flattened string. Default is ';'.
      *
      * @return array<mixed> the resulting multidimensional array
      */
-    public static function unflatten(array|string $items, $delim = '=', $section_delim = ';'): array
+    public static function unflatten(array|string $items, $delim = '=', $sectionDelim = ';'): array
     {
         if (!is_array($items)) {
-            $items = preg_split("/\\s*\\{$section_delim}\\s*/", trim($items));
+            $items = preg_split("/\\s*\\{$sectionDelim }\\s*/", trim($items));
         }
         $result = [];
         foreach ($items as $item) {
@@ -188,49 +197,53 @@ class Arr
     }
 
     /**
-     * Collate a multi-dimensional array into an associative array where $key_item is the key and $value_item is the value.
+     * Collate a multi-dimensional array into an associative array where $keyItem is the key and $valueItem is the value.
      *
      * * If the key value does not exist in the array, the element is skipped.
      * * If the value item does not exist, the value will be NULL.
      *
-     * @param array<mixed>    $array      the array to collate
-     * @param bool|int|string $key_item   the value to use as the key.  If true is passed, the key will be the array key.
-     * @param int|string      $value_item The value to use as the value.  If not supplied, the whole element will be the value.  Allows re-keying a mult-dimensional array by an array element.
-     * @param int|string      $group_item optional value to group items by
+     * @param array<mixed>    $array     the array to collate
+     * @param bool|int|string $keyItem   the value to use as the key.  If true is passed, the key will be the array key.
+     * @param int|string      $valueItem The value to use as the value.  If not supplied, the whole element will be the value.  Allows re-keying a mult-dimensional array by an array element.
+     * @param int|string      $groupItem optional value to group items by
      *
      * @return array<mixed>
      */
-    public static function collate(array $array, bool|int|string $key_item, null|int|string $value_item = null, null|int|string $group_item = null): array
-    {
+    public static function collate(
+        array $array,
+        bool|int|string $keyItem,
+        null|int|string $valueItem = null,
+        null|int|string $groupItem = null
+    ): array {
         $result = [];
         foreach ($array as $key => $item) {
             if (is_array($item) || $item instanceof \ArrayAccess) {
-                if (true === $key_item) {
-                    $result[$key] = $item[$value_item] ?? null;
+                if (true === $keyItem) {
+                    $result[$key] = $item[$valueItem] ?? null;
 
                     continue;
                 }
-                if (!isset($item[$key_item])) {
+                if (!isset($item[$keyItem])) {
                     continue;
                 }
-                if (null !== $group_item) {
-                    $result[$item[$group_item] ?? null][$item[$key_item]] = $item[$value_item] ?? null;
+                if (null !== $groupItem) {
+                    $result[$item[$groupItem] ?? null][$item[$keyItem]] = $item[$valueItem] ?? null;
                 } else {
-                    $result[$item[$key_item]] = (null === $value_item) ? $item : $item[$value_item] ?? null;
+                    $result[$item[$keyItem]] = (null === $valueItem) ? $item : $item[$valueItem] ?? null;
                 }
             } elseif ($item instanceof \stdClass) {
-                if (true === $key_item) {
-                    $result[$key] = $item[$value_item] ?? null;
+                if (true === $keyItem) {
+                    $result[$key] = $item[$valueItem] ?? null;
 
                     continue;
                 }
-                if (!isset($item->{$key_item})) {
+                if (!isset($item->{$keyItem})) {
                     continue;
                 }
-                if (null !== $group_item) {
-                    $result[$item[$group_item] ?? null][$item->{$key_item}] = $item[$value_item] ?? null;
+                if (null !== $groupItem) {
+                    $result[$item[$groupItem] ?? null][$item->{$keyItem}] = $item[$valueItem] ?? null;
                 } else {
-                    $result[$item->{$key_item}] = (null === $value_item) ? $item : $item[$value_item] ?? null;
+                    $result[$item->{$keyItem}] = (null === $valueItem) ? $item : $item[$valueItem] ?? null;
                 }
             }
         }
@@ -241,7 +254,8 @@ class Arr
     /**
      * Converts a multi dimensional array into key[key][key] => value syntax that can be used in html INPUT field names.
      *
-     * @param array<mixed> $array
+     * @param array<mixed> $array The array to convert
+     * @param bool         $root  If true, the root element is not included in the key
      *
      * @return array<string, mixed>
      */
@@ -252,7 +266,7 @@ class Arr
             if (is_array($value)) {
                 $value = self::buildHtml($value, false);
                 foreach ($value as $skey => $svalue) {
-                    $newkey = $key.($root ? '['.$skey.']' : ']['.$skey);
+                    $newkey = $key.($root ? "[{$skey}]" : "][{$skey}");
                     $result[$newkey] = $svalue;
                 }
             } else {
@@ -264,7 +278,7 @@ class Arr
     }
 
     /**
-     * Convert to dot notation.
+     * Convert a multi-dimenstional array to dot notation.
      *
      * Converts/reduces a multidimensional array into a single dimensional array with keys in dot-notation.
      *
@@ -291,24 +305,24 @@ class Arr
             return $array;
         }
         $rows = [];
-        $numeric_array = (strlen($numericArraySeparators) >= 2);
+        $numericArray = (strlen($numericArraySeparators) >= 2);
         foreach ($array as $key => $value) {
             if (is_array($value)) {
                 $children = self::toDotNotation($value, $separator, is_null($depth) ? $depth : ($depth - 1), $numericArraySeparators);
                 foreach ($children as $childkey => $child) {
-                    if ($numeric_array && is_numeric($key)) {
-                        $new_key = $numericArraySeparators[0].$key.$numericArraySeparators[1];
+                    if ($numericArray && is_numeric($key)) {
+                        $newKey = $numericArraySeparators[0].$key.$numericArraySeparators[1];
                     } else {
-                        $new_key = $key;
+                        $newKey = $key;
                     }
-                    if ($numeric_array && is_numeric($childkey)) {
-                        $new_key .= $numericArraySeparators[0].$childkey.$numericArraySeparators[1];
-                    } elseif ($numeric_array && $childkey[0] === $numericArraySeparators[0]) {
-                        $new_key .= $childkey;
+                    if ($numericArray && is_numeric($childkey)) {
+                        $newKey .= $numericArraySeparators[0].$childkey.$numericArraySeparators[1];
+                    } elseif ($numericArray && $childkey[0] === $numericArraySeparators[0]) {
+                        $newKey .= $childkey;
                     } else {
-                        $new_key .= $separator.$childkey;
+                        $newKey .= $separator.$childkey;
                     }
-                    $rows[$new_key] = $child;
+                    $rows[$newKey] = $child;
                 }
             } else {
                 $rows[$key] = $value;
@@ -321,7 +335,7 @@ class Arr
     /**
      * Convert a single dimension array in dot notation into a multi-dimensional array.
      *
-     * Inverse to the above function, array_to_dot_notation().
+     * This is the inverse of `Arr::toDotNotation()`.
      *
      * @param array<string,string> $array
      *
@@ -496,9 +510,9 @@ class Arr
                     if (!(is_array($compareValue) || $compareValue instanceof \stdClass)) {
                         break;
                     }
-                    $child_diff = self::diffAssocRecursive($value, $compareValue);
-                    if (!empty($child_diff)) {
-                        $value = $child_diff;
+                    $childDiff = self::diffAssocRecursive($value, $compareValue);
+                    if (!empty($childDiff)) {
+                        $value = $childDiff;
 
                         break;
                     }
@@ -693,11 +707,11 @@ class Arr
                     if (!(is_array($value) && is_array($itemCompare[$key]))) {
                         continue 2;
                     }
-                    $value_diff = self::diffKeyRecursive($value, $itemCompare[$key]);
-                    if (0 === count($value_diff)) {
+                    $valueDiff = self::diffKeyRecursive($value, $itemCompare[$key]);
+                    if (0 === count($valueDiff)) {
                         continue 2;
                     }
-                    $value = $value_diff;
+                    $value = $valueDiff;
                 }
             }
             $diff[$key] = $value;
