@@ -2,16 +2,16 @@
 
 namespace Hazaar\Console\DBI;
 
-use Hazaar\Console\Command;
+use Hazaar\Console\Module;
 use Hazaar\Console\Input;
 use Hazaar\Console\Output;
 use Hazaar\DBI\Adapter;
 
-class MigrateCommand extends Command
+class MigrateModule extends Module
 {
     protected function configure(): void
     {
-        $this->setName('migrate')
+        $this->addCommand('migrate')
             ->setDescription('Migrate the database schema')
             ->setHelp('This command allows you to migrate the database schema to a specific version.')
             ->addArgument('version', 'The version to migrate to.')

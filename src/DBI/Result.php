@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI;
 
+use Hazaar\Arr;
 use Hazaar\DateTime;
 use Hazaar\DBI\Interface\Result as ResultInterface;
 use Hazaar\Model;
@@ -51,7 +52,7 @@ abstract class Result implements ResultInterface, \Countable
      */
     public function collate(int|string $indexColumn, int|string $valueColumn, null|int|string $groupColumn = null): array
     {
-        return array_collate($this->fetchAll(), $indexColumn, $valueColumn, $groupColumn);
+        return Arr::collate($this->fetchAll(), $indexColumn, $valueColumn, $groupColumn);
     }
 
     /**
@@ -227,7 +228,7 @@ abstract class Result implements ResultInterface, \Countable
                     unset($record[$name]);
                 }
             }
-            $record = array_merge($record, array_from_dot_notation($objs));
+            $record = array_merge($record, Arr::fromDotNotation($objs));
         }
 
         // $this->decrypt($record);

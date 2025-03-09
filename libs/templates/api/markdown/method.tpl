@@ -1,4 +1,4 @@
-{include file="include/functions.tpl"}
+{include file="../include/functions.tpl"}
 
 {if $header || $header !== false}### [{$method->name}](#{$method->name}){/if}
 {if $method->brief}{$method->brief}{/if}

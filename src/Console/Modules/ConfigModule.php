@@ -2,18 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Console\Tool;
+namespace Hazaar\Console\Modules;
 
 use Hazaar\Application\Config;
-use Hazaar\Console\Command;
+use Hazaar\Arr;
 use Hazaar\Console\Input;
+use Hazaar\Console\Module;
 use Hazaar\Console\Output;
 
-class ConfigCommand extends Command
+class ConfigModule extends Module
 {
     protected function configure(): void
     {
-        $this->setName('config')
+        $this->addCommand('config')
             ->setDescription('Run a tool command')
             ->addArgument('command', 'The tool command to run')
             ->addArgument('args', 'Arguments to pass to the tool command', true)
@@ -40,7 +41,7 @@ class ConfigCommand extends Command
                 if (!($configArg = $input->getArgument('config'))) {
                     throw new \Exception('No configuration argument specified', 1);
                 }
-                $configUpdates = array_unflatten($configArg, '=', ';');
+                $configUpdates = Arr::unflatten($configArg, '=', ';');
                 if (0 === count($configUpdates)) {
                     throw new \Exception('No configuration value specified', 1);
                 }
@@ -55,7 +56,7 @@ class ConfigCommand extends Command
 
             case 'show':
                 $output->write('app.env = '.$env.PHP_EOL);
-                $list = array_to_dot_notation($config->toArray());
+                $list = Arr::toDotNotation($config->toArray());
                 foreach ($list as $key => $value) {
                     $output->write($key.' = '.$value.PHP_EOL);
                 }

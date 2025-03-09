@@ -11,6 +11,7 @@ use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 use Hazaar\HTTP\Response;
+use Hazaar\Str;
 
 class SharePoint extends Client implements BackendInterface, DriverInterface
 {
@@ -639,9 +640,9 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
                 return false;
             }
             if ($error = $response->body()['error'] ?? null) {
-                $exception_message = 'Invalid response (' . $response->status . '): code=' . $error->code . ' message=' . $error->message->value;
+                $exception_message = 'Invalid response ('.$response->status.'): code='.$error->code.' message='.$error->message->value;
             } else {
-                $exception_message = 'Unknown response: ' . $response->body();
+                $exception_message = 'Unknown response: '.$response->body();
             }
 
             throw new Exception\SharePointError($exception_message, $response);
@@ -707,7 +708,7 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
 
         try {
             if (!($folder instanceof \stdClass && property_exists($folder, 'Exists'))) {
-                $folder = (object) array_merge(($this->_query($this->_folder(implode('/', $parts)))['d'] ?? []), (array) $folder);
+                $folder = (object) array_merge($this->_query($this->_folder(implode('/', $parts)))['d'] ?? [], (array) $folder);
             }
             if ($folder['Exists'] ?? false) {
                 if (!property_exists($folder, 'items')) {
@@ -781,7 +782,7 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
             $request->setHeader('Accept', 'application/json; OData=verbose');
             $request->setHeader('X-RequestDigest', $this->_getFormDigest());
             $request->setHeader('X-RequestDigest', $this->_getFormDigest());
-            $request->enableMultipart('multipart/mixed', 'batch_'.guid());
+            $request->enableMultipart('multipart/mixed', 'batch_'.Str::guid());
             $headers = ['Content-Transfer-Encoding' => 'binary'];
             $request->addMultipart('GET '.$this->_folder($path, 'folders')
                 ." HTTP/1.1\nAccept: application/json; OData=verbose\n", 'application/http', $headers);

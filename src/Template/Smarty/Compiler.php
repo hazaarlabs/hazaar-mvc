@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Template\Smarty;
 
+use Hazaar\Arr;
 use Hazaar\DateTime;
 use Hazaar\Template\Exception\IncludeFileNotFound;
 use Hazaar\Template\Smarty;
@@ -259,6 +260,9 @@ class Compiler
             foreach ($modifiers as $modifier) {
                 $params = str_getcsv($modifier, ':', '"', '\\');
                 $func = array_shift($params);
+                foreach ($params as &$param) {
+                    $param = $this->parseValue($param);
+                }
                 $name = '$this->modify->execute("'.$func.'", '.$name.((count($params) > 0) ? ', "'.implode('", "', $params).'"' : '').')';
             }
         }
@@ -364,7 +368,7 @@ class Compiler
         $parts = preg_split('/\s+/', $params);
         $params = [];
         foreach ($parts as $part) {
-            $params += array_unflatten($part);
+            $params += Arr::unflatten($part);
         }
         // Make sure we have the name and loop required parameters.
         if (!(($name = $params['name'] ?? null) && ($loop = $params['loop'] ?? null))) {

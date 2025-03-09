@@ -2,16 +2,16 @@
 
 namespace Hazaar\Console\DBI;
 
-use Hazaar\Console\Command;
 use Hazaar\Console\Input;
+use Hazaar\Console\Module;
 use Hazaar\Console\Output;
 use Hazaar\DBI\Adapter;
 
-class SchemaCommand extends Command
+class SchemaModule extends Module
 {
     protected function configure(): void
     {
-        $this->setName('schema')
+        $this->addCommand('schema')
             ->setDescription('Display the current database schema.')
             ->addOption('all', 'a', 'Display the entire schema instead of just the applied schema.')
         ;

@@ -1,17 +1,17 @@
 <?php
 
-namespace Hazaar\Console\Tool;
+namespace Hazaar\Console\Modules;
 
-use Hazaar\Console\Command;
 use Hazaar\Console\Input;
+use Hazaar\Console\Module;
 use Hazaar\Console\Output;
 use Hazaar\File;
 
-class EncryptCommand extends Command
+class EncryptModule extends Module
 {
     protected function configure(): void
     {
-        $this->setName('encrypt')
+        $this->addCommand('encrypt')
             ->setDescription('Encrypt a file using the Hazaar encryption system')
             ->addArgument('file', 'The file to encrypt')
         ;

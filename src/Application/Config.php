@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Hazaar\Application;
 
 use Hazaar\Application;
+use Hazaar\Arr;
 use Hazaar\File;
 use Hazaar\Loader;
 use Hazaar\Map;
@@ -251,7 +252,7 @@ class Config implements \ArrayAccess, \Iterator
      */
     public function toString(): string
     {
-        $config = array_to_dot_notation($this->options);
+        $config = Arr::toDotNotation($this->options);
         $output = "[{$this->env}]\n";
         foreach ($config as $key => $value) {
             $output .= "{$key}={$value}\n";
@@ -413,7 +414,7 @@ class Config implements \ArrayAccess, \Iterator
                 throw new \Exception('Failed to parse INI config file: '.$source);
             }
             foreach ($config as &$array) {
-                $array = array_from_dot_notation($array);
+                $array = Arr::fromDotNotation($array);
             }
         } else {
             throw new \Exception('Unknown file format: '.$source);

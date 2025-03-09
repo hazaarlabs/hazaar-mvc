@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Hazaar\File;
 
+use Hazaar\Arr;
 use Hazaar\File;
+use Hazaar\Str;
 
 /**
  * The file upload manager class.
@@ -147,7 +149,7 @@ class Upload
         }
         if (($pos = strpos($key, '.')) > 0) {
             $subKey = substr($key, $pos + 1);
-            $files = array_to_dot_notation($this->get(substr($key, 0, $pos)), '.', substr_count($subKey, '.') + 1);
+            $files = Arr::toDotNotation($this->get(substr($key, 0, $pos)), '.', substr_count($subKey, '.') + 1);
 
             return $files[$subKey] ?? [];
         }
@@ -159,12 +161,12 @@ class Upload
         }
         $files = [];
         foreach ($info as $item => $itemInfo) {
-            foreach (array_to_dot_notation($itemInfo) as $name => $data) {
+            foreach (Arr::toDotNotation($itemInfo) as $name => $data) {
                 $files[$name.'.'.$item] = $data;
             }
         }
 
-        return array_from_dot_notation($files);
+        return Arr::fromDotNotation($files);
     }
 
     /**
@@ -276,10 +278,10 @@ class Upload
     public static function getMaxUploadSize(): int
     {
         $max_size = -1;
-        if (($post_max_size = bytes_str(ini_get('post_max_size'))) > 0) {
+        if (($post_max_size = Str::toBytes(ini_get('post_max_size'))) > 0) {
             $max_size = $post_max_size;
         }
-        $upload_max_filesize = bytes_str(ini_get('upload_max_filesize'));
+        $upload_max_filesize = Str::toBytes(ini_get('upload_max_filesize'));
         if ($upload_max_filesize > 0 && $upload_max_filesize < $max_size) {
             $max_size = $upload_max_filesize;
         }

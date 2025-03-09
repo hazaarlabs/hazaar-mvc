@@ -16,6 +16,7 @@ class Documentor
 {
     public const DOC_OUTPUT_HTML = 1;
     public const DOC_OUTPUT_MARKDOWN = 2;
+    public const DOC_OUTPUT_INDEX = 3;
 
     private int $outputFormat;
     private ?string $title;
@@ -23,10 +24,16 @@ class Documentor
 
     private ?\stdClass $index = null;
 
+    private string $outputPath;
+
+    private string $scanPath;
+
     public function __construct(int $outputFormat, ?string $title = null)
     {
         $this->outputFormat = $outputFormat;
         $this->title = $title;
+        $this->scanPath = getcwd();
+        $this->outputPath = getcwd();
     }
 
     public function setCallback(\Closure $callback): void
@@ -34,19 +41,78 @@ class Documentor
         $this->callback = $callback;
     }
 
-    public function generate(string $path, string $outputPath): bool
+    public function setScanPath(string $scanPath): void
     {
-        if (!file_exists($path)) {
-            return false;
+        $this->scanPath = realpath($scanPath);
+    }
+
+    public function setOutputPath(string $outputPath): void
+    {
+        $this->outputPath = $outputPath;
+    }
+
+    public function generate(): bool
+    {
+        if (!is_dir($this->outputPath)) {
+            throw new \Exception('Output path does not exist', 1);
+        }
+        if (!is_writable($this->outputPath)) {
+            throw new \Exception('Output path is not writable', 1);
         }
         $timer = new Timer();
         $timer->start('scan');
-        $path = realpath($path);
+        $this->scan();
+        $timer->checkpoint('render');
+        $this->log('Scan completed in '.interval($timer->get('scan') / 1000));
+        $result = $this->render($this->index, $this->outputPath);
+        $this->log('Rendered in '.interval($timer->stop('render') / 1000));
+        $this->log('Total time: '.interval($timer->get('total') / 1000));
+
+        return $result;
+    }
+
+    public function generateIndex(string $style = 'vuepress'): bool
+    {
+        $outputDir = dirname($this->outputPath);
+        if (!is_dir($outputDir)) {
+            throw new \Exception('Output path does not exist', 1);
+        }
+        if (!is_writable($outputDir)) {
+            throw new \Exception('Output path is not writable', 1);
+        }
+        $timer = new Timer();
+        $timer->start('scan');
+        $this->scan();
+        $timer->checkpoint('sort');
+        $this->log('Scan completed in '.interval($timer->get('scan') / 1000));
+        $this->log('Sorting index');
+        $this->createNamespaceHierarchy($this->index);
+        $timer->checkpoint('render');
+        $this->log('Sort completed in '.interval($timer->get('scan') / 1000));
+        $templates = $this->loadTemplates(__DIR__.'/../../../libs/templates/api', self::DOC_OUTPUT_INDEX);
+        if (!array_key_exists($style, $templates)) {
+            throw new \Exception('Invalid index style: '.$style);
+        }
+        $this->log('Rendering index');
+        file_put_contents($this->outputPath, $templates[$style]->render((array) $this->index));
+        $this->log('Index written to '.$this->outputPath);
+        $this->log('Rendered in '.interval($timer->stop('render') / 1000));
+        $this->log('Total time: '.interval($timer->get('total') / 1000));
+
+        return true;
+    }
+
+    private function scan(): bool
+    {
+        if (!file_exists($this->scanPath)) {
+            return false;
+        }
+
         $files = [];
-        if (!is_dir($path)) {
-            $files[] = $path;
+        if (!is_dir($this->scanPath)) {
+            $files[] = $this->scanPath;
         } else {
-            $files = $this->getFiles($path);
+            $files = $this->getFiles($this->scanPath);
         }
         $PHPParser = new PHP();
         $this->index = (object) [
@@ -76,25 +142,13 @@ class Documentor
                 continue;
             }
         }
-        $this->log('Scan completed in '.interval($timer->stop('scan') / 1000));
-        $timer->start('render');
-        $result = $this->render($this->index, $outputPath);
-        $this->log('Rendered in '.interval($timer->stop('render') / 1000));
-        $this->log('Total time: '.interval($timer->get('total') / 1000));
 
-        return $result;
-    }
-
-    private function log(string $message): void
-    {
-        if ($this->callback) {
-            ($this->callback)($message);
-        }
+        return true;
     }
 
     private function render(\stdClass &$index, string $outputPath): bool
     {
-        $templates = $this->loadTemplates(__DIR__.'/../../../libs/templates/api');
+        $templates = $this->loadTemplates(__DIR__.'/../../../libs/templates/api', $this->outputFormat);
 
         try {
             if (!file_exists($outputPath)) {
@@ -162,10 +216,11 @@ class Documentor
     /**
      * @return array<string,Smarty>
      */
-    private function loadTemplates(string $path): array
+    private function loadTemplates(string $path, int $outputFormat = 2): array
     {
-        $templatePath = rtrim($path, '/ ').'/'.match ($this->outputFormat) {
+        $templatePath = rtrim($path, '/ ').'/'.match ($outputFormat) {
             self::DOC_OUTPUT_MARKDOWN => 'markdown',
+            self::DOC_OUTPUT_INDEX => 'index',
             default => 'markdown'
         };
         if (!(file_exists($templatePath) && is_dir($templatePath))) {
@@ -275,5 +330,55 @@ class Documentor
 
             return '['.$item[1].'](/api/'.$type.'/'.str_replace('\\', '/', $item[1]).'.'.$extension.')';
         }, $content);
+    }
+
+    private function log(string $message): void
+    {
+        if ($this->callback) {
+            ($this->callback)($message);
+        }
+    }
+
+    private function createNamespaceHierarchy(\stdClass &$item): void
+    {
+        $namespaces = $item->namespaces;
+        $item->namespaces = [];
+
+        // Sort namespace keys to ensure proper hierarchy
+        $keys = array_keys((array) $namespaces);
+        sort($keys);
+
+        foreach ($keys as $ns) {
+            $parts = explode('\\', trim($ns, '\\'));
+            $current = &$item->namespaces;
+            $fullPath = '';
+
+            foreach ($parts as $part) {
+                $fullPath = trim($fullPath.'\\'.$part, '\\');
+                // @phpstan-ignore isset.offset
+                if (!isset($current[$part])) {
+                    $current[$part] = (object) [
+                        'name' => $part,
+                        'fullName' => $fullPath,
+                        'namespaces' => [],
+                        'classes' => [],
+                        'interfaces' => [],
+                        'traits' => [],
+                        'functions' => [],
+                        'constants' => [],
+                    ];
+                }
+                // If this is the last part, merge the original namespace data
+                if ($fullPath === $ns) {
+                    $original = $namespaces[$ns];
+                    $current[$part]->classes = $original->classes;
+                    $current[$part]->interfaces = $original->interfaces;
+                    $current[$part]->traits = $original->traits;
+                    $current[$part]->functions = $original->functions;
+                    $current[$part]->constants = $original->constants;
+                }
+                $current = &$current[$part]->namespaces;
+            }
+        }
     }
 }

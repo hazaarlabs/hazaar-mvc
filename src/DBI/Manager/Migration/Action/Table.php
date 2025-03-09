@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\Manager\Migration\Action;
 
+use Hazaar\Arr;
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Manager\Migration\Action\Component\Column;
 
@@ -111,7 +112,7 @@ class Table extends BaseAction
         }
         if (isset($action->alter) && count($action->alter) > 0) {
             foreach ($action->alter as $column) {
-                $index = array_usearch($this->columns, function (Column $localColumn) use ($column) {
+                $index = Arr::usearch($this->columns, function (Column $localColumn) use ($column) {
                     return $localColumn->name === $column->name;
                 });
                 if (false !== $index) {
@@ -137,7 +138,7 @@ class Table extends BaseAction
             'name' => $this->name,
         ]);
         foreach ($table->columns as $column) {
-            $index = array_usearch($this->columns, function (Column $localColumn) use ($column) {
+            $index = Arr::usearch($this->columns, function (Column $localColumn) use ($column) {
                 return $localColumn->name === $column->name;
             });
             // Column does not exist in local schema. Add it. Otherwise, check if the column has changed.
@@ -154,7 +155,7 @@ class Table extends BaseAction
             }
         }
         foreach ($this->columns as $column) {
-            $index = array_usearch($table->columns, function (Column $remoteColumn) use ($column) {
+            $index = Arr::usearch($table->columns, function (Column $remoteColumn) use ($column) {
                 return $remoteColumn->name === $column->name;
             });
             // Column does not exist in remote schema. Drop it.
@@ -182,7 +183,7 @@ class Table extends BaseAction
         if (isset($this->drop)) {
             $spec['add'] = [];
             foreach ($this->drop as $column) {
-                $spec['add'][] = $sourceTable->columns[array_usearch($sourceTable->columns, function (Column $sourceColumn) use ($column) {
+                $spec['add'][] = $sourceTable->columns[Arr::usearch($sourceTable->columns, function (Column $sourceColumn) use ($column) {
                     return $sourceColumn->name === $column;
                 })];
             }

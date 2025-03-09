@@ -3,17 +3,17 @@
 namespace Hazaar\Console\DBI;
 
 use Hazaar\Application\FilePath;
-use Hazaar\Console\Command;
 use Hazaar\Console\Input;
+use Hazaar\Console\Module;
 use Hazaar\Console\Output;
 use Hazaar\DBI\Adapter;
 use Hazaar\Loader;
 
-class SyncCommand extends Command
+class SyncModule extends Module
 {
     protected function configure(): void
     {
-        $this->setName('sync')
+        $this->addCommand('sync')
             ->setDescription('Sync the database data files')
             ->setHelp('This command will sync the database with the data files.')
             ->addArgument('sync_file', 'The file to sync with the database.')

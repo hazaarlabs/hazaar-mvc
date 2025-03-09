@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Hazaar\Application;
+use Hazaar\Arr;
 use Hazaar\Controller\Response\Stream;
 
 /**
@@ -12,7 +13,7 @@ function errorAndDie(): void
 {
     $code = 0;
     $app = Application::getInstance();
-    $headers = array_unflatten(headers_list(), ':', "\n");
+    $headers = Arr::unflatten(headers_list(), ':', "\n");
     $args = func_get_args();
     if ('stream' == ($headers['X-Response-Type'] ?? null)) {
         $stream = new Stream($args[0]);

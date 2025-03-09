@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\Manager\Migration\Action;
 
+use Hazaar\Arr;
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Manager\Migration\Enum\ActionName;
 use Hazaar\DBI\Manager\Migration\Enum\ActionType;
@@ -19,7 +20,7 @@ abstract class BaseAction extends Model implements Spec
 
     public function construct(mixed &$data): void
     {
-        if (!isset($data['name']) && !isset($data['drop']) && !is_assoc($data)) {
+        if (!isset($data['name']) && !isset($data['drop']) && !Arr::isAssoc($data)) {
             $data['drop'] = $data;
         }
     }

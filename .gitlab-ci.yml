@@ -25,9 +25,11 @@ variables:
   script:
     - mkdir -p docs/src/api
     - bin/hztool doc --scan=src --title="API Reference" docs/src/api
+    - bin/hztool docindex --scan=src docs/src/.vuepress/api_sidebar.js
   artifacts:
     paths:
       - docs/src/api
+      - docs/src/.vuepress/api_sidebar.js
 
 .Build Image:
   stage: package

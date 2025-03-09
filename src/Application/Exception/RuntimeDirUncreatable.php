@@ -13,7 +13,7 @@ class RuntimeDirUncreatable extends \Exception
         $msg .= 'cd '.dirname($path)."\n";
         $msg .= "mkdir {$dir}\n";
         $msg .= "chmod 0775 {$dir}\n";
-        $group = coalesce(getenv('APACHE_RUN_GROUP'), '{your http server group}');
+        $group = getenv('APACHE_RUN_GROUP') ?: '{your http server group}';
         $msg .= "chgrp {$group} {$dir}\n</pre>";
         parent::__construct($msg, 500);
     }

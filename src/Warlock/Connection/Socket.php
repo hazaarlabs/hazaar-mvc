@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Connection;
 
+use Hazaar\Str;
 use Hazaar\Warlock\Interface\Connection;
 use Hazaar\Warlock\Protocol;
 use Hazaar\Warlock\Protocol\WebSockets;
@@ -30,7 +31,7 @@ final class Socket extends WebSockets implements Connection
         }
         parent::__construct(['warlock']);
         $this->protocol = $protocol;
-        $this->id = (null === $guid ? guid() : $guid);
+        $this->id = null === $guid ? Str::guid() : $guid;
         $this->key = uniqid();
     }
 

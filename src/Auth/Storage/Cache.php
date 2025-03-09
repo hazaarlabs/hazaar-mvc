@@ -16,6 +16,7 @@ namespace Hazaar\Auth\Storage;
 
 use Hazaar\Application;
 use Hazaar\Application\Request;
+use Hazaar\Arr;
 use Hazaar\Auth\Adapter;
 use Hazaar\Auth\Interface\Storage;
 use Hazaar\Cache\Adapter as CacheAdapter;
@@ -72,7 +73,7 @@ class Cache implements Storage
      */
     public function __construct(array $config)
     {
-        $this->config = array_enhance($config, [
+        $this->config = Arr::enhance($config, [
             'backend' => 'file',
             'usePragma' => false,
             'lifetime' => 3600, // 1 hour
