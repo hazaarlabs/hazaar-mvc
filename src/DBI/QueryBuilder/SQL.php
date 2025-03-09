@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\QueryBuilder;
 
+use Hazaar\Arr;
 use Hazaar\DateTime;
 use Hazaar\DBI\Interface\QueryBuilder;
 use Hazaar\DBI\Table;
@@ -553,7 +554,7 @@ class SQL implements QueryBuilder
                 $fieldDef[] = is_array($value) ? $this->prepareFields($value, [], $tables) : $this->field($value);
             } elseif (is_array($value)) {
                 $fields = [];
-                $fieldMap = array_to_dot_notation([$key => $this->prepareArrayAliases($value)]);
+                $fieldMap = Arr::toDotNotation([$key => $this->prepareArrayAliases($value)]);
                 foreach ($fieldMap as $alias => $field) {
                     if (preg_match('/^((\w+)\.)?\*$/', trim($field), $matches) > 0) {
                         if (count($matches) > 1) {

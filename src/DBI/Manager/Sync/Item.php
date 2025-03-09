@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\Manager\Sync;
 
+use Hazaar\Arr;
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Manager\Sync\Enums\RowStatus;
 use Hazaar\Model;
@@ -139,7 +140,7 @@ class Item extends Model
             return RowStatus::NEW;
         }
         $this->fixTypes($data, $existingRow);
-        $diff = array_diff_assoc_recursive($data, $existingRow);
+        $diff = Arr::diffAssocRecursive($data, $existingRow);
         if (0 === count($diff)) {
             return RowStatus::UNCHANGED;
         }

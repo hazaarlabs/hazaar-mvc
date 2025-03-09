@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\File;
 
+use Hazaar\Arr;
 use Hazaar\File;
 
 /**
@@ -147,7 +148,7 @@ class Upload
         }
         if (($pos = strpos($key, '.')) > 0) {
             $subKey = substr($key, $pos + 1);
-            $files = array_to_dot_notation($this->get(substr($key, 0, $pos)), '.', substr_count($subKey, '.') + 1);
+            $files = Arr::toDotNotation($this->get(substr($key, 0, $pos)), '.', substr_count($subKey, '.') + 1);
 
             return $files[$subKey] ?? [];
         }
@@ -159,12 +160,12 @@ class Upload
         }
         $files = [];
         foreach ($info as $item => $itemInfo) {
-            foreach (array_to_dot_notation($itemInfo) as $name => $data) {
+            foreach (Arr::toDotNotation($itemInfo) as $name => $data) {
                 $files[$name.'.'.$item] = $data;
             }
         }
 
-        return array_from_dot_notation($files);
+        return Arr::fromDotNotation($files);
     }
 
     /**

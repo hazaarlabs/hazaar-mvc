@@ -142,7 +142,7 @@ class Application
         if (!$this->config) {
             return;
         }
-        $shutdown = $this->path.DIRECTORY_SEPARATOR.(array_get($this->config, 'app.files.shutdown') ?? 'shutdown.php');
+        $shutdown = $this->path.DIRECTORY_SEPARATOR.(Arr::get($this->config, 'app.files.shutdown') ?? 'shutdown.php');
         if (file_exists($shutdown)) {
             include $shutdown;
         }
@@ -246,7 +246,7 @@ class Application
         Application::setRoot($this->config['app']['root'] ?? '/');
         // PHP root elements can be set directly with the PHP ini_set function
         if (isset($this->config['php'])) {
-            $phpValues = array_to_dot_notation($this->config['php']);
+            $phpValues = Arr::toDotNotation($this->config['php']);
             foreach ($phpValues as $directive => $phpValue) {
                 ini_set($directive, $phpValue);
             }
@@ -450,7 +450,7 @@ class Application
         // Check for an application bootstrap file and execute it
         $bootstrapFile = $this->path
             .DIRECTORY_SEPARATOR
-            .(array_get($this->config, 'app.files.bootstrap') ?? 'bootstrap.php');
+            .(Arr::get($this->config, 'app.files.bootstrap') ?? 'bootstrap.php');
         if (file_exists($bootstrapFile)) {
             $config = $this->config;
             $router = $this->router;
@@ -493,7 +493,7 @@ class Application
             $request = new Request($_SERVER);
             $requestFile = $this->path
                 .DIRECTORY_SEPARATOR
-                .(array_get($this->config, 'app.files.request') ?? 'request.php');
+                .(Arr::get($this->config, 'app.files.request') ?? 'request.php');
             if (file_exists($requestFile)) {
                 ob_start();
                 // @phpstan-ignore-next-line
@@ -533,7 +533,7 @@ class Application
             ob_end_flush();
             $completeFile = $this->path
                 .DIRECTORY_SEPARATOR
-                .(array_get($this->config, 'app.files.complete') ?? 'complete.php');
+                .(Arr::get($this->config, 'app.files.complete') ?? 'complete.php');
             if (file_exists($completeFile)) {
                 ob_start();
                 $timer = $this->timer;

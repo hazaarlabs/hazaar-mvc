@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Hazaar\Cache;
 
 use Hazaar\Application;
+use Hazaar\Arr;
 
 /**
  * The cache frontend.
@@ -123,7 +124,7 @@ class Adapter implements \ArrayAccess
      */
     public function configure(array $options): void
     {
-        $this->options = array_enhance($this->options, $options);
+        $this->options = Arr::enhance($this->options, $options);
     }
 
     public function getBackend(): Backend

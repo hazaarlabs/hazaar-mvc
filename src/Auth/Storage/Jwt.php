@@ -6,6 +6,7 @@ namespace Hazaar\Auth\Storage;
 
 use Hazaar\Application;
 use Hazaar\Application\FilePath;
+use Hazaar\Arr;
 use Hazaar\Auth\Adapter;
 use Hazaar\Auth\Interface\Storage;
 use Hazaar\Auth\Storage\Exception\JWTPrivateKeyFileNotFound;
@@ -50,7 +51,7 @@ class JWT implements Storage
         }
         $app->registerOutputFunction([$this, 'writeToken']);
         $this->config = $config;
-        array_enhance($this->config, [
+        Arr::enhance($this->config, [
             'alg' => 'HS256',
             'issuer' => 'hazaar-auth',
             'timeout' => 3600,

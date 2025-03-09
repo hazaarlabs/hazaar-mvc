@@ -2,6 +2,8 @@
 
 namespace Hazaar\Mail\Mime;
 
+use Hazaar\Arr;
+
 class Message implements \JsonSerializable
 {
     protected string $crlf = "\r\n";
@@ -127,7 +129,7 @@ class Message implements \JsonSerializable
         if (($content_type = $headers['Content-Type'] ?? null) && 'multipart' === substr($content_type, 0, 9)) {
             $content_type_parts = array_map(function ($value) {
                 return trim($value, '"');
-            }, array_unflatten($content_type));
+            }, Arr::unflatten($content_type));
             if ($boundary = $content_type_parts['boundary'] ?? null) {
                 $parts = explode('--'.$boundary."\n", $content);
                 array_shift($parts);
