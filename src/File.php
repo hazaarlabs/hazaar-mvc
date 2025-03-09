@@ -40,7 +40,7 @@ class File implements \JsonSerializable
     /**
      * @var ?array<string>
      */
-    protected ?array $csv_contents = null;
+    protected ?array $csvContents = null;
 
     /**
      * @var ?resource
@@ -838,10 +838,10 @@ class File implements \JsonSerializable
      */
     public function getcsv(int $length = 0, string $delimiter = ',', string $enclosure = '"', string $escape = '\\'): ?array
     {
-        if (null === $this->csv_contents) {
-            $this->csv_contents = explode("\n", $this->getContents());
-            $line = reset($this->csv_contents);
-        } elseif (!($line = next($this->csv_contents))) {
+        if (null === $this->csvContents) {
+            $this->csvContents = explode("\n", $this->getContents());
+            $line = reset($this->csvContents);
+        } elseif (!($line = next($this->csvContents))) {
             return null;
         }
 
@@ -865,10 +865,10 @@ class File implements \JsonSerializable
      */
     public function putcsv(array $fields, string $delimiter = ',', string $enclosure = '"', string $escape = '\\')
     {
-        if (null === $this->csv_contents) {
-            $this->csv_contents = [];
+        if (null === $this->csvContents) {
+            $this->csvContents = [];
         }
-        $this->csv_contents[] = $line = str_putcsv($fields, $delimiter, $enclosure, $escape);
+        $this->csvContents[] = $line = Str::putCSV($fields, $delimiter, $enclosure, $escape);
 
         return strlen($line);
     }

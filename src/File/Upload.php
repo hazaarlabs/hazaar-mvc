@@ -6,6 +6,7 @@ namespace Hazaar\File;
 
 use Hazaar\Arr;
 use Hazaar\File;
+use Hazaar\Str;
 
 /**
  * The file upload manager class.
@@ -277,10 +278,10 @@ class Upload
     public static function getMaxUploadSize(): int
     {
         $max_size = -1;
-        if (($post_max_size = bytes_str(ini_get('post_max_size'))) > 0) {
+        if (($post_max_size = Str::toBytes(ini_get('post_max_size'))) > 0) {
             $max_size = $post_max_size;
         }
-        $upload_max_filesize = bytes_str(ini_get('upload_max_filesize'));
+        $upload_max_filesize = Str::toBytes(ini_get('upload_max_filesize'));
         if ($upload_max_filesize > 0 && $upload_max_filesize < $max_size) {
             $max_size = $upload_max_filesize;
         }

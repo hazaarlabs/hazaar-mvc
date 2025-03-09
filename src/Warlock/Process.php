@@ -6,6 +6,7 @@ namespace Hazaar\Warlock;
 
 use Hazaar\Application;
 use Hazaar\DateTime;
+use Hazaar\Str;
 use Hazaar\Warlock\Interface\Connection;
 
 abstract class Process
@@ -41,7 +42,7 @@ abstract class Process
         $this->start = time();
         $this->application = $application;
         $this->protocol = $protocol;
-        $this->id = (null === $guid ? guid() : $guid);
+        $this->id = null === $guid ? Str::guid() : $guid;
         $conn = $this->connect($protocol, $guid);
         if (false === $conn) {
             throw new \Exception('Process initialisation failed!', 1);
@@ -489,7 +490,7 @@ abstract class Process
      */
     public static function runner(Application $application, ?array $argv = null): int
     {
-        posix_setsid();
+        \posix_setsid();
         $options = self::getopt();
         $serviceName = $options['serviceName'] ?? null;
         if (!class_exists('\Hazaar\Warlock\Config')) {
