@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hazaar\Template\Smarty;
 
+use Hazaar\Str;
+
 class Modifier
 {
     /**
@@ -28,7 +30,7 @@ class Modifier
             return $this->runWithArgs($name, $value, ...$args);
         }
         $className = 'Hazaar\Template\Smarty\Modifier\\'.str_replace(' ', '', ucwords(str_replace('_', ' ', $name)));
-        if (is_reserved($name)) {
+        if (Str::isReserved($name)) {
             $className .= 'Modifier';
         }
         if (!class_exists($className)) {

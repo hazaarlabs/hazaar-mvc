@@ -9,6 +9,7 @@ use Hazaar\DBI\Adapter;
 use Hazaar\File\Interface\Backend as BackendInterface;
 use Hazaar\File\Interface\Driver as DriverInterface;
 use Hazaar\File\Manager;
+use Hazaar\Str;
 
 class DBI implements BackendInterface, DriverInterface
 {
@@ -39,7 +40,7 @@ class DBI implements BackendInterface, DriverInterface
         ];
         $this->options = array_merge_recursive($defaults, $options);
         if (is_string($this->options['chunkSize'])) {
-            $this->options['chunkSize'] = (int) bytes_str($this->options['chunkSize']);
+            $this->options['chunkSize'] = (int) Str::toBytes($this->options['chunkSize']);
         }
         $this->db = new Adapter($this->options['dbi']);
         $this->loadRootObject();
