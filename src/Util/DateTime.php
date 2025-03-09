@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
-namespace Hazaar;
+namespace Hazaar\Util;
 
 if (!ini_get('date.timezone')) {
     ini_set('date.timezone', 'UTC');
@@ -23,7 +23,7 @@ if (!ini_get('date.timezone')) {
  * ### Example
  *
  * ```php
- * $date = new Hazaar\DateTime('next tuesday');
+ * $date = new Hazaar\Util\DateTime('next tuesday');
  * echo $date; //Echo's a timestamp such as '2013-01-15 11:00:00.0'
  * ```
  *
@@ -87,7 +87,7 @@ class DateTime extends \DateTime implements \JsonSerializable, \DateTimeInterfac
                     $ndatetime .= '.'.$datetime['usec'];
                 }
                 $datetime = $ndatetime;
-            } elseif (array_key_exists('usec', $datetime) && array_key_exists('date', $datetime)) { // Array version of Hazaar\DateTime
+            } elseif (array_key_exists('usec', $datetime) && array_key_exists('date', $datetime)) { // Array version of Hazaar\Util\DateTime
                 if (!$timezone && array_key_exists('timezone', $datetime)) {
                     $timezone = $datetime['timezone'];
                 }
@@ -397,7 +397,7 @@ class DateTime extends \DateTime implements \JsonSerializable, \DateTimeInterfac
      *
      * @param \DateInterval|string $interval  Can be either a \DateInterval object or a string representing an
      *                                        interval, such as P1H to specify 1 hour
-     * @param bool                 $returnNew Doesn't update the current \Hazaar\DateTime object and instead returns
+     * @param bool                 $returnNew Doesn't update the current \Hazaar\Util\DateTime object and instead returns
      *                                        a new object with the interval applied
      */
     public function add(\DateInterval|string $interval, $returnNew = false): static
@@ -422,7 +422,7 @@ class DateTime extends \DateTime implements \JsonSerializable, \DateTimeInterfac
      * See the PHP documentation on how to use the [DateInterval](http://au2.php.net/manual/en/class.dateinterval.php) object.
      *
      * @param \DateInterval|string $interval  can be either a \DateInterval object or a string representing an interval, such as P1H to specify 1 hour
-     * @param bool                 $returnNew doesn't update the current \Hazaar\DateTime object and instead returns a new object with the interval applied
+     * @param bool                 $returnNew doesn't update the current \Hazaar\Util\DateTime object and instead returns a new object with the interval applied
      */
     public function sub(\DateInterval|string $interval, bool $returnNew = false): static
     {

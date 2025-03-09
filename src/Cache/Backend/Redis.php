@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Cache\Backend;
 
-use Hazaar\Arr;
+use Hazaar\Util\Arr;
 use Hazaar\Cache\Backend;
 use Hazaar\Socket\Client;
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\HTTP;
 
-use Hazaar\Arr;
+use Hazaar\Util\Arr;
 
 class Response
 {

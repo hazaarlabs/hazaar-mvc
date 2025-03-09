@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Hazaar\Template\Smarty;
 
-use Hazaar\Arr;
-use Hazaar\DateTime;
 use Hazaar\Template\Exception\IncludeFileNotFound;
 use Hazaar\Template\Smarty;
+use Hazaar\Util\Arr;
+use Hazaar\Util\DateTime;
 
 class Compiler
 {

@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use Hazaar\Application;
-use Hazaar\Arr;
 use Hazaar\Controller\Response\Stream;
+use Hazaar\Util\Arr;
 
 /**
  * This function handles errors and terminates the script execution.

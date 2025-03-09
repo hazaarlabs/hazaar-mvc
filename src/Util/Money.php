@@ -9,11 +9,13 @@ declare(strict_types=1);
  * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
-namespace Hazaar;
+namespace Hazaar\Util;
 
 use Hazaar\Application\FilePath;
 use Hazaar\Cache\Adapter;
+use Hazaar\File;
 use Hazaar\File\BTree;
+use Hazaar\Loader;
 
 /**
  * @brief       Money class

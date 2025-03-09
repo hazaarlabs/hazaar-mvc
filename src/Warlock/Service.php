@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Hazaar\Warlock;
 
 use Hazaar\Application;
-use Hazaar\Cron;
-use Hazaar\DateTime;
+use Hazaar\Util\Cron;
+use Hazaar\Util\DateTime;
 use Hazaar\Warlock\Connection\Pipe;
 use Hazaar\Warlock\Connection\Socket;
 use Hazaar\Warlock\Interface\Connection;

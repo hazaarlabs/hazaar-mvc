@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hazaar;
+namespace Hazaar\Util;
 
 class Arr
 {

@@ -9,7 +9,7 @@ use Hazaar\Controller\Response\File as FileResponse;
 use Hazaar\File;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
-use Hazaar\Str;
+use Hazaar\Util\Str;
 
 class BrowserConnector
 {

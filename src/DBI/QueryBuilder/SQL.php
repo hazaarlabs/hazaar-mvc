@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\QueryBuilder;
 
-use Hazaar\Arr;
-use Hazaar\DateTime;
 use Hazaar\DBI\Interface\QueryBuilder;
 use Hazaar\DBI\Table;
 use Hazaar\Model;
+use Hazaar\Util\Arr;
+use Hazaar\Util\DateTime;
 
 class SQL implements QueryBuilder
 {

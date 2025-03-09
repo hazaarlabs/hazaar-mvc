@@ -15,7 +15,7 @@ declare(strict_types=1);
 namespace Hazaar\Application;
 
 use Hazaar\Application;
-use Hazaar\Arr;
+use Hazaar\Util\Arr;
 use Hazaar\File;
 use Hazaar\Loader;
 use Hazaar\Map;

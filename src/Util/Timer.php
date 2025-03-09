@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
-namespace Hazaar;
+namespace Hazaar\Util;
 
 /**
  * Timer class for measuring how long things take.

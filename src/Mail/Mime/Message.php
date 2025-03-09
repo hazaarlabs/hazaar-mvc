@@ -2,7 +2,7 @@
 
 namespace Hazaar\Mail\Mime;
 
-use Hazaar\Arr;
+use Hazaar\Util\Arr;
 
 class Message implements \JsonSerializable
 {

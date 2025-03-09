@@ -10,7 +10,7 @@ use Hazaar\Parser\PHP\ParserFile;
 use Hazaar\Parser\PHP\ParserNamespace;
 use Hazaar\Parser\PHP\TokenParser;
 use Hazaar\Template\Smarty;
-use Hazaar\Timer;
+use Hazaar\Util\Timer;
 
 class Documentor
 {

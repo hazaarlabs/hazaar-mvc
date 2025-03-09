@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Hazaar\Tests;
 
 use Hazaar\Application;
-use Hazaar\Arr;
 use Hazaar\File\BTree;
-use Hazaar\Str;
+use Hazaar\Util\Arr;
+use Hazaar\Util\Str;
 use PHPUnit\Framework\TestCase;
 
 /**

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Warlock\Server;
 
 use Hazaar\Model;
-use Hazaar\Version;
+use Hazaar\Util\Version;
 
 if (!defined('SERVER_PATH')) {
     throw new \Exception('SERVER_PATH is not defined');

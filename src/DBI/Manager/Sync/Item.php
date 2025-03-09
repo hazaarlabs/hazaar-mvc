@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\Manager\Sync;
 
-use Hazaar\Arr;
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Manager\Sync\Enums\RowStatus;
 use Hazaar\Model;
+use Hazaar\Util\Arr;
 
 class Item extends Model
 {

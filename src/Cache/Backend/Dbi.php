@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Hazaar\Cache\Backend;
 
 use Hazaar\Cache\Backend;
-use Hazaar\DateTime;
+use Hazaar\Util\DateTime;
 use Hazaar\DBI\Adapter;
 
 /**

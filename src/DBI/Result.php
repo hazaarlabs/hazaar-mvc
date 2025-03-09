@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI;
 
-use Hazaar\Arr;
-use Hazaar\DateTime;
 use Hazaar\DBI\Interface\Result as ResultInterface;
 use Hazaar\Model;
+use Hazaar\Util\Arr;
+use Hazaar\Util\DateTime;
 
 abstract class Result implements ResultInterface, \Countable
 {

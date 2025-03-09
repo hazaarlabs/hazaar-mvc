@@ -11,7 +11,7 @@ use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 use Hazaar\HTTP\Response;
-use Hazaar\Str;
+use Hazaar\Util\Str;
 
 class SharePoint extends Client implements BackendInterface, DriverInterface
 {
