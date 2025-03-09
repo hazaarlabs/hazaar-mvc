@@ -52,19 +52,15 @@ class ParserFunction extends TokenParser
             } elseif (T_STATIC == $token->type) {
                 $this->static = true;
             } else {
-                if (0 == $count) {
-                    ++$count;
-                }
-
                 break;
             }
             ++$count;
         }
-        for ($i = 0; $i < $count; ++$i) {
-            next($tokens);
-        }
+        next($tokens);
         $this->docBlock = $this->checkDocComment($tokens);
-        $token = next($tokens);
+        for ($i = 0; $i < $count; ++$i) {
+            $token = next($tokens);
+        }
         if (T_FUNCTION == $token->type) {
             $token = next($tokens);
         }
