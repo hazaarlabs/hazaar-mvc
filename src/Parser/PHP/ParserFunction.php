@@ -56,7 +56,7 @@ class ParserFunction extends TokenParser
             }
             ++$count;
         }
-        next($tokens);
+        $token = next($tokens);
         $this->docBlock = $this->checkDocComment($tokens);
         for ($i = 0; $i < $count; ++$i) {
             $token = next($tokens);
