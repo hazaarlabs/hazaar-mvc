@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Tests;
 
 use Hazaar\Application;
+use Hazaar\Arr;
 use Hazaar\File\BTree;
 use PHPUnit\Framework\TestCase;
 
@@ -28,13 +29,13 @@ class HelperTest extends TestCase
             'root.child4.child5' => 'value',
             'root.child6.child7' => 'value',
         ];
-        $result = array_from_dot_notation($dot_notation);
+        $result = Arr::fromDotNotation($dot_notation);
         $this->assertArrayHasKey('root', $result);
         $this->assertIsArray($result['root']);
         $this->assertArrayHasKey('child1', $result['root']);
         $this->assertIsArray($result['root']['child1']);
         $this->assertArrayHasKey('child7', $result['root']['child6']);
-        $dot_notation_from_array = array_to_dot_notation($result);
+        $dot_notation_from_array = Arr::toDotNotation($result);
         $this->assertEquals($dot_notation, $dot_notation_from_array);
     }
 
@@ -73,10 +74,10 @@ class HelperTest extends TestCase
                 ['name' => 'item3', 'type' => ['id' => 3, 'name' => 'type3']],
             ],
         ];
-        $this->assertEquals('value', array_get($array, 'key.subkey'));
-        $this->assertNull(array_get($array, 'key.missing'));
-        $this->assertEquals('item2', array_get($array, 'items[1].name'));
-        $this->assertEquals('item3', array_get($array, 'items(type.id=3).name'));
-        $this->assertEquals('type2', array_get($array, 'items(name=item2).type.name'));
+        $this->assertEquals('value', Arr::get($array, 'key.subkey'));
+        $this->assertNull(Arr::get($array, 'key.missing'));
+        $this->assertEquals('item2', Arr::get($array, 'items[1].name'));
+        $this->assertEquals('item3', Arr::get($array, 'items(type.id=3).name'));
+        $this->assertEquals('type2', Arr::get($array, 'items(name=item2).type.name'));
     }
 }

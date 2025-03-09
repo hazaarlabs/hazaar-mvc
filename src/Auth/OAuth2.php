@@ -6,6 +6,7 @@ namespace Hazaar\Auth\Adapter;
 
 use Hazaar\Application;
 use Hazaar\Application\URL;
+use Hazaar\Arr;
 use Hazaar\Auth\Adapter;
 use Hazaar\Controller\Response\HTML;
 use Hazaar\HTTP\Client;
@@ -580,7 +581,7 @@ class OAuth2 extends Adapter
             return false;
         }
         if (array_key_exists('access_token', $_REQUEST) && ($_REQUEST['state'] ?? null) === $this->storage['state']) {
-            return array_to_object($_REQUEST);
+            return Arr::toObject($_REQUEST);
         }
         if ('implicit' == ($_REQUEST['grantType'] ?? null)) {
             // Some JavaScript magic to turn a hash response into a normal query response.
@@ -612,7 +613,7 @@ class OAuth2 extends Adapter
         if (count($this->scopes) > 0) {
             $params['scope'] = implode(' ', $this->scopes);
         }
-        $url = $this->metadata['authorization_endpoint'].'?'.array_flatten($params, '=', '&');
+        $url = $this->metadata['authorization_endpoint'].'?'.Arr::flatten($params, '=', '&');
         header('Location: '.$url);
 
         exit;

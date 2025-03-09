@@ -2,6 +2,7 @@
 
 namespace Hazaar\Cache;
 
+use Hazaar\Arr;
 use Hazaar\Cache\Interface\Backend as BackendInterface;
 
 abstract class Backend implements BackendInterface
@@ -92,6 +93,6 @@ abstract class Backend implements BackendInterface
      */
     protected function configure(array $options): void
     {
-        $this->options = array_enhance($this->options, $options);
+        $this->options = Arr::enhance($this->options, $options);
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Template\Smarty;
 
+use Hazaar\Arr;
 use Hazaar\DateTime;
 use Hazaar\Template\Exception\IncludeFileNotFound;
 use Hazaar\Template\Smarty;
@@ -367,7 +368,7 @@ class Compiler
         $parts = preg_split('/\s+/', $params);
         $params = [];
         foreach ($parts as $part) {
-            $params += array_unflatten($part);
+            $params += Arr::unflatten($part);
         }
         // Make sure we have the name and loop required parameters.
         if (!(($name = $params['name'] ?? null) && ($loop = $params['loop'] ?? null))) {

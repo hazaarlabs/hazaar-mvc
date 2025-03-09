@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\DBD\Traits;
 
+use Hazaar\Arr;
 use Hazaar\DBI\Result;
 use Hazaar\DBI\Result\PDO as PDOResult;
 
@@ -107,6 +108,6 @@ trait PDO
         }
         $options = array_intersect_key($config, array_combine($DBD::$dsnElements, $DBD::$dsnElements));
 
-        return $config['type'].':'.array_flatten($options, '=', ';');
+        return $config['type'].':'.Arr::flatten($options, '=', ';');
     }
 }

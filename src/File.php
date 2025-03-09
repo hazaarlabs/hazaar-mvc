@@ -121,7 +121,7 @@ class File implements \JsonSerializable
             [$type, $raw_params] = explode(';', $disposition);
             $params = array_map(function ($value) {
                 return trim($value ?? '', '"');
-            }, array_unflatten(trim($raw_params)));
+            }, Arr::unflatten(trim($raw_params)));
             if (isset($params['filename'])) {
                 $filename = $params['filename'];
             }
@@ -486,7 +486,7 @@ class File implements \JsonSerializable
             $this->contents = ('base64' == $encoding) ? base64_decode($content) : $content;
             $this->setMimeContentType($contentType);
             if (count($info) > 0) {
-                $attributes = array_unflatten($info);
+                $attributes = Arr::unflatten($info);
                 if (array_key_exists('name', $attributes)) {
                     $this->source_file = $attributes['name'];
                 }

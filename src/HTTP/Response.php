@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hazaar\HTTP;
 
+use Hazaar\Arr;
+
 class Response
 {
     // Status code of the response
@@ -278,7 +280,7 @@ class Response
             return $header;
         }
         $contentType = substr($header, 0, $start);
-        $args = array_unflatten(substr($header, $start + 1), '=', ';');
+        $args = Arr::unflatten(substr($header, $start + 1), '=', ';');
 
         return $contentType;
     }
