@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Controller\Response;
 
 use Hazaar\Application;
+use Hazaar\Arr;
 use Hazaar\Controller\Response\HTTP\OK;
 use Hazaar\DateTime;
 use Hazaar\File as FileObject;
@@ -239,7 +240,7 @@ class File extends OK
         if (($colon_pos = strpos($this->contentType, ';')) === false) {
             return;
         }
-        $options = array_change_key_case(array_unflatten(trim(substr($this->contentType, $colon_pos + 1))), CASE_LOWER);
+        $options = array_change_key_case(Arr::unflatten(trim(substr($this->contentType, $colon_pos + 1))), CASE_LOWER);
         if (!array_key_exists('charset', $options)) {
             return;
         }

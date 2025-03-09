@@ -2,6 +2,7 @@
 
 namespace Hazaar\Mail\Transport;
 
+use Hazaar\Arr;
 use Hazaar\Mail\Mime\Message;
 use Hazaar\Mail\Transport;
 use Hazaar\Mail\TransportMessage;
@@ -98,7 +99,7 @@ class SMTP extends Transport
                 } elseif (in_array('PLAIN', $auth_methods)) {
                     $auth_method = 'PLAIN';
                 } else {
-                    throw new \Exception('Authentication not possible.  Only CRAM-MD5, LOGIN and PLAIN methods are supported.  Server needs: '.grammatical_implode($auth_methods, 'or'));
+                    throw new \Exception('Authentication not possible.  Only CRAM-MD5, LOGIN and PLAIN methods are supported.  Server needs: '.Arr::grammaticalImplode($auth_methods, 'or'));
                 }
             }
 
@@ -139,7 +140,7 @@ class SMTP extends Transport
                     break;
 
                 default:
-                    throw new \Exception('Authentication not possible.  Only CRAM-MD5, LOGIN and PLAIN methods are supported.  Server needs: '.grammatical_implode($auth_methods, 'or'));
+                    throw new \Exception('Authentication not possible.  Only CRAM-MD5, LOGIN and PLAIN methods are supported.  Server needs: '.Arr::grammaticalImplode($auth_methods, 'or'));
             }
             if (false === $this->read(235, 1024, $result, $response)) {
                 throw new \Exception('SMTP Auth failed: '.$result);

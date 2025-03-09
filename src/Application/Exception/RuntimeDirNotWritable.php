@@ -15,7 +15,7 @@ class RuntimeDirNotWritable extends \Exception
             $msg .= "Please run the following:\n\n";
             $msg .= 'cd '.dirname($path)."\n";
             $msg .= "chmod 0775 {$dir}\n";
-            $group = coalesce(getenv('APACHE_RUN_GROUP'), '{your http server group}');
+            $group = getenv('APACHE_RUN_GROUP') ?: '{your http server group}';
             $msg .= "chgrp {$group} {$dir}\n\n";
         }
         parent::__construct($msg, 500);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Auth\Adapter;
 
+use Hazaar\Arr;
 use Hazaar\Auth\Adapter;
 use Hazaar\DBI\Adapter as DBIAdapter;
 use Hazaar\DBI\Table;
@@ -21,7 +22,7 @@ class DBITable extends Adapter implements \Hazaar\Auth\Interface\Adapter
         array $config = []
     ) {
         parent::__construct($config);
-        array_enhance($this->options, [
+        Arr::enhance($this->options, [
             'table' => null,
             'fields' => [
                 'identity' => 'identity',

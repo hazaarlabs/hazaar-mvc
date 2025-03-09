@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Cache\Backend;
 
+use Hazaar\Arr;
 use Hazaar\Cache\Backend;
 use Hazaar\Socket\Client;
 
@@ -338,7 +339,7 @@ class Redis extends Backend
         }
         if (is_array($value)) {
             $encoded = '';
-            if (is_assoc($value)) {
+            if (Arr::isAssoc($value)) {
                 $encoded = '%'.count($value)."\r\n";
                 foreach ($value as $key => $item) {
                     $encoded .= $this->encodeValue($key).$this->encodeValue($item);
