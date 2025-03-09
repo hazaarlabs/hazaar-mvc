@@ -9,6 +9,7 @@ use Hazaar\Controller\Response\File as FileResponse;
 use Hazaar\File;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
+use Hazaar\Str;
 
 class BrowserConnector
 {
@@ -137,7 +138,7 @@ class BrowserConnector
                     ++$info['dirs'];
                 }
             }
-        } elseif ($file->isReadable() && preg_match_array($this->allowPreview, $info['mime'])) {
+        } elseif ($file->isReadable() && Str::pregMatchArray($this->allowPreview, $info['mime'])) {
             $info['previewLink'] = rtrim($this->url, '/').'/'.$source->name.rtrim($file->dirname(), '/').'/'.$file->basename().'?width={$w}&height={$h}&crop=true';
         }
 
@@ -236,7 +237,7 @@ class BrowserConnector
                 'source' => array_search($source, $this->sources),
             ],
             'sys' => [
-                'max_upload_size' => min(bytes_str(ini_get('upload_max_filesize')), bytes_str(ini_get('post_max_size'))),
+                'max_upload_size' => min(Str::toBytes(ini_get('upload_max_filesize')), Str::toBytes(ini_get('post_max_size'))),
             ],
             'files' => $files,
         ];

@@ -7,6 +7,7 @@ namespace Hazaar\Tests;
 use Hazaar\Application;
 use Hazaar\Arr;
 use Hazaar\File\BTree;
+use Hazaar\Str;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -51,12 +52,12 @@ class HelperTest extends TestCase
 
     public function testUptimeFunction(): void
     {
-        $this->assertEquals('3:24:12', uptime(12252));
-        $this->assertEquals('0:00:00', uptime(0));
-        $this->assertEquals('1 day 0:00:00', uptime(86400));
-        $this->assertEquals('1 day 10:17:36', uptime(123456));
-        $this->assertEquals('7 days 13:45:21', uptime(654321));
-        $this->assertEquals('365 days 0:31:30', uptime(31537890));
+        $this->assertEquals('3:24:12', Str::uptime(12252));
+        $this->assertEquals('0:00:00', Str::uptime(0));
+        $this->assertEquals('1 day 0:00:00', Str::uptime(86400));
+        $this->assertEquals('1 day 10:17:36', Str::uptime(123456));
+        $this->assertEquals('7 days 13:45:21', Str::uptime(654321));
+        $this->assertEquals('365 days 0:31:30', Str::uptime(31537890));
     }
 
     public function testAgeFunction(): void
