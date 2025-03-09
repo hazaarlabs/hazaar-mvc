@@ -81,4 +81,56 @@ class HelperTest extends TestCase
         $this->assertEquals('item3', Arr::get($array, 'items(type.id=3).name'));
         $this->assertEquals('type2', Arr::get($array, 'items(name=item2).type.name'));
     }
+
+    public function testStrMatchReplace(): void
+    {
+        $this->assertEquals('Hello World', Str::matchReplace('Hello {{name}}', ['name' => 'World']));
+        $this->assertEquals('Hello World', Str::matchReplace('Hello {{name}}', ['name' => 'World', 'missing' => '']));
+        $this->assertEquals('Hello World', Str::matchReplace('Hello {{name}}', ['name' => 'World', 'missing' => ''], true));
+        $this->assertEquals('Hello ', Str::matchReplace('Hello {{name}}', ['missing' => '']));
+        $this->assertNull(Str::matchReplace('Hello {{name}}', ['missing' => ''], true));
+    }
+
+    public function testStrIsReserved(): void
+    {
+        $this->assertTrue(Str::isReserved('class'));
+        $this->assertTrue(Str::isReserved('function'));
+        $this->assertTrue(Str::isReserved('namespace'));
+        $this->assertTrue(Str::isReserved('trait'));
+        $this->assertTrue(Str::isReserved('interface'));
+        $this->assertTrue(Str::isReserved('extends'));
+        $this->assertTrue(Str::isReserved('implements'));
+        $this->assertTrue(Str::isReserved('use'));
+        $this->assertTrue(Str::isReserved('public'));
+        $this->assertTrue(Str::isReserved('protected'));
+        $this->assertTrue(Str::isReserved('private'));
+        $this->assertTrue(Str::isReserved('static'));
+        $this->assertTrue(Str::isReserved('final'));
+        $this->assertTrue(Str::isReserved('abstract'));
+        $this->assertTrue(Str::isReserved('const'));
+        $this->assertTrue(Str::isReserved('var'));
+        $this->assertTrue(Str::isReserved('callable'));
+        $this->assertTrue(Str::isReserved('as'));
+        $this->assertTrue(Str::isReserved('try'));
+        $this->assertTrue(Str::isReserved('catch'));
+        $this->assertTrue(Str::isReserved('throw'));
+        $this->assertTrue(Str::isReserved('goto'));
+        $this->assertTrue(Str::isReserved('return'));
+        $this->assertTrue(Str::isReserved('exit'));
+        $this->assertTrue(Str::isReserved('die'));
+        $this->assertTrue(Str::isReserved('echo'));
+        $this->assertTrue(Str::isReserved('print'));
+    }
+
+    public function testStrFromBytes(): void
+    {
+        $this->assertEquals('1KB', Str::fromBytes(1024));
+        $this->assertEquals('1KB', Str::fromBytes(1100));
+        $this->assertEquals('1.07KB', Str::fromBytes(1100, 'K', 2));
+        $this->assertEquals('1MB', Str::fromBytes(1024 * 1024));
+        $this->assertEquals('1GB', Str::fromBytes(1024 * 1024 * 1024));
+        $this->assertEquals('1TB', Str::fromBytes(1024 * 1024 * 1024 * 1024));
+        $this->assertEquals('1PB', Str::fromBytes(1024 * 1024 * 1024 * 1024 * 1024));
+        $this->assertEquals('1EB', Str::fromBytes(1024 * 1024 * 1024 * 1024 * 1024 * 1024));
+    }
 }

@@ -12,15 +12,22 @@ class Str
      * @var array<string> this is a list of reserved PHP keywords that should not be used as variable names
      */
     private static array $reservedKeywords = [
-        '__halt_compiler', 'abstract', 'and', 'array', 'as', 'break', 'callable',
-        'case', 'catch', 'class', 'clone', 'const', 'continue', 'declare', 'default',
-        'die', 'do', 'echo', 'else', 'elseif', 'empty', 'enddeclare', 'endfor',
-        'endforeach', 'endif', 'endswitch', 'endwhile', 'eval', 'exit', 'extends',
-        'final', 'finally', 'fn', 'for', 'foreach', 'function', 'global', 'goto', 'if',
-        'implements', 'include', 'include_once', 'instanceof', 'insteadof', 'interface',
-        'isset', 'list', 'match', 'namespace', 'new', 'or', 'print', 'private',
-        'protected', 'public', 'require', 'require_once', 'return', 'static', 'switch',
-        'throw', 'trait', 'try', 'unset', 'use', 'var', 'while', 'xor', 'yield',
+        '__halt_compiler', 'abstract', 'and', 'array', 'as', 'break', 'callable', 'case', 'catch',
+        'class', 'clone', 'const', 'continue', 'declare', 'default', 'die', 'do', 'echo', 'else',
+        'elseif', 'empty', 'enddeclare', 'endfor', 'endforeach', 'endif', 'endswitch', 'endwhile',
+        'eval', 'exit', 'extends', 'final', 'for', 'foreach', 'function', 'global', 'goto', 'if',
+        'implements', 'include', 'include_once', 'instanceof', 'insteadof', 'interface', 'isset',
+        'list', 'namespace', 'new', 'or', 'print', 'private', 'protected', 'public', 'require',
+        'require_once', 'return', 'static', 'switch', 'throw', 'trait', 'try', 'unset', 'use',
+        'var', 'while', 'xor',
+    ];
+
+    /**
+     * @var array<string> this is a list of reserved PHP constants that should not be used as variable names
+     */
+    private static array $reservedConstants = [
+        '__CLASS__', '__DIR__', '__FILE__', '__FUNCTION__', '__LINE__',
+        '__METHOD__', '__NAMESPACE__', '__TRAIT__',
     ];
 
     /**
@@ -28,19 +35,19 @@ class Str
      *
      * Formats an integer representing a size in bytes to a human readable string representation.
      *
-     * @param int    $bytes          the byte value to convert to a string
-     * @param string $type           The type to convert to. Type can be:
-     *                               * B (bytes)
-     *                               * K (kilobytes)
-     *                               * M (megabytes)
-     *                               * G (giabytes)
-     *                               * T (terrabytes)
-     * @param int    $precision      the number of decimal places to show
-     * @param bool   $exclude_suffix if true, the suffix will not be included in the output
+     * @param int    $bytes         the byte value to convert to a string
+     * @param string $type          The type to convert to. Type can be:
+     *                              * B (bytes)
+     *                              * K (kilobytes)
+     *                              * M (megabytes)
+     *                              * G (giabytes)
+     *                              * T (terrabytes)
+     * @param int    $precision     the number of decimal places to show
+     * @param bool   $excludeSuffix if true, the suffix will not be included in the output
      *
      * @return string The human readable byte string. eg: '100 MB'.
      */
-    public static function fromBytes(int $bytes, ?string $type = null, ?int $precision = null, bool $exclude_suffix = false)
+    public static function fromBytes(int $bytes, ?string $type = null, ?int $precision = null, bool $excludeSuffix = false)
     {
         if (null === $type) {
             if ($bytes < pow(2, 10)) {
@@ -49,14 +56,20 @@ class Str
                 $type = 'K';
             } elseif ($bytes < pow(2, 30)) {
                 $type = 'M';
-            } else {
+            } elseif ($bytes < pow(2, 40)) {
                 $type = 'G';
+            } elseif ($bytes < pow(2, 50)) {
+                $type = 'T';
+            } elseif ($bytes < pow(2, 60)) {
+                $type = 'P';
+            } else {
+                $type = 'E';
             }
         }
         $type = strtoupper($type);
         $value = $bytes;
         $suffix = 'bytes';
-        $prec = 0;
+        $precision = $precision ?? 0;
 
         switch ($type) {
             case 'K':
@@ -75,22 +88,29 @@ class Str
             case 'G':
                 $value = $bytes / pow(2, 30);
                 $suffix = 'GB';
-                $prec = 2;
 
                 break;
 
             case 'T':
                 $value = $bytes / pow(2, 40);
                 $suffix = 'TB';
-                $prec = 2;
+
+                break;
+
+            case 'P':
+                $value = $bytes / pow(2, 50);
+                $suffix = 'PB';
+
+                break;
+
+            case 'E':
+                $value = $bytes / pow(2, 60);
+                $suffix = 'EB';
 
                 break;
         }
-        if (null !== $precision) {
-            $prec = $precision;
-        }
 
-        return number_format($value, $prec).($exclude_suffix ? '' : ' '.$suffix);
+        return number_format($value, $precision).($excludeSuffix ? '' : $suffix);
     }
 
     /**
@@ -246,10 +266,10 @@ class Str
      * @param string       $delimiter Defaults to comma (,)
      * @param string       $enclosure Defaults to double quote (")
      */
-    public static function putCSV(array $input, string $delimiter = ',', string $enclosure = '"', string $escape_char = '\\'): string
+    public static function putCSV(array $input, string $delimiter = ',', string $enclosure = '"', string $escapeChar = '\\'): string
     {
         $fp = fopen('php://temp', 'r+b');
-        fputcsv($fp, $input, $delimiter, $enclosure, $escape_char);
+        fputcsv($fp, $input, $delimiter, $enclosure, $escapeChar);
         rewind($fp);
         $data = rtrim(stream_get_contents($fp), "\n");
         fclose($fp);
@@ -260,19 +280,19 @@ class Str
     /**
      * Generate a truly random string of characters.
      *
-     * @param mixed $length          the length of the random string being created
-     * @param mixed $include_special Whether or not special characters.  Normally only Aa-Zz, 0-9 are used.  If TRUE will include
-     *                               characters such as #, $, etc.  This can also be a string of characters to use.
+     * @param mixed $length         the length of the random string being created
+     * @param mixed $includeSpecial Whether or not special characters.  Normally only Aa-Zz, 0-9 are used.  If TRUE will include
+     *                              characters such as #, $, etc.  This can also be a string of characters to use.
      *
      * @return string a totally random string of characters
      */
-    public static function random($length, $include_special = false)
+    public static function random($length, $includeSpecial = false)
     {
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        if (true === $include_special) {
+        if (true === $includeSpecial) {
             $characters .= ' ~!@#$%^&*()-_=+[{]}\|;:\'",<.>/?';
-        } elseif (is_string($include_special)) {
-            $characters .= $include_special;
+        } elseif (is_string($includeSpecial)) {
+            $characters .= $includeSpecial;
         }
         $count = strlen($characters);
         $randomString = '';
@@ -341,6 +361,7 @@ class Str
 
     public static function isReserved(string $word): bool
     {
-        return in_array(strtolower($word), self::$reservedKeywords);
+        return in_array(strtolower($word), self::$reservedKeywords)
+            || in_array(strtoupper($word), self::$reservedConstants);
     }
 }
