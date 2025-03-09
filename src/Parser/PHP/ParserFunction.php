@@ -52,6 +52,10 @@ class ParserFunction extends TokenParser
             } elseif (T_STATIC == $token->type) {
                 $this->static = true;
             } else {
+                if (0 === $count) {
+                    ++$count;
+                }
+
                 break;
             }
             ++$count;
