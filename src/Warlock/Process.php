@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Warlock;
 
 use Hazaar\Application;
+use Hazaar\Util\Boolean;
 use Hazaar\Util\Closure;
 use Hazaar\Util\DateTime;
 use Hazaar\Util\Str;
@@ -711,7 +712,7 @@ abstract class Process
         $data['exec'] = $this->makeCallable($callable);
         if ($tag) {
             $data['tag'] = $tag;
-            $data['overwrite'] = strbool($overwrite);
+            $data['overwrite'] = Boolean::toString($overwrite);
         }
         $data['exec']['params'] = $params;
         $this->send($command, $data);

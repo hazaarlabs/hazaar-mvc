@@ -8,6 +8,7 @@ use Hazaar\DBI\Interface\QueryBuilder;
 use Hazaar\DBI\Table;
 use Hazaar\Model;
 use Hazaar\Util\Arr;
+use Hazaar\Util\Boolean;
 use Hazaar\Util\DateTime;
 
 class SQL implements QueryBuilder
@@ -699,7 +700,7 @@ class SQL implements QueryBuilder
                 if ($parentRef && false === strpos($key, '.')) {
                     $key = $parentRef.'.'.$key;
                 }
-                if (is_null($value) || is_boolean($value)) {
+                if (is_null($value) || Boolean::is($value)) {
                     $joiner = 'IS'.(('!=' === $tissue) ? 'NOT' : null);
                 } else {
                     $joiner = $tissue;

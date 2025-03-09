@@ -165,7 +165,7 @@ class Item extends Model
             } elseif (is_float($existingRow[$key])) {
                 $value = (float) $value;
             } elseif (is_bool($existingRow[$key])) {
-                $value = boolify($value);
+                $value = \Hazaar\Util\Boolean::from($value);
             }
         }
     }

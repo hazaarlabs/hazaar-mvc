@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Server;
 
+use Hazaar\Util\Boolean;
+
 // STATUS CONSTANTS
 define('TASK_INIT', 0);
 define('TASK_QUEUED', 1);
@@ -159,7 +161,7 @@ abstract class Task extends Process implements \Hazaar\Warlock\Interface\Task
 
     public function commandTrigger(string $eventID, mixed $data, bool $echoClient = true): bool
     {
-        $this->log->write(W_DEBUG, "TASK<-TRIGGER: NAME={$eventID} ID={$this->id} ECHO=".strbool($echoClient), $this->name);
+        $this->log->write(W_DEBUG, "TASK<-TRIGGER: NAME={$eventID} ID={$this->id} ECHO=".Boolean::toString($echoClient), $this->name);
 
         return Master::$instance->trigger($eventID, $data, false === $echoClient ? $this->id : null);
     }

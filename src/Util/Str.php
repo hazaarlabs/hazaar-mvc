@@ -172,29 +172,6 @@ class Str
     }
 
     /**
-     * Convert interval to uptime string.
-     *
-     * This function will convert an integer of seconds into an uptime string similar to what is returned by
-     * the unix uptime command. ie: '9 days 3:32:02'
-     */
-    public static function uptime(int $interval): string
-    {
-        $d = floor(days((int) $interval));
-        $h = (string) (floor(hours((int) $interval)) - ($d * 24));
-        $m = (string) (floor(minutes((int) $interval)) - (($h + ($d * 24)) * 60));
-        $s = (string) (floor($interval) - (($m + ($h + ($d * 24)) * 60) * 60));
-        $o = '';
-        if (1 == $d) {
-            $o .= "{$d} day ";
-        } elseif ($d > 1) {
-            $o .= "{$d} days ";
-        }
-        $o .= $h.':'.str_pad($m, 2, '0', STR_PAD_LEFT).':'.str_pad($s, 2, '0', STR_PAD_LEFT);
-
-        return $o;
-    }
-
-    /**
      * Fix a numeric string.
      *
      * Sometimes a numeric (int or float) will be stored as a string variable. This can cause

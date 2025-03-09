@@ -176,7 +176,7 @@ abstract class Result implements ResultInterface, \Countable
                         } elseif ('text' == $type || 'varchar' == $type) {
                             $element = trim($element, "'\"");
                         } elseif ('bool' == $type) {
-                            $element = boolify($element);
+                            $element = \Hazaar\Util\Boolean::from($element);
                         } elseif ('timestamp' == $type || 'date' == $type || 'time' == $type) {
                             $element = new DateTime(trim($element, '"'));
                         } elseif ('json' == $type) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Hazaar\Application;
 use Hazaar\Controller\Response\Stream;
 use Hazaar\Util\Arr;
+use Hazaar\Util\Boolean;
 
 /**
  * This function handles errors and terminates the script execution.
@@ -94,7 +95,7 @@ function dieDieDie(string|Throwable $err): void
     $errString = 'An unknown error has occurred';
     if ($err instanceof Throwable) {
         $errString = $err->getMessage();
-        if (boolify(ini_get('display_errors'))) {
+        if (Boolean::from(ini_get('display_errors'))) {
             $errString .= "\n\non line ".$err->getLine().' of file '.$err->getFile()."\n\n".$err->getTraceAsString();
         }
     } elseif (is_string($err)) {

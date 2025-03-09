@@ -120,7 +120,7 @@ class Redis extends Backend
 
     public function select(int $db): bool
     {
-        return boolify($this->cmd(['SELECT', "{$db}"]));
+        return \Hazaar\Util\Boolean::from($this->cmd(['SELECT', "{$db}"]));
     }
 
     public function close(): bool
@@ -180,12 +180,12 @@ class Redis extends Backend
 
     public function remove(string $key): bool
     {
-        return boolify($this->cmd(['HDEL', $this->namespace, $key], true));
+        return \Hazaar\Util\Boolean::from($this->cmd(['HDEL', $this->namespace, $key], true));
     }
 
     public function clear(): bool
     {
-        return boolify($this->cmd(['DEL', $this->namespace], true));
+        return \Hazaar\Util\Boolean::from($this->cmd(['DEL', $this->namespace], true));
     }
 
     /**

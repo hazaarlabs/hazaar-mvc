@@ -6,7 +6,6 @@ namespace Hazaar\Auth\Storage;
 
 use Hazaar\Application;
 use Hazaar\Application\FilePath;
-use Hazaar\Util\Arr;
 use Hazaar\Auth\Adapter;
 use Hazaar\Auth\Interface\Storage;
 use Hazaar\Auth\Storage\Exception\JWTPrivateKeyFileNotFound;
@@ -16,6 +15,8 @@ use Hazaar\Auth\Storage\Exception\NoJWTPassphrase;
 use Hazaar\Auth\Storage\Exception\NoJWTPrivateKey;
 use Hazaar\Auth\Storage\Exception\UnsupportedJWTAlgorithm;
 use Hazaar\Loader;
+use Hazaar\Util\Arr;
+use Hazaar\Util\URL;
 
 /**
  * JWT Authentication Adapter.
@@ -206,8 +207,8 @@ class JWT implements Storage
             return false;
         }
         [$JWTHeader, $JWTBodyString, $tokenSignature] = explode('.', $token, 3);
-        $JWTHeader = json_decode(base64url_decode($JWTHeader), true);
-        $JWTBody = json_decode(base64url_decode($JWTBodyString), true);
+        $JWTHeader = json_decode(URL::base64Decode($JWTHeader), true);
+        $JWTBody = json_decode(URL::base64Decode($JWTBodyString), true);
         if (!(is_array($JWTHeader)
             && is_array($JWTBody)
             && array_key_exists('alg', $JWTHeader)
@@ -272,8 +273,8 @@ class JWT implements Storage
             'typ' => 'JWT',
         ];
 
-        return base64url_encode(json_encode($JWTHeader))
-            .'.'.base64url_encode(json_encode($JWTBody))
+        return URL::base64Encode(json_encode($JWTHeader))
+            .'.'.URL::base64Encode(json_encode($JWTBody))
             .'.'.$this->sign($JWTHeader, $JWTBody, $passphrase);
     }
 
@@ -312,7 +313,7 @@ class JWT implements Storage
         if (!$passphrase) {
             $passphrase = $this->passphrase;
         }
-        $tokenContent = base64url_encode(json_encode($JWTHeader)).'.'.base64url_encode(json_encode($JWTBody));
+        $tokenContent = URL::base64Encode(json_encode($JWTHeader)).'.'.URL::base64Encode(json_encode($JWTBody));
 
         switch ($alg) {
             case 'HS':
@@ -369,6 +370,6 @@ class JWT implements Storage
             throw new \Exception('Unable to sign JWT');
         }
 
-        return base64url_encode($signature);
+        return URL::base64Encode($signature);
     }
 }

@@ -9,7 +9,9 @@ use Hazaar\Controller\Response\File as FileResponse;
 use Hazaar\File;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
+use Hazaar\Util\Boolean;
 use Hazaar\Util\Str;
+use Hazaar\Util\URL;
 
 class BrowserConnector
 {
@@ -85,7 +87,7 @@ class BrowserConnector
         if (array_key_exists($target, $this->sources)) {
             return $this->sources[$target];
         }
-        $raw = base64url_decode($target);
+        $raw = URL::base64Decode($target);
         if (($pos = strpos($raw, ':')) > 0) {
             $source = substr($raw, 0, $pos);
         } else {
@@ -97,7 +99,7 @@ class BrowserConnector
 
     public function path(string $target): false|string
     {
-        $raw = base64url_decode($target);
+        $raw = URL::base64Decode($target);
         if (($pos = strpos($raw, ':')) > 0) {
             return substr($raw, $pos + 1);
         }
@@ -241,7 +243,7 @@ class BrowserConnector
             ],
             'files' => $files,
         ];
-        if (true === boolify($tree)) {
+        if (true === Boolean::from($tree)) {
             $result['tree'] = $this->tree($target, $depth);
         }
 
@@ -527,6 +529,6 @@ class BrowserConnector
             $source = array_search($source, $this->sources);
         }
 
-        return base64url_encode($source.':'.$path);
+        return URL::base64Encode($source.':'.$path);
     }
 }

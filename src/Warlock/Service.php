@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Warlock;
 
 use Hazaar\Application;
+use Hazaar\Util\Boolean;
 use Hazaar\Util\Cron;
 use Hazaar\Util\DateTime;
 use Hazaar\Warlock\Connection\Pipe;
@@ -501,7 +502,7 @@ abstract class Service extends Process
         ];
         if ($tag) {
             $data['tag'] = $tag;
-            $data['overwrite'] = strbool($overwrite);
+            $data['overwrite'] = Boolean::toString($overwrite);
         }
         $this->schedule[$id] = $data;
         if (null === $this->next || $when < $this->next) {
@@ -537,7 +538,7 @@ abstract class Service extends Process
         ];
         if ($tag) {
             $data['tag'] = $tag;
-            $data['overwrite'] = strbool($overwrite);
+            $data['overwrite'] = Boolean::toString($overwrite);
         }
         $this->schedule[$id] = $data;
         if (null === $this->next || $when < $this->next) {

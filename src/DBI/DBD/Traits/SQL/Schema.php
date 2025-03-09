@@ -24,7 +24,7 @@ trait Schema
         }
         $sql = $queryBuilder->exists('information_schema.schemata', ['schema_name' => $schemaName]);
         if ($result = $this->query($sql)) {
-            return boolify($result->fetchColumn(0));
+            return \Hazaar\Util\Boolean::from($result->fetchColumn(0));
         }
 
         return false;

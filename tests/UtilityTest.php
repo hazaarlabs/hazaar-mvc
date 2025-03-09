@@ -7,13 +7,14 @@ namespace Hazaar\Tests;
 use Hazaar\Application;
 use Hazaar\File\BTree;
 use Hazaar\Util\Arr;
+use Hazaar\Util\Interval;
 use Hazaar\Util\Str;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @internal
  */
-class HelperTest extends TestCase
+class UtilityTest extends TestCase
 {
     private Application $app;
 
@@ -52,17 +53,17 @@ class HelperTest extends TestCase
 
     public function testUptimeFunction(): void
     {
-        $this->assertEquals('3:24:12', Str::uptime(12252));
-        $this->assertEquals('0:00:00', Str::uptime(0));
-        $this->assertEquals('1 day 0:00:00', Str::uptime(86400));
-        $this->assertEquals('1 day 10:17:36', Str::uptime(123456));
-        $this->assertEquals('7 days 13:45:21', Str::uptime(654321));
-        $this->assertEquals('365 days 0:31:30', Str::uptime(31537890));
+        $this->assertEquals('3:24:12', Interval::uptime(12252));
+        $this->assertEquals('0:00:00', Interval::uptime(0));
+        $this->assertEquals('1 day 0:00:00', Interval::uptime(86400));
+        $this->assertEquals('1 day 10:17:36', Interval::uptime(123456));
+        $this->assertEquals('7 days 13:45:21', Interval::uptime(654321));
+        $this->assertEquals('365 days 0:31:30', Interval::uptime(31537890));
     }
 
     public function testAgeFunction(): void
     {
-        $this->assertEquals(46, age('1978-12-13'));
+        $this->assertEquals(46, Interval::age('1978-12-13'));
     }
 
     public function testAKEFunctionWithDotNotation(): void

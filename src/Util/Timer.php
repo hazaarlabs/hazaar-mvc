@@ -72,7 +72,7 @@ class Timer
      */
     public function __toString()
     {
-        return (string) interval($this->get() / 1000);
+        return (string) Interval::toString($this->get() / 1000);
     }
 
     /**

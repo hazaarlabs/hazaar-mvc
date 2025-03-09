@@ -16,6 +16,7 @@ use Hazaar\Controller\Response;
 use Hazaar\HTTP\Client;
 use Hazaar\Loader;
 use Hazaar\Session;
+use Hazaar\Util\Boolean;
 
 /**
  * Application HTTP Request Class.
@@ -437,7 +438,7 @@ class Request implements RequestInterface
             if ('null' === $value) {
                 $value = null;
             } elseif ('true' == $value || 'false' == $value) {
-                $value = boolify($value);
+                $value = Boolean::from($value);
             }
 
             return $value;
@@ -483,14 +484,14 @@ class Request implements RequestInterface
      * will automatically return the requested value as an boolean unless it is NULL or not set.  In which case
      * either NULL or the default value will be returned.
      *
-     * This internally uses the boolify() function so the usual bool strings are supported (t, f, true, false, 0, 1, on, off, etc).
+     * This internally uses the \Hazaar\Util\Boolean::from() function so the usual bool strings are supported (t, f, true, false, 0, 1, on, off, etc).
      *
      * @param string $key     the key of the request value to return
      * @param bool   $default a default value to use if the value is NULL or not set
      */
     public function getBool($key, $default = null): bool
     {
-        return boolify($this->get($key, $default));
+        return Boolean::from($this->get($key, $default));
     }
 
     /**

@@ -6,6 +6,7 @@ namespace Hazaar\DBI\Manager\Sync;
 
 use Hazaar\DBI\Adapter;
 use Hazaar\Model;
+use Hazaar\Util\Boolean;
 
 class Macro extends Model
 {
@@ -93,8 +94,8 @@ class Macro extends Model
             $value = (int) $value;
         } elseif ('null' === strtolower($value)) {
             $value = null;
-        } elseif (is_boolean($value)) {
-            $value = boolify($value);
+        } elseif (Boolean::is($value)) {
+            $value = Boolean::from($value);
         }
 
         return [$field => $value];

@@ -306,7 +306,7 @@ class DateTime extends \DateTime implements \JsonSerializable, \DateTimeInterfac
      */
     public function age(int $precision = 0): int
     {
-        return (int) round(years(time() - $this->sec()), $precision);
+        return (int) round(Interval::years(time() - $this->sec()), $precision);
     }
 
     /**
