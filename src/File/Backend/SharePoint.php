@@ -11,7 +11,8 @@ use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 use Hazaar\HTTP\Response;
-use Hazaar\Str;
+use Hazaar\Util\Boolean;
+use Hazaar\Util\Str;
 
 class SharePoint extends Client implements BackendInterface, DriverInterface
 {
@@ -355,7 +356,7 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
     // Write the contents of a file
     public function write(string $file, string $data, ?string $content_type = null, bool $overwrite = false): ?int
     {
-        $url = $this->_folder(dirname($file), "Files/add(url='".$this->encodePath($file)."',overwrite=".strbool($overwrite).')');
+        $url = $this->_folder(dirname($file), "Files/add(url='".$this->encodePath($file)."',overwrite=".Boolean::toString($overwrite).')');
         $result = $this->_query($url, 'POST', $data, null, $response);
         if ($this->updateInfo($result)) {
             return strlen($data);

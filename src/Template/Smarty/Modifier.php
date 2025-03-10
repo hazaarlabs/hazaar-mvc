@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Template\Smarty;
 
-use Hazaar\Str;
+use Hazaar\Util\Str;
 
 class Modifier
 {

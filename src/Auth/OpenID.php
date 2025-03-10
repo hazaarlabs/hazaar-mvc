@@ -59,7 +59,7 @@ class OpenID extends OAuth2
         }
         $parts = explode('.', $this->storage['oauth2_data']['id_token']);
         foreach ($parts as &$part) {
-            $part = \base64url_decode($part);
+            $part = \Hazaar\Util\URL::base64Decode($part);
         }
 
         return json_decode($parts[1]);

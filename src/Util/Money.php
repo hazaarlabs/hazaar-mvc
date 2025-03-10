@@ -9,48 +9,49 @@ declare(strict_types=1);
  * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
-namespace Hazaar;
+namespace Hazaar\Util;
 
 use Hazaar\Application\FilePath;
 use Hazaar\Cache\Adapter;
+use Hazaar\File;
 use Hazaar\File\BTree;
+use Hazaar\Loader;
 
 /**
- * @brief       Money class
+ * Money class
  *
- * @detail      This class is used to extend a normal integer value by adding currency related features such as the
- *              currency type (AUD, USD, JPY, etc) and realtime currency conversion using Yahoo Quotes.
+ * This class is used to extend a normal integer value by adding currency related features such as the
+ * currency type (AUD, USD, JPY, etc) and realtime currency conversion using Yahoo Quotes.
  *
- *              ### Example
+ * ### Example
  *
- *              ```php
- *              $aud = new Money(500, 'AUD');
- *              $usd = new Money(200, 'USD');
- *              $total = $aud->add($usd);
- *              ```
+ * ```php
+ * $aud = new Money(500, 'AUD');
+ * $usd = new Money(200, 'USD');
+ * $total = $aud->add($usd);
+ * ```
  *
- *              The default money format is '%.2n' which will format the value to whole dollar with 2 decimal places. ie:
- *              $123.45. You can specify the format when retrieving the amount (see self::format()) or you can set the
- *              default format at any time.
+ * The default money format is '%.2n' which will format the value to whole dollar with 2 decimal places. ie:
+ * $123.45. You can specify the format when retrieving the amount (see self::format()) or you can set the
+ * default format at any time.
  *
- *              You can also set the default currency code to use when none is specified.
+ * You can also set the default currency code to use when none is specified.
  *
- *              It is recommended that these be set in your bootstrap file so that they are consistent across the whole
- *              application.
+ * It is recommended that these be set in your bootstrap file so that they are consistent across the whole
+ * application.
  *
- *              ### Example bootstrap.php
+ * ### Example bootstrap.php
  *
- *              ```php
- *              Hazaar\self::$money_format = '%.0n';
- *              Hazaar\self::$default_currency = 'AUD';
- *              ```
+ * ```php
+ * Hazaar\self::$defaultCurrency = 'AUD';
+ * ```
  */
 class Money
 {
     /**
      * Default currency code.
      */
-    public static ?string $default_currency = null;
+    public static ?string $defaultCurrency = null;
 
     /**
      * @private
@@ -86,11 +87,11 @@ class Money
      */
     public function __construct(float $value = 0, ?string $currency = null)
     {
-        if (null === self::$default_currency) {
-            self::$default_currency = trim(localeconv()['int_curr_symbol'] ?? '');
+        if (null === self::$defaultCurrency) {
+            self::$defaultCurrency = trim(localeconv()['int_curr_symbol'] ?? '');
         }
         if (null === $currency) {
-            $currency = self::$default_currency;
+            $currency = self::$defaultCurrency;
         }
         $this->set($value, $currency);
         $this->localCurrency = $this->getCurrencyInfo($currency);
@@ -135,7 +136,7 @@ class Money
 
     /**
      * @detail      Get either the default currency code, or get a currency code for a country.  Use this instead of
-     *              accessing self::default_currency directly because if self::$default_currency is not set, this will
+     *              accessing self::defaultCurrency directly because if self::$defaultCurrency is not set, this will
      *              try and determine the default currency and set it automatically which will occur when a new Money
      *              object is created.
      *
@@ -145,7 +146,7 @@ class Money
     {
         // If there is no currency set, get the default currency
         if (!$code) {
-            $code = self::$default_currency;
+            $code = self::$defaultCurrency;
         }
         // If there is no default currency, look it up and set it now
         if (!$code) {
@@ -162,8 +163,8 @@ class Money
         if (2 === strlen($code)) {
             $code = $this->getCode($code);
         }
-        if (!self::$default_currency) {
-            self::$default_currency = $code;
+        if (!self::$defaultCurrency) {
+            self::$defaultCurrency = $code;
         }
 
         return strtoupper($code);

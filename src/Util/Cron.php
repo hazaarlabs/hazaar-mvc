@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @author      Jamie Carl <jamie@hazaar.io>
  */
 
-namespace Hazaar;
+namespace Hazaar\Util;
 
 define('IDX_MINUTE', 0);
 define('IDX_HOUR', 1);

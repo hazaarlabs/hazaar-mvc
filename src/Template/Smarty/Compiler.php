@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Hazaar\Template\Smarty;
 
-use Hazaar\Arr;
-use Hazaar\DateTime;
 use Hazaar\Template\Exception\IncludeFileNotFound;
-use Hazaar\Template\Smarty;
+use Hazaar\Util\Arr;
+use Hazaar\Util\Boolean;
+use Hazaar\Util\DateTime;
 
 class Compiler
 {
@@ -317,7 +317,7 @@ class Compiler
                 }
             } elseif (is_numeric($param)) {
                 $param += 0;
-            } elseif (!is_boolean($param)) {
+            } elseif (!Boolean::is($param)) {
                 $param = "'{$param}'";
             }
         }

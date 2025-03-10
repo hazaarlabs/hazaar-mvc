@@ -7,6 +7,7 @@ use Hazaar\Application\Route;
 use Hazaar\Application\Router;
 use Hazaar\Application\Router\Exception\ControllerHasNoRoutes;
 use Hazaar\Date;
+use Hazaar\Util\Boolean;
 
 /**
  * The annotated router class.
@@ -163,12 +164,12 @@ class Annotated extends Advanced
                         $endpoint['cache'] = true;
                         $endpoint['cache_ttl'] = (int) $cache;
                     } else {
-                        $endpoint['cache'] = boolify($cache);
+                        $endpoint['cache'] = Boolean::from($cache);
                     }
                     if (true === $endpoint['cache']
                         && (($pos = array_search('cache_ignore_params', $methodMatches[2])) !== false)
                         && preg_match('/cache_ignore_params\s+(.*)/', $methodMatches[1][$pos], $cacheMatches)) {
-                        $endpoint['cache_ignore_params'] = boolify($cacheMatches[1]);
+                        $endpoint['cache_ignore_params'] = Boolean::from($cacheMatches[1]);
                     }
                 }
             }

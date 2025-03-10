@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Auth\Adapter;
 
-use Hazaar\Arr;
+use Hazaar\Util\Arr;
 use Hazaar\Auth\Adapter;
 use Hazaar\DBI\Adapter as DBIAdapter;
 use Hazaar\DBI\Table;

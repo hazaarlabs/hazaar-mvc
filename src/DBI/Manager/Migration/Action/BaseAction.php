@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\Manager\Migration\Action;
 
-use Hazaar\Arr;
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Manager\Migration\Enum\ActionName;
 use Hazaar\DBI\Manager\Migration\Enum\ActionType;
 use Hazaar\DBI\Manager\Migration\Interface\Spec;
 use Hazaar\Model;
+use Hazaar\Util\Arr;
 
 abstract class BaseAction extends Model implements Spec
 {

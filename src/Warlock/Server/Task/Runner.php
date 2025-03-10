@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Server\Task;
 
-use Hazaar\Cron;
+use Hazaar\Util\Cron;
 use Hazaar\Warlock\Server\Master;
 use Hazaar\Warlock\Server\Task;
 

@@ -428,7 +428,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         $request['root'] = 'auto';
         $request['path'] = $path;
         $response = $this->sendRequest($request);
-        if (boolify($response['is_dir'])) {
+        if (\Hazaar\Util\Boolean::from($response['is_dir'])) {
             $this->meta[strtolower($response['path'])] = $response;
 
             return true;

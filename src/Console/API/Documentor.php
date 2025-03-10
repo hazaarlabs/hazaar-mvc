@@ -10,7 +10,8 @@ use Hazaar\Parser\PHP\ParserFile;
 use Hazaar\Parser\PHP\ParserNamespace;
 use Hazaar\Parser\PHP\TokenParser;
 use Hazaar\Template\Smarty;
-use Hazaar\Timer;
+use Hazaar\Util\Interval;
+use Hazaar\Util\Timer;
 
 class Documentor
 {
@@ -63,10 +64,10 @@ class Documentor
         $timer->start('scan');
         $this->scan();
         $timer->checkpoint('render');
-        $this->log('Scan completed in '.interval($timer->get('scan') / 1000));
+        $this->log('Scan completed in '.Interval::toString($timer->get('scan') / 1000));
         $result = $this->render($this->index, $this->outputPath);
-        $this->log('Rendered in '.interval($timer->stop('render') / 1000));
-        $this->log('Total time: '.interval($timer->get('total') / 1000));
+        $this->log('Rendered in '.Interval::toString($timer->stop('render') / 1000));
+        $this->log('Total time: '.Interval::toString($timer->get('total') / 1000));
 
         return $result;
     }
@@ -84,11 +85,11 @@ class Documentor
         $timer->start('scan');
         $this->scan();
         $timer->checkpoint('sort');
-        $this->log('Scan completed in '.interval($timer->get('scan') / 1000));
+        $this->log('Scan completed in '.Interval::toString($timer->get('scan') / 1000));
         $this->log('Sorting index');
         $this->createNamespaceHierarchy($this->index);
         $timer->checkpoint('render');
-        $this->log('Sort completed in '.interval($timer->get('scan') / 1000));
+        $this->log('Sort completed in '.Interval::toString($timer->get('scan') / 1000));
         $templates = $this->loadTemplates(__DIR__.'/../../../libs/templates/api', self::DOC_OUTPUT_INDEX);
         if (!array_key_exists($style, $templates)) {
             throw new \Exception('Invalid index style: '.$style);
@@ -96,8 +97,8 @@ class Documentor
         $this->log('Rendering index');
         file_put_contents($this->outputPath, $templates[$style]->render((array) $this->index));
         $this->log('Index written to '.$this->outputPath);
-        $this->log('Rendered in '.interval($timer->stop('render') / 1000));
-        $this->log('Total time: '.interval($timer->get('total') / 1000));
+        $this->log('Rendered in '.Interval::toString($timer->stop('render') / 1000));
+        $this->log('Total time: '.Interval::toString($timer->get('total') / 1000));
 
         return true;
     }

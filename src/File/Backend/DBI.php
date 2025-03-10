@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Hazaar\File\Backend;
 
-use Hazaar\DateTime;
+use Hazaar\Util\DateTime;
 use Hazaar\DBI\Adapter;
 use Hazaar\File\Interface\Backend as BackendInterface;
 use Hazaar\File\Interface\Driver as DriverInterface;
 use Hazaar\File\Manager;
-use Hazaar\Str;
+use Hazaar\Util\Str;
 
 class DBI implements BackendInterface, DriverInterface
 {

@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace Hazaar\Cache;
 
 use Hazaar\Application;
-use Hazaar\Arr;
+use Hazaar\Util\Arr;
 
 /**
  * The cache frontend.

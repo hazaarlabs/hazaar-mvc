@@ -21,9 +21,10 @@ use Hazaar\Application\Router;
 use Hazaar\Application\Router\Exception\RouteNotFound;
 use Hazaar\Application\Router\Exception\RouterInitialisationFailed;
 use Hazaar\Application\URL;
-use Hazaar\Controller\Response\File;
 use Hazaar\File\Metric;
 use Hazaar\Logger\Frontend;
+use Hazaar\Util\Arr;
+use Hazaar\Util\Timer;
 
 require_once __DIR__.DIRECTORY_SEPARATOR.'Constants.php';
 
