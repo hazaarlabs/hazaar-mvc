@@ -10,11 +10,15 @@ $dumpLog = [];
 /**
  * Logs the provided data with a timestamp.
  *
+ * This function logs the provided data with a timestamp to the global log array.  The dump log
+ * will be displayed when the dump function is called.  This allows for dumping data without
+ * immediately halting the script.
+ *
  * @param mixed $data the data to be logged
  *
  * @global array $dumpLog The global log array where the data will be stored.
  */
-function log_dump(mixed $data): void
+function dumpLog(mixed $data): void
 {
     global $dumpLog;
     $dumpLog[] = ['time' => microtime(true), 'data' => $data];
