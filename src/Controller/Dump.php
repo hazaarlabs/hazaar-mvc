@@ -197,6 +197,6 @@ class Dump extends Diagnostic
             $view->set('trace', $e->getTrace());
         }
 
-        return new Response\HTML($view->render());
+        return new Response\View($view);
     }
 }

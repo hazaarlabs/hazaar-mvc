@@ -131,8 +131,8 @@ class Timer
     {
         if ($this->last) {
             $this->stop($this->last);
-            $this->start($name);
         }
+        $this->start($name);
     }
 
     /**

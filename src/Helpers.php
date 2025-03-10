@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Hazaar\Application;
-use Hazaar\Application\Request;
 use Hazaar\Controller\Dump;
 
 $dumpLog = [];
@@ -59,21 +58,12 @@ function dump(mixed ...$data): void
         $caller['class'] = $trace[1]['class'] ?? '';
     }
     if (defined('HAZAAR_VERSION') && ($app = Application::getInstance())) {
-        if (isset($app->router)) {
-            $controller = new Dump($data);
-            if (is_array($dumpLog)) {
-                $controller->addLogEntries($dumpLog);
-            }
-            $request = new Request();
-            $controller->initialize($request);
-            $controller->setCaller($caller);
-            $response = $controller->run();
-            $response->writeOutput();
-        } else {
-            foreach ($data as $dataItem) {
-                var_dump($dataItem);
-            }
+        $controller = new Dump($data);
+        if (is_array($dumpLog)) {
+            $controller->addLogEntries($dumpLog);
         }
+        $controller->setCaller($caller);
+        $app->run($controller);
     } else {
         $out = "HAZAAR DUMP\n\n";
         if (defined('HAZAAR_START')) {
