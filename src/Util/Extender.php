@@ -10,12 +10,12 @@ use Hazaar\Exception\MethodUndefined;
 use Hazaar\Exception\PropertyUndefined;
 
 /**
- * @brief       The Class Extender Class
+ * The Class Extender Class.
  *
- * @detail      The Extender Class allows (or simulates) multiple class inheritance in PHP.  It does this
- *              by loading instances of the extended class under the covers and transparently passing non-existent
- *              method calls on to 'child' classes (if the method exist).  It will also work with member variables
- *              and honors the private, protected and public variable definitions.
+ * The Extender Class allows (or simulates) multiple class inheritance in PHP.  It does this
+ * by loading instances of the extended class under the covers and transparently passing non-existent
+ * method calls on to 'child' classes (if the method exist).  It will also work with member variables
+ * and honors the private, protected and public variable definitions.
  */
 abstract class Extender
 {

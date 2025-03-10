@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Hazaar\Util;
 
+/**
+ * Boolean utility class.
+ *
+ * This class provides a number of helper functions for working with boolean values.
+ */
 class Boolean
 {
     /**

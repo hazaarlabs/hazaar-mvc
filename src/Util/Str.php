@@ -6,6 +6,11 @@ namespace Hazaar\Util;
 
 use Hazaar\Exception\MatchReplaceError;
 
+/**
+ * The string utility class.
+ *
+ * This class contains a collection of string manipulation functions.
+ */
 class Str
 {
     /**

@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace Hazaar\Util;
 
+/**
+ * Hazaar Array Utility Class.
+ *
+ * This class provides a number of utility functions for working with arrays and objects.
+ *
+ * @category    Utility
+ */
 class Arr
 {
     /**

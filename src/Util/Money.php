@@ -18,33 +18,33 @@ use Hazaar\File\BTree;
 use Hazaar\Loader;
 
 /**
- * @brief       Money class
+ * Money class
  *
- * @detail      This class is used to extend a normal integer value by adding currency related features such as the
- *              currency type (AUD, USD, JPY, etc) and realtime currency conversion using Yahoo Quotes.
+ * This class is used to extend a normal integer value by adding currency related features such as the
+ * currency type (AUD, USD, JPY, etc) and realtime currency conversion using Yahoo Quotes.
  *
- *              ### Example
+ * ### Example
  *
- *              ```php
- *              $aud = new Money(500, 'AUD');
- *              $usd = new Money(200, 'USD');
- *              $total = $aud->add($usd);
- *              ```
+ * ```php
+ * $aud = new Money(500, 'AUD');
+ * $usd = new Money(200, 'USD');
+ * $total = $aud->add($usd);
+ * ```
  *
- *              The default money format is '%.2n' which will format the value to whole dollar with 2 decimal places. ie:
- *              $123.45. You can specify the format when retrieving the amount (see self::format()) or you can set the
- *              default format at any time.
+ * The default money format is '%.2n' which will format the value to whole dollar with 2 decimal places. ie:
+ * $123.45. You can specify the format when retrieving the amount (see self::format()) or you can set the
+ * default format at any time.
  *
- *              You can also set the default currency code to use when none is specified.
+ * You can also set the default currency code to use when none is specified.
  *
- *              It is recommended that these be set in your bootstrap file so that they are consistent across the whole
- *              application.
+ * It is recommended that these be set in your bootstrap file so that they are consistent across the whole
+ * application.
  *
- *              ### Example bootstrap.php
+ * ### Example bootstrap.php
  *
- *              ```php
- *              Hazaar\self::$defaultCurrency = 'AUD';
- *              ```
+ * ```php
+ * Hazaar\self::$defaultCurrency = 'AUD';
+ * ```
  */
 class Money
 {

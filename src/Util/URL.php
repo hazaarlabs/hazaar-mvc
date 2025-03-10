@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Hazaar\Util;
 
+/**
+ * URL utility class.
+ *
+ * This class provides a number of utility functions for working with URLs.
+ */
 class URL
 {
     /**

@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Hazaar\Util;
 
+/**
+ * Interval utility class.
+ *
+ * This class provides a number of helper functions for working with time intervals.
+ */
 class Interval
 {
     /**
