@@ -305,7 +305,7 @@ class Response implements ResponseInterface
      */
     public function getStatusMessage(): string
     {
-        return http_response_text($this->statusCode);
+        return \Hazaar\HTTP\Response::getText($this->statusCode);
     }
 
     /**

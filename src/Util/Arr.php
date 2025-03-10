@@ -750,4 +750,28 @@ class Arr
             )
         );
     }
+
+    /**
+     * Recrusively convert a traversable object into a normal array.
+     *
+     * This is the same as the built-in PHP iterator_to_array() function except it will recurse
+     * into any \Traversable objects it contains.
+     *
+     * @param \Traversable<mixed> $it the object to convert to an array
+     *
+     * @return array<mixed>
+     */
+    public static function recursiveIteratorToArray(\Traversable $it): array
+    {
+        $result = [];
+        foreach ($it as $key => $value) {
+            if ($value instanceof \Traversable) {
+                $result[$key] = self::recursiveIteratorToArray($value);
+            } else {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
+    }
 }

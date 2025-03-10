@@ -229,7 +229,7 @@ class Cron
                 // to use later to find the right date. The following line probably looks
                 // a little odd but thats the easiest way of adding/substracting a day without
                 // screwing up the date. Just trust me on that one ;-)
-                $rtime = explode(',', str_ftime('%M,%H,%d,%m,%w,%Y', mktime($rtime[IDX_HOUR], $rtime[IDX_MINUTE], 0, $rtime[IDX_MONTH], $rtime[IDX_DAY], $rtime[IDX_YEAR]) + ((($next) ? 1 : -1) * 86400)));
+                $rtime = explode(',', DateTime::ftime('%M,%H,%d,%m,%w,%Y', mktime($rtime[IDX_HOUR], $rtime[IDX_MINUTE], 0, $rtime[IDX_MONTH], $rtime[IDX_DAY], $rtime[IDX_YEAR]) + ((($next) ? 1 : -1) * 86400)));
             } else {
                 // OK, there is a higher/lower hour available. Check the minutes-part.
                 $nminute = $this->findValue($rtime[IDX_MINUTE], $cron[IDX_MINUTE], $next);
@@ -240,7 +240,7 @@ class Cron
                         // No more hours available... add/substract a day... you know what happens ;-)
                         $nminute = reset($cron[IDX_MINUTE]);
                         $nhour = reset($cron[IDX_HOUR]);
-                        $rtime = explode(',', str_ftime('%M,%H,%d,%m,%w,%Y', mktime($nhour, $nminute, 0, $rtime[IDX_MONTH], $rtime[IDX_DAY], $rtime[IDX_YEAR]) + ((($next) ? 1 : -1) * 86400)));
+                        $rtime = explode(',', DateTime::ftime('%M,%H,%d,%m,%w,%Y', mktime($nhour, $nminute, 0, $rtime[IDX_MONTH], $rtime[IDX_DAY], $rtime[IDX_YEAR]) + ((($next) ? 1 : -1) * 86400)));
                     } else {
                         // OK, there was another hour. Set the right minutes-value
                         $rtime[IDX_HOUR] = $nhour;
@@ -285,7 +285,7 @@ class Cron
                                 // The date is "OK" - lets see if the weekday matches, too...
                                 if (in_array($dow, $cron[IDX_WEEKDAY])) {
                                     // WIN! :-) We found a valid date...
-                                    $rtime = explode(',', str_ftime('%M,%H,%d,%m,%w,%Y', mktime($rtime[IDX_HOUR], $rtime[IDX_MINUTE], 0, $nmonth, $nday, $nyear)));
+                                    $rtime = explode(',', DateTime::ftime('%M,%H,%d,%m,%w,%Y', mktime($rtime[IDX_HOUR], $rtime[IDX_MINUTE], 0, $nmonth, $nday, $nyear)));
 
                                     return mktime(
                                         (int) $rtime[1],
@@ -329,7 +329,7 @@ class Cron
         if (is_null($timestamp)) {
             $timestamp = time();
         }
-        $arr = explode(',', str_ftime('%M,%H,%d,%m,%w,%Y', $timestamp));
+        $arr = explode(',', DateTime::ftime('%M,%H,%d,%m,%w,%Y', $timestamp));
         // Remove leading zeros (or we'll get in trouble ;-)
         array_walk($arr, function (&$value) { $value = (int) $value; });
 

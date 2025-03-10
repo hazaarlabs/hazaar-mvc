@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Server;
 
+use Hazaar\HTTP\Response;
 use Hazaar\Warlock\Protocol;
 use Hazaar\Warlock\Protocol\WebSockets;
 
@@ -276,7 +277,7 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
     protected function httpResponse(int $code, ?string $body = null, array $headers = []): string
     {
         $lf = "\r\n";
-        $response = "HTTP/1.1 {$code} ".http_response_text($code).$lf;
+        $response = "HTTP/1.1 {$code} ".Response::getText($code).$lf;
         $defaultHeaders = [
             'Date' => date('r'),
             'Server' => 'Warlock/2.0 ('.php_uname('s').')',
@@ -575,7 +576,7 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
         if (!(array_key_exists('get', $headers) && 101 === $responseCode)) {
             $responseHeaders['Connection'] = 'close';
             $responseHeaders['Content-Type'] = 'text/text';
-            $body = $responseCode.' '.http_response_text($responseCode);
+            $body = $responseCode.' '.Response::getText($responseCode);
             $response = $this->httpResponse($responseCode, $body, $responseHeaders);
             $this->log->write(W_WARN, "Handshake failed with code {$body}", $this->name);
             @fwrite($this->stream, $response, strlen($response));

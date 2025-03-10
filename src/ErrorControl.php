@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Hazaar\Application;
 use Hazaar\Controller\Response\Stream;
+use Hazaar\HTTP\Response;
 use Hazaar\Util\Arr;
 use Hazaar\Util\Boolean;
 
@@ -105,7 +106,7 @@ function dieDieDie(string|Throwable $err): void
         $msg = "Hazaar ERROR: {$errString}\n";
     } else {
         http_response_code($code);
-        $msg = '<h1>'.http_response_text(http_response_code())."</h1><pre>{$errString}</pre>"
+        $msg = '<h1>'.Response::getText(http_response_code())."</h1><pre>{$errString}</pre>"
             .'<hr/><i>Hazaar/'.HAZAAR_VERSION
             .' ('.php_uname('s').')';
         if (array_key_exists('SERVER_NAME', $_SERVER)) {

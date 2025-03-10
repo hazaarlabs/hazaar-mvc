@@ -610,4 +610,31 @@ class Request implements RequestInterface
     {
         return $this->method;
     }
+
+    /**
+     * Get the current request headers.
+     *
+     * This function will return the current request headers as an associative array.
+     *
+     * @return array<string,string> The request headers
+     */
+    public static function getRequestHeaders(): array
+    {
+        $headers = [];
+        foreach ($_SERVER as $name => $value) {
+            if ('HTTP_' == substr($name, 0, 5)) {
+                $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
+            }
+        }
+        // Fix a missing Content-Type header
+        if (isset($_SERVER['CONTENT_TYPE'])) {
+            $headers['Content-Type'] = $_SERVER['CONTENT_TYPE'];
+        }
+        // Fix a missing Content-Length header
+        if (isset($_SERVER['CONTENT_LENGTH'])) {
+            $headers['Content-Length'] = (int) $_SERVER['CONTENT_LENGTH'];
+        }
+
+        return $headers;
+    }
 }
