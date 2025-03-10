@@ -16,6 +16,7 @@ use Hazaar\Model\Attribute\Pad;
 use Hazaar\Model\Attribute\Required;
 use Hazaar\Model\Attribute\Trim;
 use Hazaar\Model\Email;
+use Hazaar\Util\Interval;
 use PHPUnit\Framework\TestCase;
 
 class AgeModel extends Model
@@ -26,7 +27,7 @@ class AgeModel extends Model
     public function construct(array &$data): void
     {
         $this->defineEventHook('get', 'years', function ($value) {
-            return age($this->dob);
+            return Interval::age($this->dob);
         });
     }
 }

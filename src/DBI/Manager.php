@@ -19,7 +19,7 @@ use Hazaar\DBI\Manager\Schema;
 use Hazaar\DBI\Manager\Snapshot;
 use Hazaar\DBI\Manager\Version;
 use Hazaar\Loader;
-use Hazaar\Timer;
+use Hazaar\Util\Timer;
 
 /**
  * Relational Database Schema Manager.

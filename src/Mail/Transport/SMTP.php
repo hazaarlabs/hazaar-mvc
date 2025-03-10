@@ -2,10 +2,10 @@
 
 namespace Hazaar\Mail\Transport;
 
-use Hazaar\Arr;
 use Hazaar\Mail\Mime\Message;
 use Hazaar\Mail\Transport;
 use Hazaar\Mail\TransportMessage;
+use Hazaar\Util\Arr;
 
 class SMTP extends Transport
 {

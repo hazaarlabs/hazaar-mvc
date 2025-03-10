@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Template\Smarty\Modifier;
 
-use Hazaar\DateTime;
+use Hazaar\Util\DateTime;
 
 /**
  * Formats a date using the specified format.

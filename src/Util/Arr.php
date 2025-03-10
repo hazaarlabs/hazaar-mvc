@@ -2,8 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Hazaar;
+namespace Hazaar\Util;
 
+/**
+ * Hazaar Array Utility Class.
+ *
+ * This class provides a number of utility functions for working with arrays and objects.
+ *
+ * @category    Utility
+ */
 class Arr
 {
     /**
@@ -742,5 +749,29 @@ class Arr
                 function (string $value): bool {return strlen($value) > 0; }
             )
         );
+    }
+
+    /**
+     * Recrusively convert a traversable object into a normal array.
+     *
+     * This is the same as the built-in PHP iterator_to_array() function except it will recurse
+     * into any \Traversable objects it contains.
+     *
+     * @param \Traversable<mixed> $it the object to convert to an array
+     *
+     * @return array<mixed>
+     */
+    public static function recursiveIteratorToArray(\Traversable $it): array
+    {
+        $result = [];
+        foreach ($it as $key => $value) {
+            if ($value instanceof \Traversable) {
+                $result[$key] = self::recursiveIteratorToArray($value);
+            } else {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
     }
 }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Connection;
 
-use Hazaar\Str;
+use Hazaar\Util\Str;
 use Hazaar\Warlock\Interface\Connection;
 use Hazaar\Warlock\Protocol;
 use Hazaar\Warlock\Protocol\WebSockets;

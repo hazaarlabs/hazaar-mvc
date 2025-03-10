@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @copyright   Copyright (c) 2012 Jamie Carl (http://www.hazaar.io)
  */
 
-namespace Hazaar;
+namespace Hazaar\Util;
 
 if (!ini_get('date.timezone')) {
     ini_set('date.timezone', 'UTC');
@@ -23,7 +23,7 @@ if (!ini_get('date.timezone')) {
  * ### Example
  *
  * ```php
- * $date = new Hazaar\DateTime('next tuesday');
+ * $date = new Hazaar\Util\DateTime('next tuesday');
  * echo $date; //Echo's a timestamp such as '2013-01-15 11:00:00.0'
  * ```
  *
@@ -87,7 +87,7 @@ class DateTime extends \DateTime implements \JsonSerializable, \DateTimeInterfac
                     $ndatetime .= '.'.$datetime['usec'];
                 }
                 $datetime = $ndatetime;
-            } elseif (array_key_exists('usec', $datetime) && array_key_exists('date', $datetime)) { // Array version of Hazaar\DateTime
+            } elseif (array_key_exists('usec', $datetime) && array_key_exists('date', $datetime)) { // Array version of Hazaar\Util\DateTime
                 if (!$timezone && array_key_exists('timezone', $datetime)) {
                     $timezone = $datetime['timezone'];
                 }
@@ -306,7 +306,7 @@ class DateTime extends \DateTime implements \JsonSerializable, \DateTimeInterfac
      */
     public function age(int $precision = 0): int
     {
-        return (int) round(years(time() - $this->sec()), $precision);
+        return (int) round(Interval::years(time() - $this->sec()), $precision);
     }
 
     /**
@@ -397,7 +397,7 @@ class DateTime extends \DateTime implements \JsonSerializable, \DateTimeInterfac
      *
      * @param \DateInterval|string $interval  Can be either a \DateInterval object or a string representing an
      *                                        interval, such as P1H to specify 1 hour
-     * @param bool                 $returnNew Doesn't update the current \Hazaar\DateTime object and instead returns
+     * @param bool                 $returnNew Doesn't update the current \Hazaar\Util\DateTime object and instead returns
      *                                        a new object with the interval applied
      */
     public function add(\DateInterval|string $interval, $returnNew = false): static
@@ -422,7 +422,7 @@ class DateTime extends \DateTime implements \JsonSerializable, \DateTimeInterfac
      * See the PHP documentation on how to use the [DateInterval](http://au2.php.net/manual/en/class.dateinterval.php) object.
      *
      * @param \DateInterval|string $interval  can be either a \DateInterval object or a string representing an interval, such as P1H to specify 1 hour
-     * @param bool                 $returnNew doesn't update the current \Hazaar\DateTime object and instead returns a new object with the interval applied
+     * @param bool                 $returnNew doesn't update the current \Hazaar\Util\DateTime object and instead returns a new object with the interval applied
      */
     public function sub(\DateInterval|string $interval, bool $returnNew = false): static
     {
@@ -586,7 +586,7 @@ class DateTime extends \DateTime implements \JsonSerializable, \DateTimeInterfac
             return false;
         }
         $format = null;
-        if (preg_match('/(\d+)(\W)(\d+)(\W)(\d+)/', str_ftime('%c', mktime(0, 0, 0, 12, 1, 2000)), $matches)) {
+        if (preg_match('/(\d+)(\W)(\d+)(\W)(\d+)/', self::ftime('%c', mktime(0, 0, 0, 12, 1, 2000)), $matches)) {
             $matrix = [1 => 'D', 12 => 'M', 2000 => 'Y'];
             $format = $matrix[(int) $matches[1]].$matrix[(int) $matches[3]].$matrix[(int) $matches[5]];
         }
@@ -601,5 +601,115 @@ class DateTime extends \DateTime implements \JsonSerializable, \DateTimeInterfac
     public function jsonSerialize(): mixed
     {
         return isset($this->instanceFormat) ? parent::format($this->instanceFormat) : $this->timestamp();
+    }
+
+    /**
+     * Hazaar implementation of the str_ftime function.
+     *
+     * This function is a replacement for the deprecated strftime function.  It is not a complete replacement
+     * but it does provide a lot of the functionality that strftime does.  It is not a drop-in replacement
+     * for strftime as it does not support all the same format specifiers.
+     *
+     * The following format specifiers are supported:
+     * - %a An abbreviated textual representation of the day	Sun through Sat
+     * - %A A full textual representation of the day	Sunday through Saturday
+     * - %d Two-digit day of the month (with leading zeros)	01 to 31
+     * - %e Day of the month, with a space preceding single digits. Not implemented as described on Windows. See below for more information.	1 to 31
+     * - %j Day of the year, 3 digits with leading zeros	001 to 366
+     * - %u ISO-8601 numeric representation of the day of the week	1 (for Monday) through 7 (for Sunday)
+     * - %w Numeric representation of the day of the week	0 (for Sunday) through 6 (for Saturday)
+     * - %U Week number of the given year, starting with the first Sunday as the first week	13 (for the 13th full week of the year)
+     * - %V ISO-8601:1988 week number of the given year, starting with the first week of the year with at least 4 weekdays, with Monday being the start of the week	01 through 53 (where 53 accounts for an overlapping week)
+     * - %W A numeric representation of the week of the year, starting with the first Monday as the first week	46 (for the 46th week of the year beginning with a Monday)
+     * - %b Abbreviated month name, based on the locale	Jan through Dec
+     * - %B Full month name, based on the locale	January through December
+     * - %h Abbreviated month name, based on the locale (an alias of %b)	Jan through Dec
+     * - %m Two digit representation of the month	01 (for January) through 12 (for December)
+     * - %C Two digit representation of the century (year divided by 100, truncated to an integer)	19 for the 20th Century
+     * - %g Two digit representation of the year going by ISO-8601:1988 standards (see %V)	Example: 09 for the week of January 6, 2009
+     * - %G The full four-digit version of %g	Example: 2008 for the week of January 3, 2009
+     * - %y Two digit representation of the year	Example: 09 for 2009, 79 for 1979
+     * - %Y Four digit representation for the year	Example: 2038
+     * - %H Two digit representation of the hour in 24-hour format	00 through 23
+     * - %k Hour in 24-hour format, with a space preceding single digits	0 through 23
+     * - %I Two digit representation of the hour in 12-hour format	01 through 12
+     * - %l (lower-case 'L')	Hour in 12-hour format, with a space preceding single digits	1 through 12
+     * - %M Two digit representation of the minute	00 through 59
+     * - %p UPPER-CASE 'AM' or 'PM' based on the given time	Example: AM for 00:31, PM for 22:23
+     * - %P lower-case 'am' or 'pm' based on the given time	Example: am for 00:31, pm for 22:23
+     * - %r Same as "%I:%M:%S %p"	Example: 09:34:17 PM for 21:34:17
+     * - %R Same as "%H:%M"	Example: 00:35 for 12:35 AM, 16:44 for 4:44 PM
+     * - %S Two digit representation of the second	00 through 59
+     * - %T Same as "%H:%M:%S"	Example: 21:34:17 for 09:34:17 PM
+     * - %X Preferred time representation based on locale, without the date	Example: 03:59:16 or 15:59:16
+     * - %z The time zone offset. Not implemented as described on Windows. See below for more information.	Example: -0500 for U.S. Eastern Time
+     * - %Z Time zone name. Not implemented as described on Windows. See below for more information.	Example: EST for Eastern Time
+     * - %s The number of seconds since the Unix Epoch	Example: 1390948122
+     * - %n A newline character ("\n")
+     * - %t A Tab character ("\t")
+     * - %% A literal percentage character ("%")
+     *
+     * @param string $format The format string to use defined by the original `strftime()` function
+     */
+    public static function ftime(string $format, ?int $timestamp = null): string
+    {
+        if (!$timestamp) {
+            $timestamp = time();
+        }
+        $map = [
+            'a' => 'D',	    // An abbreviated textual representation of the day	Sun through Sat
+            'A' => 'l',	    // A full textual representation of the day	Sunday through Saturday
+            'd' => 'd',	    // Two-digit day of the month (with leading zeros)	01 to 31
+            'e' => 'j',	    // Day of the month, with a space preceding single digits. Not implemented as described on Windows. See below for more information.	1 to 31
+            'j' => 'z',	    // Day of the year, 3 digits with leading zeros	001 to 366
+            'u' => 'N',	    // ISO-8601 numeric representation of the day of the week	1 (for Monday) through 7 (for Sunday)
+            'w' => 'w',	    // Numeric representation of the day of the week	0 (for Sunday) through 6 (for Saturday)
+            // Week	---	---
+            'U' => 'W',	    // Week number of the given year, starting with the first Sunday as the first week	13 (for the 13th full week of the year)
+            'V' => 'W',	    // ISO-8601:1988 week number of the given year, starting with the first week of the year with at least 4 weekdays, with Monday being the start of the week	01 through 53 (where 53 accounts for an overlapping week)
+            'W' => 'W',	    // A numeric representation of the week of the year, starting with the first Monday as the first week	46 (for the 46th week of the year beginning with a Monday)
+            // Month	---	---
+            'b' => 'M',	    // Abbreviated month name, based on the locale	Jan through Dec
+            'B' => 'F',	    // Full month name, based on the locale	January through December
+            'h' => 'M',	    // Abbreviated month name, based on the locale (an alias of %b)	Jan through Dec
+            'm' => 'm',	    // Two digit representation of the month	01 (for January) through 12 (for December)
+            // Year	---	---
+            'C' => '',	    // Two digit representation of the century (year divided by 100, truncated to an integer)	19 for the 20th Century
+            'g' => 'y',	    // Two digit representation of the year going by ISO-8601:1988 standards (see %V)	Example: 09 for the week of January 6, 2009
+            'G' => 'Y',	    // The full four-digit version of %g	Example: 2008 for the week of January 3, 2009
+            'y' => 'y',	    // Two digit representation of the year	Example: 09 for 2009, 79 for 1979
+            'Y' => 'Y',	    // Four digit representation for the year	Example: 2038
+            // Time	---	---
+            'H' => 'H',	    // Two digit representation of the hour in 24-hour format	00 through 23
+            'k' => 'G',	    // Hour in 24-hour format, with a space preceding single digits	0 through 23
+            'I' => 'h',	    // Two digit representation of the hour in 12-hour format	01 through 12
+            'l' => 'g',     // (lower-case 'L')	Hour in 12-hour format, with a space preceding single digits	1 through 12
+            'M' => 'i', 	// Two digit representation of the minute	00 through 59
+            'p' => 'A', 	// UPPER-CASE 'AM' or 'PM' based on the given time	Example: AM for 00:31, PM for 22:23
+            'P' => 'a',	    // lower-case 'am' or 'pm' based on the given time	Example: am for 00:31, pm for 22:23
+            'r' => 'h:i:s a', // Same as "%I:%M:%S %p"	Example: 09:34:17 PM for 21:34:17
+            'R' => 'H:i', 	// Same as "%H:%M"	Example: 00:35 for 12:35 AM, 16:44 for 4:44 PM
+            'S' => 's', 	// Two digit representation of the second	00 through 59
+            'T' => 'H:i:s',	// Same as "%H:%M:%S"	Example: 21:34:17 for 09:34:17 PM
+            'X' => 'H:i:s',	// Preferred time representation based on locale, without the date	Example: 03:59:16 or 15:59:16
+            'z' => 'O',	    // The time zone offset. Not implemented as described on Windows. See below for more information.	Example: -0500 for US Eastern Time
+            'Z' => 'T',	    // The time zone abbreviation. Not implemented as described on Windows. See below for more information.	Example: EST for Eastern Time
+            // Time and Date Stamps	---	---
+            'c' => 'r',	    // Preferred date and time stamp based on locale	Example: Tue Feb 5 00:45:10 2009 for February 5, 2009 at 12:45:10 AM
+            'D' => 'm/d/y',	// Same as "%m/%d/%y"	Example: 02/05/09 for February 5, 2009
+            'F' => 'Y-m-d',	// Same as "%Y-%m-%d" (commonly used in database datestamps)	Example: 2009-02-05 for February 5, 2009
+            's' => 'U',	    // Unix Epoch Time timestamp (same as the time() function)	Example: 305815200 for September 10, 1979 08:40:00 AM
+            // 'x' => 'r',	    //Preferred date representation based on locale, without the time	Example: 02/05/09 for February 5, 2009
+            // 'x' is removed because there is no way to equivalent in the date() function
+            // Miscellaneous	---	---
+            'n' => "\n",	// A newline character ("\n")	---
+            't' => "\t",	// A Tab character ("\t")	---
+            '%' => '%',      // A literal percentage character ("%")
+        ];
+        $mapped_format = preg_replace_callback('/\%(\w)/', function ($match) use ($map) {
+            return isset($map[$match[1]]) ? $map[$match[1]] : '';
+        }, $format);
+
+        return date($mapped_format, $timestamp);
     }
 }

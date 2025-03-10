@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\HTTP;
 
-use Hazaar\Arr;
+use Hazaar\Util\Arr;
 
 class Response
 {
@@ -263,7 +263,7 @@ class Response
             $code = $this->status;
         }
 
-        return http_response_text($code);
+        return self::getText($code);
     }
 
     /**
@@ -345,5 +345,29 @@ class Response
         $this->body = $decryptedValue;
 
         return true;
+    }
+
+    /**
+     * Helper function to get the status text for an HTTP response code.
+     *
+     * @param int $code the response code
+     *
+     * @return mixed A string containing the response text if the code is valid. False otherwise.
+     */
+    public static function getText($code)
+    {
+        $data_file = dirname(__FILE__)
+        .DIRECTORY_SEPARATOR.'..'
+        .DIRECTORY_SEPARATOR.'libs'
+        .DIRECTORY_SEPARATOR.'HTTP_Status.dat';
+        if (!file_exists($data_file)) {
+            throw new \Exception('HTTP status data file is missing!');
+        }
+        $text = false;
+        if (preg_match('/^'.$code.'\s(.*)$/m', file_get_contents($data_file), $matches)) {
+            $text = $matches[1];
+        }
+
+        return $text;
     }
 }

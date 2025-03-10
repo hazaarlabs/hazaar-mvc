@@ -304,7 +304,7 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
         $request['root'] = 'auto';
         $request['path'] = $path;
         $response = $this->send($request);
-        if ($response instanceof Response && boolify($response['is_dir'])) {
+        if ($response instanceof Response && \Hazaar\Util\Boolean::from($response['is_dir'])) {
             $this->meta[strtolower($response['path'])] = $response->body;
 
             return true;

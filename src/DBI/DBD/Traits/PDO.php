@@ -8,9 +8,9 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\DBD\Traits;
 
-use Hazaar\Arr;
 use Hazaar\DBI\Result;
 use Hazaar\DBI\Result\PDO as PDOResult;
+use Hazaar\Util\Arr;
 
 /**
  * Relational Database Driver - Base Class.

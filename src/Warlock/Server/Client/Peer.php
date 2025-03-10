@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Server\Client;
 
+use Hazaar\Util\Boolean;
 use Hazaar\Warlock\Server\Client;
 use Hazaar\Warlock\Server\Logger;
 use Hazaar\Warlock\Server\Master;
@@ -35,7 +36,7 @@ class Peer extends Client
         $this->id = md5($this->address.':'.$this->port);
         $this->name = 'PEER_'.strtoupper($this->address).':'.$this->port;
         $this->isRemote = $isRemote;
-        $this->log->write(W_DEBUG, 'PEER->CONSTRUCT: HOST='.$this->address.' PORT='.$this->port.' REMOTE='.strbool($this->isRemote));
+        $this->log->write(W_DEBUG, 'PEER->CONSTRUCT: HOST='.$this->address.' PORT='.$this->port.' REMOTE='.Boolean::toString($this->isRemote));
     }
 
     public function __destruct()

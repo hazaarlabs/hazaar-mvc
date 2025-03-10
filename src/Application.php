@@ -15,19 +15,19 @@ declare(strict_types=1);
 namespace Hazaar;
 
 use Hazaar\Application\Config;
+use Hazaar\Application\Error;
 use Hazaar\Application\FilePath;
 use Hazaar\Application\Request;
 use Hazaar\Application\Router;
 use Hazaar\Application\Router\Exception\RouteNotFound;
 use Hazaar\Application\Router\Exception\RouterInitialisationFailed;
 use Hazaar\Application\URL;
-use Hazaar\Controller\Response\File;
 use Hazaar\File\Metric;
 use Hazaar\Logger\Frontend;
+use Hazaar\Util\Arr;
+use Hazaar\Util\Timer;
 
 require_once __DIR__.DIRECTORY_SEPARATOR.'Constants.php';
-
-require_once __DIR__.DIRECTORY_SEPARATOR.'ErrorControl.php';
 
 define('HAZAAR_VERSION', '3.0');
 define('HAZAAR_START', microtime(true));
@@ -127,7 +127,7 @@ class Application
             $this->router = new Router($routerConfig);
             $this->timer->stop('init');
         } catch (\Throwable $e) {
-            dieDieDie($e);
+            Error::dieDieDie($e);
         }
     }
 
@@ -544,7 +544,7 @@ class Application
                 ob_end_clean();
             }
         } catch (Controller\Exception\HeadersSent $e) {
-            dieDieDie('HEADERS SENT');
+            Error::dieDieDie('HEADERS SENT');
         } catch (\Throwable $e) {
             /*
             * Here we check if the controller we tried to execute was already an error
@@ -552,7 +552,7 @@ class Application
             * so we throw a normal exception that will be grabbed by ErrorControl as an unhandled exception.
             */
             if ($controller instanceof Controller\Error) {
-                dieDieDie($e->getMessage());
+                Error::dieDieDie($e->getMessage());
             } else {
                 $this->exceptionHandler($e, isset($route) ? $route->getResponseType() : null);
             }
@@ -637,7 +637,7 @@ class Application
             Frontend::e('CORE', "Error #{$errno} on line {$errline} of file {$errfile}: {$errstr}");
         }
 
-        errorAndDie($errno, $errstr, $errfile, $errline, debug_backtrace());
+        Error::errorAndDie($errno, $errstr, $errfile, $errline, debug_backtrace());
 
         return true;
     }
@@ -655,7 +655,7 @@ class Application
                 ob_clean();
             }
             match ($error['type']) {
-                E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR => errorAndDie($error, debug_backtrace()),
+                E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR => Error::errorAndDie($error, debug_backtrace()),
                 default => null
             };
         }
@@ -674,7 +674,7 @@ class Application
         if ($e->getCode() >= 500) {
             Frontend::e('CORE', 'Error #'.$e->getCode().' on line '.$e->getLine().' of file '.$e->getFile().': '.$e->getMessage());
         }
-        errorAndDie($e, $responseType);
+        Error::errorAndDie($e, $responseType);
     }
 
     public function getBase(): string

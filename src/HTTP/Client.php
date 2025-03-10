@@ -7,9 +7,9 @@ namespace Hazaar\HTTP;
 use Hazaar\Application\FilePath;
 use Hazaar\Auth\Adapter;
 use Hazaar\Cache\Adapter as CacheAdapter;
-use Hazaar\DateTime;
 use Hazaar\HTTP\Exception\RedirectNotAllowed;
 use Hazaar\Loader;
+use Hazaar\Util\DateTime;
 
 class Client
 {

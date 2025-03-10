@@ -7,7 +7,7 @@ namespace Hazaar\Tests;
 use Hazaar\Application;
 use Hazaar\File\BTree;
 use Hazaar\File;
-use Hazaar\GeoData;
+use Hazaar\Util\GeoData;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -96,7 +96,6 @@ class FileTest extends TestCase
     public function testGeoData(): void
     {
         $geo = new GeoData();
-        $this->assertInstanceOf('\Hazaar\GeoData', $geo);
         $this->assertArrayHasKey('AU', $geo->countries());
         $countryInfo = $geo->countryInfo('AU');
         $this->assertArrayHasKey('currency', $countryInfo);

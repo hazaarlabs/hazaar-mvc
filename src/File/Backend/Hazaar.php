@@ -10,6 +10,7 @@ use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 use Hazaar\HTTP\URL;
+use Hazaar\Util\URL as URLUtil;
 
 class Hazaar implements BackendInterface, DriverInterface
 {
@@ -67,7 +68,7 @@ class Hazaar implements BackendInterface, DriverInterface
         if (!$this->pathCache) {
             $this->pathCache = [
                 '/' => [
-                    'id' => base64url_encode('/'),
+                    'id' => URLUtil::base64Encode('/'),
                     'kind' => 'dir',
                     'name' => 'ROOT',
                     'path' => '/',
@@ -82,7 +83,7 @@ class Hazaar implements BackendInterface, DriverInterface
             ];
             if ($paths = $this->request('tree')) {
                 foreach ($paths as $p) {
-                    [$source, $base] = explode(':', base64url_decode($p['parent']), 2);
+                    [$source, $base] = explode(':', URLUtil::base64Decode($p['parent']), 2);
                     if (!$base) {
                         $p['name'] = $source;
                         $p['parent'] = $this->pathCache['/']['id'];
@@ -297,7 +298,7 @@ class Hazaar implements BackendInterface, DriverInterface
         $result = $this->request('mkdir', ['parent' => $parent['id'], 'name' => basename($path)]);
         if ($tree = $result['tree'] ?? null) {
             foreach ($tree as $d) {
-                $source = explode(':', base64url_decode($d['id']), 2)[0];
+                $source = explode(':', URLUtil::base64Decode($d['id']), 2)[0];
                 $source_path = '/'.$source.$d['path'];
                 $this->pathCache[$source_path] = $d;
             }
@@ -351,7 +352,7 @@ class Hazaar implements BackendInterface, DriverInterface
                 if ($meta = $this->meta[$path] ?? null) {
                     $this->request('set_meta', ['target' => $fileInfo['id'], 'values' => $meta]);
                 }
-                $source_path = '/'.explode(':', base64url_decode($fileInfo['parent']), 2)[0];
+                $source_path = '/'.explode(':', URLUtil::base64Decode($fileInfo['parent']), 2)[0];
                 if (array_key_exists($source_path, $this->pathCache)) {
                     $this->pathCache[$source_path]['files'][$fileInfo['name']] = $fileInfo;
                 }

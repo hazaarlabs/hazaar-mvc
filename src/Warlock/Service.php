@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Hazaar\Warlock;
 
 use Hazaar\Application;
-use Hazaar\Cron;
-use Hazaar\DateTime;
+use Hazaar\Util\Boolean;
+use Hazaar\Util\Cron;
+use Hazaar\Util\DateTime;
 use Hazaar\Warlock\Connection\Pipe;
 use Hazaar\Warlock\Connection\Socket;
 use Hazaar\Warlock\Interface\Connection;
+use Hazaar\Warlock\Server\Functions;
 
 require 'Server/Functions.php';
 define('W_LOCAL', -1);
@@ -302,7 +304,7 @@ abstract class Service extends Process
     {
         $this->log(W_LOCAL, 'ROTATING LOG FILES: MAX='.$logfiles);
         fclose($this->__log);
-        rotateLogFile($this->__logFile, $logfiles);
+        Functions::rotateLogFile($this->__logFile, $logfiles);
         $this->__log = fopen($this->__logFile, 'a');
         $this->log(W_LOCAL, 'New log file started');
     }
@@ -501,7 +503,7 @@ abstract class Service extends Process
         ];
         if ($tag) {
             $data['tag'] = $tag;
-            $data['overwrite'] = strbool($overwrite);
+            $data['overwrite'] = Boolean::toString($overwrite);
         }
         $this->schedule[$id] = $data;
         if (null === $this->next || $when < $this->next) {
@@ -537,7 +539,7 @@ abstract class Service extends Process
         ];
         if ($tag) {
             $data['tag'] = $tag;
-            $data['overwrite'] = strbool($overwrite);
+            $data['overwrite'] = Boolean::toString($overwrite);
         }
         $this->schedule[$id] = $data;
         if (null === $this->next || $when < $this->next) {

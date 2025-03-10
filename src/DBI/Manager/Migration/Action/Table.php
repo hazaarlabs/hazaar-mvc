@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\Manager\Migration\Action;
 
-use Hazaar\Arr;
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Manager\Migration\Action\Component\Column;
+use Hazaar\Util\Arr;
 
 class Table extends BaseAction
 {

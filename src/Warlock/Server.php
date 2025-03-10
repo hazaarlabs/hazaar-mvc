@@ -7,7 +7,6 @@ namespace Hazaar\Warlock;
 include __DIR__.'/../../../../autoload.php';
 
 require_once __DIR__.'/../Constants.php';
-require_once 'Server/Functions.php';
 if (!extension_loaded('sockets')) {
     exit("The sockets extension is not loaded.\n");
 }
@@ -40,6 +39,6 @@ set_include_path(implode(PATH_SEPARATOR, [
 ]));
 $reflector = null;
 $log_level = W_INFO;
-$warlock = new Server\Master($env, in_array('-s', $argv) ? true : boolify('file' === getenv('WARLOCK_OUTPUT')));
+$warlock = new Server\Master($env, in_array('-s', $argv) ? true : \Hazaar\Util\Boolean::from('file' === getenv('WARLOCK_OUTPUT')));
 
 exit($warlock->bootstrap()->run());

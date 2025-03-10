@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hazaar\Template\Smarty\Modifier;
 
+use Hazaar\Util\Boolean;
+
 /**
  * Count the number of words in a string.
  */
@@ -16,6 +18,6 @@ class Yn
      */
     public function run(mixed $string, string $trueValue = 'Yes', string $faleValue = 'No'): string
     {
-        return yn($string, $trueValue, $faleValue);
+        return Boolean::yn($string, $trueValue, $faleValue);
     }
 }

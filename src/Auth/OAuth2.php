@@ -6,7 +6,7 @@ namespace Hazaar\Auth\Adapter;
 
 use Hazaar\Application;
 use Hazaar\Application\URL;
-use Hazaar\Arr;
+use Hazaar\Util\Arr;
 use Hazaar\Auth\Adapter;
 use Hazaar\Controller\Response\HTML;
 use Hazaar\HTTP\Client;

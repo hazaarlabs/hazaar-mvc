@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Hazaar;
+namespace Hazaar\Util;
 
+use Hazaar\Application;
+use Hazaar\File;
 use Hazaar\File\BTree;
 
 /**

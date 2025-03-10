@@ -2,14 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Hazaar;
+namespace Hazaar\Util;
 
 /**
- * @brief       The version class
+ * The version class.
  *
- * @detail      Handy for comparing version numbers such as 1.0 vs 1.3 or even 2.3.6 vs 1.6.3.7.32
- *
- * @module      core
+ * Handy for comparing version numbers such as 1.0 vs 1.3 or even 2.3.6 vs 1.6.3.7.32
  */
 class Version
 {

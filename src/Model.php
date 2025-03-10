@@ -8,6 +8,8 @@ use Hazaar\Model\Exception\DefineEventHookException;
 use Hazaar\Model\Exception\PropertyAttributeException;
 use Hazaar\Model\Exception\PropertyException;
 use Hazaar\Model\Interface\AttributeRule;
+use Hazaar\Util\Boolean;
+use Hazaar\Util\DateTime;
 
 /**
  * This is an abstract class that implements the \jsonSerializable interface.
@@ -638,7 +640,7 @@ abstract class Model implements \jsonSerializable, \Iterator
                     && !$propertyValue instanceof $propertyTypeName) {
                     $propertyValue = new $propertyTypeName($propertyValue);
                 }
-            } elseif ('Hazaar\DateTime' === $propertyTypeName) {
+            } elseif ('Hazaar\Util\DateTime' === $propertyTypeName) {
                 if (null !== $propertyValue && !$propertyValue instanceof DateTime) {
                     $propertyValue = new DateTime($propertyValue);
                 }
@@ -663,7 +665,7 @@ abstract class Model implements \jsonSerializable, \Iterator
             }
         } elseif (null !== $propertyValue && false === $propertyType->allowsNull()) {
             if ('bool' === $propertyTypeName) {
-                $propertyValue = boolify($propertyValue);
+                $propertyValue = Boolean::from($propertyValue);
             } elseif ('array' === $propertyTypeName) {
                 $docComment = $reflectionProperty->getDocComment();
                 if (false !== $docComment && preg_match('/^\s*\*\s*@var\s+array<(.+)>\s*$/m', $docComment, $matches)) {
@@ -709,7 +711,7 @@ abstract class Model implements \jsonSerializable, \Iterator
         }
         if (in_array($propertyType, self::$allowTypes, true)) {
             if ('bool' === $propertyType || 'boolean' === $propertyType) {
-                $propertyValue = boolify($propertyValue);
+                $propertyValue = Boolean::from($propertyValue);
             } else {
                 settype($propertyValue, $propertyType);
             }
@@ -717,7 +719,7 @@ abstract class Model implements \jsonSerializable, \Iterator
             if (null !== $propertyValue && !$propertyValue instanceof $propertyType) {
                 $propertyValue = new $propertyType($propertyValue);
             }
-        } elseif ('Hazaar\DateTime' === $propertyType) {
+        } elseif ('Hazaar\Util\DateTime' === $propertyType) {
             if (null !== $propertyValue && !$propertyValue instanceof DateTime) {
                 $propertyValue = new DateTime($propertyValue);
             }
