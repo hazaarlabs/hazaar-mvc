@@ -8,12 +8,43 @@ use Hazaar\Controller\Dump;
 
 $dumpLog = [];
 
+/**
+ * Logs the provided data with a timestamp.
+ *
+ * @param mixed $data the data to be logged
+ *
+ * @global array $dumpLog The global log array where the data will be stored.
+ */
 function log_dump(mixed $data): void
 {
     global $dumpLog;
     $dumpLog[] = ['time' => microtime(true), 'data' => $data];
 }
 
+/**
+ * Dumps information about one or more variables and halts the execution of the script.
+ *
+ * This function provides detailed information about the variables passed to it, including
+ * their values, types, and a backtrace of the call stack. It can also log the information
+ * and output it in different formats depending on the application state.
+ *
+ * @param mixed ...$data One or more variables to dump.
+ *
+ * Global Variables:
+ *
+ * @global array $dumpLog An array to store log entries.
+ *
+ * The function performs the following actions:
+ * - Retrieves the call stack to determine the caller's file, line, function, and class.
+ * - If the HAZAAR_VERSION constant is defined and the application instance is available:
+ *   - If the router is set, it initializes a Dump controller, adds log entries, and runs the controller.
+ *   - Otherwise, it uses var_dump to output the variables.
+ * - If the HAZAAR_VERSION constant is not defined:
+ *   - It constructs a detailed output string including execution time, end time, variable values, log entries, and backtrace.
+ *   - Outputs the constructed string.
+ *
+ * The function terminates the script execution using exit.
+ */
 function dump(mixed ...$data): void
 {
     global $dumpLog;
