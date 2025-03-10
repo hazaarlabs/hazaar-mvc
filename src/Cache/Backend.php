@@ -2,7 +2,7 @@
 
 namespace Hazaar\Cache;
 
-use Hazaar\Arr;
+use Hazaar\Util\Arr;
 use Hazaar\Cache\Interface\Backend as BackendInterface;
 
 abstract class Backend implements BackendInterface

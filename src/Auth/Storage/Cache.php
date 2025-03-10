@@ -16,7 +16,7 @@ namespace Hazaar\Auth\Storage;
 
 use Hazaar\Application;
 use Hazaar\Application\Request;
-use Hazaar\Arr;
+use Hazaar\Util\Arr;
 use Hazaar\Auth\Adapter;
 use Hazaar\Auth\Interface\Storage;
 use Hazaar\Cache\Adapter as CacheAdapter;

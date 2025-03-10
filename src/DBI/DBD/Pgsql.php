@@ -336,7 +336,7 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
                 'name' => $row['index_name'],
                 'table' => $row['table_name'],
                 'columns' => array_map('trim', explode(',', $row['column_names'])),
-                'unique' => boolify($row['indisunique']),
+                'unique' => \Hazaar\Util\Boolean::from($row['indisunique']),
             ];
         }
 

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Hazaar\File;
 
-use Hazaar\Arr;
 use Hazaar\File;
-use Hazaar\Str;
+use Hazaar\Util\Arr;
+use Hazaar\Util\Str;
 
 /**
  * The file upload manager class.

@@ -87,7 +87,7 @@ class Sqlite implements Driver, SQL, Table, Transaction, Trigger
             $column = [
                 'name' => $row['name'],
                 'default' => $default,
-                'not_null' => boolify($row['notnull']),
+                'not_null' => \Hazaar\Util\Boolean::from($row['notnull']),
                 'type' => strtolower($row['type']),
                 'length' => null,
             ];

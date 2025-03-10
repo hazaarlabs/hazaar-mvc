@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Console\Modules;
 
 use Hazaar\Application\Config;
-use Hazaar\Arr;
+use Hazaar\Util\Arr;
 use Hazaar\Console\Input;
 use Hazaar\Console\Module;
 use Hazaar\Console\Output;

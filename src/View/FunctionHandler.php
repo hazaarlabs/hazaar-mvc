@@ -3,7 +3,7 @@
 namespace Hazaar\View;
 
 use Hazaar\Application\URL;
-use Hazaar\DateTime;
+use Hazaar\Util\DateTime;
 use Hazaar\View;
 
 class FunctionHandler
@@ -80,7 +80,7 @@ class FunctionHandler
     /**
      * Return a formatted date as a string.
      *
-     * @param mixed  $value  This can be practically any date type.  Either a \Hazaar\DateTime object, epoch int, or even a string.
+     * @param mixed  $value  This can be practically any date type.  Either a \Hazaar\Util\DateTime object, epoch int, or even a string.
      * @param string $format Optionally specify the format to display the date.  Otherwise the current default is used.
      *
      * @return string the nicely formatted datetime string

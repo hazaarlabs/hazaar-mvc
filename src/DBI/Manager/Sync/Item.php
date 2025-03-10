@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\Manager\Sync;
 
-use Hazaar\Arr;
 use Hazaar\DBI\Adapter;
 use Hazaar\DBI\Manager\Sync\Enums\RowStatus;
 use Hazaar\Model;
+use Hazaar\Util\Arr;
 
 class Item extends Model
 {
@@ -165,7 +165,7 @@ class Item extends Model
             } elseif (is_float($existingRow[$key])) {
                 $value = (float) $value;
             } elseif (is_bool($existingRow[$key])) {
-                $value = boolify($value);
+                $value = \Hazaar\Util\Boolean::from($value);
             }
         }
     }

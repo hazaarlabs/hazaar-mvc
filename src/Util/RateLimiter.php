@@ -1,6 +1,6 @@
 <?php
 
-namespace Hazaar;
+namespace Hazaar\Util;
 
 use Hazaar\Application\Request\HTTP;
 use Hazaar\RateLimiter\Backend;

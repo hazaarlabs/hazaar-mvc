@@ -5,6 +5,7 @@ namespace Hazaar\Application;
 use Hazaar\Controller;
 use Hazaar\Controller\Closure;
 use Hazaar\Controller\Response;
+use Hazaar\Util\Boolean;
 
 /**
  * The route class.
@@ -172,7 +173,7 @@ class Route
                 return false;
             }
             if ('bool' === $routeType || 'boolean' === $routeType) {
-                $path[$routePartID] = boolify($path[$routePartID]);
+                $path[$routePartID] = Boolean::from($path[$routePartID]);
             } elseif ('array' === $routeType) {
                 $path[$routePartID] = explode(',', $path[$routePartID]);
             } elseif ('json' === $routeType) {

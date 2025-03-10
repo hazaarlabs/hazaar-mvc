@@ -2,15 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Hazaar;
+namespace Hazaar\Util;
+
+use Hazaar\Exception\ExtenderAccessFailed;
+use Hazaar\Exception\ExtenderMayNotInherit;
+use Hazaar\Exception\MethodUndefined;
+use Hazaar\Exception\PropertyUndefined;
 
 /**
- * @brief       The Class Extender Class
+ * The Class Extender Class.
  *
- * @detail      The Extender Class allows (or simulates) multiple class inheritance in PHP.  It does this
- *              by loading instances of the extended class under the covers and transparently passing non-existent
- *              method calls on to 'child' classes (if the method exist).  It will also work with member variables
- *              and honors the private, protected and public variable definitions.
+ * The Extender Class allows (or simulates) multiple class inheritance in PHP.  It does this
+ * by loading instances of the extended class under the covers and transparently passing non-existent
+ * method calls on to 'child' classes (if the method exist).  It will also work with member variables
+ * and honors the private, protected and public variable definitions.
  */
 abstract class Extender
 {
@@ -78,7 +83,7 @@ abstract class Extender
             }
         }
 
-        throw new Exception\MethodUndefined(get_class($this), $method);
+        throw new MethodUndefined(get_class($this), $method);
     }
 
     /**
@@ -108,12 +113,12 @@ abstract class Extender
             if (!($return = $rp->isPublic())) {
                 $trace = debug_backtrace();
                 if ($rp->isPrivate()) {
-                    throw new Exception\ExtenderAccessFailed('private', get_class($this), $property);
+                    throw new ExtenderAccessFailed('private', get_class($this), $property);
                 }
                 if (array_key_exists('class', $trace[1]) && $trace[1]['class'] == get_class($this)) {
                     $return = true;
                 } elseif ($rp->isProtected()) {
-                    throw new Exception\ExtenderAccessFailed('protected', get_class($this), $property);
+                    throw new ExtenderAccessFailed('protected', get_class($this), $property);
                 }
             }
             if ($return) {
@@ -121,7 +126,7 @@ abstract class Extender
             }
         }
 
-        throw new Exception\PropertyUndefined(get_class($this), $property);
+        throw new PropertyUndefined(get_class($this), $property);
     }
 
     /**
@@ -145,12 +150,12 @@ abstract class Extender
         if (!($set = $rp->isPublic())) {
             $trace = debug_backtrace();
             if ($rp->isPrivate()) {
-                throw new Exception\ExtenderAccessFailed('private', get_class($this), $property);
+                throw new ExtenderAccessFailed('private', get_class($this), $property);
             }
             if (array_key_exists('class', $trace[1]) && $trace[1]['class'] == get_class($this)) {
                 $return = true;
             } elseif ($rp->isProtected()) {
-                throw new Exception\ExtenderAccessFailed('protected', get_class($this), $property);
+                throw new ExtenderAccessFailed('protected', get_class($this), $property);
             }
         }
         if ($set) {
@@ -207,7 +212,7 @@ abstract class Extender
         }
         $r = new \ReflectionClass($class);
         if ($r->isFinal()) {
-            throw new Exception\ExtenderMayNotInherit('final', get_class($this), $class);
+            throw new ExtenderMayNotInherit('final', get_class($this), $class);
         }
         if ($r->isAbstract()) {
             $wrapperClass = 'wrapper_'.str_replace('\\', '_', $class);

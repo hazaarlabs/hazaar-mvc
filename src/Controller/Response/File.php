@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Hazaar\Controller\Response;
 
 use Hazaar\Application;
-use Hazaar\Arr;
+use Hazaar\Util\Arr;
 use Hazaar\Controller\Response\HTTP\OK;
-use Hazaar\DateTime;
+use Hazaar\Util\DateTime;
 use Hazaar\File as FileObject;
 use Hazaar\File\Manager;
 

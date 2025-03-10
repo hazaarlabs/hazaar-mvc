@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Hazaar\Warlock;
 
 use Hazaar\Application;
-use Hazaar\DateTime;
-use Hazaar\Str;
+use Hazaar\Util\Boolean;
+use Hazaar\Util\Closure;
+use Hazaar\Util\DateTime;
+use Hazaar\Util\Str;
 use Hazaar\Warlock\Interface\Connection;
 
 abstract class Process
@@ -670,7 +672,7 @@ abstract class Process
     protected function makeCallable(callable|\Closure $callable): array
     {
         if ($callable instanceof \Closure) {
-            $callable = (string) new \Hazaar\Closure($callable);
+            $callable = (string) new Closure($callable);
         } elseif (is_array($callable)) {
             if (is_object($callable[0])) {
                 $reflectionMethod = new \ReflectionMethod($callable[0], $callable[1]);
@@ -710,7 +712,7 @@ abstract class Process
         $data['exec'] = $this->makeCallable($callable);
         if ($tag) {
             $data['tag'] = $tag;
-            $data['overwrite'] = strbool($overwrite);
+            $data['overwrite'] = Boolean::toString($overwrite);
         }
         $data['exec']['params'] = $params;
         $this->send($command, $data);

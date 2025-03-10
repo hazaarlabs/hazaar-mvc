@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Tests;
 
-use Hazaar\Cron;
+use Hazaar\Util\Cron;
 use PHPUnit\Framework\TestCase;
 
 /**

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Hazaar\Logger\Backend;
 
-use Hazaar\DateTime;
 use Hazaar\DBI\Adapter;
 use Hazaar\Logger\Backend;
+use Hazaar\Util\DateTime;
 
 class Database extends Backend
 {

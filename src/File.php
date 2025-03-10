@@ -10,7 +10,8 @@ use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 use Hazaar\HTTP\URL;
-use stdClass;
+use Hazaar\Util\Arr;
+use Hazaar\Util\Str;
 
 define('FILE_FILTER_IN', 0);
 define('FILE_FILTER_OUT', 1);

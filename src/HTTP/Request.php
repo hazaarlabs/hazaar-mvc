@@ -516,7 +516,7 @@ class Request implements \ArrayAccess
      */
     public function setURLEncode(bool $value = true): void
     {
-        $this->dontEncodeURL = !boolify($value);
+        $this->dontEncodeURL = !\Hazaar\Util\Boolean::from($value);
     }
 
     /**
