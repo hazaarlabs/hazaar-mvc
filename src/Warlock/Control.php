@@ -62,7 +62,7 @@ class Control extends Process
             }
             if (true === $autostart) {
                 if (!$this->serverConfig['sys']['phpBinary']) {
-                    $this->serverConfig['sys']['phpBinary'] = php_binary();
+                    $this->serverConfig['sys']['phpBinary'] = PHP_BINARY;
                 }
                 $this->pidfile = $runtime_path.$this->serverConfig['sys']['pid'];
                 if (!$this->start()) {

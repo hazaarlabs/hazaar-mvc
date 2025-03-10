@@ -87,28 +87,3 @@ function dump(mixed ...$data): void
 
     exit;
 }
-
-/**
- * Returns the path to the PHP binary.
- *
- * This function tries to determine the path to the PHP binary by checking the currently running PHP binary
- * and the system's PATH environment variable. It first checks if the PHP_BINARY constant is defined and
- * uses its directory path. If not, it uses the 'which' command to find the PHP binary in the system's PATH.
- *
- * @return null|string the path to the PHP binary, or null if it cannot be determined
- */
-function php_binary(): ?string
-{
-    // Try and use the currently running PHP binary (this filters out the possibility of FPM)
-    $php_binary = (defined('PHP_BINARY') ? dirname(PHP_BINARY).DIRECTORY_SEPARATOR : '').'php';
-    if (file_exists($php_binary)) {
-        return $php_binary;
-    }
-    // Look in the path
-    $php_binary = exec('which php');
-    if (\file_exists($php_binary)) {
-        return $php_binary;
-    }
-
-    return null;
-}
