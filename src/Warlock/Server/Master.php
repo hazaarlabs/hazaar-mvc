@@ -1823,13 +1823,13 @@ class Master
         if (self::$config['log']['file']) {
             $out = $runtime_path.DIRECTORY_SEPARATOR.self::$config['log']['file'];
             fclose($STDOUT);
-            rotateLogFile($out, $logfiles);
+            Functions::rotateLogFile($out, $logfiles);
             $STDOUT = fopen($out, 'a');
         }
         if (self::$config['log']['error']) {
             $err = $runtime_path.DIRECTORY_SEPARATOR.self::$config['log']['error'];
             fclose($STDERR);
-            rotateLogFile($err, $logfiles);
+            Functions::rotateLogFile($err, $logfiles);
             $STDERR = fopen($err, 'a');
         }
 
