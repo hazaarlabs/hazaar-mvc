@@ -7,9 +7,9 @@ namespace Hazaar\Util;
 use Hazaar\Exception\MatchReplaceError;
 
 /**
- * The string utility class.
+ * The Str utility class.
  *
- * This class contains a collection of string manipulation functions.
+ * This class contains a collection of static methods for working with strings.
  */
 class Str
 {
@@ -40,13 +40,18 @@ class Str
      *
      * Formats an integer representing a size in bytes to a human readable string representation.
      *
+     * The `$type` can be on of:
+     *
+     * * B (bytes)
+     * * K (kilobytes)
+     * * M (megabytes)
+     * * G (giabytes)
+     * * T (terrabytes)
+     *
+     * If the `$type` is not provided, the function will automatically determine the best type to use based on the size of the byte value.
+     *
      * @param int    $bytes         the byte value to convert to a string
      * @param string $type          The type to convert to. Type can be:
-     *                              * B (bytes)
-     *                              * K (kilobytes)
-     *                              * M (megabytes)
-     *                              * G (giabytes)
-     *                              * T (terrabytes)
      * @param int    $precision     the number of decimal places to show
      * @param bool   $excludeSuffix if true, the suffix will not be included in the output
      *
