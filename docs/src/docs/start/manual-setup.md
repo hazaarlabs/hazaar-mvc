@@ -23,7 +23,7 @@ To get started with Hazaar, you need to create an application using composer.  T
 ### The Example Application
 
 ```shell
-$ composer create-project hazaarlabs/example
+$ composer create-project hazaar/hazaar
 ```
 
 This will create a new directory called `example` in your current working directory.  This directory will contain the application, library, and public directories of your project and some example code to help get you started quickly.
@@ -31,7 +31,7 @@ This will create a new directory called `example` in your current working direct
 ### The Skeleton Application _(Optional)_
 
 ```shell
-$ composer create-project hazaarlabs/skeleton myapp
+$ composer create-project hazaar/hazaar myapp
 ```
 
 This will create a new directory called `myapp` in your current working directory.  This directory will contain the application, library, and public directories of your project with no example code.  This is a good starting point for a new project.

@@ -31,23 +31,24 @@ To get started with Hazaar, you need to create an application using composer.  T
 ### The Example Application
 
 ```shell
-$ composer create-project hazaarlabs/example
+$ composer create-project hazaar/hazaar myapp
 ```
 
 Alternatively you can get the example application using Git directly:
 
 ```shell
-$ git clone https://git.hazaar.io/hazaar/example.git
+$ git clone https://git.hazaar.io/hazaar/hazaar myapp
 ``` 
 
-This will create a new directory called `example` in your current working directory.  This directory will contain the application and public directories of your project and some example code to help get you started quickly.  If installed with composer, the library will also be installed in the `vendor` directory.
+This will create a new directory called `myapp` in your current working directory.  This directory will contain the application and public directories of your project and some example code to help get you started quickly.  If installed with composer, the library will also be installed in the `vendor` directory.
 
-Once you have the example application, you can open it in Visual Studio Code.  If you have the devContainers plugin installed, you will be prompted to open the project in a container.  This will automatically start the container and install all the required dependencies.
+Once you have the example application, you can open it in Visual Studio Code.  If you have the [devcontainers extension](https://code.visualstudio.com/docs/devcontainers/containers) installed, you will be prompted to open the project in a container.  This will automatically start the container and install all the required dependencies.
 
 ## What's Next?
 
-* [Configuration](/guide/basics/configuration) - Learn how to configure your application.
-* [Routing](/guide/basics/routing) - Learn how routing works for your application.
-* [Models](/guide/basics/models) - Learn how to create models for your application.
-* [Views](/guide/basics/views) - Learn how to create views for your application.
-* [Controllers](/guide/basics/controllers) - Learn how to create controllers for your application.
+* [Configuration](/docs/basics/configuration.md) - Learn how to configure your application.
+* [Routing](/docs/basics/routing.md) - Learn how routing works for your application.
+* [Controllers](/docs/basics/controllers.md) - Learn how to create controllers for your application.
+* [Views](/docs/basics/views/overview.md) - Learn how to create views for your application.
+* [Models](/docs/basics/models.md) - Learn how to create models for your application.
+* [Database](/docs/dbi/overview.md) - Learn how to use databases in your application.

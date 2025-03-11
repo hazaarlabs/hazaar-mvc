@@ -8,7 +8,7 @@
             This example application is a good starting point for building your own application with Hazaar.
         </p>
         <p>
-            <a class="btn btn-hazaar btn-lg" href="https://scroly.io/hazaarmvc" role="button">Learn more &raquo;</a>
+            <a class="btn btn-hazaar btn-lg" href="https://hazaar.io/docs" role="button">Learn more &raquo;</a>
         </p>
     </div>
 </div>
@@ -22,15 +22,15 @@
             <p>
                 Hazaar is constantly under development and is growing constantly. To keep up to date on new features
                 feel free to checkout the roadmap page on the Hazaar development website. You can also view the
-                documentation<a href="http://git.hazaarlabs.com/hazaar/hazaar-mvc/wikis/home">wiki</a>,
-                <a href="http://mvc.hazaar.io/news">dev blog</a>,
-                <a href="http://git.hazaarlabs.com/hazaar/hazaar-mvc/issues">issue tracker</a>,
+                <a href="https://hazaar.io/docs">online documentation</a>,
+                <a href="https://funkynerd.com">dev blog</a>,
+                <a href="https://git.hazaar.io/hazaar/framework/issues">issue tracker</a>,
                 and much, much more. The development website is the main hub and a great resource for everything related
                 to the development of Hazaar.
             </p>
 
-            <p> 
-                <a href="https://git.hazaarlabs.com/hazaar/hazaar-mvc/milestones" class="btn btn-secondary">View the
+            <p>
+                <a href="https://git.hazaar.io/hazaar/framework/milestones" class="btn btn-secondary">View the
                     Roadmap &raquo;</a>
             </p>
         </div>

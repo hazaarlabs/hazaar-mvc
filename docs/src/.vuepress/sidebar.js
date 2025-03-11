@@ -12,8 +12,9 @@ function sidebarGuide() {
             collapsible: true,
             icon: 'ic:baseline-add-location',
             children: [
+                { text: 'Introduction', link: '/docs/start/introduction' },
                 {
-                    text: 'Installation', link: '/docs/start/installoverview',
+                    text: 'Installation', link: '/docs/start/install/overview',
                     "children": [
                         { text: 'Composer', link: '/docs/start/install/composer' },
                         { text: 'Manual', link: '/docs/start/install/manual' },
