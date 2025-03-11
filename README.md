@@ -101,7 +101,7 @@ command from the project directory:
 $ composer serve
 ```
 
-You can now access the application from your web browser by navigating to http://localhost:8080.
+You can now access the application from your web browser by navigating to http://localhost:8000.
 
 You can now have a read of our [Online Documentation](https://hazaar.io/docs) for tips
 on setting up a web server to run your new application.
