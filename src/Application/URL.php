@@ -22,7 +22,7 @@ use Hazaar\Application;
  *
  *              Parameters are dynamic and depend on what you are trying to generate.
  *
- *              For examples see [Generating URLs](/guide/basics/urls.md) in the
+ *              For examples see [Generating URLs](/docs/basics/urls.md) in the
  *              Hazaar support documentation.
  */
 class URL implements \JsonSerializable

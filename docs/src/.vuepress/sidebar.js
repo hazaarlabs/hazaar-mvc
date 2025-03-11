@@ -21,7 +21,6 @@ function sidebarGuide() {
                         { text: 'Dev Container', link: '/docs/start/install/devcontainer' }
                     ]
                 },
-                { text: 'Configuration', link: '/docs/start/configuration' },
                 { text: 'Directory Structure', link: '/docs/start/structure' },
                 {
                     text: 'Deployment',
@@ -51,6 +50,7 @@ function sidebarGuide() {
             text: 'The Basics',
             collapsible: true,
             children: [
+                { text: 'Configuration', link: '/docs/basics/configuration' },
                 { text: 'Routing', link: '/docs/basics/routing' },
                 { text: 'Requests', link: '/docs/basics/requests' },
                 { text: 'Controllers', link: '/docs/basics/controllers' },
