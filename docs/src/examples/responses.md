@@ -22,7 +22,7 @@ Router::get('/json', function(){
 });
 ```
 
-Alternatively, you can return a `Response` object with the JSON content type set.
+Alternatively, you can return a [`Hazaar\Controller\Response\JSON`](/api/class/Hazaar/Controller/Response/JSON.md) object.
 
 ```php
 use Hazaar\Controller\Response\Json;
@@ -31,20 +31,9 @@ Router::get('/json', function(){
 });
 ```
 
-## Returning an image
-
-If you want to return an image, you can return a `Response` object with the image content type set.
-
-```php
-use Hazaar\Controller\Response\Image;
-Router::get('/image', function(){
-    return new Image('path/to/image.jpg');
-});
-```
-
 ## Returning a file
 
-If you want to return a file, you can return a `Response` object with the file content type set.
+If you want to return a file, you can return a [`Hazaar\Controller\Response\File`](/api/class/Hazaar/Controller/Response/File.md) object.
 
 ```php
 use Hazaar\Controller\Response\File;
@@ -53,20 +42,31 @@ Router::get('/file', function(){
 });
 ```
 
+## Returning an image file
+
+If you want to return an image file, you can return a [`Hazaar\Controller\Response\Image`](/api/class/Hazaar/Controller/Response/Image.md) object.
+
+```php
+use Hazaar\Controller\Response\Image;
+Router::get('/image', function(){
+    return new Image('path/to/image.jpg');
+});
+```
+
 # Built-in HTTP Responses
 
 Hazaar has a number of built-in response classes that you can use to return different types of HTTP responses.  More of these will be added in the future, but for now there are a few basic ones.
 
-Available built-in response classes:
+The following built-in `Hazaar\Controller\Response\HTTP` classes are available:
 
-* `Hazaar\Controller\Response\HTTP\OK` - 200 OK
-* `Hazaar\Controller\Response\HTTP\NoContent` - 204 No Content
-* `Hazaar\Controller\Response\HTTP\Redirect` - 301 Moved Permanently
-* `Hazaar\Controller\Response\HTTP\BadRequest` - 400 Bad Request
-* `Hazaar\Controller\Response\HTTP\Unauthorized` - 401 Unauthorized
-* `Hazaar\Controller\Response\HTTP\Forbidden` - 403 Forbidden
-* `Hazaar\Controller\Response\HTTP\NotFound` - 404 Not Found
-* `Hazaar\Controller\Response\HTTP\RateLimitExceeded` - 429 Too Many Requests
+* [OK](/api/class/Hazaar/Controller/Response/HTTP/Ok.md) - `200 OK`
+* [NoContent](/api/class/Hazaar/Controller/Response/HTTP/NoContent.md) - `204 No Content`
+* [Redirect](/api/class/Hazaar/Controller/Response/HTTP/Redirect.md) - `301 Moved Permanently`
+* [BadRequest](/api/class/Hazaar/Controller/Response/HTTP/BadRequest.md) - `400 Bad Request`
+* [Unauthorized](/api/class/Hazaar/Controller/Response/HTTP/Unauthorized.md) - `401 Unauthorized`
+* [Forbidden](/api/class/Hazaar/Controller/Response/HTTP/Forbidden.md) - `403 Forbidden`
+* [NotFound](/api/class/Hazaar/Controller/Response/HTTP/NotFound.md) - `404 Not Found`
+* [RateLimitExceeded](/api/class/Hazaar/Controller/Response/HTTP/RateLimitExceeded.md) - `429 Too Many Requests`
 
 ## Redirecting to another URL
 

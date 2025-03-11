@@ -507,6 +507,8 @@ class Application
                 if (null === $response) {
                     $response = $controller->run();
                 }
+            } elseif (!$this->router) {
+                throw new \Exception('Router not initialised');
             } else {
                 $route = $this->router->evaluateRequest($request);
                 if (!$route) {
@@ -523,11 +525,11 @@ class Application
                     $func($response);
                 }
             }
+            $this->timer->checkpoint('render');
             // Finally, write the response to the output buffer.
             $response->writeOutput();
-            $this->timer->stop('exec');
             // Shutdown the controller
-            $this->timer->start('shutdown');
+            $this->timer->checkpoint('shutdown');
             $controller->shutdown($response);
             $code = $response->getStatus();
             ob_end_flush();
@@ -580,7 +582,7 @@ class Application
      *
      * Parameters are dynamic and depend on what you are trying to generate.
      *
-     * For examples see: [Generating URLs](/guide/basics/urls.md)
+     * For examples see: [Generating URLs](/docs/basics/urls.md)
      */
     public function getURL(): URL
     {

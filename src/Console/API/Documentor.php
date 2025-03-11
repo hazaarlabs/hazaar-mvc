@@ -42,9 +42,15 @@ class Documentor
         $this->callback = $callback;
     }
 
-    public function setScanPath(string $scanPath): void
+    public function setScanPath(string $scanPath): bool
     {
-        $this->scanPath = realpath($scanPath);
+        $realPath = realpath($scanPath);
+        if (false === $realPath) {
+            return false;
+        }
+        $this->scanPath = $realPath;
+
+        return true;
     }
 
     public function setOutputPath(string $outputPath): void

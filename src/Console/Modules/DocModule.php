@@ -42,7 +42,10 @@ class DocModule extends Module
             $output->write($message.PHP_EOL);
         });
         $this->doc->setOutputPath($outputPath);
-        $this->doc->setScanPath($input->getOption('scan') ?? '.');
+        $scanPath = $input->getOption('scan') ?? '.';
+        if (!$this->doc->setScanPath($scanPath)) {
+            throw new \Exception("Invalid scan path: {$scanPath}", 1);
+        }
     }
 
     protected function generate(Input $input, Output $output): int

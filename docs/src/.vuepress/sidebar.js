@@ -12,15 +12,15 @@ function sidebarGuide() {
             collapsible: true,
             icon: 'ic:baseline-add-location',
             children: [
+                { text: 'Introduction', link: '/docs/start/introduction' },
                 {
-                    text: 'Installation', link: '/docs/start/installoverview',
+                    text: 'Installation', link: '/docs/start/install/overview',
                     "children": [
                         { text: 'Composer', link: '/docs/start/install/composer' },
                         { text: 'Manual', link: '/docs/start/install/manual' },
                         { text: 'Dev Container', link: '/docs/start/install/devcontainer' }
                     ]
                 },
-                { text: 'Configuration', link: '/docs/start/configuration' },
                 { text: 'Directory Structure', link: '/docs/start/structure' },
                 {
                     text: 'Deployment',
@@ -50,6 +50,7 @@ function sidebarGuide() {
             text: 'The Basics',
             collapsible: true,
             children: [
+                { text: 'Configuration', link: '/docs/basics/configuration' },
                 { text: 'Routing', link: '/docs/basics/routing' },
                 { text: 'Requests', link: '/docs/basics/requests' },
                 { text: 'Controllers', link: '/docs/basics/controllers' },

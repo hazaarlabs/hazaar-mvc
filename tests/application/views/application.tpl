@@ -12,7 +12,8 @@
         {$application->config->app['name']}
     </title>
 
-    <link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css"
+        href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
     <link rel="stylesheet" type="text/css" href="{url css/main.css}" />
 </head>
 
@@ -20,10 +21,7 @@
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand"
-                href="{url}">
-                {$application->config['app']['name']}
-            </a>
+            <a class="navbar-brand" href="{url}">{$application->config['app']['name']}</a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive"
                 aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -31,28 +29,24 @@
             <div class="collapse navbar-collapse" id="navbarResponsive">
                 <ul class="navbar-nav">
                     <li class="nav-item active">
-                        <a href="{url}"
-                            class="nav-link">Home</a>
+                        <a href="{url}" class="nav-link">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a href="{url test}"
-                            class="nav-link">Test</a>
+                        <a href="{url test}" class="nav-link">Test</a>
                     </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="http://example.com" id="dropdown01"
                             data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Help</a>
                         <div class="dropdown-menu" aria-labelledby="dropdown01">
                             <h6 class="dropdown-header">Documentation</h6>
-                            <a href="http://mvc.hazaar.io" class="dropdown-item" target="_blank">Hazaar Website</a>
-                            <a href="http://scroly.io/hazaarmvc" class="dropdown-item" target="_blank">Online
-                                Documentation</a>
-                            <a href="http://scroly.io/hazaarmvc/latest/api" class="dropdown-item" target="_blank">API
+                            <a href="https://hazaar.io" class="dropdown-item" target="_blank">Hazaar Documentation</a>
+                            <a href="https://hazaar.io/api" class="dropdown-item" target="_blank">API
                                 Reference</a>
                             <div class="dropdown-divider"></div>
                             <h6 class="dropdown-header">Support</h6>
-                            <a href="http://git.hazaarlabs.com/hazaar/hazaar-mvc/issues" class="dropdown-item"
+                            <a href="https://git.hazaar.io/hazaar/framework/issues" class="dropdown-item"
                                 target="_blank">Support Issues</a>
-                            <a href="http://git.hazaarlabs.com/hazaar/hazaar-mvc/issues/new" class="dropdown-item"
+                            <a href="https://git.hazaario/hazaar/framework/issues/new" class="dropdown-item"
                                 target="_blank">Create Issue</a>
                         </div>
                     </li>
@@ -69,7 +63,7 @@
         <div class="container-fluid p-3 p-md-5">
             <ul class="bd-footer-links">
                 <li>
-                    <a href="https://git.hazaarlabs.com/hazaar/hazaar-mvc">GitLab</a>
+                    <a href="https://git.hazaar.io/hazaar/framework">GitLab</a>
                 </li>
                 <li>
                     <a href="https://facebook.com/hazaarmvc">Facebook</a>
@@ -86,7 +80,6 @@
 
             </ul>
             <p>Copyright &copy; Hazaar Labs - 2017</p>
-
         </div>
     </footer>
 

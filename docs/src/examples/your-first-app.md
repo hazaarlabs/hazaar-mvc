@@ -46,7 +46,7 @@ Finally, run the application using the built-in PHP web server:
 
 ```bash
 cd myapp
-php -S localhost:8000
+composer serve
 ```
 
 You can now access the application in your web browser at [http://localhost:8000/hello](http://localhost:8000/hello).

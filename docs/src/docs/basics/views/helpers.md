@@ -575,7 +575,7 @@ You can control the start attribute of an ordered list like so;
 
 ```
 
-<a href="http://git.funkynerd.com/hazaar/hazaar-mvc/issues/5">#5</a> Item 5
+<a href="http://git.funkynerd.com/hazaar/framework/issues/5">#5</a> Item 5
 # Item 6
 ```
 

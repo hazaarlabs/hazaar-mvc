@@ -207,7 +207,8 @@
                 <h1>Hazaar Dump</h1>
             </div>
             <table class="timetable">
-                {foreach from=$time item=item key=key}
+                {assign var="timers" value=$application->timer->all()}
+                {foreach from=$timers item=item key=key}
                     <tr>
                         <th>{$key|capitalize}</th>
                         <td>{$item|string_format:"%.2f"}ms</td>
@@ -216,7 +217,9 @@
             </table>
         </div>
         <div class="dumpcaller">
-            Called from <em>{$class}::{$function}</em> on line <em>#{$line}</em> of file <em>{$file}</em>
+            {if $class}
+                Called from <em>{$class}::{$function}</em> on line <em>#{$line}</em> of file <em>{$file}</em>
+            {/if}
         </div>
         <div class="dumpmain">
             {if $data !== null}

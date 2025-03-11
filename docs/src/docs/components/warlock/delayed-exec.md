@@ -14,20 +14,24 @@ The schedular itself runs in a single thread that will never block and there is 
 
 There are currently two methods for scheduling function execution.  In both methods, `$function` is something that the PHP function `is_callable()` considers to be a callable object.  Support for static method function references are also such as `Application\Model\MyModel::doTheThing`.
 
-### delay($seconds, $function, $tag = null, $overwrite = false)
+```php
+delay($seconds, $function, $tag = null, $overwrite = false);
+```
 
 This will run the function after the $seconds number of seconds has passed.
 
 Returns the job ID on success, false otherwise.
 
-### schedule($when, $function, $tag = null, $overwrite = false)
+```php
+schedule($when, $function, $tag = null, $overwrite = false);
+```
 
 This will schedule the function to execute at a specific date/time specified by $when. The schedule method usesstrtotime() internally to resolve text times in $when into epoch values. This means that any string times thatstrtotime() supports can be used, including 'tomorrow 1pm', 'next week', etc.
 
 You can also use epoch integer values.
 
 ::: warning 
-Be aware however that there may be configuration differences between the schedular and your application which may cause timezones to be different. It is suggested that if you are setting an explicit time of execution that you should specify the timezone in the time string as a matter of course. Using the PHP function date('c', time()) will do this.
+Be aware however that there may be configuration differences between the schedular and your application which may cause timezones to be different. It is suggested that if you are setting an explicit time of execution that you should specify the timezone in the time string as a matter of course. Using the PHP function `date('c', time())` will do this.
 :::
 
 Returns the job ID on success, false otherwise.
@@ -39,12 +43,12 @@ Consider the following example code:
 ```php
 $control = new Hazaar\Warlock\Control();
     
-$code = function(){
+$code = function() {
     echo "APPLICATION_PATH = " . APPLICATION_PATH . "\n";        
     echo "APPLICATION_ENV  = " . APPLICATION_ENV . "\n";
 };
     
-if($control->runDelay(5, $code)){
+if($control->runDelay(5, $code)) {
     $this->redirect($this->url());
 }
 
@@ -68,7 +72,7 @@ It is possible to run the schedular from the command line. See the section runni
 In PHP, anonymous functions are implemented using the Closure class. The syntax to create an anonymous function is just the same as most other languages that allow anonymous functions.
 
 ```php
-$code = function(){
+$code = function() {
     echo "APPLICATION_PATH = " . APPLICATION_PATH . "\n";
     echo "APPLICATION_ENV  = " . APPLICATION_ENV . "\n";
 };
@@ -109,16 +113,13 @@ The benefits of tagging are that you can ensure that a particular function will 
 
 ## Running Warlock from the command-line
 
-It's not suggested that a developer ever do this, but during testing it is sometimes handy to have control over when Warlock runs.
+To run Warlock from the command line do the following from your application path:
 
-To run Warlock from the command line do the following:
-
-* *cd* into your Hazaar application path
-* Run the following command:
 ```shell
-# sudo -u www-data php vendor/hazaarlabs/hazaar-warlock/src/Server.php
+$ vendor/bin/warlock
 ```
-Logging data will then be output to your terminal.
+
+Warlock will then start and you should see logging output to your terminal.
 
 ## Calling static class methods
 
@@ -130,14 +131,11 @@ For example:
 ```php
 namespace Application\Model;
 
-class MyTestClass {
-
+class MyTestClass 
+{
     static public function doTheThing(){
-    
         $this->log(W_INFO, 'The thing is done!');
-
     }
-
 }
 ```
 
@@ -148,9 +146,14 @@ allows the use of `trigger`, `substribe`, `log` and any other methods normally a
 To execute this method in the background you can pass the callable in one of the following ways:
 
 ```php
-$this->runDelay(30, array('Application\\Model\\MyTestClass', 'doTheThing'));
-$this->runDelay(30, 'Application\\Model\\MyTestClass::doTheThing');
+$this->runDelay(30, ['Application\Model\MyTestClass', 'doTheThing']);
 ```
+is the same as
+```php
+$this->runDelay(30, 'Application\Model\MyTestClass::doTheThing');
+```
+
+It's dealers choice which you use.
 
 ## Globally Scheduled Jobs
 
@@ -173,5 +176,10 @@ add the following to the main Warlock config file `warlock.json`.
 }
 ```
 
-When the scheduled time rolls around, a new *Runner* process will be started up and the `Application\\Model\\myTestClass::handleTestEvent` method
+When the scheduled time rolls around, a new *Runner* process will be started up and the `Application\Model\myTestClass::handleTestEvent` method
 will be executed.  
+
+::: warning
+Notice the double backslashes in the class name.  This is because the JSON parser will strip a single backslash and we need to ensure that the class name is passed correctly.
+Without the double backslashes the class name would be parsed incorrectly and the method would not be executed.
+:::

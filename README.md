@@ -1,10 +1,10 @@
-<p align="center"><a href="https://hazaar.io" target="_blank"><img src="https://git.hazaar.io/hazaar/hazaar-mvc/-/raw/master/libs/hazaar-icon-lg.png?inline=false" width="200" alt="Laravel Logo"></a></p>
+<p align="center"><a href="https://hazaar.io" target="_blank"><img src="https://git.hazaar.io/hazaar/framework/-/raw/master/libs/hazaar-icon-lg.png?ref_type=heads&inline=false" width="200" alt="Hazaar Logo"></a></p>
 
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://git.hazaar.io/hazaar/hazaar-mvc/badges/master/pipeline.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/hazaarlabs/hazaar-mvc" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/hazaarlabs/hazaar-mvc" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/hazaarlabs/hazaar-mvc" alt="License"></a>
+<a href="https://git.hazaar.io/hazaar/framework/pipelines"><img src="https://git.hazaar.io/hazaar/framework/badges/master/pipeline.svg" alt="Build Status"></a>
+<a href="https://packagist.org/packages/hazaar/framework"><img src="https://img.shields.io/packagist/dt/hazaar/framework" alt="Total Downloads"></a>
+<a href="https://packagist.org/packages/hazaar/framework"><img src="https://img.shields.io/packagist/v/hazaar/framework" alt="Latest Stable Version"></a>
+<a href="https://packagist.org/packages/hazaar/framework"><img src="https://img.shields.io/packagist/l/hazaar/framework" alt="License"></a>
 </p>
 
 # About Hazaar
@@ -30,7 +30,7 @@ to ensure that Hazaar is cross-platform compatible, particularly with Windows su
 I am now developing under Windows daily so Hazaar has become quite stable under Windows.
 
 If you hit any problems, please feel free to create a support issue so they can be fixed
-at https://git.hazaar.io/hazaar/hazaar-mvc/issues.
+at https://git.hazaar.io/hazaar/framework/issues.
 
 Hazaar is installed with [Composer](http://getcomposer.org) and available via
 [Packagist](http://packagist.org). 
@@ -90,33 +90,26 @@ also give you a starting point for development.
 You can do this with one command using composer:
 
 ```
-$ composer create-project hazaarlabs/example path/to/install
+$ composer create-project hazaar/hazaar myapp
 ```
 
 That's it.  You should now have the example application and Hazaar downloaded and ready
-to go. Now all you need to do is set up your web server and you're good to go.  
-
-You can now have a read of our [Online Documentation](https://scroly.io/hazaarmvc) for tips
-on setting up a web server to run your new application.
-
-## Test your new project
-
-Because I'm a nice guy, i've made it super simple to test your new project without installing
-any further programs.  You can start up the application using the PHP built-in web server
-by executing the composer `serve` command from your new project directory:
+to go. You can start the application with PHP's built-in web server by running the following
+command from the project directory:
 
 ```
 $ composer serve
 ```
 
-At this point the application will be accessible from your web browser by navigating to
-http://localhost:8080.
+You can now access the application from your web browser by navigating to http://localhost:8080.
 
+You can now have a read of our [Online Documentation](https://hazaar.io/docs) for tips
+on setting up a web server to run your new application.
 
 # Getting Started with Development
 
 A great place to get up to speed quickly on Hazaar is by reading the
-[Hazaar Getting Started Guide](https://scroly.io/hazaarmvc/latest/getting_started/requirements.md).
+[Hazaar Getting Started Guide](https://hazaar.io/docs/start/introduction).
 
 The QuickStart covers some of the most commonly used components of Hazaar.
 
@@ -128,4 +121,4 @@ get involved!
 # Licence
 
 The files in this archive are released under the Apache 2.0 License. You can find a
- copy of this license in [LICENCE.md](https://git.hazaar.io/hazaar/hazaar-mvc/blob/master/LICENCE.md).
+copy of this license in [LICENCE.md](https://git.hazaar.io/hazaar/framework/blob/master/LICENCE.md).

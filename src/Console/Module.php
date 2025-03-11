@@ -39,15 +39,22 @@ abstract class Module
 
     public function run(string $command): int
     {
-        if (!isset($this->commands[$command])) {
-            throw new \Exception('Command not found', 1);
-        }
-        $command = $this->commands[$command];
-        $this->input->run($command);
-        $this->prepare($this->input, $this->output);
-        $callable = $command->getCallable();
+        $result = 1;
 
-        return $callable($this->input, $this->output);
+        try {
+            if (!isset($this->commands[$command])) {
+                throw new \Exception('Command not found', 1);
+            }
+            $command = $this->commands[$command];
+            $this->input->run($command);
+            $this->prepare($this->input, $this->output);
+            $callable = $command->getCallable();
+            $result = $callable($this->input, $this->output);
+        } catch (\Exception $e) {
+            $this->output->write($e->getMessage().PHP_EOL);
+        }
+
+        return $result;
     }
 
     protected function prepare(Input $input, Output $output): void {}
