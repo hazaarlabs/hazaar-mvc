@@ -16,18 +16,20 @@ HazaarMVC has a project layout like most other MVC frameworks. The project root 
 │  │  ├─ database.json
 │  │  └─ ...
 │  ├─ controllers
+│  │  ├─ Main.php
 │  │  ├─ Error.php
-│  │  ├─ Index.php
 │  │  └─ ...
 │  ├─ models
-│  │  ├─ Data.php
+│  │  ├─ Model1.php
+│  │  ├─ Model2.php
 │  │  └─ ...
-│  └─ views
-│     ├─ application.phtml
-│     ├─ index.phtml
-│     ├─ error.phtml
-│     ├─ custom.tpl
-│     └─ ...
+│  ├─ views
+│  |  ├─ application.tpl
+│  |  ├─ index.tpl
+│  |  ├─ error.tpl
+|  |  └─ ...
+|  ├─ bootstrap.php
+|  └─ route.php
 ├─ public
 │  └─ index.php
 └─ composer.json

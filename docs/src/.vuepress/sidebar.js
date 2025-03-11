@@ -17,8 +17,7 @@ function sidebarGuide() {
                     text: 'Installation', link: '/docs/start/install/overview',
                     "children": [
                         { text: 'Composer', link: '/docs/start/install/composer' },
-                        { text: 'Manual', link: '/docs/start/install/manual' },
-                        { text: 'Dev Container', link: '/docs/start/install/devcontainer' }
+                        { text: 'DevContainer', link: '/docs/start/install/devcontainer' }
                     ]
                 },
                 { text: 'Directory Structure', link: '/docs/start/structure' },
