@@ -274,4 +274,26 @@ class TemplateTest extends TestCase
         $compiled = $smartyCompiler->getCode('_test_template_');
         $this->assertStringContainsString('class _test_template_', $compiled);
     }
+
+    public function testCanRenderSmartyTemplateWithCondition(): void
+    {
+        $smarty = new Smarty();
+        $smarty->loadFromString('Hello {if $name == "World"}World{else}Stranger{/if}!');
+        $this->assertEquals('Hello World!', $smarty->render(['name' => 'World']));
+        $this->assertEquals('Hello Stranger!', $smarty->render(['name' => 'Stranger']));
+        $smarty->loadFromString('Hello {if $name == "World"}World{elseif $name == "Stranger"}Stranger{else}Guest{/if}!');
+        $this->assertEquals('Hello World!', $smarty->render(['name' => 'World']));
+        $this->assertEquals('Hello Stranger!', $smarty->render(['name' => 'Stranger']));
+        $this->assertEquals('Hello Guest!', $smarty->render(['name' => 'Guest']));
+        $smarty->loadFromString('Hello {if $name != "World"}Stranger{/if}!');
+        $this->assertEquals('Hello Stranger!', $smarty->render(['name' => 'Stranger']));
+        $this->assertEquals('Hello !', $smarty->render(['name' => 'World']));
+    }
+
+    public function testCanRenderSmartyTemplateWithLoop(): void
+    {
+        $smarty = new Smarty();
+        $smarty->loadFromString('Hello {foreach $items as $item}{$item.title}{/foreach}!');
+        $this->assertEquals('Hello First ItemSecond Item!', $smarty->render(['items' => [['title' => 'First Item'], ['title' => 'Second Item']]]));
+    }
 }
