@@ -296,4 +296,74 @@ class TemplateTest extends TestCase
         $smarty->loadFromString('Hello {foreach $items as $item}{$item.title}{/foreach}!');
         $this->assertEquals('Hello First ItemSecond Item!', $smarty->render(['items' => [['title' => 'First Item'], ['title' => 'Second Item']]]));
     }
+
+    public function testCanRenderSmartyTemplateWithNamedConditionEq(): void
+    {
+        $smarty = new Smarty();
+        $smarty->loadFromString('Hello {if $name eq "World"}World{else}Stranger{/if}!');
+        $this->assertEquals('Hello World!', $smarty->render(['name' => 'World']));
+        $this->assertEquals('Hello Stranger!', $smarty->render(['name' => 'Stranger']));
+    }
+
+    public function testCanRenderSmartyTemplateWithNamedConditionNeq(): void
+    {
+        $smarty = new Smarty();
+        $smarty->loadFromString('Hello {if $name neq "World"}Stranger{/if}!');
+        $this->assertEquals('Hello Stranger!', $smarty->render(['name' => 'Stranger']));
+        $this->assertEquals('Hello !', $smarty->render(['name' => 'World']));
+    }
+
+    public function testCanRenderSmartyTemplateWithNamedConditionGt(): void
+    {
+        $smarty = new Smarty();
+        $smarty->loadFromString('Hello {if $name gt 5}Stranger{/if}!');
+        $this->assertEquals('Hello Stranger!', $smarty->render(['name' => 8]));
+        $this->assertEquals('Hello !', $smarty->render(['name' => 5]));
+        $this->assertEquals('Hello !', $smarty->render(['name' => 1]));
+    }
+
+    public function testCanRenderSmartyTemplateWithNamedConditionGte(): void
+    {
+        $smarty = new Smarty();
+        $smarty->loadFromString('Hello {if $name gte 5}Stranger{/if}!');
+        $this->assertEquals('Hello Stranger!', $smarty->render(['name' => 8]));
+        $this->assertEquals('Hello Stranger!', $smarty->render(['name' => 5]));
+        $this->assertEquals('Hello !', $smarty->render(['name' => 1]));
+    }
+
+    public function testCanRenderSmartyTemplateWithNamedConditionLt(): void
+    {
+        $smarty = new Smarty();
+        $smarty->loadFromString('Hello {if $name lt 5}Stranger{/if}!');
+        $this->assertEquals('Hello !', $smarty->render(['name' => 8]));
+        $this->assertEquals('Hello !', $smarty->render(['name' => 5]));
+        $this->assertEquals('Hello Stranger!', $smarty->render(['name' => 1]));
+    }
+
+    public function testCanRenderSmartyTemplateWithNamedConditionLte(): void
+    {
+        $smarty = new Smarty();
+        $smarty->loadFromString('Hello {if $name lte 5}Stranger{/if}!');
+        $this->assertEquals('Hello !', $smarty->render(['name' => 8]));
+        $this->assertEquals('Hello Stranger!', $smarty->render(['name' => 5]));
+        $this->assertEquals('Hello Stranger!', $smarty->render(['name' => 1]));
+    }
+
+    public function testCanRenderSmartyTemplateWithNamedConditionAnd(): void
+    {
+        $smarty = new Smarty();
+        $smarty->loadFromString('Hello {if $name eq "World" and $age eq 25}Stranger{/if}!');
+        $this->assertEquals('Hello Stranger!', $smarty->render(['name' => 'World', 'age' => 25]));
+        $this->assertEquals('Hello !', $smarty->render(['name' => 'World', 'age' => 30]));
+        $this->assertEquals('Hello !', $smarty->render(['name' => 'Stranger', 'age' => 25]));
+    }
+
+    public function testCanRenderSmartyTemplateWithNamedConditionOr(): void
+    {
+        $smarty = new Smarty();
+        $smarty->loadFromString('Hello {if $name eq "World" or $age eq 25}Stranger{/if}!');
+        $this->assertEquals('Hello Stranger!', $smarty->render(['name' => 'World', 'age' => 30]));
+        $this->assertEquals('Hello Stranger!', $smarty->render(['name' => 'Stranger', 'age' => 25]));
+        $this->assertEquals('Hello !', $smarty->render(['name' => 'Stranger', 'age' => 30]));
+    }
 }
