@@ -63,8 +63,9 @@ function sidebarGuide() {
                         { text: 'Helpers', link: '/docs/basics/views/helpers' }
                     ]
                 },
-                { text: 'Security', link: '/docs/basics/security' },
                 { text: 'Generating URLs', link: '/docs/basics/urls' },
+                { text: 'Validation', link: '/docs/basics/validation' },
+                { text: 'Security', link: '/docs/basics/security' },
                 { text: 'Helper Functions', link: '/docs/basics/helpers' },
             ]
         },
