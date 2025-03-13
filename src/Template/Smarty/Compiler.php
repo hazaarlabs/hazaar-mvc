@@ -32,6 +32,23 @@ class Compiler
         'call',
         'php',
     ];
+
+    /**
+     * Map of conditional operators to PHP operators.
+     *
+     * @var array<string,string>
+     */
+    protected static array $conditionalMap = [
+        'eq' => '==',
+        'ne' => '!=',
+        'neq' => '!=',
+        'lt' => '<',
+        'gt' => '>',
+        'lte' => '<=',
+        'gte' => '>=',
+        'and' => '&&',
+        'or' => '||',
+    ];
     private string $ldelim = '{';
     private string $rdelim = '}';
     private ?string $cwd = null;
@@ -202,8 +219,8 @@ class Compiler
     protected function parseVALUE(string $array): mixed
     {
         if (!('[' === substr($array, 0, 1) && ']' === substr($array, -1))) {
-            if (preg_match("/'(.*)'$/", $array, $matches)) {
-                return $matches[1];
+            if (preg_match('/(["\'])(.*)\1$/', $array, $matches)) {
+                return $matches[2];
             }
 
             return $array;
@@ -296,33 +313,29 @@ class Compiler
     /**
      * @param array<mixed>|string $params
      */
-    protected function compilePARAMS(array|string $params): string
+    protected function compileCONDITIONS(array|string $params): string
     {
         if (is_array($params)) {
             $out = [];
             foreach ($params as $p) {
-                $out[] = $this->compilePARAMS($p);
+                $out[] = $this->compileCONDITIONS($p);
             }
 
             return implode(', ', $out);
         }
-        $params = preg_split(pattern: '/\s*([|&]{2})\s*/', subject: $params, flags: PREG_SPLIT_DELIM_CAPTURE);
-        foreach ($params as &$param) {
-            if ('||' === $param || '&&' === $param) {
-                continue;
-            }
-            if (preg_match_all('/\$[^\d][\w]*(?:(?:\.|->)\w+|\[[^\]]+\])*/', $param, $matches)) {
-                foreach ($matches[0] as $match) {
-                    $param = str_replace($match, $this->compileVAR($match), $param);
-                }
-            } elseif (is_numeric($param)) {
-                $param += 0;
-            } elseif (!Boolean::is($param)) {
-                $param = "'{$param}'";
+        $parts = preg_split('/\s+/', $params);
+        foreach ($parts as &$part) {
+            if ('$' === substr($part, 0, 1)) {
+                $part = $this->compileVAR($part);
+            } elseif (array_key_exists($part, self::$conditionalMap)) {
+                $part = self::$conditionalMap[$part];
+            } elseif (!(Boolean::is($parts) || is_numeric($part) || preg_match('/^(["\']).*\1$/', $part))
+                && !in_array($part, self::$conditionalMap)) {
+                $part = "'{$part}'";
             }
         }
 
-        return implode(' ', $params);
+        return implode(' ', $parts);
     }
 
     /**
@@ -335,7 +348,7 @@ class Compiler
             if (is_array($value)) {
                 $value = $this->compileARRAY($value);
             } else {
-                $value = $this->compilePARAMS($value);
+                $value = $this->compileCONDITIONS($value);
             }
             $out[] = "'{$key}' => ".$value;
         }
@@ -345,12 +358,12 @@ class Compiler
 
     protected function compileIF(string $params): string
     {
-        return '<?php if('.$this->compilePARAMS($params).'): ?>';
+        return '<?php if('.$this->compileCONDITIONS($params).'): ?>';
     }
 
     protected function compileELSEIF(string $params): string
     {
-        return '<?php elseif('.$this->compilePARAMS($params).'): ?>';
+        return '<?php elseif('.$this->compileCONDITIONS($params).'): ?>';
     }
 
     protected function compileELSE(): string
@@ -505,7 +518,7 @@ class Compiler
     protected function compileFUNCTION(string $params): string
     {
         $params = $this->parsePARAMS($params);
-        if (!($name = trim($params['name'] ?? '', '\'"'))) {
+        if (!($name = $params['name'] ?? '')) {
             return '';
         }
         unset($params['name']);
@@ -558,7 +571,7 @@ class Compiler
         if (!array_key_exists('file', $params)) {
             return '';
         }
-        $file = trim($params['file'], '\'"');
+        $file = $params['file'];
         unset($params['file']);
         if ('/' !== $file[0] && !preg_match('/^\w+\:\/\//', $file)) {
             $file = realpath($this->cwd ? rtrim($this->cwd, ' /') : getcwd()).DIRECTORY_SEPARATOR.$file;
