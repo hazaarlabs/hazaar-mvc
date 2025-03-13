@@ -36,6 +36,7 @@ class GeoData
      * Changing this triggers a re-initialisation of the internal database.
      */
     public const int VERSION = 2;
+    public static string $dbFile;
 
     /**
      * The publicly available GeoData database data sources.
@@ -52,15 +53,18 @@ class GeoData
      */
     private static ?BTree $db = null;
 
-    public function __construct(bool $re_intialise = false)
+    public function __construct(bool $forceDownloadGeodataFile = false)
     {
-        $filename = Application::getInstance()->getRuntimePath('geodata.db');
-        $file = new File($filename);
-        if (true === $re_intialise || !$file->exists()) {
-            $this->__initialise();
+        if (!isset(self::$dbFile)) {
+            self::$dbFile = Application::getInstance()->getRuntimePath('geodata.db');
         }
-        GeoData::$db = new BTree($file, true);
-        if (GeoData::VERSION !== GeoData::$db->get('__version__')) {
+        $dbFile = new File(self::$dbFile);
+        if (!$dbFile->exists()) {
+            $forceDownloadGeodataFile = true;
+        }
+        self::$db = new BTree(self::$dbFile, true);
+        if (true === $forceDownloadGeodataFile
+            || GeoData::VERSION !== GeoData::$db->get('__version__')) {
             $this->__initialise();
         }
     }
@@ -205,7 +209,7 @@ class GeoData
         $list = [];
         if ($country = GeoData::$db->get(strtoupper($country_code))) {
             foreach ($country['states'] as $state) {
-                if (!($state['code'] && $state['name'])) {
+                if (!isset($state['code'], $state['name'])) {
                     continue;
                 }
                 $list[$state['code']] = $state['name'];
