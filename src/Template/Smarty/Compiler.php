@@ -202,8 +202,8 @@ class Compiler
     protected function parseVALUE(string $array): mixed
     {
         if (!('[' === substr($array, 0, 1) && ']' === substr($array, -1))) {
-            if (preg_match("/'(.*)'$/", $array, $matches)) {
-                return $matches[1];
+            if (preg_match('/(["\'])(.*)\1$/', $array, $matches)) {
+                return $matches[2];
             }
 
             return $array;
@@ -505,7 +505,7 @@ class Compiler
     protected function compileFUNCTION(string $params): string
     {
         $params = $this->parsePARAMS($params);
-        if (!($name = trim($params['name'] ?? '', '\'"'))) {
+        if (!($name = $params['name'] ?? '')) {
             return '';
         }
         unset($params['name']);
@@ -558,7 +558,7 @@ class Compiler
         if (!array_key_exists('file', $params)) {
             return '';
         }
-        $file = trim($params['file'], '\'"');
+        $file = $params['file'];
         unset($params['file']);
         if ('/' !== $file[0] && !preg_match('/^\w+\:\/\//', $file)) {
             $file = realpath($this->cwd ? rtrim($this->cwd, ' /') : getcwd()).DIRECTORY_SEPARATOR.$file;

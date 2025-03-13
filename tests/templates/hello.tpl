@@ -1,3 +1,4 @@
+{include file="functions.tpl"}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -28,7 +29,7 @@
 
 <body>
     <header>
-        <h1>Welcome, {$userName}!</h1>
+        <h1>{greet $userName}!</h1>
     </header>
     <div class="container">
         <h2>{$welcomeMessage|default:"Welcome to our site"}</h2>

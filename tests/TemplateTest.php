@@ -257,7 +257,7 @@ class TemplateTest extends TestCase
                 ['title' => 'Second Item', 'description' => 'Description of the second item'],
             ],
         ]);
-        $this->assertStringContainsString('Welcome, John Doe', $result);
+        $this->assertStringContainsString('Welcome, John Doe!', $result);
         $this->assertStringContainsString('Welcome to our Amazing Site', $result);
         $this->assertStringContainsString('<h3>First Item</h3>', $result);
         $this->assertStringContainsString('<p>Description of the first item</p>', $result);
