@@ -205,6 +205,9 @@ class GeoData
         $list = [];
         if ($country = GeoData::$db->get(strtoupper($country_code))) {
             foreach ($country['states'] as $state) {
+                if (!($state['code'] && $state['name'])) {
+                    continue;
+                }
                 $list[$state['code']] = $state['name'];
             }
             asort($list);
