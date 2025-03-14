@@ -9,6 +9,22 @@ use Hazaar\Util\Arr;
 use Hazaar\Util\Boolean;
 use Hazaar\Util\DateTime;
 
+/**
+ * Compiler for Smarty templates
+ *
+ * This class handles the compilation of Smarty template syntax into executable PHP code.
+ * It parses Smarty tags, variables, modifiers, and directives and transforms them into
+ * their PHP equivalents. The Compiler manages template delimiters, section and foreach
+ * loops, variable captures, and includes.
+ * 
+ * The compilation process follows these main steps:
+ * 1. Template content is parsed for Smarty syntax using delimiters
+ * 2. Tags and variables are identified and processed by their respective handlers
+ * 3. PHP code is generated that, when executed, will render the template output
+ * 
+ * This class is used internally by the Smarty template engine and should not be
+ * instantiated directly by application code.
+ */
 class Compiler
 {
     /**
@@ -40,8 +56,9 @@ class Compiler
      */
     protected static array $conditionalMap = [
         'eq' => '==',
+        'eqeq' => '===',
         'ne' => '!=',
-        'neq' => '!=',
+        'neq' => '!==',
         'lt' => '<',
         'gt' => '>',
         'lte' => '<=',
@@ -168,6 +185,15 @@ class Compiler
         return '?>';
     }
 
+    /**
+     * Transforms the provided value into the specified type with optional formatting arguments.
+     *
+     * @param mixed       $value The value to be type converted
+     * @param string      $type  The target type to convert to ('date' or 'string')
+     * @param null|string $args  Optional formatting arguments (e.g., date format string)
+     *
+     * @return string The transformed value as a string
+     */
     protected function setType(mixed $value, string $type = 'string', ?string $args = null): string
     {
         switch ($type) {
@@ -188,7 +214,12 @@ class Compiler
     }
 
     /**
-     * @return array<mixed>
+     * Parses a parameter string into an associative array of parameter values.
+     * Handles complex parameter strings including arrays, quoted strings, and variable references.
+     *
+     * @param string $params The parameter string to parse
+     *
+     * @return array<mixed> Associative array of parsed parameters
      */
     protected function parsePARAMS(string $params): array
     {
@@ -216,6 +247,14 @@ class Compiler
         return $params;
     }
 
+    /**
+     * Parses a value string that may represent an array or simple value.
+     * Handles array syntax with brackets and arrow notation.
+     *
+     * @param string $array The string to parse as a value
+     *
+     * @return mixed The parsed value, either as an array or simple value
+     */
     protected function parseVALUE(string $array): mixed
     {
         if (!('[' === substr($array, 0, 1) && ']' === substr($array, -1))) {
@@ -242,6 +281,14 @@ class Compiler
         return $compiledArray;
     }
 
+    /**
+     * Compiles a variable reference into its PHP equivalent.
+     * Handles variable modifiers, array access, object properties, and section variables.
+     *
+     * @param string $name The variable name/reference to compile
+     *
+     * @return string The compiled PHP code for the variable
+     */
     protected function compileVAR(string $name): string
     {
         $modifiers = [];
@@ -287,6 +334,14 @@ class Compiler
         return $name;
     }
 
+    /**
+     * Compiles variables within a string into their PHP equivalents.
+     * Replaces all variable references with their compiled versions.
+     *
+     * @param string $string The string containing variables to compile
+     *
+     * @return string The string with compiled variable references
+     */
     protected function compileVARS(string $string): string
     {
         if (preg_match_all('/\$\w[\w\.\->]+/', $string, $matches)) {
@@ -298,6 +353,13 @@ class Compiler
         return $string;
     }
 
+    /**
+     * Generates PHP code to write a variable value to output.
+     *
+     * @param string $name The variable reference to output
+     *
+     * @return string The PHP code to write the variable
+     */
     protected function replaceVAR(string $name): string
     {
         $var = $this->compileVAR($name);
@@ -305,13 +367,25 @@ class Compiler
         return "<?php \$this->write({$var}); ?>";
     }
 
+    /**
+     * Generates PHP code to write a configuration variable value to output.
+     *
+     * @param string $name The configuration variable name
+     *
+     * @return string The PHP code to write the config variable
+     */
     protected function replaceCONFIG_VAR(string $name): string
     {
         return $this->replaceVAR("\$this->variables['{$name}']");
     }
 
     /**
-     * @param array<mixed>|string $params
+     * Compiles parameters into valid PHP code expressions.
+     * Handles arrays, variables, logical operators, and literal values.
+     *
+     * @param array<mixed>|string $params Parameters to compile
+     *
+     * @return string The compiled PHP expression
      */
     protected function compileCONDITIONS(array|string $params): string
     {
@@ -339,7 +413,11 @@ class Compiler
     }
 
     /**
-     * @param array<mixed> $array
+     * Recursively compiles an array into its PHP array syntax representation.
+     *
+     * @param array<mixed> $array The array to compile
+     *
+     * @return string The PHP array syntax as a string
      */
     protected function compileARRAY(array $array): string
     {
@@ -356,16 +434,35 @@ class Compiler
         return '['.implode(', ', $out).']';
     }
 
+    /**
+     * Compiles an IF statement into its PHP equivalent.
+     *
+     * @param string $params The condition expression to evaluate
+     *
+     * @return string The compiled PHP if statement
+     */
     protected function compileIF(string $params): string
     {
         return '<?php if('.$this->compileCONDITIONS($params).'): ?>';
     }
 
+    /**
+     * Compiles an ELSEIF statement into its PHP equivalent.
+     *
+     * @param string $params The condition expression to evaluate
+     *
+     * @return string The compiled PHP elseif statement
+     */
     protected function compileELSEIF(string $params): string
     {
         return '<?php elseif('.$this->compileCONDITIONS($params).'): ?>';
     }
 
+    /**
+     * Compiles an ELSE statement into its PHP equivalent.
+     *
+     * @return string The compiled PHP else statement
+     */
     protected function compileELSE(): string
     {
         return '<?php else: ?>';
