@@ -48,7 +48,7 @@ class Apc extends Backend
     {
         if (count($this->refresh) > 0) {
             foreach ($this->refresh as $key => &$value) {
-                \apcu_store($this->key($key), $value, $this->options['lifetime']);
+                \apcu_store($this->key($key), $value, $this->options['ttl']);
             }
         }
 
@@ -69,8 +69,7 @@ class Apc extends Backend
     {
         $result = \apcu_fetch($this->key($key));
         if ($result
-            && ($this->options['keepalive'] ?? false)
-            && ($this->options['lifetime'] ?? 0) > 0) {
+            && ($this->options['ttl'] ?? 0) > 0) {
             $this->refresh[$key] = $result;
         }
 
@@ -79,8 +78,8 @@ class Apc extends Backend
 
     public function set(string $key, mixed $value, int $timeout = 0): bool
     {
-        if (!$timeout && ($this->options['lifetime'] ?? 0) > 0) {
-            $timeout = $this->options['lifetime'];
+        if (!$timeout && ($this->options['ttl'] ?? 0) > 0) {
+            $timeout = $this->options['ttl'];
         }
         if (array_key_exists($key, $this->refresh)) {
             unset($this->refresh[$key]);

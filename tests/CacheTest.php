@@ -33,6 +33,7 @@ class CacheTest extends TestCase
     {
         $options = [
             'path' => Application::getInstance()->getRuntimePath('cache'),
+            'ttl' => 30,
         ];
         $cache = new Adapter('file', $options);
         $this->assertTrue($cache->set('test', 'value'));
