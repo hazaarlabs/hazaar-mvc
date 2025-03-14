@@ -23,7 +23,7 @@ use Hazaar\Cache\Backend;
  *
  * Available config options:
  *
- * * lifetime - The lifetime to use for cached data. Default: 3600.
+ * * ttl - The time-to-live value to use for cached data. Default: 3600.
  * * session - Any settings to set on the session instance.
  */
 class Session extends Backend
@@ -73,8 +73,8 @@ class Session extends Backend
                 session_name($name);
             }
             // Check if we need to configure a session cache expire time.
-            if (isset($this->options['lifetime'])) {
-                $this->timeout = $this->options['lifetime'];
+            if (isset($this->options['ttl'])) {
+                $this->timeout = $this->options['ttl'];
             } elseif (isset($app->config['session'], $app->config['session']['timeout'])) {
                 $this->timeout = (int) $app->config['session']['timeout'];
             }

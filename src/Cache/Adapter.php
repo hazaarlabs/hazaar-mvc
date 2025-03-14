@@ -57,7 +57,7 @@ class Adapter implements \ArrayAccess
             }
         }
         $this->configure([
-            'lifetime' => 3600,
+            'ttl' => 3600,
             'use_pragma' => true,
             'keepalive' => false,
         ]);
@@ -183,7 +183,7 @@ class Adapter implements \ArrayAccess
      * @param mixed  $value   The value that should be stored. Values can be pretty much anything including integers, booleans,
      *                        strings and any object that can be serialised.
      * @param int    $timeout The number of seconds after which the value becomes invalid. If not set the global
-     *                        'lifetime' option is used. Set a value of '-1' to indicate that the value should never timeout.
+     *                        'ttl' option is used. Set a value of '-1' to indicate that the value should never timeout.
      */
     public function set(string $key, mixed $value, int $timeout = 0): bool
     {
