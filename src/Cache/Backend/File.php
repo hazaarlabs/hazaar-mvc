@@ -61,21 +61,28 @@ class File extends Backend
             $this->store->set('__namespace_timeout', $this->timeout);
         }
         unset($this->store);
-        if (false === self::$shutdownRegistered) {
-            self::$shutdownRegistered = true;
-            register_shutdown_function(function () {
-                $dir = dir($this->cacheDir);
-                while (false !== ($entry = $dir->read())) {
-                    if ('.' === $entry || '..' === $entry) {
-                        continue;
-                    }
-                    $file = $this->cacheDir.$entry;
-                    if (is_file($file) && filemtime($file) < time() - $this->options['flush']) {
+        if (true === self::$shutdownRegistered) {
+            return;
+        }
+        self::$shutdownRegistered = true;
+        register_shutdown_function(function () {
+            $dir = dir($this->cacheDir);
+            while (false !== ($entry = $dir->read())) {
+                if ('.' === $entry || '..' === $entry) {
+                    continue;
+                }
+                $file = $this->cacheDir.$entry;
+                if (is_file($file) && filemtime($file) < time() - $this->options['flush']) {
+                    $dbFile = new BTree($file);
+                    $timeout = $dbFile->get('__namespace_timeout');
+                    $dbFile->close();
+                    // If the namespace has expired (plus 5 minutes), drop it
+                    if ($timeout && time() >= ($timeout + 300)) {
                         unlink($file);
                     }
                 }
-            });
-        }
+            }
+        });
     }
 
     public static function available(): bool
