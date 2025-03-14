@@ -11,6 +11,7 @@ use Hazaar\Parser\PHP\ParserNamespace;
 use Hazaar\Parser\PHP\TokenParser;
 use Hazaar\Template\Smarty;
 use Hazaar\Util\Interval;
+use Hazaar\Util\Str;
 use Hazaar\Util\Timer;
 
 class Documentor
@@ -74,6 +75,7 @@ class Documentor
         $result = $this->render($this->index, $this->outputPath);
         $this->log('Rendered in '.Interval::toString($timer->stop('render') / 1000));
         $this->log('Total time: '.Interval::toString($timer->get('total') / 1000));
+        $this->log('Memory usage: '.Str::fromBytes(memory_get_peak_usage(true)));
 
         return $result;
     }
@@ -105,6 +107,7 @@ class Documentor
         $this->log('Index written to '.$this->outputPath);
         $this->log('Rendered in '.Interval::toString($timer->stop('render') / 1000));
         $this->log('Total time: '.Interval::toString($timer->get('total') / 1000));
+        $this->log('Memory usage: '.Str::fromBytes(memory_get_peak_usage(true)));
 
         return true;
     }
