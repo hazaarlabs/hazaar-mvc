@@ -91,8 +91,8 @@ class File extends Backend
             'file_prefix' => null,
             'use_zlib' => false,
             'encode_fs' => false,
-            'keepalive' => false,
-            'flush' => 86400, // Flush cache files that have not been accessed in 24 hours by default
+            'ttl' => 0,
+            'flush' => 3600, // Check cache files that have not been accessed in the last hour (by defaul) and remove them if they are older than the namespace timeout
         ]);
         $this->cacheDir = $this->options['cache_dir']
             .(($this->options['file_prefix']) ? DIRECTORY_SEPARATOR.$this->options['file_prefix'] : null)
@@ -114,8 +114,8 @@ class File extends Backend
         if (!$this->options['encode_fs']) {
             $this->addCapabilities('array');
         }
-        // If the lifetime value is greater than 0 then we support namespace timeouts.
-        if (true === $this->options['keepalive'] && $this->options['lifetime'] > 0) {
+        // If the time-to-live value is greater than 0 then we support namespace timeouts.
+        if ($this->options['ttl'] > 0) {
             $this->addCapabilities('expire_ns', 'keepalive');
             // If a timeout exists, load it and check if we need to drop the namespace.
             if (!($timeout = $this->store->get('__namespace_timeout'))) {
@@ -208,8 +208,8 @@ class File extends Backend
 
     private function keepalive(): void
     {
-        if (true === $this->options['keepalive'] && $this->options['lifetime'] > 0) {
-            $this->timeout = time() + $this->options['lifetime'];
+        if ($this->options['ttl'] > 0) {
+            $this->timeout = time() + $this->options['ttl'];
         }
     }
 

@@ -55,7 +55,7 @@ class Shm extends Backend
     public function init(string $namespace): void
     {
         $this->addCapabilities('store_objects', 'keepalive', 'array', 'lock');
-        $this->keepalive = $this->options['keepalive'];
+        $this->keepalive = $this->options['ttl'] > 0;
         $app = Application::getInstance();
         $inodeFile = $app->getRuntimePath('.shm_inode'); // The inode file is used to create a unique key for the shared memory segment
         file_exists($inodeFile) || touch($inodeFile); // Create the inode file if it doesn't exist

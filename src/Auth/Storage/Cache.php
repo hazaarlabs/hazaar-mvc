@@ -76,7 +76,7 @@ class Cache implements Storage
         $this->config = Arr::enhance($config, [
             'backend' => 'file',
             'usePragma' => false,
-            'lifetime' => 3600, // 1 hour
+            'ttl' => 3600, // 1 hour
             'name' => 'hazaar-auth',
         ]);
         if (array_key_exists($this->config['name'], $_COOKIE)) {

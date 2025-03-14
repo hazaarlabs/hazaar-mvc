@@ -11,9 +11,10 @@ declare(strict_types=1);
 
 namespace Hazaar\Cache\Backend;
 
-use Hazaar\Util\Arr;
 use Hazaar\Cache\Backend;
 use Hazaar\Socket\Client;
+use Hazaar\Util\Arr;
+use Hazaar\Util\Boolean;
 
 /**
  * @brief The Redis cache backend.
@@ -51,8 +52,7 @@ class Redis extends Backend
             'server' => 'localhost',
             'port' => 6379,
             'dbIndex' => 0,
-            'keepalive' => false,
-            'lifetime' => 0,
+            'ttl' => 0,
         ]);
         $this->socket = $this->connect($this->options['server'], $this->options['port']);
         if (isset($this->options['serverpass']) && ($serverpass = $this->options['serverpass'])) {
@@ -120,7 +120,7 @@ class Redis extends Backend
 
     public function select(int $db): bool
     {
-        return \Hazaar\Util\Boolean::from($this->cmd(['SELECT', "{$db}"]));
+        return Boolean::from($this->cmd(['SELECT', "{$db}"]));
     }
 
     public function close(): bool
@@ -144,8 +144,8 @@ class Redis extends Backend
             ['TTL', $keyName],
             ['HGETALL', $keyName],
         ];
-        if ($this->options['keepalive'] && $this->options['lifetime'] > 0) {
-            $cmds[] = ['EXPIRE', $keyName, (string) $this->options['lifetime']];
+        if ($this->options['ttl'] > 0) {
+            $cmds[] = ['EXPIRE', $keyName, (string) $this->options['ttl']];
         }
         $results = $this->cmd($cmds);
         $rawValues = $results[1];
@@ -164,7 +164,7 @@ class Redis extends Backend
             array_merge(['HSET', $keyName], $this->deconstructValue($value)),
         ];
         if (null === $timeout) {
-            $timeout = $this->options['lifetime'];
+            $timeout = $this->options['ttl'];
         }
         if ($timeout > 0) {
             $cmds[] = ['EXPIRE', $keyName, (string) $timeout];
@@ -180,12 +180,12 @@ class Redis extends Backend
 
     public function remove(string $key): bool
     {
-        return \Hazaar\Util\Boolean::from($this->cmd(['HDEL', $this->namespace, $key], true));
+        return Boolean::from($this->cmd(['HDEL', $this->namespace, $key], true));
     }
 
     public function clear(): bool
     {
-        return \Hazaar\Util\Boolean::from($this->cmd(['DEL', $this->namespace], true));
+        return Boolean::from($this->cmd(['DEL', $this->namespace], true));
     }
 
     /**
