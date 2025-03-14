@@ -48,6 +48,8 @@ class File extends Backend
      */
     private static array $__openStore = [];
 
+    private static bool $shutdownRegistered = false;
+
     /**
      * Store the namespace timeout in the cache dir timeout file.
      *
@@ -59,6 +61,21 @@ class File extends Backend
             $this->store->set('__namespace_timeout', $this->timeout);
         }
         unset($this->store);
+        if (false === self::$shutdownRegistered) {
+            self::$shutdownRegistered = true;
+            register_shutdown_function(function () {
+                $dir = dir($this->cacheDir);
+                while (false !== ($entry = $dir->read())) {
+                    if ('.' === $entry || '..' === $entry) {
+                        continue;
+                    }
+                    $file = $this->cacheDir.$entry;
+                    if (is_file($file) && filemtime($file) < time() - $this->options['flush']) {
+                        unlink($file);
+                    }
+                }
+            });
+        }
     }
 
     public static function available(): bool
@@ -75,6 +92,7 @@ class File extends Backend
             'use_zlib' => false,
             'encode_fs' => false,
             'keepalive' => false,
+            'flush' => 86400, // Flush cache files that have not been accessed in 24 hours by default
         ]);
         $this->cacheDir = $this->options['cache_dir']
             .(($this->options['file_prefix']) ? DIRECTORY_SEPARATOR.$this->options['file_prefix'] : null)
