@@ -949,13 +949,13 @@ class Adapter implements ConstraintAPI, ExtensionAPI, GroupAPI, IndexAPI, Schema
         return $this->driver->dropView($name, $ifExists, $cascade);
     }
 
-    public function prepare(string $sql): \PDOStatement
+    public function prepare(QueryBuilderInterface $queryBuilder): \PDOStatement
     {
         if (!$this->driver instanceof StatementAPI) {
             throw new \BadMethodCallException('Driver does not support prepared statements');
         }
 
-        return $this->driver->prepare($sql);
+        return $this->driver->prepare($queryBuilder);
     }
 
     /**

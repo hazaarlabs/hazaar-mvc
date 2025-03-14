@@ -72,30 +72,55 @@ class SQLiteTest extends TestCase
         unset($row, $result); // Unlock the result set so we can drop the table
     }
 
-    public function testTableQueries(): void
+    public function testTableInsert(): void
     {
         // Setup
         $table = $this->db->table('test_table');
         $this->assertInstanceOf('Hazaar\DBI\Table', $table);
         $this->assertEquals('test_table', $table->getName());
         // Insert
-        $rowId = $table->insert(['name' => 'test'], 'id');
+        $rowId = $table->insert(['name' => 'test', 'id' => 1], 'id');
         $this->assertIsInt($rowId);
         $this->assertGreaterThan(0, $rowId);
+    }
+
+    public function testTableFindOne(): void
+    {
+        // Setup
+        $table = $this->db->table('test_table');
+        $this->assertInstanceOf('Hazaar\DBI\Table', $table);
+        $this->assertEquals('test_table', $table->getName());
+        $this->assertEquals(1, $table->insert(['name' => 'test', 'id' => 1], 'id'));
         // Select
-        $result = $table->findOne(['id' => $rowId]);
+        $result = $table->findOne(['id' => 1,[ 'name' => 'test']]);
         $this->assertIsArray($result);
         $this->assertEquals('test', $result['name']);
+    }
+
+    public function testTableUpdate(): void
+    {
+        // Setup
+        $table = $this->db->table('test_table');
+        $this->assertInstanceOf('Hazaar\DBI\Table', $table);
+        $this->assertEquals('test_table', $table->getName());
         // Update
-        $updated = $table->update(['name' => 'test2'], ['id' => $rowId]);
+        $updated = $table->update(['name' => 'test2'], ['id' => 1]);
         $this->assertEquals(1, $updated);
-        $result = $table->findOne(['id' => $rowId]);
+        $result = $table->findOne(['id' => 1]);
         $this->assertIsArray($result);
         $this->assertEquals('test2', $result['name']);
+    }
+
+    public function testTableDelete(): void
+    {
+        // Setup
+        $table = $this->db->table('test_table');
+        $this->assertInstanceOf('Hazaar\DBI\Table', $table);
+        $this->assertEquals('test_table', $table->getName());
         // Delete
-        $deleted = $table->delete(['id' => $rowId]);
+        $deleted = $table->delete(['id' => 1]);
         $this->assertEquals(1, $deleted);
-        $result = $table->findOne(['id' => $rowId]);
+        $result = $table->findOne(['id' => 1]);
         $this->assertFalse($result);
     }
 

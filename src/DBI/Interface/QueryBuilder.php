@@ -95,7 +95,7 @@ interface QueryBuilder
 
     public function offset(int $offset): int|self;
 
-    public function toString(): string;
+    public function toString(bool $prepareValues = false): string;
 
     public function getSchemaName(): ?string;
 
@@ -140,4 +140,9 @@ interface QueryBuilder
     ): string;
 
     public function reset(): self;
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function getCriteriaValues(): array;
 }

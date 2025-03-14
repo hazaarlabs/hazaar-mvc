@@ -445,7 +445,7 @@ class SQL implements QueryBuilder
     /**
      * Return the current selection as a valid SQL string.
      */
-    public function toString(bool $terminateWithColon = false, bool $untable = false): string
+    public function toString(bool $terminateWithColon = false, bool $prepareValues = false): string
     {
         $sql = 'SELECT';
         if (is_array($this->distinct) && count($this->distinct) > 0) {
@@ -473,7 +473,7 @@ class SQL implements QueryBuilder
         }
         // WHERE
         if (count($this->where) > 0) {
-            $sql .= ' WHERE '.$this->prepareCriteria($this->where);
+            $sql .= ' WHERE '.($prepareValues ? $this->prepareCriteriaTags($this->where) : $this->prepareCriteria($this->where));
         }
         // GROUP BY
         if (count($this->group) > 0) {
@@ -654,6 +654,21 @@ class SQL implements QueryBuilder
     /**
      * @param array<mixed> $criteria
      */
+    public function prepareCriteriaTags(array $criteria, string $bindType = 'AND'): string
+    {
+        $criteriaParts = [];
+        foreach ($criteria as $key => $value) {
+            $criteriaParts[] = is_array($value)
+                ? $this->prepareCriteriaTags($value)
+                : "{$key} = :{$key}";
+        }
+
+        return implode(" {$bindType} ", $criteriaParts);
+    }
+
+    /**
+     * @param array<mixed> $criteria
+     */
     public function prepareCriteria(
         array|string $criteria,
         string $bindType = 'AND',
@@ -711,6 +726,24 @@ class SQL implements QueryBuilder
         $sql = ((count($parts) > 1) ? '( ' : null).implode(" {$bindType} ", $parts).((count($parts) > 1) ? ' )' : null);
 
         return $sql;
+    }
+
+    public function getCriteriaValues(): array
+    {
+        $flatten = function ($item) use (&$flatten) {
+            $result = [];
+            foreach ($item as $key => $value) {
+                if (is_array($value)) {
+                    $result = array_merge($result, $flatten($value));
+                } elseif (!(is_int($key) || '$' === substr($key, 0, 1))) {
+                    $result[$key] = $value;
+                }
+            }
+
+            return $result;
+        };
+
+        return $flatten($this->where);
     }
 
     /**

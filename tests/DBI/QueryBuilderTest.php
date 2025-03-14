@@ -22,8 +22,10 @@ class QueryBuilderTest extends TestCase
             ->limit(10)
             ->offset(5)
         ;
-        $sql = 'SELECT id, name FROM "test_table" WHERE id = 1 ORDER BY id ASC NULLS LAST LIMIT 10 OFFSET 5';
-        $this->assertEquals($sql, $query->toString());
+        $sql = 'SELECT id, name FROM "test_table" WHERE id = :id ORDER BY id ASC NULLS LAST LIMIT 10 OFFSET 5';
+        $this->assertEquals($sql, $query->toString(prepareValues: true));
+        $values = $query->getCriteriaValues();
+        $this->assertEquals(['id' => 1], $values);
     }
 
     public function testBasicINSERT(): void

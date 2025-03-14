@@ -6,15 +6,18 @@ namespace Hazaar\DBI\DBD;
 
 use Hazaar\DBI\DBD\Interface\Driver;
 use Hazaar\DBI\Interface\API\SQL;
+use Hazaar\DBI\Interface\API\Statement;
 use Hazaar\DBI\Interface\API\Table;
 use Hazaar\DBI\Interface\API\Transaction;
 use Hazaar\DBI\Interface\API\Trigger;
+use Hazaar\Util\Boolean;
 
-class Sqlite implements Driver, SQL, Table, Transaction, Trigger
+class Sqlite implements Driver, SQL, Statement, Table, Transaction, Trigger
 {
     use Traits\PDO {
         Traits\PDO::query as pdoQuery; // Alias the trait's query method to pdoQuery
     }
+    use Traits\PDO\Statement;
     use Traits\PDO\Transaction;
     use Traits\SQL;
     use Traits\SQL\Table;
@@ -87,7 +90,7 @@ class Sqlite implements Driver, SQL, Table, Transaction, Trigger
             $column = [
                 'name' => $row['name'],
                 'default' => $default,
-                'not_null' => \Hazaar\Util\Boolean::from($row['notnull']),
+                'not_null' => Boolean::from($row['notnull']),
                 'type' => strtolower($row['type']),
                 'length' => null,
             ];

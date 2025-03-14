@@ -354,9 +354,9 @@ class Table
         if (null !== $columns) {
             $this->select($columns);
         }
-        $result = $this->adapter->query($this->queryBuilder->limit(1)->toString());
-        if ($result) {
-            return $result->fetch();
+        $statement = $this->adapter->prepare($this->queryBuilder->limit(1));
+        if ($statement->execute()) {
+            return $statement->fetch(\PDO::FETCH_ASSOC);
         }
 
         return false;
