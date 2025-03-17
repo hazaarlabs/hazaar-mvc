@@ -14,9 +14,9 @@ trait Trigger
         $queryBuilder = $this->getQueryBuilder();
         $sql = 'SELECT DISTINCT trigger_schema AS schema, trigger_name AS name
                     FROM INFORMATION_SCHEMA.triggers
-                    WHERE event_object_schema='.$queryBuilder->prepareValue($queryBuilder->getSchemaName());
+                    WHERE event_object_schema='.$queryBuilder->prepareValue('schema_name', $queryBuilder->getSchemaName());
         if (null !== $tableName) {
-            $sql .= ' AND event_object_table='.$queryBuilder->prepareValue($tableName);
+            $sql .= ' AND event_object_table='.$queryBuilder->prepareValue('table_name', $tableName);
         }
         if ($result = $this->query($sql)) {
             return $result->fetchAll(\PDO::FETCH_ASSOC);
@@ -59,8 +59,8 @@ trait Trigger
                         action_orientation AS orientation,
                         action_timing AS timing
                     FROM INFORMATION_SCHEMA.triggers
-                    WHERE trigger_schema='.$queryBuilder->prepareValue($schemaName)
-                    .' AND trigger_name='.$queryBuilder->prepareValue($triggerName);
+                    WHERE trigger_schema='.$queryBuilder->prepareValue('schema_name', $schemaName)
+                    .' AND trigger_name='.$queryBuilder->prepareValue('trigger_name', $triggerName);
         if (!($result = $this->query($sql))) {
             return false;
         }

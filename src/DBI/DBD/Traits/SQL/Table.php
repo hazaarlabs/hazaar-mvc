@@ -32,7 +32,7 @@ trait Table
             'table_schema' => $queryBuilder->getSchemaName(),
         ];
         $sql = $queryBuilder->exists('information_schema.tables', $criteria);
-        $result = $this->query($sql);
+        $result = $this->query($sql, $queryBuilder->getCriteriaValues());
         if (false === $result) {
             return false;
         }

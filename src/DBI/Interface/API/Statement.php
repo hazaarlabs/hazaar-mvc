@@ -16,5 +16,7 @@ interface Statement
      *
      * @param QueryBuilder $sql the SQL string to prepare
      */
-    public function prepare(QueryBuilder $sql): \PDOStatement;
+    public function prepareQuery(QueryBuilder $sql): \PDOStatement;
+
+    public function prepare(string $sql): \PDOStatement;
 }

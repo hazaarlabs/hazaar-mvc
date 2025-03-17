@@ -17,7 +17,6 @@ class Sqlite implements Driver, SQL, Statement, Table, Transaction, Trigger
     use Traits\PDO {
         Traits\PDO::query as pdoQuery; // Alias the trait's query method to pdoQuery
     }
-    use Traits\PDO\Statement;
     use Traits\PDO\Transaction;
     use Traits\SQL;
     use Traits\SQL\Table;
@@ -71,9 +70,9 @@ class Sqlite implements Driver, SQL, Statement, Table, Transaction, Trigger
 
     public function tableExists(string $name): bool
     {
-        $sql = 'SELECT name FROM sqlite_master WHERE type = \'table\' AND name = ?';
+        $sql = 'SELECT name FROM sqlite_master WHERE type = \'table\' AND name = :name';
 
-        return false !== $this->query($sql, [$name])->fetch();
+        return false !== $this->query($sql, ['name' => $name])->fetch();
     }
 
     public function describeTable(string $tableName, ?string $sort = null): array|false

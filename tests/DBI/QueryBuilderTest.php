@@ -25,7 +25,7 @@ class QueryBuilderTest extends TestCase
         $sql = 'SELECT id, name FROM "test_table" WHERE id = :id0 ORDER BY id ASC NULLS LAST LIMIT 10 OFFSET 5;';
         $this->assertEquals($sql, (string) $query);
         $values = $query->getCriteriaValues();
-        $this->assertEquals(['id' => 1], $values);
+        $this->assertEquals(['id0' => 1], $values);
     }
 
     public function testAdvancedSELECT(): void
@@ -41,7 +41,7 @@ class QueryBuilderTest extends TestCase
         $sql = 'SELECT id, name FROM "test_table" WHERE id = :id0 AND name = :name0 ORDER BY id ASC NULLS LAST LIMIT 10 OFFSET 5;';
         $this->assertEquals($sql, (string) $query);
         $values = $query->getCriteriaValues();
-        $this->assertEquals(['id' => 1, 'name' => 'test'], $values);
+        $this->assertEquals(['id0' => 1, 'name0' => 'test'], $values);
     }
 
     public function testBasicINSERT(): void

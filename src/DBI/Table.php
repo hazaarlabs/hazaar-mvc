@@ -216,7 +216,7 @@ class Table
             ->returning($returning)
             ->onConflict($conflictTarget, $conflictUpdate)
         ;
-        $statement = $this->adapter->prepare($queryBuilder);
+        $statement = $this->adapter->prepareQuery($queryBuilder);
         $result = $statement->execute();
         if (!$result) {
             return false;
@@ -238,13 +238,16 @@ class Table
     ): false|Model {
         $values = $model->toArray();
         // For efficiency, we only return the values that were not set by the model
-        $returning = array_diff($model->keys(), array_keys($values));
-        $sqlString = $this->queryBuilder->insert($this->name, $values, $returning, $conflictTarget, $conflictUpdate);
-        $result = $this->adapter->query($sqlString);
+        $queryBuilder = $this->queryBuilder->insert($values)
+            ->returning(array_diff($model->keys(), array_keys($values)))
+            ->onConflict($conflictTarget, $conflictUpdate)
+        ;
+        $statement = $this->adapter->prepareQuery($queryBuilder);
+        $result = $statement->execute();
         if (!$result) {
             return false;
         }
-        $model->extend($result->fetch());
+        $model->extend($statement->fetch(\PDO::FETCH_ASSOC));
 
         return $model;
     }
@@ -258,7 +261,7 @@ class Table
             ->where($where)
             ->returning($returning)
         ;
-        $statement = $this->adapter->prepare($queryBuilder);
+        $statement = $this->adapter->prepareQuery($queryBuilder);
         $result = $statement->execute();
         if (!$result) {
             return false;
@@ -294,7 +297,7 @@ class Table
             ->where($criteria)
             ->returning(array_diff($model->keys(), array_keys($values)))
         ;
-        $statement = $this->adapter->prepare($queryBuilder);
+        $statement = $this->adapter->prepareQuery($queryBuilder);
         $result = $statement->execute();
         if (!$result) {
             return false;
@@ -312,7 +315,7 @@ class Table
         $queryBuilder = $this->queryBuilder->delete()
             ->where($where)
         ;
-        $statement = $this->adapter->prepare($queryBuilder);
+        $statement = $this->adapter->prepareQuery($queryBuilder);
         $result = $statement->execute();
 
         if (false === $result) {
@@ -345,7 +348,7 @@ class Table
         if (null !== $where) {
             $this->where($where);
         }
-        $statement = $this->adapter->prepare($this->queryBuilder);
+        $statement = $this->adapter->prepareQuery($this->queryBuilder);
         $result = $statement->execute();
 
         if ($result) {
@@ -373,7 +376,7 @@ class Table
     public function findOne(array|string $where, mixed $columns = null): array|false
     {
         $this->queryBuilder->select($columns)->where($where);
-        $statement = $this->adapter->prepare($this->queryBuilder->limit(1));
+        $statement = $this->adapter->prepareQuery($this->queryBuilder->limit(1));
         if ($statement->execute()) {
             return $statement->fetch(\PDO::FETCH_ASSOC);
         }
