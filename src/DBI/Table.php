@@ -215,16 +215,17 @@ class Table
         null|array|bool $conflictUpdate = null,
         ?Table $table = null
     ): mixed {
-        $sqlString = $this->queryBuilder->insert($this->name, $values, $returning, $conflictTarget, $conflictUpdate, $table);
-        $result = $this->adapter->query($sqlString);
+        $queryBuilder = $this->queryBuilder->insert($values, $returning, $conflictTarget, $conflictUpdate, $table);
+        $statement = $this->adapter->prepare($queryBuilder);
+        $result = $statement->execute();
         if (!$result) {
             return false;
         }
         if (null === $returning) {
-            return $result->rowCount();
+            return $statement->rowCount();
         }
 
-        return ($result->columnCount() > 1) ? $result->fetch() : $result->fetchColumn(0);
+        return ($statement->columnCount() > 1) ? $statement->fetch() : $statement->fetchColumn(0);
     }
 
     /**
@@ -253,7 +254,7 @@ class Table
      */
     public function update(mixed $values, array|string $where = [], mixed $returning = null): mixed
     {
-        $result = $this->adapter->query($this->queryBuilder->update($this->name, $values, $where, [], $returning));
+        $result = $this->adapter->prepare($this->queryBuilder->update($this->name, $values, $where, [], $returning));
 
         return null === $returning
             ? $result->rowCount()

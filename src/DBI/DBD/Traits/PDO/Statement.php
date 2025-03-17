@@ -10,7 +10,7 @@ trait Statement
 {
     public function prepare(QueryBuilder $queryBuilder): \PDOStatement
     {
-        $statement = $this->pdo->prepare($queryBuilder->toString(prepareValues: true));
+        $statement = $this->pdo->prepare($queryBuilder->toString());
         $values = $queryBuilder->getCriteriaValues();
         foreach ($values as $key => $value) {
             $statement->bindValue($key, $value);
