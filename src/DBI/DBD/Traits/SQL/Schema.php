@@ -2,6 +2,8 @@
 
 namespace Hazaar\DBI\DBD\Traits\SQL;
 
+use Hazaar\Util\Boolean;
+
 trait Schema
 {
     public function getSchemaName(): string
@@ -24,7 +26,7 @@ trait Schema
         }
         $sql = $queryBuilder->exists('information_schema.schemata', ['schema_name' => $schemaName]);
         if ($result = $this->query($sql)) {
-            return \Hazaar\Util\Boolean::from($result->fetchColumn(0));
+            return Boolean::from($result->fetchColumn(0));
         }
 
         return false;
@@ -63,7 +65,7 @@ trait Schema
         ;
 
         $rows = [];
-        $result = $this->query($sql);
+        $result = $this->query($sql, $queryBuilder->getCriteriaValues());
         if ($result) {
             while ($row = $result->fetch()) {
                 $rows[] = $row;

@@ -15,45 +15,16 @@ interface QueryBuilder
 
     public function create(string $name, string $type, bool $ifNotExists = false): string;
 
-    /**
-     * @param array<string>|string $returning
-     * @param array<mixed>         $conflictTarget
-     * @param array<string>|bool   $conflictUpdate
-     */
-    public function insert(
-        string $tableName,
-        mixed $fields,
-        null|array|string $returning = null,
-        null|array|string $conflictTarget = null,
-        null|array|bool $conflictUpdate = null,
-        ?Table $table = null
-    ): string;
+    public function insert(mixed $fields): self;
 
     /**
-     * @param array<mixed>  $criteria
-     * @param array<string> $from
-     * @param array<string> $tables
+     * @param array<mixed> $fields
      */
-    public function update(
-        string $table,
-        mixed $fields,
-        array $criteria = [],
-        array $from = [],
-        mixed $returning = null,
-        array $tables = []
-    ): string;
+    public function update(array $fields): self;
 
-    /**
-     * @param array<mixed>  $criteria
-     * @param array<string> $from
-     */
-    public function delete(
-        string $table,
-        array $criteria,
-        array $from = []
-    ): string;
+    public function delete(): self;
 
-    public function truncate(string $table, bool $cascade = false): string;
+    public function truncate(bool $cascade = false): self;
 
     public function count(): string;
 
@@ -63,9 +34,14 @@ interface QueryBuilder
 
     public function distinct(string ...$columns): self;
 
-    public function from(string $table): self;
+    public function table(string $table, ?string $alias = null): self;
 
-    public function where(mixed ...$criteria): self;
+    public function from(string $table, ?string $alias = null): self;
+
+    /**
+     * @param array<mixed>|string $criteria
+     */
+    public function where(array|string $criteria): self;
 
     public function group(string ...$column): self;
 
@@ -116,9 +92,7 @@ interface QueryBuilder
      */
     public function prepareFields(mixed $fields, array $exclude = [], array $tables = []): string;
 
-    public function prepareValues(mixed $values): string;
-
-    public function prepareValue(mixed $value, ?string $key = null): mixed;
+    public function prepareValue(string $key, mixed $value): mixed;
 
     /**
      * @param array<mixed> $array
@@ -135,9 +109,24 @@ interface QueryBuilder
         string $bindType = 'AND',
         string $tissue = '=',
         ?string $parentRef = null,
-        null|int|string $optionalKey = null,
-        bool &$setKey = true
+        bool &$setKey = true,
     ): string;
 
     public function reset(): self;
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function getCriteriaValues(): array;
+
+    public function returning(mixed ...$columns): self;
+
+    /**
+     * @param array<string> $target
+     * @param array<string> $update
+     */
+    public function onConflict(
+        null|array|string $target = null,
+        null|array|bool $update = null
+    ): self;
 }

@@ -12,15 +12,16 @@ use Hazaar\DBI\Interface\API\Index;
 use Hazaar\DBI\Interface\API\Schema;
 use Hazaar\DBI\Interface\API\Sequence;
 use Hazaar\DBI\Interface\API\SQL;
+use Hazaar\DBI\Interface\API\Statement;
 use Hazaar\DBI\Interface\API\StoredFunction;
 use Hazaar\DBI\Interface\API\Table;
 use Hazaar\DBI\Interface\API\Transaction;
 use Hazaar\DBI\Interface\API\Trigger;
 use Hazaar\DBI\Interface\API\User;
 use Hazaar\DBI\Interface\API\View;
-use Hazaar\DBI\Interface\QueryBuilder;
+use Hazaar\Util\Boolean;
 
-class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequence, SQL, StoredFunction, Table, Trigger, User, View, Transaction
+class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequence, Statement, SQL, StoredFunction, Table, Trigger, User, View, Transaction
 {
     use Traits\PDO {
         Traits\PDO::query as pdoQuery; // Alias the trait's query method to pdoQuery
@@ -250,7 +251,7 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
             .$queryBuilder->quoteSpecial($name)
             .' WITH LOGIN';
         if (null !== $password) {
-            $sql .= ' PASSWORD '.$queryBuilder->prepareValue($password);
+            $sql .= ' PASSWORD '.$queryBuilder->prepareValue('password', $password);
         }
         if (!empty($privileges)) {
             $sql .= ' '.implode(' ', $privileges);
@@ -279,7 +280,7 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
     {
         $queryBuilder = $this->getQueryBuilder();
         $sql = 'CREATE ROLE '
-            .$queryBuilder->prepareValue($name);
+            .$queryBuilder->prepareValue('name', $name);
 
         return false !== $this->exec($sql);
     }
@@ -288,7 +289,7 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
     {
         $queryBuilder = $this->getQueryBuilder();
         $sql = 'DROP ROLE '.($ifExists ? 'IF EXISTS ' : '')
-            .$queryBuilder->prepareValue($name);
+            .$queryBuilder->prepareValue('named', $name);
 
         return false !== $this->exec($sql);
     }
@@ -336,7 +337,7 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
                 'name' => $row['index_name'],
                 'table' => $row['table_name'],
                 'columns' => array_map('trim', explode(',', $row['column_names'])),
-                'unique' => \Hazaar\Util\Boolean::from($row['indisunique']),
+                'unique' => Boolean::from($row['indisunique']),
             ];
         }
 
@@ -372,7 +373,7 @@ class Pgsql implements Driver, Constraint, Extension, Group, Index, Schema, Sequ
         $queryBuilder = $this->getQueryBuilder();
         [$schema, $name] = $queryBuilder->parseSchemaName($name);
         $sql = 'SELECT table_name as name, trim(view_definition) as query FROM INFORMATION_SCHEMA.views WHERE table_schema='
-            .$queryBuilder->prepareValue($schema).' AND table_name='.$queryBuilder->prepareValue($name);
+            .$queryBuilder->prepareValue('schema_name', $schema).' AND table_name='.$queryBuilder->prepareValue('table_name', $name);
         if ($result = $this->query($sql)) {
             return $result->fetch(\PDO::FETCH_ASSOC);
         }

@@ -6,11 +6,13 @@ namespace Hazaar\DBI\DBD;
 
 use Hazaar\DBI\DBD\Interface\Driver;
 use Hazaar\DBI\Interface\API\SQL;
+use Hazaar\DBI\Interface\API\Statement;
 use Hazaar\DBI\Interface\API\Table;
 use Hazaar\DBI\Interface\API\Transaction;
 use Hazaar\DBI\Interface\API\Trigger;
+use Hazaar\Util\Boolean;
 
-class Sqlite implements Driver, SQL, Table, Transaction, Trigger
+class Sqlite implements Driver, SQL, Statement, Table, Transaction, Trigger
 {
     use Traits\PDO {
         Traits\PDO::query as pdoQuery; // Alias the trait's query method to pdoQuery
@@ -68,9 +70,9 @@ class Sqlite implements Driver, SQL, Table, Transaction, Trigger
 
     public function tableExists(string $name): bool
     {
-        $sql = 'SELECT name FROM sqlite_master WHERE type = \'table\' AND name = ?';
+        $sql = 'SELECT name FROM sqlite_master WHERE type = \'table\' AND name = :name';
 
-        return false !== $this->query($sql, [$name])->fetch();
+        return false !== $this->query($sql, ['name' => $name])->fetch();
     }
 
     public function describeTable(string $tableName, ?string $sort = null): array|false
@@ -87,7 +89,7 @@ class Sqlite implements Driver, SQL, Table, Transaction, Trigger
             $column = [
                 'name' => $row['name'],
                 'default' => $default,
-                'not_null' => \Hazaar\Util\Boolean::from($row['notnull']),
+                'not_null' => Boolean::from($row['notnull']),
                 'type' => strtolower($row['type']),
                 'length' => null,
             ];

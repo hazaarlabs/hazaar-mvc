@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI\DBD\Traits;
 
+use Hazaar\DBI\Interface\QueryBuilder;
 use Hazaar\DBI\Result;
 use Hazaar\DBI\Result\PDO as PDOResult;
 use Hazaar\Util\Arr;
@@ -25,25 +26,43 @@ trait PDO
         return $this->pdo->exec($sql);
     }
 
+    public function prepare(string $sql): \PDOStatement
+    {
+        return $this->pdo->prepare($sql);
+    }
+
+    public function prepareQuery(QueryBuilder $queryBuilder): \PDOStatement
+    {
+        $statement = $this->pdo->prepare($queryBuilder->toString());
+        $values = $queryBuilder->getCriteriaValues();
+        foreach ($values as $key => $value) {
+            $statement->bindValue($key, $value);
+        }
+        $this->lastQueryString = $statement->queryString;
+
+        return $statement;
+    }
+
+    public function lastQueryString(): string
+    {
+        return $this->lastQueryString;
+    }
+
     /**
      * @param array<mixed> $parameters
      */
     public function query(string $sql, array $parameters = []): false|Result
     {
-        $this->lastQueryString = $sql;
-        $stmt = $this->pdo->prepare($sql);
-        if (false === $stmt) {
-            return false;
-        }
+        $statement = $this->pdo->prepare($sql);
         foreach ($parameters as $key => $value) {
-            $stmt->bindValue($key + 1, $value);
+            $statement->bindValue($key, $value);
         }
-        $result = $stmt->execute();
+        $result = $statement->execute();
         if (false === $result) {
             return false;
         }
 
-        return new PDOResult($stmt);
+        return new PDOResult($statement);
     }
 
     public function quote(mixed $string, int $type = \PDO::PARAM_STR): false|string
@@ -76,11 +95,6 @@ trait PDO
     public function errorCode(): string
     {
         return $this->pdo->errorCode();
-    }
-
-    public function lastQueryString(): string
-    {
-        return $this->lastQueryString;
     }
 
     /**
