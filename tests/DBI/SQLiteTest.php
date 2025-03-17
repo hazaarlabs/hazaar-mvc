@@ -79,9 +79,11 @@ class SQLiteTest extends TestCase
         $this->assertInstanceOf('Hazaar\DBI\Table', $table);
         $this->assertEquals('test_table', $table->getName());
         // Insert
-        $rowId = $table->insert(['name' => 'test', 'id' => 1], 'id');
-        $this->assertIsInt($rowId);
+        $rowId = rand(1, 1000);
+        $newRowId = $table->insert(['name' => 'test', 'id' => $rowId], 'id');
+        $this->assertIsInt($newRowId);
         $this->assertGreaterThan(0, $rowId);
+        $this->assertEquals($rowId, $newRowId);
     }
 
     public function testTableFindOne(): void
@@ -90,9 +92,10 @@ class SQLiteTest extends TestCase
         $table = $this->db->table('test_table');
         $this->assertInstanceOf('Hazaar\DBI\Table', $table);
         $this->assertEquals('test_table', $table->getName());
-        $this->assertEquals(1, $table->insert(['name' => 'test', 'id' => 1], 'id'));
+        $rowId = rand(1, 1000);
+        $this->assertEquals($rowId, $table->insert(['name' => 'test', 'id' => $rowId], 'id'));
         // Select
-        $result = $table->findOne(['id' => 1,[ 'name' => 'test']]);
+        $result = $table->findOne(['id' => $rowId, ['name' => 'test']]);
         $this->assertIsArray($result);
         $this->assertEquals('test', $result['name']);
     }
@@ -103,10 +106,13 @@ class SQLiteTest extends TestCase
         $table = $this->db->table('test_table');
         $this->assertInstanceOf('Hazaar\DBI\Table', $table);
         $this->assertEquals('test_table', $table->getName());
+        $rowId = rand(1, 1000);
+        // Insert
+        $this->assertEquals($rowId, $table->insert(['name' => 'test', 'id' => $rowId], 'id'));
         // Update
-        $updated = $table->update(['name' => 'test2'], ['id' => 1]);
+        $updated = $table->update(['name' => 'test2'], ['id' => $rowId]);
         $this->assertEquals(1, $updated);
-        $result = $table->findOne(['id' => 1]);
+        $result = $table->findOne(['id' => $rowId]);
         $this->assertIsArray($result);
         $this->assertEquals('test2', $result['name']);
     }
@@ -117,23 +123,27 @@ class SQLiteTest extends TestCase
         $table = $this->db->table('test_table');
         $this->assertInstanceOf('Hazaar\DBI\Table', $table);
         $this->assertEquals('test_table', $table->getName());
+        $rowId = rand(1, 1000);
+        // Insert
+        $this->assertEquals($rowId, $table->insert(['name' => 'test', 'id' => $rowId], 'id'));
         // Delete
-        $deleted = $table->delete(['id' => 1]);
+        $deleted = $table->delete(['id' => $rowId]);
         $this->assertEquals(1, $deleted);
-        $result = $table->findOne(['id' => 1]);
+        $result = $table->findOne(['id' => $rowId]);
         $this->assertFalse($result);
     }
 
     public function testInsertSelect(): void
     {
-        $sql = 'SELECT * FROM "test_table" WHERE id = 1234';
+        $rowId = rand(1, 1000);
+        $sql = 'SELECT * FROM "test_table" WHERE id = :id0';
         $data = [
-            'id' => 1234,
+            'id' => $rowId,
             'name' => 'Test Name',
             'stored' => true,
         ];
         $this->assertEquals(1, $this->db->table('test_table')->insert($data));
-        $statement = $this->db->table('test_table')->find(['id' => 1234]);
+        $statement = $this->db->table('test_table')->find(['id' => $rowId]);
         $this->assertEquals($sql, (string) $statement);
         $this->assertEquals($data, $statement->fetch());
     }

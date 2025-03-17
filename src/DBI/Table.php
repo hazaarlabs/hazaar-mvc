@@ -50,10 +50,7 @@ class Table
         return $this->adapter->query($sql)->fetchColumn(0);
     }
 
-    /**
-     * @param array<mixed>|string $columns
-     */
-    public function select(array|string $columns = '*'): self
+    public function select(mixed $columns = '*'): self
     {
         $this->queryBuilder->select($columns);
 
@@ -215,7 +212,10 @@ class Table
         null|array|bool $conflictUpdate = null,
         ?Table $table = null
     ): mixed {
-        $queryBuilder = $this->queryBuilder->insert($values, $returning, $conflictTarget, $conflictUpdate, $table);
+        $queryBuilder = $this->queryBuilder->insert($values)
+            ->returning($returning)
+            ->onConflict($conflictTarget, $conflictUpdate)
+        ;
         $statement = $this->adapter->prepare($queryBuilder);
         $result = $statement->execute();
         if (!$result) {
@@ -254,11 +254,19 @@ class Table
      */
     public function update(mixed $values, array|string $where = [], mixed $returning = null): mixed
     {
-        $result = $this->adapter->prepare($this->queryBuilder->update($this->name, $values, $where, [], $returning));
+        $queryBuilder = $this->queryBuilder->update($values)
+            ->where($where)
+            ->returning($returning)
+        ;
+        $statement = $this->adapter->prepare($queryBuilder);
+        $result = $statement->execute();
+        if (!$result) {
+            return false;
+        }
 
         return null === $returning
-            ? $result->rowCount()
-            : ($result->columnCount() > 1 ? $result->fetch() : $result->fetchColumn(0));
+            ? $statement->rowCount()
+            : ($statement->columnCount() > 1 ? $statement->fetch() : $statement->fetchColumn(0));
     }
 
     /**
@@ -282,12 +290,16 @@ class Table
             $criteria[$key] = $model->get($key);
         }
         $values = $model->toArray();
-        $returning = array_diff($model->keys(), array_keys($values));
-        $result = $this->adapter->query($this->queryBuilder->update($this->name, $values, $criteria, [], $returning));
+        $queryBuilder = $this->queryBuilder->update($values)
+            ->where($criteria)
+            ->returning(array_diff($model->keys(), array_keys($values)))
+        ;
+        $statement = $this->adapter->prepare($queryBuilder);
+        $result = $statement->execute();
         if (!$result) {
             return false;
         }
-        $model->extend($result->fetch());
+        $model->extend($statement->fetch());
 
         return $model;
     }
@@ -297,38 +309,47 @@ class Table
      */
     public function delete(array|string $where): false|int
     {
-        $result = $this->adapter->query($this->queryBuilder->delete($this->name, $where));
+        $queryBuilder = $this->queryBuilder->delete()
+            ->where($where)
+        ;
+        $statement = $this->adapter->prepare($queryBuilder);
+        $result = $statement->execute();
+
         if (false === $result) {
             return false;
         }
 
-        return $result->rowCount();
+        return $statement->rowCount();
     }
 
     public function deleteAll(): false|int
     {
-        return $this->adapter->exec($this->queryBuilder->delete($this->name, []));
+        $queryBuilder = $this->queryBuilder->delete();
+
+        return $this->adapter->exec($queryBuilder->toString());
     }
 
     public function truncate(bool $cascade = false): bool
     {
-        return false !== $this->adapter->exec($this->queryBuilder->truncate($this->name, $cascade));
+        $queryBuilder = $this->queryBuilder->truncate($cascade);
+
+        return false !== $this->adapter->exec($queryBuilder->toString());
     }
 
     /**
      * @param null|array<mixed>|string $columns
      */
-    public function find(mixed $where = null, null|array|string $columns = null): false|Result
+    public function find(mixed $where = null, mixed $columns = null): false|Result
     {
-        if (null !== $columns) {
-            $this->select($columns);
-        }
+        $this->select($columns);
         if (null !== $where) {
             $this->where($where);
         }
-        $result = $this->adapter->query($this->queryBuilder->toString());
+        $statement = $this->adapter->prepare($this->queryBuilder);
+        $result = $statement->execute();
+
         if ($result) {
-            return $result;
+            return new \Hazaar\DBI\Result\PDO($statement);
         }
 
         return false;
@@ -349,12 +370,9 @@ class Table
      *
      * @return array<mixed>|false
      */
-    public function findOne(array|string $where, null|array|string $columns = null): array|false
+    public function findOne(array|string $where, mixed $columns = null): array|false
     {
-        $this->queryBuilder->where($where);
-        if (null !== $columns) {
-            $this->select($columns);
-        }
+        $this->queryBuilder->select($columns)->where($where);
         $statement = $this->adapter->prepare($this->queryBuilder->limit(1));
         if ($statement->execute()) {
             return $statement->fetch(\PDO::FETCH_ASSOC);
@@ -387,10 +405,7 @@ class Table
      */
     public function findOneRow(array|string $where, null|array|string $columns = null): false|Row
     {
-        $this->queryBuilder->where($where);
-        if (null !== $columns) {
-            $this->select($columns);
-        }
+        $this->queryBuilder->select($columns)->where($where);
         $result = $this->adapter->query($this->queryBuilder->limit(1)->toString());
         if ($result) {
             return $result->row();

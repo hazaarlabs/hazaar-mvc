@@ -92,10 +92,7 @@ interface QueryBuilder
      */
     public function prepareFields(mixed $fields, array $exclude = [], array $tables = []): string;
 
-    /**
-     * @param array<string,mixed> $valueIndex
-     */
-    public function prepareValue(string $key, mixed $value, array &$valueIndex = []): mixed;
+    public function prepareValue(string $key, mixed $value): mixed;
 
     /**
      * @param array<mixed> $array
@@ -105,8 +102,7 @@ interface QueryBuilder
     public function prepareArrayAliases(array $array): array;
 
     /**
-     * @param array<mixed>        $criteria
-     * @param array<string,mixed> $valueIndex
+     * @param array<mixed> $criteria
      */
     public function prepareCriteria(
         array|string $criteria,
@@ -114,7 +110,6 @@ interface QueryBuilder
         string $tissue = '=',
         ?string $parentRef = null,
         bool &$setKey = true,
-        array &$valueIndex = []
     ): string;
 
     public function reset(): self;
@@ -123,4 +118,15 @@ interface QueryBuilder
      * @return array<string,mixed>
      */
     public function getCriteriaValues(): array;
+
+    public function returning(mixed ...$columns): self;
+
+    /**
+     * @param array<string> $target
+     * @param array<string> $update
+     */
+    public function onConflict(
+        null|array|string $target = null,
+        null|array|bool $update = null
+    ): self;
 }

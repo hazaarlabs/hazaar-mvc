@@ -93,14 +93,22 @@ class SQL implements QueryBuilder
     protected ?int $limit = null;
     protected ?int $offset = null;
 
-    protected ?string $conflictTarget = null;
+    /**
+     * @var null|array<string>|string
+     */
+    protected null|array|string $conflictTarget = null;
 
     /**
-     * @var array<string>|bool
+     * @var null|array<string>|bool
      */
-    protected array|bool $conflictUpdate = false;
+    protected null|array|bool $conflictUpdate = false;
 
     private ?string $schemaName;
+
+    /**
+     * @var array<string,mixed>
+     */
+    private array $valueIndex = [];
 
     public function __construct(?string $schemaName = null)
     {
@@ -191,6 +199,7 @@ class SQL implements QueryBuilder
         $this->cascade = false;
         $this->limit = null;
         $this->offset = null;
+        $this->valueIndex = [];
 
         return $this;
     }
@@ -251,6 +260,7 @@ class SQL implements QueryBuilder
 
     public function select(mixed ...$columns): self
     {
+        $this->type = QueryType::SELECT;
         $this->fields = array_filter($columns, function ($value) {
             return !(is_null($value) || (is_string($value) && '' === trim($value)));
         });
@@ -377,6 +387,7 @@ class SQL implements QueryBuilder
      */
     public function toString(bool $terminateWithColon = false): string
     {
+        $this->valueIndex = [];
         return match ($this->type) {
             QueryType::SELECT => $this->toSELECTString(),
             QueryType::INSERT => $this->toINSERTString(),
@@ -448,25 +459,21 @@ class SQL implements QueryBuilder
         return implode(', ', $fieldDef);
     }
 
-    /**
-     * @param-out array<string,mixed> $valueIndex
-     */
-    public function prepareValue(string $key, mixed $value, array &$valueIndex = []): mixed
+    public function prepareValue(string $key, mixed $value): mixed
     {
-        if (isset($valueIndex[$key])) {
-            if (in_array($value, $valueIndex[$key])) {
-                $index = array_search($value, $valueIndex[$key]);
+        if (isset($this->valueIndex[$key])) {
+            if (in_array($value, $this->valueIndex[$key])) {
+                $index = array_search($value, $this->valueIndex[$key]);
                 $key = ":{$key}{$index}";
             } else {
-                $index = count($valueIndex[$key]);
+                $index = count($this->valueIndex[$key]);
             }
         } else {
-            $valueIndex[$key] = [$value];
+            $this->valueIndex[$key] = [$value];
             $index = 0;
         }
-        $key = ":{$key}{$index}";
 
-        return $key;
+        return ":{$key}{$index}";
     }
 
     /**
@@ -505,7 +512,6 @@ class SQL implements QueryBuilder
         string $tissue = '=',
         ?string $parentRef = null,
         bool &$setKey = true,
-        array &$valueIndex = [],
         int $depth = 0,
     ): string {
         if (!is_array($criteria)) {
@@ -523,19 +529,19 @@ class SQL implements QueryBuilder
                 $parts[] = '( '.$value.' )';
             } elseif (is_string($key) && '$' == substr($key, 0, 1)) {
                 $parentRef = $parentRef ?? $key;
-                if ($actionParts = $this->prepareCriteriaAction(strtolower(substr($key, 1)), $value, $parentRef, $tissue, $setKey, valueIndex: $valueIndex, depth: $depth)) {
+                if ($actionParts = $this->prepareCriteriaAction(strtolower(substr($key, 1)), $value, $parentRef, $tissue, $setKey, depth: $depth)) {
                     if (is_array($actionParts)) {
                         $parts = array_merge($parts, $actionParts);
                     } else {
                         $parts[] = $actionParts;
                     }
                 } else {
-                    $parts[] = ' '.$tissue.' '.$this->prepareCriteria(criteria: $value, bindType: strtoupper(substr($key, 1)), valueIndex: $valueIndex, depth: $depth + 1);
+                    $parts[] = ' '.$tissue.' '.$this->prepareCriteria(criteria: $value, bindType: strtoupper(substr($key, 1)), depth: $depth + 1);
                 }
             } elseif (is_array($value)) {
                 $parentRef = $parentRef ?? is_string($key) ? $key : null;
                 $set = true;
-                $subValue = $this->prepareCriteria($value, $bindType, $tissue, $parentRef, $set, valueIndex: $valueIndex, depth: $depth + 1);
+                $subValue = $this->prepareCriteria($value, $bindType, $tissue, $parentRef, $set, depth: $depth + 1);
                 if (is_numeric($key)) {
                     $parts[] = $subValue;
                 } else {
@@ -550,7 +556,7 @@ class SQL implements QueryBuilder
                 } else {
                     $joiner = $tissue;
                 }
-                $parts[] = $this->field($key).' '.$joiner.' '.$this->prepareValue($key, value: $value, valueIndex: $valueIndex);
+                $parts[] = $this->field($key).' '.$joiner.' '.$this->prepareValue($key, value: $value);
             }
         }
         $encapsulate = (count($parts) > 1) && ($depth > 0);
@@ -561,25 +567,34 @@ class SQL implements QueryBuilder
 
     public function getCriteriaValues(): array
     {
-        $flatten = function ($item) use (&$flatten) {
-            $result = [];
-            foreach ($item as $key => $value) {
-                if (is_array($value)) {
-                    $result = array_merge($result, $flatten($value));
-                } elseif (!(is_int($key) || '$' === substr($key, 0, 1))) {
-                    $result[$key] = $value;
-                }
+        $criteriaValues = [];
+        foreach ($this->valueIndex as $key => $values) {
+            foreach ($values as $index => $value) {
+                $criteriaValues["{$key}{$index}"] = $value;
             }
+        }
 
-            return $result;
-        };
+        return $criteriaValues;
+    }
 
-        return $flatten($this->where);
+    public function returning(mixed ...$columns): self
+    {
+        $this->returning = 1 === count($columns) ? $columns[0] : $columns;
+
+        return $this;
+    }
+
+    public function onConflict(
+        null|array|string $target = null,
+        null|array|bool $update = null
+    ): self {
+        $this->conflictTarget = $target;
+        $this->conflictUpdate = $update;
+
+        return $this;
     }
 
     /**
-     * @param array<string,mixed> $valueIndex
-     *
      * @return null|array<string>|string
      */
     private function prepareCriteriaAction(
@@ -588,25 +603,24 @@ class SQL implements QueryBuilder
         string $key,
         ?string $tissue = '=',
         bool &$setKey = true,
-        array &$valueIndex = [],
         int $depth = 0,
     ): null|array|string {
         switch ($action) {
             case 'and':
-                return $this->prepareCriteria(criteria: $value, bindType: 'AND', depth: $depth, valueIndex: $valueIndex);
+                return $this->prepareCriteria(criteria: $value, bindType: 'AND', depth: $depth);
 
             case 'or':
-                return $this->prepareCriteria(criteria: $value, bindType: 'OR', depth: $depth, valueIndex: $valueIndex);
+                return $this->prepareCriteria(criteria: $value, bindType: 'OR', depth: $depth);
 
             case 'ne':
                 if (is_null($value)) {
                     return 'IS NOT NULL';
                 }
 
-                return (is_bool($value) ? 'IS NOT ' : '!= ').$this->prepareValue($key, $value, $valueIndex);
+                return (is_bool($value) ? 'IS NOT ' : '!= ').$this->prepareValue($key, $value);
 
             case 'not':
-                return 'NOT ('.$this->prepareCriteria(criteria: $value, depth: $depth, valueIndex: $valueIndex).')';
+                return 'NOT ('.$this->prepareCriteria(criteria: $value, depth: $depth).')';
 
             case 'ref':
                 return $tissue.' '.$value;
@@ -619,7 +633,7 @@ class SQL implements QueryBuilder
                     }
                     $values = [];
                     foreach ($value as $val) {
-                        $values[] = $this->prepareValue($key, $val, $valueIndex);
+                        $values[] = $this->prepareValue($key, $val);
                     }
                     $value = implode(', ', $values);
                 }
@@ -627,50 +641,50 @@ class SQL implements QueryBuilder
                 return (('nin' == $action) ? 'NOT ' : null).'IN ('.$value.')';
 
             case 'gt':
-                return '> '.$this->prepareValue($key, $value, $valueIndex);
+                return '> '.$this->prepareValue($key, $value);
 
             case 'gte':
-                return '>= '.$this->prepareValue($key, $value, $valueIndex);
+                return '>= '.$this->prepareValue($key, $value);
 
             case 'lt':
-                return '< '.$this->prepareValue($key, $value, $valueIndex);
+                return '< '.$this->prepareValue($key, $value);
 
             case 'lte':
-                return '<= '.$this->prepareValue($key, $value, $valueIndex);
+                return '<= '.$this->prepareValue($key, $value);
 
             case 'ilike': // iLike
-                return 'ILIKE '.$this->prepareValue($key, $value, $valueIndex);
+                return 'ILIKE '.$this->prepareValue($key, $value);
 
             case 'like': // Like
-                return 'LIKE '.$this->prepareValue($key, $value, $valueIndex);
+                return 'LIKE '.$this->prepareValue($key, $value);
 
             case 'bt':
                 if (($count = count($value)) !== 2) {
                     throw new \Exception('DBD: $bt operator requires array argument with exactly 2 elements. '.$count.' given.');
                 }
 
-                return 'BETWEEN '.$this->prepareValue($key, array_values($value)[0], $valueIndex)
-                    .' AND '.$this->prepareValue($key, array_values($value)[1], $valueIndex);
+                return 'BETWEEN '.$this->prepareValue($key, array_values($value)[0])
+                    .' AND '.$this->prepareValue($key, array_values($value)[1]);
 
             case '~':
             case '~*':
             case '!~':
             case '!~*':
-                return $action.' '.$this->prepareValue($key, $value, $valueIndex);
+                return $action.' '.$this->prepareValue($key, $value);
 
             case 'exists': // exists
                 $parts = [];
                 foreach ($value as $table => $criteria) {
-                    $parts[] = 'EXISTS ( SELECT * FROM '.$table.' WHERE '.$this->prepareCriteria($criteria, valueIndex: $valueIndex).' )';
+                    $parts[] = 'EXISTS ( SELECT * FROM '.$table.' WHERE '.$this->prepareCriteria($criteria).' )';
                 }
 
                 return $parts;
 
             case 'sub': // sub query
-                return '('.$value[0]->toString(false).') '.$this->prepareCriteria($value[1], valueIndex: $valueIndex);
+                return '('.$value[0]->toString(false).') '.$this->prepareCriteria($value[1]);
 
             case 'json':
-                return $this->prepareValue($key, json_encode($value, JSON_UNESCAPED_UNICODE), $valueIndex);
+                return $this->prepareValue($key, json_encode($value, JSON_UNESCAPED_UNICODE));
         }
 
         return null;
@@ -746,7 +760,6 @@ class SQL implements QueryBuilder
 
     private function toSELECTString(): string
     {
-        $valueIndex = [];
         $sql = 'SELECT';
         if (is_array($this->distinct) && count($this->distinct) > 0) {
             $sql .= ' DISTINCT ON ('.$this->prepareFields($this->distinct).')';
@@ -768,12 +781,12 @@ class SQL implements QueryBuilder
                 if ($join['alias']) {
                     $sql .= ' '.$join['alias'];
                 }
-                $sql .= ' ON '.$this->prepareCriteria(criteria: $join['on'], valueIndex: $valueIndex);
+                $sql .= ' ON '.$this->prepareCriteria(criteria: $join['on']);
             }
         }
         // WHERE
         if (count($this->where) > 0) {
-            $sql .= ' WHERE '.$this->prepareCriteria($this->where, valueIndex: $valueIndex);
+            $sql .= ' WHERE '.$this->prepareCriteria($this->where);
         }
         // GROUP BY
         if (count($this->group) > 0) {
@@ -781,7 +794,7 @@ class SQL implements QueryBuilder
         }
         // HAVING
         if (count($this->having) > 0) {
-            $sql .= ' HAVING '.$this->prepareCriteria($this->having, valueIndex: $valueIndex);
+            $sql .= ' HAVING '.$this->prepareCriteria($this->having);
         }
         // WINDOW
         if (count($this->window) > 0) {
@@ -828,7 +841,6 @@ class SQL implements QueryBuilder
 
     private function toINSERTString(): string
     {
-        $valueIndex = [];
         $sql = 'INSERT INTO '.$this->schemaName($this->primaryTable);
         if ($this->fields instanceof Model) {
             $this->fields = $this->fields->toArray('dbiWrite', 0);
@@ -844,7 +856,7 @@ class SQL implements QueryBuilder
             }
             $valueDef = array_values($this->fields);
             foreach ($valueDef as $key => &$value) {
-                $value = $this->prepareValue(key: $fieldDef[$key], value: $value, valueIndex: $valueIndex);
+                $value = $this->prepareValue(key: $fieldDef[$key], value: $value);
             }
             $sql .= ' ('.implode(', ', $fieldDef).') VALUES ('.implode(', ', $valueDef).')';
         }
@@ -894,9 +906,8 @@ class SQL implements QueryBuilder
             $this->fields = (array) $this->fields;
         }
         $fieldDef = [];
-        $valueIndex = [];
         foreach ($this->fields as $key => &$value) {
-            $fieldDef[] = $this->field($key).' = '.$this->prepareValue(key: $key, value: $value, valueIndex: $valueIndex);
+            $fieldDef[] = $this->field($key).' = '.$this->prepareValue(key: $key, value: $value);
         }
         if (0 == count($fieldDef)) {
             throw new Exception\NoUpdate();
@@ -906,7 +917,7 @@ class SQL implements QueryBuilder
             $sql .= ' FROM '.implode(', ', $this->tables);
         }
         if (count($this->where) > 0) {
-            $sql .= ' WHERE '.$this->prepareCriteria($this->where, valueIndex: $valueIndex);
+            $sql .= ' WHERE '.$this->prepareCriteria($this->where);
         }
         $returning = (true === $this->returning) ? '*' : $this->returning;
         if (is_string($returning)) {
