@@ -71,9 +71,10 @@ class PgSQLTest extends TestCase
 
     public function testModelInsert(): void
     {
-        $sql = 'INSERT INTO "public"."test_table" (id, name) VALUES (1234, \'Test Name\') RETURNING stored';
+        $rowId = rand(1, 10000);
+        $sql = 'INSERT INTO "public"."test_table" (id, name) VALUES (:id0, :name0) RETURNING stored';
         $data = [
-            'id' => 1234,
+            'id' => $rowId,
             'name' => 'Test Name',
             'extra' => 'extra data that will not be inserted',
         ];
@@ -85,12 +86,13 @@ class PgSQLTest extends TestCase
 
     public function testModelSelect(): void
     {
+        $rowId = rand(1, 10000);
         $data = [
-            'id' => 1234,
+            'id' => $rowId,
             'name' => 'Test Name',
         ];
         $this->assertEquals(1, $this->db->table('test_table')->insert($data));
-        $result = $this->db->table('test_table')->find(['id' => 1234]);
+        $result = $this->db->table('test_table')->find(['id' => $rowId]);
         $model = $result->fetchModel(DBITestModel::class);
         $this->assertInstanceOf(DBITestModel::class, $model);
         $this->assertEquals($data['name'], $model->name);
@@ -100,31 +102,33 @@ class PgSQLTest extends TestCase
 
     public function testInsertSelect(): void
     {
-        $sql = 'SELECT * FROM "public"."test_table" WHERE id = 1234';
+        $rowId = rand(1, 10000);
+        $sql = 'SELECT * FROM "public"."test_table" WHERE id = :id0';
         $data = [
-            'id' => 1234,
+            'id' => $rowId,
             'name' => 'Test Name',
             'stored' => true,
         ];
         $this->assertEquals(1, $this->db->table('test_table')->insert($data));
-        $statement = $this->db->table('test_table')->find(['id' => 1234]);
-        $this->assertEquals($sql, (string) $statement);
-        $this->assertEquals($data, $statement->fetch());
+        $result = $this->db->table('test_table')->find(['id' => $rowId]);
+        $this->assertEquals($sql, (string) $result);
+        $this->assertEquals($data, $result->fetch());
     }
 
     public function testSelectRow(): void
     {
-        $sql = 'SELECT * FROM "public"."test_table" WHERE id = 1234';
+        $rowId = rand(1, 10000);
+        $sql = 'SELECT * FROM "public"."test_table" WHERE id = :id0';
         $data = [
-            'id' => 1234,
+            'id' => $rowId,
             'name' => 'Test Name',
         ];
         $this->assertEquals(1, $this->db->table('test_table')->insert($data));
-        $statement = $this->db->table('test_table')->find(['id' => 1234]);
+        $statement = $this->db->table('test_table')->find(['id' => $rowId]);
         $this->assertEquals($sql, (string) $statement);
         $row = $statement->row();
         $this->assertInstanceOf(Row::class, $row);
-        $this->assertEquals(1234, $row->id);
+        $this->assertEquals($rowId, $row->id);
         $this->assertEquals('Test Name', $row->name);
     }
 }

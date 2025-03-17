@@ -22,36 +22,63 @@ class QueryBuilderTest extends TestCase
             ->limit(10)
             ->offset(5)
         ;
-        $sql = 'SELECT id, name FROM "test_table" WHERE id = 1 ORDER BY id ASC NULLS LAST LIMIT 10 OFFSET 5';
-        $this->assertEquals($sql, $query->toString());
+        $sql = 'SELECT id, name FROM "test_table" WHERE id = :id0 ORDER BY id ASC NULLS LAST LIMIT 10 OFFSET 5;';
+        $this->assertEquals($sql, (string) $query);
+        $values = $query->getCriteriaValues();
+        $this->assertEquals(['id0' => 1], $values);
+    }
+
+    public function testAdvancedSELECT(): void
+    {
+        $query = new SQL();
+        $query->select(['id', 'name'])
+            ->from('test_table')
+            ->where(['id' => 1, 'name' => 'test'])
+            ->order('id', SORT_ASC)
+            ->limit(10)
+            ->offset(5)
+        ;
+        $sql = 'SELECT id, name FROM "test_table" WHERE id = :id0 AND name = :name0 ORDER BY id ASC NULLS LAST LIMIT 10 OFFSET 5;';
+        $this->assertEquals($sql, (string) $query);
+        $values = $query->getCriteriaValues();
+        $this->assertEquals(['id0' => 1, 'name0' => 'test'], $values);
     }
 
     public function testBasicINSERT(): void
     {
         $query = new SQL();
-        $sql = 'INSERT INTO "test_table" (id, name) VALUES (1, \'test\')';
-        $this->assertEquals($sql, $query->insert('test_table', ['id' => 1, 'name' => 'test']));
+        $query->insert(['id' => 1, 'name' => 'test'])
+            ->table('test_table')
+        ;
+        $sql = 'INSERT INTO "test_table" (id, name) VALUES (:id0, :name0);';
+        $this->assertEquals($sql, (string) $query);
     }
 
     public function testBasicUPDATE(): void
     {
         $query = new SQL();
-        $sql = 'UPDATE "test_table" SET id = 1, name = \'test\' WHERE id = 1';
-        $this->assertEquals($sql, $query->update('test_table', ['id' => 1, 'name' => 'test'], ['id' => 1]));
+        $query->update(['active' => true, 'name' => 'test'])
+            ->table('test_table')
+            ->where(['id' => 1])
+        ;
+        $sql = 'UPDATE "test_table" SET active = :active0, name = :name0 WHERE id = :id0;';
+        $this->assertEquals($sql, (string) $query);
     }
 
     public function testBasicDELETE(): void
     {
         $query = new SQL();
-        $sql = 'DELETE FROM "test_table" WHERE id = 1';
-        $this->assertEquals($sql, $query->delete('test_table', ['id' => 1]));
+        $query->delete()->from('test_table')->where(['id' => 1]);
+        $sql = 'DELETE FROM "test_table" WHERE id = :id0;';
+        $this->assertEquals($sql, (string) $query);
     }
 
     public function testBasicTRUNCATE(): void
     {
         $query = new SQL();
-        $sql = 'TRUNCATE TABLE "test_table"';
-        $this->assertEquals($sql, $query->truncate('test_table'));
+        $query->truncate()->table('test_table');
+        $sql = 'TRUNCATE TABLE "test_table";';
+        $this->assertEquals($sql, (string) $query);
     }
 
     public function testSELECTWithJoin(): void
@@ -65,8 +92,8 @@ class QueryBuilderTest extends TestCase
             ->limit(10)
             ->offset(5)
         ;
-        $sql = 'SELECT id, name FROM "test_table" INNER JOIN "other_table" ON test_table.id = other_table.id WHERE id = 1 ORDER BY id ASC NULLS LAST LIMIT 10 OFFSET 5';
-        $this->assertEquals($sql, $query->toString());
+        $sql = 'SELECT id, name FROM "test_table" INNER JOIN "other_table" ON test_table.id = other_table.id WHERE id = :id0 ORDER BY id ASC NULLS LAST LIMIT 10 OFFSET 5;';
+        $this->assertEquals($sql, (string) $query);
     }
 
     public function testSELECTWithGroupBy(): void
@@ -78,7 +105,7 @@ class QueryBuilderTest extends TestCase
             ->having('COUNT(id) > 1')
         ;
         $sql = 'SELECT id, name FROM "test_table" GROUP BY id HAVING ( COUNT(id) > 1 )';
-        $this->assertEquals($sql, $query->toString());
+        $this->assertEquals($sql, (string) $query->toString());
     }
 
     public function testSELECTWithGreaterThan(): void
@@ -88,8 +115,8 @@ class QueryBuilderTest extends TestCase
             ->from('test_table')
             ->where(['id' => ['$gt' => 8]])
         ;
-        $sql = 'SELECT id, name FROM "test_table" WHERE id > 8';
-        $this->assertEquals($sql, $query->toString());
+        $sql = 'SELECT id, name FROM "test_table" WHERE id > :id0';
+        $this->assertEquals($sql, (string) $query->toString());
     }
 
     public function testSELECTWithNotEquals(): void
@@ -99,8 +126,8 @@ class QueryBuilderTest extends TestCase
             ->from('test_table')
             ->where(['name' => ['$ne' => 'test']])
         ;
-        $sql = 'SELECT id, name FROM "test_table" WHERE name != \'test\'';
-        $this->assertEquals($sql, $query->toString());
+        $sql = 'SELECT id, name FROM "test_table" WHERE name != :name0';
+        $this->assertEquals($sql, (string) $query->toString());
     }
 
     public function testSELECTWithNestedGreaterThan(): void
@@ -108,12 +135,29 @@ class QueryBuilderTest extends TestCase
         $query = new SQL();
         $query->select(['id', 'name'])
             ->from('test_table')
-            ->where(['$or' => [
-                ['id' => ['$gt' => 8]],
+            ->where(['$and' => [
+                ['$or' => [
+                    ['id' => ['$lt' => 8]],
+                    ['id' => ['$gt' => 2]],
+                ]],
                 ['name' => ['$ne' => 'test']],
             ]])
         ;
-        $sql = 'SELECT id, name FROM "test_table" WHERE ( id > 8 OR name != \'test\' )';
-        $this->assertEquals($sql, $query->toString());
+        $sql = 'SELECT id, name FROM "test_table" WHERE ( id < :id0 OR id > :id1 ) AND name != :name0';
+        $this->assertEquals($sql, (string) $query->toString());
+    }
+
+    public function testSELECTWithOrOfSameColumn(): void
+    {
+        $query = new SQL();
+        $query->select(['id', 'name'])
+            ->from('test_table')
+            ->where(['$or' => [
+                ['id' => 8],
+                ['id' => 2],
+            ]])
+        ;
+        $sql = 'SELECT id, name FROM "test_table" WHERE id = :id0 OR id = :id1';
+        $this->assertEquals($sql, (string) $query->toString());
     }
 }

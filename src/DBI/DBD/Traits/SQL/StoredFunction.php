@@ -20,7 +20,7 @@ trait StoredFunction
             FROM INFORMATION_SCHEMA.routines r 
             LEFT JOIN INFORMATION_SCHEMA.parameters p ON p.specific_name=r.specific_name
             WHERE r.routine_type='FUNCTION'
-            AND r.specific_schema=".$queryBuilder->prepareValue($schemaName)."
+            AND r.specific_schema=".$queryBuilder->prepareValue('schema_name', $schemaName)."
             AND NOT (r.routine_body='EXTERNAL' AND r.external_language='C')
             ORDER BY r.routine_name, p.ordinal_position;";
         $q = $this->query($sql);
@@ -82,8 +82,8 @@ trait StoredFunction
                 FROM INFORMATION_SCHEMA.routines r
                 LEFT JOIN INFORMATION_SCHEMA.parameters p ON p.specific_name=r.specific_name
                 WHERE r.routine_type='FUNCTION'
-                AND r.routine_schema=".$queryBuilder->prepareValue($schemaName).'
-                AND r.routine_name='.$queryBuilder->prepareValue($name).'
+                AND r.routine_schema=".$queryBuilder->prepareValue('schema_name', $schemaName).'
+                AND r.routine_name='.$queryBuilder->prepareValue('name', $name).'
                 ORDER BY r.routine_name, p.ordinal_position;';
         if (!($q = $this->query($sql))) {
             throw new \Exception($this->errorInfo()[2]);
