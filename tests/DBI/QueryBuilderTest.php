@@ -50,18 +50,18 @@ class QueryBuilderTest extends TestCase
         $query->insert(['id' => 1, 'name' => 'test'])
             ->table('test_table')
         ;
-        $sql = 'INSERT INTO "test_table" (id, name) VALUES (:id, :name);';
+        $sql = 'INSERT INTO "test_table" (id, name) VALUES (:id0, :name0);';
         $this->assertEquals($sql, (string) $query);
     }
 
     public function testBasicUPDATE(): void
     {
         $query = new SQL();
-        $query->update(['id' => 1, 'name' => 'test'])
+        $query->update(['active' => true, 'name' => 'test'])
             ->table('test_table')
             ->where(['id' => 1])
         ;
-        $sql = 'UPDATE "test_table" SET id = 1, name = \'test\' WHERE id = 1;';
+        $sql = 'UPDATE "test_table" SET active = :active0, name = :name0 WHERE id = :id0;';
         $this->assertEquals($sql, (string) $query);
     }
 
@@ -69,7 +69,7 @@ class QueryBuilderTest extends TestCase
     {
         $query = new SQL();
         $query->delete()->from('test_table')->where(['id' => 1]);
-        $sql = 'DELETE FROM "test_table" WHERE id = 1;';
+        $sql = 'DELETE FROM "test_table" WHERE id = :id0;';
         $this->assertEquals($sql, (string) $query);
     }
 

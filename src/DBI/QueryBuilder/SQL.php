@@ -746,6 +746,7 @@ class SQL implements QueryBuilder
 
     private function toSELECTString(): string
     {
+        $valueIndex = [];
         $sql = 'SELECT';
         if (is_array($this->distinct) && count($this->distinct) > 0) {
             $sql .= ' DISTINCT ON ('.$this->prepareFields($this->distinct).')';
@@ -767,12 +768,12 @@ class SQL implements QueryBuilder
                 if ($join['alias']) {
                     $sql .= ' '.$join['alias'];
                 }
-                $sql .= ' ON '.$this->prepareCriteria($join['on']);
+                $sql .= ' ON '.$this->prepareCriteria(criteria: $join['on'], valueIndex: $valueIndex);
             }
         }
         // WHERE
         if (count($this->where) > 0) {
-            $sql .= ' WHERE '.$this->prepareCriteria($this->where);
+            $sql .= ' WHERE '.$this->prepareCriteria($this->where, valueIndex: $valueIndex);
         }
         // GROUP BY
         if (count($this->group) > 0) {
@@ -780,7 +781,7 @@ class SQL implements QueryBuilder
         }
         // HAVING
         if (count($this->having) > 0) {
-            $sql .= ' HAVING '.$this->prepareCriteria($this->having);
+            $sql .= ' HAVING '.$this->prepareCriteria($this->having, valueIndex: $valueIndex);
         }
         // WINDOW
         if (count($this->window) > 0) {
@@ -827,6 +828,7 @@ class SQL implements QueryBuilder
 
     private function toINSERTString(): string
     {
+        $valueIndex = [];
         $sql = 'INSERT INTO '.$this->schemaName($this->primaryTable);
         if ($this->fields instanceof Model) {
             $this->fields = $this->fields->toArray('dbiWrite', 0);
@@ -842,7 +844,7 @@ class SQL implements QueryBuilder
             }
             $valueDef = array_values($this->fields);
             foreach ($valueDef as $key => &$value) {
-                $value = $this->prepareValue($value, $fieldDef[$key]);
+                $value = $this->prepareValue(key: $fieldDef[$key], value: $value, valueIndex: $valueIndex);
             }
             $sql .= ' ('.implode(', ', $fieldDef).') VALUES ('.implode(', ', $valueDef).')';
         }
@@ -892,8 +894,9 @@ class SQL implements QueryBuilder
             $this->fields = (array) $this->fields;
         }
         $fieldDef = [];
+        $valueIndex = [];
         foreach ($this->fields as $key => &$value) {
-            $fieldDef[] = $this->field($key).' = '.$this->prepareValue($value, $key);
+            $fieldDef[] = $this->field($key).' = '.$this->prepareValue(key: $key, value: $value, valueIndex: $valueIndex);
         }
         if (0 == count($fieldDef)) {
             throw new Exception\NoUpdate();
@@ -903,7 +906,7 @@ class SQL implements QueryBuilder
             $sql .= ' FROM '.implode(', ', $this->tables);
         }
         if (count($this->where) > 0) {
-            $sql .= ' WHERE '.$this->prepareCriteria($this->where);
+            $sql .= ' WHERE '.$this->prepareCriteria($this->where, valueIndex: $valueIndex);
         }
         $returning = (true === $this->returning) ? '*' : $this->returning;
         if (is_string($returning)) {
