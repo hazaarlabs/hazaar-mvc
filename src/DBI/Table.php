@@ -229,6 +229,16 @@ class Table
     }
 
     /**
+     * @param array<string> $columnNames
+     */
+    public function prepareInsert(array $columnNames): Statement
+    {
+        $values = array_combine($columnNames, array_fill(0, count($columnNames), null));
+
+        return $this->adapter->prepareQuery($this->queryBuilder->insert($values));
+    }
+
+    /**
      * @param array<mixed> $conflictTarget
      */
     public function insertModel(

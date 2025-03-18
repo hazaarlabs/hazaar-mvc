@@ -8,8 +8,16 @@ class Statement extends \PDOStatement
 {
     protected function __construct() {}
 
-    public function customMethod(): void
+    /**
+     * @param null|array<string, mixed> $params
+     */
+    public function execute(?array $params = null): bool
     {
-        // Your added functionality
+        $statementParams = [];
+        foreach ($params as $key => $value) {
+            $statementParams["{$key}0"] = $value;
+        }
+
+        return parent::execute($statementParams);
     }
 }

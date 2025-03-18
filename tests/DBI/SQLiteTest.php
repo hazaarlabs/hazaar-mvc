@@ -189,4 +189,23 @@ class SQLiteTest extends TestCase
         $result = $this->db->query('SELECT * FROM test_table');
         $this->assertIsArray($result->fetch());
     }
+
+    public function testPreparedStatementInsertOnTable(): void
+    {
+        $table = $this->db->table('test_table');
+        $this->assertInstanceOf('Hazaar\DBI\Table', $table);
+        $this->assertEquals('test_table', $table->getName());
+        $statement = $table->prepareInsert(['name']);
+        $this->assertInstanceOf('Hazaar\DBI\Statement', $statement);
+        $this->assertEquals(1, $statement->execute(['name' => 'test1']));
+        $this->assertEquals(2, $statement->execute(['name' => 'test2']));
+        $this->assertEquals(3, $statement->execute(['name' => 'test3']));
+        $result = $this->db->query('SELECT * FROM test_table');
+        $count = 0;
+        while ($row = $result->fetch()) {
+            $this->assertStringStartsWith('test', $row['name']);
+            ++$count;
+        }
+        $this->assertEquals(3, $count);
+    }
 }
