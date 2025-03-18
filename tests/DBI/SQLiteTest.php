@@ -180,4 +180,13 @@ class SQLiteTest extends TestCase
         $result = $this->db->dropTrigger('test_trigger', 'test_table', true);
         $this->assertTrue($result);
     }
+
+    public function testPreparedStatements(): void
+    {
+        $statement = $this->db->prepare('INSERT INTO test_table (name) VALUES (:name)');
+        $this->assertInstanceOf('Hazaar\DBI\Statement', $statement);
+        $this->assertEquals(1, $statement->execute(['name' => 'test']));
+        $result = $this->db->query('SELECT * FROM test_table');
+        $this->assertIsArray($result->fetch());
+    }
 }
