@@ -201,6 +201,21 @@ class Table
     }
 
     /**
+     * Prepares a SELECT statement with the specified column names and criteria names.
+     *
+     * @param array<string> $columns       the names of the columns to be selected
+     * @param array<string> $criteriaNames the names of the columns to be used as criteria for the selection
+     *
+     * @return Statement the prepared SELECT statement
+     */
+    public function prepareSelect(array $columns, array $criteriaNames): Statement
+    {
+        $criteria = array_combine($criteriaNames, array_fill(0, count($criteriaNames), null));
+
+        return $this->adapter->prepareQuery($this->queryBuilder->select($columns)->where($criteria));
+    }
+
+    /**
      * @param null|array<mixed>|string $returning
      * @param array<mixed>             $conflictTarget
      * @param array<string>|bool       $conflictUpdate
@@ -370,6 +385,13 @@ class Table
         }
 
         return $statement->rowCount();
+    }
+
+    public function prepareDelete(array $criteriaNames): Statement
+    {
+        $criteria = array_combine($criteriaNames, array_fill(0, count($criteriaNames), null));
+
+        return $this->adapter->prepareQuery($this->queryBuilder->where($criteria)->delete());
     }
 
     public function deleteAll(): false|int

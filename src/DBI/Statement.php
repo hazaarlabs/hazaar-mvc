@@ -8,10 +8,7 @@ class Statement extends \PDOStatement
 {
     public bool $aliased = false;
 
-    protected function __construct(bool $aliases = false)
-    {
-        $this->aliased = $aliases;
-    }
+    protected function __construct() {}
 
     /**
      * @param null|array<string, mixed> $params

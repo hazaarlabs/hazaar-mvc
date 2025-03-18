@@ -34,7 +34,11 @@ trait PDO
 
     public function prepareQuery(QueryBuilder $queryBuilder): false|Statement
     {
+        /** @var false|Statement $statement */
         $statement = $this->pdo->prepare($queryBuilder->toString());
+        if (false === $statement) {
+            return false;
+        }
         $statement->aliased = true;
         $values = $queryBuilder->getCriteriaValues();
         foreach ($values as $key => $value) {
