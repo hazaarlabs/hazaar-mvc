@@ -201,6 +201,21 @@ class Table
     }
 
     /**
+     * Prepares a SELECT statement with the specified column names and criteria names.
+     *
+     * @param array<string> $columns       the names of the columns to be selected
+     * @param array<string> $criteriaNames the names of the columns to be used as criteria for the selection
+     *
+     * @return Statement the prepared SELECT statement
+     */
+    public function prepareSelect(array $columns, array $criteriaNames): Statement
+    {
+        $criteria = array_combine($criteriaNames, array_fill(0, count($criteriaNames), null));
+
+        return $this->adapter->prepareQuery($this->queryBuilder->select($columns)->where($criteria));
+    }
+
+    /**
      * @param null|array<mixed>|string $returning
      * @param array<mixed>             $conflictTarget
      * @param array<string>|bool       $conflictUpdate
@@ -229,6 +244,25 @@ class Table
     }
 
     /**
+     * Prepares an SQL INSERT statement with the given column names.
+     *
+     * This method takes an array of column names and creates an associative array
+     * where each column name is a key and the value is set to null. It then uses
+     * the query builder to generate an INSERT query with these values and prepares
+     * the query using the adapter.
+     *
+     * @param array<string> $columnNames an array of column names to be included in the INSERT statement
+     *
+     * @return Statement the prepared SQL INSERT statement
+     */
+    public function prepareInsert(array $columnNames): Statement
+    {
+        $values = array_combine($columnNames, array_fill(0, count($columnNames), null));
+
+        return $this->adapter->prepareQuery($this->queryBuilder->insert($values));
+    }
+
+    /**
      * @param array<mixed> $conflictTarget
      */
     public function insertModel(
@@ -253,7 +287,13 @@ class Table
     }
 
     /**
-     * @param array<mixed>|string $where
+     * Updates records in the database table.
+     *
+     * @param mixed               $values    The values to update in the table. This can be an associative array of column-value pairs.
+     * @param array<mixed>|string $where     The conditions to identify the records to update. This can be an associative array of column-value pairs or a string condition.
+     * @param mixed               $returning Optional. Specifies the columns to return after the update. This can be a string or an array of column names.
+     *
+     * @return mixed Returns the number of affected rows if $returning is null. If $returning is specified, returns the fetched result. Returns false if the update fails.
      */
     public function update(mixed $values, array|string $where = [], mixed $returning = null): mixed
     {
@@ -270,6 +310,28 @@ class Table
         return null === $returning
             ? $statement->rowCount()
             : ($statement->columnCount() > 1 ? $statement->fetch() : $statement->fetchColumn(0));
+    }
+
+    /**
+     * Prepares an update statement with the specified column names and criteria names.
+     *
+     * @param array<string> $columnNames   the names of the columns to be updated
+     * @param array<string> $criteriaNames the names of the columns to be used as criteria for the update
+     *
+     * @return Statement the prepared update statement
+     *
+     * @throws \InvalidArgumentException if column names and criteria names overlap
+     */
+    public function prepareUpdate(array $columnNames, array $criteriaNames = []): Statement
+    {
+        $duplicateNames = array_intersect($columnNames, $criteriaNames);
+        if (count($duplicateNames) > 0) {
+            throw new \InvalidArgumentException('Column names and criteria names must not overlap');
+        }
+        $values = array_combine($columnNames, array_fill(0, count($columnNames), null));
+        $criteria = array_combine($criteriaNames, array_fill(0, count($criteriaNames), null));
+
+        return $this->adapter->prepareQuery($this->queryBuilder->where($criteria)->update($values));
     }
 
     /**
@@ -323,6 +385,20 @@ class Table
         }
 
         return $statement->rowCount();
+    }
+
+    /**
+     * Prepares a DELETE statement with the specified criteria names.
+     *
+     * @param array<string> $criteriaNames the names of the columns to be used as criteria for the deletion
+     *
+     * @return Statement the prepared DELETE statement
+     */
+    public function prepareDelete(array $criteriaNames): Statement
+    {
+        $criteria = array_combine($criteriaNames, array_fill(0, count($criteriaNames), null));
+
+        return $this->adapter->prepareQuery($this->queryBuilder->where($criteria)->delete());
     }
 
     public function deleteAll(): false|int

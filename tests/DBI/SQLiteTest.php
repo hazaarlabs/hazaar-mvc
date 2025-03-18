@@ -180,4 +180,89 @@ class SQLiteTest extends TestCase
         $result = $this->db->dropTrigger('test_trigger', 'test_table', true);
         $this->assertTrue($result);
     }
+
+    public function testPreparedStatements(): void
+    {
+        $statement = $this->db->prepare('INSERT INTO test_table (name) VALUES (:name)');
+        $this->assertInstanceOf('Hazaar\DBI\Statement', $statement);
+        $this->assertEquals(1, $statement->execute(['name' => 'test']));
+        $result = $this->db->query('SELECT * FROM test_table');
+        $this->assertIsArray($result->fetch());
+    }
+
+    public function testPreparedStatementInsertOnTable(): void
+    {
+        $table = $this->db->table('test_table');
+        $this->assertInstanceOf('Hazaar\DBI\Table', $table);
+        $this->assertEquals('test_table', $table->getName());
+        $statement = $table->prepareInsert(['name']);
+        $this->assertInstanceOf('Hazaar\DBI\Statement', $statement);
+        $this->assertEquals(1, $statement->execute(['name' => 'test1']));
+        $this->assertEquals(2, $statement->execute(['name' => 'test2']));
+        $this->assertEquals(3, $statement->execute(['name' => 'test3']));
+        $result = $this->db->query('SELECT * FROM test_table');
+        $count = 0;
+        while ($row = $result->fetch()) {
+            $this->assertStringStartsWith('test', $row['name']);
+            ++$count;
+        }
+        $this->assertEquals(3, $count);
+    }
+
+    public function testPreparedStatementSelectOnTable(): void
+    {
+        $table = $this->db->table('test_table');
+        $this->assertInstanceOf('Hazaar\DBI\Table', $table);
+        $this->assertEquals('test_table', $table->getName());
+        $statement = $table->prepareSelect(['name'], ['id']);
+        $this->assertInstanceOf('Hazaar\DBI\Statement', $statement);
+        $this->assertEquals(1, $table->insert(['name' => 'fake1', 'id' => 1], 'id'));
+        $this->assertEquals(2, $table->insert(['name' => 'fake2', 'id' => 2], 'id'));
+        $this->assertEquals(3, $table->insert(['name' => 'fake3', 'id' => 3], 'id'));
+        $this->assertTrue($statement->execute(['id' => 1]));
+        $this->assertIsArray($statement->fetch());
+        $this->assertTrue($statement->execute(['id' => 2]));
+        $this->assertIsArray($statement->fetch());
+        $this->assertTrue($statement->execute(['id' => 3]));
+        $this->assertIsArray($statement->fetch());
+    }
+
+    public function testPreparedStatementUpdateOnTable(): void
+    {
+        $table = $this->db->table('test_table');
+        $this->assertInstanceOf('Hazaar\DBI\Table', $table);
+        $this->assertEquals('test_table', $table->getName());
+        $statement = $table->prepareUpdate(['name'], ['id']);
+        $this->assertInstanceOf('Hazaar\DBI\Statement', $statement);
+        $this->assertEquals(1, $table->insert(['name' => 'fake1', 'id' => 1], 'id'));
+        $this->assertEquals(2, $table->insert(['name' => 'fake2', 'id' => 2], 'id'));
+        $this->assertEquals(3, $table->insert(['name' => 'fake3', 'id' => 3], 'id'));
+        $this->assertEquals(1, $statement->execute(['name' => 'test4', 'id' => 1]));
+        $this->assertEquals(1, $statement->execute(['name' => 'test5', 'id' => 2]));
+        $this->assertEquals(1, $statement->execute(['name' => 'test6', 'id' => 3]));
+        $result = $this->db->query('SELECT * FROM test_table');
+        $count = 0;
+        while ($row = $result->fetch()) {
+            $this->assertStringStartsWith('test', $row['name']);
+            ++$count;
+        }
+        $this->assertEquals(3, $count);
+    }
+
+    public function testPrepareStatementDeleteOnTable(): void
+    {
+        $table = $this->db->table('test_table');
+        $this->assertInstanceOf('Hazaar\DBI\Table', $table);
+        $this->assertEquals('test_table', $table->getName());
+        $statement = $table->prepareDelete(['id']);
+        $this->assertInstanceOf('Hazaar\DBI\Statement', $statement);
+        $this->assertEquals(1, $table->insert(['name' => 'fake1', 'id' => 1], 'id'));
+        $this->assertEquals(2, $table->insert(['name' => 'fake2', 'id' => 2], 'id'));
+        $this->assertEquals(3, $table->insert(['name' => 'fake3', 'id' => 3], 'id'));
+        $this->assertEquals(1, $statement->execute(['id' => 1]));
+        $this->assertEquals(1, $statement->execute(['id' => 2]));
+        $this->assertEquals(1, $statement->execute(['id' => 3]));
+        $result = $this->db->query('SELECT * FROM test_table');
+        $this->assertFalse($result->fetch());
+    }
 }
