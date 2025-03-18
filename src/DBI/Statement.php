@@ -6,13 +6,21 @@ namespace Hazaar\DBI;
 
 class Statement extends \PDOStatement
 {
-    protected function __construct() {}
+    public bool $aliased = false;
+
+    protected function __construct(bool $aliases = false)
+    {
+        $this->aliased = $aliases;
+    }
 
     /**
      * @param null|array<string, mixed> $params
      */
     public function execute(?array $params = null): bool
     {
+        if (null === $params || false === $this->aliased) {
+            return parent::execute($params);
+        }
         $statementParams = [];
         foreach ($params as $key => $value) {
             $statementParams["{$key}0"] = $value;

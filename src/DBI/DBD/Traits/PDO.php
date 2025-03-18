@@ -35,6 +35,7 @@ trait PDO
     public function prepareQuery(QueryBuilder $queryBuilder): false|Statement
     {
         $statement = $this->pdo->prepare($queryBuilder->toString());
+        $statement->aliased = true;
         $values = $queryBuilder->getCriteriaValues();
         foreach ($values as $key => $value) {
             $statement->bindValue($key, $value);
