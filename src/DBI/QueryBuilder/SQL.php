@@ -388,6 +388,7 @@ class SQL implements QueryBuilder
     public function toString(bool $terminateWithColon = false): string
     {
         $this->valueIndex = [];
+
         return match ($this->type) {
             QueryType::SELECT => $this->toSELECTString(),
             QueryType::INSERT => $this->toINSERTString(),
@@ -442,7 +443,7 @@ class SQL implements QueryBuilder
                     $fields[$lookup] = $field;
                 }
                 $fieldDef[] = $this->prepareFields($fields, [], $tables);
-            } elseif (preg_match('/^((\w+)\.)?\*$/', trim($value), $matches) > 0) {
+            } elseif (is_string($value) && preg_match('/^((\w+)\.)?\*$/', trim($value), $matches) > 0) {
                 if (count($matches) > 1) {
                     $alias = $tables[$matches[2]] ?? null;
                 } else {

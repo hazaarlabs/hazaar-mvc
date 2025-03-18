@@ -11,6 +11,7 @@ namespace Hazaar\DBI\DBD\Traits;
 use Hazaar\DBI\Interface\QueryBuilder;
 use Hazaar\DBI\Result;
 use Hazaar\DBI\Result\PDO as PDOResult;
+use Hazaar\DBI\Statement;
 use Hazaar\Util\Arr;
 
 /**
@@ -26,14 +27,19 @@ trait PDO
         return $this->pdo->exec($sql);
     }
 
-    public function prepare(string $sql): \PDOStatement
+    public function prepare(string $sql): false|Statement
     {
         return $this->pdo->prepare($sql);
     }
 
-    public function prepareQuery(QueryBuilder $queryBuilder): \PDOStatement
+    public function prepareQuery(QueryBuilder $queryBuilder): false|Statement
     {
+        /** @var false|Statement $statement */
         $statement = $this->pdo->prepare($queryBuilder->toString());
+        if (false === $statement) {
+            return false;
+        }
+        $statement->aliased = true;
         $values = $queryBuilder->getCriteriaValues();
         foreach ($values as $key => $value) {
             $statement->bindValue($key, $value);
@@ -106,6 +112,7 @@ trait PDO
         ?string $password = null,
         ?array $driverOptions = null
     ): bool {
+        $driverOptions[\PDO::ATTR_STATEMENT_CLASS] = ['\Hazaar\DBI\Statement', []];
         $this->pdo = new \PDO($dsn, $username, $password, $driverOptions);
 
         return true;

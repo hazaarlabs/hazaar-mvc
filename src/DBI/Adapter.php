@@ -949,7 +949,7 @@ class Adapter implements ConstraintAPI, ExtensionAPI, GroupAPI, IndexAPI, Schema
         return $this->driver->dropView($name, $ifExists, $cascade);
     }
 
-    public function prepareQuery(QueryBuilderInterface $queryBuilder): \PDOStatement
+    public function prepareQuery(QueryBuilderInterface $queryBuilder): Statement
     {
         if (!$this->driver instanceof StatementAPI) {
             throw new \BadMethodCallException('Driver does not support prepared statements');
@@ -958,7 +958,7 @@ class Adapter implements ConstraintAPI, ExtensionAPI, GroupAPI, IndexAPI, Schema
         return $this->driver->prepareQuery($queryBuilder);
     }
 
-    public function prepare(string $sql): \PDOStatement
+    public function prepare(string $sql): Statement
     {
         if (!$this->driver instanceof StatementAPI) {
             throw new \BadMethodCallException('Driver does not support prepared statements');

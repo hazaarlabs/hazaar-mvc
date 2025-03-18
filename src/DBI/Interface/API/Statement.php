@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\DBI\Interface\API;
 
 use Hazaar\DBI\Interface\QueryBuilder;
+use Hazaar\DBI\Statement as DBIStatement;
 
 interface Statement
 {
@@ -16,7 +17,7 @@ interface Statement
      *
      * @param QueryBuilder $sql the SQL string to prepare
      */
-    public function prepareQuery(QueryBuilder $sql): \PDOStatement;
+    public function prepareQuery(QueryBuilder $sql): DBIStatement|false;
 
-    public function prepare(string $sql): \PDOStatement;
+    public function prepare(string $sql): DBIStatement|false;
 }
