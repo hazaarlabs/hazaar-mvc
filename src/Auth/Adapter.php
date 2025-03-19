@@ -237,7 +237,7 @@ abstract class Adapter implements AdapterInterface, \ArrayAccess
 
             return true;
         }
-        $this->authenticationFailure($identity, $auth);
+        $this->authenticationFailure($identity, is_array($auth) ? $auth : []);
         $this->clear();
 
         return false;
