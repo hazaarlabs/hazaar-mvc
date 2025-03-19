@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Tests;
+namespace Hazaar\Tests\Auth;
 
 use Hazaar\Auth\Adapter\Basic;
 use PHPUnit\Framework\TestCase;
@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @internal
  */
-class AuthTest extends TestCase
+class MockAuthTest extends TestCase
 {
     private mixed $authMock;
     private mixed $mockData;

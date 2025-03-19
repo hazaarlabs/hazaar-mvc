@@ -175,6 +175,6 @@ class HTPasswd extends Adapter
             }
         }
 
-        return (bool) file_put_contents($this->passwd, implode("\n", $lines));
+        return false !== file_put_contents($this->passwd, implode("\n", $lines));
     }
 }
