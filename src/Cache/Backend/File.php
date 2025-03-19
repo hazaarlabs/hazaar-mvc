@@ -138,11 +138,11 @@ class File extends Backend
     /**
      * Check if a value exists.
      */
-    public function has(string $key, bool $check_empty = false): bool
+    public function has(string $key, bool $checkEmpty = false): bool
     {
         $value = $this->load($key);
 
-        return "\0" !== $value && (true !== $check_empty || '' !== $value);
+        return "\0" !== $value && (true !== $checkEmpty || '' !== $value);
     }
 
     public function get(string $key): mixed

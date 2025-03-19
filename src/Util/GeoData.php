@@ -200,14 +200,14 @@ class GeoData
      *
      * Using a two character ISO country code, this method will return a list of states for that country.
      *
-     * @param string $country_code Two character ISO country code
+     * @param string $countryCode Two character ISO country code
      *
      * @return array<string, string> an array of states with their state code as the key and full name as the value
      */
-    public function states(string $country_code): array
+    public function states(string $countryCode): array
     {
         $list = [];
-        if ($country = GeoData::$db->get(strtoupper($country_code))) {
+        if ($country = GeoData::$db->get(strtoupper($countryCode))) {
             foreach ($country['states'] as $state) {
                 if (!isset($state['code'], $state['name'])) {
                     continue;
@@ -226,16 +226,16 @@ class GeoData
      * Using a two character ISO country code and the state code this method will return an
      * array of cities in that state.
      *
-     * @param string $country_code two character ISO country code
-     * @param string $state_code   state code
+     * @param string $countryCode two character ISO country code
+     * @param string $stateCode   state code
      *
      * @return array<string> an array of city names
      */
-    public function cities(string $country_code, string $state_code): array
+    public function cities(string $countryCode, string $stateCode): array
     {
         $list = [];
-        if ($country = GeoData::$db->get(strtoupper($country_code))) {
-            $cities = ($country['states'][$state_code]['cities'] ?? []);
+        if ($country = GeoData::$db->get(strtoupper($countryCode))) {
+            $cities = ($country['states'][$stateCode]['cities'] ?? []);
             foreach ($cities as $id) {
                 if (!($city = $country['cities'][$id])) {
                     continue;
@@ -251,11 +251,11 @@ class GeoData
     /**
      * Quick access method to retrieve a country name.
      *
-     * @param string $country_code a two character ISO country code
+     * @param string $countryCode a two character ISO country code
      */
-    public function countryName(string $country_code): string
+    public function countryName(string $countryCode): string
     {
-        $info = $this->countryInfo($country_code);
+        $info = $this->countryInfo($countryCode);
 
         return $info['name'] ?? '';
     }
@@ -283,13 +283,13 @@ class GeoData
     /**
      * Quick access method to retrieve country continent info.
      *
-     * @param string $country_code two character ISO country code
+     * @param string $countryCode two character ISO country code
      *
      * @return array<string,string>
      */
-    public function countryContinent(string $country_code): ?array
+    public function countryContinent(string $countryCode): ?array
     {
-        $info = $this->countryInfo($country_code);
+        $info = $this->countryInfo($countryCode);
 
         return $info['continent'] ?? null;
     }
@@ -297,13 +297,13 @@ class GeoData
     /**
      * Quick access method to retrieve country language info.
      *
-     * @param string $country_code two character ISO country code
+     * @param string $countryCode two character ISO country code
      *
      * @return array<string>
      */
-    public function countryLanguages(string $country_code): array
+    public function countryLanguages(string $countryCode): array
     {
-        $info = $this->countryInfo($country_code);
+        $info = $this->countryInfo($countryCode);
 
         return $info['languages'] ?? [];
     }
@@ -311,11 +311,11 @@ class GeoData
     /**
      * Quick access method to retrieve country phone dialling code.
      *
-     * @param string $country_code two character ISO country code
+     * @param string $countryCode two character ISO country code
      */
-    public function countryPhoneCode(string $country_code): int
+    public function countryPhoneCode(string $countryCode): int
     {
-        $info = $this->countryInfo($country_code);
+        $info = $this->countryInfo($countryCode);
 
         return $info['phone_code'] ?? 0;
     }
@@ -323,11 +323,11 @@ class GeoData
     /**
      * Quick access method to retrieve country capital name.
      *
-     * @param string $country_code two character ISO country code
+     * @param string $countryCode two character ISO country code
      */
-    public function countryCapital(string $country_code): string
+    public function countryCapital(string $countryCode): string
     {
-        $info = $this->countryInfo($country_code);
+        $info = $this->countryInfo($countryCode);
 
         return $info['capital'] ?? '';
     }
@@ -335,11 +335,11 @@ class GeoData
     /**
      * Quick access method to retrieve country capital timezone.
      *
-     * @param string $country_code two character ISO country code
+     * @param string $countryCode two character ISO country code
      */
-    public function countryCapitalTimezone(string $country_code): string
+    public function countryCapitalTimezone(string $countryCode): string
     {
-        $info = $this->countryInfo($country_code);
+        $info = $this->countryInfo($countryCode);
 
         return $info['capital_timezone'] ?? '';
     }
@@ -347,11 +347,11 @@ class GeoData
     /**
      * Quick access method to retrieve country area in square kilometers.
      *
-     * @param string $country_code two character ISO country code
+     * @param string $countryCode two character ISO country code
      */
-    public function countryArea(string $country_code): int
+    public function countryArea(string $countryCode): int
     {
-        $info = $this->countryInfo($country_code);
+        $info = $this->countryInfo($countryCode);
 
         return $info['area'] ?? 0;
     }
@@ -359,11 +359,11 @@ class GeoData
     /**
      * Quick access method to retrieve country estimated internet hosts.
      *
-     * @param string $country_code two character ISO country code
+     * @param string $countryCode two character ISO country code
      */
-    public function countryHosts(string $country_code): int
+    public function countryHosts(string $countryCode): int
     {
-        $info = $this->countryInfo($country_code);
+        $info = $this->countryInfo($countryCode);
 
         return $info['hosts'] ?? 0;
     }
@@ -371,11 +371,11 @@ class GeoData
     /**
      * Quick access method to retrieve country estimated internet users.
      *
-     * @param string $country_code two character ISO country code
+     * @param string $countryCode two character ISO country code
      */
-    public function countryUsers(string $country_code): int
+    public function countryUsers(string $countryCode): int
     {
-        $info = $this->countryInfo($country_code);
+        $info = $this->countryInfo($countryCode);
 
         return $info['users'] ?? 0;
     }

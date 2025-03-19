@@ -30,7 +30,7 @@ abstract class Task extends Process implements \Hazaar\Warlock\Interface\Task
     public int $expire = 0;
     public int $timeout = 0;
     public bool $respawn = false;
-    public int $respawn_delay = 0;
+    public int $respawnDelay = 0;
 
     public string $accessKey = '';
     public int $lastHeartbeat = 0;

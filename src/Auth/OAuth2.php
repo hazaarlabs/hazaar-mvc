@@ -149,10 +149,10 @@ class OAuth2 extends Adapter
         }
         $metadata = $this->storage->get('oauth2_metadata');
         if (!(array_key_exists($key, $metadata) && $metadata[$key])) {
-            if (!($meta_source = @file_get_contents($uri))) {
+            if (!($metaSource = @file_get_contents($uri))) {
                 throw new \Exception('Authentication platform offline.  Service discovery failed!');
             }
-            $metadata[$key] = json_decode($meta_source, true);
+            $metadata[$key] = json_decode($metaSource, true);
             $this->storage->set('oauth2_metadata', $metadata);
         }
         $this->metadata = $metadata[$key];
@@ -214,8 +214,8 @@ class OAuth2 extends Adapter
             && ($this->storage->has('oauth2_expiry') && $this->storage->get('oauth2_expiry') > time())) {
             return ($this->storage->get('oauth2_data')['access_token'] ?? '') !== '';
         }
-        if ($refresh_token = ($this->storage->get('oauth2_data')['refresh_token'] ?? null)) {
-            return $this->refresh($refresh_token);
+        if ($refreshToken = ($this->storage->get('oauth2_data')['refresh_token'] ?? null)) {
+            return $this->refresh($refreshToken);
         }
 
         return false;
@@ -235,9 +235,9 @@ class OAuth2 extends Adapter
         ?string $identity = null,
         ?string $credential = null,
         bool $autologin = false,
-        bool $skip_auth_check = false
+        bool $skipAuth_check = false
     ): bool {
-        if (true !== $skip_auth_check && $this->authenticated()) {
+        if (true !== $skipAuth_check && $this->authenticated()) {
             if ($uri = $this->storage->get('redirect_uri')) {
                 header('Location: '.$uri);
                 $this->storage->unset('redirect_uri');
@@ -416,11 +416,11 @@ class OAuth2 extends Adapter
      * Introspects the given token using the OAuth2 introspection endpoint.
      *
      * @param null|string $token      The token to introspect. If null, the access token from storage will be used.
-     * @param string      $token_type the type of the token, default is 'access_token'
+     * @param string      $tokenType the type of the token, default is 'access_token'
      *
      * @return bool|string the response body from the introspection endpoint, or false if the endpoint is not available
      */
-    public function introspect(?string $token = null, string $token_type = 'access_token'): bool|string
+    public function introspect(?string $token = null, string $tokenType = 'access_token'): bool|string
     {
         if (!($uri = $this->metadata['introspection_endpoint'] ?? null)) {
             return false;
@@ -429,7 +429,7 @@ class OAuth2 extends Adapter
         $request['clientID'] = $this->clientID;
         $request['clientSecret'] = $this->clientSecret;
         $request['token'] = $token ?? ($this->storage['oauth2_data']['access_token'] ?? null);
-        $request['token_type_hint'] = $token_type;
+        $request['token_type_hint'] = $tokenType;
         $response = $this->httpClient->send($request);
 
         return $response->body();
@@ -518,11 +518,11 @@ class OAuth2 extends Adapter
         string $grantType = 'password',
         ?string $scope = null
     ): bool|\stdClass {
-        if (!($token_endpoint = $this->metadata['token_endpoint'] ?? null)) {
+        if (!($tokenEndpoint = $this->metadata['token_endpoint'] ?? null)) {
             return false;
         }
-        $target_url = (is_array($token_endpoint) ? ($token_endpoint[1] ?? $token_endpoint[0] ?? null) : $token_endpoint);
-        $request = new Request($target_url, 'POST');
+        $targetUrl = (is_array($tokenEndpoint) ? ($tokenEndpoint[1] ?? $tokenEndpoint[0] ?? null) : $tokenEndpoint);
+        $request = new Request($targetUrl, 'POST');
         $request['grantType'] = $grantType;
         $request['clientID'] = $this->clientID;
         $request['clientSecret'] = $this->clientSecret;

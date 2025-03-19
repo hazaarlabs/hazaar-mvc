@@ -237,10 +237,10 @@ class File extends OK
     public function setContentType(?string $type = null): void
     {
         parent::setContentType($type);
-        if (($colon_pos = strpos($this->contentType, ';')) === false) {
+        if (($colonPos = strpos($this->contentType, ';')) === false) {
             return;
         }
-        $options = array_change_key_case(Arr::unflatten(trim(substr($this->contentType, $colon_pos + 1))), CASE_LOWER);
+        $options = array_change_key_case(Arr::unflatten(trim(substr($this->contentType, $colonPos + 1))), CASE_LOWER);
         if (!array_key_exists('charset', $options)) {
             return;
         }

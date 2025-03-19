@@ -13,7 +13,7 @@ namespace Hazaar\Model\Attribute;
  *
  * ```php
  * #[Format('%s formatted')]
- * public $my_property;
+ * public $myProperty;
  * ```
  */
 #[\Attribute]

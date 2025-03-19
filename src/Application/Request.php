@@ -145,8 +145,8 @@ class Request implements RequestInterface
                 case 'application/json':
                 case 'application/javascript':
                 case 'application/x-javascript':
-                    if ($json_body = json_decode($this->body, true)) {
-                        $request = array_merge($request, is_array($json_body) ? $json_body : [$json_body]);
+                    if ($jsonBody = json_decode($this->body, true)) {
+                        $request = array_merge($request, is_array($jsonBody) ? $jsonBody : [$jsonBody]);
                     }
 
                     break;
@@ -345,15 +345,15 @@ class Request implements RequestInterface
      */
     public static function getRemoteAddr(): ?string
     {
-        $forwarded_ip = getenv('HTTP_X_FORWARDED_FOR') ?:
+        $forwardedIp = getenv('HTTP_X_FORWARDED_FOR') ?:
             getenv('HTTP_X_FORWARDED') ?:
             getenv('HTTP_FORWARDED_FOR') ?:
             getenv('HTTP_FORWARDED');
-        if (!$forwarded_ip) {
+        if (!$forwardedIp) {
             return isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] :
                 (getenv('REMOTE_ADDR') ?: getenv('HTTP_CLIENT_IP') ?: null);
         }
-        $forwarded = explode(',', $forwarded_ip);
+        $forwarded = explode(',', $forwardedIp);
 
         return trim($forwarded[0]);
     }
@@ -498,11 +498,11 @@ class Request implements RequestInterface
      * Check to see if a request value has been set.
      *
      * @param array<string>|string $keys      the key of the request value to check for
-     * @param bool                 $check_any The check type when $key is an array.  TRUE means that ANY key must exist.  FALSE means ALL keys must exist.
+     * @param bool                 $checkAny The check type when $key is an array.  TRUE means that ANY key must exist.  FALSE means ALL keys must exist.
      *
      * @return bool true if the value is set, False otherwise
      */
-    public function has(array|string $keys, bool $check_any = false): bool
+    public function has(array|string $keys, bool $checkAny = false): bool
     {
         // If the parameter is an array, make sure all of the keys exist before returning true
         if (!is_array($keys)) {
@@ -511,7 +511,7 @@ class Request implements RequestInterface
         $result = false;
         $count = count(array_intersect($keys, array_keys($this->params)));
 
-        return $check_any ? $count > 0 : $count === count($keys);
+        return $checkAny ? $count > 0 : $count === count($keys);
     }
 
     /**
@@ -543,22 +543,22 @@ class Request implements RequestInterface
     /**
      * Return an array of request parameters as key/value pairs.
      *
-     * @param array<string> $filter_in  only include parameters with keys specified in this filter
-     * @param array<string> $filter_out exclude parameters with keys specified in this filter
+     * @param array<string> $filterIn  only include parameters with keys specified in this filter
+     * @param array<string> $filterOut exclude parameters with keys specified in this filter
      *
      * @return array<mixed> the request parameters
      */
-    public function getParams(?array $filter_in = null, ?array $filter_out = null): array
+    public function getParams(?array $filterIn = null, ?array $filterOut = null): array
     {
-        if (null === $filter_in && null === $filter_out) {
+        if (null === $filterIn && null === $filterOut) {
             return $this->params;
         }
         $params = $this->params;
-        if ($filter_in) {
-            $params = array_intersect_key($params, array_flip($filter_in));
+        if ($filterIn) {
+            $params = array_intersect_key($params, array_flip($filterIn));
         }
-        if ($filter_out) {
-            $params = array_diff_key($params, array_flip($filter_out));
+        if ($filterOut) {
+            $params = array_diff_key($params, array_flip($filterOut));
         }
 
         return $params;

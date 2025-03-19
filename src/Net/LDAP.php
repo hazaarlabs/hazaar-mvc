@@ -118,9 +118,9 @@ class LDAP
         if (null === $this->conn) {
             return false;
         }
-        $search_result = ldap_search($this->conn, $base.($this->suffix ? ','.$this->suffix : ''), $filter);
+        $searchResult = ldap_search($this->conn, $base.($this->suffix ? ','.$this->suffix : ''), $filter);
 
-        return ldap_get_entries($this->conn, $search_result);
+        return ldap_get_entries($this->conn, $searchResult);
     }
 
     /**

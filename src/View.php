@@ -575,9 +575,9 @@ class View implements \ArrayAccess
         /**
          * Search paths for view helpers. The order here matters because apps should be able to override built-in helpers.
          */
-        $search_prefixes = ['\Application\Helper\View', '\Hazaar\View\Helper'];
+        $searchPrefixes = ['\Application\Helper\View', '\Hazaar\View\Helper'];
         $name = \ucfirst($name);
-        foreach ($search_prefixes as $prefix) {
+        foreach ($searchPrefixes as $prefix) {
             $class = $prefix.'\\'.$name;
             if (\class_exists($class)) {
                 return $class;

@@ -11,7 +11,7 @@ namespace Hazaar\Model\Attribute;
  *
  * ```php
  * #[Pad(10)]
- * public $my_property;
+ * public $myProperty;
  * ```
  */
 #[\Attribute]

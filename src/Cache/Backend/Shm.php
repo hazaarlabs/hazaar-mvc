@@ -150,11 +150,11 @@ class Shm extends Backend
      * Check if a key exists in the shared memory cache.
      *
      * @param string $key         the key to check
-     * @param bool   $check_empty whether to check if the data associated with the key is empty
+     * @param bool   $checkEmpty whether to check if the data associated with the key is empty
      *
      * @return bool returns true if the key exists in the cache, false otherwise
      */
-    public function has(string $key, bool $check_empty = false): bool
+    public function has(string $key, bool $checkEmpty = false): bool
     {
         $index = $this->getIndex();
         if (!array_key_exists($key, $index)) {
@@ -168,7 +168,7 @@ class Shm extends Backend
             return false;
         }
 
-        return true === $check_empty ? empty($info['data']) : true;
+        return true === $checkEmpty ? empty($info['data']) : true;
     }
 
     /**

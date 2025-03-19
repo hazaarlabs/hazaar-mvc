@@ -28,20 +28,20 @@ class File extends Backend
         $this->setDefaultOption('write_timestamp', true);
         $this->setDefaultOption('write_pid', false);
         $this->setDefaultOption('logfile', Application::getInstance()->getRuntimePath('hazaar.log'));
-        if (($log_file = $this->getOption('logfile'))
-            && is_writable(dirname($log_file))
-            && (!\file_exists($log_file) || \is_writable($log_file))) {
-            if (($this->hLog = fopen($log_file, 'a')) == false) {
-                throw new Exception\OpenLogFileFailed($log_file);
+        if (($logFile = $this->getOption('logfile'))
+            && is_writable(dirname($logFile))
+            && (!\file_exists($logFile) || \is_writable($logFile))) {
+            if (($this->hLog = fopen($logFile, 'a')) == false) {
+                throw new Exception\OpenLogFileFailed($logFile);
             }
         }
 
         $this->setDefaultOption('errfile', Application::getInstance()->getRuntimePath('error.log'));
-        if (($error_file = $this->getOption('errfile'))
-            && is_writable(dirname($error_file))
-            && (!\file_exists($error_file) || \is_writeable($error_file))) {
-            if (($this->hErr = fopen($error_file, 'a')) == false) {
-                throw new Exception\OpenLogFileFailed($error_file);
+        if (($errorFile = $this->getOption('errfile'))
+            && is_writable(dirname($errorFile))
+            && (!\file_exists($errorFile) || \is_writeable($errorFile))) {
+            if (($this->hErr = fopen($errorFile, 'a')) == false) {
+                throw new Exception\OpenLogFileFailed($errorFile);
             }
         }
         $this->levelPadding = max(array_map('strlen', array_keys($this->levels))) - strlen(self::LOG_LEVEL_PREFIX);

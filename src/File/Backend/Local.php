@@ -65,10 +65,10 @@ class Local implements BackendInterface, DriverInterface
      */
     public function scandir(
         string $path,
-        ?string $regex_filter = null,
+        ?string $regexFilter = null,
         int $sort = SCANDIR_SORT_ASCENDING,
-        bool $show_hidden = false,
-        ?string $relative_path = null
+        bool $showHidden = false,
+        ?string $relativePath = null
     ): array|bool {
         $list = [];
         $path = $this->resolvePath($path);
@@ -80,10 +80,10 @@ class Local implements BackendInterface, DriverInterface
             if ('.metadata' == $file) {
                 continue;
             }
-            if ((false == $show_hidden && '.' == substr($file, 0, 1)) || '.' == $file || '..' == $file) {
+            if ((false == $showHidden && '.' == substr($file, 0, 1)) || '.' == $file || '..' == $file) {
                 continue;
             }
-            if ($regex_filter && !preg_match($regex_filter, $file)) {
+            if ($regexFilter && !preg_match($regexFilter, $file)) {
                 continue;
             }
             $list[] = $file;
@@ -117,7 +117,7 @@ class Local implements BackendInterface, DriverInterface
         return $ret;
     }
 
-    public function write(string $file, string $data, ?string $content_type = null, bool $overwrite = true): ?int
+    public function write(string $file, string $data, ?string $contentType = null, bool $overwrite = true): ?int
     {
         $file = $this->resolvePath($file);
         if (file_exists($file) && false == $overwrite) {
@@ -463,7 +463,7 @@ class Local implements BackendInterface, DriverInterface
         return false;
     }
 
-    public function authorise(?string $redirect_uri = null): bool
+    public function authorise(?string $redirectUri = null): bool
     {
         return true;
     }
@@ -473,7 +473,7 @@ class Local implements BackendInterface, DriverInterface
         return true;
     }
 
-    public function buildAuthURL(?string $callback_url = null): ?string
+    public function buildAuthURL(?string $callbackUrl = null): ?string
     {
         return null;
     }
@@ -573,12 +573,12 @@ class Local implements BackendInterface, DriverInterface
         return fclose($stream);
     }
 
-    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array|false
+    public function find(?string $search = null, string $path = '/', bool $caseInsensitive = false): array|false
     {
         return false;
     }
 
-    public function fsck(bool $skip_root_reload = false): bool
+    public function fsck(bool $skipRoot_reload = false): bool
     {
         return false;
     }
@@ -593,8 +593,8 @@ class Local implements BackendInterface, DriverInterface
         if (!($meta = $db->get($fullpath))) {
             $meta = [];
             // Generate Image Meta
-            $content_type = $this->mimeContentType($fullpath);
-            if (null !== $content_type && 'image' == substr($content_type, 0, 5)) {
+            $contentType = $this->mimeContentType($fullpath);
+            if (null !== $contentType && 'image' == substr($contentType, 0, 5)) {
                 $size = getimagesize($fullpath);
                 $meta['width'] = $size[0];
                 $meta['height'] = $size[1];

@@ -72,7 +72,7 @@ class Protocol
         0x91 => 'DEBUG',
     ];
     private int $id;
-    private string $last_error;
+    private string $lastError;
     private bool $encoded = true;
 
     public function __construct(int $id, bool $encoded = true)
@@ -88,7 +88,7 @@ class Protocol
      */
     public function getLastError(): string
     {
-        return $this->last_error;
+        return $this->lastError;
     }
 
     /**
@@ -220,7 +220,7 @@ class Protocol
      */
     private function error(string $msg): bool
     {
-        $this->last_error = $msg;
+        $this->lastError = $msg;
 
         return false;
     }

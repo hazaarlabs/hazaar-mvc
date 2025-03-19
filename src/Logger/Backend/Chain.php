@@ -18,9 +18,9 @@ class Chain extends Backend
         $this->setDefaultOption('chain', ['backend' => ['file']]);
         $chain = $this->getOption('chain');
         if (is_array($chain['backend'])) {
-            foreach ($chain['backend'] as $backend_name) {
-                $backend_class = 'Hazaar_Logger_Backend_'.ucfirst($backend_name);
-                $backend = new $backend_class([]);
+            foreach ($chain['backend'] as $backendName) {
+                $backendClass = 'Hazaar_Logger_Backend_'.ucfirst($backendName);
+                $backend = new $backendClass([]);
                 $this->backends[] = $backend;
                 foreach ($backend->getCapabilities() as $capability) {
                     $this->addCapability($capability);

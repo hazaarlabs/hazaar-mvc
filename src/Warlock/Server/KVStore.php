@@ -28,12 +28,12 @@ class KVStore
     {
         $this->log = $log;
         if (true === $persistent) {
-            $db_file = new File(Master::$instance->getRuntimePath('kvstore.db'));
-            $this->db = new BTree($db_file);
+            $dbFile = new File(Master::$instance->getRuntimePath('kvstore.db'));
+            $this->db = new BTree($dbFile);
             if ($compactTime > 0) {
                 $this->log->write(W_NOTICE, 'KV Store persistent storage compaction enabled');
                 $this->compactTime = $compactTime;
-                $this->lastCompact = $db_file->ctime();
+                $this->lastCompact = $dbFile->ctime();
             }
         }
     }

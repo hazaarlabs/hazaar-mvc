@@ -40,7 +40,7 @@ final class Socket extends WebSockets implements Connection
         $this->disconnect();
     }
 
-    public function connect(string $applicationName, string $host, int $port, ?array $extra_headers = null): bool
+    public function connect(string $applicationName, string $host, int $port, ?array $extraHeaders = null): bool
     {
         $this->socket = @socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         if (false === $this->socket) {
@@ -57,8 +57,8 @@ final class Socket extends WebSockets implements Connection
             'X-WARLOCK-PHP' => 'true',
             'X-WARLOCK-USER' => base64_encode(get_current_user()),
         ];
-        if (is_array($extra_headers)) {
-            $headers = array_merge($headers, $extra_headers);
+        if (is_array($extraHeaders)) {
+            $headers = array_merge($headers, $extraHeaders);
         }
 
         /**
@@ -89,9 +89,9 @@ final class Socket extends WebSockets implements Connection
         return true;
     }
 
-    public function getLastSocketError(bool $as_string = false): string
+    public function getLastSocketError(bool $asString = false): string
     {
-        return $as_string ? socket_strerror($this->socketLastError) : $this->socketLastError;
+        return $asString ? socket_strerror($this->socketLastError) : $this->socketLastError;
     }
 
     public function disconnect(): bool
@@ -129,27 +129,27 @@ final class Socket extends WebSockets implements Connection
         $frame = $this->frame($packet, 'text');
         $len = strlen($frame);
         $attempts = 0;
-        $total_sent = 0;
+        $totalSent = 0;
         while ($frame) {
             ++$attempts;
-            $bytes_sent = @socket_write($this->socket, $frame, $len);
-            if (-1 === $bytes_sent || false === $bytes_sent) {
+            $bytesSent = @socket_write($this->socket, $frame, $len);
+            if (-1 === $bytesSent || false === $bytesSent) {
                 throw new \Exception('An error occured while sending to the socket');
             }
-            $total_sent += $bytes_sent;
-            if ($total_sent === $len) { // If all the bytes sent then don't waste time processing the leftover frame
+            $totalSent += $bytesSent;
+            if ($totalSent === $len) { // If all the bytes sent then don't waste time processing the leftover frame
                 break;
             }
             if ($attempts >= 100) {
                 throw new \Exception('Unable to write to socket.  Socket appears to be stuck.');
             }
-            $frame = substr($frame, $bytes_sent);
+            $frame = substr($frame, $bytesSent);
         }
 
         return true;
     }
 
-    public function recv(mixed &$payload = null, int $tv_sec = 3, int $tv_usec = 0): null|bool|string
+    public function recv(mixed &$payload = null, int $tvSec = 3, int $tvUsec = 0): null|bool|string
     {
         // Process any frames sitting in the local frame buffer first.
         while ($frame = $this->processFrame()) {
@@ -171,7 +171,7 @@ final class Socket extends WebSockets implements Connection
         ];
         $write = $except = null;
         $start = 0; // time();
-        while (socket_select($read, $write, $except, $tv_sec, $tv_usec) > 0) {
+        while (socket_select($read, $write, $except, $tvSec, $tvUsec) > 0) {
             // will block to wait server response
             $this->bytesReceived += $bytesReceived = socket_recv($this->socket, $buffer, 65536, 0);
             if ($bytesReceived > 0) {

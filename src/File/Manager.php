@@ -17,7 +17,7 @@ class Manager implements Backend
     /**
      * @var array<mixed> Default configuration for a media source
      */
-    public static array $default_config = [
+    public static array $defaultConfig = [
         'enabled' => true,
         'auth' => false,
         'allow' => [
@@ -35,22 +35,22 @@ class Manager implements Backend
     /**
      * @var array<string>
      */
-    public static ?array $mime_types = null;
+    public static ?array $mimeTypes = null;
 
     /**
      * @var array<string, string>
      */
-    private static array $backend_aliases = [
+    private static array $backendAliases = [
         'googledrive' => 'GoogleDrive',
         'sharepoint' => 'SharePoint',
         'webdav' => 'WebDAV',
     ];
-    private static string $default_backend = 'local';
+    private static string $defaultBackend = 'local';
 
     /**
      * @var array<mixed>
      */
-    private static array $default_backend_options = [];
+    private static array $defaultBackend_options = [];
     private Backend $backend;
     private string $backendName;
 
@@ -59,25 +59,25 @@ class Manager implements Backend
      */
     private array $options = [];
     private ?Manager $failover = null;
-    private bool $in_failover = false;
+    private bool $inFailover = false;
 
     /**
      * Manager constructor.
      *
-     * @param array<mixed> $backend_options
+     * @param array<mixed> $backendOptions
      */
-    public function __construct(?string $backend = null, array $backend_options = [], ?string $name = null)
+    public function __construct(?string $backend = null, array $backendOptions = [], ?string $name = null)
     {
         if (!$backend) {
-            if (Manager::$default_backend) {
-                $backend = Manager::$default_backend;
-                $backend_options = Manager::$default_backend_options ? Manager::$default_backend_options : [];
+            if (Manager::$defaultBackend) {
+                $backend = Manager::$defaultBackend;
+                $backendOptions = Manager::$defaultBackend_options ? Manager::$defaultBackend_options : [];
             } else {
                 $backend = 'local';
-                $backend_options = ['root' => '/'];
+                $backendOptions = ['root' => '/'];
             }
         }
-        $backendClass = 'Hazaar\File\Backend\\'.(self::$backend_aliases[$backend] ?? ucfirst($backend));
+        $backendClass = 'Hazaar\File\Backend\\'.(self::$backendAliases[$backend] ?? ucfirst($backend));
         if (!class_exists($backendClass)) {
             throw new Exception\BackendNotFound($backend);
         }
@@ -85,7 +85,7 @@ class Manager implements Backend
             throw new Exception\InvalidBackend($backend);
         }
         $this->backendName = $backend;
-        $this->backend = new $backendClass($backend_options, $this);
+        $this->backend = new $backendClass($backendOptions, $this);
         if (!$name) {
             $name = strtolower($backend);
         }
@@ -95,7 +95,7 @@ class Manager implements Backend
     public function __destruct()
     {
         try {
-            if ($this->failover && false === $this->in_failover) {
+            if ($this->failover && false === $this->inFailover) {
                 $this->failoverSync();
             }
         } catch (\Exception $e) {
@@ -146,7 +146,7 @@ class Manager implements Backend
         if (!isset($config[$name])) {
             return false;
         }
-        $source = array_merge_recursive(Manager::$default_config, $config->{$name});
+        $source = array_merge_recursive(Manager::$defaultConfig, $config->{$name});
         if (null !== $options) {
             $source['options']->extend($options);
         }
@@ -168,8 +168,8 @@ class Manager implements Backend
      */
     public static function configure(string $backend, array $options): void
     {
-        Manager::$default_backend = $backend;
-        Manager::$default_backend_options = $options;
+        Manager::$defaultBackend = $backend;
+        Manager::$defaultBackend_options = $options;
     }
 
     public function activateFailover(): void
@@ -248,11 +248,11 @@ class Manager implements Backend
      *
      * These are used by certain backends that require OAuth-like user authorisation
      */
-    public function authorise(?string $redirect_uri = null): bool
+    public function authorise(?string $redirectUri = null): bool
     {
-        $result = $this->backend->authorise($redirect_uri);
+        $result = $this->backend->authorise($redirectUri);
         if (false === $result) {
-            header('Location: '.$this->backend->buildAuthUrl($redirect_uri));
+            header('Location: '.$this->backend->buildAuthUrl($redirectUri));
 
             exit;
         }
@@ -263,9 +263,9 @@ class Manager implements Backend
     /**
      * Alias to authorise() which is the CORRECT spelling.
      */
-    public function authorize(?string $redirect_uri = null): mixed
+    public function authorize(?string $redirectUri = null): mixed
     {
-        return $this->authorise($redirect_uri);
+        return $this->authorise($redirectUri);
     }
 
     public function authorised(): bool
@@ -287,9 +287,9 @@ class Manager implements Backend
         return $this->backend->reset();
     }
 
-    public function buildAuthURL(?string $callback_url = null): ?string
+    public function buildAuthURL(?string $callbackUrl = null): ?string
     {
-        return $this->backend->buildAuthURL($callback_url);
+        return $this->backend->buildAuthURL($callbackUrl);
     }
 
     /**
@@ -326,9 +326,9 @@ class Manager implements Backend
      *
      * @return array<string> the directory object
      */
-    public function toArray(string $path, int $sort = SCANDIR_SORT_ASCENDING, bool $allow_hidden = false): array
+    public function toArray(string $path, int $sort = SCANDIR_SORT_ASCENDING, bool $allowHidden = false): array
     {
-        return $this->backend->scandir($this->fixPath($path), null, $sort, $allow_hidden);
+        return $this->backend->scandir($this->fixPath($path), null, $sort, $allowHidden);
     }
 
     /**
@@ -336,9 +336,9 @@ class Manager implements Backend
      *
      * @return array<string> the directory object
      */
-    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array
+    public function find(?string $search = null, string $path = '/', bool $caseInsensitive = false): array
     {
-        $result = $this->backend->find($search, $path, $case_insensitive);
+        $result = $this->backend->find($search, $path, $caseInsensitive);
         if (false !== $result) {
             return $result;
         }
@@ -353,10 +353,10 @@ class Manager implements Backend
                     $first = substr($search, 0, 1);
                     if ((ctype_alnum($first) || '\\' == $first) == false
                         && $first == substr($search, -1, 1)) {
-                        if (!preg_match($search.($case_insensitive ? 'i' : ''), $file->basename())) {
+                        if (!preg_match($search.($caseInsensitive ? 'i' : ''), $file->basename())) {
                             continue;
                         }
-                    } elseif (!fnmatch($search, $file->basename(), $case_insensitive ? FNM_CASEFOLD : 0)) {
+                    } elseif (!fnmatch($search, $file->basename(), $caseInsensitive ? FNM_CASEFOLD : 0)) {
                         continue;
                     }
                 }
@@ -385,17 +385,17 @@ class Manager implements Backend
         return $bytes;
     }
 
-    public function write(string $file, string $data, ?string $content_type = null, bool $overwrite = false): ?int
+    public function write(string $file, string $data, ?string $contentType = null, bool $overwrite = false): ?int
     {
         $result = false;
 
         try {
-            $result = $this->backend->write($this->fixPath($file), $data, $content_type, $overwrite);
+            $result = $this->backend->write($this->fixPath($file), $data, $contentType, $overwrite);
         } catch (Offline $e) {
             if (!$this->failover) {
                 throw $e;
             }
-            $this->in_failover = true;
+            $this->inFailover = true;
             $f = $this->failover->get($file); // Make the file as a directory to store logs
             if ($f->isDir()) {
                 throw new \Exception('File exists and is not a file!');
@@ -560,23 +560,23 @@ class Manager implements Backend
      */
     public function scandir(
         string $path,
-        ?string $regex_filter = null,
+        ?string $regexFilter = null,
         int $sort = SCANDIR_SORT_ASCENDING,
-        bool $show_hidden = false,
-        ?string $relative_path = null
+        bool $showHidden = false,
+        ?string $relativePath = null
     ): array|false {
         if (($items = $this->backend->scandir($this->fixPath($path))) === false) {
             return false;
         }
-        if (!$relative_path) {
-            $relative_path = rtrim($path, '/').'/';
+        if (!$relativePath) {
+            $relativePath = rtrim($path, '/').'/';
         }
         foreach ($items as &$item) {
             $fullpath = $this->fixPath($path, $item);
-            $item = ($this->isDir($fullpath) ? new Dir($fullpath, $this, $relative_path) : new File($fullpath, $this, $relative_path));
+            $item = ($this->isDir($fullpath) ? new Dir($fullpath, $this, $relativePath) : new File($fullpath, $this, $relativePath));
         }
         if ($this->failover && $this->failover->exists($path)) {
-            $items = array_merge($items, $this->failover->scandir($path, $regex_filter, $sort, $show_hidden));
+            $items = array_merge($items, $this->failover->scandir($path, $regexFilter, $sort, $showHidden));
         }
 
         return $items;
@@ -785,10 +785,10 @@ class Manager implements Backend
 
     public static function lookupContentType(string $extension): ?string
     {
-        if (null === self::$mime_types) {
-            self::$mime_types = [];
-            $mt_file = Loader::getFilePath(FilePath::SUPPORT, 'mime.types');
-            $h = fopen($mt_file, 'r');
+        if (null === self::$mimeTypes) {
+            self::$mimeTypes = [];
+            $mtFile = Loader::getFilePath(FilePath::SUPPORT, 'mime.types');
+            $h = fopen($mtFile, 'r');
             while ($line = fgets($h)) {
                 $line = trim($line);
                 if ('#' == substr($line, 0, 1) || 0 == strlen($line)) {
@@ -798,7 +798,7 @@ class Manager implements Backend
                     $extens = explode(' ', $matches[2]);
                     foreach ($extens as $value) {
                         if ($value) {
-                            self::$mime_types[strtolower($value)] = $matches[1];
+                            self::$mimeTypes[strtolower($value)] = $matches[1];
                         }
                     }
                 }
@@ -806,7 +806,7 @@ class Manager implements Backend
             fclose($h);
         }
 
-        return self::$mime_types[strtolower($extension)] ?? null;
+        return self::$mimeTypes[strtolower($extension)] ?? null;
     }
 
     private function deepCopy(string $src, string $dst, Manager $srcManager, ?\Closure $progressCallback = null): bool

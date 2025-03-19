@@ -34,27 +34,27 @@ class Control extends Process
     public function __construct(
         ?bool $autostart = null,
         array $serverConfig = [],
-        ?string $instance_key = null,
-        bool $require_connect = true
+        ?string $instanceKey = null,
+        bool $requireConnect = true
     ) {
         $this->serverConfig = new Config($serverConfig);
-        if (!$instance_key) {
-            $instance_key = hash('crc32b', $this->serverConfig['client']['server'].$this->serverConfig['client']['port']);
+        if (!$instanceKey) {
+            $instanceKey = hash('crc32b', $this->serverConfig['client']['server'].$this->serverConfig['client']['port']);
         }
-        if (array_key_exists($instance_key, Control::$instance)) {
+        if (array_key_exists($instanceKey, Control::$instance)) {
             throw new \Exception('There is already a control instance for this server:host.  Please use '.__CLASS__.'::getInstance()');
         }
-        Control::$instance[$instance_key] = $this;
+        Control::$instance[$instanceKey] = $this;
         $application = Application::getInstance();
         if (null === $this->serverConfig['client']['encoded']) {
             $this->serverConfig['client']['encoded'] = $this->serverConfig['server']['encoded'];
         }
         $protocol = new Protocol((string) $this->serverConfig['sys']->id, $this->serverConfig['client']['encoded']);
-        $runtime_path = rtrim($this->serverConfig['sys']['runtimePath'], '/').DIRECTORY_SEPARATOR;
+        $runtimePath = rtrim($this->serverConfig['sys']['runtimePath'], '/').DIRECTORY_SEPARATOR;
         if (!Control::$guid) {
-            $guid_file = $runtime_path.'server.guid';
-            if (file_exists($guid_file)) {
-                Control::$guid = file_get_contents($guid_file);
+            $guidFile = $runtimePath.'server.guid';
+            if (file_exists($guidFile)) {
+                Control::$guid = file_get_contents($guidFile);
             }
             // First we check to see if we need to start the Warlock server process
             if (null === $autostart) {
@@ -64,7 +64,7 @@ class Control extends Process
                 if (!$this->serverConfig['sys']['phpBinary']) {
                     $this->serverConfig['sys']['phpBinary'] = PHP_BINARY;
                 }
-                $this->pidfile = $runtime_path.$this->serverConfig['sys']['pid'];
+                $this->pidfile = $runtimePath.$this->serverConfig['sys']['pid'];
                 if (!$this->start()) {
                     throw new \Exception('Autostart of Warlock server has failed!');
                 }
@@ -75,7 +75,7 @@ class Control extends Process
             if ($autostart) {
                 throw new \Exception('Warlock was started, but we were unable to communicate with it.');
             }
-            if (true === $require_connect) {
+            if (true === $requireConnect) {
                 throw new \Exception('Unable to communicate with Warlock.  Is it running?');
             }
         }
@@ -87,14 +87,14 @@ class Control extends Process
     public static function getInstance(
         ?bool $autostart = null,
         array $config = [],
-        bool $require_connect = true
+        bool $requireConnect = true
     ): Control {
-        $instance_key = hash('crc32b', ($config['client']['server'] ?? '') . ($config['client']['port'] ?? ''));
-        if (!array_key_exists($instance_key, Control::$instance)) {
-            Control::$instance[$instance_key] = new Control($autostart, $config, $instance_key, $require_connect);
+        $instanceKey = hash('crc32b', ($config['client']['server'] ?? '') . ($config['client']['port'] ?? ''));
+        if (!array_key_exists($instanceKey, Control::$instance)) {
+            Control::$instance[$instanceKey] = new Control($autostart, $config, $instanceKey, $requireConnect);
         }
 
-        return Control::$instance[$instance_key];
+        return Control::$instance[$instanceKey];
     }
 
     public function isRunning(): bool
@@ -108,11 +108,11 @@ class Control extends Process
         if (!($pid = (int) file_get_contents($this->pidfile))) {
             return false;
         }
-        $proc_file = '/proc/'.$pid.'/stat';
-        if (!file_exists($proc_file)) {
+        $procFile = '/proc/'.$pid.'/stat';
+        if (!file_exists($procFile)) {
             return false;
         }
-        $proc = file_get_contents($proc_file);
+        $proc = file_get_contents($procFile);
 
         return '' !== $proc && preg_match('/^'.preg_quote((string) $pid, '/').'\s+\(php\)/', $proc);
     }
@@ -131,7 +131,7 @@ class Control extends Process
             'APPLICATION_ROOT' => Application::getRoot(),
             'WARLOCK_EXEC' => 1,
         ];
-        $php_options = [];
+        $phpOptions = [];
         if (function_exists('xdebug_is_debugger_active') && \xdebug_is_debugger_active()) {
             $env['XDEBUG_CONFIG'] = 'remote_enable='.ini_get('xdebug.remote_enable')
                 .' remote_handler='.ini_get('xdebug.remote_handler')
@@ -141,23 +141,23 @@ class Control extends Process
                 .' remote_cookie_expire_time='.ini_get('xdebug.remote_cookie_expire_time')
                 .' profiler_enable='.ini_get('xdebug.profiler_enable');
         }
-        $php_options[] = $server = dirname(__FILE__).DIRECTORY_SEPARATOR.'Server.php';
+        $phpOptions[] = $server = dirname(__FILE__).DIRECTORY_SEPARATOR.'Server.php';
         if (!file_exists($server)) {
             throw new \Exception('Warlock server script could not be found!');
         }
-        $this->cmd = $this->serverConfig['sys']['phpBinary'].' '.implode(' ', $php_options).'&';
+        $this->cmd = $this->serverConfig['sys']['phpBinary'].' '.implode(' ', $phpOptions).'&';
         $env['WARLOCK_OUTPUT'] = 'file';
         foreach ($env as $name => $value) {
             putenv($name.'='.$value);
         }
-        $start_check = time();
+        $startCheck = time();
         // Start the server.  This should work on Linux and Windows
         shell_exec($this->cmd);
         if (!$timeout) {
             $timeout = $this->serverConfig['timeouts']->connect;
         }
         while (!$this->isRunning()) {
-            if (time() > ($start_check + $timeout)) {
+            if (time() > ($startCheck + $timeout)) {
                 return false;
             }
             usleep(100);

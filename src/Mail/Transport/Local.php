@@ -21,8 +21,8 @@ class Local extends Transport
 
     public function send(TransportMessage $message): mixed
     {
-        $sendmail_from = '';
-        $mail_headers = [];
+        $sendmailFrom = '';
+        $mailHeaders = [];
         foreach ($message->headers as $key => $value) {
             if (!$value) {
                 continue;
@@ -33,26 +33,26 @@ class Local extends Transport
                  * Sometimes emails will not send correctly if this fails
                  */
                 if (preg_match('/[\w\s]*\<(.*)\>/', $value, $matches)) {
-                    $sendmail_from = $matches[1];
+                    $sendmailFrom = $matches[1];
                 } else {
-                    $sendmail_from = $value;
+                    $sendmailFrom = $value;
                 }
             }
-            $mail_headers[] = $key.':   '.trim($value);
+            $mailHeaders[] = $key.':   '.trim($value);
         }
-        $mail_headers = implode("\n", $mail_headers);
+        $mailHeaders = implode("\n", $mailHeaders);
         $params = [
             '-R' => 'hdrs',
         ];
-        if ($sendmail_from) {
-            $params['-f'] = $sendmail_from;
+        if ($sendmailFrom) {
+            $params['-f'] = $sendmailFrom;
         }
         if (count($message->dsn) > 0) {
             $params['-N'] = '"'.implode(',', array_map('strtolower', $message->dsn)).'"';
         }
         // The @ sign causes errors not to be thrown and allows things to continue.  the mail() command
         // will just return false when not successful.
-        $ret = @mail($this->formatTo($message->to), $message->subject, (string) $message->content, $mail_headers);
+        $ret = @mail($this->formatTo($message->to), $message->subject, (string) $message->content, $mailHeaders);
         if (!$ret) {
             $error = error_get_last();
 

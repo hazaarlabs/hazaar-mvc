@@ -129,7 +129,7 @@ class Compiler
                 $replacement = $this->replaceVAR($matches[1]);
             // Matched a config variable
             } elseif ('#' === substr($matches[1], 0, 1) && '#' === substr($matches[1], -1)) {
-                $replacement = $this->replaceCONFIG_VAR(substr($matches[1], 1, -1));
+                $replacement = $this->replaceCONFIGVAR(substr($matches[1], 1, -1));
             // Must be a function so we exec the internal function handler
             } elseif (('/' == substr($matches[2], 0, 1)
                 && in_array(substr($matches[2], 1), self::$tags))
@@ -374,7 +374,7 @@ class Compiler
      *
      * @return string The PHP code to write the config variable
      */
-    protected function replaceCONFIG_VAR(string $name): string
+    protected function replaceCONFIGVAR(string $name): string
     {
         return $this->replaceVAR("\$this->variables['{$name}']");
     }
@@ -650,16 +650,16 @@ class Compiler
 
     protected function compileCALL(string $params): string
     {
-        $call_params = $this->parsePARAMS($params);
-        if (isset($call_params[0])) {
-            $call_params['name'] = $call_params[0];
+        $callParams = $this->parsePARAMS($params);
+        if (isset($callParams[0])) {
+            $callParams['name'] = $callParams[0];
         }
         $params = substr($params, strpos($params, ' ') + 1);
-        if (!isset($call_params['name'])) {
+        if (!isset($callParams['name'])) {
             return '';
         }
 
-        return $this->compileFUNCTIONHANDLER($call_params['name'], $params);
+        return $this->compileFUNCTIONHANDLER($callParams['name'], $params);
     }
 
     protected function compileINCLUDE(string $params): string

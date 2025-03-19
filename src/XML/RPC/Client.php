@@ -13,15 +13,15 @@ use Hazaar\XML\RPC\Exception\XMLRPCNotInstalled;
 class Client extends \Hazaar\HTTP\Client
 {
     protected URL $location;
-    protected string $method_pfx = '';
+    protected string $methodPfx = '';
 
-    public function __construct(URL $url, string $method_pfx = '')
+    public function __construct(URL $url, string $methodPfx = '')
     {
         if (!in_array('xmlrpc', get_loaded_extensions())) {
             throw new XMLRPCNotInstalled();
         }
         $this->location = $url;
-        $this->method_pfx = $method_pfx;
+        $this->methodPfx = $methodPfx;
         parent::__construct();
     }
 
@@ -38,7 +38,7 @@ class Client extends \Hazaar\HTTP\Client
      */
     public function call(string $name, array $args): mixed
     {
-        $method = ($this->method_pfx ? $this->method_pfx.'.' : '').$name;
+        $method = ($this->methodPfx ? $this->methodPfx.'.' : '').$name;
         $response = '';
         $request = new Request($this->location, 'POST', 'text/xml');
         $request->setBody(xmlrpc_encode_request($method, $args, ['version' => 'xmlrpc']));

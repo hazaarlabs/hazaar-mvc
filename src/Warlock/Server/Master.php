@@ -235,7 +235,7 @@ class Master
             define('RUNTIME_PATH', $path);
         }
         self::$config->generateSystemID(APPLICATION_PATH);
-        $runtime_path = $this->getRuntimePath(null, true);
+        $runtimePath = $this->getRuntimePath(null, true);
         Logger::setDefaultLogLevel(self::$config['log']['level']);
         $this->log = new Logger();
         set_error_handler([$this, '__errorHandler']);
@@ -255,17 +255,17 @@ class Master
         if ($this->silent) {
             if (self::$config['log']['file']) {
                 fclose(STDOUT);
-                $STDOUT = fopen($runtime_path.DIRECTORY_SEPARATOR.self::$config['log']['file'], 'a');
+                $STDOUT = fopen($runtimePath.DIRECTORY_SEPARATOR.self::$config['log']['file'], 'a');
             }
             if (self::$config['log']['error']) {
                 fclose(STDERR);
-                $STDERR = fopen($runtime_path.DIRECTORY_SEPARATOR.self::$config['log']['error'], 'a');
+                $STDERR = fopen($runtimePath.DIRECTORY_SEPARATOR.self::$config['log']['error'], 'a');
             }
         }
         $this->log->write(W_INFO, 'Warlock starting up...');
         $this->pid = getmypid();
-        $this->pidfile = $runtime_path.DIRECTORY_SEPARATOR.self::$config['sys']->pid;
-        $rrdfile = $runtime_path.DIRECTORY_SEPARATOR.self::$config['log']['rrd'];
+        $this->pidfile = $runtimePath.DIRECTORY_SEPARATOR.self::$config['sys']->pid;
+        $rrdfile = $runtimePath.DIRECTORY_SEPARATOR.self::$config['log']['rrd'];
         $this->rrd = new Metric($rrdfile);
         if (!$this->rrd->exists()) {
             $this->rrd->addDataSource('streams', 'GAUGE', 0, null, 'Stream Connections');
@@ -285,7 +285,7 @@ class Master
         $this->log->write(W_NOTICE, 'Application path = '.APPLICATION_PATH);
         $this->log->write(W_NOTICE, 'Application name = '.self::$config['sys']['applicationName']);
         $this->log->write(W_NOTICE, 'Application environment = '.APPLICATION_ENV);
-        $this->log->write(W_NOTICE, 'Runtime path = '.$runtime_path);
+        $this->log->write(W_NOTICE, 'Runtime path = '.$runtimePath);
         $this->log->write(W_NOTICE, 'PID = '.$this->pid);
         $this->log->write(W_NOTICE, 'PID file = '.$this->pidfile);
         $this->log->write(W_NOTICE, 'Server ID = '.self::$config['sys']->id);
@@ -444,13 +444,13 @@ class Master
      * normal operation. For example, cached views, and backend applications.
      *
      * @param mixed $suffix     An optional suffix to tack on the end of the path
-     * @param mixed $create_dir if the runtime directory does not yet exist, try and create it (requires write permission)
+     * @param mixed $createDir if the runtime directory does not yet exist, try and create it (requires write permission)
      *
      * @return string The path to the runtime directory
      *
      * @throws \Exception
      */
-    public function getRuntimePath($suffix = null, $create_dir = false)
+    public function getRuntimePath($suffix = null, $createDir = false)
     {
         $path = self::$config['sys']->get('runtimePath');
         if (!file_exists($path)) {
@@ -474,15 +474,15 @@ class Master
             if (DIRECTORY_SEPARATOR != substr($suffix, 0, 1)) {
                 $suffix = DIRECTORY_SEPARATOR.$suffix;
             }
-            $full_path = $path.$suffix;
-            if (!file_exists($full_path) && $create_dir) {
-                mkdir($full_path, 0775, true);
+            $fullPath = $path.$suffix;
+            if (!file_exists($fullPath) && $createDir) {
+                mkdir($fullPath, 0775, true);
             }
         } else {
-            $full_path = $path;
+            $fullPath = $path;
         }
 
-        return $full_path;
+        return $fullPath;
     }
 
     /**
@@ -607,16 +607,16 @@ class Master
                 $this->tv = 0;
                 foreach ($read as $stream) {
                     if ($stream === $this->master) {
-                        $client_socket = stream_socket_accept($stream);
-                        if ($client_socket < 0) {
+                        $clientSocket = stream_socket_accept($stream);
+                        if ($clientSocket < 0) {
                             $this->log->write(W_ERR, 'Failed: socket_accept()');
 
                             continue;
                         }
-                        $socket_id = (int) $client_socket;
-                        $this->streams[$socket_id] = $client_socket;
-                        $peer = stream_socket_get_name($client_socket, true);
-                        $this->log->write(W_NOTICE, "Connection from {$peer} with socket id #{$socket_id}");
+                        $socketId = (int) $clientSocket;
+                        $this->streams[$socketId] = $clientSocket;
+                        $peer = stream_socket_get_name($clientSocket, true);
+                        $this->log->write(W_NOTICE, "Connection from {$peer} with socket id #{$socketId}");
                     } else {
                         $this->clientProcess($stream);
                     }
@@ -1037,9 +1037,9 @@ class Master
     {
         if (file_exists($this->pidfile)) {
             $pid = (int) file_get_contents($this->pidfile);
-            $proc_file = '/proc/'.$pid.'/stat';
-            if (file_exists($proc_file)) {
-                $proc = file_get_contents($proc_file);
+            $procFile = '/proc/'.$pid.'/stat';
+            if (file_exists($procFile)) {
+                $proc = file_get_contents($procFile);
 
                 return '' !== $proc && preg_match('/^'.preg_quote((string) $pid, '/').'\s+\(php\)/', $proc);
             }
@@ -1071,17 +1071,17 @@ class Master
 
             return false;
         }
-        $bytes_received = strlen($buf);
+        $bytesReceived = strlen($buf);
         $client = $this->clientGet($stream);
         if ($client instanceof ClientInterface) {
             if ('client' === $client->type) {
-                if (0 === $bytes_received) {
+                if (0 === $bytesReceived) {
                     $this->log->write(W_NOTICE, "Remote host {$client->address}:{$client->port} closed connection", $client->name);
                     $this->disconnect($stream);
 
                     return false;
                 }
-                $this->log->write(W_DEBUG, "CLIENT<-RECV: HOST={$client->address} PORT={$client->port} BYTES=".$bytes_received, $client->name);
+                $this->log->write(W_DEBUG, "CLIENT<-RECV: HOST={$client->address} PORT={$client->port} BYTES=".$bytesReceived, $client->name);
             }
             $client->recv($buf);
         } else {
@@ -1620,40 +1620,40 @@ class Master
             if (!$this->fieldExists($field, $event['data'])) {
                 return false;
             }
-            $field_value = $this->getFieldValue($field, $event['data']);
+            $fieldValue = $this->getFieldValue($field, $event['data']);
             if ($data instanceof \stdClass) { // If $data is an array it's a complex filter
-                foreach (get_object_vars($data) as $filter_type => $filter_value) {
-                    switch ($filter_type) {
+                foreach (get_object_vars($data) as $filterType => $filterValue) {
+                    switch ($filterType) {
                         case 'is':
-                            if ($field_value != $filter_value) {
+                            if ($fieldValue != $filterValue) {
                                 return true;
                             }
 
                             break;
 
                         case 'not':
-                            if ($field_value === $filter_value) {
+                            if ($fieldValue === $filterValue) {
                                 return true;
                             }
 
                             break;
 
                         case 'like':
-                            if (!preg_match($filter_value, $field_value)) {
+                            if (!preg_match($filterValue, $fieldValue)) {
                                 return true;
                             }
 
                             break;
 
                         case 'in':
-                            if (!in_array($field_value, $filter_value)) {
+                            if (!in_array($fieldValue, $filterValue)) {
                                 return true;
                             }
 
                             break;
 
                         case 'nin':
-                            if (in_array($field_value, $filter_value)) {
+                            if (in_array($fieldValue, $filterValue)) {
                                 return true;
                             }
 
@@ -1661,7 +1661,7 @@ class Master
                     }
                 }
             } else { // Otherwise it's a simple filter with an acceptable value in it
-                if ($field_value != $data) {
+                if ($fieldValue != $data) {
                     return true;
                 }
             }
@@ -1816,18 +1816,18 @@ class Master
         global $STDOUT;
         global $STDERR;
         $this->log->write(W_NOTICE, "ROTATING LOG FILES: MAX={$logfiles}");
-        $runtime_path = rtrim(self::$config['sys']->getRuntimePath);
-        if (!\is_dir($runtime_path)) {
+        $runtimePath = rtrim(self::$config['sys']->getRuntimePath);
+        if (!\is_dir($runtimePath)) {
             return false;
         }
         if (self::$config['log']['file']) {
-            $out = $runtime_path.DIRECTORY_SEPARATOR.self::$config['log']['file'];
+            $out = $runtimePath.DIRECTORY_SEPARATOR.self::$config['log']['file'];
             fclose($STDOUT);
             Functions::rotateLogFile($out, $logfiles);
             $STDOUT = fopen($out, 'a');
         }
         if (self::$config['log']['error']) {
-            $err = $runtime_path.DIRECTORY_SEPARATOR.self::$config['log']['error'];
+            $err = $runtimePath.DIRECTORY_SEPARATOR.self::$config['log']['error'];
             fclose($STDERR);
             Functions::rotateLogFile($err, $logfiles);
             $STDERR = fopen($err, 'a');

@@ -8,7 +8,7 @@ interface Backend
 {
     public function init(string $namespace): void;
 
-    public function has(string $key, bool $check_empty = false): bool;
+    public function has(string $key, bool $checkEmpty = false): bool;
 
     public function get(string $key): mixed;
 
