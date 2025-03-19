@@ -267,17 +267,18 @@ class Application
          * and this is where we can start them up if they have valid configuration.
          */
         $initialisers = [
-            'app' => '\Hazaar\Application\Url',
+            'app' => '\Hazaar\Application\URL',
             'log' => '\Hazaar\Logger\Frontend',
         ];
         foreach ($initialisers as $property => $class) {
-            if (isset($this->config[$property]) && class_exists($class)) {
-                $moduleConfig = $this->config[$property];
-                if (!is_array($moduleConfig)) {
-                    throw new \Exception('Invalid configuration module: '.$property);
-                }
-                $class::initialise($moduleConfig);
+            if (!(isset($this->config[$property]) && class_exists($class))) {
+                continue;
             }
+            $moduleConfig = $this->config[$property];
+            if (!is_array($moduleConfig)) {
+                throw new \Exception('Invalid configuration module: '.$property);
+            }
+            $class::initialise($moduleConfig);
         }
     }
 

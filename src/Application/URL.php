@@ -94,7 +94,7 @@ class URL implements \JsonSerializable
     public static function initialise(array $config): void
     {
         self::$baseURL = $config['base'] ?? '/';
-        self::$rewriteURL = $config['rewrite'] ?? '/';
+        self::$rewriteURL = $config['rewrite'] ?? true;
     }
 
     /**
