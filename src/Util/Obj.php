@@ -54,22 +54,22 @@ class Obj
         if (count($objects) < 2 || !is_object($objects[0])) {
             return null;
         }
-        $target_reflection = new \ReflectionObject($objects[0]);
-        $target_object = $target_reflection->newInstance();
+        $targetReflection = new \ReflectionObject($objects[0]);
+        $targetObject = $targetReflection->newInstance();
         foreach ($objects as $object) {
             if (is_object($object)) {
                 $reflection = new \ReflectionObject($object);
                 foreach ($reflection->getProperties() as $property) {
                     $property->setAccessible(true);
-                    $property->setValue($target_object, $property->getValue($object));
+                    $property->setValue($targetObject, $property->getValue($object));
                 }
             } elseif (is_array($object)) {
                 foreach ($object as $key => $value) {
-                    $target_object->{$key} = $value;
+                    $targetObject->{$key} = $value;
                 }
             }
         }
 
-        return $target_object;
+        return $targetObject;
     }
 }

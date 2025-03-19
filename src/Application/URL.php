@@ -57,17 +57,17 @@ class URL implements \JsonSerializable
 
                 break;
             }
-            $part_parts = (false === strpos((string) $part, '/')) ? [$part] : explode('/', (string) $part);
-            foreach ($part_parts as $part_part) {
-                if (false !== strpos((string) $part_part, '?')) {
-                    [$part_part, $part_params] = explode('?', $part_part, 2);
-                    parse_str($part_params, $part_params);
-                    $params = array_merge($params, $part_params);
+            $partParts = (false === strpos((string) $part, '/')) ? [$part] : explode('/', (string) $part);
+            foreach ($partParts as $partPart) {
+                if (false !== strpos((string) $partPart, '?')) {
+                    [$partPart, $partParams] = explode('?', $partPart, 2);
+                    parse_str($partParams, $partParams);
+                    $params = array_merge($params, $partParams);
                 }
-                if (!($part_part = trim($part_part ?? ''))) {
+                if (!($partPart = trim($partPart ?? ''))) {
                     continue;
                 }
-                $parts[] = $part_part;
+                $parts[] = $partPart;
             }
         }
         if (count($parts) > 0) {

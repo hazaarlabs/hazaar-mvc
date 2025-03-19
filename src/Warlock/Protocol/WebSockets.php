@@ -9,7 +9,7 @@ abstract class WebSockets
     /**
      * @var array<string>
      */
-    protected array $allowed_protocols = [];
+    protected array $allowedProtocols = [];
     private string $magicGUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 
     /**
@@ -18,11 +18,11 @@ abstract class WebSockets
     private array $headers = [];
 
     /**
-     * @param array<string> $allowed_protocols
+     * @param array<string> $allowedProtocols
      */
-    public function __construct(array $allowed_protocols = [])
+    public function __construct(array $allowedProtocols = [])
     {
-        $this->allowed_protocols = $allowed_protocols;
+        $this->allowedProtocols = $allowedProtocols;
     }
 
     /**
@@ -56,14 +56,14 @@ abstract class WebSockets
     }
 
     /**
-     * @param array<string> $extra_headers
+     * @param array<string> $extraHeaders
      */
     protected function createHandshake(
         string $path,
         string $host,
         ?string $origin,
         string $key,
-        ?array $extra_headers = null
+        ?array $extraHeaders = null
     ): string {
         $headers = [
             'Host' => $host,
@@ -76,8 +76,8 @@ abstract class WebSockets
         if ($origin) {
             $header['Origin'] = $origin;
         }
-        if (is_array($extra_headers)) {
-            $headers = array_merge($headers, $extra_headers);
+        if (is_array($extraHeaders)) {
+            $headers = array_merge($headers, $extraHeaders);
         }
         $requestHeaders = 'GET '.$path." HTTP/1.1\r\n";
         foreach ($headers as $name => $value) {
@@ -312,7 +312,7 @@ abstract class WebSockets
         }
         foreach ($protocols as $proto) {
             $proto = strtolower(trim($proto));
-            if (in_array($proto, $this->allowed_protocols)) {
+            if (in_array($proto, $this->allowedProtocols)) {
                 $allowed[] = $proto;
             }
         }

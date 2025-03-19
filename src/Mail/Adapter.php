@@ -31,7 +31,7 @@ use Hazaar\File;
  */
 class Adapter
 {
-    protected static string $default_transport = 'local';
+    protected static string $defaultTransport = 'local';
     protected Transport $transport;
     protected TransportMessage $message;
     protected string|Template $subject;
@@ -40,7 +40,7 @@ class Adapter
     /**
      * @var array<mixed>
      */
-    protected array $last_to = [];
+    protected array $lastTo = [];
 
     /**
      * @var array<mixed>
@@ -69,7 +69,7 @@ class Adapter
             $this->config = array_merge([
                 'enable' => true,
                 'testmode' => false,
-                'transport' => self::$default_transport,
+                'transport' => self::$defaultTransport,
             ], Application::getInstance()->config['mail']);
         }
         $this->transport = $this->getTransportObject($this->config['transport'], $this->config);
@@ -101,7 +101,7 @@ class Adapter
      */
     public static function setDefaultTransport(string $transport): void
     {
-        self::$default_transport = $transport;
+        self::$defaultTransport = $transport;
     }
 
     /**
@@ -142,12 +142,12 @@ class Adapter
      *
      * This is for working with templates that need to be sent/rendered multiple times to send to many recipients.
      */
-    public function clear(bool $clear_attachments = false): void
+    public function clear(bool $clearAttachments = false): void
     {
         $this->message->to = [];
         $this->message->cc = [];
         $this->message->bcc = [];
-        if (true === $clear_attachments) {
+        if (true === $clearAttachments) {
             $this->message->attachments = [];
         }
     }
@@ -187,7 +187,7 @@ class Adapter
      */
     public function getLastTo(): array
     {
-        return $this->last_to;
+        return $this->lastTo;
     }
 
     /**
@@ -382,30 +382,30 @@ class Adapter
         }
         $this->message->subject = $this->subject->render($params);
         $this->message->content = $this->getBody($params);
-        $map_func = function ($item) {
+        $mapFunc = function ($item) {
             return is_array($item) ? Adapter::encodeEmailAddress($item[0], $item[1]) : $item;
         };
-        if ($override_to = $this->config['override']['to']) {
+        if ($overrideTo = $this->config['override']['to']) {
             $to = [];
             if (isset($this->config['noOverrideMatch'])) {
-                foreach ((array) $override_to as $rcpt) {
+                foreach ((array) $overrideTo as $rcpt) {
                     if (preg_match('/'.$this->config['noOverrideMatch'].'/', $rcpt[0])) {
                         $to[] = $rcpt;
                     }
                 }
             }
             if (0 === count($to)) {
-                $to = $override_to;
+                $to = $overrideTo;
             }
-            $this->message->to = array_map($map_func, (array) $to);
+            $this->message->to = array_map($mapFunc, (array) $to);
         }
         if ($cc = $this->config['override']['cc']) {
-            $this->message->cc = array_map($map_func, (array) $cc);
+            $this->message->cc = array_map($mapFunc, (array) $cc);
         }
         if ($bcc = $this->config['override']['bcc']) {
-            $this->message->bcc = array_map($map_func, (array) $bcc);
+            $this->message->bcc = array_map($mapFunc, (array) $bcc);
         }
-        $this->last_to = $this->message->to;
+        $this->lastTo = $this->message->to;
         $result = $this->transport->send($this->message);
         if ($result) {
             $this->clear();

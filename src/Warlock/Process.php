@@ -90,8 +90,8 @@ abstract class Process
 
             case 'PONG':
                 if (is_int($payload)) {
-                    $trip_ms = (microtime(true) - $payload) * 1000;
-                    $this->send('DEBUG', 'PONG received in '.$trip_ms.'ms');
+                    $tripMs = (microtime(true) - $payload) * 1000;
+                    $this->send('DEBUG', 'PONG received in '.$tripMs.'ms');
                 } else {
                     $this->send('ERROR', 'PONG received with invalid payload!');
                 }
@@ -152,9 +152,9 @@ abstract class Process
         return $this->conn->send($command, $payload);
     }
 
-    public function recv(mixed &$payload = null, int $tv_sec = 3, int $tv_usec = 0): null|bool|string
+    public function recv(mixed &$payload = null, int $tvSec = 3, int $tvUsec = 0): null|bool|string
     {
-        return $this->conn->recv($payload, $tv_sec, $tv_usec);
+        return $this->conn->recv($payload, $tvSec, $tvUsec);
     }
 
     public function ping(bool $waitPong = false): bool|string
@@ -533,15 +533,15 @@ abstract class Process
                                 $method = $class->getMethod($payload->exec[1]);
                                 if ($method->isStatic() && $method->isPublic()) {
                                     $file = file($method->getFileName());
-                                    $start_line = $method->getStartLine() - 1;
-                                    $end_line = $method->getEndLine();
-                                    if (preg_match('/function\s+\w+(\(.*)/', $file[$start_line], $matches)) {
-                                        $file[$start_line] = 'function'.$matches[1];
+                                    $startLine = $method->getStartLine() - 1;
+                                    $endLine = $method->getEndLine();
+                                    if (preg_match('/function\s+\w+(\(.*)/', $file[$startLine], $matches)) {
+                                        $file[$startLine] = 'function'.$matches[1];
                                     }
                                     if ($namespace = $class->getNamespaceName()) {
                                         $code = "namespace {$namespace};\n\n";
                                     }
-                                    $code .= '$_function = '.implode("\n", array_splice($file, $start_line, $end_line - $start_line)).';';
+                                    $code .= '$_function = '.implode("\n", array_splice($file, $startLine, $endLine - $startLine)).';';
                                 }
                             } else {
                                 $code = '$_function = '.$payload->exec.';';
@@ -616,12 +616,12 @@ abstract class Process
         Protocol $protocol,
         bool $remote = false
     ): false|Service {
-        $class_search = [
+        $classSearch = [
             'Application\Services\\'.ucfirst($serviceName),
             ucfirst($serviceName).'Service',
         ];
         $service = null;
-        foreach ($class_search as $serviceClass) {
+        foreach ($classSearch as $serviceClass) {
             if (!class_exists($serviceClass)) {
                 continue;
             }

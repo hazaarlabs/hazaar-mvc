@@ -12,8 +12,8 @@ use Hazaar\Controller\Response;
  */
 class RateLimitExceeded extends Response
 {
-    public function __construct(string $content_type = 'text/html')
+    public function __construct(string $contentType = 'text/html')
     {
-        parent::__construct($content_type, 429);
+        parent::__construct($contentType, 429);
     }
 }

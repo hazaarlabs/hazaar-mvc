@@ -15,10 +15,10 @@ interface Backend
      */
     public function scandir(
         string $path,
-        ?string $regex_filter = null,
+        ?string $regexFilter = null,
         int $sort = SCANDIR_SORT_ASCENDING,
-        bool $show_hidden = false,
-        ?string $relative_path = null
+        bool $showHidden = false,
+        ?string $relativePath = null
     ): array|bool;
 
     public function touch(string $path): bool;
@@ -90,14 +90,14 @@ interface Backend
     public function read(string $path, int $offset = -1, ?int $maxlen = null): false|string;
 
     // Write the contents of a file
-    public function write(string $path, string $bytes, ?string $content_type = null, bool $overwrite = false): ?int;
+    public function write(string $path, string $bytes, ?string $contentType = null, bool $overwrite = false): ?int;
 
     /**
      * @return array<string>|false
      */
-    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array|false;
+    public function find(?string $search = null, string $path = '/', bool $caseInsensitive = false): array|false;
 
-    public function fsck(bool $skip_root_reload = false): bool;
+    public function fsck(bool $skipRoot_reload = false): bool;
 
     /**
      * Upload a file that was uploaded with a POST.
@@ -128,11 +128,11 @@ interface Backend
      */
     public function thumbnailURL(string $path, int $width = 100, int $height = 100, string $format = 'jpeg', array $params = []): false|string;
 
-    public function authorise(?string $redirect_uri = null): bool;
+    public function authorise(?string $redirectUri = null): bool;
 
     public function authorised(): bool;
 
-    public function buildAuthURL(?string $callback_url = null): ?string;
+    public function buildAuthURL(?string $callbackUrl = null): ?string;
 
     /**
      * Direct stream read/write methods.

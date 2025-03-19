@@ -39,7 +39,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
     /**
      * @var array<string>
      */
-    private array $meta_items = [
+    private array $metaItems = [
         'kind',
         'id',
         'title',
@@ -120,7 +120,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         return true;
     }
 
-    public function authorise(?string $redirect_uri = null): bool
+    public function authorise(?string $redirectUri = null): bool
     {
         if (($code = $_REQUEST['code'] ?? null) && ($state = $_REQUEST['state'] ?? null)) {
             if ($state != $this->cache->pull('oauth2_state')) {
@@ -128,11 +128,11 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             }
             $request = new Request('https://accounts.google.com/o/oauth2/token', 'POST');
             $request['code'] = $code;
-            $request['redirect_uri'] = (string) $redirect_uri;
+            $request['redirect_uri'] = (string) $redirectUri;
             $request['grant_type'] = 'authorization_code';
-        } elseif ($this->options['oauth2']->has('refresh_token') && $refresh_token = $this->options['oauth2']->get('refresh_token')) {
+        } elseif ($this->options['oauth2']->has('refresh_token') && $refreshToken = $this->options['oauth2']->get('refresh_token')) {
             $request = new Request('https://www.googleapis.com/oauth2/v3/token', 'POST');
-            $request['refresh_token'] = $refresh_token;
+            $request['refresh_token'] = $refreshToken;
             $request['grant_type'] = 'refresh_token';
         } else {
             return $this->authorised();
@@ -160,7 +160,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             && null != $this->options['oauth2']['access_token'];
     }
 
-    public function buildAuthURL(?string $redirect_uri = null): string
+    public function buildAuthURL(?string $redirectUri = null): string
     {
         $state = md5(uniqid());
         $this->cache->set('oauth2_state', $state, 300);
@@ -170,7 +170,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             'approval_prompt=force',
             'client_id='.$this->options['client_id'],
             'scope='.implode(' ', $this->scope),
-            'redirect_uri='.$redirect_uri,
+            'redirect_uri='.$redirectUri,
             'state='.$state,
         ];
 
@@ -186,7 +186,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             $this->cursor = (int) $response['largestChangeId'];
             $request = new Request('https://www.googleapis.com/drive/v2/files/root', 'GET');
             $response = $this->sendRequest($request);
-            $this->meta[$response['id']] = array_intersect_key($response, array_flip($this->meta_items));
+            $this->meta[$response['id']] = array_intersect_key($response, array_flip($this->metaItems));
             $request = new Request('https://www.googleapis.com/drive/v2/files', 'GET');
             if (isset($this->options['maxResults'])) {
                 $request['maxResults'] = $this->options['maxResults'];
@@ -197,7 +197,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
                     return false;
                 }
                 foreach ($response['items']->toArray() as $item) {
-                    $this->meta[$item['id']] = array_intersect_key($item, array_flip($this->meta_items));
+                    $this->meta[$item['id']] = array_intersect_key($item, array_flip($this->metaItems));
                 }
                 if (!isset($response['nextPageToken'])) {
                     break;
@@ -220,7 +220,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
                 $items = array_merge($items, $this->resolveItem($this->meta[$item['fileId']]));
                 $deleted[] = $item['fileId'];
             } elseif (array_key_exists('file', $item)) {
-                $file = array_intersect_key($item['file'], array_flip($this->meta_items));
+                $file = array_intersect_key($item['file'], array_flip($this->metaItems));
                 $this->meta[$item['fileId']] = $file;
                 $items = array_merge($items, $this->resolveItem($file));
             }
@@ -235,10 +235,10 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
     // Get a directory listing
     public function scandir(
         string $path,
-        ?string $regex_filter = null,
+        ?string $regexFilter = null,
         int $sort = SCANDIR_SORT_ASCENDING,
-        bool $show_hidden = false,
-        ?string $relative_path = null
+        bool $showHidden = false,
+        ?string $relativePath = null
     ): array|bool {
         $parent = $this->resolvePath($path);
         $items = [];
@@ -561,7 +561,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
     }
 
     // Write the contents of a file
-    public function write(string $file, string $data, ?string $content_type = null, bool $overwrite = false): ?int
+    public function write(string $file, string $data, ?string $contentType = null, bool $overwrite = false): ?int
     {
         if (!$overwrite && $this->exists($file)) {
             return null;
@@ -571,7 +571,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         }
         $request = new Request('https://www.googleapis.com/upload/drive/v2/files?uploadType=multipart', 'POST');
         $request->addMultipart(['title' => basename($file), 'parents' => [['id' => $parent['id']]]], 'application/json');
-        $request->addMultipart($data, $content_type);
+        $request->addMultipart($data, $contentType);
         $response = $this->sendRequest($request);
         if ($response) {
             $this->meta[$response['id']] = $response;
@@ -726,12 +726,12 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         return false;
     }
 
-    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array|false
+    public function find(?string $search = null, string $path = '/', bool $caseInsensitive = false): array|false
     {
         return false;
     }
 
-    public function fsck(bool $skip_root_reload = false): bool
+    public function fsck(bool $skipRoot_reload = false): bool
     {
         return false;
     }

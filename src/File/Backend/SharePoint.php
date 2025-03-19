@@ -56,11 +56,11 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
         if (null === $this->options['webURL'] || null === $this->options['username'] || null === $this->options['password']) {
             throw new Exception\SharePointError('SharePoint filesystem backend requires a webURL, username and password.');
         }
-        $cache_options = [
+        $cacheOptions = [
             'use_pragma' => false,
             'namespace' => 'sharepoint_'.md5($this->options['username'].':'.$this->options['password'].'@'.$this->options['webURL']),
         ];
-        $this->cache = new Adapter($this->options['cache_backend'], $cache_options);
+        $this->cache = new Adapter($this->options['cache_backend'], $cacheOptions);
         $this->uncacheCookie($this->cache);
         $this->root = new \stdClass();
         $this->hostInfo = parse_url($this->options['webURL']);
@@ -85,7 +85,7 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
         return true;
     }
 
-    public function authorise(?string $redirect_uri = null): bool
+    public function authorise(?string $redirectUri = null): bool
     {
         if ($this->authorised()) {
             return true;
@@ -112,10 +112,10 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
      */
     public function scandir(
         string $path,
-        ?string $regex_filter = null,
+        ?string $regexFilter = null,
         int $sort = SCANDIR_SORT_ASCENDING,
-        bool $show_hidden = false,
-        ?string $relative_path = null
+        bool $showHidden = false,
+        ?string $relativePath = null
     ): array|bool {
         $files = [];
         if ($info = &$this->info($path)) {
@@ -354,7 +354,7 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
     }
 
     // Write the contents of a file
-    public function write(string $file, string $data, ?string $content_type = null, bool $overwrite = false): ?int
+    public function write(string $file, string $data, ?string $contentType = null, bool $overwrite = false): ?int
     {
         $url = $this->_folder(dirname($file), "Files/add(url='".$this->encodePath($file)."',overwrite=".Boolean::toString($overwrite).')');
         $result = $this->_query($url, 'POST', $data, null, $response);
@@ -411,7 +411,7 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
         return $info['link'] ?? null;
     }
 
-    public function buildAuthURL(?string $callback_url = null): ?string
+    public function buildAuthURL(?string $callbackUrl = null): ?string
     {
         return null;
     }
@@ -506,12 +506,12 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
         return false;
     }
 
-    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array|false
+    public function find(?string $search = null, string $path = '/', bool $caseInsensitive = false): array|false
     {
         return false;
     }
 
-    public function fsck(bool $skip_root_reload = false): bool
+    public function fsck(bool $skipRoot_reload = false): bool
     {
         return false;
     }
@@ -556,8 +556,8 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
 
     private function getAuthenticationCookies(string $token): bool
     {
-        $url_info = parse_url($this->options['webURL']);
-        $url = $url_info['scheme'].'://'.$url_info['host'].self::$signInURL;
+        $urlInfo = parse_url($this->options['webURL']);
+        $url = $urlInfo['scheme'].'://'.$urlInfo['host'].self::$signInURL;
         $request = new Request($url, 'POST');
         $request->setBody($token);
         $response = $this->send($request, 0);
@@ -593,7 +593,7 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
 
     /**
      * @param array<mixed>         $body
-     * @param array<string,string> $extra_headers
+     * @param array<string,string> $extraHeaders
      *
      * @param-out ?Response         $response
      */
@@ -601,7 +601,7 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
         string $url,
         string $method = 'GET',
         null|array|string $body = null,
-        ?array $extra_headers = null,
+        ?array $extraHeaders = null,
         ?Response &$response = null
     ): false|\stdClass {
         $retries = 3;
@@ -609,13 +609,13 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
             try {
                 $this->authorise();
                 if ('POST' === $method || 'PUT' === $method) {
-                    $extra_headers['X-RequestDigest'] = $this->_getFormDigest();
+                    $extraHeaders['X-RequestDigest'] = $this->_getFormDigest();
                 }
                 $request = new Request($url, $method, 'application/json; OData=verbose');
                 $request->setURLEncode(false);
                 $request->setHeader('Accept', 'application/json; OData=verbose');
-                if (is_array($extra_headers)) {
-                    foreach ($extra_headers as $key => $value) {
+                if (is_array($extraHeaders)) {
+                    foreach ($extraHeaders as $key => $value) {
                         $request->setHeader($key, $value);
                     }
                 }
@@ -641,12 +641,12 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
                 return false;
             }
             if ($error = $response->body()['error'] ?? null) {
-                $exception_message = 'Invalid response ('.$response->status.'): code='.$error->code.' message='.$error->message->value;
+                $exceptionMessage = 'Invalid response ('.$response->status.'): code='.$error->code.' message='.$error->message->value;
             } else {
-                $exception_message = 'Unknown response: '.$response->body();
+                $exceptionMessage = 'Unknown response: '.$response->body();
             }
 
-            throw new Exception\SharePointError($exception_message, $response);
+            throw new Exception\SharePointError($exceptionMessage, $response);
         }
 
         throw new Exception\SharePointError('Query failed after '.$retries.' retries with code '.$response->status.'.  Giving up!');
@@ -681,7 +681,7 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
         return $url;
     }
 
-    private function &info(string $path, ?\stdClass $new_item = null): ?\stdClass
+    private function &info(string $path, ?\stdClass $newItem = null): ?\stdClass
     {
         $folder = &$this->root;
         $parts = explode('/', trim($path, ' /'));
@@ -717,17 +717,17 @@ class SharePoint extends Client implements BackendInterface, DriverInterface
                 }
                 foreach ($folder->items as &$f) {
                     if ($f->Name === $item) {
-                        if (null !== $new_item) {
-                            $f = $new_item;
+                        if (null !== $newItem) {
+                            $f = $newItem;
                         }
 
                         return $f;
                     }
                 }
-                if (null !== $new_item) {
-                    $folder->items[] = $new_item;
+                if (null !== $newItem) {
+                    $folder->items[] = $newItem;
 
-                    return $new_item;
+                    return $newItem;
                 }
             }
         } catch (Exception\SharePointError $e) {

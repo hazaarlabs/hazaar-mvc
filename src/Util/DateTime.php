@@ -706,10 +706,10 @@ class DateTime extends \DateTime implements \JsonSerializable, \DateTimeInterfac
             't' => "\t",	// A Tab character ("\t")	---
             '%' => '%',      // A literal percentage character ("%")
         ];
-        $mapped_format = preg_replace_callback('/\%(\w)/', function ($match) use ($map) {
+        $mappedFormat = preg_replace_callback('/\%(\w)/', function ($match) use ($map) {
             return isset($map[$match[1]]) ? $map[$match[1]] : '';
         }, $format);
 
-        return date($mapped_format, $timestamp);
+        return date($mappedFormat, $timestamp);
     }
 }

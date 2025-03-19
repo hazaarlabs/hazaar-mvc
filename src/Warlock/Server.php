@@ -38,7 +38,7 @@ set_include_path(implode(PATH_SEPARATOR, [
     get_include_path(),
 ]));
 $reflector = null;
-$log_level = W_INFO;
+$logLevel = W_INFO;
 $warlock = new Server\Master($env, in_array('-s', $argv) ? true : \Hazaar\Util\Boolean::from('file' === getenv('WARLOCK_OUTPUT')));
 
 exit($warlock->bootstrap()->run());

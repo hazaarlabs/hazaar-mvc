@@ -92,14 +92,14 @@ class Message implements \JsonSerializable
     }
 
     /**
-     * @param array<string>|string $content_type
+     * @param array<string>|string $contentType
      */
-    public function findPart(array|string $content_type): bool|Part
+    public function findPart(array|string $contentType): bool|Part
     {
         if (!count($this->parts) > 0) {
             return false;
         }
-        $types = is_array($content_type) ? $content_type : [$content_type];
+        $types = is_array($contentType) ? $contentType : [$contentType];
         foreach ($this->parts as $part) {
             if (in_array($part->getContentType(), $types)) {
                 return $part;
@@ -126,11 +126,11 @@ class Message implements \JsonSerializable
         $pos = strpos($data, "\n\n");
         $headers = Message::parseMessageHeaders(substr($data, 0, $pos));
         $content = substr($data, $pos + 2);
-        if (($content_type = $headers['Content-Type'] ?? null) && 'multipart' === substr($content_type, 0, 9)) {
-            $content_type_parts = array_map(function ($value) {
+        if (($contentType = $headers['Content-Type'] ?? null) && 'multipart' === substr($contentType, 0, 9)) {
+            $contentType_parts = array_map(function ($value) {
                 return trim($value, '"');
-            }, Arr::unflatten($content_type));
-            if ($boundary = $content_type_parts['boundary'] ?? null) {
+            }, Arr::unflatten($contentType));
+            if ($boundary = $contentType_parts['boundary'] ?? null) {
                 $parts = explode('--'.$boundary."\n", $content);
                 array_shift($parts);
                 $content = [];
@@ -148,12 +148,12 @@ class Message implements \JsonSerializable
      */
     public static function parseMessageHeaders(string $content): array
     {
-        $header_lines = explode("\n", $content);
+        $headerLines = explode("\n", $content);
         $headers = [];
-        $last_header = null;
-        foreach ($header_lines as $line) {
+        $lastHeader = null;
+        foreach ($headerLines as $line) {
             if (preg_match('/^\W/', $line)) {
-                $headers[$last_header] .= "\n ".$line;
+                $headers[$lastHeader] .= "\n ".$line;
 
                 continue;
             }
@@ -161,7 +161,7 @@ class Message implements \JsonSerializable
             if (!preg_match('/^(\S+)\:\s(.*)/', $line, $matches)) {
                 continue;
             }
-            $headers[$last_header = trim($matches[1])] = trim($matches[2]);
+            $headers[$lastHeader = trim($matches[1])] = trim($matches[2]);
         }
 
         return $headers;

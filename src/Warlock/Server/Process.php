@@ -171,23 +171,23 @@ abstract class Process extends Model
         $php = new Version(phpversion());
         $cwd = dirname($cmd);
         if (1 === $php->compareTo('7.4')) {
-            $proc_cmd = [
+            $procCmd = [
                 $phpBinary,
                 basename($cmd),
                 '-d',
             ];
 
             if ($this->tag) {
-                $proc_cmd[] = '--name';
-                $proc_cmd[] = $this->tag;
+                $procCmd[] = '--name';
+                $procCmd[] = $this->tag;
             }
-            $this->log->write(W_DEBUG, 'EXEC='.implode(' ', $proc_cmd), $this->id);
+            $this->log->write(W_DEBUG, 'EXEC='.implode(' ', $procCmd), $this->id);
         } else {
-            $proc_cmd = $phpBinary.' "'.basename($cmd).'" -d'.($this->tag ? ' --name '.$this->tag : '');
-            $this->log->write(W_DEBUG, 'EXEC='.$proc_cmd, $this->id);
+            $procCmd = $phpBinary.' "'.basename($cmd).'" -d'.($this->tag ? ' --name '.$this->tag : '');
+            $this->log->write(W_DEBUG, 'EXEC='.$procCmd, $this->id);
         }
         $this->log->write(W_DEBUG, 'CWD='.$cwd, $this->id);
-        $this->process = proc_open($proc_cmd, $descriptorspec, $pipes, $cwd, $env);
+        $this->process = proc_open($procCmd, $descriptorspec, $pipes, $cwd, $env);
         if (!is_resource($this->process)) {
             throw new \Exception('Failed to start the process');
         }
@@ -203,14 +203,14 @@ abstract class Process extends Model
         $len = strlen($packet .= "\n");
         $this->log->write(W_DEBUG, "PROCESS->PIPE: BYTES={$len} ID={$this->id}", $this->tag);
         $this->log->write(W_DECODE, 'PROCESS->PACKET: '.trim($packet), $this->tag);
-        $bytes_sent = @fwrite($this->pipes[0], $packet, $len);
-        if (false === $bytes_sent) {
+        $bytesSent = @fwrite($this->pipes[0], $packet, $len);
+        if (false === $bytesSent) {
             $this->log->write(W_WARN, 'An error occured while sending to the client. Pipe has disappeared!?', $this->tag);
 
             return false;
         }
-        if ($bytes_sent !== $len) {
-            $this->log->write(W_ERR, $bytes_sent.' bytes have been sent instead of the '.$len.' bytes expected', $this->tag);
+        if ($bytesSent !== $len) {
+            $this->log->write(W_ERR, $bytesSent.' bytes have been sent instead of the '.$len.' bytes expected', $this->tag);
 
             return false;
         }

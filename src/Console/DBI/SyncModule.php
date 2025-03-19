@@ -27,12 +27,12 @@ class SyncModule extends Module
             $output->write($message.PHP_EOL);
         });
         $data = null;
-        if ($sync_file = $input->getArgument('sync_file')) {
-            $sync_file = Loader::getFilePath(FilePath::APPLICATION, DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.$sync_file);
-            if (!($sync_file && file_exists($sync_file))) {
-                throw new \Exception('Unable to sync.  File not found: '.realpath($sync_file));
+        if ($syncFile = $input->getArgument('sync_file')) {
+            $syncFile = Loader::getFilePath(FilePath::APPLICATION, DIRECTORY_SEPARATOR.'..'.DIRECTORY_SEPARATOR.$syncFile);
+            if (!($syncFile && file_exists($syncFile))) {
+                throw new \Exception('Unable to sync.  File not found: '.realpath($syncFile));
             }
-            if (!($data = json_decode(file_get_contents($sync_file)))) {
+            if (!($data = json_decode(file_get_contents($syncFile)))) {
                 throw new \Exception('Unable to sync.  File is not a valid JSON file.');
             }
         }

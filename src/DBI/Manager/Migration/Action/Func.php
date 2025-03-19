@@ -10,7 +10,7 @@ use Hazaar\DBI\Manager\Migration\Action\Exception\CreateFailed;
 class Func extends BaseAction
 {
     public string $name;
-    public string $return_type;
+    public string $returnType;
     public string $lang;
     public string $body;
 

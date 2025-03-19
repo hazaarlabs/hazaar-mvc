@@ -20,7 +20,7 @@ final class Pipe implements Connection
         $this->guid = $guid;
     }
 
-    public function connect(string $applicationName, string $host, int $port, ?array $extra_headers = null): bool
+    public function connect(string $applicationName, string $host, int $port, ?array $extraHeaders = null): bool
     {
         return true;
     }
@@ -44,15 +44,15 @@ final class Pipe implements Connection
         }
         $len = strlen($packet .= "\n");
         $attempts = 0;
-        $total_sent = 0;
+        $totalSent = 0;
         while ($packet) {
             ++$attempts;
             $bytesSent = @fwrite(STDOUT, $packet, $len);
             if ($bytesSent < $len) {
                 return false;
             }
-            $total_sent += $bytesSent;
-            if ($total_sent === $len) { // If all the bytes sent then don't waste time processing the leftover frame
+            $totalSent += $bytesSent;
+            if ($totalSent === $len) { // If all the bytes sent then don't waste time processing the leftover frame
                 break;
             }
             if ($attempts >= 100) {
@@ -64,7 +64,7 @@ final class Pipe implements Connection
         return true;
     }
 
-    public function recv(mixed &$payload = null, int $tv_sec = 3, int $tv_usec = 0): null|bool|string
+    public function recv(mixed &$payload = null, int $tvSec = 3, int $tvUsec = 0): null|bool|string
     {
         if ($this->buffer && false !== strpos($this->buffer, "\n")) {
             while ($packet = $this->processPacket($this->buffer)) {
@@ -77,7 +77,7 @@ final class Pipe implements Connection
         }
         $read = [STDIN];
         $write = $except = null;
-        while (stream_select($read, $write, $except, $tv_sec, $tv_usec) > 0) {
+        while (stream_select($read, $write, $except, $tvSec, $tvUsec) > 0) {
             // will block to wait server response
             $this->buffer .= $buffer = fread(STDIN, 65536);
             $this->bytesReceived += ($bytesReceived = strlen($buffer));

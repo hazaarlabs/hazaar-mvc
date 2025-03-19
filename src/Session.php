@@ -22,9 +22,9 @@ use Hazaar\Cache\Adapter;
  */
 class Session extends Adapter
 {
-    private string $session_name = 'hazaar-session';
-    private ?string $session_id = null;
-    private bool $session_init = false;
+    private string $sessionName = 'hazaar-session';
+    private ?string $sessionId = null;
+    private bool $sessionInit = false;
 
     /**
      * @param array<mixed> $options
@@ -36,19 +36,19 @@ class Session extends Adapter
             'session_name' => 'hazaar-session',
         ], $options);
         if (isset($options['session_name'])) {
-            $this->session_name = $options['session_name'];
+            $this->sessionName = $options['session_name'];
         }
         if (isset($options['session_id'])) {
-            $this->session_id = $options['session_id'];
+            $this->sessionId = $options['session_id'];
         }
-        if (!($this->session_id || ($this->session_id = ($_COOKIE[$this->session_name] ?? null)))) {
-            $this->session_id = null !== $options['session_id'] ? $options['session_id'] : hash($options['hash_algorithm'], uniqid());
+        if (!($this->sessionId || ($this->sessionId = ($_COOKIE[$this->sessionName] ?? null)))) {
+            $this->sessionId = null !== $options['session_id'] ? $options['session_id'] : hash($options['hash_algorithm'], uniqid());
         } else {
-            $this->session_init = true;
+            $this->sessionInit = true;
         }
         $options['use_pragma'] = false;
         $options['keepalive'] = true;
-        parent::__construct($backend, $options, $this->session_id);
+        parent::__construct($backend, $options, $this->sessionId);
         if (!$this->backend->can('keepalive')) {
             throw new \Exception('The currently selected cache backend, '.get_class($this->backend).', does not support the keepalive feature which is required by the '.__CLASS__.' class.  Please choose a caching backend that supports the keepalive feature.');
         }
@@ -56,9 +56,9 @@ class Session extends Adapter
 
     public function set(mixed $key, mixed $value, int $timeout = 0): bool
     {
-        if (true !== $this->session_init && false === strpos(php_sapi_name(), 'cli')) {
-            setcookie($this->session_name, $this->session_id, 0, Application::getPath());
-            $this->session_init = true;
+        if (true !== $this->sessionInit && false === strpos(php_sapi_name(), 'cli')) {
+            setcookie($this->sessionName, $this->sessionId, 0, Application::getPath());
+            $this->sessionInit = true;
         }
 
         return parent::set($key, $value, $timeout);
@@ -67,8 +67,8 @@ class Session extends Adapter
     public function clear(): void
     {
         parent::clear();
-        if (($_COOKIE[$this->session_name] ?? null) === $this->session_id) {
-            setcookie($this->session_name, '', time() - 3600, Application::getPath());
+        if (($_COOKIE[$this->sessionName] ?? null) === $this->sessionId) {
+            setcookie($this->sessionName, '', time() - 3600, Application::getPath());
         }
     }
 }

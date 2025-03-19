@@ -76,7 +76,7 @@ class GZFile extends File
             return $this->handle;
         }
 
-        return $this->handle = gzopen($this->source_file, $mode);
+        return $this->handle = gzopen($this->sourceFile, $mode);
     }
 
     /**
@@ -167,15 +167,15 @@ class GZFile extends File
     /**
      * Returns a line from the file pointer and strips HTML tags.
      *
-     * @param array<string>|string $allowable_tags
+     * @param array<string>|string $allowableTags
      */
-    public function getss(null|array|string $allowable_tags = null): false|string
+    public function getss(null|array|string $allowableTags = null): false|string
     {
         if (null === $this->handle) {
             return false;
         }
 
-        return strip_tags(gzgets($this->handle), $allowable_tags);
+        return strip_tags(gzgets($this->handle), $allowableTags);
     }
 
     /**
@@ -249,7 +249,7 @@ class GZFile extends File
         if ($this->contents) {
             return $this->contents;
         }
-        $this->contents = gzdecode($this->manager->read($this->source_file, $offset, $maxlen));
+        $this->contents = gzdecode($this->manager->read($this->sourceFile, $offset, $maxlen));
         $this->filterIN($this->contents);
 
         return $this->contents;

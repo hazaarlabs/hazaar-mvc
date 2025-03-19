@@ -48,8 +48,8 @@ class Diagnostic extends Action
             $this->responseType = Response::TYPE_HAZAAR;
         } elseif (PHP_SAPI == 'cli') {
             $this->responseType = Response::TYPE_TEXT;
-        } elseif ($x_requested_with = $request->getHeader('X-Requested-With')) {
-            switch ($x_requested_with) {
+        } elseif ($xRequested_with = $request->getHeader('X-Requested-With')) {
+            switch ($xRequested_with) {
                 case 'XMLHttpRequest':
                     $this->responseType = Response::TYPE_JSON;
 

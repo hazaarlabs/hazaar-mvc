@@ -108,8 +108,8 @@ class GD extends BaseRenderer
         ?int $height = null,
         bool $crop = false,
         ?string $align = null,
-        bool $keep_aspect = true,
-        bool $reduce_only = true,
+        bool $keepAspect = true,
+        bool $reduceOnly = true,
         ?float $ratio = null,
         int $offsetTop = 0,
         int $offsetLeft = 0
@@ -125,7 +125,7 @@ class GD extends BaseRenderer
         if (!$ratio) {
             $ratio = $src_h / $src_w;
         }
-        if ($reduce_only) {
+        if ($reduceOnly) {
             $width = min($src_w, (int) $width);
             $height = min($src_h, (int) $height);
             if ($src_w <= $width && $src_h <= $height) {
@@ -143,7 +143,7 @@ class GD extends BaseRenderer
             $width = 100;
             $height = 100;
         } elseif (!$width > 0) {
-            $width = $keep_aspect ? floor($height / $ratio) : $src_w;
+            $width = $keepAspect ? floor($height / $ratio) : $src_w;
             $crop = false;
         } elseif (!$height > 0) {
             if ($ratio > 1) {
@@ -160,28 +160,28 @@ class GD extends BaseRenderer
         // Check if we are cropping and figure out what area we want
         if (true == $crop) {
             // The target height scaled to the original image
-            $scale_height = ($src_w / $width) * $height;
+            $scaleHeight = ($src_w / $width) * $height;
             // The target height scaled to the original image
-            $scale_width = ($src_h / $height) * $width;
-            if ($scale_height < $src_h) {
+            $scaleWidth = ($src_h / $height) * $width;
+            if ($scaleHeight < $src_h) {
                 if ('top' == $align) {
                     $src_y = 0;
                 } elseif ('bottom' == $align) {
-                    $src_y = ceil($src_h - $scale_height);
+                    $src_y = ceil($src_h - $scaleHeight);
                 } else {
-                    $src_y = ceil(($src_h / 2) - ($scale_height / 2));
+                    $src_y = ceil(($src_h / 2) - ($scaleHeight / 2));
                 }
-                $src_h = ceil($scale_height);
+                $src_h = ceil($scaleHeight);
             }
-            if ($scale_width < $src_w) {
+            if ($scaleWidth < $src_w) {
                 if ('left' == $align) {
                     $src_x = 0;
                 } elseif ('right' == $align) {
-                    $src_x = ceil($src_w - $scale_width);
+                    $src_x = ceil($src_w - $scaleWidth);
                 } else {
-                    $src_x = ceil(($src_w / 2) - ($scale_width / 2));
+                    $src_x = ceil(($src_w / 2) - ($scaleWidth / 2));
                 }
-                $src_w = ceil($scale_width);
+                $src_w = ceil($scaleWidth);
             }
         }
         // Do the actual resize
@@ -204,15 +204,15 @@ class GD extends BaseRenderer
     }
 
     /**
-     * @param array<string>|string $filter_def
+     * @param array<string>|string $filterDef
      */
-    public function filter(array|string $filter_def): bool
+    public function filter(array|string $filterDef): bool
     {
         $filters = [];
-        if (is_array($filter_def)) {
-            $filters = $filter_def;
+        if (is_array($filterDef)) {
+            $filters = $filterDef;
         } else {
-            $parts = explode(';', $filter_def);
+            $parts = explode(';', $filterDef);
             foreach ($parts as $part) {
                 $values = explode(':', $part);
                 $key = array_shift($values);

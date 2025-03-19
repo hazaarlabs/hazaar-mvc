@@ -53,8 +53,8 @@ class Element implements \ArrayAccess, \Iterator
      * The direct parent object of the current node element.
      */
     public ?Element $__parent = null;
-    public string $open_tag = '<';
-    public string $close_tag = '>';
+    public string $openTag = '<';
+    public string $closeTag = '>';
 
     /**
      * The name of the current node element.
@@ -115,20 +115,20 @@ class Element implements \ArrayAccess, \Iterator
      *                                  \Hazaar\XML\Element object.
      * @param array<string> $namespaces Array of namespaces to declare where the key is the prefix and the value is the
      *                                  namespace URI
-     * @param string        $open_tag   Configurable open tag for elements.  XML defines this as '<'.  This can be changed for
+     * @param string        $openTag   Configurable open tag for elements.  XML defines this as '<'.  This can be changed for
      *                                  use with alternative file formats.
-     * @param string        $close_tag  Configurable close tag for elements.  XML defines this as '>'.  This can be changed for
+     * @param string        $closeTag  Configurable close tag for elements.  XML defines this as '>'.  This can be changed for
      *                                  use with alternative file formats.
      */
     public function __construct(
         ?string $name = null,
         mixed $value = null,
         ?array $namespaces = null,
-        string $open_tag = '<',
-        string $close_tag = '>'
+        string $openTag = '<',
+        string $closeTag = '>'
     ) {
-        $this->open_tag = $open_tag;
-        $this->close_tag = $close_tag;
+        $this->openTag = $openTag;
+        $this->closeTag = $closeTag;
         if (null !== $name) {
             $this->setName($name);
         }
@@ -205,18 +205,18 @@ class Element implements \ArrayAccess, \Iterator
      * By changing the open and close tags we are able to use the \Hazaar\XML\Element class to work with text formats
      * other than XML but that have a similar format.
      *
-     * @param string $open_tag  the open tag to set
-     * @param string $close_tag the close tag to set
+     * @param string $openTag  the open tag to set
+     * @param string $closeTag the close tag to set
      */
-    public function setTagChars(string $open_tag, string $close_tag): void
+    public function setTagChars(string $openTag, string $closeTag): void
     {
-        $this->open_tag = $open_tag;
-        $this->close_tag = $close_tag;
+        $this->openTag = $openTag;
+        $this->closeTag = $closeTag;
         if (0 === count($this->__children)) {
             return;
         }
         foreach ($this->__children as $element) {
-            $element->setTagChars($open_tag, $close_tag);
+            $element->setTagChars($openTag, $closeTag);
         }
     }
 
@@ -342,7 +342,7 @@ class Element implements \ArrayAccess, \Iterator
      */
     public function add(string $name, mixed $value = null, ?array $namespaces = null): Element
     {
-        $child = new Element($name, $value, $namespaces, $this->open_tag, $this->close_tag);
+        $child = new Element($name, $value, $namespaces, $this->openTag, $this->closeTag);
         $child->setParent($this);
         if (!$this->__name && !$this->__parent) {
             $child->__namespaces = $this->__namespaces;
@@ -450,14 +450,14 @@ class Element implements \ArrayAccess, \Iterator
      * this element or a parent element.
      *
      * If the namespace is NOT valid, then it is simply ignored.  If the namespace should be returned regardless of it's
-     * validity, use the $include_invalid_namespace parameter.
+     * validity, use the $includeInvalid_namespace parameter.
      *
-     * @param bool $include_invalid_namespace include namespaces that have no been defined in the current or parent
+     * @param bool $includeInvalid_namespace include namespaces that have no been defined in the current or parent
      *                                        nodes
      */
-    public function getName(bool $include_invalid_namespace = false): string
+    public function getName(bool $includeInvalid_namespace = false): string
     {
-        if ($include_invalid_namespace || ($this->__namespace && $this->namespaceExists($this->__namespace))) {
+        if ($includeInvalid_namespace || ($this->__namespace && $this->namespaceExists($this->__namespace))) {
             return ($this->__namespace ? $this->__namespace.':' : null).$this->__name;
         }
 
@@ -544,9 +544,9 @@ class Element implements \ArrayAccess, \Iterator
      */
     public function toXML(?string $filename = null): bool|string
     {
-        $xml = (!$this->__parent ? $this->open_tag.'?xml version="'.$this::VERSION.'" encoding="'.$this::ENCODING.'" ?'.$this->close_tag."\n" : '');
+        $xml = (!$this->__parent ? $this->openTag.'?xml version="'.$this::VERSION.'" encoding="'.$this::ENCODING.'" ?'.$this->closeTag."\n" : '');
         if ($this->__name) {
-            $xml .= $this->open_tag.$this->getName();
+            $xml .= $this->openTag.$this->getName();
             foreach ($this->__attributes as $name => $value) {
                 $xml .= ' '.$name.'="'.$value.'"';
             }
@@ -556,19 +556,19 @@ class Element implements \ArrayAccess, \Iterator
         }
         if (count($this->__children) > 0) {
             if ($this->__name) {
-                $xml .= $this->close_tag;
+                $xml .= $this->closeTag;
             }
             foreach ($this->__children as $children) {
                 $xml .= $this->resolveXML($children);
             }
             if ($this->__name) {
-                $xml .= $this->open_tag.'/'.$this->getName().$this->close_tag;
+                $xml .= $this->openTag.'/'.$this->getName().$this->closeTag;
             }
         } elseif ($this->__name) {
             if ($this->__value) {
-                $xml .= $this->close_tag.$this->__value.$this->open_tag.'/'.$this->getName().$this->close_tag;
+                $xml .= $this->closeTag.$this->__value.$this->openTag.'/'.$this->getName().$this->closeTag;
             } else {
-                $xml .= ' /'.$this->close_tag;
+                $xml .= ' /'.$this->closeTag;
             }
         }
         if ($filename) {
@@ -597,18 +597,18 @@ class Element implements \ArrayAccess, \Iterator
         $len = strlen($xml);
         for ($i = 0; $i < $len; ++$i) {
             $c = $xml[$i];
-            if ($c == $this->open_tag) {
+            if ($c == $this->openTag) {
                 $node = '';
                 $l = null;
-                $in_str = false;
+                $inStr = false;
                 for ($i++; $i < $len; ++$i) {
                     $c = $xml[$i];
-                    if ($c == $this->close_tag && !$in_str) {
+                    if ($c == $this->closeTag && !$inStr) {
                         break;
                     }
                     if ('"' == $c && '\\' != $l) {
-                        $in_str = !$in_str;
-                    } elseif ('!' == $c && !$in_str) {
+                        $inStr = !$inStr;
+                    } elseif ('!' == $c && !$inStr) {
                         ++$i;
                         if ('--' == substr($xml, $i, 2)) { // It's a comment!
                             $exit = 0;
@@ -616,7 +616,7 @@ class Element implements \ArrayAccess, \Iterator
                                 $c = $xml[$i];
                                 if ('-' == $c) {
                                     ++$exit;
-                                } elseif ($c == $this->close_tag && 2 == $exit) {
+                                } elseif ($c == $this->closeTag && 2 == $exit) {
                                     break;
                                 } else {
                                     $exit = 0;
@@ -635,7 +635,7 @@ class Element implements \ArrayAccess, \Iterator
                             for ($i++; $i < $len; ++$i) {
                                 $c = $xml[$i];
                                 if (']' == $c) {
-                                    if (substr($xml, $i, strlen($this->close_tag) + 2) == (']]'.$this->close_tag)) {
+                                    if (substr($xml, $i, strlen($this->closeTag) + 2) == (']]'.$this->closeTag)) {
                                         $i += 3;
                                         if ($parent) {
                                             $parent->value($cdata);
@@ -647,7 +647,7 @@ class Element implements \ArrayAccess, \Iterator
                                 $cdata .= $c;
                             }
                         }
-                    } elseif ((' ' == $c && ' ' == $l) || ($in_str && '\\' == $c)) {
+                    } elseif ((' ' == $c && ' ' == $l) || ($inStr && '\\' == $c)) {
                         continue;
                     }
                     $l = $c;
@@ -887,9 +887,9 @@ class Element implements \ArrayAccess, \Iterator
      */
     protected function setName(string $name): void
     {
-        if (($ns_sep = strpos($name, ':')) !== false) {
-            $this->__namespace = substr($name, 0, $ns_sep);
-            $name = substr($name, $ns_sep + 1);
+        if (($nsSep = strpos($name, ':')) !== false) {
+            $this->__namespace = substr($name, 0, $nsSep);
+            $name = substr($name, $nsSep + 1);
         }
         $this->__name = $name;
     }

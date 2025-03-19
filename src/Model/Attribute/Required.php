@@ -13,7 +13,7 @@ use Hazaar\Model\Exception\PropertyValidationException;
  *
  * ```php
  * #[Required]
- * public $my_property;
+ * public $myProperty;
  * ```
  */
 #[\Attribute]

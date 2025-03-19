@@ -39,7 +39,7 @@ class Request implements \ArrayAccess
         'Connection' => 'close',
     ];
     private URL $url;
-    private string $fsock_host;
+    private string $fsockHost;
     private mixed $body = null;
     private bool $multipart = false;
     private bool $dontEncodeURL = false;
@@ -56,28 +56,28 @@ class Request implements \ArrayAccess
      *
      * @param string   $url            The url of the resource that will be requested
      * @param string   $method         The request method to use.  Typically GET, POST, etc
-     * @param string   $content_type   optionally set the content type header
-     * @param resource $custom_context Optionally use a custom context.  Allows to define private SSL certificates.
+     * @param string   $contentType   optionally set the content type header
+     * @param resource $customContext Optionally use a custom context.  Allows to define private SSL certificates.
      */
     public function __construct(
         null|string|URL $url = null,
         string $method = 'GET',
-        ?string $content_type = null,
-        mixed $custom_context = null
+        ?string $contentType = null,
+        mixed $customContext = null
     ) {
         if ($method) {
             $this->method = $method;
         }
-        if (!$content_type) {
+        if (!$contentType) {
             if ('POST' == $this->method) {
-                $content_type = 'application/x-www-form-urlencoded';
+                $contentType = 'application/x-www-form-urlencoded';
             } else {
-                $content_type = 'text/html';
+                $contentType = 'text/html';
             }
         }
-        $this->setHeader('Content-Type', $content_type);
+        $this->setHeader('Content-Type', $contentType);
         $this->url($url);
-        $this->context = null === $custom_context ? stream_context_create() : $custom_context;
+        $this->context = null === $customContext ? stream_context_create() : $customContext;
     }
 
     /**
@@ -101,9 +101,9 @@ class Request implements \ArrayAccess
         }
         // If the protocol ends in s, we're going to assume it is meant for SSL
         if ($this->url->isSecure()) {
-            $this->fsock_host = 'ssl://'.$this->url->host().':'.$this->url->port();
+            $this->fsockHost = 'ssl://'.$this->url->host().':'.$this->url->port();
         } else {
-            $this->fsock_host = 'tcp://'.$this->url->host().':'.$this->url->port();
+            $this->fsockHost = 'tcp://'.$this->url->host().':'.$this->url->port();
         }
         $this->setHeader('Host', $this->url->host());
 
@@ -113,9 +113,9 @@ class Request implements \ArrayAccess
     /**
      * Sets the Content-Type header for the request.
      */
-    public function setContentType(string $content_type): void
+    public function setContentType(string $contentType): void
     {
-        $this->setHeader('Content-Type', $content_type);
+        $this->setHeader('Content-Type', $contentType);
     }
 
     /**
@@ -129,12 +129,12 @@ class Request implements \ArrayAccess
     /**
      * Enable multipart mime request body optionally using the specified boundary and content type.
      *
-     * @param string $content_type Optional request content type to use.  Defaults to multipart/form-data.
+     * @param string $contentType Optional request content type to use.  Defaults to multipart/form-data.
      * @param string $boundary     Optional boundary identifier. Defaults to HazaarMultipartBoundary_{uniqid}
      *
      * @return bool True if multipart was enabled.  False if it was already enabled.
      */
-    public function enableMultipart(?string $content_type = null, ?string $boundary = null): bool
+    public function enableMultipart(?string $contentType = null, ?string $boundary = null): bool
     {
         if (true === $this->multipart) {
             return false;
@@ -144,10 +144,10 @@ class Request implements \ArrayAccess
         if (!$boundary) {
             $boundary = 'HazaarMultipartBoundary_'.uniqid();
         }
-        if (!$content_type) {
-            $content_type = 'multipart/form-data';
+        if (!$contentType) {
+            $contentType = 'multipart/form-data';
         }
-        $this->setContentType($content_type.'; boundary="'.$boundary.'"');
+        $this->setContentType($contentType.'; boundary="'.$boundary.'"');
 
         return true;
     }
@@ -168,8 +168,8 @@ class Request implements \ArrayAccess
         if (true !== $this->multipart) {
             return false;
         }
-        $content_type = $this->getHeader('Content-Type');
-        if (!preg_match('/^multipart\/.*boundary\s*=\s*"(.*)"/', $content_type, $matches)) {
+        $contentType = $this->getHeader('Content-Type');
+        if (!preg_match('/^multipart\/.*boundary\s*=\s*"(.*)"/', $contentType, $matches)) {
             return false;
         }
 
@@ -180,16 +180,16 @@ class Request implements \ArrayAccess
      * Add a multipart chunk to the request.
      *
      * @param mixed                     $data         the data to add to the request
-     * @param string                    $content_type the content type of the added data
+     * @param string                    $contentType the content type of the added data
      * @param null|array<string,string> $headers
      */
-    public function addMultipart(mixed $data, ?string $content_type = null, ?array $headers = null): void
+    public function addMultipart(mixed $data, ?string $contentType = null, ?array $headers = null): void
     {
-        if (!$content_type) {
+        if (!$contentType) {
             if (is_array($data)) {
-                $content_type = 'application/json';
+                $contentType = 'application/json';
             } else {
-                $content_type = 'text/text';
+                $contentType = 'text/text';
             }
         }
         if (true !== $this->multipart) {
@@ -198,7 +198,7 @@ class Request implements \ArrayAccess
         if (!is_array($headers)) {
             $headers = [];
         }
-        $headers['Content-Type'] = $content_type;
+        $headers['Content-Type'] = $contentType;
         $part = [$headers, $data];
         $this->body[] = $part;
     }
@@ -208,7 +208,7 @@ class Request implements \ArrayAccess
      */
     public function getHost(): string
     {
-        return $this->fsock_host;
+        return $this->fsockHost;
     }
 
     /**
@@ -216,19 +216,19 @@ class Request implements \ArrayAccess
      *
      * If multipart is enabled, then the body will be added as a new chunk.
      */
-    public function setBody(mixed $body, ?string $content_type = null): void
+    public function setBody(mixed $body, ?string $contentType = null): void
     {
         if ($body instanceof Element) {
-            if (null === $content_type) {
-                $content_type = 'application/xml';
+            if (null === $contentType) {
+                $contentType = 'application/xml';
             }
             $body = $body->toXML();
         }
         if (is_array($this->body)) {
-            $this->body[] = [$content_type, $body];
+            $this->body[] = [$contentType, $body];
         } else {
-            if ($content_type) {
-                $this->setContentType($content_type);
+            if ($contentType) {
+                $this->setContentType($contentType);
             }
             $this->body = $body;
         }
@@ -271,12 +271,12 @@ class Request implements \ArrayAccess
      *
      * @param string $key            the name of the header to set
      * @param string $value          the value to set on the header
-     * @param bool   $allow_multiple Whether multiple instances of the header are allowed.  Defaults to false, meaning if the
+     * @param bool   $allowMultiple Whether multiple instances of the header are allowed.  Defaults to false, meaning if the
      *                               header exists, it will be updated.  Multiple headers are rare but the main one is 'Cookie'.
      */
-    public function setHeader(string $key, string $value, bool $allow_multiple = false): void
+    public function setHeader(string $key, string $value, bool $allowMultiple = false): void
     {
-        if (true === $allow_multiple && array_key_exists($key, $this->headers)) {
+        if (true === $allowMultiple && array_key_exists($key, $this->headers)) {
             if (!is_array($this->headers[$key])) {
                 $this->headers[$key] = [$this->headers[$key]];
             }
@@ -291,15 +291,15 @@ class Request implements \ArrayAccess
      *
      * This is the method that renders the request as a HTTP/1.1 compliant request.
      *
-     * @param string $encryption_key    optionally encrypt the request using this encryption key
-     * @param string $encryption_cipher optionally specifiy the cipher used to encrypt the request
+     * @param string $encryptionKey    optionally encrypt the request using this encryption key
+     * @param string $encryptionCipher optionally specifiy the cipher used to encrypt the request
      */
-    public function toString(?string $encryption_key = null, ?string $encryption_cipher = null): string
+    public function toString(?string $encryptionKey = null, ?string $encryptionCipher = null): string
     {
         $url = clone $this->url;
         $body = '';
         // Convert any parameters into a HTTP POST query
-        if ('GET' === $this->method && $this->count() > 0 && null === $encryption_key) {
+        if ('GET' === $this->method && $this->count() > 0 && null === $encryptionKey) {
             $url->setParams($this->toArray());
         } elseif (null !== $this->body) {
             if ($this->count() > 0) {
@@ -312,12 +312,12 @@ class Request implements \ArrayAccess
                     if (!is_array($part[0])) {
                         $part[0] = ['Content-Type' => $part[0]];
                     }
-                    if ($content_type = $part[0]['Content-Type'] ?? null) {
-                        if (($pos = strpos($content_type, ';')) > 0) {
-                            $content_type = substr($content_type, 0, $pos);
+                    if ($contentType = $part[0]['Content-Type'] ?? null) {
+                        if (($pos = strpos($contentType, ';')) > 0) {
+                            $contentType = substr($contentType, 0, $pos);
                         }
 
-                        switch ($content_type) {
+                        switch ($contentType) {
                             case 'text/json' :
                             case 'application/json' :
                                 $data = json_encode($part[1], $this->jsonEncodeFlags, $this->jsonEncodeDepth);
@@ -351,12 +351,12 @@ class Request implements \ArrayAccess
                 $body = $this->body;
             }
         } elseif ($this->count() > 0) {
-            $content_type = $this->getHeader('Content-Type');
-            if (($pos = strpos($content_type, ';')) > 0) {
-                $content_type = substr($content_type, 0, $pos);
+            $contentType = $this->getHeader('Content-Type');
+            if (($pos = strpos($contentType, ';')) > 0) {
+                $contentType = substr($contentType, 0, $pos);
             }
 
-            switch ($content_type) {
+            switch ($contentType) {
                 case 'text/json' :
                 case 'application/json' :
                 case 'application/javascript' :
@@ -373,30 +373,30 @@ class Request implements \ArrayAccess
                     break;
             }
         }
-        if (null !== $encryption_key) {
-            if (null === $encryption_cipher) {
-                $encryption_cipher = Client::$encryptionDefaultCipher;
+        if (null !== $encryptionKey) {
+            if (null === $encryptionCipher) {
+                $encryptionCipher = Client::$encryptionDefaultCipher;
             }
-            $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($encryption_cipher));
-            $body = base64_encode(openssl_encrypt($body, $encryption_cipher, $encryption_key, OPENSSL_RAW_DATA, $iv));
+            $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($encryptionCipher));
+            $body = base64_encode(openssl_encrypt($body, $encryptionCipher, $encryptionKey, OPENSSL_RAW_DATA, $iv));
             $this->setHeader(Client::$encryptionHeader, base64_encode($iv));
         }
         // Always include a content-length header.  Fixes POST to IIS returning 411 (length required).
         $this->setHeader('Content-Length', (string) strlen($body));
         // Build the header section
-        $access_url = ($this->dontEncodeURL ? $url->path() : implode('/', array_map('rawurlencode', explode('/', $url->path())))).$url->queryString();
-        $http_request = "{$this->method} {$access_url} HTTP/1.1\r\n";
+        $accessUrl = ($this->dontEncodeURL ? $url->path() : implode('/', array_map('rawurlencode', explode('/', $url->path())))).$url->queryString();
+        $httpRequest = "{$this->method} {$accessUrl} HTTP/1.1\r\n";
         foreach ($this->headers as $header => $value) {
             if (!is_array($value)) {
                 $value = [$value];
             }
             foreach ($value as $hdr) {
-                $http_request .= $header.': '.$hdr."\r\n";
+                $httpRequest .= $header.': '.$hdr."\r\n";
             }
         }
-        $http_request .= "\r\n".$body;
+        $httpRequest .= "\r\n".$body;
 
-        return $http_request;
+        return $httpRequest;
     }
 
     /**
@@ -443,17 +443,17 @@ class Request implements \ArrayAccess
     /**
      * Set a local PEM encoded certificate to use for SSL communication.
      */
-    public function setLocalCertificate(string $local_cert, ?string $passphrase = null, ?string $local_pk = null): bool
+    public function setLocalCertificate(string $localCert, ?string $passphrase = null, ?string $localPk = null): bool
     {
-        if (!file_exists((string) $local_cert)) {
+        if (!file_exists((string) $localCert)) {
             throw new CertificateNotFound();
         }
-        $result = stream_context_set_option($this->context, 'ssl', 'local_cert', $local_cert);
-        if ($local_pk) {
-            if (!file_exists((string) $local_pk)) {
+        $result = stream_context_set_option($this->context, 'ssl', 'local_cert', $localCert);
+        if ($localPk) {
+            if (!file_exists((string) $localPk)) {
                 throw new \Exception('Local private key specified but the file does not exist!');
             }
-            stream_context_set_option($this->context, 'ssl', 'local_pk', $local_pk);
+            stream_context_set_option($this->context, 'ssl', 'local_pk', $localPk);
         }
         if ($passphrase) {
             stream_context_set_option($this->context, 'ssl', 'passphrase', $passphrase);

@@ -13,12 +13,12 @@ class Frontend
     /**
      * @var array<mixed>
      */
-    private static array $message_buffer = [];
+    private static array $messageBuffer = [];
 
     /**
-     * @param array<mixed> $backend_options
+     * @param array<mixed> $backendOptions
      */
-    public function __construct(int|string $level, ?string $backend = null, array $backend_options = [])
+    public function __construct(int|string $level, ?string $backend = null, array $backendOptions = [])
     {
         if (!$backend) {
             $backend = 'file';
@@ -26,23 +26,23 @@ class Frontend
         if ('database' == strtolower($backend)) {
             $backend = 'Database';
         }
-        $backend_class = 'Hazaar\Logger\Backend\\'.ucfirst($backend);
-        if (!class_exists($backend_class)) {
+        $backendClass = 'Hazaar\Logger\Backend\\'.ucfirst($backend);
+        if (!class_exists($backendClass)) {
             throw new Exception\NoBackend();
         }
-        $this->backend = new $backend_class($backend_options);
+        $this->backend = new $backendClass($backendOptions);
         if (is_numeric($level)) {
             $this->level = $level;
         } elseif (($this->level = $this->backend->getLogLevelId($level)) === 0) {
             $this->level = E_ERROR;
         }
-        $buf = Frontend::$message_buffer;
+        $buf = Frontend::$messageBuffer;
         if (count($buf) > 0) {
             foreach ($buf as $msg) {
                 $this->writeLog($msg[0], $msg[1]);
             }
         }
-        Frontend::$message_buffer = [];
+        Frontend::$messageBuffer = [];
     }
 
     /**
@@ -69,7 +69,7 @@ class Frontend
         if (Frontend::$logger instanceof Frontend) {
             Frontend::$logger->writeLog($message, $level, $tag);
         } else {
-            Frontend::$message_buffer[] = [
+            Frontend::$messageBuffer[] = [
                 $message,
                 $level,
                 $tag,

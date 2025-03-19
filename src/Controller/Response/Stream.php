@@ -12,33 +12,33 @@ class Stream extends OK
     private string $type = 's';
 
     /**
-     * @param array<mixed>|\Exception $final_packet
+     * @param array<mixed>|\Exception $finalPacket
      */
-    public function __construct(array|\Exception|string $final_packet)
+    public function __construct(array|\Exception|string $finalPacket)
     {
         parent::__construct('text/plain');
 
-        if ($final_packet instanceof \Exception) {
+        if ($finalPacket instanceof \Exception) {
             $error = [
                 'ok' => false,
                 'error' => [
-                    'type' => $final_packet->getCode(),
+                    'type' => $finalPacket->getCode(),
                     'status' => 'Stream Error',
-                    'str' => $final_packet->getMessage(),
+                    'str' => $finalPacket->getMessage(),
                 ],
             ];
             if (ini_get('display_errors')) {
-                $error['error']['line'] = $final_packet->getLine();
-                $error['error']['file'] = $final_packet->getFile();
+                $error['error']['line'] = $finalPacket->getLine();
+                $error['error']['file'] = $finalPacket->getFile();
                 $error['trace'] = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
             }
             $this->type = 'e';
             $this->final = json_encode($error);
-        } elseif (is_array($final_packet)) {
-            $this->final = json_encode($final_packet);
+        } elseif (is_array($finalPacket)) {
+            $this->final = json_encode($finalPacket);
             $this->type = 'a';
         } else {
-            $this->final = $final_packet;
+            $this->final = $finalPacket;
         }
     }
 

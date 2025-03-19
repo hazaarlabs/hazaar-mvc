@@ -110,8 +110,8 @@ abstract class Service extends Process
             }
         }
         $this->__remote = $remote;
-        if ($this->config['log']->has('level') && defined($out_level = $this->config['log']->get('level'))) {
-            $this->__localLogLevel = constant($out_level);
+        if ($this->config['log']->has('level') && defined($outLevel = $this->config['log']->get('level'))) {
+            $this->__localLogLevel = constant($outLevel);
         }
         if (true === $remote && !isset($this->config['server'])) {
             throw new \Exception("Warlock server required to run in remote service mode.\n");
@@ -610,12 +610,12 @@ abstract class Service extends Process
         return $result;
     }
 
-    final public function recv(mixed &$payload = null, int $tv_sec = 3, int $tv_usec = 0): null|bool|string
+    final public function recv(mixed &$payload = null, int $tvSec = 3, int $tvUsec = 0): null|bool|string
     {
         if (HAZAAR_SERVICE_NONE === $this->state) {
             return false;
         }
-        $result = parent::recv($payload, $tv_sec, $tv_usec);
+        $result = parent::recv($payload, $tvSec, $tvUsec);
         if (false === $result) {
             $this->log(W_LOCAL, 'An error occured while receiving data.  Stopping.');
             $this->stop();
@@ -660,8 +660,8 @@ abstract class Service extends Process
         $slept = false;
         // Sleep if we are still sleeping and the timeout is not reached.  If the timeout is NULL or 0 do this process at least once.
         while ($this->state < 4 && (false === $slept || ($start + $timeout) >= microtime(true))) {
-            $tv_sec = 0;
-            $tv_usec = 0;
+            $tvSec = 0;
+            $tvUsec = 0;
             if ($timeout > 0) {
                 $this->state = HAZAAR_SERVICE_SLEEP;
                 $diff = ($start + $timeout) - microtime(true);
@@ -671,14 +671,14 @@ abstract class Service extends Process
                     $diff = $next - time();
                 }
                 if ($diff > 0) {
-                    $tv_sec = (int) floor($diff);
-                    $tv_usec = (int) round(($diff - floor($diff)) * 1000000);
+                    $tvSec = (int) floor($diff);
+                    $tvUsec = (int) round(($diff - floor($diff)) * 1000000);
                 } else {
-                    $tv_sec = 1;
+                    $tvSec = 1;
                 }
             }
             $payload = null;
-            if ($type = $this->recv($payload, $tv_sec, $tv_usec)) {
+            if ($type = $this->recv($payload, $tvSec, $tvUsec)) {
                 $this->__processCommand($type, $payload);
             }
             if ($this->next > 0 && $this->next <= time()) {
@@ -716,14 +716,14 @@ abstract class Service extends Process
     {
         $events = $this->config['subscribe'] ?? [];
         if (is_array($events)) {
-            foreach ($events as $event_name => $event) {
+            foreach ($events as $eventName => $event) {
                 if (is_array($event)) {
                     if (!($action = $event['action'] ?? null)) {
                         continue;
                     }
-                    $this->subscribe($event_name, $action, $event['filter'] ?? null);
+                    $this->subscribe($eventName, $action, $event['filter'] ?? null);
                 } else {
-                    $this->subscribe($event_name, $event);
+                    $this->subscribe($eventName, $event);
                 }
             }
         }

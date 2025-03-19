@@ -11,7 +11,7 @@ namespace Hazaar\Util;
  */
 class Version
 {
-    public static string $default_delimiter = '.';
+    public static string $defaultDelimiter = '.';
     private ?int $__precision = null;
     private string $__version = 'none';
 
@@ -31,7 +31,7 @@ class Version
     {
         $this->__precision = $precision;
         if (!$delimiter) {
-            $delimiter = self::$default_delimiter;
+            $delimiter = self::$defaultDelimiter;
         }
         $this->set($version, $delimiter);
     }
@@ -57,7 +57,7 @@ class Version
     public static function format(array|string $version, int $precision, ?string $delimiter = null): string
     {
         if (!$delimiter) {
-            $delimiter = self::$default_delimiter;
+            $delimiter = self::$defaultDelimiter;
         }
         $version = is_array($version) ? $version : explode($delimiter, $version);
 
@@ -75,7 +75,7 @@ class Version
     public function set(string $version, ?string $delimiter = null): void
     {
         if (null === $delimiter) {
-            $delimiter = self::$default_delimiter;
+            $delimiter = self::$defaultDelimiter;
         }
         if (!preg_match('/[0-9]+(\\'.$delimiter.'[0-9]+)*/', $version)) {
             throw new \Exception('Invalid version format');

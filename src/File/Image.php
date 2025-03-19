@@ -71,15 +71,15 @@ class Image extends File
         ?int $height = null,
         bool $crop = false,
         ?string $align = null,
-        bool $keep_aspect = true,
-        bool $reduce_only = true,
+        bool $keepAspect = true,
+        bool $reduceOnly = true,
         ?float $ratio = null,
         int $offsetTop = 0,
         int $offsetLeft = 0
     ): bool {
         $this->checkLoaded();
 
-        return $this->renderer->resize($width, $height, $crop, $align, $keep_aspect, $reduce_only, $ratio, $offsetTop, $offsetLeft);
+        return $this->renderer->resize($width, $height, $crop, $align, $keepAspect, $reduceOnly, $ratio, $offsetTop, $offsetLeft);
     }
 
     public function expand(

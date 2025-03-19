@@ -75,10 +75,10 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
     // Metadata Operations
     public function scandir(
         string $path,
-        ?string $regex_filter = null,
+        ?string $regexFilter = null,
         int $sort = SCANDIR_SORT_ASCENDING,
-        bool $show_hidden = false,
-        ?string $relative_path = null
+        bool $showHidden = false,
+        ?string $relativePath = null
     ): array|bool {
         $path = '/'.trim($path, '/');
         if (!array_key_exists($path, $this->meta) || false == $this->meta[$path]['scanned']) {
@@ -381,10 +381,10 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
         return $response->body;
     }
 
-    public function write(string $path, string $data, ?string $content_type = null, bool $overwrite = false): ?int
+    public function write(string $path, string $data, ?string $contentType = null, bool $overwrite = false): ?int
     {
         $request = new Request('https://api-content.dropbox.com/1/files_put/auto'.$path, 'POST');
-        $request->setHeader('Content-Type', $content_type);
+        $request->setHeader('Content-Type', $contentType);
         if ($overwrite) {
             $request['overwrite'] = true;
         }
@@ -456,12 +456,12 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
         return true;
     }
 
-    public function authorise(?string $redirect_uri = null): bool
+    public function authorise(?string $redirectUri = null): bool
     {
         return true;
     }
 
-    public function buildAuthURL(?string $callback_url = null): ?string
+    public function buildAuthURL(?string $callbackUrl = null): ?string
     {
         return null;
     }
@@ -551,12 +551,12 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
         return false;
     }
 
-    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array|false
+    public function find(?string $search = null, string $path = '/', bool $caseInsensitive = false): array|false
     {
         return false;
     }
 
-    public function fsck(bool $skip_root_reload = false): bool
+    public function fsck(bool $skipRoot_reload = false): bool
     {
         return false;
     }
