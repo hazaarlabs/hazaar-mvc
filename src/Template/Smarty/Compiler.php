@@ -429,6 +429,8 @@ class Compiler
         foreach ($array as $key => $value) {
             if (is_array($value)) {
                 $value = $this->compileARRAY($value);
+            } elseif (is_string($value) && '$' === substr($value, 0, 1)) {
+                $value = $this->compileVAR($value);
             } else {
                 $value = match (true) {
                     is_string($value) => "'{$value}'",
