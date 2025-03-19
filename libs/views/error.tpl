@@ -150,7 +150,7 @@
                 <h1>{$code}</h1>
                 <h2>{$status}</h2>
             </div>
-            {if $application->config['php']['display_errors'] == true}
+            {if $application->config['php']['display_errors']}
                 <div class="errormessage">
                     <p class="muted big">{$err.class}</p>
                     <p class="content">{$err.message}</p>
