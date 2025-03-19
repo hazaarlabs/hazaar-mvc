@@ -12,7 +12,7 @@ namespace Hazaar\Model\Attribute;
  *
  * ```php
  * #[Filter(FILTER_VALIDATE_EMAIL)]
- * public $my_property;
+ * public $myProperty;
  * ```
  */
 #[\Attribute]

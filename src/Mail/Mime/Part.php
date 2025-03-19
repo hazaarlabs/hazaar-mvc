@@ -14,13 +14,13 @@ class Part implements \JsonSerializable
     /**
      * @param array<string> $headers
      */
-    public function __construct(?string $content = null, ?string $content_type = null, array $headers = [])
+    public function __construct(?string $content = null, ?string $contentType = null, array $headers = [])
     {
         if ($content) {
             $this->setContent($content);
         }
-        if ($content_type) {
-            $this->setContentType($content_type);
+        if ($contentType) {
+            $this->setContentType($contentType);
         }
         $this->setHeaders($headers);
     }
@@ -86,7 +86,7 @@ class Part implements \JsonSerializable
         return "\n";
     }
 
-    public function encode(int $width_limit = 76): string
+    public function encode(int $widthLimit = 76): string
     {
         $message = 'Date: '.date('r', time()).$this->crlf;
         foreach ($this->headers as $header => $content) {
@@ -97,7 +97,7 @@ class Part implements \JsonSerializable
             }
             $message .= $header.': '.$content.$this->crlf;
         }
-        $message .= $this->crlf.(($width_limit > 0) ? wordwrap($this->content, $width_limit, $this->detect_break($this->content), true) : $this->content).$this->crlf;
+        $message .= $this->crlf.(($widthLimit > 0) ? wordwrap($this->content, $widthLimit, $this->detectBreak($this->content), true) : $this->content).$this->crlf;
 
         return $message;
     }

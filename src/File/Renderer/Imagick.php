@@ -72,8 +72,8 @@ class Imagick extends BaseRenderer
         ?int $height = null,
         bool $crop = false,
         ?string $align = null,
-        bool $keep_aspect = true,
-        bool $reduce_only = true,
+        bool $keepAspect = true,
+        bool $reduceOnly = true,
         ?float $ratio = null,
         int $offsetTop = 0,
         int $offsetLeft = 0
@@ -82,12 +82,12 @@ class Imagick extends BaseRenderer
         if (null === $ratio) {
             $ratio = $geo['height'] / $geo['width'];
             if ($crop) {
-                $keep_aspect = false;
+                $keepAspect = false;
             }
         } else {
             $ratio = floatval($ratio);
         }
-        if ($reduce_only) {
+        if ($reduceOnly) {
             $width = min($geo['width'], (int) $width);
             $height = min($geo['height'], (int) $height);
             if ($geo['width'] <= $width && $geo['height'] <= $height) {
@@ -98,34 +98,34 @@ class Imagick extends BaseRenderer
             $width = 100;
             $height = 100;
         } elseif (!$width > 0) { // Without a width, calculate it based on the aspect ratio
-            $width = $keep_aspect ? (int) floor($height / $ratio) : $geo['width'];
+            $width = $keepAspect ? (int) floor($height / $ratio) : $geo['width'];
         } elseif (!$height > 0) { // Without a height, calculate it based on the aspect ratio
-            $height = $keep_aspect ? (int) floor($width * $ratio) : $geo['height'];
+            $height = $keepAspect ? (int) floor($width * $ratio) : $geo['height'];
         }
         if (true === $crop) {
-            $o_ratio = $geo['height'] / $geo['width'];
-            $scale_width = $width;
-            $scale_height = $height;
-            if ($width > ($height / $o_ratio)) {
-                $scale_height = $width * $o_ratio;
+            $oRatio = $geo['height'] / $geo['width'];
+            $scaleWidth = $width;
+            $scaleHeight = $height;
+            if ($width > ($height / $oRatio)) {
+                $scaleHeight = $width * $oRatio;
             } else {
-                $scale_width = $height / $o_ratio;
+                $scaleWidth = $height / $oRatio;
             }
-            $this->dst->resizeImage($scale_width, $scale_height, \Imagick::FILTER_CATROM, 0.9);
+            $this->dst->resizeImage($scaleWidth, $scaleHeight, \Imagick::FILTER_CATROM, 0.9);
             $x = 0;
             $y = 0;
-            if ($height < $scale_height) {
+            if ($height < $scaleHeight) {
                 if ('bottom' == $align || 'bottomleft' == $align || 'bottomright' == $align) {
-                    $y = $scale_height - $height;
+                    $y = $scaleHeight - $height;
                 } elseif (!('top' == $align || 'topleft' == $align || 'topright' == $align)) {
-                    $y = (int) round(($scale_height - $height) / 2);
+                    $y = (int) round(($scaleHeight - $height) / 2);
                 }
             }
-            if ($width < $scale_width) {
+            if ($width < $scaleWidth) {
                 if ('right' == $align || 'topright' == $align || 'bottomright' == $align) {
-                    $x = $scale_width - $width;
+                    $x = $scaleWidth - $width;
                 } elseif (!('left' == $align || 'topleft' == $align || 'bottomleft' == $align)) {
-                    $x = (int) floor(($scale_width - $width) / 2);
+                    $x = (int) floor(($scaleWidth - $width) / 2);
                 }
             }
             $x += $offsetLeft;
@@ -190,15 +190,15 @@ class Imagick extends BaseRenderer
     }
 
     /**
-     * @param array<string>|string $filter_def
+     * @param array<string>|string $filterDef
      */
-    public function filter(array|string $filter_def): bool
+    public function filter(array|string $filterDef): bool
     {
         $filters = [];
-        if (is_array($filter_def)) {
-            $filters = $filter_def;
+        if (is_array($filterDef)) {
+            $filters = $filterDef;
         } else {
-            $parts = explode(';', $filter_def);
+            $parts = explode(';', $filterDef);
             foreach ($parts as $part) {
                 $values = explode(':', $part);
                 $key = array_shift($values);

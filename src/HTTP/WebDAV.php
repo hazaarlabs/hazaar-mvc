@@ -89,10 +89,10 @@ class WebDAV extends Client
      * @param string        $url             the URL of the file to get the contents of
      * @param array<mixed>  $properties      An array of properties to request.  If empty, all properties will be requested.
      * @param int           $depth           the depth of the PROPFIND request
-     * @param bool          $return_response if true, the raw response object will be returned instead of the file contents
+     * @param bool          $returnResponse if true, the raw response object will be returned instead of the file contents
      * @param array<string> $namespaces      an array of namespaces to use in the PROPFIND request
      */
-    public function propfind(string $url, array $properties = [], int $depth = 1, bool $return_response = false, array $namespaces = []): mixed
+    public function propfind(string $url, array $properties = [], int $depth = 1, bool $returnResponse = false, array $namespaces = []): mixed
     {
         if (!in_array('PROPFIND', $this->allow)) {
             throw new \Exception('Host does not support PROPFIND command!');
@@ -127,7 +127,7 @@ class WebDAV extends Client
         if (207 != $response->status) {
             throw new \Exception('WebDAV server returned: '.$response->body(), $response->status);
         }
-        if ($return_response) {
+        if ($returnResponse) {
             return $response;
         }
         $result = $this->parseMultiStatus($response->body);
@@ -225,7 +225,7 @@ class WebDAV extends Client
         return false;
     }
 
-    public function putFile(string $dir_url, File $file): bool
+    public function putFile(string $dirUrl, File $file): bool
     {
         if (!$this->authorised) {
             return false;
@@ -233,10 +233,10 @@ class WebDAV extends Client
         if (!$file->exists()) {
             return false;
         }
-        if ('/' != substr($dir_url, -1, 1)) {
-            $dir_url .= '/';
+        if ('/' != substr($dirUrl, -1, 1)) {
+            $dirUrl .= '/';
         }
-        $url = $dir_url.$file->basename();
+        $url = $dirUrl.$file->basename();
 
         return self::put($url, $file->getContents(), $file->mimeContentType());
     }

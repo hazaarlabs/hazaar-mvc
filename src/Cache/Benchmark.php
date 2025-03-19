@@ -60,16 +60,16 @@ class Benchmark
                 $tests = [];
                 $cache = new Adapter($backend, $this->configs[$backend] ?? []);
                 for ($i = $start; $i <= $end; $i = $i * 2) {
-                    $w_bytes = str_repeat('.', $i);
+                    $wBytes = str_repeat('.', $i);
                     // Test write speed
                     $s = microtime(true);
-                    $cache->set('test_value', $w_bytes);
+                    $cache->set('test_value', $wBytes);
                     $tests[$i]['w'] = round((microtime(true) - $s) * 1000, 4);
                     // Test read speed
                     $s = microtime(true);
-                    $r_bytes = $cache->get('test_value');
+                    $rBytes = $cache->get('test_value');
                     $tests[$i]['r'] = round((microtime(true) - $s) * 1000, 4);
-                    $tests[$i]['valid'] = ($r_bytes === $w_bytes);
+                    $tests[$i]['valid'] = ($rBytes === $wBytes);
                 }
                 $results[$backend] = $tests;
             } catch (\Exception $e) {

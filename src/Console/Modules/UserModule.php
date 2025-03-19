@@ -89,9 +89,9 @@ class UserModule extends Module
                 echo "Password must be at least 6 characters long\n";
             }
         }
-        $credential_confirm = readline('Confirm password: ');
+        $credentialConfirm = readline('Confirm password: ');
         system('stty echo');
-        if ($credential !== $credential_confirm) {
+        if ($credential !== $credentialConfirm) {
             throw new \Exception('Passwords do not match', 1);
         }
 

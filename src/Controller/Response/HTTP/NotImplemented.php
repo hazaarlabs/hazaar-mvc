@@ -8,8 +8,8 @@ use Hazaar\Controller\Response;
 
 class NotImplemented extends Response
 {
-    public function __construct(string $content_type = 'text/html')
+    public function __construct(string $contentType = 'text/html')
     {
-        parent::__construct($content_type, 501);
+        parent::__construct($contentType, 501);
     }
 }

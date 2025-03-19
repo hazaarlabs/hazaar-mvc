@@ -71,8 +71,8 @@ function dump(mixed ...$data): void
     } else {
         $out = "HAZAAR DUMP\n\n";
         if (defined('HAZAAR_START')) {
-            $exec_time = round((microtime(true) - HAZAAR_START) * 1000, 2);
-            $out .= "Exec time: {$exec_time}\n";
+            $execTime = round((microtime(true) - HAZAAR_START) * 1000, 2);
+            $out .= "Exec time: {$execTime}\n";
         }
         $out .= 'Endtime: '.date('c')."\n\n";
         foreach ($data as $item) {

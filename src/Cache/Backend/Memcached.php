@@ -54,7 +54,7 @@ class Memcached extends Backend
         $this->memcached->setOption(\Memcached::OPT_COMPRESSION, $this->options['use_compression']);
     }
 
-    public function has(string $key, bool $check_empty = false): bool
+    public function has(string $key, bool $checkEmpty = false): bool
     {
         $this->memcached->get($this->key($key));
         $result = $this->memcached->getResultCode();

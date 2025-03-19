@@ -55,12 +55,12 @@ class Error extends Diagnostic
     /**
      * @var array<int,string>
      */
-    private static ?array $status_codes = null;
+    private static ?array $statusCodes = null;
 
     public function __construct($name = 'Error')
     {
-        if (!is_array(self::$status_codes)) {
-            self::$status_codes = $this->loadStatusCodes();
+        if (!is_array(self::$statusCodes)) {
+            self::$statusCodes = $this->loadStatusCodes();
         }
         parent::__construct($name);
     }
@@ -80,7 +80,7 @@ class Error extends Diagnostic
             $code = $this->code;
         }
 
-        return array_key_exists($code, self::$status_codes) ? self::$status_codes[$code] : null;
+        return array_key_exists($code, self::$statusCodes) ? self::$statusCodes[$code] : null;
     }
 
     /**
@@ -107,7 +107,7 @@ class Error extends Diagnostic
             $code = $e->getCode();
             if (is_int($code)) {
                 $this->code = $code;
-                if (!array_key_exists($this->code = $e->getCode(), self::$status_codes)) {
+                if (!array_key_exists($this->code = $e->getCode(), self::$statusCodes)) {
                     $this->code = 500;
                 }
             }
@@ -125,7 +125,7 @@ class Error extends Diagnostic
             $this->errfile = $args[2];
             $this->errline = $args[3];
             $this->callstack = $args[4];
-            if (!array_key_exists($this->code = $args[0], self::$status_codes)) {
+            if (!array_key_exists($this->code = $args[0], self::$statusCodes)) {
                 $this->code = 500;
             }
         }
@@ -380,16 +380,16 @@ class Error extends Diagnostic
      */
     private function loadStatusCodes(): array
     {
-        $status_codes = [];
+        $statusCodes = [];
         if ($file = Loader::getFilePath(FilePath::SUPPORT, 'HTTP_Status.dat')) {
             $h = fopen($file, 'r');
             while ($line = fgets($h)) {
                 if (preg_match('/^(\d*)\s(.*)$/', $line, $matches)) {
-                    $status_codes[(int) $matches[1]] = $matches[2];
+                    $statusCodes[(int) $matches[1]] = $matches[2];
                 }
             }
         }
 
-        return $status_codes;
+        return $statusCodes;
     }
 }

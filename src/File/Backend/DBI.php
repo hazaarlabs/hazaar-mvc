@@ -91,7 +91,7 @@ class DBI implements BackendInterface, DriverInterface
         return is_array($this->rootObject);
     }
 
-    public function fsck(bool $skip_root_reload = false): bool
+    public function fsck(bool $skipRoot_reload = false): bool
     {
         $c = $this->db->table('hz_file')->find([], ['id', 'filename', 'parent']);
         while ($file = $c->fetch()) {
@@ -111,7 +111,7 @@ class DBI implements BackendInterface, DriverInterface
         while ($row = $select->fetch()) {
             $this->cleanChunk($row['id']);
         }
-        if (true !== $skip_root_reload) {
+        if (true !== $skipRoot_reload) {
             $this->loadRootObject();
         }
         // Check and de-dup any directories that have been duplicated accidentally
@@ -168,10 +168,10 @@ class DBI implements BackendInterface, DriverInterface
      */
     public function scandir(
         string $path,
-        ?string $regex_filter = null,
+        ?string $regexFilter = null,
         int $sort = SCANDIR_SORT_ASCENDING,
-        bool $show_hidden = false,
-        ?string $relative_path = null
+        bool $showHidden = false,
+        ?string $relativePath = null
     ): array|bool {
         if (!($parent = &$this->info($path))) {
             return false;
@@ -182,7 +182,7 @@ class DBI implements BackendInterface, DriverInterface
         $list = [];
         foreach ($parent['items'] as $file) {
             $fullpath = $path.$file['filename'];
-            if ($regex_filter && !preg_match($regex_filter, $fullpath)) {
+            if ($regexFilter && !preg_match($regexFilter, $fullpath)) {
                 continue;
             }
             $list[] = $file['filename'];
@@ -432,66 +432,66 @@ class DBI implements BackendInterface, DriverInterface
         return $bytes;
     }
 
-    public function write(string $path, string $bytes, ?string $content_type = null, bool $overwrite = false): ?int
+    public function write(string $path, string $bytes, ?string $contentType = null, bool $overwrite = false): ?int
     {
         if (!($parent = &$this->info($this->dirname($path)))) {
             throw new \Exception('Unable to determine parent of path: '.$path);
         }
         $size = strlen($bytes);
         $md5 = md5($bytes);
-        $chunk_id = null;
+        $chunkId = null;
 
         if ($info = $this->db->table('hz_file')->findOne(['md5' => $md5])) {
-            $chunk_id = $info['start_chunk'];
+            $chunkId = $info['start_chunk'];
         } else {
-            $chunk_size = $this->options['chunkSize'];
+            $chunkSize = $this->options['chunkSize'];
             $stmt = $this->db->prepare('INSERT INTO hz_file_chunk (parent, n, data) VALUES (?, ?, ?) RETURNING id;');
-            $chunks = (int) ceil($size / $chunk_size);
-            $last_chunk_id = null;
+            $chunks = (int) ceil($size / $chunkSize);
+            $lastChunk_id = null;
             for ($n = 0; $n < $chunks; ++$n) {
-                $stmt->bindParam(1, $last_chunk_id);
+                $stmt->bindParam(1, $lastChunk_id);
                 $stmt->bindParam(2, $n); // Support for multiple chunks will come later at some point
-                if ($size > $chunk_size) {
-                    $chunk = substr($bytes, $n * $chunk_size, $chunk_size);
+                if ($size > $chunkSize) {
+                    $chunk = substr($bytes, $n * $chunkSize, $chunkSize);
                     $stmt->bindParam(3, $chunk, \PDO::PARAM_LOB);
                 } else {
                     $stmt->bindParam(3, $bytes, \PDO::PARAM_LOB);
                 }
-                if (!($last_chunk_id = $stmt->execute()) > 0) {
+                if (!($lastChunk_id = $stmt->execute()) > 0) {
                     throw $this->db->errorException('Write failed!');
                 }
-                settype($last_chunk_id, 'integer');
+                settype($lastChunk_id, 'integer');
                 if (0 === (int) $n) {
-                    $chunk_id = $last_chunk_id;
+                    $chunkId = $lastChunk_id;
                 }
             }
         }
         if ($fileInfo = &$this->info($path)) {
             // If it's the same chunk, just bomb out because we are not updating anything
-            if (($old_chunk = $fileInfo['start_chunk']) === $chunk_id) {
+            if (($oldChunk = $fileInfo['start_chunk']) === $chunkId) {
                 return null;
             }
             $data = [
-                'start_chunk' => $fileInfo['start_chunk'] = $chunk_id,
+                'start_chunk' => $fileInfo['start_chunk'] = $chunkId,
                 'md5' => $fileInfo['md5'] = $md5,
                 'modified_on' => $fileInfo['modified_on'] = new DateTime(),
                 'length' => $size,
-                'mime_type' => $content_type,
+                'mime_type' => $contentType,
             ];
             if (!$this->db->table('hz_file')->update(['id' => $fileInfo['id']], $data)) {
                 return null;
             }
-            $this->cleanChunk($old_chunk);
+            $this->cleanChunk($oldChunk);
         } else {
             $fileInfo = [
                 'kind' => 'file',
                 'parent' => $parent['id'],
-                'start_chunk' => $chunk_id,
+                'start_chunk' => $chunkId,
                 'filename' => basename($path),
                 'created_on' => new DateTime(),
                 'modified_on' => new DateTime(),
                 'length' => $size,
-                'mime_type' => $content_type,
+                'mime_type' => $contentType,
                 'md5' => $md5,
             ];
             if (!($id = $this->db->table('hz_file')->insert($fileInfo, 'id'))) {
@@ -724,11 +724,11 @@ class DBI implements BackendInterface, DriverInterface
     /**
      * @return array<string>|false
      */
-    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array|false
+    public function find(?string $search = null, string $path = '/', bool $caseInsensitive = false): array|false
     {
         $list = [];
         $result = $this->db->table('hz_file')->find([[
-            'filename' => [($case_insensitive ? '$ilike' : '$like') => '%'.$search.'%'],
+            'filename' => [($caseInsensitive ? '$ilike' : '$like') => '%'.$search.'%'],
         ]]);
         while ($file = $result->fetch()) {
             $list[] = $file['id'];
@@ -740,7 +740,7 @@ class DBI implements BackendInterface, DriverInterface
         return false;
     }
 
-    public function authorise(?string $redirect_uri = null): bool
+    public function authorise(?string $redirectUri = null): bool
     {
         return true;
     }
@@ -750,7 +750,7 @@ class DBI implements BackendInterface, DriverInterface
         return true;
     }
 
-    public function buildAuthURL(?string $callback_url = null): ?string
+    public function buildAuthURL(?string $callbackUrl = null): ?string
     {
         return null;
     }
@@ -917,12 +917,12 @@ class DBI implements BackendInterface, DriverInterface
         return true;
     }
 
-    private function cleanChunk(int $start_chunk_id): bool
+    private function cleanChunk(int $startChunk_id): bool
     {
-        if (0 !== $this->db->table('hz_file')->find(['start_chunk' => $start_chunk_id])->count()) {
+        if (0 !== $this->db->table('hz_file')->find(['start_chunk' => $startChunk_id])->count()) {
             return false;
         }
-        $sql = 'WITH RECURSIVE chunk_chain(id, parent) AS (SELECT id, parent FROM hz_file_chunk WHERE id = '.$start_chunk_id;
+        $sql = 'WITH RECURSIVE chunk_chain(id, parent) AS (SELECT id, parent FROM hz_file_chunk WHERE id = '.$startChunk_id;
         $sql .= ' UNION ALL SELECT fc.id, fc.parent FROM chunk_chain cc INNER JOIN hz_file_chunk AS fc ON fc.parent = cc.id)';
         $sql .= ' SELECT id FROM chunk_chain;';
         if (!($result = $this->db->query($sql))) {

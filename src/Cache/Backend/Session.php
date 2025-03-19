@@ -124,7 +124,7 @@ class Session extends Backend
         return session_write_close();
     }
 
-    public function has(string $key, bool $check_empty = false): bool
+    public function has(string $key, bool $checkEmpty = false): bool
     {
         $value = $this->load($key);
 

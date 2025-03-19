@@ -684,25 +684,25 @@ class Application
         return $this->base;
     }
 
-    public static function findApplicationPath(?string $search_path = null): false|string
+    public static function findApplicationPath(?string $searchPath = null): false|string
     {
         if ($path = getenv('APPLICATION_PATH')) {
             return realpath($path);
         }
-        $search_path = (null === $search_path) ? getcwd() : realpath($search_path);
+        $searchPath = (null === $searchPath) ? getcwd() : realpath($searchPath);
         $count = 0;
         do {
-            if (':' === substr($search_path, 1, 1)) {
-                $search_path = substr($search_path, 2);
+            if (':' === substr($searchPath, 1, 1)) {
+                $searchPath = substr($searchPath, 2);
             }
-            if (file_exists($search_path.DIRECTORY_SEPARATOR.'application')
-                && file_exists($search_path.DIRECTORY_SEPARATOR.'application'.DIRECTORY_SEPARATOR.'configs')) {
-                return realpath($search_path.DIRECTORY_SEPARATOR.'application');
+            if (file_exists($searchPath.DIRECTORY_SEPARATOR.'application')
+                && file_exists($searchPath.DIRECTORY_SEPARATOR.'application'.DIRECTORY_SEPARATOR.'configs')) {
+                return realpath($searchPath.DIRECTORY_SEPARATOR.'application');
             }
-            if (DIRECTORY_SEPARATOR === $search_path || ++$count >= 16) {
+            if (DIRECTORY_SEPARATOR === $searchPath || ++$count >= 16) {
                 break;
             }
-        } while ($search_path = dirname($search_path));
+        } while ($searchPath = dirname($searchPath));
 
         return false;
     }

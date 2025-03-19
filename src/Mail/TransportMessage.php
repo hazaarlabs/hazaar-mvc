@@ -52,5 +52,5 @@ class TransportMessage
      * @var array<Attachment>
      */
     public array $attachments = [];
-    public string $batch_id = '';
+    public string $batchId = '';
 }

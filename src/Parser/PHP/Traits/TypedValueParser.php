@@ -9,7 +9,7 @@ trait TypedValueParser
     /**
      * @param array<string|Token> $tokens
      */
-    protected function getTypedValue(array &$tokens, bool $prev_after = true): mixed
+    protected function getTypedValue(array &$tokens, bool $prevAfter = true): mixed
     {
         $token = current($tokens);
         if (!$token instanceof Token) {
@@ -101,7 +101,7 @@ trait TypedValueParser
             } else {
                 prev($tokens);
             }
-        } elseif ($prev_after) {
+        } elseif ($prevAfter) {
             prev($tokens);
         }
 

@@ -40,13 +40,13 @@ class Html extends Part implements \JsonSerializable
         $this->params = $params;
     }
 
-    public function encode(int $width_limit = 998): string
+    public function encode(int $widthLimit = 998): string
     {
         $html = $this->html->render($this->params);
         $text = new Part(str_replace('<br>', "\r\n", strip_tags($html, '<br>')), 'text/plain');
         $html = new Part($html, 'text/html');
-        $message = '--'.$this->boundary.$this->crlf.$text->encode($width_limit).$this->crlf;
-        $message .= '--'.$this->boundary.$this->crlf.$html->encode($width_limit).$this->crlf."--{$this->boundary}--".$this->crlf.$this->crlf;
+        $message = '--'.$this->boundary.$this->crlf.$text->encode($widthLimit).$this->crlf;
+        $message .= '--'.$this->boundary.$this->crlf.$html->encode($widthLimit).$this->crlf."--{$this->boundary}--".$this->crlf.$this->crlf;
         $this->setContent($message);
 
         return parent::encode(0);

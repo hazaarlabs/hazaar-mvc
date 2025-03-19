@@ -277,16 +277,16 @@ class Upload
 
     public static function getMaxUploadSize(): int
     {
-        $max_size = -1;
-        if (($post_max_size = Str::toBytes(ini_get('post_max_size'))) > 0) {
-            $max_size = $post_max_size;
+        $maxSize = -1;
+        if (($postMax_size = Str::toBytes(ini_get('post_max_size'))) > 0) {
+            $maxSize = $postMax_size;
         }
-        $upload_max_filesize = Str::toBytes(ini_get('upload_max_filesize'));
-        if ($upload_max_filesize > 0 && $upload_max_filesize < $max_size) {
-            $max_size = $upload_max_filesize;
+        $uploadMax_filesize = Str::toBytes(ini_get('upload_max_filesize'));
+        if ($uploadMax_filesize > 0 && $uploadMax_filesize < $maxSize) {
+            $maxSize = $uploadMax_filesize;
         }
 
-        return $max_size;
+        return $maxSize;
     }
 
     /**

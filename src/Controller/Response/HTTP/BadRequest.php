@@ -8,8 +8,8 @@ use Hazaar\Controller\Response;
 
 class BadRequest extends Response
 {
-    public function __construct(string $content_type = 'text/html')
+    public function __construct(string $contentType = 'text/html')
     {
-        parent::__construct($content_type, 400);
+        parent::__construct($contentType, 400);
     }
 }

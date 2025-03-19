@@ -12,7 +12,7 @@ class URL implements \ArrayAccess
     /**
      * @var array<string, int>
      */
-    public array $common_ports = [
+    public array $commonPorts = [
         'ftp' => 21,
         'http' => 80,
         'https' => 443,
@@ -102,12 +102,12 @@ class URL implements \ArrayAccess
 
     public function lookupPort(string $scheme): ?int
     {
-        if ($port = ($this->common_ports[$scheme] ?? null)) {
+        if ($port = ($this->commonPorts[$scheme] ?? null)) {
             return $port;
         }
-        $services_file = DIRECTORY_SEPARATOR.'etc'.DIRECTORY_SEPARATOR.'services';
-        if (file_exists($services_file)) {
-            $services = file_get_contents($services_file);
+        $servicesFile = DIRECTORY_SEPARATOR.'etc'.DIRECTORY_SEPARATOR.'services';
+        if (file_exists($servicesFile)) {
+            $services = file_get_contents($servicesFile);
             if (preg_match('/^'.$scheme.'\s*(\d*)\/tcp/m', $services, $matches)) {
                 return (int) $matches[1];
             }

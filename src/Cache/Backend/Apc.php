@@ -55,9 +55,9 @@ class Apc extends Backend
         return true;
     }
 
-    public function has(string $key, bool $check_empty = false): bool
+    public function has(string $key, bool $checkEmpty = false): bool
     {
-        if (false === $check_empty) {
+        if (false === $checkEmpty) {
             return \apcu_exists($this->key($key));
         }
         $value = $this->get($key);
@@ -113,8 +113,8 @@ class Apc extends Backend
         $iter = new \APCUIterator('/^'.$this->namespace.'::/');
         $array = [];
         $pos = strlen($this->namespace) + 2;
-        foreach ($iter as $ns_key => $value) {
-            $array[substr($ns_key, $pos)] = $value['value'];
+        foreach ($iter as $nsKey => $value) {
+            $array[substr($nsKey, $pos)] = $value['value'];
         }
 
         return $array;

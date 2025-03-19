@@ -16,9 +16,9 @@ interface Connection
      * @param string             $applicationName The name of the application connecting
      * @param string             $host            The host name or IP address of the Warlock server
      * @param int                $port            The port number of the Warlock server
-     * @param null|array<string> $extra_headers   Additional headers to send with the connection
+     * @param null|array<string> $extraHeaders   Additional headers to send with the connection
      */
-    public function connect(string $applicationName, string $host, int $port, ?array $extra_headers = null): bool;
+    public function connect(string $applicationName, string $host, int $port, ?array $extraHeaders = null): bool;
 
     public function disconnect(): bool;
 
@@ -26,5 +26,5 @@ interface Connection
 
     public function send(string $command, mixed $payload = null): bool;
 
-    public function recv(mixed &$payload = null, int $tv_sec = 3, int $tv_usec = 0): null|bool|string;
+    public function recv(mixed &$payload = null, int $tvSec = 3, int $tvUsec = 0): null|bool|string;
 }

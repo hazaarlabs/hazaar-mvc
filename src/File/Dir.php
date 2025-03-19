@@ -25,11 +25,11 @@ class Dir
      * @var array<File>
      */
     protected ?array $files = null;
-    protected bool $allow_hidden = false;
+    protected bool $allowHidden = false;
     protected ?URL $__media_uri = null;
-    protected ?string $relative_path = null;
+    protected ?string $relativePath = null;
 
-    public function __construct(File|string $path, ?Manager $manager = null, ?string $relative_path = null)
+    public function __construct(File|string $path, ?Manager $manager = null, ?string $relativePath = null)
     {
         if ($path instanceof File) {
             $manager = $path->getManager();
@@ -38,8 +38,8 @@ class Dir
         }
         $this->manager = $manager;
         $this->path = $this->manager->fixPath($path);
-        if ($relative_path) {
-            $this->relative_path = rtrim(str_replace('\\', '/', $relative_path), '/');
+        if ($relativePath) {
+            $this->relativePath = rtrim(str_replace('\\', '/', $relativePath), '/');
         }
     }
 
@@ -102,33 +102,33 @@ class Dir
             } elseif ($path instanceof Dir) {
                 $path = $path->fullpath();
             }
-            $source_path = explode('/', trim(str_replace('\\', '/', dirname($this->path)), '/'));
+            $sourcePath = explode('/', trim(str_replace('\\', '/', dirname($this->path)), '/'));
             $path = explode('/', trim(str_replace('\\', '/', $path), '/'));
             $index = 0;
-            while (isset($source_path[$index], $path[$index])
-                && $source_path[$index] === $path[$index]) {
+            while (isset($sourcePath[$index], $path[$index])
+                && $sourcePath[$index] === $path[$index]) {
                 ++$index;
             }
-            $diff = count($source_path) - $index;
+            $diff = count($sourcePath) - $index;
 
             return implode('/', array_merge(array_fill(0, $diff, '..'), array_slice($path, $index)));
         }
 
-        if (!$this->relative_path) {
+        if (!$this->relativePath) {
             return $this->fullpath();
         }
-        $dir_parts = explode('/', $this->dirname());
-        $rel_parts = explode('/', $this->relative_path);
+        $dirParts = explode('/', $this->dirname());
+        $relParts = explode('/', $this->relativePath);
         $path = null;
-        foreach ($dir_parts as $index => $part) {
-            if (array_key_exists($index, $rel_parts) && $rel_parts[$index] === $part) {
+        foreach ($dirParts as $index => $part) {
+            if (array_key_exists($index, $relParts) && $relParts[$index] === $part) {
                 continue;
             }
-            $dir_parts = array_slice($dir_parts, $index);
-            if (($count = count($rel_parts) - $index) > 0) {
-                $dir_parts = array_merge(array_fill(0, $count, '..'), $dir_parts);
+            $dirParts = array_slice($dirParts, $index);
+            if (($count = count($relParts) - $index) > 0) {
+                $dirParts = array_merge(array_fill(0, $count, '..'), $dirParts);
             }
-            $path = implode('/', $dir_parts);
+            $path = implode('/', $dirParts);
 
             break;
         }
@@ -138,7 +138,7 @@ class Dir
 
     public function setRelativePath(string $path): void
     {
-        $this->relative_path = $path;
+        $this->relativePath = $path;
     }
 
     public function realpath(): string
@@ -265,7 +265,7 @@ class Dir
 
     public function allowHidden(bool $toggle = true): void
     {
-        $this->allow_hidden = $toggle;
+        $this->allowHidden = $toggle;
     }
 
     public function create(bool $recursive = false): bool
@@ -327,25 +327,25 @@ class Dir
      * This is the same as calling delete(true) except that the directory itself is not deleted.
      *
      * By default hidden files are not deleted.  This is for protection.  You can choose to delete them
-     * as well by setting $include_hidden to true.
+     * as well by setting $includeHidden to true.
      *
-     * @param mixed $include_hidden also delete hidden files
+     * @param mixed $includeHidden also delete hidden files
      *
      * @return bool
      */
-    public function empty($include_hidden = false)
+    public function empty($includeHidden = false)
     {
         $org = null;
-        if ($include_hidden && !$this->allow_hidden) {
-            $org = $this->allow_hidden;
-            $this->allow_hidden = true;
+        if ($includeHidden && !$this->allowHidden) {
+            $org = $this->allowHidden;
+            $this->allowHidden = true;
         }
         $this->rewind();
         while ($file = $this->read()) {
             $file->unlink();
         }
         if (null !== $org) {
-            $this->allow_hidden = $org;
+            $this->allowHidden = $org;
         }
 
         return true;
@@ -356,10 +356,10 @@ class Dir
         $this->files = null;
     }
 
-    public function read(?string $regex_filter = null): false|File
+    public function read(?string $regexFilter = null): false|File
     {
         if (!is_array($this->files)) {
-            if (!($files = $this->manager->scandir($this->path, $regex_filter, SCANDIR_SORT_NONE, $this->allow_hidden))) {
+            if (!($files = $this->manager->scandir($this->path, $regexFilter, SCANDIR_SORT_NONE, $this->allowHidden))) {
                 return false;
             }
             $this->files = $files;
@@ -387,31 +387,31 @@ class Dir
      * @param string $pattern        The pattern to match against.  This can be either a wildcard string, such as
      *                               "*.txt" or a regex pattern.  Regex is detected if the string is longer than a
      *                               single character and first character is the same as the last.
-     * @param bool   $case_sensitive if TRUE character case will be honoured
+     * @param bool   $caseSensitive if TRUE character case will be honoured
      * @param int    $depth          Recursion depth.  NULL will always recurse.  0 will prevent recursion.
      *
      * @return array<File> returns an array of matches files
      */
-    public function find(string $pattern, bool $show_hidden = false, bool $case_sensitive = true, ?int $depth = null): ?array
+    public function find(string $pattern, bool $showHidden = false, bool $caseSensitive = true, ?int $depth = null): ?array
     {
         $list = [];
-        if (!($dir = $this->manager->scandir($this->path, null, SCANDIR_SORT_NONE, true, $this->relative_path))) {
+        if (!($dir = $this->manager->scandir($this->path, null, SCANDIR_SORT_NONE, true, $this->relativePath))) {
             return null;
         }
         foreach ($dir as $item) {
-            if (false === $show_hidden && '.' == substr($item->name(), 0, 1)) {
+            if (false === $showHidden && '.' == substr($item->name(), 0, 1)) {
                 continue;
             }
             if ($item->isDir() && (null === $depth || $depth > 0)) {
-                if ($subdiritems = $item->find($pattern, $show_hidden, $case_sensitive, (null === $depth) ? $depth : $depth - 1)) {
+                if ($subdiritems = $item->find($pattern, $showHidden, $caseSensitive, (null === $depth) ? $depth : $depth - 1)) {
                     $list = array_merge($list, $subdiritems);
                 }
             } else {
                 if (strlen($pattern) > 1 && substr($pattern, 0, 1) == substr($pattern, -1, 1)) {
-                    if (0 == preg_match($pattern.($case_sensitive ? null : 'i'), (string) $item)) {
+                    if (0 == preg_match($pattern.($caseSensitive ? null : 'i'), (string) $item)) {
                         continue;
                     }
-                } elseif (!fnmatch($pattern, $item->basename(), $case_sensitive ? 0 : FNM_CASEFOLD)) {
+                } elseif (!fnmatch($pattern, $item->basename(), $caseSensitive ? 0 : FNM_CASEFOLD)) {
                     continue;
                 }
                 $list[] = $item;
@@ -421,7 +421,7 @@ class Dir
         return $list;
     }
 
-    public function copyTo(string $target, bool $recursive = false, null|callable|\Closure $transport_callback = null): bool
+    public function copyTo(string $target, bool $recursive = false, null|callable|\Closure $transportCallback = null): bool
     {
         if ($this->manager->exists($target)) {
             if (!$this->manager->isDir($target)) {
@@ -435,20 +435,20 @@ class Dir
             if ('.' === $cur->name() || '..' === $cur->name()) {
                 continue;
             }
-            if ($transport_callback instanceof \Closure || is_callable($transport_callback)) {
+            if ($transportCallback instanceof \Closure || is_callable($transportCallback)) {
                 /*
                  * Call the transport callback.  If it returns true, do the copy.  False means do not copy this file.
                  * This gives the callback a chance to perform the copy itself in a special way, or ignore a
                  * file/directory
                  */
-                if (!call_user_func_array($transport_callback, [$cur->fullpath(), $target.'/'.$cur->basename()])) {
+                if (!call_user_func_array($transportCallback, [$cur->fullpath(), $target.'/'.$cur->basename()])) {
                     continue;
                 }
             }
             if ($cur->isDir()) {
                 if ($recursive) {
                     $dir = new Dir($cur, $this->manager);
-                    $dir->copyTo($target, $recursive, $transport_callback);
+                    $dir->copyTo($target, $recursive, $transportCallback);
                 }
             } else {
                 $perms = $cur->perms();
@@ -460,14 +460,14 @@ class Dir
         return true;
     }
 
-    public function get(string $child, bool $force_dir = false): Dir|File
+    public function get(string $child, bool $forceDir = false): Dir|File
     {
         $path = $this->path($child);
-        if (true === $force_dir) {
+        if (true === $forceDir) {
             return $this->getDir($child);
         }
 
-        return new File($this->path($child), $this->manager, $this->relative_path ? $this->relative_path : $this->path);
+        return new File($this->path($child), $this->manager, $this->relativePath ? $this->relativePath : $this->path);
     }
 
     public function getDir(string $path): Dir
@@ -482,9 +482,9 @@ class Dir
 
     public function dir(?string $child = null): Dir
     {
-        $relative_path = $this->relative_path ? $this->relative_path : $this->path;
+        $relativePath = $this->relativePath ? $this->relativePath : $this->path;
 
-        return new Dir($this->path($child), $this->manager, $relative_path);
+        return new Dir($this->path($child), $this->manager, $relativePath);
     }
 
     /**
@@ -492,7 +492,7 @@ class Dir
      */
     public function toArray(): array
     {
-        return $this->manager->toArray($this->path, SCANDIR_SORT_NONE, $this->allow_hidden);
+        return $this->manager->toArray($this->path, SCANDIR_SORT_NONE, $this->allowHidden);
     }
 
     /**
@@ -511,18 +511,18 @@ class Dir
      * This is useful for download large files as this method will write the file directly
      * to storage.  Currently, only local storage is supported as this uses OS file access.
      *
-     * @param mixed $source_url The source URL of the file to download
+     * @param mixed $sourceUrl The source URL of the file to download
      * @param mixed $timeout    The download timeout after which an exception will be thrown
      *
      * @return File A file object for accessing the newly created file
      *
      * @throws \Exception
      */
-    public function download($source_url, $timeout = 60)
+    public function download($sourceUrl, $timeout = 60)
     {
-        $file = $this->get(basename($source_url));
-        $resource = fopen(sys_get_temp_dir().'/'.basename($source_url), 'w+');
-        $url = str_replace(' ', '%20', $source_url);
+        $file = $this->get(basename($sourceUrl));
+        $resource = fopen(sys_get_temp_dir().'/'.basename($sourceUrl), 'w+');
+        $url = str_replace(' ', '%20', $sourceUrl);
         if (function_exists('curl_version')) {
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
@@ -549,13 +549,13 @@ class Dir
         return $file;
     }
 
-    public function mediaURL(null|string|URL $set_path = null): ?URL
+    public function mediaURL(null|string|URL $setPath = null): ?URL
     {
-        if (null !== $set_path) {
-            if (!$set_path instanceof URL) {
-                $set_path = new URL($set_path);
+        if (null !== $setPath) {
+            if (!$setPath instanceof URL) {
+                $setPath = new URL($setPath);
             }
-            $this->__media_uri = $set_path;
+            $this->__media_uri = $setPath;
         }
         if ($this->__media_uri) {
             return $this->__media_uri;
@@ -567,17 +567,17 @@ class Dir
     public function sync(
         Dir $source,
         bool $recursive = false,
-        null|callable|\Closure $progress_callback = null,
-        int $max_retries = 3
+        null|callable|\Closure $progressCallback = null,
+        int $maxRetries = 3
     ): bool {
-        if (true !== $this->callSyncCallback($progress_callback, HZ_SYNC_DIR, ['src' => $source, 'dst' => $this])) {
+        if (true !== $this->callSyncCallback($progressCallback, HZ_SYNC_DIR, ['src' => $source, 'dst' => $this])) {
             return false;
         }
         if (!$this->exists()) {
             $this->create();
         }
         while ($item = $source->read()) {
-            $retries = $max_retries;
+            $retries = $maxRetries;
             for ($i = 0; $i < $retries; ++$i) {
                 try {
                     $result = true;
@@ -587,29 +587,29 @@ class Dir
                         }
                         $item = $this->get($item->basename(), true);
                         if ($item instanceof Dir) {
-                            $item->sync($item, $recursive, $progress_callback);
+                            $item->sync($item, $recursive, $progressCallback);
                         }
                     } elseif ($item instanceof File) {
                         $target = null;
-                        if (true !== $this->callSyncCallback($progress_callback, HZ_SYNC_FILE, ['src' => $item, 'dst' => $this])) {
+                        if (true !== $this->callSyncCallback($progressCallback, HZ_SYNC_FILE, ['src' => $item, 'dst' => $this])) {
                             continue 2;
                         }
                         if (!($sync = (!$this->exists($item->basename())))) {
-                            $target_file = $this->get($item->basename());
-                            $sync = $item->mtime() > $target_file->mtime();
+                            $targetFile = $this->get($item->basename());
+                            $sync = $item->mtime() > $targetFile->mtime();
                         }
-                        if ($sync && true === $this->callSyncCallback($progress_callback, HZ_SYNC_FILE_UPDATE, ['src' => $item, 'dst' => $this])) {
+                        if ($sync && true === $this->callSyncCallback($progressCallback, HZ_SYNC_FILE_UPDATE, ['src' => $item, 'dst' => $this])) {
                             $target = $this->put($item, true);
                         }
-                        $this->callSyncCallback($progress_callback, HZ_SYNC_FILE_COMPLETE, ['src' => $item, 'dst' => $this, 'target' => $target]);
+                        $this->callSyncCallback($progressCallback, HZ_SYNC_FILE_COMPLETE, ['src' => $item, 'dst' => $this, 'target' => $target]);
                     }
 
                     continue 2;
                 } catch (\Throwable $e) {
                     // If we get an exception, it could be due to a network issue, so notify any callbacks to handle the situation
-                    if (is_callable($progress_callback)) {
+                    if (is_callable($progressCallback)) {
                         // Check the result of the callback.  False will retry the file a maximumu of 3 times.  Anything else will continue.
-                        if (true !== $this->callSyncCallback($progress_callback, HZ_SYNC_ERROR, ['src' => $source, 'dst' => $this, 'err' => $e])) {
+                        if (true !== $this->callSyncCallback($progressCallback, HZ_SYNC_ERROR, ['src' => $source, 'dst' => $this, 'err' => $e])) {
                             continue 2;
                         }
                     } else {
@@ -621,14 +621,14 @@ class Dir
 
             throw isset($e) ? $e : new \Exception('Unknown error!');
         }
-        $this->callSyncCallback($progress_callback, HZ_SYNC_DIR_COMPLETE, ['src' => $source, 'dst' => $this]);
+        $this->callSyncCallback($progressCallback, HZ_SYNC_DIR_COMPLETE, ['src' => $source, 'dst' => $this]);
 
         return true;
     }
 
-    public function write(string $file, string $bytes, ?string $content_type = null): ?int
+    public function write(string $file, string $bytes, ?string $contentType = null): ?int
     {
-        return $this->manager->write($this->manager->fixPath($this->path, $file), $bytes, $content_type);
+        return $this->manager->write($this->manager->fixPath($this->path, $file), $bytes, $contentType);
     }
 
     private function callSyncCallback(): bool

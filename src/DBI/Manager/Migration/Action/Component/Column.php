@@ -8,7 +8,7 @@ class Column extends BaseComponent
 {
     public string $name;
     public mixed $default;
-    public bool $not_null;
+    public bool $notNull;
     public string $type;
     public bool $primarykey;
 
