@@ -251,22 +251,26 @@ class Compiler
      * Parses a value string that may represent an array or simple value.
      * Handles array syntax with brackets and arrow notation.
      *
-     * @param string $array The string to parse as a value
+     * @param string $valueString The string to parse as a value
      *
      * @return mixed The parsed value, either as an array or simple value
      */
-    protected function parseVALUE(string $array): mixed
+    protected function parseVALUE(string $valueString): mixed
     {
-        if (!('[' === substr($array, 0, 1) && ']' === substr($array, -1))) {
-            if (preg_match('/(["\'])(.*)\1$/', $array, $matches)) {
+        if (!('[' === substr($valueString, 0, 1) && ']' === substr($valueString, -1))) {
+            if (preg_match('/(["\'])(.*)\1$/', $valueString, $matches)) {
                 return $matches[2];
             }
 
-            return $array;
+            return match (true) {
+                Boolean::is($valueString) => Boolean::from($valueString),
+                is_numeric($valueString) => $valueString + 0,
+                default => $valueString
+            };
         }
         $compiledArray = [];
-        $array = preg_split('/\s*,\s*(?![^\[]*\])/', substr($array, 1, -1));
-        foreach ($array as &$item) {
+        $valueString = preg_split('/\s*,\s*(?![^\[]*\])/', substr($valueString, 1, -1));
+        foreach ($valueString as &$item) {
             if (strpos($item, '=>')) {
                 [$key, $value] = preg_split('/\s*=>\s*/', $item);
                 $key = $this->parseVALUE($key);
@@ -426,7 +430,11 @@ class Compiler
             if (is_array($value)) {
                 $value = $this->compileARRAY($value);
             } else {
-                $value = $this->compileCONDITIONS($value);
+                $value = match (true) {
+                    is_string($value) => "'{$value}'",
+                    is_bool($value) => $value ? 'true' : 'false',
+                    default => $value,
+                };
             }
             $out[] = "'{$key}' => ".$value;
         }

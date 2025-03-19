@@ -51,7 +51,7 @@
         </div>
         <div class="container">
             {include file="card.tpl"}
-            {include file="card.tpl" card_title="Another Card Title" card_content="This is another sample card content."}
+            {include file="card.tpl" card_title="Another Card Title" card_content="This is another sample card content." card_enable=true card_num=2}
         </div>
     </main>
 </body>
