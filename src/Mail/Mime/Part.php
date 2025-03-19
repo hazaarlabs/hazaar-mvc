@@ -72,7 +72,7 @@ class Part implements \JsonSerializable
         return $this->content;
     }
 
-    public function detect_break(string $content, string $default = "\r\n"): string
+    public function detectBreak(string $content, string $default = "\r\n"): string
     {
         $pos = strpos($content, "\n");
         if (false == $pos) {

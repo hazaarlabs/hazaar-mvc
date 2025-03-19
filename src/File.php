@@ -66,7 +66,7 @@ class File implements \JsonSerializable
             $manager = $file->manager;
             $this->info = $file->info;
             $this->mimeContentType = $file->mimeContentType;
-            $file = $file->source_file;
+            $file = $file->sourceFile;
         } elseif (is_resource($file)) {
             $meta = stream_get_meta_data($file);
             $this->resource = $file;
@@ -173,12 +173,12 @@ class File implements \JsonSerializable
     }
 
     // Standard filesystem functions
-    public function basename(string $suffix = ''): string
+    public function baseName(string $suffix = ''): string
     {
         return basename($this->sourceFile, $suffix);
     }
 
-    public function dirname(): string
+    public function dirName(): string
     {
         /*
          * Hack: The str_replace() call makes all directory separaters consistent as /.
@@ -192,7 +192,7 @@ class File implements \JsonSerializable
         return pathinfo($this->sourceFile, PATHINFO_FILENAME);
     }
 
-    public function fullpath(): string
+    public function fullPath(): string
     {
         $dir = $this->dirname();
 
@@ -211,7 +211,7 @@ class File implements \JsonSerializable
      *
      * @return bool|string The relative path.  False when $path is not valid
      */
-    public function relativepath($path = null)
+    public function relativePath($path = null)
     {
         if (null !== $path) {
             if ($path instanceof File) {
@@ -285,7 +285,7 @@ class File implements \JsonSerializable
         return $this->manager->exists($this->sourceFile);
     }
 
-    public function realpath(): string
+    public function realPath(): string
     {
         return $this->manager->realpath($this->sourceFile);
     }
@@ -837,7 +837,7 @@ class File implements \JsonSerializable
      *
      * @return array<string>
      */
-    public function getcsv(int $length = 0, string $delimiter = ',', string $enclosure = '"', string $escape = '\\'): ?array
+    public function getCSV(int $length = 0, string $delimiter = ',', string $enclosure = '"', string $escape = '\\'): ?array
     {
         if (null === $this->csvContents) {
             $this->csvContents = explode("\n", $this->getContents());
@@ -864,7 +864,7 @@ class File implements \JsonSerializable
      *
      * @return null|int
      */
-    public function putcsv(array $fields, string $delimiter = ',', string $enclosure = '"', string $escape = '\\')
+    public function putCSV(array $fields, string $delimiter = ',', string $enclosure = '"', string $escape = '\\')
     {
         if (null === $this->csvContents) {
             $this->csvContents = [];

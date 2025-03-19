@@ -374,7 +374,7 @@ class Compiler
      *
      * @return string The PHP code to write the config variable
      */
-    protected function replaceCONFIG_VAR(string $name): string
+    protected function replaceCONFIGVAR(string $name): string
     {
         return $this->replaceVAR("\$this->variables['{$name}']");
     }
