@@ -73,13 +73,13 @@ class BrowserConnector
         return true;
     }
 
-    public function authorise(string $sourceName, ?string $redirect_uri = null): bool
+    public function authorise(string $sourceName, ?string $redirectUri = null): bool
     {
         if (!($source = ($this->sources[$sourceName] ?? null))) {
             return false;
         }
 
-        return $source->authorise($redirect_uri);
+        return $source->authorise($redirectUri);
     }
 
     public function source(string $target): false|Manager
@@ -112,10 +112,10 @@ class BrowserConnector
      */
     public function info(Manager $source, Dir|File $file): array
     {
-        $is_dir = $file instanceof Dir || $file->isDir();
+        $isDir = $file instanceof Dir || $file->isDir();
         $parent = ('/' === $file->fullpath()) ? $this->target($source) : $this->target($source, rtrim($file->dirname(), '/').'/');
         $path = $source->fixPath($file->dirname(), $file->basename());
-        $fileId = $this->target($source, $is_dir ? rtrim($path, '/').'/' : $path);
+        $fileId = $this->target($source, $isDir ? rtrim($path, '/').'/' : $path);
         $linkURL = rtrim($this->url, '/').'/'.$source->name.rtrim($file->dirname(), '/').'/'.$file->basename();
         $downloadURL = $linkURL.'?download=true';
         $info = [
@@ -132,7 +132,7 @@ class BrowserConnector
             'read' => $file->isReadable(),
             'write' => $file->isWritable(),
         ];
-        if ($is_dir) {
+        if ($isDir) {
             $info['dirs'] = 0;
             $dir = $source->dir($file->fullpath());
             while (($file = $dir->read()) != false) {
@@ -204,7 +204,7 @@ class BrowserConnector
         bool $tree = false,
         int $depth = 1,
         ?string $filter = null,
-        bool $with_meta = false
+        bool $withMeta = false
     ): array|false {
         if (!count($this->sources) > 0) {
             return false;
@@ -227,7 +227,7 @@ class BrowserConnector
                 continue;
             }
             $info = $this->info($source, $file);
-            if ($with_meta) {
+            if ($withMeta) {
                 $info['meta'] = $file->getMeta();
             }
             $files[] = $info;
@@ -390,7 +390,7 @@ class BrowserConnector
     /**
      * @return array<mixed>
      */
-    public function rename(string $target, string $name, bool $with_meta = false): array
+    public function rename(string $target, string $name, bool $withMeta = false): array
     {
         $manager = $this->source($target);
         $path = $this->path($target);
@@ -398,7 +398,7 @@ class BrowserConnector
         if ($manager->move($path, $new)) {
             $file = $manager->get($new);
             $info = $this->info($manager, $file);
-            if (true === $with_meta) {
+            if (true === $withMeta) {
                 $info['meta'] = $file->getMeta();
             }
 

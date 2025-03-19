@@ -35,8 +35,8 @@ interface ImageRendererInterface
         ?int $height = null,
         bool $crop = false,
         ?string $align = null,
-        bool $keep_aspect = true,
-        bool $reduce_only = true,
+        bool $keepAspect = true,
+        bool $reduceOnly = true,
         ?float $ratio = null,
         int $offsetTop = 0,
         int $offsetLeft = 0

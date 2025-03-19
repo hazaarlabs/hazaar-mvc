@@ -11,7 +11,7 @@ namespace Hazaar\Model\Attribute;
  *
  * ```php
  * #[Trim()]
- * public $my_property;
+ * public $myProperty;
  * ```
  */
 #[\Attribute]

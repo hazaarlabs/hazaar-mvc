@@ -188,13 +188,13 @@ abstract class Adapter implements AdapterInterface, \ArrayAccess
             $algos = [$algos];
         }
         $salt = $this->options['encryption']['salt'];
-        $hash_algos = hash_algos();
+        $hashAlgos = hash_algos();
         if (!is_string($salt)) {
             $salt = '';
         }
         for ($i = 1; $i <= $count; ++$i) {
             foreach ($algos as $algo) {
-                if (!in_array($algo, $hash_algos)) {
+                if (!in_array($algo, $hashAlgos)) {
                     continue;
                 }
                 $hash = hash($algo, $hash.$credential.$salt);

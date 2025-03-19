@@ -421,13 +421,13 @@ class Socket
      * Socket::readSelect() will execute a socket_select call on the socket and wait for data to be available for reading. This is really
      * only useful if you are working with a single socket as it does no allow the select call to wait on multiple sockets.
      *
-     * @param int $tv_sec The tv_sec and tv_usec together form the timeout parameter. The timeout is an upper bound on the amount of time
+     * @param int $tvSec The tv_sec and tv_usec together form the timeout parameter. The timeout is an upper bound on the amount of time
      *                    elapsed before socket_select() return. tv_sec may be zero , causing socket_select() to return immediately. This is useful
      *                    for polling. If tv_sec is NULL (no timeout), socket_select() can block indefinitely.
      *
      * @return bool Returns TRUE if the socket had data to be read. FALSE otherwise.
      */
-    public function select(?int $tv_sec, int $tv_usec = 0): bool
+    public function select(?int $tvSec, int $tvUsec = 0): bool
     {
         if (!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket))) {
             return false;
@@ -437,7 +437,7 @@ class Socket
         ];
         $write = null;
         $exempt = null;
-        socket_select($read, $write, $exempt, $tv_sec, $tv_usec);
+        socket_select($read, $write, $exempt, $tvSec, $tvUsec);
         if (count($read) > 0 && $read[0] == $this->resource) {
             return true;
         }
@@ -451,13 +451,13 @@ class Socket
      * Socket::readSelect() will execute a socket_select call on the socket and wait for the socket to be available to write to. This is
      * really only useful if you are working with a single socket as it does no allow the select call to wait on multiple sockets.
      *
-     * @param int $tv_sec The tv_sec and tv_usec together form the timeout parameter. The timeout is an upper bound on the amount of time
+     * @param int $tvSec The tv_sec and tv_usec together form the timeout parameter. The timeout is an upper bound on the amount of time
      *                    elapsed before socket_select() return. tv_sec may be zero , causing socket_select() to return immediately. This is useful
      *                    for polling. If tv_sec is NULL (no timeout), socket_select() can block indefinitely.
      *
      * @return bool Returns TRUE if the socket can be written to. FALSE otherwise.
      */
-    public function writeSelect(?int $tv_sec, int $tv_usec = 0): bool
+    public function writeSelect(?int $tvSec, int $tvUsec = 0): bool
     {
         if (!(is_resource($this->resource) || ($this->resource && $this->resource instanceof \Socket))) {
             return false;
@@ -467,7 +467,7 @@ class Socket
             $this->resource,
         ];
         $exempt = null;
-        socket_select($read, $write, $exempt, $tv_sec, $tv_usec);
+        socket_select($read, $write, $exempt, $tvSec, $tvUsec);
         if (count($write) > 0 && $write[0] == $this->resource) {
             return true;
         }

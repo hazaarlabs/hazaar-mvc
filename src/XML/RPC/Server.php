@@ -20,7 +20,7 @@ abstract class Server extends Controller
     /**
      * @var array<string, array<object|string>>
      */
-    protected array $registered_methods = [];
+    protected array $registeredMethods = [];
 
     public function __toString()
     {
@@ -30,11 +30,11 @@ abstract class Server extends Controller
     public function initialize(Request $request): ?Response
     {
         parent::initialize($request);
-        $auto_register = true;
+        $autoRegister = true;
         if (method_exists($this, 'init')) {
-            $auto_register = $this->init($request);
+            $autoRegister = $this->init($request);
         }
-        if (false !== $auto_register) {
+        if (false !== $autoRegister) {
             foreach (get_class_methods($this) as $method) {
                 if ('run' == $method || preg_match('/^__/', $method)) {
                     continue;
@@ -51,16 +51,16 @@ abstract class Server extends Controller
 
     public function run(?Route $route = null): XML
     {
-        $raw_post_data = file_get_contents('php://input');
+        $rawPost_data = file_get_contents('php://input');
         $method = null;
-        $result = xmlrpc_decode_request($raw_post_data, $method);
+        $result = xmlrpc_decode_request($rawPost_data, $method);
         if (!$method) {
             throw new InvalidRequest($_SERVER['REMOTE_ADDR']);
         }
-        if (!array_key_exists($method, $this->registered_methods)) {
+        if (!array_key_exists($method, $this->registeredMethods)) {
             throw new MethodNotFound($method);
         }
-        $response = call_user_func_array($this->registered_methods[$method], $result);
+        $response = call_user_func_array($this->registeredMethods[$method], $result);
         $xml = new Element();
         $xml->loadXML(\xmlrpc_encode_request($method, $response));
 
@@ -69,7 +69,7 @@ abstract class Server extends Controller
 
     public function registerMethod(object $object, string $method): void
     {
-        $this->registered_methods[$method] = [
+        $this->registeredMethods[$method] = [
             $object,
             $method,
         ];

@@ -143,14 +143,14 @@ class Response
             if ($this->chunked) {
                 while (strlen($this->buffer) > 0) {
                     // Get the current chunk length
-                    if (($chunkLen_end = strpos($this->buffer, "\r\n", $this->chunkOffset + 1) + 2) === 2) {
+                    if (($chunkLenEnd = strpos($this->buffer, "\r\n", $this->chunkOffset + 1) + 2) === 2) {
                         break;
                     }
-                    $chunkLen_string = substr($this->buffer, 0, $chunkLen_end - $this->chunkOffset - 2);
-                    $chunkLen = hexdec($chunkLen_string) + 2;
+                    $chunkLenString = substr($this->buffer, 0, $chunkLenEnd - $this->chunkOffset - 2);
+                    $chunkLen = hexdec($chunkLenString) + 2;
                     // If we don't have the whole chunk, bomb out for now.  This expects that this read method will be
                     // called again later with more of the response body.  The +2 includes the CRLF chunk terminator.
-                    if ((strlen($this->buffer) - $chunkLen_end) < $chunkLen) {
+                    if ((strlen($this->buffer) - $chunkLenEnd) < $chunkLen) {
                         break;
                     }
                     if (0 == $chunkLen) {
@@ -162,13 +162,13 @@ class Response
                         return true;
                     }
                     // Get the current chunk
-                    $chunk = substr($this->buffer, $chunkLen_end, $chunkLen - 2);
+                    $chunk = substr($this->buffer, $chunkLenEnd, $chunkLen - 2);
                     // TODO: This is where we could fire off a callback with the current data chunk;
                     // call_user_func($callback, $chunk);
                     // Append the current chunk onto the body
                     $this->body .= $chunk;
                     // Remove the processed chunk from the buffer
-                    $this->buffer = substr($this->buffer, $chunkLen_end + $chunkLen);
+                    $this->buffer = substr($this->buffer, $chunkLenEnd + $chunkLen);
                 }
             } else {
                 // If we have a content length, check how many bytes are left to retrieve
@@ -244,17 +244,17 @@ class Response
 
     public function toString(): string
     {
-        $http_response = "{$this->version} {$this->status} {$this->name}\r\n";
+        $httpResponse = "{$this->version} {$this->status} {$this->name}\r\n";
         foreach ($this->headers as $header => $value) {
-            $http_response .= $header.': '.$value."\r\n";
+            $httpResponse .= $header.': '.$value."\r\n";
         }
-        $content_len = strlen($this->body);
-        if ($content_len > 0) {
-            $http_response .= 'Content-Length: '.$content_len."\r\n";
+        $contentLen = strlen($this->body);
+        if ($contentLen > 0) {
+            $httpResponse .= 'Content-Length: '.$contentLen."\r\n";
         }
-        $http_response .= "\r\n".$this->body;
+        $httpResponse .= "\r\n".$this->body;
 
-        return $http_response;
+        return $httpResponse;
     }
 
     public function getStatusMessage(?int $code = null): string
@@ -356,15 +356,15 @@ class Response
      */
     public static function getText($code)
     {
-        $data_file = dirname(__FILE__)
+        $dataFile = dirname(__FILE__)
         .DIRECTORY_SEPARATOR.'..'
         .DIRECTORY_SEPARATOR.'libs'
         .DIRECTORY_SEPARATOR.'HTTP_Status.dat';
-        if (!file_exists($data_file)) {
+        if (!file_exists($dataFile)) {
             throw new \Exception('HTTP status data file is missing!');
         }
         $text = false;
-        if (preg_match('/^'.$code.'\s(.*)$/m', file_get_contents($data_file), $matches)) {
+        if (preg_match('/^'.$code.'\s(.*)$/m', file_get_contents($dataFile), $matches)) {
             $text = $matches[1];
         }
 

@@ -57,7 +57,7 @@ class Layout extends View
      * Prepares the layout for rendering.
      *
      * This method prepares the layout by rendering all the views added to it. It adds the layout's helpers to each view,
-     * extends the view's data with the layout's data, and renders each view. If the `$merge_data` parameter is set to true,
+     * extends the view's data with the layout's data, and renders each view. If the `$mergeData` parameter is set to true,
      * it also extends the layout's data with each view's data.
      *
      * @return bool returns true if the layout was prepared successfully, false if it was already prepared

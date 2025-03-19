@@ -6,8 +6,8 @@ namespace Hazaar\Controller\Exception;
 
 class MethodExists extends \Exception
 {
-    public function __construct(string $method_name)
+    public function __construct(string $methodName)
     {
-        parent::__construct("Error trying to register controller method '{$method_name}'.  A method with that name already exist.");
+        parent::__construct("Error trying to register controller method '{$methodName}'.  A method with that name already exist.");
     }
 }

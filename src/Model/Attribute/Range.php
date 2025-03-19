@@ -12,7 +12,7 @@ namespace Hazaar\Model\Attribute;
  *
  * ```php
  * #[Range(0, 10)]
- * public $my_property;
+ * public $myProperty;
  * ```
  */
 #[\Attribute]

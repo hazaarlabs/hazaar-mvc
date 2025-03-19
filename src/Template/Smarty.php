@@ -19,7 +19,7 @@ use Hazaar\Template\Smarty\Compiler;
  * with the array key value of 'tagname'.  Such as:
  *
  * ```
- * $tpl = new \Hazaar\Template\Smarty($template_content);
+ * $tpl = new \Hazaar\Template\Smarty($templateContent);
  * $tpl->render(['tagname' => 'Hello, World!']);
  * ```
  */

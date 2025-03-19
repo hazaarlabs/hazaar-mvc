@@ -302,15 +302,15 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
         $len = strlen($frame);
         $this->log->write(W_DECODE2, 'CLIENT->FRAME: '.implode(' ', $this->hexString($frame)), $this->name);
         $this->log->write(W_DEBUG, "CLIENT->STREAM: BYTES={$len} HOST={$this->address} PORT={$this->port}", $this->name);
-        $bytes_sent = @fwrite($this->stream, $frame, $len);
-        if (false === $bytes_sent) {
+        $bytesSent = @fwrite($this->stream, $frame, $len);
+        if (false === $bytesSent) {
             $this->log->write(W_WARN, 'An error occured while sending to the client. Could be disconnected.', $this->name);
             $this->disconnect();
 
             return false;
         }
-        if ($bytes_sent != $len) {
-            $this->log->write(W_ERR, $bytes_sent.' bytes have been sent instead of the '.$len.' bytes expected', $this->name);
+        if ($bytesSent != $len) {
+            $this->log->write(W_ERR, $bytesSent.' bytes have been sent instead of the '.$len.' bytes expected', $this->name);
             $this->disconnect();
 
             return false;
@@ -471,8 +471,8 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
 
             case 'PONG':
                 if (is_int($payload)) {
-                    $trip_ms = (microtime(true) - $payload) * 1000;
-                    $this->log->write(W_INFO, 'PONG received in '.$trip_ms.'ms', $this->name);
+                    $tripMs = (microtime(true) - $payload) * 1000;
+                    $this->log->write(W_INFO, 'PONG received in '.$tripMs.'ms', $this->name);
                 } else {
                     $this->log->write(W_WARN, 'PONG received with invalid payload!', $this->name);
                 }

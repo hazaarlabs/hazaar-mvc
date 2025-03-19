@@ -74,7 +74,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         return 'Dropbox';
     }
 
-    public function authorise(?string $redirect_uri = null): bool
+    public function authorise(?string $redirectUri = null): bool
     {
         if (($code = $_REQUEST['code'] ?? null) && ($state = $_REQUEST['state'] ?? null)) {
             if ($state != $this->cache->pull('oauth2_state')) {
@@ -86,7 +86,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
                 'grant_type' => 'authorization_code',
                 'client_id' => $this->options['app_key'],
                 'client_secret' => $this->options['app_secret'],
-                'redirect_uri' => $redirect_uri,
+                'redirect_uri' => $redirectUri,
             ]);
             $response = $this->send($request);
             if (200 !== $response->status) {
@@ -107,17 +107,17 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         return isset($this->options['oauth2']) && null !== $this->options['oauth2']['access_token'];
     }
 
-    public function buildAuthURL(?string $redirect_uri = null): string
+    public function buildAuthURL(?string $redirectUri = null): string
     {
-        if (!$redirect_uri) {
-            $redirect_uri = $_SERVER['REQUEST_URI'];
+        if (!$redirectUri) {
+            $redirectUri = $_SERVER['REQUEST_URI'];
         }
         $state = md5(uniqid());
         $this->cache->set('oauth2_state', $state);
         $params = [
             'response_type=code',
             'client_id='.$this->options['app_key'],
-            'redirect_uri='.$redirect_uri,
+            'redirect_uri='.$redirectUri,
             'state='.$state,
         ];
 
@@ -165,10 +165,10 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
     // Metadata Operations
     public function scandir(
         string $path,
-        ?string $regex_filter = null,
+        ?string $regexFilter = null,
         int $sort = SCANDIR_SORT_ASCENDING,
-        bool $show_hidden = false,
-        ?string $relative_path = null
+        bool $showHidden = false,
+        ?string $relativePath = null
     ): array|bool {
         if (!$this->authorised()) {
             return false;
@@ -206,7 +206,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         return $meta;
     }
 
-    public function search(string $query, bool $include_deleted = false): false
+    public function search(string $query, bool $includeDeleted = false): false
     {
         throw new DropboxError('Search is not done yet!');
         /*
@@ -215,7 +215,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         if ($this->options->has('file_limit')) {
             $request->file_limit = $this->options['file_limit'];
         }
-        $request->include_deleted = $include_deleted;
+        $request->include_deleted = $includeDeleted;
         if (!($response = $this->sendRequest($request))) {
             return false;
         }
@@ -527,10 +527,10 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         return $this->sendRequest($request, false);
     }
 
-    public function write(string $path, string $data, ?string $content_type = null, bool $overwrite = false): ?int
+    public function write(string $path, string $data, ?string $contentType = null, bool $overwrite = false): ?int
     {
         $request = new Request('https://api-content.dropbox.com/1/files_put/auto'.$path, 'POST');
-        $request->setHeader('Content-Type', $content_type);
+        $request->setHeader('Content-Type', $contentType);
         if ($overwrite) {
             $request['overwrite'] = true;
         }
@@ -713,12 +713,12 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         return false;
     }
 
-    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array|false
+    public function find(?string $search = null, string $path = '/', bool $caseInsensitive = false): array|false
     {
         return false;
     }
 
-    public function fsck(bool $skip_root_reload = false): bool
+    public function fsck(bool $skipRoot_reload = false): bool
     {
         return false;
     }

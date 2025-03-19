@@ -36,11 +36,11 @@ class View extends HTML
     }
 
     /**
-     * @param array<mixed> $param_arr
+     * @param array<mixed> $paramArr
      */
-    public function __call(string $method, array $param_arr): mixed
+    public function __call(string $method, array $paramArr): mixed
     {
-        return call_user_func_array([$this->_view, $method], $param_arr);
+        return call_user_func_array([$this->_view, $method], $paramArr);
     }
 
     public function __set(mixed $key, mixed $value): void

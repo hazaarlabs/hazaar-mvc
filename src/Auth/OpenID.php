@@ -68,11 +68,11 @@ class OpenID extends OAuth2
     /**
      * Logs out the user by clearing the session and redirecting to the OpenID end session endpoint.
      *
-     * @param null|string $redirect_url optional URL to redirect to after logout
+     * @param null|string $redirectUrl optional URL to redirect to after logout
      *
      * @return bool|URL returns the URL object for the end session endpoint if successful, or false on failure
      */
-    public function logout(?string $redirect_url = null): bool|URL
+    public function logout(?string $redirectUrl = null): bool|URL
     {
         if (!($url = $this->metadata['end_session_endpoint'] ?? false)) {
             return false;
@@ -80,8 +80,8 @@ class OpenID extends OAuth2
         $endpoint = new URL($url);
         $endpoint['clientID'] = $this->clientID;
         $endpoint['id_token_hint'] = $this->storage['oauth2_data']['id_token'] ?? null;
-        if ($redirect_url) {
-            $endpoint['post_logout_redirect_uri'] = (string) $redirect_url;
+        if ($redirectUrl) {
+            $endpoint['post_logout_redirect_uri'] = (string) $redirectUrl;
         }
         if (!$this->clear()) {
             return false;

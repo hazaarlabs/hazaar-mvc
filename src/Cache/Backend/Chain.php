@@ -58,10 +58,10 @@ class Chain extends Backend
         $this->addCapabilities('store_objects');
     }
 
-    public function has(string $key, bool $check_empty = false): bool
+    public function has(string $key, bool $checkEmpty = false): bool
     {
         foreach ($this->backends as $backend) {
-            if ($backend->has($key, $check_empty)) {
+            if ($backend->has($key, $checkEmpty)) {
                 return true;
             }
         }

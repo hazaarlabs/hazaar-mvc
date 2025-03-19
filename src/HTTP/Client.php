@@ -149,13 +149,13 @@ class Client
             $request->authorise($this->username, $this->password);
         }
         $this->applyCookies($request);
-        $sck_fd = @stream_socket_client($request->getHost(), $errno, $errstr, $this->connectionTimeout, STREAM_CLIENT_CONNECT, $request->context);
-        if ($sck_fd) {
-            $http_request = $request->toString($this->encryptionKey, $this->encryptionCipher);
-            fputs($sck_fd, $http_request, strlen($http_request));
+        $sckFd = @stream_socket_client($request->getHost(), $errno, $errstr, $this->connectionTimeout, STREAM_CLIENT_CONNECT, $request->context);
+        if ($sckFd) {
+            $httpRequest = $request->toString($this->encryptionKey, $this->encryptionCipher);
+            fputs($sckFd, $httpRequest, strlen($httpRequest));
             $response = new Response();
             $bufferSize = $this->bufferSize;
-            while (($buf = fread($sck_fd, $bufferSize)) !== false) {
+            while (($buf = fread($sckFd, $bufferSize)) !== false) {
                 $response->read($buf);
                 /*
                  * Dynamic buffer resize.  This fixes a problem when the bytes remaining is less than the buffer size,
@@ -168,11 +168,11 @@ class Client
                     $bufferSize = $response->bytesRemaining;
                 }
                 // If the socket is now EOF then break out
-                if (feof($sck_fd)) {
+                if (feof($sckFd)) {
                     break;
                 }
             }
-            fclose($sck_fd);
+            fclose($sckFd);
             if (!$response->status > 0) {
                 throw new \Exception('Host returned no data', 503);
             }
@@ -381,10 +381,10 @@ class Client
         $url = $request->url();
         $path = explode('/', trim($url->path(), '/'));
         $cookies = [];
-        foreach ($this->cookies as $cookie_key => $cookieData) {
+        foreach ($this->cookies as $cookieKey => $cookieData) {
             if ($expires = $cookieData['expires'] ?? null) {
                 if ($expires->getTimestamp() < time()) {
-                    unset($this->cookies[$cookie_key]);
+                    unset($this->cookies[$cookieKey]);
 
                     continue;
                 }

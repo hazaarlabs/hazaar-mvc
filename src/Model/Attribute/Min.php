@@ -15,7 +15,7 @@ use Hazaar\Model\Exception\PropertyValidationException;
  *
  * ```php
  * #[Min(10)]
- * public $my_property;
+ * public $myProperty;
  * ```
  */
 #[\Attribute]

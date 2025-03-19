@@ -38,17 +38,17 @@ class PDF extends File
      *
      * @param string  $file          Filename to use if the file will be written to disk.  If null, the file can exist only in memory.
      * @param Manager $manager       An optional file manager for accessing public file data
-     * @param string  $relative_path internal relative path when accessing the file through a Hazaar\File\Dir object
+     * @param string  $relativePath internal relative path when accessing the file through a Hazaar\File\Dir object
      *
      * @throws Exception\WKPDF\InstallFailed the automated installation of WKPDFtoHTML failed
      * @throws Exception\WKPDF\NotExecutable the WKPDFtoHTML executable exists but failed to execute
      */
-    public function __construct(?string $file = null, ?Manager $manager = null, ?string $relative_path = null)
+    public function __construct(?string $file = null, ?Manager $manager = null, ?string $relativePath = null)
     {
         if (!class_exists('Dompdf\Dompdf')) {
             throw new \Exception('The DomPdf library is required to generate PDF files.  Please install the library using composer.');
         }
-        parent::__construct($file, $manager, $relative_path);
+        parent::__construct($file, $manager, $relativePath);
         parent::registerFilter(FILE_FILTER_SET, 'render');
     }
 

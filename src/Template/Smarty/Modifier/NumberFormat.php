@@ -12,11 +12,11 @@ class NumberFormat
     /**
      * @param mixed  $value         The number to format
      * @param int    $decimals      The number of decimal points
-     * @param string $dec_point     The character to use as the decimal point
-     * @param string $thousands_sep The character to use as the thousands separator
+     * @param string $decPoint     The character to use as the decimal point
+     * @param string $thousandsSep The character to use as the thousands separator
      */
-    public function run(mixed $value, int $decimals = 0, string $dec_point = '.', string $thousands_sep = ','): string
+    public function run(mixed $value, int $decimals = 0, string $decPoint = '.', string $thousandsSep = ','): string
     {
-        return number_format(floatval($value), $decimals, $dec_point, $thousands_sep);
+        return number_format(floatval($value), $decimals, $decPoint, $thousandsSep);
     }
 }

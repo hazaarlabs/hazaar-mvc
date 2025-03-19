@@ -49,18 +49,18 @@ class Func extends Adapter
             throw new NoFunction();
         }
         $key = $this->generateKey($function, $paramArray);
-        $use_cache = true;
+        $useCache = true;
         $result = false;
         if ($this->options['cache_by_default']) {
             if (count($nonCachedFunction = $this->options['non_cached_functions']) > 0
                 && $this->options['non_cached_functions']->in($function)) {
-                $use_cache = false;
+                $useCache = false;
             }
         } elseif (count($cachedFunctions = $this->options['cached_functions']) > 0
             && !$cachedFunctions->in($function)) {
-            $use_cache = false;
+            $useCache = false;
         }
-        if ($use_cache) {
+        if ($useCache) {
             $result = $this->get($key);
         }
         if (false === $result) {

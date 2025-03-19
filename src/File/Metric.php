@@ -217,8 +217,8 @@ class Metric
         if ($ds['last'] < 0) {
             $ds['last'] = 0;
         }
-        $offset_start = $this->getDataSourceOffset($dsname);
-        $offset = $offset_start
+        $offsetStart = $this->getDataSourceOffset($dsname);
+        $offset = $offsetStart
             + METRIC_DSDEF_LEN
             + strlen($ds['name'].$ds['desc']);
         $pos = $offset + ($ds['last'] * METRIC_PDP_ROW_LEN);
@@ -247,7 +247,7 @@ class Metric
             }
             $current['tick'] = $tick;
             $current['value'] = 0;
-            fseek($this->handle, $offset_start + METRIC_DSDEF_LEN + strlen($ds['name'].$ds['desc']) - 4);
+            fseek($this->handle, $offsetStart + METRIC_DSDEF_LEN + strlen($ds['name'].$ds['desc']) - 4);
             fwrite($this->handle, pack('l', $ds['last']));
             $this->lastTick['data'][$dsname] = $tick;
         }
@@ -328,16 +328,16 @@ class Metric
                         }
                     }
                     ksort($data);
-                    $current_data = [];
+                    $currentData = [];
                     foreach ($data as $tick => $value) {
                         if ($tick >= $currentTick) {         // Not ready to process this data point yet
                             break;
                         }
-                        $current_data[$tick] = $value;
-                        if (count($current_data) == $archive['ticks']) {
-                            $cvalue = $this->consolidate($archive['cf'], $current_data, $ds['type']);
+                        $currentData[$tick] = $value;
+                        if (count($currentData) == $archive['ticks']) {
+                            $cvalue = $this->consolidate($archive['cf'], $currentData, $ds['type']);
                             $updates[$archiveID][$tick][$dsname] = $cvalue;
-                            $current_data = [];
+                            $currentData = [];
                         }
                     }
                 }
@@ -347,7 +347,7 @@ class Metric
             foreach ($updates as $archiveID => $rows) {
                 $archive = &$this->archives[$archiveID];
                 // Get the start of the archive
-                $offset_start = $this->getArchiveOffset($archiveID);
+                $offsetStart = $this->getArchiveOffset($archiveID);
                 foreach ($rows as $tick => $values) {
                     if (count($values) != count($this->dataSources)) {
                         throw new \Exception('All dataSources must be written in an update!');
@@ -358,13 +358,13 @@ class Metric
                         $row = 0;
                     }
                     $offset = METRIC_ARCHIVE_HDR_LEN + strlen($archive['id'].$archive['desc']) + ($row * $this->getCDPLength());
-                    $pos = $offset_start + $offset;
+                    $pos = $offsetStart + $offset;
                     fseek($this->handle, $pos); // Seek to the correct archive position
                     $this->writeCDP($tick, $values);
                     $archive['last'] = $row;
                     $this->lastTick['archive'][$archiveID] = $tick;
                 }
-                $pos = $offset_start + METRIC_ARCHIVE_HDR_LEN + strlen($archive['id'].$archive['desc']) - 4;
+                $pos = $offsetStart + METRIC_ARCHIVE_HDR_LEN + strlen($archive['id'].$archive['desc']) - 4;
                 fseek($this->handle, $pos);
                 fwrite($this->handle, pack('l', $archive['last']));
             }
@@ -419,7 +419,7 @@ class Metric
         $archive = $this->archives[$archiveID];
         $offset = $this->getArchiveOffset($archiveID) + METRIC_ARCHIVE_HDR_LEN + strlen($archive['id'].$archive['desc']);
         fseek($this->handle, $offset);
-        $row_length = $this->getCDPLength();
+        $rowLength = $this->getCDPLength();
         while ($type = fread($this->handle, 2)) {
             if (METRIC_TYPE_CDP != ord($type)) {
                 break;
@@ -429,18 +429,18 @@ class Metric
             if (!($tick > 0)) {
                 break;
             }
-            $values = array_combine(array_keys($this->dataSources), unpack('f*', fread($this->handle, $row_length - 6)));
+            $values = array_combine(array_keys($this->dataSources), unpack('f*', fread($this->handle, $rowLength - 6)));
             $data[$tick] = $values[$dsname];
         }
-        $step_sec = $archive['ticks'] * $this->tickSec;
+        $stepSec = $archive['ticks'] * $this->tickSec;
         if (($diff = ($archive['rows'] - count($data))) > 0) {
             if (count($data) > 0) {
                 $min = min(array_keys($data));
             } else {
                 $min = $this->getTick() * $this->tickSec;
             }
-            $start_tick = $min - ($diff * $step_sec);
-            for ($tick = $start_tick; $tick < $min; $tick += $step_sec) {
+            $startTick = $min - ($diff * $stepSec);
+            for ($tick = $startTick; $tick < $min; $tick += $stepSec) {
                 $data[$tick] = floatval(0);
             }
         }
@@ -535,7 +535,7 @@ class Metric
      */
     private function getArchiveOffset($archiveID = 'default'): int
     {
-        $row_length = $this->getCDPLength();
+        $rowLength = $this->getCDPLength();
         $offset = METRIC_HDR_LEN;
         foreach ($this->dataSources as $ds) {
             $offset += METRIC_DSDEF_LEN + strlen($ds['name'].$ds['desc']) + ($ds['ticks'] * METRIC_PDP_ROW_LEN);
@@ -544,7 +544,7 @@ class Metric
             if ($archiveID == $id) {
                 break;
             }
-            $offset += METRIC_ARCHIVE_HDR_LEN + ($row_length * $archive['rows']) + strlen($archive['id'].$archive['desc']);
+            $offset += METRIC_ARCHIVE_HDR_LEN + ($rowLength * $archive['rows']) + strlen($archive['id'].$archive['desc']);
         }
 
         return $offset;

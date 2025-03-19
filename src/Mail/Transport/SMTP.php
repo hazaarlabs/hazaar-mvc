@@ -44,13 +44,13 @@ class SMTP extends Transport
 
     public function send(TransportMessage $message): mixed
     {
-        $extra_headers = [
+        $extraHeaders = [
             'To' => [],
             'From' => $this->encodeEmail($message->from),
             'Subject' => $message->subject,
         ];
         if ($message->content instanceof Message) {
-            $extra_headers = array_merge($message->content->getHeaders(), $extra_headers);
+            $extraHeaders = array_merge($message->content->getHeaders(), $extraHeaders);
         }
         $this->connect();
         if (false === $this->read(220, 1024, $result)) {
@@ -83,7 +83,7 @@ class SMTP extends Transport
         } elseif (true === $this->options['starttls']) {
             throw new \Exception('STARTTLS is required but server does not support it.');
         }
-        $auth_methods = array_reduce($modules, function ($carry, $item) {
+        $authMethods = array_reduce($modules, function ($carry, $item) {
             if ('AUTH' === substr($item, 0, 4)) {
                 return array_merge($carry, explode(' ', substr($item, 5)));
             }
@@ -91,19 +91,19 @@ class SMTP extends Transport
             return $carry;
         }, []);
         if ($username = $this->options['username']) {
-            if (!($auth_method = strtoupper($this->options['auth'] ?? ''))) {
-                if (in_array('CRAM-MD5', $auth_methods)) {
-                    $auth_method = 'CRAM-MD5';
-                } elseif (in_array('LOGIN', $auth_methods)) {
-                    $auth_method = 'LOGIN';
-                } elseif (in_array('PLAIN', $auth_methods)) {
-                    $auth_method = 'PLAIN';
+            if (!($authMethod = strtoupper($this->options['auth'] ?? ''))) {
+                if (in_array('CRAM-MD5', $authMethods)) {
+                    $authMethod = 'CRAM-MD5';
+                } elseif (in_array('LOGIN', $authMethods)) {
+                    $authMethod = 'LOGIN';
+                } elseif (in_array('PLAIN', $authMethods)) {
+                    $authMethod = 'PLAIN';
                 } else {
-                    throw new \Exception('Authentication not possible.  Only CRAM-MD5, LOGIN and PLAIN methods are supported.  Server needs: '.Arr::grammaticalImplode($auth_methods, 'or'));
+                    throw new \Exception('Authentication not possible.  Only CRAM-MD5, LOGIN and PLAIN methods are supported.  Server needs: '.Arr::grammaticalImplode($authMethods, 'or'));
                 }
             }
 
-            switch ($auth_method) {
+            switch ($authMethod) {
                 case 'CRAM-MD5':
                     $this->write('AUTH CRAM-MD5');
                     if (false === $this->read(334, 128, $result)) {
@@ -140,29 +140,29 @@ class SMTP extends Transport
                     break;
 
                 default:
-                    throw new \Exception('Authentication not possible.  Only CRAM-MD5, LOGIN and PLAIN methods are supported.  Server needs: '.Arr::grammaticalImplode($auth_methods, 'or'));
+                    throw new \Exception('Authentication not possible.  Only CRAM-MD5, LOGIN and PLAIN methods are supported.  Server needs: '.Arr::grammaticalImplode($authMethods, 'or'));
             }
             if (false === $this->read(235, 1024, $result, $response)) {
                 throw new \Exception('SMTP Auth failed: '.$result);
             }
         }
-        if ($dsn_active = (count($message->dsn) > 0 && in_array('DSN', $modules))) {
+        if ($dsnActive = (count($message->dsn) > 0 && in_array('DSN', $modules))) {
             $message->dsn = array_map('strtoupper', $message->dsn);
         }
-        $this->write("MAIL FROM: {$message->from['email']}".($dsn_active ? ' RET=HDRS' : ''));
+        $this->write("MAIL FROM: {$message->from['email']}".($dsnActive ? ' RET=HDRS' : ''));
         if (false === $this->read(250, 1024, $result)) {
             throw new \Exception('Bad response on mail from: '.$result);
         }
-        $rcpt_lists = [
+        $rcptLists = [
             'To' => $message->to,
             'CC' => $message->cc,
             'BCC' => $message->bcc,
         ];
-        foreach ($rcpt_lists as $header => $rcpt_list) {
-            foreach ($rcpt_list as $x) {
-                $extra_headers[$header][] = $this->encodeEmail($x);
+        foreach ($rcptLists as $header => $rcptList) {
+            foreach ($rcptList as $x) {
+                $extraHeaders[$header][] = $this->encodeEmail($x);
                 $rcpt = $x['email'];
-                $this->write("RCPT TO: <{$rcpt}>".($dsn_active ? ' NOTIFY='.implode(',', $message->dsn) : ''));
+                $this->write("RCPT TO: <{$rcpt}>".($dsnActive ? ' NOTIFY='.implode(',', $message->dsn) : ''));
                 // @phpstan-ignore-next-line
                 if (false === $this->read(250, 1024, $result)) {
                     throw new \Exception('Bad response on mail to: '.$result);
@@ -174,7 +174,7 @@ class SMTP extends Transport
             throw new \Exception($result);
         }
         $out = '';
-        foreach ($extra_headers as $key => $value) {
+        foreach ($extraHeaders as $key => $value) {
             $out .= "{$key}: ".(is_array($value) ? implode(', ', $value) : $value)."\r\n";
         }
         $out .= "\r\n{$message->content}\r\n.";

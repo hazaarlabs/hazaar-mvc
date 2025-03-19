@@ -60,10 +60,10 @@ class Hazaar implements BackendInterface, DriverInterface
 
     public function scandir(
         string $path,
-        ?string $regex_filter = null,
+        ?string $regexFilter = null,
         int $sort = SCANDIR_SORT_ASCENDING,
-        bool $show_hidden = false,
-        ?string $relative_path = null
+        bool $showHidden = false,
+        ?string $relativePath = null
     ): array|bool {
         if (!$this->pathCache) {
             $this->pathCache = [
@@ -88,12 +88,12 @@ class Hazaar implements BackendInterface, DriverInterface
                         $p['name'] = $source;
                         $p['parent'] = $this->pathCache['/']['id'];
                     }
-                    $source_path = '/'.$source.$p['path'];
+                    $sourcePath = '/'.$source.$p['path'];
                     if ('/' == $p['path']) {
-                        $source_path = rtrim($source_path, '/');
+                        $sourcePath = rtrim($sourcePath, '/');
                         ++$this->pathCache['/']['dirs'];
                     }
-                    $this->pathCache[$source_path] = $p;
+                    $this->pathCache[$sourcePath] = $p;
                 }
             }
         }
@@ -277,8 +277,8 @@ class Hazaar implements BackendInterface, DriverInterface
      */
     public function &info(string $path): array|false
     {
-        $is_dir = $this->scandir($path);
-        if (false === $is_dir) {
+        $isDir = $this->scandir($path);
+        if (false === $isDir) {
             $dir = $this->info(dirname($path));
             if ($info = $dir['files'][basename($path)] ?? null) {
                 return $info;
@@ -299,8 +299,8 @@ class Hazaar implements BackendInterface, DriverInterface
         if ($tree = $result['tree'] ?? null) {
             foreach ($tree as $d) {
                 $source = explode(':', URLUtil::base64Decode($d['id']), 2)[0];
-                $source_path = '/'.$source.$d['path'];
-                $this->pathCache[$source_path] = $d;
+                $sourcePath = '/'.$source.$d['path'];
+                $this->pathCache[$sourcePath] = $d;
             }
 
             return true;
@@ -336,7 +336,7 @@ class Hazaar implements BackendInterface, DriverInterface
         return false;
     }
 
-    public function write(string $path, string $bytes, ?string $content_type = null, bool $overwrite = false): ?int
+    public function write(string $path, string $bytes, ?string $contentType = null, bool $overwrite = false): ?int
     {
         $parent = $this->info(dirname($path));
         if (!$parent) {
@@ -344,7 +344,7 @@ class Hazaar implements BackendInterface, DriverInterface
         }
         $content = [$bytes, [
             'Content-Disposition' => 'form-data; name="file"; filename="'.basename($path).'"',
-            'Content-Type' => $content_type,
+            'Content-Type' => $contentType,
         ]];
         $info = $this->request('upload', ['parent' => $parent['id'], 'overwrite' => $overwrite], [$content]);
         if ($info) {
@@ -352,9 +352,9 @@ class Hazaar implements BackendInterface, DriverInterface
                 if ($meta = $this->meta[$path] ?? null) {
                     $this->request('set_meta', ['target' => $fileInfo['id'], 'values' => $meta]);
                 }
-                $source_path = '/'.explode(':', URLUtil::base64Decode($fileInfo['parent']), 2)[0];
-                if (array_key_exists($source_path, $this->pathCache)) {
-                    $this->pathCache[$source_path]['files'][$fileInfo['name']] = $fileInfo;
+                $sourcePath = '/'.explode(':', URLUtil::base64Decode($fileInfo['parent']), 2)[0];
+                if (array_key_exists($sourcePath, $this->pathCache)) {
+                    $this->pathCache[$sourcePath]['files'][$fileInfo['name']] = $fileInfo;
                 }
 
                 return strlen($bytes);
@@ -472,7 +472,7 @@ class Hazaar implements BackendInterface, DriverInterface
         return false;
     }
 
-    public function authorise(?string $redirect_uri = null): bool
+    public function authorise(?string $redirectUri = null): bool
     {
         return false;
     }
@@ -482,7 +482,7 @@ class Hazaar implements BackendInterface, DriverInterface
         return false;
     }
 
-    public function buildAuthURL(?string $callback_url = null): ?string
+    public function buildAuthURL(?string $callbackUrl = null): ?string
     {
         return null;
     }
@@ -582,31 +582,31 @@ class Hazaar implements BackendInterface, DriverInterface
         return false;
     }
 
-    public function find(?string $search = null, string $path = '/', bool $case_insensitive = false): array|false
+    public function find(?string $search = null, string $path = '/', bool $caseInsensitive = false): array|false
     {
         return false;
     }
 
-    public function fsck(bool $skip_root_reload = false): bool
+    public function fsck(bool $skipRoot_reload = false): bool
     {
         return false;
     }
 
     /**
      * @param array<mixed> $params
-     * @param array<mixed> $mime_parts
+     * @param array<mixed> $mimeParts
      *
      * @return array<mixed>|false
      */
-    private function request(string $cmd, array $params = [], array $mime_parts = []): array|false
+    private function request(string $cmd, array $params = [], array $mimeParts = []): array|false
     {
         $request = new Request($this->options['url'], 'POST');
         if (count($params) > 0) {
             $request->populate($params);
         }
         $request['cmd'] = $cmd;
-        if (count($mime_parts) > 0) {
-            foreach ($mime_parts as $part) {
+        if (count($mimeParts) > 0) {
+            foreach ($mimeParts as $part) {
                 if (2 == !count($part)) {
                     continue;
                 }

@@ -16,19 +16,19 @@ class HTTP extends Transport
      * @var array<string>
      */
     protected array $schema = [
-        // 'type_id' => '$type_id', //One day this may support multiple message types such as email or SMS.
-        'send_at' => '$send_at',
+        // 'type_id' => '$typeId', //One day this may support multiple message types such as email or SMS.
+        'send_at' => '$sendAt',
         'to' => '$to',
         'cc' => '$cc',
         'bcc' => '$bcc',
         'from' => '$from',
-        'reply_to' => '$reply_to',
-        'reply_to_list' => '$reply_to_list',
+        'reply_to' => '$replyTo',
+        'reply_to_list' => '$replyTo_list',
         'subject' => '$subject',
         'headers' => '$headers',
         'attachments' => '$attachments',
         'categories' => '$categories',
-        'batch_id' => '$batch_id',
+        'batch_id' => '$batchId',
         'content' => '$content',
     ];
 
