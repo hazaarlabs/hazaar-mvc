@@ -358,6 +358,7 @@ class Response
     {
         $data_file = dirname(__FILE__)
         .DIRECTORY_SEPARATOR.'..'
+        .DIRECTORY_SEPARATOR.'..'
         .DIRECTORY_SEPARATOR.'libs'
         .DIRECTORY_SEPARATOR.'HTTP_Status.dat';
         if (!file_exists($data_file)) {
