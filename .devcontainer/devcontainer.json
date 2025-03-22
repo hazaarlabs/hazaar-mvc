@@ -13,7 +13,6 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"xdebug.php-debug",
 				"junstyle.php-cs-fixer",
 				"aswinkumar863.smarty-template-support",
 				"SanderRonde.phpstan-vscode",

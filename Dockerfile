@@ -16,4 +16,7 @@ RUN pecl install apcu xdebug; \
     echo -e "\nxdebug.mode = develop, debug\nxdebug.start_with_request = 1\nxdebug.log_level = 0" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 RUN mkdir -p /var/hazaar; \
     wget https://api.hazaar.io/databases/geodata.db -O /var/hazaar/geodata.db
+RUN set -e -x \
+    && curl -L https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/latest/download/php-cs-fixer.phar -o /usr/local/bin/php-cs-fixer \
+    && chmod +x /usr/local/bin/php-cs-fixer
 ENV PATH="/hazaar/bin:${PATH}"
