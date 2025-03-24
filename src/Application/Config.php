@@ -15,10 +15,13 @@ declare(strict_types=1);
 namespace Hazaar\Application;
 
 use Hazaar\Application;
-use Hazaar\Util\Arr;
+use Hazaar\Application\Exception\ConfigFileNotFound;
+use Hazaar\Application\Exception\ConfigParseError;
+use Hazaar\Application\Exception\ConfigUnknownFormat;
 use Hazaar\File;
 use Hazaar\Loader;
 use Hazaar\Map;
+use Hazaar\Util\Arr;
 
 /**
  * Application Configuration Class.
@@ -80,7 +83,7 @@ class Config implements \ArrayAccess, \Iterator
     protected function __construct(
         ?string $sourceFile = null,
         ?string $env = null,
-        array $defaults = [],
+        ?array $defaults = null,
         bool $overrideNamespaces = false
     ) {
         if (!$env) {
@@ -89,7 +92,16 @@ class Config implements \ArrayAccess, \Iterator
         if (null === $sourceFile || !($this->source = trim($sourceFile))) {
             throw new \Exception('No configuration file specified');
         }
-        $this->options = $this->load($this->source, $env, $defaults, $overrideNamespaces);
+
+        try {
+            $this->options = $this->load($this->source, $env, $defaults, $overrideNamespaces);
+        } catch (\Throwable $e) {
+            // If we don't have any defaults, then throw an exception
+            if (null === $defaults) {
+                throw $e;
+            }
+            $this->options = $defaults;
+        }
     }
 
     /**
@@ -136,7 +148,7 @@ class Config implements \ArrayAccess, \Iterator
     public static function getInstance(
         ?string $sourceFile = null,
         ?string $env = null,
-        array $defaults = [],
+        ?array $defaults = null,
         bool $overrideNamespaces = false
     ): Config {
         $sourceKey = $sourceFile.'_'.($env ?? APPLICATION_ENV);
@@ -174,7 +186,9 @@ class Config implements \ArrayAccess, \Iterator
             $pathInfo = pathinfo($sourceInfo['name']);
             // If we have an extension, just use that file.
             if (false !== ($pathInfo['extension'] ?? false)) {
-                $sourceFile = Loader::getFilePath(FilePath::CONFIG, $sourceInfo['name']);
+                $sourceFile = '/' === substr($sourceInfo['name'], 0, 1)
+                    ? $sourceInfo['name']
+                    : Loader::getFilePath(FilePath::CONFIG, $sourceInfo['name']);
             } else { // Otherwise, search for files with supported extensions
                 $extensions = ['json', 'ini']; // Ordered by preference
                 foreach ($extensions as $ext) {
@@ -404,20 +418,23 @@ class Config implements \ArrayAccess, \Iterator
             return $source;
         }
         $file = new File($source);
+        if (!$file->exists()) {
+            throw new ConfigFileNotFound($source);
+        }
         $extention = $file->extension();
         if ('json' == $extention) {
             if (false === ($config = $file->parseJSON(true))) {
-                throw new \Exception('Failed to parse JSON config file: '.$source);
+                throw new ConfigParseError($source);
             }
         } elseif ('ini' == $extention) {
             if (!$config = parse_ini_string($file->getContents(), true, INI_SCANNER_TYPED)) {
-                throw new \Exception('Failed to parse INI config file: '.$source);
+                throw new ConfigParseError($source);
             }
             foreach ($config as &$array) {
                 $array = Arr::fromDotNotation($array);
             }
         } else {
-            throw new \Exception('Unknown file format: '.$source);
+            throw new ConfigUnknownFormat('Unknown file format: '.$source);
         }
         if ($file->isEncrypted()) {
             $this->secureKeys = array_merge($this->secureKeys, $this->secureKeys += $secureKeys = array_keys($config));
