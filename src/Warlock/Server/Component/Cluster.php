@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Warlock\Server;
+namespace Hazaar\Warlock\Server\Component;
 
 use Hazaar\Warlock\Server\Client\Peer;
 
@@ -34,26 +34,27 @@ class Cluster
             return;
         }
         $this->log->write(W_INFO, 'Starting Cluster Manager');
-        if (isset($this->config['peers'])) {
-            Peer::$reconnectTimeout = $this->config['peerReconnect'] ?? 30;
-            $peers = $this->config['peers'];
-            if (is_array($peers) && 0 === count($peers)) {
-                $this->log->write(W_INFO, 'No peers defined in cluster configuration');
+        if (!isset($this->config['peers'])) {
+            return;
+        }
+        Peer::$reconnectTimeout = $this->config['peerReconnect'] ?? 30;
+        $peers = $this->config['peers'];
+        if (is_array($peers) && 0 === count($peers)) {
+            $this->log->write(W_INFO, 'No peers defined in cluster configuration');
 
-                return;
+            return;
+        }
+        foreach ($peers as $peerConfig) {
+            if (false === strpos(':', $peerConfig)) {
+                $peerConfig .= ':8000';
             }
-            foreach ($peers as $peerConfig) {
-                if (false === strpos(':', $peerConfig)) {
-                    $peerConfig .= ':8000';
-                }
-                [$address, $port] = explode(':', $peerConfig);
-                if (false === is_numeric($port)) {
-                    $port = 8000;
-                }
-                $peer = new Peer($this->config['name'], $address, intval($port));
-                $peer->connect($this->config['accessKey']);
-                $this->peers[] = $peer;
+            [$address, $port] = explode(':', $peerConfig);
+            if (false === is_numeric($port)) {
+                $port = 8000;
             }
+            $peer = new Peer($this->config['name'], $address, intval($port));
+            $peer->connect($this->config['accessKey']);
+            $this->peers[] = $peer;
         }
     }
 

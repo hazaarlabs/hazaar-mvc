@@ -116,9 +116,6 @@ class Config extends Application\Config
     public function __construct(array $config = [], ?string $env = APPLICATION_ENV)
     {
         $defaultConfig = self::$defaultConfig;
-        // @phpstan-ignore constant.notFound
-        $defaultConfig['sys']['applicationName'] = APPLICATION_NAME;
-
         try {
             parent::__construct('warlock', $env, $defaultConfig);
         } catch (\Exception $e) {

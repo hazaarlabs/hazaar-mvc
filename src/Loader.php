@@ -206,7 +206,15 @@ class Loader
     public static function getFilePath(FilePath $type, ?string $searchFile = null): ?string
     {
         $app = Application::getInstance();
-        $loader = $app ? $app->loader : Loader::getInstance(Application::findApplicationPath());
+        if ($app && $app->loader) {
+            $loader = $app->loader;
+        } else {
+            $applicationPath = Application::findApplicationPath();
+            if (!$applicationPath) {
+                return null;
+            }
+            $loader = Loader::getInstance($applicationPath);
+        }
         // If the search file is an absolute path just return it if it exists.
         if ($searchFile && Loader::isAbsolutePath($searchFile)) {
             return realpath($searchFile);

@@ -4,7 +4,13 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock;
 
-include __DIR__.'/../../../../autoload.php';
+if (file_exists(__DIR__.'/../../vendor/autoload.php')) {
+    require_once __DIR__.'/../../vendor/autoload.php';
+} elseif (file_exists(__DIR__.'/../../../autoload.php')) {
+    require_once __DIR__.'/../../../autoload.php';
+} else {
+    throw new \Exception('Autoload file could not be found.');
+}
 
 require_once __DIR__.'/../Constants.php';
 if (!extension_loaded('sockets')) {
@@ -13,15 +19,15 @@ if (!extension_loaded('sockets')) {
 if (!extension_loaded('pcntl')) {
     exit("The pcntl extension is not loaded.\n");
 }
-if (!defined('APPLICATION_PATH')) {
-    exit("Warlock can not start without an application path.  Make sure APPLICATION_PATH environment variable is set.\n");
-}
-if (!(is_dir(APPLICATION_PATH)
-    && file_exists(APPLICATION_PATH.DIRECTORY_SEPARATOR.'configs')
-    && file_exists(APPLICATION_PATH.DIRECTORY_SEPARATOR.'controllers'))) {
-    exit("Application path '".APPLICATION_PATH."' is not a valid application directory!\n");
-}
-chdir(APPLICATION_PATH);
+// if (!defined('APPLICATION_PATH')) {
+//     exit("Warlock can not start without an application path.  Make sure APPLICATION_PATH environment variable is set.\n");
+// }
+// if (!(is_dir(APPLICATION_PATH)
+//     && file_exists(APPLICATION_PATH.DIRECTORY_SEPARATOR.'configs')
+//     && file_exists(APPLICATION_PATH.DIRECTORY_SEPARATOR.'controllers'))) {
+//     exit("Application path '".APPLICATION_PATH."' is not a valid application directory!\n");
+// }
+// chdir(APPLICATION_PATH);
 $ops = getopt('s', ['env:'], $opts);
 $env = array_key_exists('env', $ops) ? $ops['env'] : (getenv('APPLICATION_ENV') ? getenv('APPLICATION_ENV') : 'development');
 define('APPLICATION_ENV', $env);

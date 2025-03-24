@@ -128,14 +128,14 @@ abstract class WebSockets
                 if (array_key_exists('origin', $headers) && !($results['origin'] = $this->checkOrigin($headers['origin']))) {
                     return 403;
                 }
-                if (!array_key_exists('sec-websocket-protocol', $headers) || !($results['protocols'] = $this->checkProtocol($headers['sec-websocket-protocol']))) {
-                    return 400;
-                }
+                // if (!array_key_exists('sec-websocket-protocol', $headers) || !($results['protocols'] = $this->checkProtocol($headers['sec-websocket-protocol']))) {
+                //     return 400;
+                // }
                 $responseHeaders = [
                     'Upgrade' => 'websocket',
                     'Connection' => 'Upgrade',
                     'Sec-WebSocket-Accept' => base64_encode(sha1($this->headers['sec-websocket-key'].$this->magicGUID, true)),
-                    'Sec-WebSocket-Protocol' => implode(', ', $results['protocols']),
+                    // 'Sec-WebSocket-Protocol' => implode(', ', $results['protocols']),
                 ];
 
                 return 101;
@@ -362,9 +362,9 @@ abstract class WebSockets
             if ($header['hasmask']) {
                 $header['mask'] = $frame[10].$frame[11].$frame[12].$frame[13];
             }
-            $header['length'] = ord($frame[2]) * 65536 * 65536 * 65536 * 256 + ord($frame[3]) * 65536 * 65536 * 65536 +
-                                ord($frame[4]) * 65536 * 65536 * 256 + ord($frame[5]) * 65536 * 65536 + ord($frame[6]) * 65536 * 256 +
-                                ord($frame[7]) * 65536 + ord($frame[8]) * 256 + ord($frame[9]);
+            $header['length'] = ord($frame[2]) * 65536 * 65536 * 65536 * 256 + ord($frame[3]) * 65536 * 65536 * 65536
+                                + ord($frame[4]) * 65536 * 65536 * 256 + ord($frame[5]) * 65536 * 65536 + ord($frame[6]) * 65536 * 256
+                                + ord($frame[7]) * 65536 + ord($frame[8]) * 256 + ord($frame[9]);
         } elseif (ord($header['hasmask']) > 0) {
             $header['mask'] = $frame[2].$frame[3].$frame[4].$frame[5];
         }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Server;
 
-use Exception;
 use Hazaar\Application;
 use Hazaar\File\Metric;
 use Hazaar\File\RRD;
@@ -12,12 +11,16 @@ use Hazaar\Warlock\Config;
 use Hazaar\Warlock\Interface\Client as ClientInterface;
 use Hazaar\Warlock\Protocol;
 
+require_once __DIR__.'/../../Constants.php';
+
 class Master
 {
     /**
-     * Singleton instance.
+     * The Warlock server instances per environment.
+     *
+     * @var array<Master>
      */
-    public static ?Master $instance = null;
+    public static array $instance = [];
     public static Config $config;
 
     /**
@@ -205,21 +208,12 @@ class Master
      *
      * The constructor here is responsible for setting up internal structures, initialising logging, RRD
      * logging, redirecting output to log files and configuring error and exception handling.
-     *
-     * @param bool $silent By default, log output will be displayed on the screen.  Silent mode will redirect all
-     *                     log output to a file.
      */
-    public function __construct(string $env = APPLICATION_ENV, bool $silent = false)
+    private function __construct(string $env = APPLICATION_ENV)
     {
-        if (self::$instance) {
-            throw new \Exception('Warlock is already running!');
-        }
-        self::$instance = $this;
         global $STDOUT;
         global $STDERR;
-        $app = Application::getInstance();
         Application\Config::$overridePaths = ['host'.DIRECTORY_SEPARATOR.$_SERVER['SERVER_NAME'], 'local'];
-        $this->silent = $silent;
         self::$config = new Config([], $env);
         if (!defined('RUNTIME_PATH')) {
             $path = APPLICATION_PATH.DIRECTORY_SEPARATOR.'.runtime';
@@ -251,16 +245,6 @@ class Master
             $this->log->write(W_WARN, str_repeat('*', strlen($msg)));
             $this->log->write(W_WARN, $msg);
             $this->log->write(W_WARN, str_repeat('*', strlen($msg)));
-        }
-        if ($this->silent) {
-            if (self::$config['log']['file']) {
-                fclose(STDOUT);
-                $STDOUT = fopen($runtimePath.DIRECTORY_SEPARATOR.self::$config['log']['file'], 'a');
-            }
-            if (self::$config['log']['error']) {
-                fclose(STDERR);
-                $STDERR = fopen($runtimePath.DIRECTORY_SEPARATOR.self::$config['log']['error'], 'a');
-            }
         }
         $this->log->write(W_INFO, 'Warlock starting up...');
         $this->pid = getmypid();
@@ -397,6 +381,30 @@ class Master
         }
     }
 
+    public function setSilent(bool $toggle): void
+    {
+        $this->silent = $toggle;
+        if ($this->silent) {
+            if (self::$config['log']['file']) {
+                fclose(STDOUT);
+                $STDOUT = fopen($runtimePath.DIRECTORY_SEPARATOR.self::$config['log']['file'], 'a');
+            }
+            if (self::$config['log']['error']) {
+                fclose(STDERR);
+                $STDERR = fopen($runtimePath.DIRECTORY_SEPARATOR.self::$config['log']['error'], 'a');
+            }
+        }
+    }
+
+    public static function getInstance(string $env = 'development'): self
+    {
+        if (!isset(self::$instance[$env])) {
+            self::$instance[$env] = new self($env);
+        }
+
+        return self::$instance[$env];
+    }
+
     public function loadConfig(): Config|false
     {
         $this->log->write(W_NOTICE, 'Re-loading configuration');
@@ -443,7 +451,7 @@ class Master
      * The runtime directory is a place where Hazaar will keep files that it needs to create during
      * normal operation. For example, cached views, and backend applications.
      *
-     * @param mixed $suffix     An optional suffix to tack on the end of the path
+     * @param mixed $suffix    An optional suffix to tack on the end of the path
      * @param mixed $createDir if the runtime directory does not yet exist, try and create it (requires write permission)
      *
      * @return string The path to the runtime directory
