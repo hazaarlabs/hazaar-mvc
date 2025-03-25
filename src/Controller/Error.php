@@ -72,15 +72,15 @@ class Error extends Diagnostic
      *
      * @param null|int $code The status code to get the message for. If null, the instance's current status code is used.
      *
-     * @return null|string the status message corresponding to the provided status code, or null if the status code is not found
+     * @return string the status message corresponding to the provided status code, or null if the status code is not found
      */
-    public function getStatusMessage(?int $code = null): ?string
+    public function getStatusMessage(?int $code = null): string
     {
         if (null === $code) {
             $code = $this->code;
         }
 
-        return array_key_exists($code, self::$statusCodes) ? self::$statusCodes[$code] : null;
+        return array_key_exists($code, self::$statusCodes) ? self::$statusCodes[$code] : 'Internal Server Error';
     }
 
     /**
@@ -380,13 +380,15 @@ class Error extends Diagnostic
      */
     private function loadStatusCodes(): array
     {
+        $file = Loader::getFilePath(FilePath::SUPPORT, 'HTTP_Status.dat');
+        if (!$file) {
+            return [];
+        }
         $statusCodes = [];
-        if ($file = Loader::getFilePath(FilePath::SUPPORT, 'HTTP_Status.dat')) {
-            $h = fopen($file, 'r');
-            while ($line = fgets($h)) {
-                if (preg_match('/^(\d*)\s(.*)$/', $line, $matches)) {
-                    $statusCodes[(int) $matches[1]] = $matches[2];
-                }
+        $h = fopen($file, 'r');
+        while ($line = fgets($h)) {
+            if (preg_match('/^(\d*)\s(.*)$/', $line, $matches)) {
+                $statusCodes[(int) $matches[1]] = $matches[2];
             }
         }
 

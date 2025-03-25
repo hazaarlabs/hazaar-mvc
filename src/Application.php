@@ -104,7 +104,7 @@ class Application
             Application::$instance = $this;
             $this->environment = $env;
             $path = self::findApplicationPath($path);
-            if($path === false){
+            if (false === $path) {
                 throw new AppDirNotFound();
             }
             $this->path = $path;
@@ -497,9 +497,9 @@ class Application
             ob_start();
             // Create the request object
             $request = new Request($_SERVER);
-            $requestFile = $this->path
+            $requestFile = $this->path ?? '/'
                 .DIRECTORY_SEPARATOR
-                .(Arr::get($this->config, 'app.files.request') ?? 'request.php');
+                .(Arr::get($this->config ?? [], 'app.files.request') ?? 'request.php');
             if (file_exists($requestFile)) {
                 ob_start();
                 // @phpstan-ignore-next-line
@@ -541,7 +541,7 @@ class Application
             ob_end_flush();
             $completeFile = $this->path
                 .DIRECTORY_SEPARATOR
-                .(Arr::get($this->config, 'app.files.complete') ?? 'complete.php');
+                .(Arr::get($this->config ?? [], 'app.files.complete') ?? 'complete.php');
             if (file_exists($completeFile)) {
                 ob_start();
                 $timer = $this->timer;

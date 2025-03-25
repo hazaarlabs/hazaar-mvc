@@ -24,8 +24,8 @@ class Error
         if ('stream' == ($headers['X-Response-Type'] ?? null)) {
             $stream = new Stream($args[0]);
             $stream->writeOutput();
-        } elseif ($app instanceof Application && isset($app->router)) {
-            $controller = $app->router->getErrorController();
+        } elseif (($app instanceof Application && isset($app->router) && $controller = $app->router->getErrorController())
+            || ($controller = new \Hazaar\Controller\Error())) {
             call_user_func_array([$controller, 'setError'], $args);
             $controller->cleanOutputBuffer();
             $code = $app->run($controller);
@@ -114,15 +114,61 @@ class Error
             $msg = "Hazaar ERROR: {$errString}\n";
         } else {
             http_response_code($code);
-            $msg = '<h1>'.Response::getText(http_response_code())."</h1><pre>{$errString}</pre>"
-                .'<hr/><i>Hazaar/'.HAZAAR_VERSION
-                .' ('.php_uname('s').')';
-            if (array_key_exists('SERVER_NAME', $_SERVER)) {
-                $msg .= ' Server at '.$_SERVER['SERVER_NAME'].' Port '.$_SERVER['SERVER_PORT'].'</i>';
-            }
+            ?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hazaar Error</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            margin: 0;
+            padding: 20px;
         }
 
-        exit($msg);
+        h1 {
+            color: #554d7c;
+        }
+
+        pre {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #dee2e6;
+            margin: 20px 0;
+        }
+
+        i {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+    </style>
+</head>
+
+<body>
+    <h1><?php echo Response::getText(http_response_code()); ?></h1>
+    <pre><?php echo htmlspecialchars($errString, ENT_QUOTES, 'UTF-8'); ?></pre>
+    <hr />
+    <i>Hazaar/<?php echo HAZAAR_VERSION.' ('.php_uname('s').')';
+            if (array_key_exists('SERVER_NAME', $_SERVER)) {
+                echo ' Server at '.htmlspecialchars($_SERVER['SERVER_NAME'], ENT_QUOTES, 'UTF-8').' Port '.htmlspecialchars($_SERVER['SERVER_PORT'], ENT_QUOTES, 'UTF-8').'</i>';
+            } ?>
+</body>
+
+</html> <?php
+        }
+
+        exit($code);
     }
 
     /**
@@ -144,3 +190,4 @@ class Error
         exit;
     }
 }
+?>
