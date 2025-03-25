@@ -24,8 +24,8 @@ class Error
         if ('stream' == ($headers['X-Response-Type'] ?? null)) {
             $stream = new Stream($args[0]);
             $stream->writeOutput();
-        } elseif (($app instanceof Application && isset($app->router) && $controller = $app->router->getErrorController())
-            || ($controller = new \Hazaar\Controller\Error())) {
+        } elseif ($app instanceof Application && isset($app->router)) {
+            $controller = $app->router->getErrorController();
             call_user_func_array([$controller, 'setError'], $args);
             $controller->cleanOutputBuffer();
             $code = $app->run($controller);
