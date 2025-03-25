@@ -103,6 +103,7 @@ class Application
             Application::$instance = $this;
             $this->environment = $env;
             $this->path = self::findApplicationPath($path);
+            chdir($this->path);
             $this->base = dirname($_SERVER['SCRIPT_NAME']);
             // Create a timer for performance measuring
             $startTime = isset($_SERVER['REQUEST_TIME_FLOAT']) ? floatval($_SERVER['REQUEST_TIME_FLOAT']) : microtime(true);
@@ -340,7 +341,9 @@ class Application
         if (!is_writable($path)) {
             throw new Application\Exception\RuntimeDirNotWritable($path);
         }
-        $path = realpath($path);
+        if ('/' !== substr($this->config['app']['runtimePath'], 0, 1)) {
+            $this->config['app']['runtimePath'] = realpath($path);
+        }
         if (null === $suffix || !($suffix = trim($suffix))) {
             return $path;
         }
