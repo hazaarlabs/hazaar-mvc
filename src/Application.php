@@ -16,6 +16,7 @@ namespace Hazaar;
 
 use Hazaar\Application\Config;
 use Hazaar\Application\Error;
+use Hazaar\Application\Exception\AppDirNotFound;
 use Hazaar\Application\FilePath;
 use Hazaar\Application\Request;
 use Hazaar\Application\Router;
@@ -102,7 +103,11 @@ class Application
         try {
             Application::$instance = $this;
             $this->environment = $env;
-            $this->path = self::findApplicationPath($path);
+            $path = self::findApplicationPath($path);
+            if($path === false){
+                throw new AppDirNotFound();
+            }
+            $this->path = $path;
             $this->base = dirname($_SERVER['SCRIPT_NAME']);
             // Create a timer for performance measuring
             $startTime = isset($_SERVER['REQUEST_TIME_FLOAT']) ? floatval($_SERVER['REQUEST_TIME_FLOAT']) : microtime(true);
@@ -214,7 +219,7 @@ class Application
                 'runtimePath' => $this->path.DIRECTORY_SEPARATOR.'.runtime',
                 'metrics' => false,
                 'responseType' => 'html',
-                'layout' => 'application',
+                'layout' => 'app',
             ],
             'router' => [
                 'type' => 'basic',
@@ -696,9 +701,9 @@ class Application
             if (':' === substr($searchPath, 1, 1)) {
                 $searchPath = substr($searchPath, 2);
             }
-            if (file_exists($searchPath.DIRECTORY_SEPARATOR.'application')
-                && file_exists($searchPath.DIRECTORY_SEPARATOR.'application'.DIRECTORY_SEPARATOR.'configs')) {
-                return realpath($searchPath.DIRECTORY_SEPARATOR.'application');
+            if (file_exists($searchPath.DIRECTORY_SEPARATOR.'app')
+                && file_exists($searchPath.DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.'configs')) {
+                return realpath($searchPath.DIRECTORY_SEPARATOR.'app');
             }
             if (DIRECTORY_SEPARATOR === $searchPath || ++$count >= 16) {
                 break;

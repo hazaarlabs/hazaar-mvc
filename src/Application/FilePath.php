@@ -7,7 +7,7 @@ namespace Hazaar\Application;
 enum FilePath: string
 {
     case ROOT = 'root';
-    case APPLICATION = 'application';
+    case APPLICATION = 'app';
     case CONFIG = 'config';
     case MODEL = 'model';
     case VIEW = 'view';
