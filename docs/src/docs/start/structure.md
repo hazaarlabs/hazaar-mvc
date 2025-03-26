@@ -10,7 +10,7 @@ HazaarMVC has a project layout like most other MVC frameworks. The project root 
 
 ```
 .
-├─ application
+├─ app
 │  ├─ configs
 │  │  ├─ application.json
 │  │  ├─ database.json
@@ -35,9 +35,9 @@ HazaarMVC has a project layout like most other MVC frameworks. The project root 
 └─ composer.json
 ```
 
-## `application` directory
+## `app` directory
 
-This is the application directory that contains all the models, views and controllers for your application. This is where you will do all of your work. The application directory contains the following sub-directories:
+This is the application directory that contains all the models, views and controllers for your application. This is where you will do all of your work. The app directory contains the following sub-directories:
 
 ### `configs` directory
 
