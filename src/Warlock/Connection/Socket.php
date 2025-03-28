@@ -40,7 +40,7 @@ final class Socket extends WebSockets implements Connection
         $this->disconnect();
     }
 
-    public function connect(string $applicationName, string $host, int $port, ?array $extraHeaders = null): bool
+    public function connect(string $host, int $port, ?array $extraHeaders = null): bool
     {
         $this->socket = @socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         if (false === $this->socket) {
@@ -64,7 +64,7 @@ final class Socket extends WebSockets implements Connection
         /**
          * Initiate a WebSockets connection.
          */
-        $handshake = $this->createHandshake('/'.$applicationName.'/warlock?CID='.$this->id, $host, null, $this->key, $headers);
+        $handshake = $this->createHandshake("/warlock?CID={$this->id}", $host, null, $this->key, $headers);
         @socket_write($this->socket, $handshake, strlen($handshake));
 
         /**
@@ -97,20 +97,19 @@ final class Socket extends WebSockets implements Connection
     public function disconnect(): bool
     {
         $this->frameBuffer = '';
-        if ($this->socket) {
-            if (false === $this->closing) {
-                $this->closing = true;
-                $frame = $this->frame('', 'close');
-                @socket_write($this->socket, $frame, strlen($frame));
-                $this->recv($payload);
-            }
-            socket_close($this->socket);
-            $this->socket = false;
-
-            return true;
+        if (!$this->socket) {
+            return false;
         }
+        if (false === $this->closing) {
+            $this->closing = true;
+            $frame = $this->frame('', 'close');
+            @socket_write($this->socket, $frame, strlen($frame));
+            $this->recv($payload);
+        }
+        socket_close($this->socket);
+        $this->socket = false;
 
-        return false;
+        return true;
     }
 
     public function connected(): bool

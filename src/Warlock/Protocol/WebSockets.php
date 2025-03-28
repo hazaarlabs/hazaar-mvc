@@ -128,14 +128,14 @@ abstract class WebSockets
                 if (array_key_exists('origin', $headers) && !($results['origin'] = $this->checkOrigin($headers['origin']))) {
                     return 403;
                 }
-                // if (!array_key_exists('sec-websocket-protocol', $headers) || !($results['protocols'] = $this->checkProtocol($headers['sec-websocket-protocol']))) {
-                //     return 400;
-                // }
+                if (!array_key_exists('sec-websocket-protocol', $headers) || !($results['protocols'] = $this->checkProtocol($headers['sec-websocket-protocol']))) {
+                    return 400;
+                }
                 $responseHeaders = [
                     'Upgrade' => 'websocket',
                     'Connection' => 'Upgrade',
                     'Sec-WebSocket-Accept' => base64_encode(sha1($this->headers['sec-websocket-key'].$this->magicGUID, true)),
-                    // 'Sec-WebSocket-Protocol' => implode(', ', $results['protocols']),
+                    'Sec-WebSocket-Protocol' => implode(', ', $results['protocols']),
                 ];
 
                 return 101;

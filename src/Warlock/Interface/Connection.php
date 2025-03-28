@@ -18,7 +18,7 @@ interface Connection
      * @param int                $port            The port number of the Warlock server
      * @param null|array<string> $extraHeaders   Additional headers to send with the connection
      */
-    public function connect(string $applicationName, string $host, int $port, ?array $extraHeaders = null): bool;
+    public function connect(string $host, int $port, ?array $extraHeaders = null): bool;
 
     public function disconnect(): bool;
 

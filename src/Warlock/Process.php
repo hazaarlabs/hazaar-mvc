@@ -45,9 +45,9 @@ abstract class Process
         $this->application = $application;
         $this->protocol = $protocol;
         $this->id = null === $guid ? Str::guid() : $guid;
-        $conn = $this->connect($protocol, $guid);
+        $conn = $this->createConnection($protocol, $guid);
         if (false === $conn) {
-            throw new \Exception('Process initialisation failed!', 1);
+            throw new \Exception('Failed to created connection!', 1);
         }
         $this->conn = $conn;
     }
@@ -633,6 +633,33 @@ abstract class Process
         return $service;
     }
 
+    public function connect(string $host, int $port = 13080): bool
+    {
+        $headers = [];
+        if (!$this->conn->connect($host, $port, $headers)) {
+            $this->conn->disconnect();
+
+            return false;
+        }
+
+        return true;
+    }
+
+    public function disconnect(): bool
+    {
+        return $this->conn->disconnect();
+    }
+
+    public function connected(): bool
+    {
+        return $this->conn->connected();
+    }
+
+    protected function createConnection(Protocol $protocol, ?string $guid = null): Connection|false
+    {
+        return false;
+    }
+
     protected function setErrorHandler(string $methodName): ?callable
     {
         if (!method_exists($this, $methodName)) {
@@ -649,21 +676,6 @@ abstract class Process
         }
 
         return set_exception_handler([$this, $methodName]);
-    }
-
-    protected function connect(Protocol $protocol, ?string $guid = null): Connection|false
-    {
-        return false;
-    }
-
-    protected function disconnect(): void
-    {
-        $this->conn->disconnect();
-    }
-
-    protected function connected(): bool
-    {
-        return $this->conn->connected();
     }
 
     /**
