@@ -153,12 +153,12 @@ class Protocol
     /**
      * Encodes the payload into a string representation.
      *
-     * @param int   $type    the type of the payload
-     * @param mixed $payload the payload to be encoded
+     * @param int|string $type    the type of the payload
+     * @param mixed      $payload the payload to be encoded
      *
      * @return string the encoded payload as a string
      */
-    public function encode(int $type, mixed $payload = null): ?string
+    public function encode(int|string $type, mixed $payload = null): ?string
     {
         if (($type = $this->check($type)) === false) {
             return null;
