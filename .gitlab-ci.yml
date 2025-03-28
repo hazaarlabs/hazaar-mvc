@@ -119,6 +119,8 @@ Unit Testing:
     POSTGRES_HOST_AUTH_METHOD: trust
   before_script:
     - composer install
+    - bin/warlock run &
+    - sleep 5
   script:
     - vendor/bin/phpunit --debug
   artifacts:

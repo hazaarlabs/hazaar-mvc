@@ -12,6 +12,13 @@ use Hazaar\Warlock\Server\Component\Logger;
 use Hazaar\Warlock\Server\Enum\LogLevel;
 use parallel\Channel;
 
+if (!extension_loaded('sockets')) {
+    throw new ExtensionNotLoaded('sockets');
+}
+if (!extension_loaded('pcntl')) {
+    throw new ExtensionNotLoaded('pcntl');
+}
+
 class Main
 {
     /**
@@ -111,12 +118,6 @@ class Main
 
     public function __construct(string $configFile = 'warlock', string $env = 'development')
     {
-        if (!extension_loaded('sockets')) {
-            throw new ExtensionNotLoaded('sockets');
-        }
-        if (!extension_loaded('pcntl')) {
-            throw new ExtensionNotLoaded('pcntl');
-        }
         self::$instance = $this;
         $this->config = Config::getInstance(sourceFile: $configFile, env: $env, defaults: self::$defaultConfig);
         $this->log = new Logger(level: $this->config['log']['level']);

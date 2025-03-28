@@ -13,6 +13,7 @@ ENV LANG en_AU.UTF-8
 ENV LANGUAGE en_AU:en  
 ENV LC_ALL en_AU.UTF-8   
 
+# Install PHP extensions
 RUN docker-php-ext-install intl gd sockets zip pdo_pgsql xml sysvshm sysvsem pcntl
 
 RUN pecl install apcu xdebug parallel; \
