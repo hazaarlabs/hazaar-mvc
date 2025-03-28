@@ -19,7 +19,7 @@ class Main
     public static array $defaultConfig = [
         'serverId' => 1,
         'listenAddress' => '0.0.0.0',
-        'port' => 8000,
+        'port' => 13080,
         'encode' => false,
         'phpBinary' => PHP_BINARY,
         'log' => [
