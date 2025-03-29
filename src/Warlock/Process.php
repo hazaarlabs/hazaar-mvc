@@ -17,7 +17,6 @@ abstract class Process
     public ?int $state = HAZAAR_SERVICE_NONE;
     protected Connection $conn;
     protected ?string $id = null;
-    protected Application $application;
     protected Protocol $protocol;
 
     /**
@@ -39,13 +38,12 @@ abstract class Process
      */
     private static array $opt = [];
 
-    public function __construct(Application $application, Protocol $protocol, ?string $guid = null)
+    public function __construct(Protocol $protocol)
     {
         $this->start = time();
-        $this->application = $application;
         $this->protocol = $protocol;
-        $this->id = null === $guid ? Str::guid() : $guid;
-        $conn = $this->createConnection($protocol, $guid);
+        $this->id = Str::guid();
+        $conn = $this->createConnection($protocol, $this->id);
         if (false === $conn) {
             throw new \Exception('Failed to created connection!', 1);
         }

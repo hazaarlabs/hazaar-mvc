@@ -10,7 +10,6 @@ use Hazaar\Warlock\Exception\ExtensionNotLoaded;
 use Hazaar\Warlock\Server\Component\Cluster;
 use Hazaar\Warlock\Server\Component\Logger;
 use Hazaar\Warlock\Server\Enum\LogLevel;
-use parallel\Channel;
 
 if (!extension_loaded('sockets')) {
     throw new ExtensionNotLoaded('sockets');
@@ -24,20 +23,6 @@ class Main
     /**
      * @var array<string, mixed>
      */
-    public static array $defaultConfig = [
-        'serverId' => 1,
-        'listenAddress' => '0.0.0.0',
-        'port' => 13080,
-        'encode' => false,
-        'phpBinary' => PHP_BINARY,
-        'log' => [
-            'level' => 'debug',
-        ],
-        'timezone' => 'UTC',
-        'client' => [
-            'check' => 60,
-        ],
-    ];
 
     /**
      * Signals that we will capture.
@@ -53,6 +38,12 @@ class Main
     public static self $instance;
     public Protocol $protocol;
 
+    /**
+     * The process ID of this server.
+     */
+    private int $pid = 0;
+    private string $pidfile = '/var/run/warlock';
+
     private bool $silent = false;
 
     /**
@@ -61,10 +52,11 @@ class Main
     private int $time = 0;
 
     /**
-     * @var array<string, Channel>
+     * The server configuration.
+     *
+     * @var array<string,mixed>
      */
-    private array $channels = [];
-    private Config $config;
+    private array $config;
     private Logger $log;
 
     /**
@@ -119,9 +111,13 @@ class Main
     public function __construct(string $configFile = 'warlock', string $env = 'development')
     {
         self::$instance = $this;
-        $this->config = Config::getInstance(sourceFile: $configFile, env: $env, defaults: self::$defaultConfig);
+        $config = new \Hazaar\Warlock\Config($configFile, env: $env);
+        if (!isset($config['server'])) {
+            throw new \Exception('Server configuration not found');
+        }
+        $this->config = $config['server'];
         $this->log = new Logger(level: $this->config['log']['level']);
-        $this->protocol = new Protocol($this->config['serverId'], $this->config['encode']);
+        $this->protocol = new Protocol($this->config['id'], $this->config['encode']);
         if ($tz = $this->config['timezone']) {
             date_default_timezone_set(timezoneId: $tz);
         }
@@ -143,17 +139,12 @@ class Main
 
     public function bootstrap(): self
     {
-        if (!class_exists('parallel\Runtime')) {
-            throw new \Exception('The parallel extension is required to run the Warlock server!');
-        }
         $this->writeStartupMessage('Warlock starting up...');
         foreach ($this->pcntlSignals as $sig => $name) {
             pcntl_signal($sig, [$this, '__signalHandler'], true);
         }
-        // $this->pid = getmypid();
-        // $this->pidfile = $runtimePath.DIRECTORY_SEPARATOR.$this->config['sys']->pid;
-        // $this->channels['test'] = Channel::make('test', Channel::Infinite);
-        // $this->channels['log'] = Channel::make('log', Channel::Infinite);
+        $this->pid = getmypid();
+        file_put_contents($this->pidfile, $this->pid);
         $this->log->write('Creating TCP socket stream on: '.$this->config['listenAddress'].':'.$this->config['port'], LogLevel::NOTICE);
         if (!($this->master = stream_socket_server('tcp://'.$this->config['listenAddress'].':'.$this->config['port'], $errno, $errstr))) {
             throw new \Exception($errstr, $errno);
@@ -238,36 +229,6 @@ class Main
         $this->shutdown = time() + $delay;
 
         return true;
-    }
-
-    public function testrun(): int
-    {
-        $runner = function (int $id): int {
-            require_once __DIR__.'/Service/Test.php';
-            $test = new Components\Test();
-
-            return $test->run($id);
-        };
-        $futures[] = \parallel\run($runner, [1]);
-        $running = true;
-        while ($running) {
-            foreach ($futures as $index => $future) {
-                if ($future->done()) {
-                    echo "{$index} returned: ".$future->value().PHP_EOL;
-                    unset($futures[$index]);
-                }
-            }
-            if (empty($futures)) {
-                $running = false;
-            } else {
-                // echo 'Waiting...'.PHP_EOL;
-                echo 'Sending event to test channel'.PHP_EOL;
-                $this->channels['test']->send(['text', uniqid()]);
-                sleep(1);
-            }
-        }
-
-        return 0;
     }
 
     public function setSilent(bool $silent): void
@@ -368,26 +329,18 @@ class Main
 
     /**
      * Process administative commands for a client.
-     *
-     * @param mixed $command
-     * @param mixed $payload
-     *
-     * @return mixed
      */
-    public function processCommand(Client $client, $command, &$payload)
+    public function processCommand(Client $client, string $command, mixed &$payload): void
     {
-        if (null !== $this->kvStore && 'KV' === substr($command, 0, 2)) {
-            return $this->kvStore->process($client, $command, $payload);
-        }
-        if (!($command && array_key_exists($client->id, $this->admins))) {
+        if (!$client->isAdmin()) {
             throw new \Exception('Admin commands only allowed by authorised clients!');
         }
-        $this->log->write(W_DEBUG, "ADMIN_COMMAND: {$command}".($client->id ? " CLIENT={$client->id}" : null));
+        $this->log->write("ADMIN_COMMAND: {$command}".($client->id ? " CLIENT={$client->id}" : null), LogLevel::DEBUG);
 
         switch ($command) {
             case 'SHUTDOWN':
                 $delay = $payload['delay'] ?? 0;
-                $this->log->write(W_NOTICE, "Shutdown requested (Delay: {$delay})");
+                $this->log->write("Shutdown requested (Delay: {$delay})", LogLevel::NOTICE);
                 if (!$this->shutdown($delay)) {
                     throw new \Exception('Unable to initiate shutdown!');
                 }
@@ -395,112 +348,15 @@ class Main
 
                 break;
 
-            case 'DELAY' :
-                $payload->when = time() + $payload['value'];
-                $this->log->write(W_DEBUG, "TASK->DELAY: INTERVAL={$payload->value}");
-
-                // no break
-            case 'SCHEDULE' :
-                if (!property_exists($payload, 'when')) {
-                    throw new \Exception('Unable schedule code execution without an execution time!');
-                }
-                if (!($id = $this->scheduleRunner(
-                    $payload->when,
-                    $payload->exec,
-                    new Struct\Application($payload->application),
-                    $payload['tag'] ?? null,
-                    $payload['overwrite'] ?? false
-                ))) {
-                    throw new \Exception('Could not schedule delayed function');
-                }
-                $client->send('OK', ['command' => $command, 'task_id' => $id]);
-
-                break;
-
-            case 'CANCEL' :
-                if (!$this->taskCancel($payload)) {
-                    throw new \Exception('Error trying to cancel task');
-                }
-                $this->log->write(W_NOTICE, 'Task successfully cancelled');
-                $client->send('OK', ['command' => $command, 'task_id' => $payload]);
-
-                break;
-
-            case 'ENABLE' :
-                $this->log->write(W_NOTICE, "ENABLE: NAME={$payload} CLIENT={$client->id}");
-                if (!$this->serviceEnable($payload)) {
-                    throw new \Exception('Unable to enable service '.$payload);
-                }
-                $client->send('OK', ['command' => $command, 'name' => $payload]);
-
-                break;
-
-            case 'DISABLE' :
-                $this->log->write(W_NOTICE, "DISABLE: NAME={$payload} CLIENT={$client->id}");
-                if (!$this->serviceDisable($payload)) {
-                    throw new \Exception('Unable to disable service '.$payload);
-                }
-                $client->send('OK', ['command' => $command, 'name' => $payload]);
-
-                break;
-
             case 'STATUS':
-                $this->log->write(W_NOTICE, "STATUS: CLIENT={$client->id}");
+                $this->log->write("STATUS: CLIENT={$client->id}", LogLevel::NOTICE);
                 $client->send('STATUS', $this->getStatus());
-
-                break;
-
-            case 'SERVICE' :
-                $this->log->write(W_NOTICE, "SERVICE: NAME={$payload} CLIENT={$client->id}");
-                if (!array_key_exists($payload, $this->services)) {
-                    throw new \Exception('Service '.$payload.' does not exist!');
-                }
-                $client->send('SERVICE', $this->services[$payload]);
-
-                break;
-
-            case 'SPAWN':
-                if (!($name = $payload['name'] ?? null)) {
-                    throw new \Exception('Unable to spawn a service without a service name!');
-                }
-                if (!($id = $this->spawn($client, $name, $payload))) {
-                    throw new \Exception('Unable to spawn dynamic service: '.$name);
-                }
-                $client->send('OK', ['command' => $command, 'name' => $name, 'task_id' => $id]);
-
-                break;
-
-            case 'KILL':
-                if (!($name = $payload['name'] ?? null)) {
-                    throw new \Exception('Can not kill dynamic service without a name!');
-                }
-                if (!$this->kill($client, $name)) {
-                    throw new \Exception('Unable to kill dynamic service '.$name);
-                }
-                $client->send('OK', ['command' => $command, 'name' => $payload]);
-
-                break;
-
-            case 'SIGNAL':
-                if (!($eventID = $payload['id'] ?? null)) {
-                    return false;
-                }
-                // Otherwise, send this signal to any child services for the requested type
-                if (!($service = $payload['service'] ?? null)) {
-                    return false;
-                }
-                if (!$this->signal($client, $eventID, $service, $payload['data'] ?? null)) {
-                    throw new \Exception('Unable to signal dynamic service');
-                }
-                $client->send('OK', ['command' => $command, 'name' => $payload]);
 
                 break;
 
             default:
                 throw new \Exception('Unhandled command: '.$command);
         }
-
-        return true;
     }
 
     public function trigger(string $eventID, mixed $data, ?string $clientID = null, ?string $triggerID = null): bool
@@ -508,12 +364,11 @@ class Main
         if (null === $data) {
             return false;
         }
-        $this->log->write(W_NOTICE, "TRIGGER: {$eventID}");
-        ++$this->stats['events'];
-        $this->rrd->setValue('events', 1);
+        $this->log->write("TRIGGER: {$eventID}", LogLevel::NOTICE);
         if (null === $triggerID) {
             $triggerID = uniqid();
-        } elseif (array_key_exists($eventID, $this->events) && array_key_exists($triggerID, $this->events[$eventID])) {
+        } elseif (array_key_exists($eventID, $this->events)
+            && array_key_exists($triggerID, $this->events[$eventID])) {
             return true;
         }
         $seen = [];
@@ -527,17 +382,6 @@ class Main
             'data' => $data,
             'seen' => $seen,
         ];
-        if (array_key_exists($eventID, $this->globals)) {
-            $this->log->write(W_NOTICE, 'Global event triggered', $eventID);
-            $task = new Task\Runner([
-                'exec' => $this->globals[$eventID],
-                'params' => [$data, $payload],
-                'timeout' => self::$config['process']['timeout'],
-                'event' => true,
-            ]);
-            $this->taskQueueAdd($task);
-            $this->taskProcess();
-        }
         // Check to see if there are any clients waiting for this event and send notifications to them all.
         $this->subscriptionProcess($eventID, $triggerID);
 
@@ -553,17 +397,12 @@ class Main
      */
     public function subscribe(Client $client, string $eventID, ?array $filter = null): bool
     {
-        $this->log->write(W_DEBUG, "CLIENT<-QUEUE: EVENT={$eventID} CLIENT={$client->id}", $client->name);
+        $this->log->write("CLIENT<-QUEUE: EVENT={$eventID} CLIENT={$client->id}", LogLevel::DEBUG);
         $this->subscriptions[$eventID][$client->id] = [
             'client' => $client,
             'since' => time(),
             'filter' => $filter,
         ];
-        if ($eventID === self::$config['admin']['trigger']) {
-            $this->log->write(W_DEBUG, "ADMIN->SUBSCRIBE: CLIENT={$client->id}", $client->name);
-        } else {
-            ++$this->stats['subscriptions'];
-        }
         // Check to see if this subscribe request has any active and unseen events waiting for it.
         $this->eventProcess($client, $eventID, $filter);
 
@@ -582,12 +421,172 @@ class Main
             && array_key_exists($client->id, $this->subscriptions[$eventID]))) {
             return false;
         }
-        $this->log->write(W_DEBUG, "CLIENT<-DEQUEUE: NAME={$eventID} CLIENT={$client->id}", $client->name);
+        $this->log->write("CLIENT<-DEQUEUE: NAME={$eventID} CLIENT={$client->id}", LogLevel::DEBUG);
         unset($this->subscriptions[$eventID][$client->id]);
-        if ($eventID === self::$config['admin']['trigger']) {
-            $this->log->write(W_DEBUG, "ADMIN->UNSUBSCRIBE: CLIENT={$client->id}", $client->name);
-        } else {
-            --$this->stats['subscriptions'];
+
+        return true;
+    }
+
+    private function getStatus(): \stdClass
+    {
+        return (object) [
+            'running' => $this->running,
+            'pid' => $this->pid,
+            'pidfile' => $this->pidfile,
+            'clients' => count($this->clients),
+            'streams' => count($this->streams),
+            'subscriptions' => count($this->subscriptions),
+            'events' => count($this->events),
+        ];
+    }
+
+    /**
+     * Tests whether a event should be filtered.
+     *
+     * Returns true if the event should be filtered (skipped), and false if the event should be processed.
+     *
+     * @param mixed        $event  the event to check
+     * @param array<mixed> $filter the filter rule to test against
+     *
+     * @return bool returns true if the event should be filtered (skipped), and false if the event should be processed
+     */
+    private function eventFilter(mixed $event, ?array $filter = null): bool
+    {
+        $this->log->write('Checking event filter for \''.$event['id'].'\'', LogLevel::DEBUG);
+        foreach ($filter as $field => $data) {
+            $field = explode('.', $field);
+            if (!$this->fieldExists($field, $event['data'])) {
+                return false;
+            }
+            $fieldValue = $this->getFieldValue($field, $event['data']);
+            if ($data instanceof \stdClass) { // If $data is an array it's a complex filter
+                foreach (get_object_vars($data) as $filterType => $filterValue) {
+                    switch ($filterType) {
+                        case 'is':
+                            if ($fieldValue != $filterValue) {
+                                return true;
+                            }
+
+                            break;
+
+                        case 'not':
+                            if ($fieldValue === $filterValue) {
+                                return true;
+                            }
+
+                            break;
+
+                        case 'like':
+                            if (!preg_match($filterValue, $fieldValue)) {
+                                return true;
+                            }
+
+                            break;
+
+                        case 'in':
+                            if (!in_array($fieldValue, $filterValue)) {
+                                return true;
+                            }
+
+                            break;
+
+                        case 'nin':
+                            if (in_array($fieldValue, $filterValue)) {
+                                return true;
+                            }
+
+                            break;
+                    }
+                }
+            } else { // Otherwise it's a simple filter with an acceptable value in it
+                if ($fieldValue != $data) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Process the event queue for a specified client.
+     *
+     * This method is executed when a client connects to see if there are any events waiting in the event
+     * queue that the client has not yet seen.  If there are, the first event found is sent to the client, marked
+     * as seen and then processing stops.
+     *
+     * @param array<mixed> $filter
+     */
+    private function eventProcess(Client $client, string $eventID, ?array $filter = null): bool
+    {
+        if (!(array_key_exists($eventID, $this->events)
+            && ($count = count($this->events[$eventID])) > 0)) {
+            return false;
+        }
+        $this->log->write("QUEUE: EVENT={$eventID} COUNT={$count}", LogLevel::DEBUG);
+        foreach ($this->events[$eventID] as $triggerID => &$event) {
+            if (!array_key_exists('seen', $event) || !is_array($event['seen'])) {
+                $event['seen'] = [];
+            }
+            if (!in_array($client->id, $event['seen'])) {
+                if (!array_key_exists($eventID, $client->subscriptions)) {
+                    continue;
+                }
+                if ($this->eventFilter($event, $filter)) {
+                    continue;
+                }
+                $this->log->write("Sending event '{$event['id']}' to {$client->id}", LogLevel::NOTICE);
+                if (!$client->sendEvent($event['id'], $triggerID, $event['data'])) {
+                    return false;
+                }
+                $event['seen'][] = $client->id;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Process all subscriptions for a specified event.
+     *
+     * This method is executed when a event is triggered.  It is responsible for sending events to clients
+     * that are waiting for the event and marking them as seen by the client.
+     */
+    private function subscriptionProcess(string $eventID, ?string $triggerID = null): bool
+    {
+        if (!(array_key_exists($eventID, $this->events)
+            && ($count = count($this->events[$eventID])) > 0)) {
+            return false;
+        }
+        $this->log->write("QUEUE: NAME={$eventID} COUNT={$count}", LogLevel::DEBUG);
+        // Get a list of triggers to process
+        $triggers = (empty($triggerID) ? array_keys($this->events[$eventID]) : [$triggerID]);
+        foreach ($triggers as $trigger) {
+            if (!isset($this->events[$eventID][$trigger])) {
+                continue;
+            }
+            $event = &$this->events[$eventID][$trigger];
+            // foreach ($this->cluster->peers as $peer) {
+            //     if (in_array($peer->name, $event['seen'])) {
+            //         continue;
+            //     }
+            //     $peer->sendEvent($eventID, $triggerID, $event['data']);
+            //     $event['seen'][] = $peer->name;
+            // }
+            if (!array_key_exists($eventID, $this->subscriptions)) {
+                continue;
+            }
+            foreach ($this->subscriptions[$eventID] as $clientID => $item) {
+                if (in_array($clientID, $event['seen'])
+                    || (is_array($item['filter']) && $this->eventFilter($event, $item['filter']))) {
+                    continue;
+                }
+                $this->log->write("Sending event '{$event['id']}' to {$clientID}", LogLevel::NOTICE);
+                if (!$item['client']->sendEvent($eventID, $trigger, $event['data'])) {
+                    return false;
+                }
+                $event['seen'][] = $clientID;
+            }
         }
 
         return true;
@@ -669,20 +668,19 @@ class Main
 
     private function eventCleanup(): void
     {
-        if (false === $this->config['cleanup']
-        || 0 === count($this->events)) {
+        if (false === $this->config['event']['cleanup']
+            || 0 === count($this->events)) {
             return;
         }
         foreach ($this->events as $eventID => $events) {
             foreach ($events as $id => $data) {
-                if ((int) ($data['when'] + $this->config['event']['queueTimeout']) <= time()) {
-                    if ($eventID != $this->config['admin']['trigger']) {
-                        $this->log->write("EXPIRE: NAME={$eventID} TRIGGER={$id}", LogLevel::DEBUG);
-                    }
+                if ((int) ($data['when'] + $this->config['event']['timeout']) <= time()) {
+                    $this->log->write("EVENT->EXPIRE: EVENT={$eventID} ID={$id}", LogLevel::DEBUG);
                     unset($this->events[$eventID][$id]);
                 }
             }
             if (0 === count($this->events[$eventID])) {
+                $this->log->write("EVENT->CLEANUP: EVENT={$eventID}", LogLevel::DEBUG);
                 unset($this->events[$eventID]);
             }
         }
@@ -729,7 +727,7 @@ class Main
         // $this->log->write(W_NOTICE, 'Runtime path = '.$runtimePath);
         // $this->log->write(W_NOTICE, 'PID = '.$this->pid);
         // $this->log->write(W_NOTICE, 'PID file = '.$this->pidfile);
-        $this->log->write('Server ID = '.$this->config['serverId'], LogLevel::NOTICE);
+        $this->log->write('Server ID = '.$this->config['id'], LogLevel::NOTICE);
         $this->log->write('Listen address = '.$this->config['listenAddress'], LogLevel::NOTICE);
         $this->log->write('Listen port = '.$this->config['port'], LogLevel::NOTICE);
         // $this->log->write(W_NOTICE, 'Task expiry = '.$this->config['task']['expire'].' seconds');

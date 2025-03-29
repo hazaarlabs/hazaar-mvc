@@ -122,6 +122,11 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
         return false;
     }
 
+    public function isAdmin(): bool
+    {
+        return 'admin' === $this->type;
+    }
+
     public function recv(string &$buf): void
     {
         // Record this time as the last time we received data from the client
@@ -497,7 +502,9 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
 
                 // no break
             default:
-                return Main::$instance->processCommand($this, $command, $payload);
+                Main::$instance->processCommand($this, $command, $payload);
+
+                return true;
         }
 
         return false;
