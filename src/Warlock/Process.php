@@ -55,59 +55,6 @@ abstract class Process
         $this->disconnect();
     }
 
-    protected function __processCommand(string $command, mixed $payload = null): bool
-    {
-        switch ($command) {
-            case 'EVENT':
-                if (!($payload instanceof \stdClass
-                    && property_exists($payload, 'id')
-                    && array_key_exists($payload->id, $this->subscriptions))) {
-                    return false;
-                }
-                $func = $this->subscriptions[$payload->id];
-                if (is_string($func)) {
-                    $func = [$this, $func];
-                }
-                if (is_callable($func)) {
-                    $process = true;
-                    if (is_object($obj = $func[0] ?? null)
-                        && method_exists($obj, 'beforeEvent')) {
-                        $process = $obj->beforeEvent($payload);
-                    }
-                    if (false !== $process) {
-                        $result = call_user_func_array($func, [$payload['data'] ?? null, $payload]);
-                        if (false !== $result
-                            && is_object($obj = $func[0] ?? null)
-                            && method_exists($obj, 'afterEvent')) {
-                            $obj->afterEvent($payload);
-                        }
-                    }
-                }
-
-                break;
-
-            case 'PONG':
-                if (is_int($payload)) {
-                    $tripMs = (microtime(true) - $payload) * 1000;
-                    $this->send('DEBUG', 'PONG received in '.$tripMs.'ms');
-                } else {
-                    $this->send('ERROR', 'PONG received with invalid payload!');
-                }
-
-                break;
-
-            case 'OK':
-                break;
-
-            default:
-                $this->send('DEBUG', ['type' => get_class($this), 'data' => 'Unhandled command: '.$command]);
-
-                break;
-        }
-
-        return true;
-    }
-
     /**
      * @param array<mixed> $data
      */
@@ -168,12 +115,9 @@ abstract class Process
     /**
      * @param array<string,mixed> $filter
      */
-    public function subscribe(string $event, string $callback, ?array $filter = null): bool
+    public function subscribe(string $event, callable $callback, ?array $filter = null): bool
     {
-        if (!method_exists($this, $callback)) {
-            return false;
-        }
-        $this->subscriptions[$event] = [$this, $callback];
+        $this->subscriptions[$event] = $callback;
 
         return $this->send('SUBSCRIBE', ['id' => $event, 'filter' => $filter]);
     }
@@ -651,6 +595,60 @@ abstract class Process
     public function connected(): bool
     {
         return $this->conn->connected();
+    }
+
+    protected function processCommand(string $command, ?\stdClass $payload = null): bool
+    {
+        switch ($command) {
+            case 'EVENT':
+                if (!($payload instanceof \stdClass
+                    && property_exists($payload, 'id')
+                    && array_key_exists($payload->id, $this->subscriptions))) {
+                    return false;
+                }
+                $func = $this->subscriptions[$payload->id];
+                if (is_string($func)) {
+                    $func = [$this, $func];
+                }
+                $result = false;
+                $process = true;
+                // Check if the callback is an object method and if a beforeEvent method exists
+                if (is_array($func) && is_object($obj = $func[0] ?? null)
+                    && method_exists($obj, 'beforeEvent')) {
+                    $process = $obj->beforeEvent($payload);
+                }
+                if (false !== $process) {
+                    $result = call_user_func_array($func, [$payload->data ?? null, $payload]);
+                }
+                if (false !== $result
+                    && is_array($func)
+                    && is_object($obj = $func[0] ?? null)
+                    && method_exists($obj, 'afterEvent')) {
+                    $obj->afterEvent($payload);
+                }
+
+                break;
+
+            case 'PONG':
+                if (is_int($payload->data)) {
+                    $tripMs = (microtime(true) - $payload->data) * 1000;
+                    $this->send('DEBUG', 'PONG received in '.$tripMs.'ms');
+                } else {
+                    $this->send('ERROR', 'PONG received with invalid payload!');
+                }
+
+                break;
+
+            case 'OK':
+                break;
+
+            default:
+                $this->send('DEBUG', ['type' => get_class($this), 'data' => 'Unhandled command: '.$command]);
+
+                break;
+        }
+
+        return true;
     }
 
     protected function createConnection(Protocol $protocol, ?string $guid = null): Connection|false

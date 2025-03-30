@@ -6,6 +6,8 @@ namespace Hazaar\Warlock\Server;
 
 use Hazaar\Model;
 use Hazaar\Util\Version;
+use Hazaar\Warlock\Server\Component\Logger;
+use Hazaar\Warlock\Server\Enum\LogLevel;
 
 if (!defined('SERVER_PATH')) {
     throw new \Exception('SERVER_PATH is not defined');
@@ -98,7 +100,7 @@ abstract class Process extends Model
                 continue;
             }
             if ($input = stream_get_contents($pipe)) {
-                $this->log->write(W_WARN, 'Excess output content on closing process', $this->tag);
+                $this->log->write('Excess output content on closing process', LogLevel::WARN);
                 echo str_repeat('-', 30)."\n".$input."\n".str_repeat('-', 30)."\n";
             }
             fclose($pipe);
@@ -128,7 +130,7 @@ abstract class Process extends Model
         //     posix_kill((int) $pid, 15);
         // }
         $status = proc_get_status($this->process);
-        $this->log->write(W_DEBUG, 'TERMINATE: PID='.$status['pid'], $this->id);
+        $this->log->write('TERMINATE: PID='.$status['pid'], LogLevel::DEBUG);
         if (false === proc_terminate($this->process, 15)) {
             return false;
         }
@@ -181,19 +183,19 @@ abstract class Process extends Model
                 $procCmd[] = '--name';
                 $procCmd[] = $this->tag;
             }
-            $this->log->write(W_DEBUG, 'EXEC='.implode(' ', $procCmd), $this->id);
+            $this->log->write('EXEC='.implode(' ', $procCmd), LogLevel::DEBUG);
         } else {
             $procCmd = $phpBinary.' "'.basename($cmd).'" -d'.($this->tag ? ' --name '.$this->tag : '');
-            $this->log->write(W_DEBUG, 'EXEC='.$procCmd, $this->id);
+            $this->log->write('EXEC='.$procCmd, LogLevel::DEBUG);
         }
-        $this->log->write(W_DEBUG, 'CWD='.$cwd, $this->id);
+        $this->log->write('CWD='.$cwd, LogLevel::DEBUG);
         $this->process = proc_open($procCmd, $descriptorspec, $pipes, $cwd, $env);
         if (!is_resource($this->process)) {
             throw new \Exception('Failed to start the process');
         }
         $this->pipes = $pipes;
         $this->procStatus = proc_get_status($this->process);
-        $this->log->write(W_NOTICE, 'PID: '.$this->procStatus['pid'], $this->id);
+        $this->log->write('PID: '.$this->procStatus['pid'], LogLevel::NOTICE);
         stream_set_blocking($this->pipes[1], false);
         stream_set_blocking($this->pipes[2], false);
     }
@@ -201,16 +203,16 @@ abstract class Process extends Model
     final protected function write(string $packet): bool
     {
         $len = strlen($packet .= "\n");
-        $this->log->write(W_DEBUG, "PROCESS->PIPE: BYTES={$len} ID={$this->id}", $this->tag);
-        $this->log->write(W_DECODE, 'PROCESS->PACKET: '.trim($packet), $this->tag);
+        $this->log->write("PROCESS->PIPE: BYTES={$len} ID={$this->id}", LogLevel::DEBUG);
+        $this->log->write('PROCESS->PACKET: '.trim($packet), LogLevel::DECODE);
         $bytesSent = @fwrite($this->pipes[0], $packet, $len);
         if (false === $bytesSent) {
-            $this->log->write(W_WARN, 'An error occured while sending to the client. Pipe has disappeared!?', $this->tag);
+            $this->log->write('An error occured while sending to the client. Pipe has disappeared!?', LogLevel::WARN);
 
             return false;
         }
         if ($bytesSent !== $len) {
-            $this->log->write(W_ERR, $bytesSent.' bytes have been sent instead of the '.$len.' bytes expected', $this->tag);
+            $this->log->write($bytesSent.' bytes have been sent instead of the '.$len.' bytes expected', LogLevel::ERROR);
 
             return false;
         }

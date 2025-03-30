@@ -27,4 +27,17 @@ final class WarlockTest extends TestCase
         $this->assertTrue($warlock->trigger('test', 'test'));
         $this->assertTrue($warlock->disconnect());
     }
+
+    public function testCanSubscribe(): void
+    {
+        $warlock = new Client();
+        $this->assertTrue($warlock->connect('localhost', 13080));
+        $this->assertTrue($warlock->subscribe('test', function ($data) {
+            $this->assertEquals('test', $data);
+        }));
+        $this->assertTrue($warlock->trigger('test', 'test', true));
+        $warlock->wait(5);
+        $this->assertTrue($warlock->unsubscribe('test'));
+        $this->assertTrue($warlock->disconnect());
+    }
 }

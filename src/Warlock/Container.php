@@ -11,7 +11,7 @@ class Container extends Process
     /**
      * @param null|array<mixed> $params
      */
-    public function exec(?string $code, null|array $params = null): int
+    public function exec(?string $code, ?array $params = null): int
     {
         $exitcode = 1;
 
@@ -45,7 +45,7 @@ class Container extends Process
         return $exitcode;
     }
 
-    protected function connect(Protocol $protocol, ?string $guid = null): Pipe
+    public function connect(Protocol $protocol, ?string $guid = null): Pipe
     {
         return new Pipe($protocol);
     }

@@ -35,16 +35,22 @@ class Client extends Process
         parent::__construct($protocol);
     }
 
+    public function wait(int $seconds = 0): void
+    {
+        $command = $this->recv($payload, $seconds);
+        $this->processCommand($command, $payload);
+    }
+
     protected function createConnection(Protocol $protocol, ?string $guid = null): Connection\Socket
     {
         $headers = [];
-        if (null !== $this->config['admin']['key']) {
-            $headers['Authorization'] = 'Apikey '.base64_encode($this->config['admin']['key']);
+        if (isset($this->config['adminKey'])) {
+            $headers['Authorization'] = 'Apikey '.base64_encode($this->config['adminKey']);
         }
-        if (null === $this->config['client']['port']) {
+        if (isset($this->config['port'])) {
             $this->config['client']['port'] = $this->config['server']['port'];
         }
 
-        return new Connection\Socket($protocol, $guid);
+        return new Connection\Socket($protocol, $guid, $headers);
     }
 }

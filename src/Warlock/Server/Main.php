@@ -441,6 +441,40 @@ class Main
     }
 
     /**
+     * @param array<mixed> $search
+     */
+    private function fieldExists(array $search, \stdClass $array): bool
+    {
+        reset($search);
+        while ($field = current($search)) {
+            if (!property_exists($array, $field)) {
+                return false;
+            }
+            $array = &$array->{$field};
+            next($search);
+        }
+
+        return true;
+    }
+
+    /**
+     * @param array<mixed> $search
+     */
+    private function getFieldValue(array $search, \stdClass $array): mixed
+    {
+        reset($search);
+        while ($field = current($search)) {
+            if (!property_exists($array, $field)) {
+                return false;
+            }
+            $array = &$array->{$field};
+            next($search);
+        }
+
+        return $array;
+    }
+
+    /**
      * Tests whether a event should be filtered.
      *
      * Returns true if the event should be filtered (skipped), and false if the event should be processed.

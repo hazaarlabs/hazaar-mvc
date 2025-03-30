@@ -24,7 +24,12 @@ final class Socket extends WebSockets implements Connection
     protected ?string $payloadBuffer = null;
     protected bool $closing = false;
 
-    public function __construct(Protocol $protocol, ?string $guid = null)
+    /**
+     * @var array<string,string>
+     */
+    protected array $headers;
+
+    public function __construct(Protocol $protocol, ?string $guid = null, array $headers = [])
     {
         if (!extension_loaded('sockets')) {
             throw new \Exception('The sockets extension is not loaded.');
@@ -33,6 +38,7 @@ final class Socket extends WebSockets implements Connection
         $this->protocol = $protocol;
         $this->id = null === $guid ? Str::guid() : $guid;
         $this->key = uniqid();
+        $this->headers = $headers;
     }
 
     final public function __destruct()
@@ -53,18 +59,16 @@ final class Socket extends WebSockets implements Connection
 
             return $this->socket = false;
         }
-        $headers = [
-            'X-WARLOCK-PHP' => 'true',
-            'X-WARLOCK-USER' => base64_encode(get_current_user()),
-        ];
+        $this->headers['X-WARLOCK-PHP'] = 'true';
+        $this->headers['X-WARLOCK-USER'] = base64_encode(get_current_user());
         if (is_array($extraHeaders)) {
-            $headers = array_merge($headers, $extraHeaders);
+            $this->headers = array_merge($this->headers, $extraHeaders);
         }
 
         /**
          * Initiate a WebSockets connection.
          */
-        $handshake = $this->createHandshake("/warlock?CID={$this->id}", $host, null, $this->key, $headers);
+        $handshake = $this->createHandshake("/warlock?CID={$this->id}", $host, null, $this->key, $this->headers);
         @socket_write($this->socket, $handshake, strlen($handshake));
 
         /**
