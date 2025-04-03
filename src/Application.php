@@ -500,7 +500,7 @@ class Application
             ob_start();
             // Create the request object
             $request = new Request($_SERVER);
-            $requestFile = $this->path ?? '/'
+            $requestFile = ($this->path ?? '/')
                 .DIRECTORY_SEPARATOR
                 .(Arr::get($this->config ?? [], 'app.files.request') ?? 'request.php');
             if (file_exists($requestFile)) {
