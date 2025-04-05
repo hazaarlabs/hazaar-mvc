@@ -394,7 +394,12 @@ class Redis extends Backend
         do {
             $key = current($rawValues);
             $rawValue = next($rawValues);
-            if (!is_string($rawValue) || false === ($value = @unserialize($rawValue))) {
+            if (is_string($rawValue) && preg_match('/^(?:a|O|s|i|d|b):/', $rawValue)) {
+                $value = @unserialize($rawValue);
+                if (false === $value) {
+                    $value = $rawValue;
+                }
+            } else {
                 $value = $rawValue;
             }
             if ('__value__' === $key) {

@@ -61,10 +61,13 @@ class GeoData
         $dbFile = new File(self::$dbFile);
         if (!$dbFile->exists()) {
             $forceDownloadGeodataFile = true;
+        }else{
+            self::$db = new BTree(self::$dbFile, true);
+            if(GeoData::VERSION !== GeoData::$db->get('__version__')) {
+                $forceDownloadGeodataFile = true;
+            }
         }
-        self::$db = new BTree(self::$dbFile, true);
-        if (true === $forceDownloadGeodataFile
-            || GeoData::VERSION !== GeoData::$db->get('__version__')) {
+        if (true === $forceDownloadGeodataFile){
             $this->__initialise();
         }
     }

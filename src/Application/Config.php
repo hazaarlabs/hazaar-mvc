@@ -172,9 +172,10 @@ class Config implements \ArrayAccess, \Iterator
     public function load(
         string $source,
         string $env = APPLICATION_ENV,
-        array $defaults = [],
+        ?array $defaults = null,
         bool $overrideNamespaces = false
     ): array {
+        $defaults ??= [];
         $options = [];
         $sources = [['name' => $source, 'ns' => true]];
         $this->env = $env;

@@ -16,6 +16,7 @@ namespace Hazaar;
 
 use Hazaar\Application\Config;
 use Hazaar\Application\Error;
+use Hazaar\Application\Exception\AppDirNotFound;
 use Hazaar\Application\FilePath;
 use Hazaar\Application\Request;
 use Hazaar\Application\Router;
@@ -102,7 +103,12 @@ class Application
         try {
             Application::$instance = $this;
             $this->environment = $env;
-            $this->path = self::findApplicationPath($path);
+            $path = self::findApplicationPath($path);
+            if (false === $path) {
+                throw new AppDirNotFound();
+            }
+            $this->path = $path;
+            chdir($this->path);
             $this->base = dirname($_SERVER['SCRIPT_NAME']);
             // Create a timer for performance measuring
             $startTime = isset($_SERVER['REQUEST_TIME_FLOAT']) ? floatval($_SERVER['REQUEST_TIME_FLOAT']) : microtime(true);
@@ -214,7 +220,7 @@ class Application
                 'runtimePath' => $this->path.DIRECTORY_SEPARATOR.'.runtime',
                 'metrics' => false,
                 'responseType' => 'html',
-                'layout' => 'application',
+                'layout' => 'app',
             ],
             'router' => [
                 'type' => 'basic',
@@ -340,7 +346,9 @@ class Application
         if (!is_writable($path)) {
             throw new Application\Exception\RuntimeDirNotWritable($path);
         }
-        $path = realpath($path);
+        if ('/' !== substr($this->config['app']['runtimePath'], 0, 1)) {
+            $this->config['app']['runtimePath'] = realpath($path);
+        }
         if (null === $suffix || !($suffix = trim($suffix))) {
             return $path;
         }
@@ -492,9 +500,9 @@ class Application
             ob_start();
             // Create the request object
             $request = new Request($_SERVER);
-            $requestFile = $this->path
+            $requestFile = ($this->path ?? '/')
                 .DIRECTORY_SEPARATOR
-                .(Arr::get($this->config, 'app.files.request') ?? 'request.php');
+                .(Arr::get($this->config ?? [], 'app.files.request') ?? 'request.php');
             if (file_exists($requestFile)) {
                 ob_start();
                 // @phpstan-ignore-next-line
@@ -536,7 +544,7 @@ class Application
             ob_end_flush();
             $completeFile = $this->path
                 .DIRECTORY_SEPARATOR
-                .(Arr::get($this->config, 'app.files.complete') ?? 'complete.php');
+                .(Arr::get($this->config ?? [], 'app.files.complete') ?? 'complete.php');
             if (file_exists($completeFile)) {
                 ob_start();
                 $timer = $this->timer;
@@ -696,9 +704,9 @@ class Application
             if (':' === substr($searchPath, 1, 1)) {
                 $searchPath = substr($searchPath, 2);
             }
-            if (file_exists($searchPath.DIRECTORY_SEPARATOR.'application')
-                && file_exists($searchPath.DIRECTORY_SEPARATOR.'application'.DIRECTORY_SEPARATOR.'configs')) {
-                return realpath($searchPath.DIRECTORY_SEPARATOR.'application');
+            if (file_exists($searchPath.DIRECTORY_SEPARATOR.'app')
+                && file_exists($searchPath.DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.'configs')) {
+                return realpath($searchPath.DIRECTORY_SEPARATOR.'app');
             }
             if (DIRECTORY_SEPARATOR === $searchPath || ++$count >= 16) {
                 break;

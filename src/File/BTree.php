@@ -103,7 +103,9 @@ class BTree
         if ($this->file->exists() && $this->file->size() < 0) {
             throw new \Exception('File is too large.  On 32-bit PHP only files up to 2GB in size are supported.');
         }
-        $this->file->open((true === $this->readOnly) ? 'rb' : 'a+b');
+        if(!$this->file->open((true === $this->readOnly) ? 'rb' : 'a+b')) {
+            return false;
+        }
         // write default node if neccessary
         if (-1 === $this->file->seek(0, SEEK_END)) {
             $this->file->close();

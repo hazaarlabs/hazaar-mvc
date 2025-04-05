@@ -43,20 +43,15 @@ Here, we will create a new error controller aptly named ErrorController.
 ```php
 class ErrorController extends \Hazaar\Controller\Error {
 
-    protected function html() {
-
-        $out = new \Hazaar\Controller\Response\Layout('application');
-  
+    protected function html() 
+    {
+        $out = new \Hazaar\Controller\Response\Layout('app');
         $out->addHelper('bootstrap');
-  
         $out->add('error');
-  
         $out->code = $this->code;
-  
         $out->message = $this->errstr;
   
         return $out;
-  
     }
 
 }
