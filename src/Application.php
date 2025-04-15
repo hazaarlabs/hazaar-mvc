@@ -111,7 +111,6 @@ class Application
                 throw new AppDirNotFound();
             }
             $this->path = $path;
-            chdir($this->path);
             $this->base = dirname($_SERVER['SCRIPT_NAME']);
             // Create a timer for performance measuring
             $startTime = isset($_SERVER['REQUEST_TIME_FLOAT']) ? floatval($_SERVER['REQUEST_TIME_FLOAT']) : microtime(true);

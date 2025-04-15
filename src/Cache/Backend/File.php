@@ -93,9 +93,8 @@ class File extends Backend
 
     public function init(string $namespace): void
     {
-        $runtime = Runtime::getInstance();
         $this->configure([
-            'cache_dir' => $runtime ? $runtime->getPath('cache', true) : sys_get_temp_dir(),
+            'cache_dir' => Runtime::getInstance()->getPath('cache', true),
             'file_prefix' => null,
             'use_zlib' => false,
             'encode_fs' => false,

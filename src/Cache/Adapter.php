@@ -91,13 +91,6 @@ class Adapter implements \ArrayAccess
         }
     }
 
-    public function __destruct()
-    {
-        if (isset($this->backend)) {
-            unset($this->backend);
-        }
-    }
-
     // MAGIC METHOD FOR DIRECT ACCESS
     public function __isset(string $key): bool
     {
