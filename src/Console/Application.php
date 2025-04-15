@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Console;
 
+use Hazaar\Application\Runtime;
 use Hazaar\Console\Modules\HelpModule;
 
 class Application
@@ -36,6 +37,7 @@ class Application
         set_error_handler([$this, 'handleError']);
         register_shutdown_function([$this, 'shutdownHandler']);
         $this->add(new HelpModule());
+        Runtime::createInstance(__DIR__.'/../../');
     }
 
     public function add(Module $module): void
