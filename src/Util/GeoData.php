@@ -65,14 +65,14 @@ class GeoData
         } else {
             $db = new BTree($dbFile, true);
             if (GeoData::VERSION === $db->get('__version__')) {
-                $this->db = $db;
+                self::$db = $db;
             } else {
                 $downloadDBFile = true;
             }
         }
         if ($downloadDBFile) {
             $dbFile = self::fetchDBFile($dbFile);
-            $this->db = new BTree($dbFile, true);
+            self::$db = new BTree($dbFile, true);
         }
     }
 
@@ -149,7 +149,7 @@ class GeoData
      */
     public function countries(): array
     {
-        return $this->__list(GeoData::$db, 'name');
+        return $this->__list(self::$db, 'name');
     }
 
     /**
@@ -174,7 +174,7 @@ class GeoData
      */
     public function countryInfo(string $code): array
     {
-        $info = GeoData::$db->get(strtoupper($code));
+        $info = self::$db->get(strtoupper($code));
         unset($info['states'], $info['cities']);
 
         return $info;
@@ -189,7 +189,7 @@ class GeoData
      */
     public function countryInfoAll(): array
     {
-        return $this->__list(GeoData::$db);
+        return $this->__list(self::$db);
     }
 
     /**
@@ -204,7 +204,7 @@ class GeoData
     public function states(string $countryCode): array
     {
         $list = [];
-        if ($country = GeoData::$db->get(strtoupper($countryCode))) {
+        if ($country = self::$db->get(strtoupper($countryCode))) {
             foreach ($country['states'] as $state) {
                 if (!isset($state['code'], $state['name'])) {
                     continue;
@@ -231,7 +231,7 @@ class GeoData
     public function cities(string $countryCode, string $stateCode): array
     {
         $list = [];
-        if ($country = GeoData::$db->get(strtoupper($countryCode))) {
+        if ($country = self::$db->get(strtoupper($countryCode))) {
             $cities = ($country['states'][$stateCode]['cities'] ?? []);
             foreach ($cities as $id) {
                 if (!($city = $country['cities'][$id])) {
@@ -264,7 +264,7 @@ class GeoData
      */
     public function countryCode(string $name): ?string
     {
-        $info = GeoData::$db->range("\x00", "\xff");
+        $info = self::$db->range("\x00", "\xff");
         foreach ($info as $code => $country) {
             if ('__' == substr($code, 0, 2)) {
                 continue;
