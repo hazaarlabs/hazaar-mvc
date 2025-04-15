@@ -7,6 +7,7 @@ use Hazaar\Console\Modules\CreateModule;
 use Hazaar\Console\Modules\DecryptModule;
 use Hazaar\Console\Modules\DocModule;
 use Hazaar\Console\Modules\EncryptModule;
+use Hazaar\Console\Modules\GeoDataModule;
 
 if (file_exists(__DIR__.'/../../../autoload.php')) {
     require __DIR__.'/../../../autoload.php';
@@ -20,5 +21,6 @@ $app->add(new CreateModule());
 $app->add(new DecryptModule());
 $app->add(new DocModule());
 $app->add(new EncryptModule());
+$app->add(new GeoDataModule());
 
 $app->run();
