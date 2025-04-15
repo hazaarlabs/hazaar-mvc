@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\File;
 
 use Hazaar\Application;
+use Hazaar\Application\Runtime;
 use Hazaar\File;
 
 /**
@@ -26,7 +27,7 @@ class Temp extends File
         if (!$name) {
             $name = uniqid().'.tmp';
         }
-        $name = Application::getInstance()->getRuntimePath('temp', true).DIRECTORY_SEPARATOR.$name;
+        $name = Runtime::getInstance()->getPath('temp', true).DIRECTORY_SEPARATOR.$name;
         parent::__construct($name);
     }
 

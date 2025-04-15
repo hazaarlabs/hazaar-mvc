@@ -6,6 +6,7 @@ namespace Hazaar\File;
 
 use Hazaar\Application;
 use Hazaar\Application\FilePath;
+use Hazaar\Application\Runtime;
 use Hazaar\File;
 use Hazaar\File\Backend\Exception\Offline;
 use Hazaar\File\Interface\Backend;
@@ -175,7 +176,7 @@ class Manager implements Backend
     public function activateFailover(): void
     {
         $this->failover = new Manager('local', [
-            'root' => Application::getInstance()->getRuntimePath('media'.DIRECTORY_SEPARATOR.$this->name, true),
+            'root' => Runtime::getInstance()->getPath('media'.DIRECTORY_SEPARATOR.$this->name, true),
         ]);
     }
 

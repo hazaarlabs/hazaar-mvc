@@ -2,7 +2,7 @@
 
 namespace Hazaar\RateLimiter\Backend;
 
-use Hazaar\Application;
+use Hazaar\Application\Runtime;
 use Hazaar\File\BTree;
 use Hazaar\RateLimiter\Backend;
 
@@ -24,10 +24,7 @@ class File extends Backend
      */
     public function __construct(array $options = [])
     {
-        if (!($app = Application::getInstance())) {
-            throw new \Exception('Application not initialized!');
-        }
-        $this->db = new BTree($app->getRuntimePath($options['file'] ?? 'rate_limiter.db'));
+        $this->db = new BTree(Runtime::getInstance()->getPath($options['file'] ?? 'rate_limiter.db'));
         if (!($this->created = $this->db->get('created'))) {
             $this->db->set('created', $this->created = time());
         }

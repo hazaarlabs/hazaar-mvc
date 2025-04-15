@@ -50,12 +50,18 @@ class Runtime
         return self::$instances[$name];
     }
 
-    public function getPath(?string $pathSuffix = null): string
+    public function getPath(?string $pathSuffix = null, bool $createDir = false): string
     {
         if (null === $pathSuffix) {
             return $this->path;
         }
+        $path = $this->path.($pathSuffix ? DIRECTORY_SEPARATOR.$pathSuffix : '');
+        if ($createDir && !file_exists($path)) {
+            if (!mkdir($path, 0777, true) && !is_dir($path)) {
+                throw new \RuntimeException('Failed to create directory: '.$path);
+            }
+        }
 
-        return $this->path.($pathSuffix ? DIRECTORY_SEPARATOR.$pathSuffix : '');
+        return $path;
     }
 }

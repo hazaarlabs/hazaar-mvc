@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Template;
 
 use Hazaar\Application;
+use Hazaar\Application\Runtime;
 use Hazaar\File;
 use Hazaar\Template\Exception\SmartyTemplateError;
 use Hazaar\Template\Smarty\Compiler;
@@ -261,11 +262,7 @@ class Smarty
         if (class_exists($templateId)) {
             return $templateId;
         }
-        $app = Application::getInstance();
-        $templatePath = $app->getRuntimePath('templates');
-        if (!file_exists($templatePath)) {
-            mkdir($templatePath, 0777, true);
-        }
+        $templatePath = Runtime::getInstance()->getPath('templates', true);
         $templateFile = $templatePath.DIRECTORY_SEPARATOR.$templateId.'.php';
         /*
          * Watch the source file and the renderer files for changes
