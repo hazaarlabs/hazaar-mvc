@@ -37,9 +37,7 @@ class Layout extends View
      */
     public function __construct(?string $view = null, array $data = [])
     {
-        if (!$view) {
-            $view = 'app';
-        }
+        $view ??= 'app';
         parent::__construct($view, $data);
     }
 
