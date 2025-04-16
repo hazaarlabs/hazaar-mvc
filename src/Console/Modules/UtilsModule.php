@@ -8,16 +8,16 @@ use Hazaar\Console\Output;
 use Hazaar\Util\GeoData;
 use Hazaar\Util\Str;
 
-class GeoDataModule extends Module
+class UtilsModule extends Module
 {
     protected function configure(): void
     {
-        $this->addCommand('cache')
+        $this->addCommand('geo', [$this, 'cacheGeodataFile'])
             ->setDescription('Cache the geodata database file')
         ;
     }
 
-    protected function execute(Input $input, Output $output): int
+    protected function cacheGeodataFile(Input $input, Output $output): int
     {
         try {
             $output->write('<fg=green>Fetching geodata database file...</>'.PHP_EOL);

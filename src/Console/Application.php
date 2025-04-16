@@ -55,7 +55,7 @@ class Application
         $this->input->initialise((array) $_SERVER['argv']);
         $this->output->write('<fg=green>'.$this->name.' v'.$this->version.'</>'.PHP_EOL);
         define('APPLICATION_ENV', $this->input->getGlobalOption('env') ?? getenv('APPLICATION_ENV') ?: 'development');
-        $this->output->write('<fg=green>Environment: '.APPLICATION_ENV.'</>'.PHP_EOL);
+        $this->output->write('<fg=green>Environment: '.APPLICATION_ENV.'</>'.PHP_EOL.PHP_EOL);
         $commandName = $this->input->getCommand();
         if (!array_key_exists($commandName, $this->commands)) {
             $this->writeHelp($this->output);
