@@ -179,11 +179,39 @@ class Smarty
     }
 
     /**
-     * Render the template with the supplied parameters and return the rendered content.
+     * Renders the stored template with the supplied parameters and return the rendered content.
+     *
+     * This method processes the template using the Smarty templating engine, merging
+     * default parameters with the provided parameters.
+     *
+     * Internally, it calls the `renderString` method to handle the rendering process, passing
+     * the template content and parameters. The rendered content is then returned as a string.
      *
      * @param array<mixed> $params parameters to use when embedding variables in the rendered template
      */
     public function render(array $params = []): string
+    {
+        return $this->renderString($this->content, $params);
+    }
+
+    /**
+     * Renders a string template with the provided parameters.
+     *
+     * This method processes a string template using the Smarty templating engine.
+     * It merges default parameters with the provided parameters, prepares the
+     * renderer class, and executes the rendering process. Additionally, it applies
+     * any registered filters to the rendered content.
+     *
+     * @param string $content the string template content to be rendered
+     * @param array  $params  An associative array of parameters to be passed to the template.
+     *                        These parameters will be merged with default parameters.
+     *                        Special handling is applied if a key named '*' exists.
+     *
+     * @return string the rendered content after processing the template and applying filters
+     *
+     * @throws \SmartyTemplateError if an error occurs during the rendering process
+     */
+    public function renderString(string $content, array $params = []): string
     {
         $app = Application::getInstance();
         $defaultParams = [
@@ -207,7 +235,7 @@ class Smarty
         }
 
         try {
-            $templateId = $this->prepareRendererClass();
+            $templateId = $this->prepareRendererClass($content);
             $obj = new $templateId();
             $obj->functionHandlers = $this->functionHandlers;
             $obj->functions = $this->customFunctions;
@@ -231,24 +259,24 @@ class Smarty
     /**
      * Prepare the renderer class.
      */
-    private function prepareRendererClass(): string
+    private function prepareRendererClass(?string $content = null): string
     {
         $app = Application::getInstance();
-        if ($this->sourceFile && $app instanceof Application) {
-            return $this->preparePHPRenderer();
+        if (null !== $content || !($this->sourceFile && $app instanceof Application)) {
+            return $this->prepareEvalRenderer($content);
         }
 
-        return $this->prepareEvalRenderer();
+        return $this->preparePHPRenderer();
     }
 
-    private function prepareEvalRenderer(): string
+    private function prepareEvalRenderer(string $content): string
     {
         $templateId = self::$templatePrefix.md5(uniqid());
         if (class_exists($templateId)) {
             return $templateId;
         }
         if (!$this->compiler->isCompiled()) {
-            $this->compiler->exec($this->content);
+            $this->compiler->exec($content);
         }
         $code = $this->compiler->getCode($templateId);
         eval($code);

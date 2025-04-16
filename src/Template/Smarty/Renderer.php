@@ -118,7 +118,7 @@ abstract class Renderer
         }
         // Special case for the url function
         if ('url' === $name) {
-            return new URL(urldecode(implode('/', $params())));
+            return new URL(urldecode(implode('/', $params)));
         }
 
         throw new SmartyTemplateFunctionNotFound($name);
