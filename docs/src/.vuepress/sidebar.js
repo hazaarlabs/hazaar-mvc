@@ -95,6 +95,7 @@ function sidebarGuide() {
                         { text: 'Backends', link: '/docs/advanced/caching/backends' }
                     ]
                 },
+                { text: 'Early Hints', link: '/docs/advanced/early-hints' },
                 { text: 'Strict Models', link: '/docs/advanced/strict-models' },
                 { text: 'Generating PDFs', link: '/docs/advanced/pdf' },
                 { text: 'XML-RPC', link: '/docs/advanced/xml-rpc' },
