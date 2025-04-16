@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Tests;
 
-use Hazaar\Application;
+use Hazaar\Application\Runtime;
 use Hazaar\File\BTree;
 use Hazaar\Util\Arr;
 use Hazaar\Util\Interval;
@@ -16,13 +16,6 @@ use PHPUnit\Framework\TestCase;
  */
 class UtilityTest extends TestCase
 {
-    private Application $app;
-
-    public function setUp(): void
-    {
-        $this->app = Application::getInstance();
-    }
-
     public function testDotNotationFunctions(): void
     {
         $dot_notation = [
@@ -43,7 +36,7 @@ class UtilityTest extends TestCase
 
     public function testBTreeFile(): void
     {
-        $btree = new BTree($this->app->getRuntimePath('test.btree'));
+        $btree = new BTree(Runtime::getInstance()->getPath('test.btree'));
         $this->assertTrue($btree->set('key', 'value'));
         $this->assertEquals('value', $btree->get('key'));
         $this->assertTrue($btree->remove('key'));

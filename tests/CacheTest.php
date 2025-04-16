@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Tests;
 
-use Hazaar\Application;
+use Hazaar\Application\Runtime;
 use Hazaar\Cache\Adapter;
 use PHPUnit\Framework\TestCase;
 
@@ -20,7 +20,7 @@ class CacheTest extends TestCase
                 'apc' => [
                 ],
                 'file' => [
-                    'path' => Application::getInstance()->getRuntimePath('cache'),
+                    'path' => Runtime::getInstance()->getPath('cache'),
                 ],
             ],
         ];
@@ -32,7 +32,7 @@ class CacheTest extends TestCase
     public function testFileCache(): void
     {
         $options = [
-            'path' => Application::getInstance()->getRuntimePath('cache'),
+            'path' => Runtime::getInstance()->getPath('cache'),
             'ttl' => 30,
         ];
         $cache = new Adapter('file', $options);

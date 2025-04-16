@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar;
 
 use Hazaar\Application\FilePath;
+use Hazaar\Application\Runtime;
 use Hazaar\File\Dir;
 use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
@@ -73,7 +74,7 @@ class File implements \JsonSerializable
             $file = $meta['uri'];
         } else {
             if (empty($file)) {
-                $file = Application::getInstance()->getRuntimePath('tmp', true).DIRECTORY_SEPARATOR.uniqid();
+                $file = Runtime::getInstance()->getPath('tmp', true).DIRECTORY_SEPARATOR.uniqid();
             }
         }
         if (!$manager instanceof Manager) {
@@ -625,7 +626,7 @@ class File implements \JsonSerializable
      *
      * @param string  $destination The destination folder to copy the file into
      * @param bool    $overwrite   overwrite the destination file if it exists
-     * @param bool    $createDest Flag that indicates if the destination folder should be created.  If the
+     * @param bool    $createDest  Flag that indicates if the destination folder should be created.  If the
      *                             destination does not exist an error will be thrown.
      * @param Manager $dstManager  The destination file manager.  Defaults to the same manager as the source.
      *
@@ -682,7 +683,7 @@ class File implements \JsonSerializable
      *
      * @param string $destination The destination folder and file name to copy the file into
      * @param bool   $overwrite   overwrite the destination file if it exists
-     * @param bool   $createDest Flag that indicates if the destination folder should be created.  If the
+     * @param bool   $createDest  Flag that indicates if the destination folder should be created.  If the
      *                            destination does not exist an error will be thrown.
      * @param mixed  $dstManager  The destination file manager.  Defaults to the same manager as the source.
      *
@@ -802,7 +803,7 @@ class File implements \JsonSerializable
      * Return the CSV content as a parsed array.
      *
      * @param bool $useHeader_row Indicates if a header row should be parsed and used to build an associative array.  In this case the
-     *                             keys in the returned array will be the values from the first row, which is normally a header row.
+     *                            keys in the returned array will be the values from the first row, which is normally a header row.
      *
      * @return array<array<string>>
      */

@@ -22,6 +22,7 @@ use Hazaar\Application\Request;
 use Hazaar\Application\Router;
 use Hazaar\Application\Router\Exception\RouteNotFound;
 use Hazaar\Application\Router\Exception\RouterInitialisationFailed;
+use Hazaar\Application\Runtime;
 use Hazaar\Application\URL;
 use Hazaar\File\Metric;
 use Hazaar\Logger\Frontend;
@@ -80,6 +81,8 @@ class Application
      */
     private array $outputFunctions = [];
 
+    private Runtime $runtime;
+
     /**
      * The main application constructor.
      *
@@ -104,11 +107,10 @@ class Application
             Application::$instance = $this;
             $this->environment = $env;
             $path = self::findApplicationPath($path);
-            if (false === $path) {
+            if (null === $path) {
                 throw new AppDirNotFound();
             }
             $this->path = $path;
-            chdir($this->path);
             $this->base = dirname($_SERVER['SCRIPT_NAME']);
             // Create a timer for performance measuring
             $startTime = isset($_SERVER['REQUEST_TIME_FLOAT']) ? floatval($_SERVER['REQUEST_TIME_FLOAT']) : microtime(true);
@@ -153,7 +155,7 @@ class Application
             include $shutdown;
         }
         if ($this->config['app']['metrics'] ?? false) {
-            $metricFile = $this->getRuntimePath('metrics.dat');
+            $metricFile = $this->runtime->getPath('metrics.dat');
             if ((!file_exists($metricFile) && is_writable(dirname($metricFile))) || is_writable($metricFile)) {
                 $metric = new Metric($metricFile);
                 if (!$metric->exists()) {
@@ -322,12 +324,9 @@ class Application
      * normal operation. For example, socket files for background scheduler communication, cached views,
      * and backend applications.
      *
-     * @param string $suffix    An optional suffix to tack on the end of the path
-     * @param bool   $createDir automatically create the runtime directory if it does not exist
-     *
      * @return string The path to the runtime directory
      */
-    public function getRuntimePath($suffix = null, $createDir = false): false|string
+    public function getRuntimePath(): false|string
     {
         $path = $this->config['app']['runtimePath'] ?? '.runtime';
         if (!file_exists($path)) {
@@ -349,18 +348,8 @@ class Application
         if ('/' !== substr($this->config['app']['runtimePath'], 0, 1)) {
             $this->config['app']['runtimePath'] = realpath($path);
         }
-        if (null === $suffix || !($suffix = trim($suffix))) {
-            return $path;
-        }
-        if (DIRECTORY_SEPARATOR != substr($suffix, 0, 1)) {
-            $suffix = DIRECTORY_SEPARATOR.$suffix;
-        }
-        $fullPath = $path.$suffix;
-        if (!file_exists($fullPath) && $createDir) {
-            mkdir($fullPath, 0775, true);
-        }
 
-        return $fullPath;
+        return $path;
     }
 
     /**
@@ -441,6 +430,7 @@ class Application
         set_exception_handler([$this, 'exceptionHandler']);
         register_shutdown_function([$this, 'shutdownHandler']);
         register_shutdown_function([$this, 'shutdown']);
+        $this->runtime = Runtime::createInstance($this->getRuntimePath());
         $locale = null;
         if (isset($this->config['app']['locale'])) {
             $locale = $this->config['app']['locale'];
@@ -452,7 +442,7 @@ class Application
         if (!date_default_timezone_set($tz)) {
             throw new Application\Exception\BadTimezone($tz);
         }
-        $this->loader->addSearchPath(FilePath::RUNTIME, $this->getRuntimePath(null, true));
+        $this->loader->addSearchPath(FilePath::RUNTIME, $this->runtime->getPath());
         if (false === $this->router->initialise()) {
             throw new RouterInitialisationFailed('Router returned false');
         }
@@ -693,7 +683,7 @@ class Application
         return $this->base;
     }
 
-    public static function findApplicationPath(?string $searchPath = null): false|string
+    public static function findApplicationPath(?string $searchPath = null): ?string
     {
         if ($path = getenv('APPLICATION_PATH')) {
             return realpath($path);
@@ -713,6 +703,6 @@ class Application
             }
         } while ($searchPath = dirname($searchPath));
 
-        return false;
+        return null;
     }
 }

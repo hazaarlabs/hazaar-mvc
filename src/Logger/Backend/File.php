@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Logger\Backend;
 
-use Hazaar\Application;
+use Hazaar\Application\Runtime;
 use Hazaar\Logger\Backend;
 
 class File extends Backend
@@ -27,7 +27,7 @@ class File extends Backend
         $this->setDefaultOption('write_ip', true);
         $this->setDefaultOption('write_timestamp', true);
         $this->setDefaultOption('write_pid', false);
-        $this->setDefaultOption('logfile', Application::getInstance()->getRuntimePath('hazaar.log'));
+        $this->setDefaultOption('logfile', Runtime::getInstance()->getPath('hazaar.log'));
         if (($logFile = $this->getOption('logfile'))
             && is_writable(dirname($logFile))
             && (!\file_exists($logFile) || \is_writable($logFile))) {
@@ -36,7 +36,7 @@ class File extends Backend
             }
         }
 
-        $this->setDefaultOption('errfile', Application::getInstance()->getRuntimePath('error.log'));
+        $this->setDefaultOption('errfile', Runtime::getInstance()->getPath('error.log'));
         if (($errorFile = $this->getOption('errfile'))
             && is_writable(dirname($errorFile))
             && (!\file_exists($errorFile) || \is_writeable($errorFile))) {

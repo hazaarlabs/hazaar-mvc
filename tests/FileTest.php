@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Hazaar\Tests;
 
-use Hazaar\Application;
-use Hazaar\File\BTree;
+use Hazaar\Application\Runtime;
 use Hazaar\File;
+use Hazaar\File\BTree;
 use Hazaar\Util\GeoData;
 use PHPUnit\Framework\TestCase;
 
@@ -18,7 +18,7 @@ class FileTest extends TestCase
     public function testTextFile(): void
     {
         $filename = 'UnitTestTempFile.txt';
-        $file = new File(Application::getInstance()->getRuntimePath($filename));
+        $file = new File(Runtime::getInstance()->getPath($filename));
         if ($file->exists()) {
             $file->unlink();
         }
@@ -37,7 +37,7 @@ class FileTest extends TestCase
     public function testJSONFile(): void
     {
         $filename = 'UnitTestTempFile.json';
-        $file = new File(Application::getInstance()->getRuntimePath($filename));
+        $file = new File(Runtime::getInstance()->getPath($filename));
         if ($file->exists()) {
             $file->unlink();
         }
@@ -62,7 +62,7 @@ class FileTest extends TestCase
 
     public function testEncryptedFile(): void
     {
-        $file = Application::getInstance()->getRuntimePath('UnitTestEncryption.txt');
+        $file = Runtime::getInstance()->getPath('UnitTestEncryption.txt');
         $encryptFile = new File($file);
         if ($encryptFile->exists()) {
             $encryptFile->unlink();
@@ -86,7 +86,7 @@ class FileTest extends TestCase
 
     public function testBTreeFile(): void
     {
-        $db = new BTree(Application::getInstance()->getRuntimePath('UnitTest.db'));
+        $db = new BTree(Runtime::getInstance()->getPath('UnitTest.db'));
         $this->assertInstanceOf('\Hazaar\File\BTree', $db);
         $this->assertTrue($db->set('test', 'value'));
         $this->assertEquals('value', $db->get('test'));
@@ -107,7 +107,7 @@ class FileTest extends TestCase
         $this->assertEquals('Australia', $geo->countryName('AU'));
         $this->assertIsArray($a = $geo->countryContinent('AU'));
         $this->assertEquals('Oceania', $a['name']);
-        //Assert array contains en-AU
+        // Assert array contains en-AU
         $this->assertContains('en-AU', $geo->countryLanguages('AU'));
         $this->assertIsArray($s = $geo->states('AU'));
         $this->assertArrayHasKey('NSW', $geo->states('AU'));
