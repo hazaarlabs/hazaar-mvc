@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\File;
 
 use Hazaar\Application;
+use Hazaar\Application\Runtime;
 
 /**
  * Create a temporary directory.
@@ -25,7 +26,7 @@ class TempDir extends Dir
         if (!$name) {
             $name = uniqid().'.tmp';
         }
-        $name = Application::getInstance()->getRuntimePath('temp', true).DIRECTORY_SEPARATOR.$name;
+        $name = Runtime::getInstance()->getPath('temp', true).DIRECTORY_SEPARATOR.$name;
         parent::__construct($name);
         if (!parent::exists()) {
             parent::create(true);

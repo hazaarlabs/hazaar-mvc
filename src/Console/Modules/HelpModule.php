@@ -13,9 +13,9 @@ class HelpModule extends Module
     protected function configure(): void
     {
         $this->addCommand('help')
-            ->setDescription('Display help information for a command.')
-            ->addArgument('command', 'The command to display help for.')
-            ->addGlobalOption('env', 'e', 'The environment to use.  Overrides the APPLICATION_ENV environment variable.')
+            ->setDescription('Display help information for a command')
+            ->addArgument('command', 'The command to display help for')
+            ->addGlobalOption('env', 'e', 'The environment to use.  Overrides the APPLICATION_ENV environment variable')
         ;
     }
 

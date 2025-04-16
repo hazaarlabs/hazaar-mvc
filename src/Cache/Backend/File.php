@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Hazaar\Cache\Backend;
 
 use Hazaar\Application;
+use Hazaar\Application\Runtime;
 use Hazaar\Cache\Backend;
 use Hazaar\File\BTree;
 
@@ -92,9 +93,8 @@ class File extends Backend
 
     public function init(string $namespace): void
     {
-        $app = Application::getInstance();
         $this->configure([
-            'cache_dir' => $app instanceof Application ? $app->getRuntimePath('cache', true) : sys_get_temp_dir(),
+            'cache_dir' => Runtime::getInstance()->getPath('cache', true),
             'file_prefix' => null,
             'use_zlib' => false,
             'encode_fs' => false,

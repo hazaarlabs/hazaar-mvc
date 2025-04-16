@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Util;
 
-use Hazaar\Application;
+use Hazaar\Application\Runtime;
 use Hazaar\File;
 use Hazaar\File\BTree;
 
@@ -36,7 +36,6 @@ class GeoData
      * Changing this triggers a re-initialisation of the internal database.
      */
     public const int VERSION = 2;
-    public static string $dbFile;
 
     /**
      * The publicly available GeoData database data sources.
@@ -53,76 +52,28 @@ class GeoData
      */
     private static ?BTree $db = null;
 
-    public function __construct(bool $forceDownloadGeodataFile = false)
+    private static string $dbFile = 'geodata.db';
+
+    public function __construct(?string $dbFile = null)
     {
-        if (!isset(self::$dbFile)) {
-            self::$dbFile = Application::getInstance()->getRuntimePath('geodata.db');
+        if (null === $dbFile) {
+            $dbFile = Runtime::getInstance()->getPath(self::$dbFile);
         }
-        $dbFile = new File(self::$dbFile);
-        if (!$dbFile->exists()) {
-            $forceDownloadGeodataFile = true;
-        }else{
-            self::$db = new BTree(self::$dbFile, true);
-            if(GeoData::VERSION !== GeoData::$db->get('__version__')) {
-                $forceDownloadGeodataFile = true;
+        $downloadDBFile = false;
+        if (!file_exists($dbFile)) {
+            $downloadDBFile = true;
+        } else {
+            $db = new BTree($dbFile, true);
+            if (GeoData::VERSION === $db->get('__version__')) {
+                self::$db = $db;
+            } else {
+                $downloadDBFile = true;
             }
         }
-        if (true === $forceDownloadGeodataFile){
-            $this->__initialise();
+        if ($downloadDBFile) {
+            $dbFile = self::fetchDBFile($dbFile);
+            self::$db = new BTree($dbFile, true);
         }
-    }
-
-    /**
-     * Initialises the internal B-Tree database with all available data.
-     *
-     * @return bool
-     *
-     * @throws \Exception
-     */
-    private function __initialise()
-    {
-        if (!class_exists('ZipArchive')) {
-            throw new \Exception('The GeoData class requires the ZipArchive class to be available!');
-        }
-        $geodataFilename = 'geodata.db';
-        if (self::$db instanceof BTree) {
-            GeoData::$db->close();
-        }
-        $zip = new \ZipArchive();
-        $geodataFilename = Application::getInstance()->getRuntimePath(basename(GeoData::$sources['url']));
-        if (false === $geodataFilename) {
-            throw new \Exception('Unable to determine runtime path for GeoData file!');
-        }
-        if (!is_writable(dirname($geodataFilename))) {
-            throw new \Exception('GeoData file is not writable!');
-        }
-        $geodataFile = new File($geodataFilename);
-        // Download the Hazaar GeoData file and check it's MD5 signature
-        $geodataData = file_get_contents(GeoData::$sources['url']);
-        if (false === $geodataData) {
-            throw new \Exception('Unable to download GeoData source file!');
-        }
-        $geodataFile->putContents($geodataData);
-        if (!$geodataFile->size() > 0) {
-            throw new \Exception('Unable to download GeoData source file!');
-        }
-        $md5 = trim(file_get_contents(GeoData::$sources['md5']));
-        if ($geodataFile->md5() !== $md5) {
-            throw new \Exception('GeoData source file MD5 signature does not match!');
-        }
-        $dir = new File\Dir(Application::getInstance()->getRuntimePath());
-        $zip->open($geodataFile->fullpath());
-        $zip->extractTo((string) $dir);
-        $geodataFile->unlink(); // Cleanup now
-        if (true === $dir->exists($geodataFilename)) {
-            if (self::$db instanceof BTree) {
-                self::$db->open();
-            }
-
-            return true;
-        }
-
-        return false;
     }
 
     /**
@@ -146,6 +97,49 @@ class GeoData
     }
 
     /**
+     * Fetch the GeoData database file from the remote API server and extract it.
+     */
+    public static function fetchDBFile(?string $dbFileName = 'geodata.db'): File
+    {
+        if (!class_exists('ZipArchive')) {
+            throw new \Exception('The GeoData class requires the ZipArchive class to be available!');
+        }
+        $zip = new \ZipArchive();
+        $geodataZIPFilename = Runtime::getInstance()->getPath(basename(GeoData::$sources['url']));
+        if (!is_writable(dirname($geodataZIPFilename))) {
+            throw new \Exception('GeoData file is not writable!');
+        }
+        $geodataZIPFile = new File($geodataZIPFilename);
+        // Download the Hazaar GeoData file and check it's MD5 signature
+        $geodataData = file_get_contents(GeoData::$sources['url']);
+        if (false === $geodataData) {
+            throw new \Exception('Unable to download GeoData source file!');
+        }
+        $geodataZIPFile->putContents($geodataData);
+        unset($geodataData);
+        if (!$geodataZIPFile->size() > 0) {
+            throw new \Exception('Unable to download GeoData source file!');
+        }
+        $md5 = trim(file_get_contents(GeoData::$sources['md5']));
+        if ($geodataZIPFile->md5() !== $md5) {
+            throw new \Exception('GeoData source file MD5 signature does not match!');
+        }
+        $dir = new File\Dir(Runtime::getInstance()->getPath());
+        $zip->open($geodataZIPFile->fullpath());
+        $zip->extractTo((string) $dir);
+        $geodataZIPFile->unlink(); // Cleanup now
+        $dbFile = $dir->get('geodata.db');
+        if (false === $dbFile->isFile()) {
+            throw new \Exception('GeoData source file not found after extraction!');
+        }
+        if ($dbFile->basename() !== $dbFileName) {
+            $dbFile->rename($dbFileName);
+        }
+
+        return $dbFile;
+    }
+
+    /**
      * Retrieve a list of countries.
      *
      * This method will return an associative array containing a list of all countries organised by their
@@ -155,7 +149,7 @@ class GeoData
      */
     public function countries(): array
     {
-        return $this->__list(GeoData::$db, 'name');
+        return $this->__list(self::$db, 'name');
     }
 
     /**
@@ -180,7 +174,7 @@ class GeoData
      */
     public function countryInfo(string $code): array
     {
-        $info = GeoData::$db->get(strtoupper($code));
+        $info = self::$db->get(strtoupper($code));
         unset($info['states'], $info['cities']);
 
         return $info;
@@ -195,7 +189,7 @@ class GeoData
      */
     public function countryInfoAll(): array
     {
-        return $this->__list(GeoData::$db);
+        return $this->__list(self::$db);
     }
 
     /**
@@ -210,7 +204,7 @@ class GeoData
     public function states(string $countryCode): array
     {
         $list = [];
-        if ($country = GeoData::$db->get(strtoupper($countryCode))) {
+        if ($country = self::$db->get(strtoupper($countryCode))) {
             foreach ($country['states'] as $state) {
                 if (!isset($state['code'], $state['name'])) {
                     continue;
@@ -237,7 +231,7 @@ class GeoData
     public function cities(string $countryCode, string $stateCode): array
     {
         $list = [];
-        if ($country = GeoData::$db->get(strtoupper($countryCode))) {
+        if ($country = self::$db->get(strtoupper($countryCode))) {
             $cities = ($country['states'][$stateCode]['cities'] ?? []);
             foreach ($cities as $id) {
                 if (!($city = $country['cities'][$id])) {
@@ -270,7 +264,7 @@ class GeoData
      */
     public function countryCode(string $name): ?string
     {
-        $info = GeoData::$db->range("\x00", "\xff");
+        $info = self::$db->range("\x00", "\xff");
         foreach ($info as $code => $country) {
             if ('__' == substr($code, 0, 2)) {
                 continue;

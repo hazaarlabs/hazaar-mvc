@@ -1541,8 +1541,8 @@ class Master
         $this->log->write(W_DEBUG, 'TASK->QUEUE: START='
             .date(self::$config['sys']['dateFormat'], $task->start)
             .($task->tag ? " TAG={$task->tag}" : ''), $task->id);
-        $this->log->write(W_DEBUG, 'APPLICATION_PATH: '.$task->application['path'], $task->id);
-        $this->log->write(W_DEBUG, 'APPLICATION_ENV:  '.$task->application['env'], $task->id);
+        $this->log->write(W_DEBUG, 'APPLICATION_PATH: '.$task->application->path, $task->id);
+        $this->log->write(W_DEBUG, 'APPLICATION_ENV:  '.$task->application->env, $task->id);
         $task->status = TASK_QUEUED;
     }
 

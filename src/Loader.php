@@ -210,20 +210,22 @@ class Loader
             return realpath($searchFile);
         }
         $app = Application::getInstance();
-        $loader = $app ? $app->loader : Loader::getInstance(Application::findApplicationPath());
+        $loader = $app ? $app->loader : Loader::getInstance(Application::findApplicationPath() ?? getcwd());
         if (!$loader) {
             return null;
         }
         // If the search file is not an absolute path then search the loader paths for it.
-        if ($paths = $loader->getSearchPaths($type)) {
-            foreach ($paths as $path) {
-                if (!$searchFile) {
-                    return $path;
-                }
-                $filename = $path.DIRECTORY_SEPARATOR.$searchFile;
-                if ($realPath = realpath($filename)) {
-                    return $realPath;
-                }
+        $paths = $loader->getSearchPaths($type);
+        if (!$paths) {
+            return null;
+        }
+        foreach ($paths as $path) {
+            if (!$searchFile) {
+                return $path;
+            }
+            $filename = $path.DIRECTORY_SEPARATOR.$searchFile;
+            if ($realPath = realpath($filename)) {
+                return $realPath;
             }
         }
 

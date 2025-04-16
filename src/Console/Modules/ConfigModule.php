@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace Hazaar\Console\Modules;
 
 use Hazaar\Application\Config;
-use Hazaar\Util\Arr;
 use Hazaar\Console\Input;
 use Hazaar\Console\Module;
 use Hazaar\Console\Output;
+use Hazaar\Util\Arr;
 
 class ConfigModule extends Module
 {
     protected function configure(): void
     {
         $this->addCommand('config')
-            ->setDescription('Run a tool command')
+            ->setDescription('View or modify the application configuration')
             ->addArgument('command', 'The tool command to run')
             ->addArgument('args', 'Arguments to pass to the tool command', true)
         ;
