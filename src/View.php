@@ -56,7 +56,7 @@ class View implements \ArrayAccess
      */
     protected array $functions = [];
 
-    private ?string $viewFile = null;
+    protected ?string $viewFile = null;
 
     /**
      * Array for storing names of initialised helpers so we only initialise them once.
