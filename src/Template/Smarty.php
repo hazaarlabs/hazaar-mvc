@@ -202,14 +202,14 @@ class Smarty
      * renderer class, and executes the rendering process. Additionally, it applies
      * any registered filters to the rendered content.
      *
-     * @param string $content the string template content to be rendered
-     * @param array  $params  An associative array of parameters to be passed to the template.
-     *                        These parameters will be merged with default parameters.
-     *                        Special handling is applied if a key named '*' exists.
+     * @param string       $content the string template content to be rendered
+     * @param array<mixed> $params  An associative array of parameters to be passed to the template.
+     *                              These parameters will be merged with default parameters.
+     *                              Special handling is applied if a key named '*' exists.
      *
      * @return string the rendered content after processing the template and applying filters
      *
-     * @throws \SmartyTemplateError if an error occurs during the rendering process
+     * @throws SmartyTemplateError if an error occurs during the rendering process
      */
     public function renderString(string $content, array $params = []): string
     {

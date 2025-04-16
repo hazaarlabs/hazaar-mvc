@@ -19,6 +19,7 @@ use Hazaar\Controller\Exception\NoAction;
 use Hazaar\Controller\Helper;
 use Hazaar\Controller\Response;
 use Hazaar\Controller\Response\HTTP\Redirect;
+use Hazaar\HTTP\Link;
 
 /**
  * Base Controller class.
@@ -362,6 +363,27 @@ abstract class Controller implements Controller\Interface\Controller
                 return false;
             }
         }
+
+        return true;
+    }
+
+    /**
+     * Send early hints to the client.
+     *
+     * This method sends early hints to the client using the HTTP/2 or HTTP/3 protocol.  It is used to inform the client
+     * about resources that should be preloaded or prefetched.  The `Link` class is used to create the links.
+     *
+     * @param array<Link> $links an array of Link objects to send as early hints
+     */
+    public function sendEarlyHints(array $links): bool
+    {
+        if (!function_exists('headers_send')) {
+            return false;
+        }
+        foreach ($links as $link) {
+            header((string) $link, false);
+        }
+        headers_send(103);
 
         return true;
     }
