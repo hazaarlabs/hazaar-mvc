@@ -128,9 +128,9 @@ class Input
     {
         $optionsDefinition = [];
         foreach ($definedOptions as $def) {
-            $optionsDefinition[] = $def['long'];
+            $optionsDefinition[$def['long']] = $def['long'];
             if ($def['short']) {
-                $definition[] = $def['short'];
+                $optionsDefinition[$def['short']] = $def['long'];
             }
         }
 
@@ -140,8 +140,8 @@ class Input
     /**
      * Parses a command line option and adds it to the options array.
      *
-     * @param array<string,mixed> $optionsDefinition
-     * @param array<string,mixed> $options
+     * @param array<string,string> $optionsDefinition
+     * @param array<string,mixed>  $options
      */
     private function parseOption(string $arg, array &$optionsDefinition, array &$options): bool
     {
@@ -155,17 +155,16 @@ class Input
 
             return true;
         }
-        if (str_starts_with($arg, '-')) {
-            $key = substr($arg, 1, 1);
-            if (in_array($key, $optionsDefinition)) {
-                $value = substr($arg, 2);
-                $options[$key] = $value;
-            }
-
-            return true;
+        if (!str_starts_with($arg, '-')) {
+            return false;
+        }
+        $key = substr($arg, 1, 1);
+        if (array_key_exists($key, $optionsDefinition)) {
+            $value = (strlen($arg) > 2) ? substr($arg, 3) : true;
+            $options[$optionsDefinition[$key]] = $value;
         }
 
-        return false;
+        return true;
     }
 
     // Shows a help page on the CLI for the options and commands that have been configured.
