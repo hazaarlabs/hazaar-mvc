@@ -25,6 +25,5 @@ docs/src/api
 .phpdoc
 .vscode/
 
-tests/application/.runtime/
-
-tests/application/configs/local/
+tests/app/.runtime/
+tests/app/configs/local/

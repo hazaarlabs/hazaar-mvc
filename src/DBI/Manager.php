@@ -11,8 +11,8 @@ declare(strict_types=1);
 
 namespace Hazaar\DBI;
 
-use Hazaar\Application;
 use Hazaar\Application\FilePath;
+use Hazaar\Application\Runtime;
 use Hazaar\DBI\Exception\ConnectionFailed;
 use Hazaar\DBI\Manager\Data;
 use Hazaar\DBI\Manager\Schema;
@@ -578,9 +578,8 @@ class Manager
 
         try {
             $sync = $dataSchema ? new Data($dataSchema) : Data::load($dataFile);
-            $application = new Application($env);
             $syncHash = $sync->getHash();
-            $syncHashFile = $application->getRuntimePath('.dbi_sync_hash');
+            $syncHashFile = Runtime::getInstance()->getPath('.dbi_sync_hash');
             if (true !== $force
                 && file_exists($syncHashFile)
                 && $syncHash == trim(file_get_contents($syncHashFile))) {
@@ -714,8 +713,7 @@ class Manager
         $result = $this->createSchemaVersionTable();
         $this->dbi->log('All database objects deleted in '.$timer);
         $env = $this->config['environment'];
-        $application = new Application($env);
-        $syncHashFile = $application->getRuntimePath('.dbi_sync_hash');
+        $syncHashFile = Runtime::getInstance()->getPath('.dbi_sync_hash');
         if (file_exists($syncHashFile)) {
             unlink($syncHashFile);
         }

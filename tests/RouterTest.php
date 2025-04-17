@@ -118,7 +118,7 @@ class RouterTest extends TestCase
             'REQUEST_URI' => '/test/hellothere',
         ]);
         $this->config['type'] = 'file';
-        $this->config['applicationPath'] = __DIR__.'/application';
+        $this->config['applicationPath'] = __DIR__.'/app';
         $router = new Router($this->config);
         $this->assertTrue($router->initialise());
         $this->assertInstanceOf(Route::class, $route = $router->evaluateRequest($request));

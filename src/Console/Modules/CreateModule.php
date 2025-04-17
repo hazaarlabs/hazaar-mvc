@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Hazaar\Console\Modules;
 
 use Hazaar\Application\FilePath;
-use Hazaar\Console\Module;
 use Hazaar\Console\Input;
+use Hazaar\Console\Module;
 use Hazaar\Console\Output;
 use Hazaar\File;
 use Hazaar\Template\Smarty;
@@ -15,11 +15,10 @@ class CreateModule extends Module
 {
     protected function configure(): void
     {
-        $this
-            ->addCommand('create')
-            ->setDescription('Create a new application object (view, controller or model).')
-            ->addArgument('type', 'The type of object to create (layout, view, controller, controller_basic, controller_action, model).')
-            ->addArgument('name', 'The name of the object to create.')
+        $this->addCommand('create')
+            ->setDescription('Create a new application object (view, controller or model)')
+            ->addArgument('type', 'The type of object to create (layout, view, controller, controller_basic, controller_action, model)')
+            ->addArgument('name', 'The name of the object to create')
         ;
     }
 

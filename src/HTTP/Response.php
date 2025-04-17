@@ -6,7 +6,10 @@ namespace Hazaar\HTTP;
 
 use Hazaar\Util\Arr;
 
-class Response
+/**
+ * @implements \ArrayAccess<string,array<string>|string>
+ */
+class Response implements \ArrayAccess
 {
     // Status code of the response
     public ?int $status = null;
@@ -54,15 +57,43 @@ class Response
     }
 
     /**
-     * Magic method to allow access to headers as properties.
-     *
-     * @param string $key The header key to get
+     * ArrayAccess method to allow access to headers as properties.
      *
      * @return null|array<string>|string
      */
-    public function __get(string $key): null|array|string
+    public function offsetGet(mixed $offset): mixed
     {
-        return $this->getHeader($key);
+        return $this->getHeader($offset);
+    }
+
+    /**
+     * ArrayAccess method to allow access to headers as properties.
+     *
+     * @param mixed $value The value to set
+     */
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        if (null === $value) {
+            $this->setHeader($offset);
+        } else {
+            $this->setHeader($offset, $value);
+        }
+    }
+
+    /**
+     * ArrayAccess method to allow access to headers as properties.
+     */
+    public function offsetExists(mixed $offset): bool
+    {
+        return $this->hasHeader($offset);
+    }
+
+    /**
+     * ArrayAccess method to allow access to headers as properties.
+     */
+    public function offsetUnset(mixed $offset): void
+    {
+        $this->setHeader($offset);
     }
 
     public function setStatus(int $status): void

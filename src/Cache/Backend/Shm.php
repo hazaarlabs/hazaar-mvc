@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Cache\Backend;
 
-use Hazaar\Application;
+use Hazaar\Application\Runtime;
 use Hazaar\Cache\Backend;
 
 /**
@@ -56,8 +56,7 @@ class Shm extends Backend
     {
         $this->addCapabilities('store_objects', 'keepalive', 'array', 'lock');
         $this->keepalive = $this->options['ttl'] > 0;
-        $app = Application::getInstance();
-        $inodeFile = $app->getRuntimePath('.shm_inode'); // The inode file is used to create a unique key for the shared memory segment
+        $inodeFile = Runtime::getInstance()->getPath('.shm_inode'); // The inode file is used to create a unique key for the shared memory segment
         file_exists($inodeFile) || touch($inodeFile); // Create the inode file if it doesn't exist
         $addrIndex = ftok($inodeFile, chr(0));
         if (-1 === $addrIndex) {
@@ -149,7 +148,7 @@ class Shm extends Backend
     /**
      * Check if a key exists in the shared memory cache.
      *
-     * @param string $key         the key to check
+     * @param string $key        the key to check
      * @param bool   $checkEmpty whether to check if the data associated with the key is empty
      *
      * @return bool returns true if the key exists in the cache, false otherwise

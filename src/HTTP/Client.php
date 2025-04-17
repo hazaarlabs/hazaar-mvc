@@ -181,9 +181,13 @@ class Client
                     if ($redirectLimit <= 0) {
                         throw new Exception\TooManyRedirects();
                     }
-                    if (!preg_match('/^http[s]?\:\/\//', $response['location'])) {
-                        if ('/' == substr($response['location'], 0, 1)) {
-                            $request->url()['path'] = $response['location'];
+                    $location = $response['location'];
+                    if ($location && !preg_match('/^http[s]?\:\/\//', $location)) {
+                        if (is_array($location)) {
+                            $location = reset($location);
+                        }
+                        if ('/' == substr($location, 0, 1)) {
+                            $request->url()['path'] = $location;
                         } else {
                             $request->url()['path'] .= (('/' == substr($request->url()['path'], -1, 1)) ? null : '/').$response['location'];
                         }

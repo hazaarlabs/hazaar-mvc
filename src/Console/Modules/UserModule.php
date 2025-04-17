@@ -15,7 +15,7 @@ class UserModule extends Module
     protected function configure(): void
     {
         $this->addCommand('user')
-            ->setDescription('Run a tool command')
+            ->setDescription('Create, delete or update a user')
             ->addArgument('command', 'The tool command to run')
             ->addArgument('user', 'The user to operate on')
         ;

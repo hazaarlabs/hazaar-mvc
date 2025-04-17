@@ -42,7 +42,6 @@ function sidebarGuide() {
                 { text: 'The Application', link: '/docs/concepts/application' },
                 { text: 'Performance', link: '/docs/concepts/performance' },
                 { text: 'What is MVC?', link: '/docs/concepts/what-is-mvc' },
-
             ]
         },
         {
@@ -66,20 +65,21 @@ function sidebarGuide() {
                 { text: 'Validation', link: '/docs/basics/validation' },
                 { text: 'Security', link: '/docs/basics/security' },
                 { text: 'Helper Functions', link: '/docs/basics/helpers' },
+                { text: 'CLI Tools', link: '/docs/basics/cli-tools' }
             ]
         },
         {
             text: 'Databases',
             collapsible: true,
             children: [
-                { text: 'Overview', link: '/docs/dbi/overview', },
-                { text: 'Configuration', link: '/docs/dbi/configure', },
-                { text: 'CRUD', link: '/docs/dbi/crud', },
-                { text: 'Schema Manager', link: '/docs/dbi/schema-manager', },
-                { text: 'Data Sync', link: '/docs/dbi/data-sync', },
-                { text: 'Encryption', link: '/docs/dbi/encryption', },
-                { text: 'Filesystem', link: '/docs/dbi/filesystem', },
-                { text: 'Parser', link: '/docs/dbi/parser', }
+                { text: 'Overview', link: '/docs/dbi/overview' },
+                { text: 'Configuration', link: '/docs/dbi/configure' },
+                { text: 'CRUD', link: '/docs/dbi/crud' },
+                { text: 'Schema Manager', link: '/docs/dbi/schema-manager' },
+                { text: 'Data Sync', link: '/docs/dbi/data-sync' },
+                { text: 'Encryption', link: '/docs/dbi/encryption' },
+                { text: 'Filesystem', link: '/docs/dbi/filesystem' },
+                { text: 'Parser', link: '/docs/dbi/parser' }
             ]
         },
         {
@@ -95,6 +95,7 @@ function sidebarGuide() {
                         { text: 'Backends', link: '/docs/advanced/caching/backends' }
                     ]
                 },
+                { text: 'Early Hints', link: '/docs/advanced/early-hints' },
                 { text: 'Strict Models', link: '/docs/advanced/strict-models' },
                 { text: 'Generating PDFs', link: '/docs/advanced/pdf' },
                 { text: 'XML-RPC', link: '/docs/advanced/xml-rpc' },

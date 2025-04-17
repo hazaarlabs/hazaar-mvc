@@ -112,7 +112,7 @@ Unit Testing:
   services:
     - postgres:15
   variables:
-    APPLICATION_PATH: tests/application
+    APPLICATION_PATH: tests/app
     POSTGRES_DB: hazaar_framework
     POSTGRES_USER: phpunit
     POSTGRES_PASSWORD: phpunit12345

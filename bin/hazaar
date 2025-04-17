@@ -4,9 +4,9 @@
 use Hazaar\Console\Application;
 use Hazaar\Console\Modules\ConfigModule;
 use Hazaar\Console\Modules\CreateModule;
-use Hazaar\Console\Modules\DecryptModule;
+use Hazaar\Console\Modules\CryptModule;
 use Hazaar\Console\Modules\DocModule;
-use Hazaar\Console\Modules\EncryptModule;
+use Hazaar\Console\Modules\UtilsModule;
 
 if (file_exists(__DIR__.'/../../../autoload.php')) {
     require __DIR__.'/../../../autoload.php';
@@ -14,11 +14,11 @@ if (file_exists(__DIR__.'/../../../autoload.php')) {
     require __DIR__.'/../vendor/autoload.php';
 }
 
-$app = new Application('Hazaar Tool', '1.0.0');
+$app = new Application('Hazaar Tool', '0.3.0');
 $app->add(new ConfigModule());
 $app->add(new CreateModule());
-$app->add(new DecryptModule());
 $app->add(new DocModule());
-$app->add(new EncryptModule());
+$app->add(new CryptModule());
+$app->add(new UtilsModule());
 
 $app->run();
