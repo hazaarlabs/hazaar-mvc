@@ -117,6 +117,11 @@ class Input
         return $this->options[$name] ?? $default;
     }
 
+    public function setOption(string $name, mixed $value): void
+    {
+        $this->options[$name] = $value;
+    }
+
     /**
      * Reduces the options array to a simple array of option names.
      *
