@@ -28,6 +28,11 @@ class RunModule extends Module
             ->addOption('force', short: 'f', description: 'Force stop the server')
             ->addOption('pid', short: 'p', description: 'The PID file to use')
         ;
+        $this->addCommand('restart', [$this, 'restartServer'])
+            ->setDescription('Restart the Warlock server')
+            ->addOption('force', short: 'f', description: 'Force restart the server')
+            ->addOption('pid', short: 'p', description: 'The PID file to use')
+        ;
     }
 
     protected function prepare(Input $input, Output $output): void
@@ -67,5 +72,14 @@ class RunModule extends Module
         $output->write('Warlock server stopped.'.PHP_EOL);
 
         return 1;
+    }
+
+    protected function restartServer(Input $input, Output $output): int
+    {
+        $output->write('Restarting Warlock server...'.PHP_EOL);
+        $input->setOption('daemon', true);
+        $this->stopServer($input, $output);
+
+        return $this->startServer($input, $output);
     }
 }
