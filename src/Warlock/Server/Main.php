@@ -21,10 +21,6 @@ if (!extension_loaded('pcntl')) {
 class Main
 {
     /**
-     * @var array<string, mixed>
-     */
-
-    /**
      * Signals that we will capture.
      *
      * @var array<int, string>
@@ -37,6 +33,7 @@ class Main
 
     public static self $instance;
     public Protocol $protocol;
+    private string $env = 'development';
 
     /**
      * The process ID of this server.
@@ -111,7 +108,7 @@ class Main
     public function __construct(string $configFile = 'warlock', string $env = 'development')
     {
         self::$instance = $this;
-        $config = new \Hazaar\Warlock\Config($configFile, env: $env);
+        $config = new \Hazaar\Warlock\Config($configFile, env: $this->env = $env);
         if (!isset($config['server'])) {
             throw new \Exception('Server configuration not found');
         }
@@ -229,6 +226,22 @@ class Main
         $this->shutdown = time() + $delay;
 
         return true;
+    }
+
+    public function stop(bool $force = false, ?int $pid = null): bool
+    {
+        if (null === $pid) {
+            $pid = file_get_contents($this->pidfile);
+            if (false === $pid) {
+                return false;
+            }
+            $pid = (int) $pid;
+            if (0 === $pid) {
+                return false;
+            }
+        }
+
+        return posix_kill($pid, $force ? SIGKILL : SIGTERM);
     }
 
     public function setSilent(bool $silent): void
@@ -757,7 +770,7 @@ class Main
         $this->log->write('PHP Binary = '.$this->config['phpBinary'], LogLevel::NOTICE);
         // $this->log->write(W_NOTICE, 'Application path = '.APPLICATION_PATH);
         // $this->log->write(W_NOTICE, 'Application name = '.$this->config['sys']['applicationName']);
-        $this->log->write('Application environment = '.APPLICATION_ENV, LogLevel::NOTICE);
+        $this->log->write('Application environment = '.$this->env, LogLevel::NOTICE);
         // $this->log->write(W_NOTICE, 'Runtime path = '.$runtimePath);
         // $this->log->write(W_NOTICE, 'PID = '.$this->pid);
         // $this->log->write(W_NOTICE, 'PID file = '.$this->pidfile);
