@@ -29,6 +29,9 @@ final class Socket extends WebSockets implements Connection
      */
     protected array $headers;
 
+    /**
+     * @param array<string,string> $headers
+     */
     public function __construct(Protocol $protocol, ?string $guid = null, array $headers = [])
     {
         if (!extension_loaded('sockets')) {
@@ -46,7 +49,14 @@ final class Socket extends WebSockets implements Connection
         $this->disconnect();
     }
 
-    public function connect(string $host, int $port, ?array $extraHeaders = null): bool
+    /**
+     * Connect to the Warlock server.
+     *
+     * @param string             $host         The host name or IP address of the Warlock server
+     * @param int                $port         The port number of the Warlock server
+     * @param null|array<string> $extraHeaders Additional headers to send with the connection
+     */
+    public function connect(?string $host = null, ?int $port = null, ?array $extraHeaders = null): bool
     {
         $this->socket = @socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         if (false === $this->socket) {

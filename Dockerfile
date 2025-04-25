@@ -1,4 +1,4 @@
-FROM php:8.4-zts-alpine
+FROM php:8.4-alpine
 
 # Copy composer from the official composer image
 COPY --from=composer:2.8.3 /usr/bin/composer /usr/bin/composer

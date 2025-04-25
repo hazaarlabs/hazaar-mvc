@@ -19,7 +19,7 @@ class REST
      */
     public function __construct(array $serverConfig = [])
     {
-        $this->serverConfig = new Config($serverConfig);
+        $this->serverConfig = new Config(config: $serverConfig);
         $this->client = new Client();
         if (null === $this->serverConfig['client']['encoded']) {
             $this->serverConfig['client']['encoded'] = $this->serverConfig['server']['encoded'];

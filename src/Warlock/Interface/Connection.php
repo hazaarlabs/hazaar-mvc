@@ -10,15 +10,7 @@ interface Connection
 {
     public function __construct(Protocol $protocol, ?string $guid = null);
 
-    /**
-     * Connect to the Warlock server.
-     *
-     * @param string             $applicationName The name of the application connecting
-     * @param string             $host            The host name or IP address of the Warlock server
-     * @param int                $port            The port number of the Warlock server
-     * @param null|array<string> $extraHeaders   Additional headers to send with the connection
-     */
-    public function connect(string $host, int $port, ?array $extraHeaders = null): bool;
+    public function connect(): bool;
 
     public function disconnect(): bool;
 

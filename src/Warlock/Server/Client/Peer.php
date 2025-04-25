@@ -6,8 +6,9 @@ namespace Hazaar\Warlock\Server\Client;
 
 use Hazaar\Util\Boolean;
 use Hazaar\Warlock\Server\Client;
-use Hazaar\Warlock\Server\Logger;
-use Hazaar\Warlock\Server\Master;
+use Hazaar\Warlock\Server\Component\Logger;
+use Hazaar\Warlock\Server\Enum\LogLevel;
+use Hazaar\Warlock\Server\Main;
 
 class Peer extends Client
 {
@@ -36,12 +37,12 @@ class Peer extends Client
         $this->id = md5($this->address.':'.$this->port);
         $this->name = 'PEER_'.strtoupper($this->address).':'.$this->port;
         $this->isRemote = $isRemote;
-        $this->log->write(W_DEBUG, 'PEER->CONSTRUCT: HOST='.$this->address.' PORT='.$this->port.' REMOTE='.Boolean::toString($this->isRemote));
+        $this->log->write('PEER->CONSTRUCT: HOST='.$this->address.' PORT='.$this->port.' REMOTE='.Boolean::toString($this->isRemote), LogLevel::DEBUG);
     }
 
     public function __destruct()
     {
-        $this->log->write(W_DEBUG, 'PEER->DESTRUCT: HOST='.$this->address.' PORT='.$this->port);
+        $this->log->write('PEER->DESTRUCT: HOST='.$this->address.' PORT='.$this->port, LogLevel::DEBUG);
     }
 
     public function process(): void
@@ -50,7 +51,7 @@ class Peer extends Client
             if (self::STATUS_DISCONNECTED === $this->status) {
                 $this->connect();
             } else {
-                $this->log->write(W_DEBUG, 'Connection to peer '.$this->address.':'.$this->port.' is not connected');
+                $this->log->write('Connection to peer '.$this->address.':'.$this->port.' is not connected', LogLevel::DEBUG);
                 $this->status = self::STATUS_DISCONNECTED;
             }
 
@@ -67,7 +68,7 @@ class Peer extends Client
 
             case self::STATUS_CONNECTING:
                 if ($meta['timed_out']) {
-                    $this->log->write(W_NOTICE, 'Connection to peer '.$this->address.' timed out');
+                    $this->log->write('Connection to peer '.$this->address.' timed out', LogLevel::NOTICE);
                     $this->disconnect();
                 } else {
                     $this->status = self::STATUS_CONNECTED;
@@ -77,7 +78,7 @@ class Peer extends Client
 
             case self::STATUS_CONNECTED:
                 if ($meta['eof']) {
-                    $this->log->write(W_NOTICE, 'Connection to peer '.$this->address.' closed unexpectedly');
+                    $this->log->write('Connection to peer '.$this->address.' closed unexpectedly', LogLevel::NOTICE);
                     $this->disconnect();
                 }
                 $packet = "GET /hazaar/warlock HTTP/1.1\n";
@@ -102,7 +103,7 @@ class Peer extends Client
             case self::STATUS_AUTHENTICATING:
             case self::STATUS_STREAMING:
                 if ($meta['eof']) {
-                    $this->log->write(W_NOTICE, 'Connection to peer '.$this->address.' closed unexpectedly');
+                    $this->log->write('Connection to peer '.$this->address.' closed unexpectedly', LogLevel::NOTICE);
                     $this->disconnect();
                 }
         }
@@ -118,7 +119,7 @@ class Peer extends Client
             if (!(isset($lead[1]) && '101' === $lead[1])) {
                 $this->disconnect();
             } else {
-                $this->log->write(W_INFO, 'Peer '.$this->address.' connected');
+                $this->log->write('Peer '.$this->address.' connected', LogLevel::INFO);
                 $this->status = self::STATUS_STREAMING;
             }
         }
@@ -147,11 +148,11 @@ class Peer extends Client
             $this->accessKey = $accessKey;
         }
         $this->status = self::STATUS_CONNECTING;
-        $this->log->write(W_DEBUG, "PEER->OPEN: HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", $this->name);
+        $this->log->write("PEER->OPEN: HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", LogLevel::DEBUG);
         $connectFlags = STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT;
         $this->stream = @stream_socket_client('tcp://'.$this->address.':'.$this->port, $errno, $errstr, 30, $connectFlags);
         if (false !== $this->stream) {
-            Master::$instance->clientAdd($this->stream, $this);
+            Main::$instance->clientAdd($this->stream, $this);
         } else {
             $this->status = self::STATUS_DISCONNECTED;
         }
@@ -160,14 +161,14 @@ class Peer extends Client
     public function disconnect(): bool
     {
         if (is_resource($this->stream)) {
-            Master::$instance->clientRemove($this->stream);
+            Main::$instance->clientRemove($this->stream);
             stream_socket_shutdown($this->stream, STREAM_SHUT_RDWR);
-            $this->log->write(W_DEBUG, "PEER->CLOSE: HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", $this->name);
+            $this->log->write("PEER->CLOSE: HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", LogLevel::DEBUG);
             fclose($this->stream);
         }
         $this->status = self::STATUS_DISCONNECTED;
         if (true === $this->isRemote) {
-            Master::$instance->cluster->removePeer($this);
+            Main::$instance->cluster->removePeer($this);
         }
 
         return true;
@@ -195,13 +196,13 @@ class Peer extends Client
 
         switch ($command) {
             case 'INIT':
-                $this->log->write(W_DEBUG, 'Received INIT command from peer '.$this->address.':'.$this->port);
+                $this->log->write('Received INIT command from peer '.$this->address.':'.$this->port, LogLevel::DEBUG);
 
                 return true;
 
             case 'EVENT':
-                $this->log->write(W_DEBUG, 'Received event from peer '.$this->address.':'.$this->port);
-                Master::$instance->trigger($payload->id, $payload->data, $this->name, $payload->trigger);
+                $this->log->write('Received event from peer '.$this->address.':'.$this->port, LogLevel::DEBUG);
+                Main::$instance->trigger($payload->id, $payload->data, $this->name, $payload->trigger);
 
                 return true;
 

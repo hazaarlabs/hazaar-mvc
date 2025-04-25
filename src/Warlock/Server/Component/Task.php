@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Hazaar\Warlock\Server;
 
 use Hazaar\Util\Boolean;
+use Hazaar\Warlock\Server\Component\Logger;
+use Hazaar\Warlock\Server\Enum\LogLevel;
 
 // STATUS CONSTANTS
 define('TASK_INIT', 0);
@@ -61,14 +63,14 @@ abstract class Task extends Process implements \Hazaar\Warlock\Interface\Task
         try {
             parent::start();
         } catch (\Exception $e) {
-            $this->log->write(W_ERR, 'Failed to start task: '.$e->getMessage(), $this->name);
+            $this->log->write('Failed to start task: '.$e->getMessage(), LogLevel::ERROR);
             $this->status = TASK_ERROR;
         }
     }
 
     public function run(): void
     {
-        $this->log->write(W_ERR, 'Task run method not implemented for: '.get_class($this), $this->name);
+        $this->log->write('Task run method not implemented for: '.get_class($this), LogLevel::ERROR);
         $this->status = TASK_ERROR;
     }
 
@@ -109,7 +111,7 @@ abstract class Task extends Process implements \Hazaar\Warlock\Interface\Task
     public function sendEvent(string $eventID, string $triggerID, mixed $data): bool|int
     {
         if (!in_array($eventID, $this->subscriptions)) {
-            $this->log->write(W_WARN, "Client {$this->id} is not subscribed to event {$eventID}", $this->name);
+            $this->log->write("Client {$this->id} is not subscribed to event {$eventID}", LogLevel::WARN);
 
             return false;
         }
@@ -127,7 +129,7 @@ abstract class Task extends Process implements \Hazaar\Warlock\Interface\Task
     {
         $this->__buffer .= $buf;
         while ($packet = $this->processPacket($this->__buffer)) {
-            $this->log->write(W_DECODE, 'TASK<-PACKET: '.trim($packet, "\n"), $this->name);
+            $this->log->write('TASK<-PACKET: '.trim($packet, "\n"), LogLevel::DECODE);
             $payload = null;
             $time = null;
             if ($type = Master::$protocol->decode($packet, $payload, $time)) {
@@ -144,26 +146,26 @@ abstract class Task extends Process implements \Hazaar\Warlock\Interface\Task
             return false;
         }
         $packet = Master::$protocol->encode($command, $payload); // Override the timestamp.
-        $this->log->write(W_DECODE, "TASK->PACKET: {$packet}", $this->name);
+        $this->log->write("TASK->PACKET: {$packet}", LogLevel::DECODE);
 
         return $this->write($packet);
     }
 
     public function commandUnsubscribe(string $eventID): bool
     {
-        $this->log->write(W_DEBUG, "TASK<-UNSUBSCRIBE: EVENT={$eventID} ID={$this->id}", $this->name);
+        $this->log->write("TASK<-UNSUBSCRIBE: EVENT={$eventID} ID={$this->id}", LogLevel::DEBUG);
         if (($index = array_search($eventID, $this->subscriptions)) !== false) {
             unset($this->subscriptions[$index]);
         }
 
-        return Master::$instance->unsubscribe($this->client, $eventID);
+        return Main::$instance->unsubscribe($this->client, $eventID);
     }
 
     public function commandTrigger(string $eventID, mixed $data, bool $echoClient = true): bool
     {
-        $this->log->write(W_DEBUG, "TASK<-TRIGGER: NAME={$eventID} ID={$this->id} ECHO=".Boolean::toString($echoClient), $this->name);
+        $this->log->write("TASK<-TRIGGER: NAME={$eventID} ID={$this->id} ECHO=".Boolean::toString($echoClient), LogLevel::DEBUG);
 
-        return Master::$instance->trigger($eventID, $data, false === $echoClient ? $this->id : null);
+        return Main::$instance->trigger($eventID, $data, false === $echoClient ? $this->id : null);
     }
 
     final public function destruct(): void
@@ -190,15 +192,15 @@ abstract class Task extends Process implements \Hazaar\Warlock\Interface\Task
         $this->accessKey = uniqid();
         $this->log = new Logger();
         $this->defineEventHook('written', 'status', function ($value) {
-            $this->log->write(W_DEBUG, 'STATUS: '.strtoupper($this->status()), $this->id);
+            $this->log->write('STATUS: '.strtoupper($this->status()), LogLevel::DEBUG);
             if (TASK_RETRY === $value) {
                 ++$this->retries;
-                $this->log->write(W_DEBUG, 'RETRIES: '.$this->retries, $this->id);
+                $this->log->write('RETRIES: '.$this->retries, LogLevel::DEBUG);
                 $this->start = time() + Master::$config['task']['retry'];
             }
         });
         $this->defineEventHook('written', 'start', function ($value) {
-            $this->log->write(W_DEBUG, 'START: '.date('Y-m-d H:i:s', $this->start), $this->id);
+            $this->log->write('START: '.date('Y-m-d H:i:s', $this->start), LogLevel::DEBUG);
         });
     }
 
@@ -218,23 +220,23 @@ abstract class Task extends Process implements \Hazaar\Warlock\Interface\Task
         if (!$command) {
             return false;
         }
-        $this->log->write(W_DEBUG, "TASK<-COMMAND: {$command} ID={$this->id}", $this->name);
+        $this->log->write("TASK<-COMMAND: {$command} ID={$this->id}", LogLevel::DEBUG);
 
         switch ($command) {
             case 'NOOP':
-                $this->log->write(W_INFO, 'NOOP: '.print_r($payload, true), $this->name);
+                $this->log->write('NOOP: '.print_r($payload, true), LogLevel::INFO);
 
                 return true;
 
             case 'OK':
                 if ($payload) {
-                    $this->log->write(W_INFO, $payload, $this->name);
+                    $this->log->write($payload, LogLevel::INFO);
                 }
 
                 return true;
 
             case 'ERROR':
-                $this->log->write(W_ERR, $payload, $this->name);
+                $this->log->write($payload, LogLevel::ERROR);
 
                 return true;
 
@@ -253,12 +255,14 @@ abstract class Task extends Process implements \Hazaar\Warlock\Interface\Task
                 return $this->commandLog($payload);
 
             case 'DEBUG':
-                $this->log->write(W_DEBUG, $payload->data ?? null, $this->name);
+                $this->log->write($payload->data ?? null, LogLevel::DEBUG);
 
                 return true;
 
             default:
-                return Master::$instance->processCommand($this->client, $command, $payload);
+                Main::$instance->processCommand($this->client, $command, $payload);
+
+                return true;
         }
     }
 
@@ -267,10 +271,10 @@ abstract class Task extends Process implements \Hazaar\Warlock\Interface\Task
      */
     private function commandSubscribe(string $eventID, ?array $filter = null): bool
     {
-        $this->log->write(W_DEBUG, "TASK<-SUBSCRIBE: EVENT={$eventID} ID={$this->id}", $this->name);
+        $this->log->write("TASK<-SUBSCRIBE: EVENT={$eventID} ID={$this->id}", LogLevel::DEBUG);
         $this->subscriptions[] = $eventID;
 
-        return Master::$instance->subscribe($this->client, $eventID, $filter);
+        return Main::$instance->subscribe($this->client, $eventID, $filter);
     }
 
     private function commandLog(\stdClass $payload): bool
@@ -278,14 +282,13 @@ abstract class Task extends Process implements \Hazaar\Warlock\Interface\Task
         if (!property_exists($payload, 'msg')) {
             throw new \Exception('Unable to write to log without a log message!');
         }
-        $level = $payload->level ?? W_INFO;
-        $name = $payload->name ?? $this->name;
+        $level = $payload->level ?? LogLevel::INFO;
         if (is_array($payload->msg)) {
             foreach ($payload->msg as $msg) {
-                $this->commandLog((object) ['level' => $level, 'msg' => $msg, 'name' => $name]);
+                $this->commandLog((object) ['level' => $level, 'msg' => $msg]);
             }
         } else {
-            $this->log->write($level, $payload->msg ?? '--', $name);
+            $this->log->write($payload->msg ?? '--', $level);
         }
 
         return true;

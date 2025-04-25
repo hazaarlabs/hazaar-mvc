@@ -9,13 +9,13 @@ use Hazaar\Util\Boolean;
 use Hazaar\Util\Closure;
 use Hazaar\Util\DateTime;
 use Hazaar\Util\Str;
-use Hazaar\Warlock\Interface\Connection;
+use Hazaar\Warlock\Connection\Socket;
 
 abstract class Process
 {
     public int $start = 0;
     public ?int $state = HAZAAR_SERVICE_NONE;
-    protected Connection $conn;
+    protected Socket $conn;
     protected ?string $id = null;
     protected Protocol $protocol;
 
@@ -489,7 +489,7 @@ abstract class Process
                                 $code = '$_function = '.$payload->exec.';';
                             }
                             if (is_string($code)) {
-                                $container = new Container($application, $protocol);
+                                $container = new Container($protocol);
                                 $exitcode = $container->exec($code, $payload->params ?? null);
                             } elseif ($class instanceof \ReflectionClass
                                 && $method instanceof \ReflectionMethod
@@ -651,7 +651,7 @@ abstract class Process
         return true;
     }
 
-    protected function createConnection(Protocol $protocol, ?string $guid = null): Connection|false
+    protected function createConnection(Protocol $protocol, ?string $guid = null): false|Socket
     {
         return false;
     }

@@ -20,7 +20,7 @@ final class Pipe implements Connection
         $this->guid = $guid;
     }
 
-    public function connect(string $applicationName, string $host, int $port, ?array $extraHeaders = null): bool
+    public function connect(): bool
     {
         return true;
     }

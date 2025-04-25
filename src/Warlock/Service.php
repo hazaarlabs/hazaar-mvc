@@ -624,7 +624,7 @@ abstract class Service extends Process
         return $result;
     }
 
-    protected function connect(Protocol $protocol, ?string $guid = null): Connection|false
+    public function connect(Protocol $protocol, ?string $guid = null): Connection|false
     {
         if (true === $this->__remote) {
             if (!isset($this->config['server'])) {
@@ -633,9 +633,9 @@ abstract class Service extends Process
             $headers = [];
             $headers['X-WARLOCK-ACCESS-KEY'] = base64_encode($this->config['server']['access_key']);
             $headers['X-WARLOCK-CLIENT-TYPE'] = 'service';
-            $conn = new Socket($protocol);
+            $conn = new Socket($protocol, $guid);
             $this->log(W_LOCAL, 'Connecting to Warlock server at '.$this->config['server']['host'].':'.$this->config['server']['port']);
-            if (!$conn->connect($this->config['applicationName'], $this->config['server']['host'], $this->config['server']['port'], $headers)) {
+            if (!$conn->connect($this->config['server']['host'], $this->config['server']['port'], $headers)) {
                 return false;
             }
             if (($type = $conn->recv($payload)) === false || 'OK' !== $type) {

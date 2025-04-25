@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Server\Component;
 
+use Hazaar\Warlock\Server\Client;
 use Hazaar\Warlock\Server\Client\Peer;
+use Hazaar\Warlock\Server\Enum\LogLevel;
+use Hazaar\Warlock\Server\Main;
 
 class Cluster
 {
@@ -33,14 +36,14 @@ class Cluster
         if (true !== $this->config['enabled']) {
             return;
         }
-        $this->log->write(W_INFO, 'Starting Cluster Manager');
+        $this->log->write('Starting Cluster Manager', LogLevel::INFO);
         if (!isset($this->config['peers'])) {
             return;
         }
         Peer::$reconnectTimeout = $this->config['peerReconnect'] ?? 30;
         $peers = $this->config['peers'];
         if (is_array($peers) && 0 === count($peers)) {
-            $this->log->write(W_INFO, 'No peers defined in cluster configuration');
+            $this->log->write('No peers defined in cluster configuration', LogLevel::INFO);
 
             return;
         }
@@ -63,7 +66,7 @@ class Cluster
         if (true !== $this->config['enabled']) {
             return;
         }
-        $this->log->write(W_INFO, 'Shutting down Cluster');
+        $this->log->write('Shutting down Cluster', LogLevel::INFO);
         foreach ($this->peers as $peer) {
             $peer->disconnect();
         }
@@ -78,19 +81,19 @@ class Cluster
             $peer = new Peer($this->config['name'], $client->address, $client->port, true);
             $peer->stream = $client->stream;
             $peer->status = Peer::STATUS_STREAMING;
-            Master::$instance->clientReplace($peer->stream, $peer);
+            Main::$instance->clientReplace($peer->stream, $peer);
         } else {
             $peer = $client;
         }
         $this->peers[$peer->name] = $peer;
-        $this->log->write(W_INFO, 'Peer added: '.$peer->name.' at '.$peer->address.':'.$peer->port);
+        $this->log->write('Peer added: '.$peer->name.' at '.$peer->address.':'.$peer->port, LogLevel::INFO);
     }
 
     public function removePeer(Peer $peer): void
     {
         if (array_key_exists($peer->name, $this->peers)) {
             unset($this->peers[$peer->name]);
-            $this->log->write(W_INFO, 'Peer removed: '.$peer->name.' at '.$peer->address.':'.$peer->port);
+            $this->log->write('Peer removed: '.$peer->name.' at '.$peer->address.':'.$peer->port, LogLevel::INFO);
         }
     }
 
