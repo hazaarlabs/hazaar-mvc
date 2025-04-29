@@ -141,7 +141,7 @@ class UtilityTest extends TestCase
         $this->assertEquals(1024 * 1024 * 1024 * 1024 * 1024 * 1024, Str::toBytes('1EB'));
     }
 
-    public function testVersionClass(): void
+    public function testVersionClassBasic(): void
     {
         // Assuming Hazaar\Util\Version exists and follows SemVer principles
         // Need to add: use Hazaar\Util\Version; at the top of the file.
@@ -160,33 +160,49 @@ class UtilityTest extends TestCase
         $this->assertEquals('alpha.1', $v2->getPreRelease());
         $this->assertEquals('build.123', $v2->getMetadata());
         $this->assertEquals('2.0.0-alpha.1+build.123', (string) $v2);
+    }
 
-        $v3 = new Version('1.2.3'); // Same as v1
-        $v4 = new Version('1.2.4');
-        $v5 = new Version('1.3.0');
-        $v6 = new Version('2.0.0');
-        $v7 = new Version('1.2.3-beta');
-        $v8 = new Version('1.2.3-alpha');
+    public function testVersionClassComparisons(): void
+    {
+        $v1 = new Version('1.2.3');
+        $v2 = new Version('1.2.3'); // Same as v1
+        $v3 = new Version('1.2.4');
+        $v4 = new Version('1.3.0');
+
+        $v5 = new Version('2.0.0-alpha.1');
+        $v6 = new Version('2.0.0-beta.1');
+        $v7 = new Version('2.0.0-beta.2');
+        $v8 = new Version('2.0.0');
+        $v9 = new Version('2.0.1-alpha.1+build.143');
+        $v10 = new Version('2.0.1-alpha.1+build.155');
 
         // Comparisons
-        $this->assertTrue($v1->equalTo($v3));
-        $this->assertFalse($v1->equalTo($v2));
+        $this->assertTrue($v1->equalTo($v2));
+        $this->assertFalse($v1->equalTo($v3));
         $this->assertTrue($v1->lessThan($v4));
         $this->assertTrue($v1->lessThan($v5));
         $this->assertTrue($v1->lessThan($v6));
-        $this->assertTrue($v1->greaterThan($v7)); // Release is greater than pre-release
-        $this->assertTrue($v7->greaterThan($v8)); // beta > alpha
+        $this->assertTrue($v6->greaterThan($v5)); // beta > alpha
+        $this->assertTrue($v7->greaterThan($v6)); // Release is greater than pre-release
         $this->assertTrue($v6->greaterThan($v1));
         $this->assertTrue($v5->greaterThan($v4));
 
-        $this->assertEquals(0, $v1->compareTo($v3));
+        $this->assertEquals(0, $v1->compareTo($v2));
         $this->assertEquals(-1, $v1->compareTo($v4));
         $this->assertEquals(1, $v4->compareTo($v1));
-        $this->assertEquals(-1, $v1->compareTo($v2));
-        $this->assertEquals(1, $v2->compareTo($v1));
-        $this->assertEquals(-1, $v8->compareTo($v7)); // alpha < beta
-        $this->assertEquals(1, $v7->compareTo($v8)); // beta > alpha
-        $this->assertEquals(-1, $v7->compareTo($v1)); // pre-release < release
-        $this->assertEquals(1, $v1->compareTo($v7)); // release > pre-release
+        $this->assertEquals(-1, $v1->compareTo($v3));
+        $this->assertEquals(1, $v3->compareTo($v1));
+        $this->assertEquals(-1, $v5->compareTo($v6)); // alpha < beta
+        $this->assertEquals(1, $v6->compareTo($v5)); // beta > alpha
+        $this->assertEquals(-1, $v7->compareTo($v8)); // pre-release < release
+        $this->assertEquals(1, $v8->compareTo($v7)); // release > pre-release
+
+        $this->assertTrue($v6->lessThan($v7)); // bool(true) because beta.1 < beta.2
+        $this->assertTrue($v7->lessThan($v8)); // bool(true) because pre-release < normal release
+        $this->assertTrue($v6->equals('2.0.0-beta.1+build.999')); // bool(true) - metadata ignored for equality
+
+        // Metadata should not affect comparison
+        $this->assertEquals(0, $v9->compareTo($v10)); // Same version, different metadata
+        $this->assertTrue($v9->equalTo($v10)); // Same version, different metadata
     }
 }
