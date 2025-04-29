@@ -5,7 +5,54 @@ declare(strict_types=1);
 namespace Hazaar\Util;
 
 /**
- * The version class.
+ * Represents and manipulates versions according to the Semantic Versioning 2.0.0 specification (SemVer).
+ *
+ * This class allows parsing a SemVer string (e.g., "1.2.3-rc.1+build.456") into its constituent parts:
+ * major, minor, patch, pre-release identifiers, and build metadata.
+ *
+ * It provides methods to:
+ * - Access individual version components (getMajor(), getMinor(), getPatch(), getPreRelease(), getMetadata()).
+ * - Compare two Version objects or a Version object and a SemVer string based on SemVer precedence rules (compareTo(), equals(), lessThan(), greaterThan()).
+ * - Conditionally update the version based on precedence (setIfHigher(), setIfLower()).
+ *
+ * Comparison follows SemVer 2.0.0 rules:
+ * - Major, Minor, Patch are compared numerically.
+ * - Pre-release versions have lower precedence than normal versions (1.0.0-alpha < 1.0.0).
+ * - Pre-release identifiers are compared segment by segment (numeric vs. alphanumeric, lexicographical).
+ * - Build metadata is *ignored* during precedence comparison.
+ *
+ * Example Usage:
+ * ```php
+ * use Hazaar\Util\Version;
+ *
+ * // Create a version object
+ * $v1 = new Version('1.2.3-beta.1+build.100');
+ * echo $v1; // Outputs: 1.2.3-beta.1+build.100
+ *
+ * // Access components
+ * echo $v1->getMajor(); // Outputs: 1
+ * echo $v1->getMinor(); // Outputs: 2
+ * echo $v1->getPatch(); // Outputs: 3
+ * echo $v1->getPreRelease(); // Outputs: beta.1
+ * echo $v1->getMetadata(); // Outputs: build.100
+ *
+ * // Compare versions
+ * $v2 = new Version('1.2.3-beta.2');
+ * $v3 = new Version('1.2.3');
+ *
+ * var_dump($v1->lessThan($v2)); // bool(true) because beta.1 < beta.2
+ * var_dump($v2->lessThan($v3)); // bool(true) because pre-release < normal release
+ * var_dump($v1->equals('1.2.3-beta.1+build.999')); // bool(true) - metadata ignored for equality
+ *
+ * // Conditional update
+ * $currentVersion = new Version('2.0.0');
+ * $currentVersion->setIfHigher('1.9.0'); // No change, 1.9.0 is not higher
+ * echo $currentVersion; // Outputs: 2.0.0
+ * $currentVersion->setIfHigher('2.1.0-alpha'); // Changes, 2.1.0-alpha is higher
+ * echo $currentVersion; // Outputs: 2.1.0-alpha
+ * ```
+ *
+ * @see https://semver.org/spec/v2.0.0.html The Semantic Versioning 2.0.0 specification.
  */
 class Version
 {
