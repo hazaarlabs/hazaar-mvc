@@ -1,6 +1,6 @@
 <?php
 
-use Application\Controller\Test;
+use App\Controller\Test;
 use Hazaar\Application\Router;
 
 // @var Router $route

@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @internal
  */
-class ApplicationTest extends TestCase
+class AppTest extends TestCase
 {
     public function testApplication(): void
     {
