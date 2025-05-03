@@ -2,6 +2,8 @@
 
 namespace Hazaar\Events;
 
+require_once __DIR__.'/EventHelpers.php';
+
 /**
  * EventDispatcher Class.
  *
@@ -58,17 +60,38 @@ class EventDispatcher
     }
 
     /**
+     * Loads event files from a specified directory.
+     *
+     * Scans the provided directory for PHP files and includes them. This allows
+     * for dynamic loading of event definitions.
+     *
+     * @param string $eventsDir The directory containing event files to load.
+     */
+    public function loadEvents(string $eventsDir): void
+    {
+        $files = scandir($eventsDir);
+        foreach ($files as $file) {
+            if ('.' === $file || '..' === $file) {
+                continue;
+            }
+            $eventFile = $eventsDir.DIRECTORY_SEPARATOR.$file;
+            if (is_file($eventFile)) {
+                include_once $eventFile;
+            }
+        }
+    }
+
+    /**
      * Adds an event listener for a specific event name.
      *
      * Registers an Event object to be triggered when the specified event name is dispatched.
      * Multiple listeners can be added for the same event name.
      *
-     * @param string $name  The name of the event to listen for (e.g., 'user.created', 'order.processed').
-     * @param Event  $event the Event object that will handle the event
+     * @param Event $event the Event object that will handle the event
      */
-    public function addListener(string $name, Event $event): void
+    public function addListener(Event $event): void
     {
-        $this->listeners[$name][] = $event;
+        $this->listeners[$event->getName()][] = $event;
     }
 
     /**

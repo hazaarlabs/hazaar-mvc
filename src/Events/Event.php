@@ -53,9 +53,20 @@ class Event
      *
      * @param string $event the name of the event
      */
-    public function __construct(string $event)
+    public function __construct(string $event, ?\Closure $callback = null)
     {
         $this->name = $event;
+        $this->callback = $callback;
+    }
+
+    /**
+     * Gets the name of the event.
+     *
+     * @return string the name of the event
+     */
+    public function getName(): string
+    {
+        return $this->name;
     }
 
     /**
@@ -115,9 +126,8 @@ class Event
      */
     public static function listen(string $event, \Closure $callback): Event
     {
-        $event = new self($event);
-        $event->callback = $callback;
-        EventDispatcher::getInstance()->addListener($event->name, $event);
+        $event = new self($event, $callback);
+        EventDispatcher::getInstance()->addListener($event);
         $event->isRegistered = true;
 
         return $event;

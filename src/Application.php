@@ -24,6 +24,7 @@ use Hazaar\Application\Router\Exception\RouteNotFound;
 use Hazaar\Application\Router\Exception\RouterInitialisationFailed;
 use Hazaar\Application\Runtime;
 use Hazaar\Application\URL;
+use Hazaar\Events\EventDispatcher;
 use Hazaar\File\Metric;
 use Hazaar\Logger\Frontend;
 use Hazaar\Util\Arr;
@@ -457,6 +458,10 @@ class Application
             (function () use ($bootstrapFile, $config, $router) {
                 include $bootstrapFile;
             })();
+        }
+        $eventsDir = $this->path.DIRECTORY_SEPARATOR.'events';
+        if (is_dir($eventsDir)) {
+            EventDispatcher::getInstance()->loadEvents($eventsDir);
         }
         $this->timer->stop('boot');
 
