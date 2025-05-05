@@ -1,6 +1,7 @@
 <?php
 
 use Hazaar\Events\Dispatchable;
+use Hazaar\Events\Event;
 use PHPUnit\Framework\TestCase;
 
 class TestEvent
@@ -26,18 +27,18 @@ class TestListener
  */
 class EventsTest extends TestCase
 {
-    // public function testRegisterEventListener(): void
-    // {
-    //     $event = Event::listen('test.event', function () use (&$executed) {
-    //         $executed = true;
-    //     });
-    //     $this->assertInstanceOf(Event::class, $event);
-    //     $this->assertTrue($event->isRegistered());
-    //     $this->assertFalse($executed);
-    //     $event->trigger();
-    //     // @phpstan-ignore method.impossibleType
-    //     $this->assertTrue($executed);
-    //     $event->unregister();
-    //     $this->assertFalse($event->isRegistered());
-    // }
+    public function testRegisterEventListener(): void
+    {
+        $listener = new TestListener();
+
+        // Register the listener
+        Event::listen(TestEvent::class, $listener::class);
+
+        // Dispatch the event
+        $event = TestEvent::dispatch('test');
+
+        // Assert that the event was dispatched
+        $this->assertTrue($event->dispatched);
+        $this->assertEquals('test', $event->name);
+    }
 }

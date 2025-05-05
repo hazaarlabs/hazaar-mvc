@@ -2,8 +2,6 @@
 
 namespace Hazaar\Events;
 
-require_once __DIR__.'/EventHelpers.php';
-
 /**
  * EventDispatcher Class.
  *
@@ -99,6 +97,27 @@ class EventDispatcher
     public function addListener(string $type, object $listener): void
     {
         $this->listeners[$type][] = $listener;
+    }
+
+    public function listen(string $event, string $listener): void
+    {
+        if (!isset($this->listeners[$event])) {
+            $this->listeners[$event] = [];
+        }
+        $this->listeners[$event][] = new $listener();
+    }
+
+    /**
+     * @return array<object>
+     */
+    public function getListeners(string $event): array
+    {
+        return $this->listeners[$event] ?? [];
+    }
+
+    public function clearListeners(): void
+    {
+        $this->listeners = [];
     }
 
     public function dispatch(object $event): void
