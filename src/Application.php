@@ -236,6 +236,8 @@ class Application
                 'controller' => 'controllers',
                 'service' => 'services',
                 'helper' => 'helpers',
+                'event' => 'events',
+                'listener' => 'listeners',
             ],
             'view' => [
                 'prepare' => false,
@@ -459,9 +461,9 @@ class Application
                 include $bootstrapFile;
             })();
         }
-        $eventsDir = $this->path.DIRECTORY_SEPARATOR.'events';
+        $eventsDir = $this->path.DIRECTORY_SEPARATOR.'listeners';
         if (is_dir($eventsDir)) {
-            EventDispatcher::getInstance()->loadEvents($eventsDir);
+            EventDispatcher::getInstance()->withEvents($eventsDir);
         }
         $this->timer->stop('boot');
 

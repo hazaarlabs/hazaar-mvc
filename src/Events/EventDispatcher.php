@@ -38,7 +38,7 @@ class EventDispatcher
     private static ?EventDispatcher $instance = null;
 
     /**
-     * @var array<string, array<Event>> stores listeners keyed by event name
+     * @var array<string,object> stores listeners keyed by event name
      */
     private array $listeners = [];
 
@@ -59,78 +59,56 @@ class EventDispatcher
         return self::$instance;
     }
 
-    /**
-     * Loads event files from a specified directory.
-     *
-     * Scans the provided directory for PHP files and includes them. This allows
-     * for dynamic loading of event definitions.
-     *
-     * @param string $eventsDir The directory containing event files to load.
-     */
-    public function loadEvents(string $eventsDir): void
+    public function withEvents(string $listenerDir): void
     {
-        $files = scandir($eventsDir);
+        $files = scandir($listenerDir);
         foreach ($files as $file) {
             if ('.' === $file || '..' === $file) {
                 continue;
             }
-            $eventFile = $eventsDir.DIRECTORY_SEPARATOR.$file;
-            if (is_file($eventFile)) {
-                include_once $eventFile;
+            $listenerFile = $listenerDir.DIRECTORY_SEPARATOR.$file;
+            if (!is_file($listenerFile)) {
+                continue;
+            }
+
+            include_once $listenerFile;
+            $listenerClass = 'App\Listener\\'.basename($file, '.php');
+            if (!class_exists($listenerClass)) {
+                continue;
+            }
+            $reflectionClass = new \ReflectionClass($listenerClass);
+            if (!$reflectionClass->isInstantiable()) {
+                continue;
+            }
+            if (!$reflectionClass->hasMethod('handle')) {
+                continue;
+            }
+            $handleMethod = $reflectionClass->getMethod('handle');
+            $parameters = $handleMethod->getParameters();
+            if (0 === count($parameters)) {
+                continue;
+            }
+            $type = $parameters[0]->getType();
+            if ($type instanceof \ReflectionNamedType) {
+                $firstParameterType = $type->getName();
+                $this->addListener($firstParameterType, $reflectionClass->newInstance());
             }
         }
     }
 
-    /**
-     * Adds an event listener for a specific event name.
-     *
-     * Registers an Event object to be triggered when the specified event name is dispatched.
-     * Multiple listeners can be added for the same event name.
-     *
-     * @param Event $event the Event object that will handle the event
-     */
-    public function addListener(Event $event): void
+    public function addListener(string $type, object $listener): void
     {
-        $this->listeners[$event->getName()][] = $event;
+        $this->listeners[$type][] = $listener;
     }
 
-    /**
-     * Removes an event listener for a specific event name.
-     *
-     * Deregisters a specific Event object from the specified event name.
-     * If the event name or the specific listener doesn't exist, the method does nothing.
-     *
-     * @param string $name  the name of the event the listener was registered for
-     * @param Event  $event the specific Event object to remove
-     */
-    public function removeListener(string $name, Event $event): void
+    public function dispatch(object $event): void
     {
-        if (!isset($this->listeners[$name])) {
+        $eventName = get_class($event);
+        if (!isset($this->listeners[$eventName])) {
             return;
         }
-        foreach ($this->listeners[$name] as $key => $listener) {
-            if ($listener === $event) {
-                unset($this->listeners[$name][$key]);
-            }
-        }
-    }
-
-    /**
-     * Dispatches an event to all registered listeners.
-     *
-     * Triggers all Event objects registered for the given event name, passing
-     * any additional arguments provided to each listener's trigger method.
-     *
-     * @param string $event   the name of the event to dispatch
-     * @param mixed  ...$args Optional arguments to pass to the event listeners.
-     */
-    public function dispatch(string $event, mixed ...$args): void
-    {
-        if (!isset($this->listeners[$event])) {
-            return;
-        }
-        foreach ($this->listeners[$event] as $listener) {
-            $listener->trigger(...$args);
+        foreach ($this->listeners[$eventName] as $listener) {
+            $listener->handle($event);
         }
     }
 }

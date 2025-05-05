@@ -19,6 +19,8 @@ enum FilePath: string
     case PUBLIC = 'public';
     case RUNTIME = 'runtime';
     case DB = 'db';
+    case EVENT = 'event';
+    case LISTENER = 'listener';
 
     public static function fromApplicationNamespace(string $namespace): ?self
     {
@@ -26,6 +28,8 @@ enum FilePath: string
             'Model' => self::MODEL,
             'Controller' => self::CONTROLLER,
             'Helper' => self::HELPER,
+            'Event' => self::EVENT,
+            'Listener' => self::LISTENER,
             default => null,
         };
     }
