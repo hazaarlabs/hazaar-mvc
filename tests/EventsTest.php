@@ -1,7 +1,10 @@
 <?php
 
+namespace Hazaar\Tests;
+
 use Hazaar\Events\Dispatchable;
 use Hazaar\Events\Event;
+use Hazaar\Events\Queuable;
 use PHPUnit\Framework\TestCase;
 
 class TestEvent
@@ -22,6 +25,8 @@ class TestListener
     }
 }
 
+class QueuedListener extends TestListener implements Queuable {}
+
 /**
  * @internal
  */
@@ -32,7 +37,7 @@ class EventsTest extends TestCase
         $listener = new TestListener();
 
         // Register the listener
-        Event::listen(TestEvent::class, $listener::class);
+        Event::listen($listener);
 
         // Dispatch the event
         $event = TestEvent::dispatch('test');
@@ -40,5 +45,28 @@ class EventsTest extends TestCase
         // Assert that the event was dispatched
         $this->assertTrue($event->dispatched);
         $this->assertEquals('test', $event->name);
+
+        Event::clearListeners();
+    }
+
+    public function testQueuedEventListener(): void
+    {
+        $listener = new QueuedListener();
+
+        // Register the listener
+        Event::listen($listener);
+
+        // Dispatch the queued event
+        $event = TestEvent::dispatch('test');
+        $this->assertFalse($event->dispatched);
+
+        // Dispatch the queue
+        Event::dispatchQueue(TestEvent::class);
+
+        // Assert that the event was dispatched
+        $this->assertTrue($event->dispatched);
+        $this->assertEquals('test', $event->name);
+
+        Event::clearListeners();
     }
 }

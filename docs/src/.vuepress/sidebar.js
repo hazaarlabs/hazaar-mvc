@@ -96,6 +96,7 @@ function sidebarGuide() {
                     ]
                 },
                 { text: 'Early Hints', link: '/docs/advanced/early-hints' },
+                { text: 'Events', link: '/docs/advanced/events' },
                 { text: 'Strict Models', link: '/docs/advanced/strict-models' },
                 { text: 'Generating PDFs', link: '/docs/advanced/pdf' },
                 { text: 'XML-RPC', link: '/docs/advanced/xml-rpc' },

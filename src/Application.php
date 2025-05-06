@@ -84,6 +84,8 @@ class Application
 
     private Runtime $runtime;
 
+    private EventDispatcher $eventDispatcher;
+
     /**
      * The main application constructor.
      *
@@ -463,7 +465,8 @@ class Application
         }
         $eventsDir = $this->path.DIRECTORY_SEPARATOR.'listeners';
         if (is_dir($eventsDir)) {
-            EventDispatcher::getInstance()->withEvents($eventsDir);
+            $this->eventDispatcher = EventDispatcher::getInstance();
+            $this->eventDispatcher->withEvents($eventsDir);
         }
         $this->timer->stop('boot');
 
@@ -539,6 +542,9 @@ class Application
             $controller->shutdown($response);
             $code = $response->getStatus();
             ob_end_flush();
+            if (isset($this->eventDispatcher)) {
+                $this->eventDispatcher->dispatchQueue();
+            }
             $completeFile = $this->path
                 .DIRECTORY_SEPARATOR
                 .(Arr::get($this->config ?? [], 'app.files.complete') ?? 'complete.php');
