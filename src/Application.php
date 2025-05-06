@@ -24,6 +24,7 @@ use Hazaar\Application\Router\Exception\RouteNotFound;
 use Hazaar\Application\Router\Exception\RouterInitialisationFailed;
 use Hazaar\Application\Runtime;
 use Hazaar\Application\URL;
+use Hazaar\Events\EventDispatcher;
 use Hazaar\File\Metric;
 use Hazaar\Logger\Frontend;
 use Hazaar\Util\Arr;
@@ -82,6 +83,8 @@ class Application
     private array $outputFunctions = [];
 
     private Runtime $runtime;
+
+    private EventDispatcher $eventDispatcher;
 
     /**
      * The main application constructor.
@@ -235,6 +238,8 @@ class Application
                 'controller' => 'controllers',
                 'service' => 'services',
                 'helper' => 'helpers',
+                'event' => 'events',
+                'listener' => 'listeners',
             ],
             'view' => [
                 'prepare' => false,
@@ -458,6 +463,11 @@ class Application
                 include $bootstrapFile;
             })();
         }
+        $eventsDir = $this->path.DIRECTORY_SEPARATOR.'listeners';
+        if (is_dir($eventsDir)) {
+            $this->eventDispatcher = EventDispatcher::getInstance();
+            $this->eventDispatcher->withEvents($eventsDir);
+        }
         $this->timer->stop('boot');
 
         return $this;
@@ -532,6 +542,9 @@ class Application
             $controller->shutdown($response);
             $code = $response->getStatus();
             ob_end_flush();
+            if (isset($this->eventDispatcher)) {
+                $this->eventDispatcher->dispatchQueue();
+            }
             $completeFile = $this->path
                 .DIRECTORY_SEPARATOR
                 .(Arr::get($this->config ?? [], 'app.files.complete') ?? 'complete.php');
