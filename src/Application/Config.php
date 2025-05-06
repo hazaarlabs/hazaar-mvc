@@ -223,6 +223,11 @@ class Config implements \ArrayAccess, \Iterator
         return $defaults;
     }
 
+    public function getSourceFile(): ?string
+    {
+        return $this->sourceFile;
+    }
+
     /**
      * Get the config environment that was loaded.
      */

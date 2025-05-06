@@ -1,5 +1,8 @@
 {
   "development": {
+    "runner": {
+      "enabled": true
+    },
     "log": {
       "level": "W_DEBUG"
     }

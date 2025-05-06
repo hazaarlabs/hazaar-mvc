@@ -29,41 +29,41 @@ class Config extends Application\Config
             ],
             'event' => [
                 'cleanup' => true,
-                'timeout' => 5,
+                'timeout' => 5, // Message queue timeout.  Messages will hang around in the queue for this many seconds.  This allows late connections to
+                // still get events and was the founding principle that allowed Warlock to work with long-polling HTTP connections.  Still
+                // very useful in the WebSocket world though.
             ],
         ],
+        'cluster' => [
+            'enabled' => false,
+            'name' => 'warlock',
+            'accessKey' => null,
+            'peers' => [],
+        ],
         'client' => [],
+        'runner' => [
+            'enabled' => true,
+            'task' => [
+                'retries' => 3,                        // Retry tasks that failed this many times.
+                'retry' => 10,                         // Retry failed tasks after this many seconds.
+                'expire' => 10,                        // Completed tasks will be cleaned up from the task queue after this many seconds.
+                'boot_delay' => 5,                      // How long to hold off executing tasks scheduled to run on a reboot.  Can be used to allow services to finish starting.
+            ],
+            'process' => [
+                'timeout' => 30,                       // Timeout for short run tasks initiated by the front end. Prevents runaway processes from hanging around.
+                'limit' => 5,                          // Maximum number of concurrent tasks to execute.  THIS INCLUDES SERVICES.  So if this is 5 and you have 6 services, one service will never run!
+                'exitWait' => 30,                       // How long the server will wait for processes to exit when shutting down.
+            ],
+            'service' => [
+                'restarts' => 5,                       // Restart a failed service this many times before disabling it for a bit.
+                'disable' => 300,                       // Disable a failed service for this many seconds before trying to start it up again.
+            ],
+        ],
         'kvstore' => [
             'enabled' => false,           // Enable the built-in key/value storage system.  Enabled by default.
             'persist' => false,           // If KVStore is enabled, this setting will enable restart persistent storage. Disabled by default.
             'namespace' => 'default',     // The namespace to persist.  Currently only one namespace is supported.
             'compact' => 0,               // Interval at which the persistent storage will be compacted to reclaim space.  Disabled by default.
-        ],
-        'task' => [
-            'retries' => 3,                        // Retry tasks that failed this many times.
-            'retry' => 10,                         // Retry failed tasks after this many seconds.
-            'expire' => 10,                        // Completed tasks will be cleaned up from the task queue after this many seconds.
-            'boot_delay' => 5,                      // How long to hold off executing tasks scheduled to run on a reboot.  Can be used to allow services to finish starting.
-        ],
-        'process' => [
-            'timeout' => 30,                       // Timeout for short run tasks initiated by the front end. Prevents runaway processes from hanging around.
-            'limit' => 5,                          // Maximum number of concurrent tasks to execute.  THIS INCLUDES SERVICES.  So if this is 5 and you have 6 services, one service will never run!
-            'exitWait' => 30,                       // How long the server will wait for processes to exit when shutting down.
-        ],
-        'service' => [
-            'restarts' => 5,                       // Restart a failed service this many times before disabling it for a bit.
-            'disable' => 300,                       // Disable a failed service for this many seconds before trying to start it up again.
-        ],
-        'event' => [
-            'queueTimeout' => 5,                   // Message queue timeout.  Messages will hang around in the queue for this many seconds.  This allows late connections to
-            // still get events and was the founding principle that allowed Warlock to work with long-polling HTTP connections.  Still
-            // very useful in the WebSocket world though.
-        ],
-        'cluster' => [
-            'enabled' => true,
-            'name' => 'warlock',
-            'accessKey' => null,
-            'peers' => [],
         ],
     ];
 

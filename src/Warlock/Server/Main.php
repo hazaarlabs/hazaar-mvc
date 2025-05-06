@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Server;
 
-use Hazaar\Application\Config;
+use _PHPStan_24e2736d6\React\Http\Server;
 use Hazaar\Application\Protocol;
+use Hazaar\Warlock\Config;
 use Hazaar\Warlock\Exception\ExtensionNotLoaded;
 use Hazaar\Warlock\Server\Component\Cluster;
 use Hazaar\Warlock\Server\Component\Logger;
@@ -55,6 +56,7 @@ class Main
      */
     private array $config;
     private Logger $log;
+    private Agent $agent;
 
     /**
      * @var bool indicates whether the server is currently running
@@ -84,21 +86,21 @@ class Main
      *
      * @var resource
      */
-    private $master;
+    private mixed $master;
 
     /**
      * Currently connected stream resources we are listening for data on.
      *
      * @var array<resource>
      */
-    private $streams = [];
+    private array $streams = [];
 
     /**
      * Currently connected clients.
      *
      * @var array<Client>
      */
-    private $clients = [];
+    private array $clients = [];
 
     /**
      * Default select() timeout.
@@ -108,10 +110,11 @@ class Main
     public function __construct(string $configFile = 'warlock', string $env = 'development')
     {
         self::$instance = $this;
-        $config = new \Hazaar\Warlock\Config($configFile, env: $this->env = $env);
+        $config = new Config($configFile, env: $this->env = $env);
         if (!isset($config['server'])) {
             throw new \Exception('Server configuration not found');
         }
+        $this->agent = new Agent($config);
         $this->config = $config['server'];
         $this->log = new Logger(level: $this->config['log']['level']);
         $this->protocol = new Protocol($this->config['id'], $this->config['encode']);
@@ -186,6 +189,9 @@ class Main
                 // $this->cluster->process();
                 $this->eventCleanup();
                 $this->clientCheck();
+                if (isset($this->runner)) {
+                    $this->runner->process();
+                }
                 $this->time = $now;
             }
         }
