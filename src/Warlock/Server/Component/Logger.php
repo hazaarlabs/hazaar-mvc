@@ -15,6 +15,7 @@ use Hazaar\Warlock\Server\Enum\LogLevel;
 class Logger
 {
     private LogLevel $level = LogLevel::INFO;
+    private string $prefix = 'WARLOCK';
 
     public function __construct(int|string $level = 0)
     {
@@ -38,8 +39,9 @@ class Logger
             return;
         }
         echo date('Y-m-d H:i:s')
-            .' - '.str_pad($level->name, $level::pad(), ' ', STR_PAD_RIGHT)
-            .' - '.$message."\n";
+            .' | '.$level->color(sprintf('%-6s', $this->prefix))
+            .' | '.$level->color(sprintf('%-'.$level::pad().'s', $level->name))
+            .' | '.$level->color($message)."\n";
     }
 
     /**
@@ -60,5 +62,25 @@ class Logger
     public function getLevel(): LogLevel
     {
         return $this->level;
+    }
+
+    /**
+     * Set a prefix for the logger.
+     *
+     * @param string $prefix the prefix to set
+     */
+    public function setPrefix(string $prefix): void
+    {
+        $this->prefix = strtoupper($prefix);
+    }
+
+    /**
+     * Get the current prefix of the logger.
+     *
+     * @return string the current prefix
+     */
+    public function getPrefix(): string
+    {
+        return $this->prefix;
     }
 }

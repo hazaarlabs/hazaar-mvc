@@ -27,4 +27,18 @@ enum LogLevel: int
     {
         return 6;
     }
+
+    public function color(string $text): string
+    {
+        return match ($this) {
+            self::NONE => "\033[0m",
+            self::INFO => "\033[0;32m",
+            self::WARN => "\033[0;33m",
+            self::ERROR => "\033[0;31m",
+            self::NOTICE => "\033[0;34m",
+            self::DEBUG => "\033[0;35m",
+            self::DECODE => "\033[0;36m",
+            self::DECODE2 => "\033[1;36m",
+        }.$text."\033[0m";
+    }
 }
