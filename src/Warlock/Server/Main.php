@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Server;
 
-use _PHPStan_24e2736d6\React\Http\Server;
 use Hazaar\Application\Protocol;
 use Hazaar\Warlock\Config;
 use Hazaar\Warlock\Exception\ExtensionNotLoaded;
@@ -56,7 +55,7 @@ class Main
      */
     private array $config;
     private Logger $log;
-    private Agent $agent;
+    private Watcher $watcher;
 
     /**
      * @var bool indicates whether the server is currently running
@@ -114,13 +113,15 @@ class Main
         if (!isset($config['server'])) {
             throw new \Exception('Server configuration not found');
         }
-        $this->agent = new Agent($config);
         $this->config = $config['server'];
         $this->log = new Logger(level: $this->config['log']['level']);
+        $this->log->setPrefix('main');
         $this->protocol = new Protocol($this->config['id'], $this->config['encode']);
         if ($tz = $this->config['timezone']) {
             date_default_timezone_set(timezoneId: $tz);
         }
+        $this->watcher = new Watcher($this->log, $config['agent'] ?? []);
+        // $this->cluster = new Cluster($this->log, $config['cluster'] ?? []);
     }
 
     private static function __signalHandler(int $signo, mixed $siginfo): void
@@ -143,8 +144,6 @@ class Main
         foreach ($this->pcntlSignals as $sig => $name) {
             pcntl_signal($sig, [$this, '__signalHandler'], true);
         }
-        $this->pid = getmypid();
-        file_put_contents($this->pidfile, $this->pid);
         $this->log->write('Creating TCP socket stream on: '.$this->config['listenAddress'].':'.$this->config['port'], LogLevel::NOTICE);
         if (!($this->master = stream_socket_server('tcp://'.$this->config['listenAddress'].':'.$this->config['port'], $errno, $errstr))) {
             throw new \Exception($errstr, $errno);
@@ -155,10 +154,8 @@ class Main
         }
         $this->streams[0] = $this->master;
         $this->running = true;
-        // if ($this->config['cluster']['enabled'] ?? false) {
-        //     $this->cluster = new Cluster($this->log, $this->config['cluster']);
-        // }
-
+        $this->pid = getmypid();
+        file_put_contents($this->pidfile, $this->pid);
         $this->log->write('Ready...', LogLevel::INFO);
 
         return $this;
@@ -175,6 +172,7 @@ class Main
     public function run()
     {
         // $this->cluster->start();
+        $this->watcher->start();
         while ($this->running) {
             pcntl_signal_dispatch();
             if (null !== $this->shutdown && $this->shutdown <= time()) {
@@ -189,17 +187,17 @@ class Main
                 // $this->cluster->process();
                 $this->eventCleanup();
                 $this->clientCheck();
-                if (isset($this->runner)) {
-                    $this->runner->process();
-                }
+                $this->watcher->process();
                 $this->time = $now;
             }
         }
+        $this->watcher->stop();
         // $this->cluster->stop();
         $this->log->write('Closing all remaining connections', LogLevel::NOTICE);
         foreach ($this->streams as $stream) {
             fclose($stream);
         }
+
         $this->log->write('Cleaning up', LogLevel::NOTICE);
         $this->streams = [];
         $this->clients = [];

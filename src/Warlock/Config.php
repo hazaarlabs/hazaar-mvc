@@ -41,7 +41,7 @@ class Config extends Application\Config
             'peers' => [],
         ],
         'client' => [],
-        'runner' => [
+        'agent' => [
             'enabled' => true,
             'task' => [
                 'retries' => 3,                        // Retry tasks that failed this many times.

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Warlock\Server\Service;
 
-class Runner
+use Hazaar\Warlock\Server\Component\Logger;
+
+class Agent
 {
     public static Config $config;
     // The Warlock protocol encoder/decoder.
@@ -61,3 +63,5 @@ class Runner
         // Your code here
     }
 }
+
+(new Agent(new Logger()))->run();
