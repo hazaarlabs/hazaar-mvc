@@ -52,6 +52,9 @@ class RunModule extends Module
                 exit('PCNTL functions not available');
             }
             $pid = pcntl_fork();
+            if (-1 === $pid) {
+                exit('Could not fork process');
+            }
             if ($pid > 0) {
                 return 0;
             }
