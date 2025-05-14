@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Application\Exception;
+namespace Hazaar\Exception;
 
 /**
  * Exception thrown when a required configuration environment is not found.
