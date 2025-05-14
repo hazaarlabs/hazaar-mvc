@@ -321,7 +321,7 @@ class Adapter implements ConstraintAPI, ExtensionAPI, GroupAPI, IndexAPI, Schema
             if (!Config::$overridePaths) {
                 Config::$overridePaths = Application::getConfigOverridePaths();
             }
-            $config = Config::getInstance('database', $configName, self::$defaultConfig, true);
+            $config = Config::getInstance('database', $configName, self::$defaultConfig);
             self::$loadedConfigs[$configName] = $config;
         }
 
