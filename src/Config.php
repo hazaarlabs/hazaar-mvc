@@ -31,7 +31,7 @@ class Config implements \ArrayAccess, \Iterator
     /**
      * @var array<string>
      */
-    public array $overridePaths = [];
+    private array $overridePaths = [];
 
     /**
      * @var array<mixed>
@@ -94,7 +94,9 @@ class Config implements \ArrayAccess, \Iterator
     public function setEnvironment(string $env): void
     {
         $this->env = trim($env);
-        $this->loadConfigOptions($this->options, $this->global, $this->env);
+        if (count($this->global) > 0) {
+            $this->loadConfigOptions($this->options, $this->global, $this->env);
+        }
     }
 
     /**
