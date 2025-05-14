@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Hazaar\Tests;
 
-use Application\Controller\Index;
-use Application\Controller\Test;
+use App\Controller\Index;
+use App\Controller\Test;
 use Hazaar\Application\Config;
 use Hazaar\Application\Request;
 use Hazaar\Application\Route;

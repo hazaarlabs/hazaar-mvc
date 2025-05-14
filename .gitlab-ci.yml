@@ -11,106 +11,102 @@ stages:
 - build
 - package
 - deploy
-
 variables:
   APPLICATION_PATH: "."
   UNIT_TEST_IMAGE: "$CI_REGISTRY_IMAGE:test"
-  APP_VERSION: $CI_PIPELINE_IID
-
-.Build Docs:
+  APP_VERSION: "$CI_PIPELINE_IID"
+".Build Docs":
   stage: build
-  image: $UNIT_TEST_IMAGE
+  image: "$UNIT_TEST_IMAGE"
   before_script:
-    - composer install
+  - composer install
   script:
-    - mkdir -p docs/src/api
-    - bin/hazaar doc --scan=src --title="API Reference" docs/src/api
-    - bin/hazaar docindex --scan=src docs/src/.vuepress/api_sidebar.js
+  - mkdir -p docs/src/api
+  - bin/hazaar doc --scan=src --title="API Reference" docs/src/api
+  - bin/hazaar docindex --scan=src docs/src/.vuepress/api_sidebar.js
   artifacts:
     paths:
-      - docs/src/api
-      - docs/src/.vuepress/api_sidebar.js
-
-.Build Image:
+    - docs/src/api
+    - docs/src/.vuepress/api_sidebar.js
+".Build Image":
   stage: package
   image: docker:latest
   services:
-    - docker:dind
+  - docker:dind
   before_script:
-    - echo "ENVIRONMENT - $CI_ENVIRONMENT_NAME"
-    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
-    - apk add npm git
-    - export NODE_OPTIONS="--max-old-space-size=4096"
+  - echo "ENVIRONMENT - $CI_ENVIRONMENT_NAME"
+  - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin
+    $CI_REGISTRY
+  - apk add npm git
+  - export NODE_OPTIONS="--max-old-space-size=4096"
   script:
-    - cd docs
-    - npm install
-    - npm run docs:build
-    - docker build --pull --rm --target $CI_ENVIRONMENT_NAME -f "Dockerfile" -t $CI_REGISTRY_IMAGE:docs -t $CI_REGISTRY_IMAGE:docs-$APP_VERSION -t $CI_REGISTRY_IMAGE:docs-$CI_ENVIRONMENT_NAME --build-arg CI_ENVIRONMENT_NAME .
-    - docker push --all-tags $CI_REGISTRY_IMAGE
-
-.Deploy Image:
+  - cd docs
+  - npm install
+  - npm run docs:build
+  - docker build --pull --rm --target $CI_ENVIRONMENT_NAME -f "Dockerfile" -t $CI_REGISTRY_IMAGE:docs
+    -t $CI_REGISTRY_IMAGE:docs-$APP_VERSION -t $CI_REGISTRY_IMAGE:docs-$CI_ENVIRONMENT_NAME
+    --build-arg CI_ENVIRONMENT_NAME .
+  - docker push --all-tags $CI_REGISTRY_IMAGE
+".Deploy Image":
   stage: deploy
-  image:    
+  image:
     name: bitnami/kubectl:latest
-    entrypoint: ['']
+    entrypoint:
+    - ''
   script:
-    - kubectl config get-contexts
-    - kubectl config use-context $GITLAB_AGENT_CONTEXT
-    - kubectl config set-context --current --namespace=hazaar
-    - kubectl get pods
-    - kubectl apply -f docs/deploy/k8s/hazaar-docs-$CI_ENVIRONMENT_NAME.yaml
-    - kubectl set image $K8_DEPLOYMENT_NAME $K8_CONTAINER_NAME=$CI_REGISTRY_IMAGE:docs-$APP_VERSION
-
+  - kubectl config get-contexts
+  - kubectl config use-context $GITLAB_AGENT_CONTEXT
+  - kubectl config set-context --current --namespace=hazaar
+  - kubectl get pods
+  - kubectl apply -f docs/deploy/k8s/hazaar-docs-$CI_ENVIRONMENT_NAME.yaml
+  - kubectl set image $K8_DEPLOYMENT_NAME $K8_CONTAINER_NAME=$CI_REGISTRY_IMAGE:docs-$APP_VERSION
 Build Unit Test Image:
   stage: build_test
   image: docker:latest
   services:
-    - docker:dind
+  - docker:dind
   before_script:
-    - until docker info; do sleep 1; done
-    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin
-      $CI_REGISTRY
+  - until docker info; do sleep 1; done
+  - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin
+    $CI_REGISTRY
   script:
-    - docker build --network host --pull --rm -f "Dockerfile" -t $UNIT_TEST_IMAGE .
-    - docker push --all-tags $CI_REGISTRY_IMAGE
+  - docker build --network host --pull --rm -f "Dockerfile" -t $UNIT_TEST_IMAGE .
+  - docker push --all-tags $CI_REGISTRY_IMAGE
   only:
     changes:
     - Dockerfile
-
 Code Quality:
   stage: test
-  image: $UNIT_TEST_IMAGE
+  image: "$UNIT_TEST_IMAGE"
   variables:
     INPUT_PATH: "./src"
     INPUT_OPTIONS: "-c .phplint.yml"
   before_script:
-    - composer install
-  script: 
-    - vendor/bin/phplint -c .phplint.yml
+  - composer install
+  script:
+  - vendor/bin/phplint -c .phplint.yml
   artifacts:
     when: always
     reports:
       junit: phplint-test-results.xml
-
 Static Analysis:
   stage: test
-  image: $UNIT_TEST_IMAGE
+  image: "$UNIT_TEST_IMAGE"
   before_script:
-    - composer install
+  - composer install
   script:
-    - vendor/bin/phpstan analyse -vvv -c phpstan.neon --error-format=junit > phpstan-test-results.xml
+  - vendor/bin/phpstan analyse -vvv -c phpstan.neon --error-format=junit > phpstan-test-results.xml
   artifacts:
     when: always
     reports:
       junit: phpstan-test-results.xml
-
 Unit Testing:
   stage: test
-  image: 
-    name: $UNIT_TEST_IMAGE
+  image:
+    name: "$UNIT_TEST_IMAGE"
     pull_policy: always
   services:
-    - postgres:15
+  - postgres:15
   variables:
     APPLICATION_PATH: tests/app
     POSTGRES_DB: hazaar_framework
@@ -122,30 +118,30 @@ Unit Testing:
     - bin/warlock run &
     - sleep 5
   script:
-    - vendor/bin/phpunit --debug
+  - vendor/bin/phpunit --debug
   artifacts:
     reports:
       junit: phpunit-test-results.xml
-
 Build Production Documentation:
-  extends: .Build Docs
+  extends: ".Build Docs"
   environment: production
   rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
-
+  - if: $CI_COMMIT_BRANCH == "master"
 Build Production Image:
-  extends: .Build Image
+  extends: ".Build Image"
   environment: production
-  needs: 
-    - Build Production Documentation
+  needs:
+  - Build Production Documentation
   rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
-
+  - if: $CI_COMMIT_BRANCH == "master"
 Deploy Documentation to Production:
-  extends: .Deploy Image
+  extends: ".Deploy Image"
   environment: production
-  needs: 
-    - Build Production Image
+  needs:
+  - Build Production Image
   rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
-
+  - if: $CI_COMMIT_BRANCH == "master"
+sast:
+  stage: test
+include:
+- template: Security/SAST.gitlab-ci.yml

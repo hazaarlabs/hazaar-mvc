@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Application\Exception;
+namespace Hazaar\Exception;
 
 /**
  * Exception thrown when a configuration file is not found.

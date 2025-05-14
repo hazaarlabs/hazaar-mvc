@@ -8,7 +8,7 @@
       "theme": {
         "name": "test"
       },
-      "debug": true,
+      "debug": false,
       "defaultController": "Index",
       "runtimePath": "/var/hazaar"
     },

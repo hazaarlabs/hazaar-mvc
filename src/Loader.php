@@ -254,9 +254,9 @@ class Loader
      * Loads a class file based on the provided class name.
      *
      * This method splits the class name into parts using non-word characters and underscores as delimiters.
-     * It then checks if the first part of the class name is 'Application', which acts as a namespace key
+     * It then checks if the first part of the class name is 'App', which acts as a namespace key
      * to restrict the loadable path to that of the application itself.
-     * If the prefix is 'Application', it constructs the file path from the class name parts and attempts
+     * If the prefix is 'App', it constructs the file path from the class name parts and attempts
      * to load the file.
      *
      * @param string $className the fully qualified name of the class to load
@@ -265,10 +265,10 @@ class Loader
     {
         $namepath = preg_split('/(\W|_)/', $className, -1, PREG_SPLIT_NO_EMPTY);
         /*
-         * Check that the prefix is 'Application'. This is sort of a namespace 'key' if you will
+         * Check that the prefix is 'App'. This is sort of a namespace 'key' if you will
          * to restrict the loadable path to that of the application itself.
          */
-        if ('Application' !== $namepath[0]) {
+        if ('App' !== $namepath[0]) {
             return;
         }
         $filename = implode(DIRECTORY_SEPARATOR, array_slice($namepath, 2)).'.php';
