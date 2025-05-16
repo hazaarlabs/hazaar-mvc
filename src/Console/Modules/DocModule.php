@@ -13,7 +13,8 @@ class DocModule extends Module
 
     protected function configure(): void
     {
-        $this->addCommand(name: 'doc', callback: [$this, 'generate'])
+        $this->setName('doc')->setDescription('Generate API documentation');
+        $this->addCommand(name: 'compile', callback: [$this, 'generate'])
             ->setDescription(description: 'Generate API documentation')
             ->addOption(long: 'title', description: 'The title of the documentation')
             ->addOption(long: 'scan', description: 'The path to scan for classes')
@@ -21,7 +22,7 @@ class DocModule extends Module
             ->addArgument(name: 'output', description: 'The output path for the documentation')
         ;
 
-        $this->addCommand('docindex', [$this, 'index'])
+        $this->addCommand('index', [$this, 'index'])
             ->setDescription('Generate an API documentation index')
             ->addOption(long: 'title', description: 'The title of the documentation')
             ->addOption(long: 'scan', description: 'The path to scan for classes')

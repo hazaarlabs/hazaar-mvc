@@ -35,6 +35,8 @@ class Input
      */
     private array $options = [];
 
+    private ?string $module = null;
+
     private ?string $command = null;
 
     private ?Command $commandObject = null;
@@ -42,9 +44,10 @@ class Input
     /**
      * Initialises the input object with the command line arguments.
      *
-     * @param array<mixed> $argv
+     * @param array<mixed>  $argv
+     * @param array<string> $moduleNames
      */
-    public function initialise(array $argv): void
+    public function initialise(array $argv, array $moduleNames = []): void
     {
         $this->executable = basename(array_shift($argv));
         if (!current($argv)) {
@@ -58,6 +61,12 @@ class Input
         }
         while ('-' === substr(current($argv), 0, 1)) {
             $this->parseOption(current($argv), $definedOptions, $this->globalOptions);
+            next($argv);
+        }
+        $this->module = current($argv);
+        if (!in_array($this->module, $moduleNames)) {
+            $this->module = 'default';
+        } else {
             next($argv);
         }
         $this->command = current($argv);
@@ -92,6 +101,11 @@ class Input
         return $this->globalOptions[$name] ?? null;
     }
 
+    public function getModule(): ?string
+    {
+        return $this->module;
+    }
+
     public function getCommandObject(): ?Command
     {
         return $this->commandObject;
@@ -120,6 +134,16 @@ class Input
     public function setOption(string $name, mixed $value): void
     {
         $this->options[$name] = $value;
+    }
+
+    /**
+     * Gets the options that were used on the command line.
+     *
+     * @return array<string> the options
+     */
+    public function getArgv(): array
+    {
+        return $this->argv ?? [];
     }
 
     /**
@@ -171,70 +195,4 @@ class Input
 
         return true;
     }
-
-    // Shows a help page on the CLI for the options and commands that have been configured.
-    // public function showHelp(): int
-    // {
-    //     $pad = 30;
-    //     $script = basename(coalesce(ake($_SERVER, 'CLI_COMMAND'), ake($_SERVER, 'SCRIPT_FILENAME')));
-    //     $msg = "Syntax: {$script}";
-    //     if (count($this->options) > 0) {
-    //         $msg .= ' [options]';
-    //     }
-    //     if (count($this->commands) > 0) {
-    //         $msg .= ' [command]';
-    //     }
-    //     if (count($this->options) > 0) {
-    //         $msg .= "\n\nGlobal Options:\n\n";
-    //         foreach ($this->options as $o) {
-    //             if (ake($o, 4)) {
-    //                 continue;
-    //             }
-    //             $avail = [];
-    //             if ($o[0]) {
-    //                 $avail[] = '-'.$o[0].(is_string($o[2]) ? ' '.$o[2] : '');
-    //             }
-    //             if ($o[1]) {
-    //                 $avail[] = '--'.$o[1].(is_string($o[2]) ? '='.$o[2] : '');
-    //             }
-    //             $msg .= '  '.str_pad(implode(', ', $avail), $pad, ' ', STR_PAD_RIGHT).' '.ake($o, 3)."\n";
-    //         }
-    //     }
-    //     $optionsMsg = [];
-    //     if (count($this->commands) > 0) {
-    //         $msg .= "\nCommands:\n\n";
-    //         foreach ($this->commands as $cmd => $c) {
-    //             $name = $cmd;
-    //             if ($options = ake($c, 1)) {
-    //                 if (!is_array($options)) {
-    //                     $options = [$options];
-    //                 }
-    //                 $name .= ' ['.implode('], [', $options).']';
-    //             }
-    //             $msg .= '  '.str_pad($name, $pad, ' ', STR_PAD_RIGHT).' '.ake($c, 0)."\n";
-    //             foreach ($this->options as $o) {
-    //                 if (ake($o, 4) !== $cmd) {
-    //                     continue;
-    //                 }
-    //                 $avail = [];
-    //                 if ($o[0]) {
-    //                     $avail[] = '-'.$o[0].(is_string($o[2]) ? ' '.$o[2] : '');
-    //                 }
-    //                 if ($o[1]) {
-    //                     $avail[] = '--'.$o[1].(is_string($o[2]) ? '='.$o[2] : '');
-    //                 }
-    //                 $optionsMsg[$cmd][] = '    '.str_pad(implode(', ', $avail), $pad - 2, ' ', STR_PAD_RIGHT).' '.ake($o, 3)."\n";
-    //             }
-    //         }
-    //     }
-    //     if (count($optionsMsg) > 0) {
-    //         $msg .= "\nCommand Options:\n\n";
-    //         foreach ($optionsMsg as $cmd => $options) {
-    //             $msg .= "  {$cmd}:\n\n".implode("\n", $options)."\n";
-    //         }
-    //     }
-    //     echo $msg."\n";
-
-    //     return 0;
-    // }
 }

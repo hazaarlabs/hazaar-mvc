@@ -7,6 +7,8 @@ namespace Hazaar\Console;
 abstract class Module
 {
     protected Application $application;
+    private string $name;
+    private string $description;
 
     /**
      * @var array<Command>
@@ -22,6 +24,30 @@ abstract class Module
         $this->input = $input;
         $this->output = $output;
         $this->configure();
+    }
+
+    public function setName(string $name): self
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name ?? null;
+    }
+
+    public function setDescription(string $description): self
+    {
+        $this->description = $description;
+
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description ?? null;
     }
 
     /**

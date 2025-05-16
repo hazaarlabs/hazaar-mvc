@@ -124,7 +124,7 @@ class Command
         ?string $description = null,
         bool $required = false
     ): self {
-        self::$globalOptions[] = [
+        self::$globalOptions[$long] = [
             'long' => $long,
             'short' => $short,
             'description' => $description,

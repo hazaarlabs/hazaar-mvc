@@ -10,7 +10,7 @@ use Hazaar\Console\Output;
 use Hazaar\Util\Boolean;
 use Hazaar\Warlock\Server\Main;
 
-class RunModule extends Module
+class ServerModule extends Module
 {
     private Main $warlock;
 
