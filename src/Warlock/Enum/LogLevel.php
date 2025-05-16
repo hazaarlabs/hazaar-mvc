@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Warlock\Server\Enum;
+namespace Hazaar\Warlock\Enum;
 
 enum LogLevel: int
 {
@@ -25,7 +25,7 @@ enum LogLevel: int
      */
     public static function pad(): int
     {
-        return 6;
+        return 7;
     }
 
     public function color(string $text): string
@@ -40,5 +40,19 @@ enum LogLevel: int
             self::DECODE => "\033[0;36m",
             self::DECODE2 => "\033[1;36m",
         }.$text."\033[0m";
+    }
+
+    public static function fromString(string $level): self
+    {
+        return match (strtolower($level)) {
+            'info' => self::INFO,
+            'warn' => self::WARN,
+            'error' => self::ERROR,
+            'notice' => self::NOTICE,
+            'debug' => self::DEBUG,
+            'decode' => self::DECODE,
+            'decode2' => self::DECODE2,
+            default => self::NONE,
+        };
     }
 }

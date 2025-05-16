@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Warlock\Server;
+namespace Hazaar\Warlock\Agent;
 
 use Hazaar\Util\Boolean;
 use Hazaar\Warlock\Server\Component\Logger;
@@ -20,7 +20,7 @@ define('TASK_ERROR', 7);
 define('TASK_RETRY', 8);
 define('TASK_WAIT', 9);
 
-abstract class Task extends Process implements \Hazaar\Warlock\Interface\Task
+abstract class Task extends Process
 {
     public ?Client $client = null;
     public string $type = 'task';

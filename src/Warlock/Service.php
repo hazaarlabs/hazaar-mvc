@@ -10,6 +10,7 @@ use Hazaar\Util\Cron;
 use Hazaar\Util\DateTime;
 use Hazaar\Warlock\Connection\Pipe;
 use Hazaar\Warlock\Connection\Socket;
+use Hazaar\Warlock\Enum\Status;
 use Hazaar\Warlock\Interface\Connection;
 use Hazaar\Warlock\Server\Functions;
 
@@ -47,7 +48,7 @@ abstract class Service extends Process
     protected array $schedule = [];              // callback execution schedule
     protected ?int $next = null;                 // Timestamp of next executable schedule item
     protected bool $slept = false;
-    private int $lastHeartbeat;
+
     private int $lastCheckfile;
     private string $serviceFile;                    // The file in which the service is defined
     private int $serviceFileMtime;              // The last modified time of the service file
@@ -144,63 +145,6 @@ abstract class Service extends Process
         parent::__destruct();
     }
 
-    /**
-     * @param array<mixed> $errcontext
-     */
-    final public function __errorHandler(
-        int $errno,
-        string $errstr,
-        ?string $errfile = null,
-        ?int $errline = null,
-        array $errcontext = []
-    ): bool {
-        ob_start();
-        $msg = "#{$errno} on line {$errline} in file {$errfile}\n"
-            .str_repeat('-', 40)."\n{$errstr}\n".str_repeat('-', 40)."\n";
-        debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-        $msg .= ob_get_clean()."\n";
-        $this->log(W_LOCAL, 'ERROR '.$msg);
-        $this->send('ERROR', $msg);
-
-        return true;
-    }
-
-    final public function __exceptionHandler(\Throwable $e): bool
-    {
-        ob_start();
-        $msg = "#{$e->getCode()} on line {$e->getLine()} in file {$e->getFile()}\n"
-            .str_repeat('-', 40)."\n{$e->getMessage()}\n".str_repeat('-', 40)."\n";
-        debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-        $msg .= ob_get_clean()."\n";
-        $this->log(W_LOCAL, 'EXCEPTION '.$msg);
-        $this->send('ERROR', $msg);
-
-        return true;
-    }
-
-    final protected function __processCommand(string $command, mixed $payload = null): bool
-    {
-        switch ($command) {
-            case 'STATUS':
-                $this->__sendHeartbeat();
-
-                break;
-
-            case 'CANCEL':
-                $this->stop();
-
-                return true;
-        }
-
-        try {
-            return parent::__processCommand($command, $payload);
-        } catch (\Exception $e) {
-            $this->__exceptionHandler($e);
-        }
-
-        return false;
-    }
-
     private function __processSchedule(): void
     {
         if (0 === count($this->schedule)) {
@@ -263,40 +207,6 @@ abstract class Service extends Process
         if (null !== $this->next) {
             $this->log(W_NOTICE, 'Next scheduled action is at '.date('Y-m-d H:i:s', $this->next));
         }
-    }
-
-    final protected function __sendHeartbeat(): void
-    {
-        $status = [
-            'pid' => getmypid(),
-            'name' => $this->name,
-            'start' => $this->start,
-            'state_code' => $this->state,
-            'state' => $this->__stateString($this->state),
-            'mem' => memory_get_usage(),
-            'peak' => memory_get_peak_usage(),
-        ];
-        $this->lastHeartbeat = time();
-        $this->send('status', $status);
-    }
-
-    private function __stateString(?int $state = null): string
-    {
-        if (null === $state) {
-            $state = $this->state;
-        }
-
-        return match ($state) {
-            HAZAAR_SERVICE_NONE => 'Not Ready',
-            HAZAAR_SERVICE_ERROR => 'Error',
-            HAZAAR_SERVICE_INIT => 'Initializing',
-            HAZAAR_SERVICE_READY => 'Ready',
-            HAZAAR_SERVICE_RUNNING => 'Running',
-            HAZAAR_SERVICE_SLEEP => 'Sleeping',
-            HAZAAR_SERVICE_STOPPING => 'Stopping',
-            HAZAAR_SERVICE_STOPPED => 'Stopped',
-            default => 'Unknown',
-        };
     }
 
     // @phpstan-ignore-next-line
@@ -435,7 +345,7 @@ abstract class Service extends Process
 
     final public function stop(): void
     {
-        $this->state = HAZAAR_SERVICE_STOPPING;
+        $this->state = Status::STOPPING;
     }
 
     final public function restart(): bool
@@ -445,7 +355,7 @@ abstract class Service extends Process
         return $this->start();
     }
 
-    final public function state(): int
+    final public function state(): Status
     {
         return $this->state;
     }

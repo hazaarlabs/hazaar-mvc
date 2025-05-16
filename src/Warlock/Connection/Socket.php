@@ -13,6 +13,8 @@ final class Socket extends WebSockets implements Connection
 {
     public int $bytesReceived = 0;
     public int $socketLastError;
+    protected string $host = '127.0.0.1';
+    protected int $port = 13080;
     protected string $id;
     protected string $key;
     protected false|\Socket $socket = false;
@@ -49,20 +51,23 @@ final class Socket extends WebSockets implements Connection
         $this->disconnect();
     }
 
+    public function configure(array $config): void
+    {
+        $this->host = $config['host'] ?? '127.0.0.1';
+        $this->port = $config['port'] ?? 13080;
+        $this->headers = $config['headers'] ?? [];
+    }
+
     /**
      * Connect to the Warlock server.
-     *
-     * @param string             $host         The host name or IP address of the Warlock server
-     * @param int                $port         The port number of the Warlock server
-     * @param null|array<string> $extraHeaders Additional headers to send with the connection
      */
-    public function connect(?string $host = null, ?int $port = null, ?array $extraHeaders = null): bool
+    public function connect(): bool
     {
         $this->socket = @socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         if (false === $this->socket) {
             throw new \Exception('Unable to create TCP socket!');
         }
-        if (!($this->connected = @socket_connect($this->socket, $host, $port))) {
+        if (!($this->connected = @socket_connect($this->socket, $this->host, $this->port))) {
             $this->socketLastError = socket_last_error($this->socket);
             error_clear_last();
             socket_close($this->socket);
@@ -71,14 +76,11 @@ final class Socket extends WebSockets implements Connection
         }
         $this->headers['X-WARLOCK-PHP'] = 'true';
         $this->headers['X-WARLOCK-USER'] = base64_encode(get_current_user());
-        if (is_array($extraHeaders)) {
-            $this->headers = array_merge($this->headers, $extraHeaders);
-        }
 
         /**
          * Initiate a WebSockets connection.
          */
-        $handshake = $this->createHandshake("/warlock?CID={$this->id}", $host, null, $this->key, $this->headers);
+        $handshake = $this->createHandshake("/warlock?CID={$this->id}", $this->host, null, $this->key, $this->headers);
         @socket_write($this->socket, $handshake, strlen($handshake));
 
         /**

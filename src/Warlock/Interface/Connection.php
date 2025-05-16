@@ -10,6 +10,13 @@ interface Connection
 {
     public function __construct(Protocol $protocol, ?string $guid = null);
 
+    /**
+     * Configure the connection.
+     *
+     * @param array<mixed> $config
+     */
+    public function configure(array $config): void;
+
     public function connect(): bool;
 
     public function disconnect(): bool;

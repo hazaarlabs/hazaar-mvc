@@ -6,10 +6,10 @@ namespace Hazaar\Warlock\Server;
 
 use Hazaar\Application\Protocol;
 use Hazaar\Warlock\Config;
+use Hazaar\Warlock\Enum\LogLevel;
 use Hazaar\Warlock\Exception\ExtensionNotLoaded;
+use Hazaar\Warlock\Logger;
 use Hazaar\Warlock\Server\Component\Cluster;
-use Hazaar\Warlock\Server\Component\Logger;
-use Hazaar\Warlock\Server\Enum\LogLevel;
 
 if (!extension_loaded('sockets')) {
     throw new ExtensionNotLoaded('sockets');
@@ -106,7 +106,7 @@ class Main
      */
     private int $tv = 1;
 
-    public function __construct(string $configFile = 'warlock', string $env = 'development')
+    public function __construct(?string $configFile = null, string $env = 'development')
     {
         self::$instance = $this;
         $config = new Config($configFile, env: $this->env = $env);
@@ -120,7 +120,9 @@ class Main
         if ($tz = $this->config['timezone']) {
             date_default_timezone_set(timezoneId: $tz);
         }
-        $this->watcher = new Watcher($this->log, $config['agent'] ?? []);
+        if ($this->config['agent'] ?? false) {
+            $this->watcher = new Watcher($this->log, $config['agent'] ?? []);
+        }
         // $this->cluster = new Cluster($this->log, $config['cluster'] ?? []);
     }
 
@@ -172,7 +174,6 @@ class Main
     public function run()
     {
         // $this->cluster->start();
-        $this->watcher->start();
         while ($this->running) {
             pcntl_signal_dispatch();
             if (null !== $this->shutdown && $this->shutdown <= time()) {
@@ -187,11 +188,15 @@ class Main
                 // $this->cluster->process();
                 $this->eventCleanup();
                 $this->clientCheck();
-                $this->watcher->process();
+                if (isset($this->watcher)) {
+                    $this->watcher->process();
+                }
                 $this->time = $now;
             }
         }
-        $this->watcher->stop();
+        if (isset($this->watcher)) {
+            $this->watcher->stop();
+        }
         // $this->cluster->stop();
         $this->log->write('Closing all remaining connections', LogLevel::NOTICE);
         foreach ($this->streams as $stream) {

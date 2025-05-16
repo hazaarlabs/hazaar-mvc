@@ -12,9 +12,12 @@ final class WarlockTest extends TestCase
 {
     public function testCanConnect(): void
     {
-        $warlock = new Client();
+        $warlock = new Client([
+            'host' => 'localhost',
+            'port' => 13080,
+        ]);
         $this->assertFalse($warlock->connected());
-        $this->assertTrue($warlock->connect('localhost', 13080));
+        $this->assertTrue($warlock->connect());
         $this->assertTrue($warlock->connected());
         $this->assertTrue($warlock->disconnect());
         $this->assertFalse($warlock->connected());
@@ -22,16 +25,22 @@ final class WarlockTest extends TestCase
 
     public function testCanSendTrigger(): void
     {
-        $warlock = new Client();
-        $this->assertTrue($warlock->connect('localhost', 13080));
-        $this->assertTrue($warlock->trigger('test', 'test'));
+        $warlock = new Client([
+            'host' => 'localhost',
+            'port' => 13080,
+        ]);
+        $this->assertTrue($warlock->connect());
+        $this->assertTrue($warlock->trigger('test', 'Hello, World!'));
         $this->assertTrue($warlock->disconnect());
     }
 
     public function testCanSubscribe(): void
     {
-        $warlock = new Client();
-        $this->assertTrue($warlock->connect('localhost', 13080));
+        $warlock = new Client([
+            'host' => 'localhost',
+            'port' => 13080,
+        ]);
+        $this->assertTrue($warlock->connect());
         $this->assertTrue($warlock->subscribe('test', function ($data) {
             $this->assertEquals('test', $data);
         }));

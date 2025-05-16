@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock;
 
-use Hazaar\Application;
 use Hazaar\Application\FilePath;
 use Hazaar\Loader;
 
-class Config extends Application\Config
+class Config extends \Hazaar\Config
 {
     /**
      * @var array<mixed>
@@ -33,6 +32,7 @@ class Config extends Application\Config
                 // still get events and was the founding principle that allowed Warlock to work with long-polling HTTP connections.  Still
                 // very useful in the WebSocket world though.
             ],
+            'agent' => false, // Automatically start the agent process.  This is useful for testing and debugging, but not recommended for production use.
         ],
         'cluster' => [
             'enabled' => false,
@@ -42,7 +42,6 @@ class Config extends Application\Config
         ],
         'client' => [],
         'agent' => [
-            'enabled' => true,
             'task' => [
                 'retries' => 3,                        // Retry tasks that failed this many times.
                 'retry' => 10,                         // Retry failed tasks after this many seconds.
@@ -75,6 +74,9 @@ class Config extends Application\Config
         $defaultConfig = self::$defaultConfig;
 
         try {
+            if ('/' !== substr($configFile, 0, 1)) {
+                $configFile = getcwd().'/'.$configFile;
+            }
             parent::__construct($configFile, $env, $defaultConfig);
         } catch (\Exception $e) {
             throw new \Exception('There is no warlock configuration file.  Warlock is disabled!');

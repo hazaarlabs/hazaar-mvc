@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Warlock\Server;
+namespace Hazaar\Warlock\Agent;
 
 use Hazaar\Model;
 use Hazaar\Util\Version;
@@ -15,7 +15,6 @@ if (!defined('SERVER_PATH')) {
 
 abstract class Process extends Model
 {
-    public Struct\Application $application;
     public string $id;
     public ?string $tag = null;
 

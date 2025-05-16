@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Warlock\Server\Enum;
+namespace Hazaar\Warlock\Enum;
 
-enum Exiting: int
+enum ExitCode: int
 {
     case NORMAL = 0;
     case DECODE_START_PAYLOAD = 1;

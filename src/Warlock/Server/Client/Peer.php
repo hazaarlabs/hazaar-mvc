@@ -168,7 +168,7 @@ class Peer extends Client
         }
         $this->status = self::STATUS_DISCONNECTED;
         if (true === $this->isRemote) {
-            Main::$instance->cluster->removePeer($this);
+            // Main::$instance->cluster->removePeer($this);
         }
 
         return true;

@@ -27,7 +27,7 @@ class Client extends Process
     public function __construct(
         array $config = []
     ) {
-        $config = new Config(config: $config);
+        $config = new Config(config: ['client' => $config]);
         $this->config = $config['client'];
         $this->config['encode'] ??= $config['server']['encode'];
         $this->config['serverId'] ??= $config['server']['id'];

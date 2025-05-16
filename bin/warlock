@@ -2,7 +2,8 @@
 <?php
 
 use Hazaar\Console\Application;
-use Hazaar\Warlock\Console\RunModule;
+use Hazaar\Warlock\Console\AgentModule;
+use Hazaar\Warlock\Console\ServerModule;
 
 if (file_exists(__DIR__.'/../../../autoload.php')) {
     require __DIR__.'/../../../autoload.php';
@@ -11,6 +12,7 @@ if (file_exists(__DIR__.'/../../../autoload.php')) {
 }
 
 $app = new Application('Warlock', '1.0.0');
-$app->add(new RunModule());
+$app->add(new ServerModule());
+$app->add(new AgentModule());
 
 $app->run();

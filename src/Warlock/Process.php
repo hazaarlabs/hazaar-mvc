@@ -9,13 +9,15 @@ use Hazaar\Util\Boolean;
 use Hazaar\Util\Closure;
 use Hazaar\Util\DateTime;
 use Hazaar\Util\Str;
-use Hazaar\Warlock\Connection\Socket;
+use Hazaar\Warlock\Enum\LogLevel;
+use Hazaar\Warlock\Enum\Status;
+use Hazaar\Warlock\Interface\Connection;
 
 abstract class Process
 {
     public int $start = 0;
-    public ?int $state = HAZAAR_SERVICE_NONE;
-    protected Socket $conn;
+    public Status $state = Status::NONE;
+    protected Connection $conn;
     protected ?string $id = null;
     protected Protocol $protocol;
 
@@ -23,26 +25,16 @@ abstract class Process
      * @var array<string,callable>
      */
     protected array $subscriptions = [];
-
-    /**
-     * @var array<string, array<null|string>>
-     */
-    private static array $options = [
-        'serviceName' => ['n', 'name', 'serviceName', "\tStart a service directly from the command line."],
-        'daemon' => ['d', 'daemon', null, "\t\t\t\tStart in daemon mode and wait for a startup packet."],
-        'help' => [null, 'help', null, "\t\t\t\tPrint this message and exit."],
-    ];
-
-    /**
-     * @var array<int,mixed>
-     */
-    private static array $opt = [];
+    protected bool $slept = false;
+    protected Logger $log;
+    private int $lastHeartbeat = 0;
 
     public function __construct(Protocol $protocol)
     {
         $this->start = time();
         $this->protocol = $protocol;
         $this->id = Str::guid();
+        $this->log = new Logger();
         $conn = $this->createConnection($protocol, $this->id);
         if (false === $conn) {
             throw new \Exception('Failed to created connection!', 1);
@@ -53,6 +45,40 @@ abstract class Process
     public function __destruct()
     {
         $this->disconnect();
+    }
+
+    /**
+     * @param array<mixed> $errcontext
+     */
+    final public function __errorHandler(
+        int $errno,
+        string $errstr,
+        ?string $errfile = null,
+        ?int $errline = null,
+        array $errcontext = []
+    ): bool {
+        ob_start();
+        $msg = "#{$errno} on line {$errline} in file {$errfile}\n"
+            .str_repeat('-', 40)."\n{$errstr}\n".str_repeat('-', 40)."\n";
+        debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+        $msg .= ob_get_clean()."\n";
+        $this->log->write($msg, LogLevel::ERROR);
+        $this->send('ERROR', $msg);
+
+        return true;
+    }
+
+    final public function __exceptionHandler(\Throwable $e): bool
+    {
+        ob_start();
+        $msg = "#{$e->getCode()} on line {$e->getLine()} in file {$e->getFile()}\n"
+            .str_repeat('-', 40)."\n{$e->getMessage()}\n".str_repeat('-', 40)."\n";
+        debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+        $msg .= ob_get_clean()."\n";
+        $this->log->write('EXCEPTION '.$msg, LogLevel::ERROR);
+        $this->send('ERROR', $msg);
+
+        return true;
     }
 
     /**
@@ -74,6 +100,20 @@ abstract class Process
         }
 
         return $payload;
+    }
+
+    final protected function __sendHeartbeat(): void
+    {
+        $status = [
+            'pid' => getmypid(),
+            'start' => $this->start,
+            'state_code' => $this->state,
+            'state' => $this->state->toString(),
+            'mem' => memory_get_usage(),
+            'peak' => memory_get_peak_usage(),
+        ];
+        $this->lastHeartbeat = time();
+        $this->send('status', $status);
     }
 
     /**
@@ -418,167 +458,9 @@ abstract class Process
         return $this->__kv_send_recv('KVCOUNT', $data);
     }
 
-    /**
-     * @brief Execute code from standard input in the application context
-     *
-     * @detail This method will accept Hazaar Protocol commands from STDIN and execute them.
-     *
-     * Exit codes:
-     *
-     * * 1 - Bad Payload - The execution payload could not be decoded.
-     * * 2 - Unknown Payload Type - The payload execution type is unknown.
-     * * 3 - Service Class Not Found - The service could not start because the service class could not be found.
-     * * 4 - Unable to open control channel - The application was unable to open a control channel back to the execution server.
-     *
-     * @param array<mixed> $argv
-     */
-    public static function runner(Application $application, ?array $argv = null): int
+    public function connect(): bool
     {
-        \posix_setsid();
-        $options = self::getopt();
-        $serviceName = $options['serviceName'] ?? null;
-        if (!class_exists('\Hazaar\Warlock\Config')) {
-            throw new \Exception('Could not find default warlock config.  How is this even working!!?');
-        }
-        $exitcode = 1;
-        $_SERVER['WARLOCK_EXEC'] = 1;
-        $warlock = new Config();
-        define('RESPONSE_ENCODED', $warlock['server']['encoded']);
-        $protocol = new Protocol($warlock['sys']['id'], $warlock['server']['encoded']);
-
-        try {
-            if (array_key_exists('daemon', $options)) {
-                // Execution should wait here until we get a command
-                $line = fgets(STDIN);
-                $payload = null;
-                if ($type = $protocol->decode($line, $payload)) {
-                    if (!$payload instanceof \stdClass) {
-                        throw new \Exception('Got Hazaar protocol packet without payload!');
-                    }
-                    // Synchronise the timezone with the server
-                    if ($tz = $payload->timezone ?? null) {
-                        \date_default_timezone_set($tz);
-                    }
-                    if ($config = $payload->config ?? null) {
-                        $application->config->extend($config);
-                    }
-
-                    switch ($type) {
-                        case 'EXEC' :
-                            $code = null;
-                            $class = $method = null;
-                            if (is_array($payload->exec)) {
-                                $class = new \ReflectionClass($payload->exec[0]);
-                                if (!$class->hasMethod($payload->exec[1])) {
-                                    throw new \Exception('EXEC FAILED: Method '.$payload->exec[0].'::'.$payload->exec[1].' does not exist');
-                                }
-                                $method = $class->getMethod($payload->exec[1]);
-                                if ($method->isStatic() && $method->isPublic()) {
-                                    $file = file($method->getFileName());
-                                    $startLine = $method->getStartLine() - 1;
-                                    $endLine = $method->getEndLine();
-                                    if (preg_match('/function\s+\w+(\(.*)/', $file[$startLine], $matches)) {
-                                        $file[$startLine] = 'function'.$matches[1];
-                                    }
-                                    if ($namespace = $class->getNamespaceName()) {
-                                        $code = "namespace {$namespace};\n\n";
-                                    }
-                                    $code .= '$_function = '.implode("\n", array_splice($file, $startLine, $endLine - $startLine)).';';
-                                }
-                            } else {
-                                $code = '$_function = '.$payload->exec.';';
-                            }
-                            if (is_string($code)) {
-                                $container = new Container($protocol);
-                                $exitcode = $container->exec($code, $payload->params ?? null);
-                            } elseif ($class instanceof \ReflectionClass
-                                && $method instanceof \ReflectionMethod
-                                && $class->isInstantiable()
-                                && $class->isSubclassOf('Hazaar\Warlock\Process')
-                                && $method->isPublic()
-                                && !$method->isStatic()) {
-                                $process = $class->newInstance($application, $protocol);
-                                if ($class->isSubclassOf('Hazaar\Warlock\Service')) {
-                                    $process->state = HAZAAR_SERVICE_RUNNING;
-                                }
-                                $method->invokeArgs($process, $payload->params ?? []);
-                                $exitcode = 0;
-                            } else {
-                                throw new \Exception('Method can not be executed.');
-                            }
-
-                            break;
-
-                        case 'SERVICE' :
-                            if (!property_exists($payload, 'name')) {
-                                $exitcode = 3;
-
-                                break;
-                            }
-                            $service = self::getServiceClass($payload->name, $application, $protocol, false);
-                            if ($service instanceof Service) {
-                                $exitcode = call_user_func([$service, 'main'], $payload->params ?? null, $payload->dynamic ?? false);
-                            } else {
-                                $exitcode = 3;
-                            }
-
-                            break;
-
-                        default:
-                            $exitcode = 2;
-
-                            break;
-                    }
-                }
-            } elseif (is_string($serviceName)) {
-                $service = self::getServiceClass($serviceName, $application, $protocol, true);
-                if (!$service instanceof Service) {
-                    throw new \Exception("Could not find service named '{$serviceName}'.\n");
-                }
-                $exitcode = call_user_func([$service, 'main']);
-            } else {
-                $exitcode = self::showHelp();
-            }
-        } catch (\Exception $e) {
-            echo $protocol->encode('ERROR', $e->getMessage())."\n";
-            flush();
-            if (($code = $e->getCode()) > 0) {
-                $exitcode = $code;
-            } else {
-                $exitcode = 3;
-            }
-        }
-
-        return $exitcode;
-    }
-
-    public static function getServiceClass(
-        string $serviceName,
-        Application $application,
-        Protocol $protocol,
-        bool $remote = false
-    ): false|Service {
-        $classSearch = [
-            'Application\Services\\'.ucfirst($serviceName),
-            ucfirst($serviceName).'Service',
-        ];
-        $service = null;
-        foreach ($classSearch as $serviceClass) {
-            if (!class_exists($serviceClass)) {
-                continue;
-            }
-            $service = new $serviceClass($application, $protocol, $remote);
-
-            break;
-        }
-
-        return $service;
-    }
-
-    public function connect(string $host, int $port = 13080): bool
-    {
-        $headers = [];
-        if (!$this->conn->connect($host, $port, $headers)) {
+        if (!$this->conn->connect()) {
             $this->conn->disconnect();
 
             return false;
@@ -597,61 +479,109 @@ abstract class Process
         return $this->conn->connected();
     }
 
-    protected function processCommand(string $command, ?\stdClass $payload = null): bool
+    /**
+     * @param array<mixed> $params
+     */
+    final public function run(?array $params = null, bool $dynamic = false): int
     {
-        switch ($command) {
-            case 'EVENT':
-                if (!($payload instanceof \stdClass
-                    && property_exists($payload, 'id')
-                    && array_key_exists($payload->id, $this->subscriptions))) {
-                    return false;
-                }
-                $func = $this->subscriptions[$payload->id];
-                if (is_string($func)) {
-                    $func = [$this, $func];
-                }
-                $result = false;
-                $process = true;
-                // Check if the callback is an object method and if a beforeEvent method exists
-                if (is_array($func) && is_object($obj = $func[0] ?? null)
-                    && method_exists($obj, 'beforeEvent')) {
-                    $process = $obj->beforeEvent($payload);
-                }
-                if (false !== $process) {
-                    $result = call_user_func_array($func, [$payload->data ?? null, $payload]);
-                }
-                if (false !== $result
-                    && is_array($func)
-                    && is_object($obj = $func[0] ?? null)
-                    && method_exists($obj, 'afterEvent')) {
-                    $obj->afterEvent($payload);
-                }
-
-                break;
-
-            case 'PONG':
-                if (is_int($payload->data)) {
-                    $tripMs = (microtime(true) - $payload->data) * 1000;
-                    $this->send('DEBUG', 'PONG received in '.$tripMs.'ms');
-                } else {
-                    $this->send('ERROR', 'PONG received with invalid payload!');
-                }
-
-                break;
-
-            case 'OK':
-                break;
-
-            default:
-                $this->send('DEBUG', ['type' => get_class($this), 'data' => 'Unhandled command: '.$command]);
-
-                break;
+        $this->state = Status::INIT;
+        if (!$this->connect()) {
+            return 1;
         }
+        $init = $this->init();
+        $this->state = ((false === $init) ? Status::ERROR : Status::READY);
+        if (Status::READY !== $this->state) {
+            return 1;
+        }
+        $this->state = Status::RUNNING;
+        $this->__sendHeartbeat();
+        $code = 0;
+        while (Status::RUNNING == $this->state || Status::SLEEP == $this->state) {
+            $this->slept = false;
+            $this->state = Status::RUNNING;
+
+            try {
+                $this->exec();
+                /*
+                * If sleep was not executed in the last call to run(), then execute it now.  This protects bad services
+                * from not sleeping as the sleep() call is where new signals are processed.
+                */
+                if (false === $this->slept) {
+                    $this->sleep(0);
+                }
+            } catch (\Throwable $e) {
+                $this->__exceptionHandler($e);
+                $this->state = Status::ERROR;
+                $code = 7;
+            }
+        }
+        $this->state = Status::STOPPING;
+        $this->log->write('Service is shutting down', LogLevel::INFO);
+        $this->shutdown();
+        $this->state = Status::STOPPED;
+
+        return $code;
+    }
+
+    // BUILT-IN PLACEHOLDER METHODS
+    public function exec(): void
+    {
+        $this->sleep(60);
+    }
+
+    public function shutdown(): bool
+    {
+        return true;
+    }
+
+    final public function stop(): void
+    {
+        $this->state = Status::STOPPING;
+    }
+
+    final public function state(): Status
+    {
+        return $this->state;
+    }
+
+    /**
+     * Sleep for a number of seconds.  If data is received during the sleep it is processed.  If the timeout is greater
+     * than zero and data is received, the remaining timeout amount will be used in subsequent selects to ensure the
+     * full sleep period is used.  If the timeout parameter is not set then the loop will just dump out after one
+     * execution.
+     */
+    final protected function sleep(int $timeout = 0): bool
+    {
+        $start = microtime(true);
+        // Sleep if we are still sleeping and the timeout is not reached.  If the timeout is NULL or 0 do this process at least once.
+        while (Status::RUNNING === $this->state && ($start + $timeout) >= microtime(true)) {
+            $tvSec = 0;
+            $tvUsec = 0;
+            if ($timeout > 0) {
+                $this->state = Status::SLEEP;
+                $diff = ($start + $timeout) - microtime(true);
+                if ($diff > 0) {
+                    $tvSec = (int) floor($diff);
+                    $tvUsec = (int) round(($diff - floor($diff)) * 1000000);
+                } else {
+                    $tvSec = 1;
+                }
+            }
+            $payload = null;
+            if ($type = $this->recv($payload, $tvSec, $tvUsec)) {
+                $this->processCommand($type, $payload);
+            }
+            if (($this->lastHeartbeat + 60) <= time()) {
+                $this->__sendHeartbeat();
+            }
+            $this->state = Status::RUNNING;
+        }
+        $this->slept = true;
 
         return true;
     }
 
-    protected function createConnection(Protocol $protocol, ?string $guid = null): false|Socket
+    protected function createConnection(Protocol $protocol, ?string $guid = null): Connection|false
     {
         return false;
     }
@@ -703,6 +633,70 @@ abstract class Process
         return ['callable' => $callable];
     }
 
+    protected function processCommand(string $command, ?\stdClass $payload = null): bool
+    {
+        switch ($command) {
+            case 'EVENT':
+                if (!($payload instanceof \stdClass
+                    && property_exists($payload, 'id')
+                    && array_key_exists($payload->id, $this->subscriptions))) {
+                    return false;
+                }
+                $func = $this->subscriptions[$payload->id];
+                if (is_string($func)) {
+                    $func = [$this, $func];
+                }
+                $result = false;
+                $process = true;
+                // Check if the callback is an object method and if a beforeEvent method exists
+                if (is_array($func) && is_object($obj = $func[0] ?? null)
+                    && method_exists($obj, 'beforeEvent')) {
+                    $process = $obj->beforeEvent($payload);
+                }
+                if (false !== $process) {
+                    $result = call_user_func_array($func, [$payload->data ?? null, $payload]);
+                }
+                if (false !== $result
+                    && is_array($func)
+                    && is_object($obj = $func[0] ?? null)
+                    && method_exists($obj, 'afterEvent')) {
+                    $obj->afterEvent($payload);
+                }
+
+                break;
+
+            case 'PONG':
+                if (is_int($payload->data)) {
+                    $tripMs = (microtime(true) - $payload->data) * 1000;
+                    $this->send('DEBUG', 'PONG received in '.$tripMs.'ms');
+                } else {
+                    $this->send('ERROR', 'PONG received with invalid payload!');
+                }
+
+                break;
+
+            case 'OK':
+                break;
+
+            case 'STATUS':
+                $this->__sendHeartbeat();
+
+                break;
+
+            case 'CANCEL':
+                $this->stop();
+
+                return true;
+
+            default:
+                $this->send('DEBUG', ['type' => get_class($this), 'data' => 'Unhandled command: '.$command]);
+
+                break;
+        }
+
+        return true;
+    }
+
     /**
      * @param array<mixed> $params
      */
@@ -729,56 +723,5 @@ abstract class Process
         }
 
         return false;
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private static function getopt(): array|int
-    {
-        if (!self::$opt) {
-            self::$opt = [0 => '', 1 => []];
-            foreach (self::$options as $name => $o) {
-                if ($o[0]) {
-                    self::$opt[0] .= $o[0].(null === $o[2] ? '' : ':');
-                }
-                if ($o[1]) {
-                    self::$opt[1][] = $o[1].(null === $o[2] ? '' : ':');
-                }
-            }
-        }
-        $ops = getopt(self::$opt[0], self::$opt[1]);
-        $options = [];
-        foreach (self::$options as $name => $o) {
-            $s = $l = false;
-            $sk = $lk = null;
-            if (($o[0] && ($s = array_key_exists($sk = rtrim($o[0], ':'), $ops))) || ($o[1] && ($l = array_key_exists($lk = rtrim($o[1], ':'), $ops)))) {
-                $options[$name] = $s ? $ops[$sk] : $ops[$lk];
-            }
-        }
-        if ($options['help'] ?? false) {
-            return self::showHelp();
-        }
-
-        return $options;
-    }
-
-    private static function showHelp(): int
-    {
-        $script = basename($_SERVER['SCRIPT_FILENAME']);
-        $msg = "Syntax: {$script} [options]\nOptions:\n";
-        foreach (self::$options as $o) {
-            $avail = [];
-            if ($o[0]) {
-                $avail[] = '-'.$o[0].' '.$o[2];
-            }
-            if ($o[1]) {
-                $avail[] = '--'.$o[1].'='.$o[2];
-            }
-            $msg .= '  '.implode(', ', $avail).$o[3]."\n";
-        }
-        echo $msg;
-
-        return 0;
     }
 }

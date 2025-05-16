@@ -1,7 +1,7 @@
 {
   "development": {
-    "runner": {
-      "enabled": true
+    "server": {
+      "port": 8000
     },
     "log": {
       "level": "W_DEBUG"

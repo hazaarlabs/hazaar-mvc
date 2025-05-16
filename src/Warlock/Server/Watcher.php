@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Server;
 
-use Hazaar\Warlock\Server\Component\Logger;
-use Hazaar\Warlock\Server\Enum\LogLevel;
+use Hazaar\Warlock\Enum\LogLevel;
+use Hazaar\Warlock\Logger;
 
 class Watcher
 {
@@ -48,7 +48,7 @@ class Watcher
 
                 continue;
             }
-            $this->log->write('Process exited: '.$status['pid'], LogLevel::DEBUG);
+            $this->log->write('Process '.$status['pid'].' exited with code '.$status['exitcode'], LogLevel::DEBUG);
             proc_close($process);
             unset($this->processes[$index]);
         }
@@ -56,7 +56,7 @@ class Watcher
 
     public function start(): bool
     {
-        $cmd = 'php '.escapeshellarg(__DIR__.'/Service/Agent.php');
+        $cmd = 'php '.escapeshellarg(__DIR__.'/Agent/Main.php');
         $this->processes['agent'] = proc_open($cmd, [
             1 => ['pipe', 'w'],
             2 => ['pipe', 'w'],

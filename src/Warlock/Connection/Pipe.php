@@ -20,6 +20,11 @@ final class Pipe implements Connection
         $this->guid = $guid;
     }
 
+    public function configure(array $config): void
+    {
+        // No configuration needed for pipe connection
+    }
+
     public function connect(): bool
     {
         return true;

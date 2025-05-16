@@ -30,8 +30,6 @@ use Hazaar\Logger\Frontend;
 use Hazaar\Util\Arr;
 use Hazaar\Util\Timer;
 
-require_once __DIR__.DIRECTORY_SEPARATOR.'Constants.php';
-
 define('HAZAAR_VERSION', '3.0');
 define('HAZAAR_START', microtime(true));
 

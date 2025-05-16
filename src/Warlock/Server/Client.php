@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Hazaar\Warlock\Server;
 
 use Hazaar\HTTP\Response;
+use Hazaar\Warlock\Enum\LogLevel;
+use Hazaar\Warlock\Logger;
 use Hazaar\Warlock\Protocol;
 use Hazaar\Warlock\Protocol\WebSockets;
-use Hazaar\Warlock\Server\Component\Logger;
-use Hazaar\Warlock\Server\Enum\LogLevel;
 
 class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
 {

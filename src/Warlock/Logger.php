@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Warlock\Server\Component;
+namespace Hazaar\Warlock;
 
-use Hazaar\Warlock\Server\Enum\LogLevel;
+use Hazaar\Warlock\Enum\LogLevel;
 
 /**
  * Logger class for handling logging operations with different log levels.
@@ -39,7 +39,7 @@ class Logger
             return;
         }
         echo date('Y-m-d H:i:s')
-            .' | '.$level->color(sprintf('%-6s', $this->prefix))
+            .' | '.$level->color(sprintf('%-7s', $this->prefix))
             .' | '.$level->color(sprintf('%-'.$level::pad().'s', $level->name))
             .' | '.$level->color($message)."\n";
     }
