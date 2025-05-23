@@ -16,8 +16,9 @@ use Hazaar\Warlock\Interface\Connection;
 abstract class Process
 {
     public int $start = 0;
-    public Status $state = Status::NONE;
+    public Status $state = Status::STARTING;
     protected Connection $conn;
+    protected bool $reconnect = false;
     protected ?string $id = null;
     protected Protocol $protocol;
 
@@ -26,6 +27,7 @@ abstract class Process
      */
     protected array $subscriptions = [];
     protected bool $slept = false;
+    protected bool $silent = false;
     protected Logger $log;
     private int $lastHeartbeat = 0;
 
@@ -35,6 +37,8 @@ abstract class Process
         $this->protocol = $protocol;
         $this->id = Str::guid();
         $this->log = new Logger();
+        set_error_handler([$this, '__errorHandler']);
+        set_exception_handler([$this, '__exceptionHandler']);
         $conn = $this->createConnection($protocol, $this->id);
         if (false === $conn) {
             throw new \Exception('Failed to created connection!', 1);
@@ -57,28 +61,17 @@ abstract class Process
         ?int $errline = null,
         array $errcontext = []
     ): bool {
-        ob_start();
-        $msg = "#{$errno} on line {$errline} in file {$errfile}\n"
-            .str_repeat('-', 40)."\n{$errstr}\n".str_repeat('-', 40)."\n";
-        debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-        $msg .= ob_get_clean()."\n";
-        $this->log->write($msg, LogLevel::ERROR);
-        $this->send('ERROR', $msg);
+        if ($this->silent) {
+            return false;
+        }
+        $this->log->write($errstr, LogLevel::ERROR);
 
         return true;
     }
 
-    final public function __exceptionHandler(\Throwable $e): bool
+    final public function __exceptionHandler(\Throwable $e): void
     {
-        ob_start();
-        $msg = "#{$e->getCode()} on line {$e->getLine()} in file {$e->getFile()}\n"
-            .str_repeat('-', 40)."\n{$e->getMessage()}\n".str_repeat('-', 40)."\n";
-        debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-        $msg .= ob_get_clean()."\n";
-        $this->log->write('EXCEPTION '.$msg, LogLevel::ERROR);
-        $this->send('ERROR', $msg);
-
-        return true;
+        $this->log->write($e->getMessage(), LogLevel::ERROR);
     }
 
     /**
@@ -484,39 +477,57 @@ abstract class Process
      */
     final public function run(?array $params = null, bool $dynamic = false): int
     {
-        $this->state = Status::INIT;
-        if (!$this->connect()) {
-            return 1;
-        }
-        $init = $this->init();
-        $this->state = ((false === $init) ? Status::ERROR : Status::READY);
-        if (Status::READY !== $this->state) {
-            return 1;
-        }
-        $this->state = Status::RUNNING;
-        $this->__sendHeartbeat();
         $code = 0;
-        while (Status::RUNNING == $this->state || Status::SLEEP == $this->state) {
-            $this->slept = false;
-            $this->state = Status::RUNNING;
-
+        $this->state = Status::RECONNECT;
+        while (Status::STOPPING !== $this->state) {
             try {
-                $this->exec();
-                /*
-                * If sleep was not executed in the last call to run(), then execute it now.  This protects bad services
-                * from not sleeping as the sleep() call is where new signals are processed.
-                */
-                if (false === $this->slept) {
-                    $this->sleep(0);
+                $this->slept = false;
+                if (Status::RECONNECT === $this->state) {
+                    $this->log->write('Waiting for server...', LogLevel::NOTICE);
+                    $this->state = Status::CONNECT;
+                    $this->silent = true;
+                }
+                if (Status::CONNECT === $this->state) {
+                    if ($this->connected()) {
+                        $this->state = Status::RUNNING;
+                    } else {
+                        if ($this->connect()) {
+                            $this->state = Status::INIT;
+                        } else {
+                            $this->silent = true;
+                            sleep(1);
+
+                            continue;
+                        }
+                    }
+                }
+                $this->silent = false;
+                if (Status::INIT === $this->state) {
+                    $init = $this->init();
+                    $this->state = ((false === $init) ? Status::ERROR : Status::READY);
+                    if (Status::READY !== $this->state) {
+                        return 1;
+                    }
+                }
+                if (Status::READY === $this->state) {
+                    $this->state = Status::RUNNING;
+                }
+                if (Status::RUNNING === $this->state) {
+                    $this->exec();
+                    /*
+                     * If sleep was not executed in the last call to run(), then execute it now.  This protects bad services
+                     * from not sleeping as the sleep() call is where new signals are processed.
+                     */
+                    if (false === $this->slept) {
+                        $this->sleep(0);
+                    }
                 }
             } catch (\Throwable $e) {
                 $this->__exceptionHandler($e);
-                $this->state = Status::ERROR;
-                $code = 7;
+                $this->state = Status::CONNECT;
             }
         }
         $this->state = Status::STOPPING;
-        $this->log->write('Service is shutting down', LogLevel::INFO);
         $this->shutdown();
         $this->state = Status::STOPPED;
 
@@ -529,10 +540,7 @@ abstract class Process
         $this->sleep(60);
     }
 
-    public function shutdown(): bool
-    {
-        return true;
-    }
+    public function shutdown(): void {}
 
     final public function stop(): void
     {
@@ -570,6 +578,13 @@ abstract class Process
             $payload = null;
             if ($type = $this->recv($payload, $tvSec, $tvUsec)) {
                 $this->processCommand($type, $payload);
+            } elseif (false === $type) {
+                $this->log->write('Connection closed by server', LogLevel::ERROR);
+                $this->state = $this->reconnect ? Status::RECONNECT : Status::STOPPING;
+                $this->disconnect();
+                $this->slept = true;
+
+                return false;
             }
             if (($this->lastHeartbeat + 60) <= time()) {
                 $this->__sendHeartbeat();

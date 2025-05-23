@@ -175,11 +175,11 @@ final class Socket extends WebSockets implements Connection
             return $this->protocol->decode($frame, $payload);
         }
         if (!$this->socket) {
-            exit(4);
+            return false;
         }
         $socketOption = socket_get_option($this->socket, SOL_SOCKET, SO_ERROR);
         if (is_int($socketOption) && $socketOption > 0) {
-            exit(4);
+            return false;
         }
         $read = [
             $this->socket,
@@ -203,8 +203,6 @@ final class Socket extends WebSockets implements Connection
                 throw new \Exception('An error occured while receiving from the socket');
             }
             if (0 == $bytesReceived) {
-                $this->disconnect();
-
                 return false;
             }
             if (($start++) > 5) {

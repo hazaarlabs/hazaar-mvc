@@ -31,6 +31,7 @@ class Main extends Process
      * @var array<Task>
      */
     public array $tasks = [];
+    protected bool $reconnect = true;
 
     /**
      * @var array<mixed>
@@ -59,8 +60,11 @@ class Main extends Process
     {
         $connection = new Socket($protocol, $guid);
         $connection->configure([
-            'host' => $this->config['host'],
-            'port' => $this->config['port'],
+            'host' => $this->config['host'] ?? '127.0.0.1',
+            'port' => $this->config['port'] ?? 13080,
+            'headers' => [
+                'X-WARLOCK-AGENT-ID' => $this->config['id'] ?? 1234,
+            ],
         ]);
 
         return $connection;
@@ -77,22 +81,21 @@ class Main extends Process
 
     public function init(): bool
     {
-        $this->log->write('Subcribing to test event', LogLevel::DEBUG);
-        $this->subscribe(
-            event: 'test',
-            callback: function (mixed $data): void {
-                $this->log->write('Test event triggered', LogLevel::DEBUG);
-                $this->log->write('Data: '.json_encode($data), LogLevel::DEBUG);
-            }
-        );
+        $this->subscribe('test', function (mixed $data): void {
+            $this->log->write('Received test event: '.json_encode($data), LogLevel::DEBUG);
+        });
 
         return true;
     }
 
     public function exec(): void
     {
-        $this->log->write('AGENT WAITING', LogLevel::INFO);
-        $this->sleep(5);
-        $this->trigger('test', 'Hello, World', true);
+        $this->log->write('Nothing to do...', LogLevel::DEBUG);
+        $this->sleep(10);
+    }
+
+    public function shutdown(): void
+    {
+        $this->log->write('Agent is shutting down', LogLevel::INFO);
     }
 }
