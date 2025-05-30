@@ -73,7 +73,10 @@ abstract class Module
             }
             $command = $this->commands[$command];
             $this->input->run($command);
-            $this->prepare($this->input, $this->output);
+            $result = $this->prepare($this->input, $this->output);
+            if ($result > 0) {
+                return $result;
+            }
             $callable = $command->getCallable();
             $result = $callable($this->input, $this->output);
         } catch (\Exception $e) {
@@ -83,7 +86,10 @@ abstract class Module
         return $result;
     }
 
-    protected function prepare(Input $input, Output $output): void {}
+    protected function prepare(Input $input, Output $output): int
+    {
+        return 0;
+    }
 
     /**
      * @param array{object,string} $callback

@@ -13,29 +13,28 @@ class DocModule extends Module
 
     protected function configure(): void
     {
-        $this->setName('doc')->setDescription('Generate API documentation');
+        $this->setName('doc')->setDescription('Work with API documentation');
         $this->addCommand(name: 'compile', callback: [$this, 'generate'])
             ->setDescription(description: 'Generate API documentation')
-            ->addOption(long: 'title', description: 'The title of the documentation')
-            ->addOption(long: 'scan', description: 'The path to scan for classes')
-            ->addOption(long: 'sidebar', description: 'The sidebar format to generate')
+            ->addOption(long: 'title', short: 't', description: 'The title of the documentation', takesValue: true, default: 'API Documentation', valueType: 'title')
+            ->addOption(long: 'scan', description: 'The path to scan for classes', takesValue: true, valueType: 'dir')
+            ->addOption('verbose', short: 'v', description: 'Enable verbose output', takesValue: false, default: false)
             ->addArgument(name: 'output', description: 'The output path for the documentation')
         ;
-
         $this->addCommand('index', [$this, 'index'])
             ->setDescription('Generate an API documentation index')
-            ->addOption(long: 'title', description: 'The title of the documentation')
-            ->addOption(long: 'scan', description: 'The path to scan for classes')
-            ->addOption('format', description: 'The index format to generate')
+            ->addOption(long: 'title', description: 'The title of the documentation', takesValue: true, default: 'API Documentation')
+            ->addOption(long: 'scan', description: 'The path to scan for classes', takesValue: true, default: '.')
+            ->addOption('format', description: 'The index format to generate', takesValue: true, default: 'vuepress')
             ->addArgument('output', description: 'The output path for the documentation')
         ;
     }
 
-    protected function prepare(Input $input, Output $output): void
+    protected function prepare(Input $input, Output $output): int
     {
         $outputPath = $input->getArgument('output');
         if (!$outputPath) {
-            throw new \Exception('No output path specified', 1);
+            throw new \InvalidArgumentException('No output path specified', 1);
         }
         $title = $input->getOption('title') ?? 'API Documentation';
         $this->doc = new Documentor(Documentor::DOC_OUTPUT_MARKDOWN, $title);
@@ -45,13 +44,20 @@ class DocModule extends Module
         $this->doc->setOutputPath($outputPath);
         $scanPath = $input->getOption('scan') ?? '.';
         if (!$this->doc->setScanPath($scanPath)) {
-            throw new \Exception("Invalid scan path: {$scanPath}", 1);
+            throw new \InvalidArgumentException("Invalid scan path: {$scanPath}", 1);
         }
+
+        return 0;
     }
 
     protected function generate(Input $input, Output $output): int
     {
         $result = $this->doc->generate();
+        if ($result) {
+            $output->write('Output: '.realpath($this->doc->getOutputPath()).PHP_EOL);
+        } else {
+            $output->write('<fg=red>Error generating documentation</>'.PHP_EOL);
+        }
 
         return $result ? 0 : 1;
     }

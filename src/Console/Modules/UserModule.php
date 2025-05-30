@@ -14,10 +14,20 @@ class UserModule extends Module
 {
     protected function configure(): void
     {
-        $this->addCommand('user')
-            ->setDescription('Create, delete or update a user')
-            ->addArgument('command', 'The tool command to run')
-            ->addArgument('user', 'The user to operate on')
+        $this->setName('user')
+            ->setDescription('Manage users in the application')
+        ;
+        $this->addCommand('add')
+            ->setDescription('Create a user')
+            ->addArgument('user', 'The tool command to run')
+        ;
+        $this->addCommand('del')
+            ->setDescription('Delete a user')
+            ->addArgument('user', 'The user to delete')
+        ;
+        $this->addCommand('passwd')
+            ->setDescription('Change a user\'s password')
+            ->addArgument('user', 'The user to change the password for')
         ;
     }
 
@@ -40,9 +50,9 @@ class UserModule extends Module
 
         switch ($command) {
             case 'add':
-                $auth = $appConfig['auth']->has('table') ?
-                    new DBITable(Adapter::getInstance(), $appConfig['auth']) :
-                    new HTPasswd($appConfig['auth']);
+                $auth = $appConfig['auth']->has('table')
+                    ? new DBITable(Adapter::getInstance(), $appConfig['auth'])
+                    : new HTPasswd($appConfig['auth']);
                 $credential = self::readCredential();
                 if ($auth->create($user, $credential)) {
                     $output->write('User added: '.$user.PHP_EOL);
@@ -53,9 +63,9 @@ class UserModule extends Module
                 break;
 
             case 'del':
-                $auth = $appConfig['auth']->has('table') ?
-                    new DBITable(Adapter::getInstance(), $appConfig['auth']) :
-                    new HTPasswd($appConfig['auth']);
+                $auth = $appConfig['auth']->has('table')
+                    ? new DBITable(Adapter::getInstance(), $appConfig['auth'])
+                    : new HTPasswd($appConfig['auth']);
                 if ($auth->delete($user)) {
                     $output->write('User deleted: '.$user.PHP_EOL);
                 } else {
@@ -65,9 +75,9 @@ class UserModule extends Module
                 break;
 
             case 'passwd':
-                $auth = $appConfig['auth']->has('table') ?
-                    new DBITable(Adapter::getInstance(), $appConfig['auth']) :
-                    new HTPasswd($appConfig['auth']);
+                $auth = $appConfig['auth']->has('table')
+                    ? new DBITable(Adapter::getInstance(), $appConfig['auth'])
+                    : new HTPasswd($appConfig['auth']);
                 $credential = self::readCredential();
                 if ($auth->update($user, $credential)) {
                     $output->write('Password updated for user: '.$user.PHP_EOL);

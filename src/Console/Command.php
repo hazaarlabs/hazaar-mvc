@@ -7,7 +7,7 @@ namespace Hazaar\Console;
 class Command
 {
     /**
-     * @var array<array{long: string, short: null|string, description: null|string, required: bool}>
+     * @var array<Option>
      */
     public static array $globalOptions = [];
     protected Application $application;
@@ -15,12 +15,12 @@ class Command
     private string $description;
 
     /**
-     * @var array<array{long: string, short: null|string, description: null|string, required: bool}>
+     * @var array<string,Option>
      */
     private array $options = [];
 
     /**
-     * @var array<array{name: string, description: string, required: bool}>
+     * @var array<Argument>
      */
     private array $arguments = [];
 
@@ -54,7 +54,7 @@ class Command
     }
 
     /**
-     * @return array<array{long: string, short: null|string, description: null|string, required: bool}>
+     * @return array<Option>
      */
     public function getOptions(): array
     {
@@ -62,7 +62,7 @@ class Command
     }
 
     /**
-     * @return array<array{name: string, description: string, required: bool}>
+     * @return array<Argument>
      */
     public function getArguments(): array
     {
@@ -92,14 +92,18 @@ class Command
         string $long,
         ?string $short = null,
         ?string $description = null,
-        bool $required = false
+        bool $takesValue = false,
+        mixed $default = null,
+        ?string $valueType = null
     ): self {
-        $this->options[] = [
-            'long' => $long,
-            'short' => $short,
-            'description' => $description,
-            'required' => $required,
-        ];
+        $this->options[$long] = new Option(
+            long: $long,
+            short: $short,
+            description: $description,
+            takesValue: $takesValue,
+            default: $default,
+            valueType: $valueType
+        );
 
         return $this;
     }
@@ -109,11 +113,11 @@ class Command
         ?string $description = null,
         bool $required = false
     ): self {
-        $this->arguments[] = [
-            'name' => $name,
-            'description' => $description,
-            'required' => $required,
-        ];
+        $this->arguments[] = new Argument(
+            name: $name,
+            description: $description,
+            required: $required
+        );
 
         return $this;
     }
@@ -122,15 +126,30 @@ class Command
         string $long,
         ?string $short = null,
         ?string $description = null,
-        bool $required = false
+        bool $takesValue = false,
+        mixed $default = null,
+        ?string $valueType = null
     ): self {
-        self::$globalOptions[$long] = [
-            'long' => $long,
-            'short' => $short,
-            'description' => $description,
-            'required' => $required,
-        ];
+        self::$globalOptions[$long] = new Option(
+            long: $long,
+            short: $short,
+            description: $description,
+            takesValue: $takesValue,
+            default: $default,
+            valueType: $valueType
+        );
 
         return $this;
+    }
+
+    public function findOption(string $name): ?Option
+    {
+        foreach ($this->options as $option) {
+            if ($option->long === $name || $option->short === $name) {
+                return $option;
+            }
+        }
+
+        return null;
     }
 }

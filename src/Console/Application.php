@@ -52,7 +52,13 @@ class Application
             $moduleName = $module->getName() ?? 'default';
             $this->commands[$moduleName] = array_merge($this->commands[$moduleName] ?? [], array_combine(array_keys($module->getCommands()), $modules));
         }
-        $this->input->initialise((array) $_SERVER['argv'], array_keys($this->commands));
+        $result = $this->input->initialise((array) $_SERVER['argv'], array_keys($this->commands));
+        if (false === $result) {
+            $this->output->write('<fg=red>Invalid command line arguments</>'.PHP_EOL);
+            $this->output->write('<fg=yellow>Use "'.$this->input->getExecutable().' help" for usage information</>'.PHP_EOL);
+
+            return 1;
+        }
         $this->output->write('<fg=green>'.$this->name.' v'.$this->version.'</>'.PHP_EOL);
         define('APPLICATION_ENV', $this->input->getGlobalOption('env') ?? getenv('APPLICATION_ENV') ?: 'development');
         $this->output->write('<fg=green>Environment: '.APPLICATION_ENV.'</>'.PHP_EOL.PHP_EOL);
