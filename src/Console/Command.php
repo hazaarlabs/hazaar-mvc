@@ -92,7 +92,7 @@ class Command
         string $long,
         ?string $short = null,
         ?string $description = null,
-        bool $takesValue = false,
+        ?bool $takesValue = null,
         mixed $default = null,
         ?string $valueType = null
     ): self {
@@ -100,7 +100,7 @@ class Command
             long: $long,
             short: $short,
             description: $description,
-            takesValue: $takesValue,
+            takesValue: null === $takesValue ? null !== $valueType : false,
             default: $default,
             valueType: $valueType
         );

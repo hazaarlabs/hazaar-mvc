@@ -17,13 +17,8 @@ class Logger
     private LogLevel $level = LogLevel::INFO;
     private string $prefix = 'WARLOCK';
 
-    public function __construct(int|string $level = 0)
+    public function __construct(LogLevel $level = LogLevel::INFO)
     {
-        if (is_string($level)) {
-            $level = constant(LogLevel::class.'::'.strtoupper($level));
-        } else {
-            $level = LogLevel::from($level);
-        }
         $this->setLevel($level);
     }
 
@@ -35,7 +30,7 @@ class Logger
      */
     public function write(string $message, LogLevel $level = LogLevel::INFO): void
     {
-        if ($level > $this->level) {
+        if ($level->value > $this->level->value) {
             return;
         }
         echo date('Y-m-d H:i:s')

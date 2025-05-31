@@ -2,7 +2,9 @@
 
 namespace Hazaar\Warlock\Server\Task;
 
-use Hazaar\Warlock\Server\Task;
+use Hazaar\Warlock\Agent\Task;
+use Hazaar\Warlock\Enum\LogLevel;
+use Hazaar\Warlock\Enum\TaskStatus;
 
 /**
  * @internal
@@ -21,44 +23,44 @@ class Test extends Task
 
     public function start(): void
     {
-        $this->log->write(W_DEBUG, 'STARTING TEST TASK', $this->id);
-        $this->status = TASK_STARTING;
+        $this->log->write('STARTING TEST TASK', LogLevel::DEBUG);
+        $this->status = TaskStatus::STARTING;
     }
 
     public function run(): void
     {
-        $this->log->write(W_DEBUG, 'RUNNING TEST TASK', $this->id);
-        $this->status = TASK_RUNNING;
+        $this->log->write('RUNNING TEST TASK', LogLevel::DEBUG);
+        $this->status = TaskStatus::RUNNING;
         $this->started = time();
     }
 
     protected function resolveStatus(mixed $value): mixed
     {
-        $this->log->write(W_DEBUG, 'STATUS: '.$value, $this->id);
+        $this->log->write('STATUS: '.$value, LogLevel::DEBUG);
 
         switch ($value) {
-            case TASK_INIT:
-            case TASK_RUNNING:
+            case TaskStatus::INIT:
+            case TaskStatus::RUNNING:
                 if (time() - $this->started > 5) {
                     if ($this->retries < 3) {
-                        $this->log->write(W_DEBUG, 'ERRORED TEST TASK', $this->id);
+                        $this->log->write('ERRORED TEST TASK', LogLevel::DEBUG);
 
-                        return TASK_ERROR;
+                        return TaskStatus::ERROR;
                     }
-                    $this->log->write(W_DEBUG, 'COMPLETED TEST TASK', $this->id);
+                    $this->log->write('COMPLETED TEST TASK', LogLevel::DEBUG);
 
-                    return TASK_COMPLETE;
+                    return TaskStatus::COMPLETE;
                 }
 
                 break;
 
-            case TASK_COMPLETE:
-                $this->log->write(W_DEBUG, 'Task is complete!', $this->id);
+            case TaskStatus::COMPLETE:
+                $this->log->write('Task is complete!', LogLevel::DEBUG);
 
                 break;
         }
-        if (TASK_RUNNING === $this->status && time() - $this->started > 5) {
-            return TASK_COMPLETE;
+        if (TaskStatus::RUNNING === $this->status && time() - $this->started > 5) {
+            return TaskStatus::COMPLETE;
         }
 
         return $value;

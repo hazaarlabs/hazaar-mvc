@@ -17,22 +17,4 @@ enum Status: int
     case STOPPING = 7;
     case STOPPED = 8;
     case ERROR = -1;
-
-    public function toString(): string
-    {
-        return match ($this) {
-            self::STARTING => 'Starting',
-            self::RECONNECT => 'Reconnecting',
-            self::CONNECT => 'Connecting',
-            self::INIT => 'Initializing',
-            self::READY => 'Ready',
-            self::RUNNING => 'Running',
-            self::SLEEP => 'Sleeping',
-            self::STOPPING => 'Stopping',
-            self::STOPPED => 'Stopped',
-            self::ERROR => 'Error',
-            self::RESTART => 'Restarting',
-            self::SHUTDOWN => 'Shutting down',
-        };
-    }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Interface;
 
+use Hazaar\Warlock\Enum\PacketType;
 use Hazaar\Warlock\Protocol;
 
 interface Connection
@@ -23,7 +24,7 @@ interface Connection
 
     public function connected(): bool;
 
-    public function send(string $command, mixed $payload = null): bool;
+    public function send(PacketType $command, mixed $payload = null): bool;
 
-    public function recv(mixed &$payload = null, int $tvSec = 3, int $tvUsec = 0): null|bool|string;
+    public function recv(mixed &$payload = null, int $tvSec = 3, int $tvUsec = 0): null|bool|PacketType;
 }

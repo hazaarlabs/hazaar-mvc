@@ -7,7 +7,7 @@ namespace Hazaar\Warlock;
 use Hazaar\Application\FilePath;
 use Hazaar\Loader;
 
-class Config extends \Hazaar\Config
+class OldConfig extends \Hazaar\Config
 {
     /**
      * @var array<mixed>

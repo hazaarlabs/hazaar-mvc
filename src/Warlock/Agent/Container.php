@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Warlock;
+namespace Hazaar\Warlock\Agent;
 
 use Hazaar\Warlock\Connection\Pipe;
+use Hazaar\Warlock\Enum\LogLevel;
+use Hazaar\Warlock\Protocol;
 
 class Container extends Process
 {
@@ -38,7 +40,7 @@ class Container extends Process
                 $exitcode = $result;
             }
         } catch (\Throwable $e) {
-            $this->log(W_ERR, $e->getMessage());
+            $this->log->write($e->getMessage(), LogLevel::ERROR);
             $exitcode = 2;
         }
 

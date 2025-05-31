@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Console;
 
+use Hazaar\Application;
 use Hazaar\Console\Input;
 use Hazaar\Console\Module;
 use Hazaar\Console\Output;
@@ -19,10 +20,11 @@ class AgentModule extends Module
         $this->setName('agent')->setDescription('Warlock Agent Commands');
         $this->addCommand('run', [$this, 'startAgent'])
             ->setDescription('Run the Warlock agent')
-            ->addOption(long: 'env', short: 'e', description: 'The environment to run the agent in')
-            ->addOption(long: 'config', description: 'The configuration file to use')
-            ->addOption(long: 'silent', short: 's', description: 'Run the agent in single process mode')
-            // ->addOption(long: 'daemon', short: 'd', description: 'Run the agent in daemon mode')
+            ->addOption(long: 'env', short: 'e', description: 'The environment to run the agent in', valueType: 'env')
+            ->addOption(long: 'path', short: 'p', description: 'The application path to use', valueType: 'path')
+            ->addOption(long: 'config', description: 'The configuration file to use', valueType: 'file')
+            ->addOption(long: 'silent', short: 's', description: 'Show no logging output')
+            ->addOption(long: 'daemon', short: 'd', description: 'Run the agent in daemon mode')
         ;
         // $this->addCommand('stop', [$this, 'stopAgent'])
         //     ->setDescription('Stop the Warlock agent')
@@ -36,11 +38,23 @@ class AgentModule extends Module
         // ;
     }
 
-    protected function prepare(Input $input, Output $output): void
+    protected function prepare(Input $input, Output $output): int
     {
         $env = $input->getOption('env') ?? 'development';
-        $configFile = $input->getOption('config') ?? getcwd().'/agent.json';
-        $this->agent = new Main(configFile: $configFile, env: $env);
+        $applicationPath = $input->getOption('path');
+        if (!$applicationPath || '/' !== substr(trim($applicationPath), 0, 1)) {
+            $searchResult = Application::findApplicationPath($applicationPath);
+            if (null === $searchResult) {
+                $output->write('Application path not found: '.$applicationPath.PHP_EOL);
+
+                return 1;
+            }
+            $applicationPath = $searchResult;
+        }
+        $configFile = $input->getOption('config') ?? 'agent.json';
+        $this->agent = new Main($applicationPath, $configFile, $env);
+
+        return 0;
     }
 
     protected function startAgent(Input $input, Output $output): int

@@ -18,8 +18,8 @@ class ServerModule extends Module
     {
         $this->addCommand('run', [$this, 'startServer'])
             ->setDescription('Run the Warlock server')
-            ->addOption(long: 'env', short: 'e', description: 'The environment to run the server in')
-            ->addOption(long: 'config', description: 'The configuration file to use')
+            ->addOption(long: 'env', short: 'e', description: 'The environment to run the server in', valueType: 'env')
+            ->addOption(long: 'config', description: 'The configuration file to use', valueType: 'file', default: 'warlock.json')
             ->addOption(long: 'silent', short: 's', description: 'Run the server in single process mode')
             ->addOption(long: 'daemon', short: 'd', description: 'Run the server in daemon mode')
         ;
@@ -35,11 +35,16 @@ class ServerModule extends Module
         ;
     }
 
-    protected function prepare(Input $input, Output $output): void
+    protected function prepare(Input $input, Output $output): int
     {
         $env = $input->getOption('env') ?? 'development';
-        $configFile = $input->getOption('config') ?? getcwd().'/warlock.json';
+        $configFile = $input->getOption('config') ?? 'warlock.json';
+        if ('/' !== substr(trim($configFile), 0, 1)) {
+            $configFile = getcwd().DIRECTORY_SEPARATOR.$configFile;
+        }
         $this->warlock = new Main(configFile: $configFile, env: $env);
+
+        return 0;
     }
 
     protected function startServer(Input $input, Output $output): int

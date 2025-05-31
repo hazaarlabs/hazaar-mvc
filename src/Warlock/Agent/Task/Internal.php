@@ -2,44 +2,45 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Warlock\Server\Task;
+namespace Hazaar\Warlock\Agent\Task;
 
 use Hazaar\Util\Cron;
-use Hazaar\Warlock\Server\Task;
+use Hazaar\Warlock\Agent\Task;
+use Hazaar\Warlock\Enum\LogLevel;
+use Hazaar\Warlock\Enum\TaskStatus;
 
 class Internal extends Task
 {
-    public string $type = 'internal';
-
     protected Cron $when;
-    protected mixed $exec;
 
-    public function construct(array &$data): void
+    public function schedule(string $when): void
     {
-        if (!isset($data['when'])) {
-            throw new \Exception('Internal tasks must have a when parameter');
-        }
-        $data['when'] = $when = new Cron($data['when']);
-        $data['start'] = $when->getNextOccurrence();
-        parent::construct($data);
+        $this->when = new Cron($when);
+        $this->start = $this->when->getNextOccurrence();
     }
 
     public function touch(): ?int
     {
+        if (TaskStatus::RUNNING === $this->status) {
+            return $this->start;
+        }
+        $this->status = TaskStatus::QUEUED;
+
         return $this->start = $this->when->getNextOccurrence();
     }
 
     public function start(): void
     {
         try {
-            $this->status = TASK_RUNNING;
-            $taskName = $this->exec->callable[0]::class.'::'.$this->exec->callable[1];
-            $this->log->write(W_DEBUG, 'INTERNAL: '.$taskName, $this->id);
-            call_user_func_array($this->exec->callable, (array) $this->exec->params);
-            $this->status = TASK_COMPLETE;
+            $this->status = TaskStatus::RUNNING;
+            $taskName = $this->endpoint->getName();
+            $this->log->write('INTERNAL: '.$taskName, LogLevel::DEBUG);
+            $this->endpoint->run();
+            $this->status = TaskStatus::COMPLETE;
+            $this->touch();
         } catch (\Throwable $e) {
-            $this->log->write(W_ERR, 'INTERNAL TASK ERROR: '.$e->getMessage(), $this->id);
-            $this->status = TASK_ERROR;
+            $this->log->write('INTERNAL TASK ERROR: '.$e->getMessage(), LogLevel::ERROR);
+            $this->status = TaskStatus::ERROR;
         }
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Warlock\Connection;
 
 use Hazaar\Util\Str;
+use Hazaar\Warlock\Enum\PacketType;
 use Hazaar\Warlock\Interface\Connection;
 use Hazaar\Warlock\Protocol;
 use Hazaar\Warlock\Protocol\WebSockets;
@@ -133,7 +134,7 @@ final class Socket extends WebSockets implements Connection
         return false !== $this->socket;
     }
 
-    public function send(string $command, mixed $payload = null): bool
+    public function send(PacketType $command, mixed $payload = null): bool
     {
         if (!$this->socket) {
             return false;
@@ -164,7 +165,7 @@ final class Socket extends WebSockets implements Connection
         return true;
     }
 
-    public function recv(mixed &$payload = null, int $tvSec = 3, int $tvUsec = 0): null|bool|string
+    public function recv(mixed &$payload = null, int $tvSec = 3, int $tvUsec = 0): null|bool|PacketType
     {
         // Process any frames sitting in the local frame buffer first.
         while ($frame = $this->processFrame()) {

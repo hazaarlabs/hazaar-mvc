@@ -1,0 +1,15 @@
+{
+    "development": {
+        "announce": {
+            "enabled": true,
+            "interval": 60
+        },
+        "timezone": "Australia/Canberra",
+        "schedule": [
+            {
+                "when": "@reboot",
+                "action": "Application\\Controller\\Test::doTheThing"
+            }
+        ]
+    }
+}

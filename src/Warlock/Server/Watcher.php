@@ -16,26 +16,14 @@ class Watcher
      */
     private array $processes = [];
 
-    /**
-     * @var array<string,bool|int|string>
-     */
-    private array $config;
-
-    /**
-     * @param array<string,bool|int|string> $config
-     */
-    public function __construct(Logger $log, array $config)
+    public function __construct(Logger $log)
     {
         $this->log = $log;
-        $this->config = $config;
         $this->log->setPrefix('watcher');
     }
 
     public function process(): void
     {
-        if (!$this->config['enabled']) {
-            return;
-        }
         $this->log->write('PROCESS COUNT='.count($this->processes), LogLevel::DEBUG);
         // Process the tasks
         foreach ($this->processes as $index => $process) {

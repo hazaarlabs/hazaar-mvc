@@ -700,6 +700,9 @@ class Application
             return realpath($path);
         }
         $searchPath = (null === $searchPath) ? getcwd() : realpath($searchPath);
+        if (false === $searchPath || !is_dir($searchPath)) {
+            return null;
+        }
         $count = 0;
         do {
             if (':' === substr($searchPath, 1, 1)) {

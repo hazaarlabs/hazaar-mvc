@@ -10,6 +10,7 @@ use Hazaar\Util\Closure;
 use Hazaar\Util\DateTime;
 use Hazaar\Util\Str;
 use Hazaar\Warlock\Enum\LogLevel;
+use Hazaar\Warlock\Enum\PacketType;
 use Hazaar\Warlock\Enum\Status;
 use Hazaar\Warlock\Interface\Connection;
 
@@ -17,10 +18,10 @@ abstract class Process
 {
     public int $start = 0;
     public Status $state = Status::STARTING;
+    public Protocol $protocol;
     protected Connection $conn;
     protected bool $reconnect = false;
     protected ?string $id = null;
-    protected Protocol $protocol;
 
     /**
      * @var array<string,callable>
@@ -77,14 +78,14 @@ abstract class Process
     /**
      * @param array<mixed> $data
      */
-    private function __kv_send_recv(string $command, array $data): false|string
+    private function __kv_send_recv(PacketType $command, array $data): false|string
     {
         if (!$this->send($command, $data)) {
             return false;
         }
         $payload = false;
         if (($ret = $this->recv($payload)) !== $command) {
-            $msg = "KVSTORE: Invalid response to command {$command} from server: ".var_export($ret, true);
+            $msg = "KVSTORE: Invalid response to command {$command->name} from server: ".var_export($ret, true);
             if (is_object($payload) && property_exists($payload, 'reason')) {
                 $msg .= "\nError: {$payload->reason}";
             }
@@ -101,12 +102,12 @@ abstract class Process
             'pid' => getmypid(),
             'start' => $this->start,
             'state_code' => $this->state,
-            'state' => $this->state->toString(),
+            'state' => $this->state->name,
             'mem' => memory_get_usage(),
             'peak' => memory_get_peak_usage(),
         ];
         $this->lastHeartbeat = time();
-        $this->send('status', $status);
+        $this->send(PacketType::STATUS, $status);
     }
 
     /**
@@ -125,19 +126,19 @@ abstract class Process
         return true;
     }
 
-    public function send(string $command, mixed $payload = null): bool
+    public function send(PacketType $command, mixed $payload = null): bool
     {
         return $this->conn->send($command, $payload);
     }
 
-    public function recv(mixed &$payload = null, int $tvSec = 3, int $tvUsec = 0): null|bool|string
+    public function recv(mixed &$payload = null, int $tvSec = 3, int $tvUsec = 0): null|bool|PacketType
     {
         return $this->conn->recv($payload, $tvSec, $tvUsec);
     }
 
     public function ping(bool $waitPong = false): bool|string
     {
-        $ret = $this->send('PING', microtime(true));
+        $ret = $this->send(PacketType::PING, microtime(true));
         if (!$waitPong) {
             return $ret;
         }
@@ -151,8 +152,14 @@ abstract class Process
     public function subscribe(string $event, callable $callback, ?array $filter = null): bool
     {
         $this->subscriptions[$event] = $callback;
+        $payload = [
+            'id' => $event,
+        ];
+        if (null !== $filter) {
+            $payload['filter'] = $filter;
+        }
 
-        return $this->send('SUBSCRIBE', ['id' => $event, 'filter' => $filter]);
+        return $this->send(PacketType::SUBSCRIBE, $payload);
     }
 
     public function unsubscribe(string $event): bool
@@ -162,7 +169,7 @@ abstract class Process
         }
         unset($this->subscriptions[$event]);
 
-        return $this->send('UNSUBSCRIBE', ['id' => $event]);
+        return $this->send(PacketType::UNSUBSCRIBE, ['id' => $event]);
     }
 
     public function trigger(string $event, mixed $data = null, bool $echoSelf = false): bool
@@ -175,20 +182,17 @@ abstract class Process
             $packet['data'] = $data;
         }
 
-        return $this->send('TRIGGER', $packet);
+        return $this->send(PacketType::TRIGGER, $packet);
     }
 
-    /**
-     * @param array<string>|string $message
-     */
-    public function log(int $level, array|string $message, ?string $name = null): bool
+    public function log(string $message, LogLevel $level = LogLevel::NOTICE, ?string $name = null): bool
     {
-        return $this->send('LOG', ['level' => $level, 'msg' => $message, 'name' => $name]);
+        return $this->send(PacketType::LOG, ['level' => $level->value, 'msg' => $message, 'name' => $name]);
     }
 
     public function debug(mixed $data, ?string $name = null): bool
     {
-        return $this->send('DEBUG', ['data' => $data, 'name' => $name]);
+        return $this->send(PacketType::DEBUG, ['data' => $data, 'name' => $name]);
     }
 
     /**
@@ -196,18 +200,18 @@ abstract class Process
      */
     public function spawn(string $service, array $params = []): bool
     {
-        return $this->send('SPAWN', ['name' => $service, 'detach' => true, 'params' => $params]);
+        return $this->send(PacketType::SPAWN, ['name' => $service, 'detach' => true, 'params' => $params]);
     }
 
     public function kill(string $service): bool
     {
-        return $this->send('KILL', ['name' => $service]);
+        return $this->send(PacketType::KILL, ['name' => $service]);
     }
 
     public function status(): false|\stdClass
     {
-        $this->send('status');
-        if ('STATUS' == $this->recv($packet)) {
+        $this->send(PacketType::STATUS);
+        if (PacketType::STATUS == $this->recv($packet)) {
             return $packet;
         }
 
@@ -255,29 +259,29 @@ abstract class Process
 
     public function cancel(string $taskID): bool
     {
-        $this->send('cancel', $taskID);
+        $this->send(PacketType::CANCEL, $taskID);
 
         return 'OK' == $this->recv();
     }
 
     public function startService(string $name): bool
     {
-        $this->send('enable', $name);
+        $this->send(PacketType::ENABLE, $name);
 
         return 'OK' == $this->recv();
     }
 
     public function stopService(string $name): bool
     {
-        $this->send('disable', $name);
+        $this->send(PacketType::DISABLE, $name);
 
         return 'OK' == $this->recv();
     }
 
     public function service(string $name): bool|string
     {
-        $this->send('service', $name);
-        if ('SERVICE' == $this->recv($payload)) {
+        $this->send(PacketType::SERVICE, $name);
+        if (PacketType::SERVICE == $this->recv($payload)) {
             return $payload;
         }
 
@@ -291,7 +295,7 @@ abstract class Process
             $data['n'] = $namespace;
         }
 
-        return $this->__kv_send_recv('KVGET', $data);
+        return $this->__kv_send_recv(PacketType::KVGET, $data);
     }
 
     public function set(
@@ -308,7 +312,7 @@ abstract class Process
             $data['t'] = $timeout;
         }
 
-        return $this->__kv_send_recv('KVSET', $data);
+        return $this->__kv_send_recv(PacketType::KVSET, $data);
     }
 
     public function has(string $key, ?string $namespace = null): false|string
@@ -318,7 +322,7 @@ abstract class Process
             $data['n'] = $namespace;
         }
 
-        return $this->__kv_send_recv('KVHAS', $data);
+        return $this->__kv_send_recv(PacketType::KVHAS, $data);
     }
 
     public function del(string $key, ?string $namespace = null): false|string
@@ -328,21 +332,21 @@ abstract class Process
             $data['n'] = $namespace;
         }
 
-        return $this->__kv_send_recv('KVDEL', $data);
+        return $this->__kv_send_recv(PacketType::KVDEL, $data);
     }
 
     public function clear(?string $namespace = null): false|string
     {
         $data = ($namespace ? ['n' => $namespace] : null);
 
-        return $this->__kv_send_recv('KVCLEAR', $data);
+        return $this->__kv_send_recv(PacketType::KVCLEAR, $data);
     }
 
     public function list(?string $namespace = null): false|string
     {
         $data = ($namespace ? ['n' => $namespace] : null);
 
-        return $this->__kv_send_recv('KVLIST', $data);
+        return $this->__kv_send_recv(PacketType::KVLIST, $data);
     }
 
     public function pull(string $key, ?string $namespace = null): false|string
@@ -352,7 +356,7 @@ abstract class Process
             $data['n'] = $namespace;
         }
 
-        return $this->__kv_send_recv('KVPULL', $data);
+        return $this->__kv_send_recv(PacketType::KVPULL, $data);
     }
 
     public function push(string $key, mixed $value, ?string $namespace = null): false|string
@@ -362,7 +366,7 @@ abstract class Process
             $data['n'] = $namespace;
         }
 
-        return $this->__kv_send_recv('KVPUSH', $data);
+        return $this->__kv_send_recv(PacketType::KVPUSH, $data);
     }
 
     public function pop(string $key, ?string $namespace = null): false|string
@@ -372,7 +376,7 @@ abstract class Process
             $data['n'] = $namespace;
         }
 
-        return $this->__kv_send_recv('KVPOP', $data);
+        return $this->__kv_send_recv(PacketType::KVPOP, $data);
     }
 
     public function shift(string $key, ?string $namespace = null): false|string
@@ -382,7 +386,7 @@ abstract class Process
             $data['n'] = $namespace;
         }
 
-        return $this->__kv_send_recv('KVSHIFT', $data);
+        return $this->__kv_send_recv(PacketType::KVSHIFT, $data);
     }
 
     public function unshift(string $key, mixed $value, ?string $namespace = null): false|string
@@ -392,7 +396,7 @@ abstract class Process
             $data['n'] = $namespace;
         }
 
-        return $this->__kv_send_recv('KVUNSHIFT', $data);
+        return $this->__kv_send_recv(PacketType::KVUNSHIFT, $data);
     }
 
     public function incr(string $key, ?int $step = null, ?string $namespace = null): false|string
@@ -405,7 +409,7 @@ abstract class Process
             $data['n'] = $namespace;
         }
 
-        return $this->__kv_send_recv('KVINCR', $data);
+        return $this->__kv_send_recv(PacketType::KVINCR, $data);
     }
 
     public function decr(string $key, ?int $step = null, ?string $namespace = null): false|string
@@ -418,7 +422,7 @@ abstract class Process
             $data['n'] = $namespace;
         }
 
-        return $this->__kv_send_recv('KVDECR', $data);
+        return $this->__kv_send_recv(PacketType::KVDECR, $data);
     }
 
     public function keys(?string $namespace = null): false|string
@@ -428,7 +432,7 @@ abstract class Process
             $data['n'] = $namespace;
         }
 
-        return $this->__kv_send_recv('KVKEYS', $data);
+        return $this->__kv_send_recv(PacketType::KVKEYS, $data);
     }
 
     public function vals(?string $namespace = null): false|string
@@ -438,7 +442,7 @@ abstract class Process
             $data['n'] = $namespace;
         }
 
-        return $this->__kv_send_recv('KVVALS', $data);
+        return $this->__kv_send_recv(PacketType::KVVALS, $data);
     }
 
     public function count(string $key, ?string $namespace = null): false|string
@@ -448,7 +452,7 @@ abstract class Process
             $data['n'] = $namespace;
         }
 
-        return $this->__kv_send_recv('KVCOUNT', $data);
+        return $this->__kv_send_recv(PacketType::KVCOUNT, $data);
     }
 
     public function connect(): bool
@@ -648,10 +652,10 @@ abstract class Process
         return ['callable' => $callable];
     }
 
-    protected function processCommand(string $command, ?\stdClass $payload = null): bool
+    protected function processCommand(PacketType $command, ?\stdClass $payload = null): bool
     {
         switch ($command) {
-            case 'EVENT':
+            case PacketType::EVENT:
                 if (!($payload instanceof \stdClass
                     && property_exists($payload, 'id')
                     && array_key_exists($payload->id, $this->subscriptions))) {
@@ -680,31 +684,36 @@ abstract class Process
 
                 break;
 
-            case 'PONG':
+            case PacketType::PONG:
                 if (is_int($payload->data)) {
                     $tripMs = (microtime(true) - $payload->data) * 1000;
-                    $this->send('DEBUG', 'PONG received in '.$tripMs.'ms');
+                    $this->send(PacketType::DEBUG, 'PONG received in '.$tripMs.'ms');
                 } else {
-                    $this->send('ERROR', 'PONG received with invalid payload!');
+                    $this->send(PacketType::ERROR, 'PONG received with invalid payload!');
                 }
 
                 break;
 
-            case 'OK':
+            case PacketType::OK:
                 break;
 
-            case 'STATUS':
+            case PacketType::STATUS:
                 $this->__sendHeartbeat();
 
                 break;
 
-            case 'CANCEL':
+            case PacketType::CANCEL:
                 $this->stop();
 
-                return true;
+                break;
+
+            case PacketType::ERROR:
+                $this->log->write('Error received from server: '.$payload->reason, LogLevel::ERROR);
+
+                break;
 
             default:
-                $this->send('DEBUG', ['type' => get_class($this), 'data' => 'Unhandled command: '.$command]);
+                $this->send(PacketType::DEBUG, ['type' => get_class($this), 'data' => 'Unhandled command: '.$command->name]);
 
                 break;
         }
@@ -732,7 +741,7 @@ abstract class Process
             $data['overwrite'] = Boolean::toString($overwrite);
         }
         $data['exec']['params'] = $params;
-        $this->send($command, $data);
+        $this->send(PacketType::from($command), $data);
         if ('OK' == $this->recv($payload)) {
             return $payload->task_id;
         }

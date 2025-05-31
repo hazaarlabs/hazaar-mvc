@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Server;
 
-use Hazaar\Application\Protocol;
-use Hazaar\Warlock\Config;
+use Hazaar\Config;
+use Hazaar\Util\Interval;
+use Hazaar\Util\Str;
+use Hazaar\Warlock\Enum\ClientType;
 use Hazaar\Warlock\Enum\LogLevel;
+use Hazaar\Warlock\Enum\PacketType;
 use Hazaar\Warlock\Exception\ExtensionNotLoaded;
 use Hazaar\Warlock\Logger;
+use Hazaar\Warlock\Protocol;
 use Hazaar\Warlock\Server\Component\Cluster;
 
 if (!extension_loaded('sockets')) {
@@ -50,10 +54,8 @@ class Main
 
     /**
      * The server configuration.
-     *
-     * @var array<string,mixed>
      */
-    private array $config;
+    private Config $config;
     private Logger $log;
     private Watcher $watcher;
 
@@ -102,6 +104,13 @@ class Main
     private array $clients = [];
 
     /**
+     * Currently connected agents.
+     *
+     * @var array<Client>
+     */
+    private array $agents = [];
+
+    /**
      * Default select() timeout.
      */
     private int $tv = 1;
@@ -109,19 +118,39 @@ class Main
     public function __construct(?string $configFile = null, string $env = 'development')
     {
         self::$instance = $this;
-        $config = new Config($configFile, env: $this->env = $env);
-        if (!isset($config['server'])) {
+        $this->config = new Config(sourceFile: $configFile, env: $this->env = $env, defaults: [
+            'id' => 1,
+            'listen' => '0.0.0.0',
+            'port' => 13080,
+            'encode' => false,
+            'phpBinary' => PHP_BINARY,
+            'log' => [
+                'level' => 'debug',
+            ],
+            'timezone' => 'UTC',
+            'client' => [
+                'check' => 60,
+            ],
+            'event' => [
+                'cleanup' => true,
+                'timeout' => 5, // Message queue timeout.  Messages will hang around in the queue for this many seconds.  This allows late connections to
+                // still get events and was the founding principle that allowed Warlock to work with long-polling HTTP connections.  Still
+                // very useful in the WebSocket world though.
+            ],
+            'agent' => false, // Automatically start the agent process.  This is useful for testing and debugging, but not recommended for production use.
+        ]);
+        if (!isset($this->config['listen'])) {
             throw new \Exception('Server configuration not found');
         }
-        $this->config = $config['server'];
-        $this->log = new Logger(level: $this->config['log']['level']);
+        $logLevel = LogLevel::fromString($this->config['log']['level']);
+        $this->log = new Logger(level: $logLevel);
         $this->log->setPrefix('main');
-        $this->protocol = new Protocol($this->config['id'], $this->config['encode']);
+        $this->protocol = new Protocol((string) $this->config['id'], $this->config['encode']);
         if ($tz = $this->config['timezone']) {
             date_default_timezone_set(timezoneId: $tz);
         }
         if ($this->config['agent'] ?? false) {
-            $this->watcher = new Watcher($this->log, $config['agent'] ?? []);
+            $this->watcher = new Watcher($this->log);
         }
         // $this->cluster = new Cluster($this->log, $config['cluster'] ?? []);
     }
@@ -146,8 +175,8 @@ class Main
         foreach ($this->pcntlSignals as $sig => $name) {
             pcntl_signal($sig, [$this, '__signalHandler'], true);
         }
-        $this->log->write('Creating TCP socket stream on: '.$this->config['listenAddress'].':'.$this->config['port'], LogLevel::NOTICE);
-        if (!($this->master = stream_socket_server('tcp://'.$this->config['listenAddress'].':'.$this->config['port'], $errno, $errstr))) {
+        $this->log->write('Creating TCP socket stream on: '.$this->config['listen'].':'.$this->config['port'], LogLevel::NOTICE);
+        if (!($this->master = stream_socket_server('tcp://'.$this->config['listen'].':'.$this->config['port'], $errno, $errstr))) {
             throw new \Exception($errstr, $errno);
         }
         $this->log->write('Configuring TCP socket', LogLevel::NOTICE);
@@ -352,32 +381,34 @@ class Main
     /**
      * Process administative commands for a client.
      */
-    public function processCommand(Client $client, string $command, mixed &$payload): void
+    public function processCommand(Client $client, PacketType $command, mixed &$payload): void
     {
-        if (!$client->isAdmin()) {
+        if (ClientType::ADMIN !== $client->type) {
             throw new \Exception('Admin commands only allowed by authorised clients!');
         }
-        $this->log->write("ADMIN_COMMAND: {$command}".($client->id ? " CLIENT={$client->id}" : null), LogLevel::DEBUG);
+        $this->log->write("ADMIN_COMMAND: {$command->name}".($client->id ? " CLIENT={$client->id}" : null), LogLevel::DEBUG);
 
         switch ($command) {
-            case 'SHUTDOWN':
+            case PacketType::SHUTDOWN:
                 $delay = $payload['delay'] ?? 0;
                 $this->log->write("Shutdown requested (Delay: {$delay})", LogLevel::NOTICE);
                 if (!$this->shutdown($delay)) {
                     throw new \Exception('Unable to initiate shutdown!');
                 }
-                $client->send('OK', ['command' => $command]);
+                $client->send(PacketType::OK, ['command' => $command]);
 
                 break;
 
-            case 'STATUS':
-                $this->log->write("STATUS: CLIENT={$client->id}", LogLevel::NOTICE);
-                $client->send('STATUS', $this->getStatus());
+            case PacketType::STATUS:
+                $this->log->write("CLIENT<-STATUS: HOST={$client->address} PORT={$client->port} CLIENT={$client->id}", LogLevel::DEBUG);
+                $this->log->write("STATUS: CLIENT={$client->id} UPTIME=".Interval::uptime(time() - $payload->start)
+                    .' MEM='.Str::fromBytes($payload->mem)
+                    .' PEAK='.Str::fromBytes($payload->peak), LogLevel::INFO);
 
                 break;
 
             default:
-                throw new \Exception('Unhandled command: '.$command);
+                throw new \Exception('Unhandled command: '.$command->name);
         }
     }
 
@@ -449,7 +480,7 @@ class Main
         return true;
     }
 
-    private function getStatus(): \stdClass
+    public function getStatus(): \stdClass
     {
         return (object) [
             'running' => $this->running,
@@ -673,15 +704,13 @@ class Main
         }
         $bytesReceived = strlen($buf);
         if ($client = $this->clientGet($stream)) {
-            if ('client' === $client->type) {
-                if (0 === $bytesReceived) {
-                    $this->log->write("Remote host {$client->address}:{$client->port} closed connection", LogLevel::NOTICE);
-                    $this->disconnect($stream);
+            if (0 === $bytesReceived) {
+                $this->log->write("Remote host {$client->address}:{$client->port} closed connection", LogLevel::NOTICE);
+                $this->disconnect($stream);
 
-                    return false;
-                }
-                $this->log->write("CLIENT<-RECV: HOST={$client->address} PORT={$client->port} BYTES=".$bytesReceived, LogLevel::DEBUG);
+                return false;
             }
+            $this->log->write("CLIENT<-RECV: HOST={$client->address} PORT={$client->port} BYTES=".$bytesReceived, LogLevel::DEBUG);
             $client->recv($buf);
         } else {
             if (!($client = $this->clientAdd($stream))) {
@@ -693,6 +722,9 @@ class Main
             if (!$client->initiateHandshake($buf)) {
                 $this->clientRemove($stream);
                 stream_socket_shutdown($stream, STREAM_SHUT_RDWR);
+            }
+            if (ClientType::AGENT === $client->type) {
+                $this->agents[$client->id] = $client;
             }
         }
 
@@ -784,7 +816,7 @@ class Main
         // $this->log->write(W_NOTICE, 'PID = '.$this->pid);
         // $this->log->write(W_NOTICE, 'PID file = '.$this->pidfile);
         $this->log->write('Server ID = '.$this->config['id'], LogLevel::NOTICE);
-        $this->log->write('Listen address = '.$this->config['listenAddress'], LogLevel::NOTICE);
+        $this->log->write('Listen address = '.$this->config['listen'], LogLevel::NOTICE);
         $this->log->write('Listen port = '.$this->config['port'], LogLevel::NOTICE);
         // $this->log->write(W_NOTICE, 'Task expiry = '.$this->config['task']['expire'].' seconds');
         // $this->log->write(W_NOTICE, 'Process timeout = '.$this->config['process']['timeout'].' seconds');

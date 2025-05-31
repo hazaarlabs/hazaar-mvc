@@ -4,17 +4,14 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Agent;
 
-use Hazaar\Model;
 use Hazaar\Util\Version;
-use Hazaar\Warlock\Server\Component\Logger;
-use Hazaar\Warlock\Server\Enum\LogLevel;
+use Hazaar\Warlock\Agent\Struct\Application;
+use Hazaar\Warlock\Enum\LogLevel;
+use Hazaar\Warlock\Logger;
 
-if (!defined('SERVER_PATH')) {
-    throw new \Exception('SERVER_PATH is not defined');
-}
-
-abstract class Process extends Model
+abstract class Process
 {
+    public Application $application;
     public string $id;
     public ?string $tag = null;
 
@@ -39,16 +36,27 @@ abstract class Process extends Model
      */
     protected mixed $process = null;
 
+    protected Main $main;
+
     /**
      * @var array<string>
      */
     private static array $processIDs = [];
 
+    public function __construct(Logger $log)
+    {
+        $this->id = $this->getProcessID();
+        $this->log = $log;
+    }
+
     final public function isRunning(): bool
     {
-        $procStatus = $this->get('procStatus');
+        if (!is_resource($this->process)) {
+            return false;
+        }
+        $procStatus = proc_get_status($this->process);
 
-        return $procStatus['running'] ?? false;
+        return $procStatus['running'];
     }
 
     /**
@@ -150,19 +158,17 @@ abstract class Process extends Model
             1 => ['pipe', 'w'],
             2 => ['pipe', 'w'],
         ];
-        $config = Master::$config;
         $env = array_filter(array_merge($_SERVER, [
-            'APPLICATION_PATH' => $this->application['path'],
-            'APPLICATION_ENV' => $this->application['env'],
-            'HAZAAR_SID' => $config['sys']['id'],
-            'HAZAAR_ADMIN_KEY' => $config['admin']['key'],
+            'APPLICATION_PATH' => $this->application->path,
+            'APPLICATION_ENV' => $this->application->env,
+            'APPLICATION_AUTOLOAD' => $this->application->autoload,
             'USERNAME' => (array_key_exists('USERNAME', $_SERVER) ? $_SERVER['USERNAME'] : null),
         ]), 'is_string');
-        $cmd = realpath(SERVER_PATH.'/Runner.php');
+        $cmd = realpath(__DIR__.'/Runner.php');
         if (!$cmd || !file_exists($cmd)) {
             throw new \Exception('Application command runner could not be found!');
         }
-        $phpBinary = Master::$config['sys']['phpBinary'];
+        $phpBinary = PHP_BINARY;
         if (!file_exists($phpBinary)) {
             throw new \Exception('The PHP CLI binary does not exist at '.$phpBinary);
         }
@@ -171,7 +177,7 @@ abstract class Process extends Model
         }
         $php = new Version(phpversion());
         $cwd = dirname($cmd);
-        if (1 === $php->compareTo('7.4')) {
+        if (1 === $php->compareTo('7.4.0')) {
             $procCmd = [
                 $phpBinary,
                 basename($cmd),
@@ -197,6 +203,15 @@ abstract class Process extends Model
         $this->log->write('PID: '.$this->procStatus['pid'], LogLevel::NOTICE);
         stream_set_blocking($this->pipes[1], false);
         stream_set_blocking($this->pipes[2], false);
+    }
+
+    public function process(): void
+    {
+        if (!is_resource($this->process)) {
+            $this->log->write('Process is not running', LogLevel::ERROR);
+
+            return;
+        }
     }
 
     final protected function write(string $packet): bool
@@ -232,24 +247,5 @@ abstract class Process extends Model
         self::$processIDs[] = $pid;
 
         return $pid;
-    }
-
-    protected function constructed(): void
-    {
-        $this->id = $this->getProcessID();
-        $this->defineEventHook('read', 'pid', function () {
-            return $this->get('procStatus')['pid'] ?? null;
-        });
-        $this->defineEventHook('read', 'exitcode', function () {
-            return $this->get('procStatus')['exitcode'] ?? null;
-        });
-        $this->defineEventHook('read', 'procStatus', function () {
-            if (!is_resource($this->process)) {
-                return false;
-            }
-
-            return proc_get_status($this->process);
-        });
-        $this->log = new Logger();
     }
 }
