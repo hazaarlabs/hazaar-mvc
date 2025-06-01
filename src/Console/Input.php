@@ -201,7 +201,18 @@ class Input
             return false;
         }
         $key = substr($arg, $offset);
+        if (1 === strlen($key)) {
+            // Search for an option with a matching short name
+            foreach ($optionsDefinition as $o) {
+                if (isset($o->short) && $o->short === $key) {
+                    $key = $o->long;
+
+                    break;
+                }
+            }
+        }
         if (!array_key_exists($key, $optionsDefinition)) {
+            // search for short options
             return true;
         }
         $option = $optionsDefinition[$key];
