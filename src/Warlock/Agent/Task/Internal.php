@@ -37,7 +37,7 @@ class Internal extends Task
             $this->log->write('INTERNAL: '.$taskName, LogLevel::DEBUG);
             $this->endpoint->run();
             $this->status = TaskStatus::COMPLETE;
-            $this->touch();
+            // $this->touch();
         } catch (\Throwable $e) {
             $this->log->write('INTERNAL TASK ERROR: '.$e->getMessage(), LogLevel::ERROR);
             $this->status = TaskStatus::ERROR;

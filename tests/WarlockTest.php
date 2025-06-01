@@ -49,4 +49,16 @@ final class WarlockTest extends TestCase
         $this->assertTrue($warlock->unsubscribe('test'));
         $this->assertTrue($warlock->disconnect());
     }
+
+    public function testCanRunCode(): void
+    {
+        $warlock = new Client([
+            'host' => 'localhost',
+            'port' => 13080,
+        ]);
+        $this->assertTrue($warlock->connect());
+        $result = $warlock->exec(function () {return 'Hello, World!'; });
+        $this->assertTrue($result);
+        $this->assertTrue($warlock->disconnect());
+    }
 }

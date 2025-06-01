@@ -10,6 +10,7 @@ use Hazaar\Warlock\Agent\Struct\Endpoint;
 use Hazaar\Warlock\Agent\Task\Internal;
 use Hazaar\Warlock\Connection\Socket;
 use Hazaar\Warlock\Enum\LogLevel;
+use Hazaar\Warlock\Enum\PacketType;
 use Hazaar\Warlock\Enum\TaskStatus;
 use Hazaar\Warlock\Interface\Connection;
 use Hazaar\Warlock\Process;
@@ -158,14 +159,6 @@ class Main extends Process
         return $this;
     }
 
-    public function exec(): void
-    {
-        foreach ($this->tasks as $task) {
-            $task->process();
-        }
-        $this->sleep(1);
-    }
-
     public function shutdown(): void
     {
         $this->log->write('Agent is shutting down', LogLevel::INFO);
@@ -180,6 +173,27 @@ class Main extends Process
             .' SUBSCRIPTIONS='.count($this->subscriptions),
             LogLevel::INFO
         );
+    }
+
+    protected function run(): void
+    {
+        foreach ($this->tasks as $task) {
+            $task->process();
+            if ($task->expired()) {
+                $this->log->write('Cleaning up expired task', LogLevel::NOTICE);
+                unset($this->tasks[$task->id]);
+            }
+        }
+        $this->sleep(1);
+    }
+
+    protected function processCommand(PacketType $command, ?\stdClass $payload = null): bool
+    {
+        if (PacketType::CANCEL === $command) {
+            return $this->taskCancel($payload->taskID ?? '');
+        }
+
+        return parent::processCommand($command, $payload);
     }
 
     private function scheduleRunner(
@@ -200,7 +214,7 @@ class Main extends Process
             $task->cancel();
             unset($this->tags[$tag], $this->tasks[$task->id]);
         }
-        $task = new Task\Runner($this,$this->log);
+        $task = new Task\Runner($this, $this->log);
         $task->schedule($when);
         $task->exec($endpoint);
         $this->log->write("TASK: ID={$task->id}", LogLevel::DEBUG);
@@ -223,6 +237,7 @@ class Main extends Process
             return;
         }
         $task->application = $this->application;
+        $task->config = $this->config['task'];
         $this->tasks[$task->id] = $task;
         // ++$this->stats['tasks'];
         // $this->admins[$task->id] = $task; // Make all processes admins so they can issue delay/schedule/etc.
@@ -244,106 +259,8 @@ class Main extends Process
         if ($task->tag) {
             unset($this->tags[$task->tag]);
         }
-        // Stop the task if it is currently running
-        if (TaskStatus::RUNNING === $task->status && $task->isRunning()) {
-            // $this->log->write('Stopping running '.$task->type, LogLevel::NOTICE);
-            $task->terminate();
-        }
-        $task->status = TaskStatus::CANCELLED;
-        // Expire the task in 30 seconds
-        $task->expire = time() + $this->config['task']['expire'];
+        $task->cancel();
 
         return true;
-    }
-
-    /**
-     * Main process loop.
-     *
-     * This method will monitor and manage queued running tasks.
-     */
-    private function taskProcess(): void
-    {
-        foreach ($this->tasks as $id => &$task) {
-            switch ($task->status) {
-                case TaskStatus::QUEUED:
-                case TaskStatus::RESTART:
-                case TaskStatus::RETRY: // Tasks that are queued and ready to execute or ready to restart an execution retry.
-                    if ($task->ready()) {
-                        // if ($this->stats['processes'] >= $this->config['process']['limit']) {
-                        //     ++$this->stats['limitHits'];
-                        //     $this->log->write('Process limit of '.$this->config['process']['limit'].' processes reached!', LogLevel::WARN);
-
-                        //     break;
-                        // }
-                        $task->start();
-                    }
-
-                    if (TaskStatus::STARTING !== $task->status) {
-                        break;
-                    }
-
-                    // no break
-                case TaskStatus::STARTING:
-                    $task->run();
-                    $pipe = $task->getReadPipe();
-                    $pipeID = (int) $pipe;
-                    $this->streams[$pipeID] = $pipe;
-
-                    break;
-
-                case TaskStatus::CANCELLED:
-                    if ($task->expired()) {
-                        $task->terminate();
-
-                        break;
-                    }
-
-                    // no break
-                case TaskStatus::RUNNING:
-                    $processes++;
-                    $this->taskMonitor($task);
-                    if ($task->timeout()) {
-                        $this->log->write('Process taking too long to execute - Attempting to kill it.', LogLevel::WARN);
-                        if ($task->terminate()) {
-                            $this->log->write('Terminate signal sent.', LogLevel::DEBUG);
-                        } else {
-                            $this->log->write('Failed to send terminate signal.', LogLevel::ERROR);
-                        }
-                    }
-
-                    break;
-
-                case TaskStatus::COMPLETE:
-                    if (($next = $task->touch()) > time()) {
-                        $task->status = TaskStatus::QUEUED;
-                        $task->retries = 0;
-                        $this->log->write('Next execution at: '.date($this->config['sys']['dateFormat'], $next), LogLevel::NOTICE);
-                    } else {
-                        $task->status = TaskStatus::WAIT;
-                        // Expire the task in 30 seconds
-                        $task->expire = time() + $this->config['task']['expire'];
-                    }
-
-                    break;
-
-                case TaskStatus::ERROR:
-                    if ($task->retries < $this->config['task']['retries']) {
-                        $this->log->write('Task failed. Retrying in '.$this->config['task']['retry'].' seconds', LogLevel::NOTICE);
-                        $task->status = TaskStatus::RETRY;
-                    } else {
-                        $this->log->write('Task execution failed', LogLevel::ERROR);
-                        $task->status = TaskStatus::WAIT;
-                        $task->expire = time() + $this->config['task']['expire'];
-                    }
-
-                    break;
-
-                case TaskStatus::WAIT:
-                    if ($task->expired()) {
-                        $this->log->write('Cleaning up', LogLevel::NOTICE);
-                        unset($this->tasks[$id]);
-                    }
-            }
-        }
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock;
 
+use Hazaar\Config;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 use Hazaar\HTTP\Response;
@@ -20,7 +21,8 @@ class REST
      */
     public function __construct(array $serverConfig = [])
     {
-        $this->serverConfig = new Config(config: $serverConfig);
+        $this->serverConfig = new Config();
+        $this->serverConfig->loadFromArray($serverConfig);
         $this->client = new Client();
         if (null === $this->serverConfig['client']['encoded']) {
             $this->serverConfig['client']['encoded'] = $this->serverConfig['server']['encoded'];

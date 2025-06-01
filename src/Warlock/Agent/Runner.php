@@ -37,11 +37,18 @@ class Runner extends Process
     public function launch(array $argv): int
     {
         $this->state = Status::RUNNING;
-        $this->log('WARLOCK AGENT RUNNER STARTED', LogLevel::INFO);
-        for ($i = 1; $i <= 30; ++$i) {
+        $this->subscribe('tick', function (array $data): void {
+            $this->log('Tick event received with data: '.json_encode($data), LogLevel::DEBUG);
+        });
+        $this->log('Bootstrapping application', LogLevel::INFO);
+        $this->application->bootstrap();
+        $this->log('Application bootstrapped successfully', LogLevel::INFO);
+        for ($i = 1; $i <= 3; ++$i) {
             $this->log('WARLOCK AGENT RUNNER COUNT='.$i, LogLevel::INFO);
+            $this->trigger('tick', ['count' => $i], true);
             $this->sleep(1);
         }
+        $this->log('Warlock Agent Runner completed successfully', LogLevel::INFO);
 
         return 0; // Exit code 0 for success
     }
@@ -65,4 +72,4 @@ class Runner extends Process
 // Create application, bootstrap, and run
 $application = new Application(APPLICATION_ENV);
 
-exit(Runner::create($application->bootstrap(), $argv));
+exit(Runner::create($application, $argv));

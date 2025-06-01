@@ -24,6 +24,13 @@ abstract class Task extends Process
     public int $lastHeartbeat = 0;
     public int $heartbeats = 0;
 
+    /**
+     * @var array<string,mixed>
+     *
+     * @detail      Configuration for the task, such as retry count, retry delay, and expiration time.
+     */
+    public array $config = [];
+
     protected Endpoint $endpoint;
 
     /**
@@ -95,6 +102,38 @@ abstract class Task extends Process
                 }
 
                 break;
+
+            case TaskStatus::CANCELLED:
+                if ($this->expired()) {
+                    $this->terminate();
+
+                    break;
+                }
+
+                // no break
+            case TaskStatus::COMPLETE:
+                if (($next = $this->touch()) > time()) {
+                    $this->status = TaskStatus::QUEUED;
+                    $this->retries = 0;
+                    $this->log->write('Next execution at: '.date('c', $next), LogLevel::NOTICE);
+                } else {
+                    $this->status = TaskStatus::WAIT;
+                    $this->expire = time() + $this->config['expire'];
+                }
+
+                break;
+
+            case TaskStatus::ERROR:
+                if ($this->retries < $this->config['task']['retries']) {
+                    $this->log->write('Task failed. Retrying in '.$this->config['task']['retry'].' seconds', LogLevel::NOTICE);
+                    $this->status = TaskStatus::RETRY;
+                } else {
+                    $this->log->write('Task execution failed', LogLevel::ERROR);
+                    $this->status = TaskStatus::WAIT;
+                    $this->expire = time() + $this->config['task']['expire'];
+                }
+
+                break;
         }
     }
 
@@ -113,6 +152,14 @@ abstract class Task extends Process
         // } else {
         //     $this->status = TaskStatus::COMPLETE;
         // }
+        // Stop the task if it is currently running
+        if (TaskStatus::RUNNING === $this->status && $this->isRunning()) {
+            // $this->log->write('Stopping running '.$task->type, LogLevel::NOTICE);
+            $this->terminate();
+        }
+        $this->status = TaskStatus::CANCELLED;
+        // Expire the task in 30 seconds
+        $this->expire = time() + $this->config['expire'];
     }
 
     public function expired(): bool
@@ -213,7 +260,7 @@ abstract class Task extends Process
     {
         $this->log->write("TASK<-TRIGGER: NAME={$eventID} ID={$this->id} ECHO=".Boolean::toString($echoClient), LogLevel::DEBUG);
 
-        return $this->agent->trigger($eventID, $data, false === $echoClient ? $this->id : null);
+        return $this->agent->trigger($eventID, $data, $echoClient);
     }
 
     /**
@@ -256,7 +303,7 @@ abstract class Task extends Process
 
     private function monitor(): void
     {
-        // $this->log->write('PROCESS->RUNNING: PID='.$task->pid.' ID='.$task->id, LogLevel::DEBUG);
+        // $this->log->write('PROCESS->RUNNING: PID='.$this->pid.' ID='.$this->id, LogLevel::DEBUG);
         $status = proc_get_status($this->process);
         if (true === $status['running']) {
             try {
@@ -282,6 +329,10 @@ abstract class Task extends Process
         // One last check of the error buffer
         if (($output = $this->readErrorPipe()) !== false) {
             $this->log->write("PROCESS ERROR:\n{$output}", LogLevel::ERROR);
+        }
+        $pipe = $this->getReadPipe();
+        if ($buffer = stream_get_contents($pipe)) {
+            $this->recv($buffer);
         }
         $this->close();
         // Process a Service shutdown.
@@ -337,7 +388,7 @@ abstract class Task extends Process
                 return $this->commandUnsubscribe($payload->id);
 
             case PacketType::TRIGGER:
-                return $this->commandTrigger($payload->id, $payload->data ?? null, $payload['echo'] ?? false);
+                return $this->commandTrigger($payload->id, $payload->data ?? null, $payload->echo ?? false);
 
             case PacketType::LOG:
                 return $this->commandLog($payload);

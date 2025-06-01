@@ -221,7 +221,19 @@ abstract class Process
     /**
      * @param array<mixed> $params
      */
-    public function runDelay(
+    public function exec(
+        callable $callable,
+        array $params = [],
+        ?string $tag = null,
+        bool $overwrite = false
+    ): bool|string {
+        return $this->sendExec('delay', ['value' => 0], $callable, $params, $tag, $overwrite);
+    }
+
+    /**
+     * @param array<mixed> $params
+     */
+    public function execDelay(
         int $delay,
         callable $callable,
         array $params = [],
@@ -479,7 +491,7 @@ abstract class Process
     /**
      * @param array<mixed> $params
      */
-    final public function run(?array $params = null, bool $dynamic = false): int
+    final public function main(?array $params = null, bool $dynamic = false): int
     {
         $code = 0;
         $this->state = Status::RECONNECT;
@@ -517,7 +529,7 @@ abstract class Process
                     $this->state = Status::RUNNING;
                 }
                 if (Status::RUNNING === $this->state) {
-                    $this->exec();
+                    $this->run();
                     /*
                      * If sleep was not executed in the last call to run(), then execute it now.  This protects bad services
                      * from not sleeping as the sleep() call is where new signals are processed.
@@ -538,12 +550,6 @@ abstract class Process
         return $code;
     }
 
-    // BUILT-IN PLACEHOLDER METHODS
-    public function exec(): void
-    {
-        $this->sleep(60);
-    }
-
     public function shutdown(): void {}
 
     final public function stop(): void
@@ -554,6 +560,12 @@ abstract class Process
     final public function state(): Status
     {
         return $this->state;
+    }
+
+    // BUILT-IN PLACEHOLDER METHODS
+    protected function run(): void
+    {
+        $this->sleep(60);
     }
 
     /**
@@ -741,7 +753,7 @@ abstract class Process
             $data['overwrite'] = Boolean::toString($overwrite);
         }
         $data['exec']['params'] = $params;
-        $this->send(PacketType::from($command), $data);
+        $this->send(PacketType::get($command), $data);
         if ('OK' == $this->recv($payload)) {
             return $payload->task_id;
         }

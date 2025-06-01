@@ -75,7 +75,7 @@ class AgentModule extends Module
             }
         }
 
-        return $this->agent->bootstrap()->run();
+        return $this->agent->bootstrap()->main();
     }
 
     // protected function stopAgent(Input $input, Output $output): int

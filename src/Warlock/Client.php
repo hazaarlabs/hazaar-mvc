@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Warlock;
 
 use Hazaar\Application;
+use Hazaar\Config;
 
 /**
  * @brief       Control class for Warlock
@@ -22,13 +23,18 @@ class Client extends Process
     public array $config;
 
     /**
-     * @param array<mixed> $config
+     * @param array<string,mixed> $clientConfig
      */
     public function __construct(
-        array $config = []
+        array $clientConfig = []
     ) {
-        $config = new Config(config: ['client' => $config]);
-        $this->config = $config['client'];
+        $config = new Config('warlock');
+        $config->loadFromArray(['client' => $clientConfig], [
+            'client' => [
+                'encode' => false,
+            ],
+        ]);
+        $this->config = $config['client'] ?? [];
         $this->config['encode'] ??= $config['server']['encode'];
         $this->config['serverId'] ??= $config['server']['id'];
         $protocol = new Protocol((string) $config['server']['id'], $this->config['encode']);
