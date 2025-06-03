@@ -26,17 +26,17 @@ abstract class WebSockets
     }
 
     /**
-     * @return array<string>
+     * @return array<string,string>
      */
-    public function parseHeaders(string $request, string &$body = ''): array|false
+    public static function parseHeaders(string $request, string &$body = ''): array
     {
-        $headers = [];
         [$header, $body] = explode("\r\n\r\n", $request, 2);
         $lines = explode("\n", $request);
         $lead = explode(' ', $lines[0], 3);
         if (!isset($lead[1])) {
-            return false;
+            return [];
         }
+        $headers = [];
         if (is_numeric($lead[1])) {
             $headers['code'] = (int) $lead[1];
             $headers['status'] = trim($lead[2]);

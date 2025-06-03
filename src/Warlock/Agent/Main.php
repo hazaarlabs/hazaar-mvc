@@ -114,7 +114,8 @@ class Main extends Process
             'host' => $this->config['server']['address'] ?? '127.0.0.1',
             'port' => $this->config['server']['port'] ?? 13080,
             'headers' => [
-                'X-WARLOCK-AGENT-ID' => $this->config['id'] ?? 1234,
+                'X-WARLOCK-TYPE' => 'agent',
+                'X-WARLOCK-ACCESS-KEY' => $this->config['id'] ?? 1234,
             ],
         ]);
 
@@ -164,6 +165,13 @@ class Main extends Process
         $this->log->write('Agent is shutting down', LogLevel::INFO);
     }
 
+    public function init(): bool
+    {
+        $this->log->write('Agent ready', LogLevel::NOTICE);
+
+        return true;
+    }
+
     public function announce(): void
     {
         $this->log->write(
@@ -189,8 +197,25 @@ class Main extends Process
 
     protected function processCommand(PacketType $command, ?\stdClass $payload = null): bool
     {
-        if (PacketType::CANCEL === $command) {
-            return $this->taskCancel($payload->taskID ?? '');
+        switch ($command) {
+            case PacketType::CANCEL:
+                return $this->taskCancel($payload->taskID ?? '');
+
+            case PacketType::DELAY:
+                if (!isset($payload->value)) {
+                    $this->log->write('Invalid payload for DELAY command', LogLevel::ERROR);
+
+                    return false;
+                }
+                $task = (new Task\Runner($this, $this->log))
+                    ->schedule(time() + $payload->value)
+                    ->exec(Endpoint::create([$this, 'announce']))
+                ;
+                $this->taskQueueAdd($task);
+                $this->send(PacketType::OK, [
+                    'message' => 'Task delayed successfully',
+                    'taskID' => $task->id,
+                ]);
         }
 
         return parent::processCommand($command, $payload);

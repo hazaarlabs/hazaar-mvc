@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Hazaar\Warlock\Channel;
 use Hazaar\Warlock\Client;
 use PHPUnit\Framework\TestCase;
 
@@ -10,12 +11,20 @@ use PHPUnit\Framework\TestCase;
  */
 final class WarlockTest extends TestCase
 {
+    /**
+     * Configuration for the Warlock client.
+     *
+     * @var array<string, mixed>
+     */
+    private static array $config = [
+        'host' => 'localhost',
+        'port' => 13080,
+        'accessKey' => 'test',
+    ];
+
     public function testCanConnect(): void
     {
-        $warlock = new Client([
-            'host' => 'localhost',
-            'port' => 13080,
-        ]);
+        $warlock = new Client(self::$config);
         $this->assertFalse($warlock->connected());
         $this->assertTrue($warlock->connect());
         $this->assertTrue($warlock->connected());
@@ -25,10 +34,7 @@ final class WarlockTest extends TestCase
 
     public function testCanSendTrigger(): void
     {
-        $warlock = new Client([
-            'host' => 'localhost',
-            'port' => 13080,
-        ]);
+        $warlock = new Client(self::$config);
         $this->assertTrue($warlock->connect());
         $this->assertTrue($warlock->trigger('test', 'Hello, World!'));
         $this->assertTrue($warlock->disconnect());
@@ -36,10 +42,7 @@ final class WarlockTest extends TestCase
 
     public function testCanSubscribe(): void
     {
-        $warlock = new Client([
-            'host' => 'localhost',
-            'port' => 13080,
-        ]);
+        $warlock = new Client(self::$config);
         $this->assertTrue($warlock->connect());
         $this->assertTrue($warlock->subscribe('test', function ($data) {
             $this->assertEquals('test', $data);
@@ -50,15 +53,31 @@ final class WarlockTest extends TestCase
         $this->assertTrue($warlock->disconnect());
     }
 
-    public function testCanRunCode(): void
+    public function testCanAuthenticate(): void
     {
-        $warlock = new Client([
-            'host' => 'localhost',
-            'port' => 13080,
-        ]);
+        $warlock = new Client(self::$config);
         $this->assertTrue($warlock->connect());
-        $result = $warlock->exec(function () {return 'Hello, World!'; });
-        $this->assertTrue($result);
+        $this->assertTrue($warlock->authenticate('test', 'test'));
+        $this->assertTrue($warlock->disconnect());
+    }
+
+    public function testCanRunClosure(): void
+    {
+        $warlock = new Client(self::$config);
+        $this->assertTrue($warlock->connect());
+        $this->assertTrue($warlock->authenticate('test', 'test'));
+        $result = $warlock->exec(function () {Channel::trigger('test', 'Hello, World!'); });
+        $this->assertIsString($result);
+        $this->assertTrue($warlock->disconnect());
+    }
+
+    public function testCanRunEndpoint(): void
+    {
+        $warlock = new Client(self::$config);
+        $this->assertTrue($warlock->connect());
+        $this->assertTrue($warlock->authenticate('test', 'test'));
+        $result = $warlock->exec(['Application\Service\Test', 'doTheThing']);
+        $this->assertIsString($result);
         $this->assertTrue($warlock->disconnect());
     }
 }

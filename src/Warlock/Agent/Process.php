@@ -205,13 +205,13 @@ abstract class Process
         stream_set_blocking($this->pipes[2], false);
     }
 
-    public function process(): void
+    public function process(): self
     {
         if (!is_resource($this->process)) {
             $this->log->write('Process is not running', LogLevel::ERROR);
-
-            return;
         }
+
+        return $this;
     }
 
     final protected function write(string $packet): bool

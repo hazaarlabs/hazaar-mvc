@@ -14,7 +14,7 @@ class Runner extends Task
     public ?Cron $when = null;
     public int $timeout = 60;
 
-    public function schedule(int|string $when): void
+    public function schedule(int|string $when): self
     {
         if (is_int($when)) {
             $this->start = $when;
@@ -22,6 +22,8 @@ class Runner extends Task
             $this->when = new Cron($when);
             $this->start = $this->when->getNextOccurrence();
         }
+
+        return $this;
     }
 
     public function touch(): ?int
@@ -50,7 +52,7 @@ class Runner extends Task
         $this->status = TaskStatus::RUNNING;
     }
 
-    public function run(): void
+    public function run(): self
     {
         $payload = [
             'exec' => $this->exec,
@@ -66,5 +68,7 @@ class Runner extends Task
         //     $this->log->write('Runner failed to start', LogLevel::DEBUG);
         //     $this->status = TaskStatus::ERROR;
         // }
+
+        return $this;
     }
 }

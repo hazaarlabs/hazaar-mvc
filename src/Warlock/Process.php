@@ -488,6 +488,24 @@ abstract class Process
         return $this->conn->connected();
     }
 
+    public function authenticate(string $username, string $password): bool
+    {
+        $this->send(PacketType::AUTH, ['identity' => base64_encode($username.':'.$password)]);
+        $result = $this->recv($payload);
+        if (PacketType::AUTH === $result && isset($payload->result) && true === $payload->result) {
+            $this->log->write('Authentication successful for user: '.$payload->user, LogLevel::NOTICE);
+
+            return true;
+        }
+        if (PacketType::ERROR === $result && isset($payload->reason)) {
+            $this->log->write('Authentication failed: '.$payload->reason, LogLevel::ERROR);
+        } else {
+            $this->log->write('Authentication failed: Invalid response from server', LogLevel::ERROR);
+        }
+
+        return false;
+    }
+
     /**
      * @param array<mixed> $params
      */
@@ -754,7 +772,7 @@ abstract class Process
         }
         $data['exec']['params'] = $params;
         $this->send(PacketType::get($command), $data);
-        if ('OK' == $this->recv($payload)) {
+        if (PacketType::OK === $this->recv($payload, 3)) {
             return $payload->task_id;
         }
 

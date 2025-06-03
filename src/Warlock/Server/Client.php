@@ -65,10 +65,10 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
      * @param resource     $stream
      * @param array<mixed> $options
      */
-    public function __construct(mixed $stream = null, ?array $options = null)
+    public function __construct(Logger $log, mixed $stream = null, ?array $options = null)
     {
         parent::__construct(['warlock']);
-        $this->log = new Logger();
+        $this->log = $log;
         $this->stream = $stream;
         $this->name = 'SOCKET#'.(int) $stream;
         $this->id = uniqid();
@@ -95,15 +95,32 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
         }
     }
 
+    public static function getTypeFromHandshake(string $request): ClientType
+    {
+        if (!($headers = WebSockets::parseHeaders($request))) {
+            return ClientType::BASIC;
+        }
+
+        return match ($headers['x-warlock-type'] ?? 'basic') {
+            'admin' => ClientType::ADMIN,
+            'agent' => ClientType::AGENT,
+            'user' => ClientType::USER,
+            default => ClientType::BASIC,
+        };
+    }
+
     /**
-     * Initiates a WebSocket client handshake.
+     * Initiates the handshake for an agent client.
      *
-     * @return bool
+     * @param string               $request the request string from the client
+     * @param array<string,string> $headers reference to an array where headers will be stored
+     *
+     * @return bool returns true if the handshake is successful, false otherwise
      */
-    public function initiateHandshake(string $request)
+    public function initiateHandshake(string $request, array &$headers = [])
     {
         $body = '';
-        if (!($headers = $this->parseHeaders($request, $body))) {
+        if (!($headers = WebSockets::parseHeaders($request, $body))) {
             $this->log->write('Unable to parse request while initiating WebSocket handshake!', LogLevel::WARN);
 
             return false;
@@ -181,6 +198,11 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
         }
 
         return false;
+    }
+
+    public function authenticated(): bool
+    {
+        return ClientType::BASIC !== $this->type;
     }
 
     public function commandUnsubscribe(string $eventID): bool
@@ -429,7 +451,7 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
 
             case PacketType::OK:
                 if ($payload) {
-                    $this->log->write($payload, LogLevel::INFO);
+                    $this->log->write(print_r($payload, true), LogLevel::INFO);
                 }
 
                 return true;
@@ -440,10 +462,7 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
                 return true;
 
             case PacketType::AUTH:
-                // return $this->commandAuthorise($payload);
-                $this->log->write('Authorisation command not implemented!', LogLevel::WARN);
-
-                return false;
+                return $this->commandAuthenticate($payload);
 
             case PacketType::SUBSCRIBE:
                 $filter = (property_exists($payload, 'filter') ? $payload->filter : null);
@@ -490,6 +509,30 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
         }
 
         return false;
+    }
+
+    protected function commandAuthenticate(\stdClass $payload, bool $service = false): bool
+    {
+        if (!property_exists($payload, 'identity')) {
+            $this->log->write('No username provided for authorisation!', LogLevel::WARN);
+
+            return false;
+        }
+        [$username, $password] = explode(':', base64_decode($payload->identity));
+        // Temporary hardcoded authentication for testing purposes
+        if ('test' !== $username || 'test' !== $password) {
+            $this->log->write("Authentication failed for user {$username}!", LogLevel::WARN);
+
+            return false;
+        }
+        $this->type = ClientType::USER;
+        $this->log->write("User {$username} authenticated successfully!", LogLevel::NOTICE);
+        $this->send(PacketType::AUTH, [
+            'result' => true,
+            'user' => $username,
+        ]);
+
+        return true;
     }
 
     protected function commandStatus(?\stdClass $payload = null): bool
@@ -578,20 +621,14 @@ class Client extends WebSockets implements \Hazaar\Warlock\Interface\Client
             if ('apikey' !== strtolower($type)) {
                 return false;
             }
-        // $payload = (object) [
-        //     'client_id' => $this->id,
-        //     'type' => $type = $headers['x-warlock-client-type'] ?? 'admin',
-        //     'access_key' => base64_decode($key),
-        // ];
-        // if (!$this->commandAuthorise($payload, 'service' === $type)) {
-        //     return false;
-        // }
-        } elseif (array_key_exists('x-cluster-access-key', $headers)) {
-            $this->log->write('Cluster manager is disabled!', LogLevel::WARN);
-        // Main::$instance->cluster->addPeer($headers, $this);
-        } elseif (array_key_exists('x-warlock-agent-id', $headers)) {
-            $this->log->write('Agent connecting in!', LogLevel::NOTICE);
-            $this->type = ClientType::AGENT;
+            // $payload = (object) [
+            //     'client_id' => $this->id,
+            //     'type' => $type = $headers['x-warlock-client-type'] ?? 'admin',
+            //     'access_key' => base64_decode($key),
+            // ];
+            // if (!$this->commandAuthorise($payload, 'service' === $type)) {
+            //     return false;
+            // }
         }
         $this->log->write("WebSockets connection from {$this->address}:{$this->port}", LogLevel::NOTICE);
 

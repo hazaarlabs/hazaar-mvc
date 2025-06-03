@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Warlock\Server\Client;
 
 use Hazaar\Util\Boolean;
+use Hazaar\Warlock\Enum\ClientType;
 use Hazaar\Warlock\Server\Client;
 use Hazaar\Warlock\Server\Component\Logger;
 use Hazaar\Warlock\Server\Enum\LogLevel;
@@ -19,7 +20,7 @@ class Peer extends Client
     public const STATUS_AUTHENTICATING = 4;
     public const STATUS_STREAMING = 5;
 
-    public string $type = 'peer';
+    public ClientType $type = ClientType::PEER;
     public int $status = self::STATUS_DISCONNECTED;
     public string $clusterName;
     public static int $reconnectTimeout = 15;

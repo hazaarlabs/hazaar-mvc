@@ -309,7 +309,7 @@ class Main
     /**
      * @param resource $stream
      */
-    public function clientAdd(mixed $stream, ?Client $client = null): Client|false
+    public function clientAdd(mixed $stream, ClientType $type = ClientType::BASIC): Client|false
     {
         // If we don't have a stream or id, return false
         if (!is_resource($stream)) {
@@ -321,14 +321,23 @@ class Main
             return $this->clients[$streamID];
         }
         // Create the new client object
-        if (null === $client) {
-            $client = new Client($stream, $this->config['client']);
+        $client = match ($type) {
+            ClientType::BASIC => new Client($this->log, $stream),
+            ClientType::AGENT => new Client\Agent($this->log, $stream),
+            // ClientType::PEER => new Client\Peer($this->log, $stream, $this->config['peer']),
+            default => null,
+        };
+        if (!$client) {
+            return false;
         }
         $this->log->write("CLIENT->ADD: CLIENT={$client->id}", LogLevel::DEBUG);
         // Add it to the client array
         $this->clients[$streamID] = $client;
         if (!array_key_exists($streamID, $this->streams)) {
             $this->streams[$streamID] = $stream;
+        }
+        if (ClientType::AGENT === $client->type) {
+            $this->agents[$client->id] = $client;
         }
 
         return $client;
@@ -373,7 +382,7 @@ class Main
             unset($queue[$client->id]);
         }
         $this->log->write("CLIENT->REMOVE: CLIENT={$client->id}", LogLevel::DEBUG);
-        unset($this->clients[$streamID], $this->streams[$streamID]);
+        unset($this->agents[$client->id], $this->clients[$streamID], $this->streams[$streamID]);
 
         return true;
     }
@@ -383,14 +392,34 @@ class Main
      */
     public function processCommand(Client $client, PacketType $command, mixed &$payload): void
     {
-        if (ClientType::ADMIN !== $client->type) {
+        if (true !== $client->authenticated()) {
             throw new \Exception('Admin commands only allowed by authorised clients!');
         }
         $this->log->write("ADMIN_COMMAND: {$command->name}".($client->id ? " CLIENT={$client->id}" : null), LogLevel::DEBUG);
 
         switch ($command) {
+            case PacketType::DELAY:
+                // Send a delay command to a random agent that is connected.
+                if (0 === count($this->agents)) {
+                    $client->send(PacketType::ERROR, ['message' => 'No agents connected']);
+
+                    return;
+                }
+                $agentIndex = rand(0, count($this->agents) - 1);
+                $agent = array_values($this->agents)[$agentIndex];
+                $result = $agent->send(PacketType::DELAY, $payload);
+                if (!$result) {
+                    $client->send(PacketType::ERROR, ['message' => 'Failed to send delay command to agent']);
+
+                    return;
+                }
+                $this->log->write("DELAY: AGENT={$agent->id} DELAY={$payload->value}", LogLevel::NOTICE);
+                $client->send(PacketType::OK, ['task_id' => uniqid()]);
+
+                break;
+
             case PacketType::SHUTDOWN:
-                $delay = $payload['delay'] ?? 0;
+                $delay = $payload->delay ?? 0;
                 $this->log->write("Shutdown requested (Delay: {$delay})", LogLevel::NOTICE);
                 if (!$this->shutdown($delay)) {
                     throw new \Exception('Unable to initiate shutdown!');
@@ -713,18 +742,15 @@ class Main
             $this->log->write("CLIENT<-RECV: HOST={$client->address} PORT={$client->port} BYTES=".$bytesReceived, LogLevel::DEBUG);
             $client->recv($buf);
         } else {
-            if (!($client = $this->clientAdd($stream))) {
+            $clientType = Client::getTypeFromHandshake($buf);
+            if (!($client = $this->clientAdd($stream, $clientType))) {
                 $this->disconnect($stream);
 
                 return false;
             }
-
             if (!$client->initiateHandshake($buf)) {
                 $this->clientRemove($stream);
                 stream_socket_shutdown($stream, STREAM_SHUT_RDWR);
-            }
-            if (ClientType::AGENT === $client->type) {
-                $this->agents[$client->id] = $client;
             }
         }
 

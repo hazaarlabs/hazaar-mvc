@@ -55,9 +55,11 @@ abstract class Task extends Process
     /**
      * Executes the task with the given callable and parameters.
      */
-    public function exec(Endpoint $endpoint): void
+    public function exec(Endpoint $endpoint): self
     {
         $this->endpoint = $endpoint;
+
+        return $this;
     }
 
     public function ready(): bool
@@ -78,7 +80,7 @@ abstract class Task extends Process
         }
     }
 
-    public function process(): void
+    public function process(): self
     {
         switch ($this->status) {
             case TaskStatus::QUEUED:
@@ -135,15 +137,19 @@ abstract class Task extends Process
 
                 break;
         }
+
+        return $this;
     }
 
-    public function run(): void
+    public function run(): self
     {
         $this->log->write('Task run method not implemented for: '.get_class($this), LogLevel::ERROR);
         $this->status = TaskStatus::ERROR;
+
+        return $this;
     }
 
-    public function cancel(int $expire = 30): void
+    public function cancel(int $expire = 30): self
     {
         // if (null !== $this->client) {
         //     $this->status = TaskStatus::CANCELLED;
@@ -160,6 +166,8 @@ abstract class Task extends Process
         $this->status = TaskStatus::CANCELLED;
         // Expire the task in 30 seconds
         $this->expire = time() + $this->config['expire'];
+
+        return $this;
     }
 
     public function expired(): bool
@@ -185,7 +193,7 @@ abstract class Task extends Process
     //     return $this->send(PacketType::EVENT, $packet);
     // }
 
-    public function recv(string &$buf): void
+    public function recv(string &$buf): self
     {
         $this->recvBuffer .= $buf;
         while ($packet = $this->processPacket($this->recvBuffer)) {
@@ -198,6 +206,8 @@ abstract class Task extends Process
                 }
             }
         }
+
+        return $this;
     }
 
     // public function send(PacketType $command, mixed $payload = null): bool
