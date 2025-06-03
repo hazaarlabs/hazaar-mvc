@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 use Hazaar\Application;
+use Hazaar\Warlock\Agent\Struct\Endpoint;
+use Hazaar\Warlock\Channel;
 use Hazaar\Warlock\Connection\Pipe;
 use Hazaar\Warlock\Enum\LogLevel;
+use Hazaar\Warlock\Enum\PacketType;
 use Hazaar\Warlock\Enum\Status;
 use Hazaar\Warlock\Interface\Connection;
 use Hazaar\Warlock\Process;
@@ -29,6 +32,7 @@ class Runner extends Process
     {
         parent::__construct(new Protocol('1', false));
         $this->application = $application;
+        $this->state = Status::INIT;
     }
 
     /**
@@ -36,21 +40,26 @@ class Runner extends Process
      */
     public function launch(array $argv): int
     {
-        $this->state = Status::RUNNING;
-        $this->subscribe('tick', function (array $data): void {
-            $this->log('Tick event received with data: '.json_encode($data), LogLevel::DEBUG);
-        });
         $this->log('Bootstrapping application', LogLevel::INFO);
         $this->application->bootstrap();
         $this->log('Application bootstrapped successfully', LogLevel::INFO);
-        for ($i = 1; $i <= 3; ++$i) {
-            $this->log('WARLOCK AGENT RUNNER COUNT='.$i, LogLevel::INFO);
-            $this->trigger('tick', ['count' => $i], true);
-            $this->sleep(1);
-        }
-        $this->log('Warlock Agent Runner completed successfully', LogLevel::INFO);
+        $this->send(PacketType::EXEC);
+        $timeout = $this->config['timeout'] ?? 5;
+        $start = time();
+        while (Status::INIT === $this->state) {
+            if (($start + $timeout) < time()) {
+                $this->state = Status::ERROR;
+                $this->log('Warlock Agent Runner timed out waiting for execution', LogLevel::ERROR);
 
-        return 0; // Exit code 0 for success
+                break;
+            }
+            $this->sleep(1, Status::INIT);
+        }
+
+        return match ($this->state) {
+            Status::RUNNING => 0,
+            default => 1
+        };
     }
 
     /**
@@ -66,6 +75,46 @@ class Runner extends Process
     protected function createConnection(Protocol $protocol, ?string $guid = null): Connection|false
     {
         return new Pipe($protocol);
+    }
+
+    protected function processCommand(PacketType $command, ?stdClass $payload = null): bool
+    {
+        // Handle commands specific to the Warlock Agent Runner
+        switch ($command) {
+            case PacketType::EXEC:
+                $this->state = Status::RUNNING;
+                $this->log('Runner started successfully', LogLevel::INFO);
+                $endpoint = Endpoint::create($payload->endpoint ?? null);
+                if (!$endpoint) {
+                    $this->log('Invalid endpoint provided for execution', LogLevel::ERROR);
+                    $this->state = Status::ERROR;
+
+                    return false;
+                }
+                Channel::registerConnection($this);
+
+                try {
+                    $endpoint->run($this->protocol);
+                } catch (Throwable $e) {
+                    $this->log('Error executing endpoint: '.$e->getMessage(), LogLevel::ERROR);
+                    $this->state = Status::ERROR;
+
+                    return false;
+                }
+
+                return true;
+
+            case PacketType::CANCEL:
+                $this->state = Status::STOPPING;
+                $this->log('Runner stopped successfully', LogLevel::INFO);
+
+                return true;
+
+            default:
+                $this->log('Unknown command received: '.$command->name, LogLevel::WARN);
+
+                return false;
+        }
     }
 }
 

@@ -35,7 +35,7 @@ class Internal extends Task
             $this->status = TaskStatus::RUNNING;
             $taskName = $this->endpoint->getName();
             $this->log->write('INTERNAL: '.$taskName, LogLevel::DEBUG);
-            $this->endpoint->run();
+            $this->endpoint->run($this->agent->protocol);
             $this->status = TaskStatus::COMPLETE;
             // $this->touch();
         } catch (\Throwable $e) {

@@ -126,13 +126,15 @@ abstract class Task extends Process
                 break;
 
             case TaskStatus::ERROR:
-                if ($this->retries < $this->config['task']['retries']) {
-                    $this->log->write('Task failed. Retrying in '.$this->config['task']['retry'].' seconds', LogLevel::NOTICE);
+                if ($this->retries < $this->config['retries']) {
+                    $this->log->write('Task failed. Retrying in '.$this->config['retry'].' seconds', LogLevel::NOTICE);
                     $this->status = TaskStatus::RETRY;
+                    $this->start = time() + $this->config['retry'];
+                    ++$this->retries;
                 } else {
                     $this->log->write('Task execution failed', LogLevel::ERROR);
                     $this->status = TaskStatus::WAIT;
-                    $this->expire = time() + $this->config['task']['expire'];
+                    $this->expire = time() + $this->config['expire'];
                 }
 
                 break;
@@ -200,12 +202,14 @@ abstract class Task extends Process
             $this->log->write('TASK<-PACKET: '.trim($packet, "\n"), LogLevel::DECODE);
             $payload = null;
             $time = null;
-            if ($type = $this->agent->protocol->decode($packet, $payload, $time)) {
-                if (!$this->processCommand($type, $payload)) {
-                    throw new \Exception('Negative response returned while processing command: '.$type->name);
-                }
+            if (!($type = $this->agent->protocol->decode($packet, $payload, $time))) {
+                continue;
+            }
+            if (!$this->processCommand($type, $payload)) {
+                $this->log->write('Negative response returned while processing command: '.$type->name, LogLevel::ERROR);
             }
         }
+        $buf = $this->recvBuffer;
 
         return $this;
     }
@@ -261,9 +265,61 @@ abstract class Task extends Process
             return false;
         }
         $packet = $this->agent->protocol->encode($command, $payload); // Override the timestamp.
+        if (!$packet) {
+            $this->log->write('ENCODE FAILED: '.$command->name, LogLevel::DEBUG);
+
+            return false;
+        }
         $this->log->write("TASK->PACKET: {$packet}", LogLevel::DECODE);
 
         return $this->write($packet);
+    }
+
+    protected function processCommand(PacketType $command, mixed $payload = null): bool
+    {
+        $this->log->write("TASK<-COMMAND: {$command->name} ID={$this->id}", LogLevel::DEBUG);
+
+        switch ($command) {
+            case PacketType::NOOP:
+                $this->log->write('NOOP: '.print_r($payload, true), LogLevel::INFO);
+
+                return true;
+
+            case PacketType::OK:
+                if ($payload) {
+                    $this->log->write($payload, LogLevel::INFO);
+                }
+
+                return true;
+
+            case PacketType::ERROR:
+                $this->log->write($payload, LogLevel::ERROR);
+
+                return true;
+
+            case PacketType::SUBSCRIBE:
+                $filter = (property_exists($payload, 'filter') ? $payload->filter : null);
+
+                return $this->commandSubscribe($payload->id, $filter);
+
+            case PacketType::UNSUBSCRIBE:
+                return $this->commandUnsubscribe($payload->id);
+
+            case PacketType::TRIGGER:
+                return $this->commandTrigger($payload->id, $payload->data ?? null, $payload->echo ?? false);
+
+            case PacketType::LOG:
+                return $this->commandLog($payload);
+
+            case PacketType::DEBUG:
+                $this->log->write($payload->data ?? null, LogLevel::DEBUG);
+
+                return true;
+                // default:
+                // return $this->agent->processCommand($this, $command, $payload);
+        }
+
+        return false;
     }
 
     private function commandTrigger(string $eventID, mixed $data, bool $echoClient = true): bool
@@ -345,6 +401,9 @@ abstract class Task extends Process
             $this->recv($buffer);
         }
         $this->close();
+        if ($buffer) {
+            $this->log->write("PROCESS->BUFFER:\n{$buffer}", LogLevel::DEBUG);
+        }
         // Process a Service shutdown.
         $this->log->write('Process exited with return code: '.$status['exitcode'], LogLevel::NOTICE);
         if ($status['exitcode'] > 0) {
@@ -365,52 +424,5 @@ abstract class Task extends Process
         $buffer = substr($buffer, $pos + 1);
 
         return $packet;
-    }
-
-    private function processCommand(PacketType $command, mixed $payload = null): bool
-    {
-        $this->log->write("TASK<-COMMAND: {$command->name} ID={$this->id}", LogLevel::DEBUG);
-
-        switch ($command) {
-            case PacketType::NOOP:
-                $this->log->write('NOOP: '.print_r($payload, true), LogLevel::INFO);
-
-                return true;
-
-            case PacketType::OK:
-                if ($payload) {
-                    $this->log->write($payload, LogLevel::INFO);
-                }
-
-                return true;
-
-            case PacketType::ERROR:
-                $this->log->write($payload, LogLevel::ERROR);
-
-                return true;
-
-            case PacketType::SUBSCRIBE:
-                $filter = (property_exists($payload, 'filter') ? $payload->filter : null);
-
-                return $this->commandSubscribe($payload->id, $filter);
-
-            case PacketType::UNSUBSCRIBE:
-                return $this->commandUnsubscribe($payload->id);
-
-            case PacketType::TRIGGER:
-                return $this->commandTrigger($payload->id, $payload->data ?? null, $payload->echo ?? false);
-
-            case PacketType::LOG:
-                return $this->commandLog($payload);
-
-            case PacketType::DEBUG:
-                $this->log->write($payload->data ?? null, LogLevel::DEBUG);
-
-                return true;
-                // default:
-                // return $this->agent->processCommand($this, $command, $payload);
-        }
-
-        return false;
     }
 }

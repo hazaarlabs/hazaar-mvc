@@ -219,10 +219,11 @@ abstract class Process
     }
 
     /**
-     * @param array<mixed> $params
+     * @param array{string,string}|callable $callable this can be a string in the format 'Class::method' or a callable function
+     * @param array<mixed>                  $params
      */
     public function exec(
-        callable $callable,
+        array|callable $callable,
         array $params = [],
         ?string $tag = null,
         bool $overwrite = false
@@ -231,11 +232,12 @@ abstract class Process
     }
 
     /**
-     * @param array<mixed> $params
+     * @param array{string,string}|callable $callable this can be a string in the format 'Class::method' or a callable function
+     * @param array<mixed>                  $params
      */
     public function execDelay(
         int $delay,
-        callable $callable,
+        array|callable $callable,
         array $params = [],
         ?string $tag = null,
         bool $overwrite = false
@@ -558,7 +560,6 @@ abstract class Process
                 }
             } catch (\Throwable $e) {
                 $this->__exceptionHandler($e);
-                $this->state = Status::CONNECT;
             }
         }
         $this->state = Status::STOPPING;
@@ -592,11 +593,11 @@ abstract class Process
      * full sleep period is used.  If the timeout parameter is not set then the loop will just dump out after one
      * execution.
      */
-    final protected function sleep(int $timeout = 0): bool
+    final protected function sleep(int $timeout = 0, Status $checkStatus = Status::RUNNING): bool
     {
         $start = microtime(true);
         // Sleep if we are still sleeping and the timeout is not reached.  If the timeout is NULL or 0 do this process at least once.
-        while (Status::RUNNING === $this->state && ($start + $timeout) >= microtime(true)) {
+        while ($checkStatus === $this->state && ($start + $timeout) >= microtime(true)) {
             $tvSec = 0;
             $tvUsec = 0;
             if ($timeout > 0) {
@@ -623,7 +624,9 @@ abstract class Process
             if (($this->lastHeartbeat + 60) <= time()) {
                 $this->__sendHeartbeat();
             }
-            $this->state = Status::RUNNING;
+            if (Status::SLEEP === $this->state) {
+                $this->state = $checkStatus;
+            }
         }
         $this->slept = true;
 
@@ -654,9 +657,11 @@ abstract class Process
     }
 
     /**
+     * @param array{string,string}|callable $callable this can be a string in the format 'Class::method' or a callable function
+     *
      * @return array<string, mixed>
      */
-    protected function makeCallable(callable|\Closure $callable): array
+    protected function makeCallable(array|callable $callable): array
     {
         if ($callable instanceof \Closure) {
             $callable = (string) new Closure($callable);
@@ -752,12 +757,13 @@ abstract class Process
     }
 
     /**
-     * @param array<mixed> $params
+     * @param array{string,string}|callable $callable this can be a string in the format 'Class::method' or a callable function
+     * @param array<mixed>                  $params
      */
     private function sendExec(
         string $command,
         mixed $data,
-        callable $callable,
+        array|callable $callable,
         ?array $params = null,
         ?string $tag = null,
         bool $overwrite = false

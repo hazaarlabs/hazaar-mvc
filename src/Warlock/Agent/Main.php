@@ -11,6 +11,7 @@ use Hazaar\Warlock\Agent\Task\Internal;
 use Hazaar\Warlock\Connection\Socket;
 use Hazaar\Warlock\Enum\LogLevel;
 use Hazaar\Warlock\Enum\PacketType;
+use Hazaar\Warlock\Enum\Status;
 use Hazaar\Warlock\Enum\TaskStatus;
 use Hazaar\Warlock\Interface\Connection;
 use Hazaar\Warlock\Process;
@@ -168,6 +169,7 @@ class Main extends Process
     public function init(): bool
     {
         $this->log->write('Agent ready', LogLevel::NOTICE);
+        $this->state = Status::RUNNING;
 
         return true;
     }

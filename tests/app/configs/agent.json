@@ -8,7 +8,7 @@
         "schedule": [
             {
                 "when": "@reboot",
-                "action": "Application\\Controller\\Test::doTheThing"
+                "action": "App\\Service\\Test::doTheThing"
             }
         ]
     }

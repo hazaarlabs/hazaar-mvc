@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Service;
 
 use Hazaar\Warlock\Agent\Container;
 use Hazaar\Warlock\Enum\LogLevel;
@@ -14,8 +14,8 @@ class Test extends Container
 
     public function doTheThing(): void
     {
-        $this->log->write('Executing test service', LogLevel::INFO);
-        $this->log->write('Service ID: '.$this->id, LogLevel::INFO);
-        $this->log->write('Service Type: '.$this->type, LogLevel::INFO);
+        $this->log('Executing test service', LogLevel::INFO);
+        $this->log('Service ID: '.$this->id, LogLevel::INFO);
+        $this->log('Service Type: '.$this->type, LogLevel::INFO);
     }
 }

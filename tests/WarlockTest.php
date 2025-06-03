@@ -76,7 +76,7 @@ final class WarlockTest extends TestCase
         $warlock = new Client(self::$config);
         $this->assertTrue($warlock->connect());
         $this->assertTrue($warlock->authenticate('test', 'test'));
-        $result = $warlock->exec(['Application\Service\Test', 'doTheThing']);
+        $result = $warlock->exec(['App\Service\Test', 'doTheThing']);
         $this->assertIsString($result);
         $this->assertTrue($warlock->disconnect());
     }

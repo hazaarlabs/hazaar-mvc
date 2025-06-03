@@ -30,6 +30,7 @@ enum FilePath: string
             'Helper' => self::HELPER,
             'Event' => self::EVENT,
             'Listener' => self::LISTENER,
+            'Service' => self::SERVICE,
             default => null,
         };
     }
