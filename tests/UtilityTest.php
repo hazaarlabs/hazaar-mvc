@@ -226,4 +226,26 @@ class UtilityTest extends TestCase
         $this->assertEquals('myValue', $closure->getParameters()[0]->getName());
         $this->assertEquals('Hello, World!', $closure('Hello, World'));
     }
+
+    public function testCanRunClosureAfterSerialization(): void
+    {
+        $closure = new Closure(function (string $myValue): string {
+            return $myValue;
+        });
+        $serialized = serialize($closure);
+        $unserializedClosure = unserialize($serialized);
+        $this->assertInstanceOf(Closure::class, $unserializedClosure);
+        $this->assertEquals('Hello, World', $unserializedClosure('Hello, World'));
+    }
+
+    public function testCanRunClosureAfterJSONSerialization(): void
+    {
+        $closure = new Closure(function (string $myValue): string {
+            return $myValue;
+        });
+        $json = json_encode($closure);
+        $unserializedClosure = new Closure(json_decode($json));
+        $this->assertInstanceOf(Closure::class, $unserializedClosure);
+        $this->assertEquals('Hello, World', $unserializedClosure('Hello, World'));
+    }
 }

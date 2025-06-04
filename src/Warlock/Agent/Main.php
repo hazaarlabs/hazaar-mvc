@@ -126,7 +126,7 @@ class Main extends Process
     public function bootstrap(): self
     {
         $this->log->setLevel(LogLevel::fromString($this->config['log']['level']));
-        $this->log->setPrefix('main');
+        $this->log->setPrefix('agent');
         $this->log->write('Bootstrapping agent...', LogLevel::DEBUG);
         if ($this->config['announce']['enabled'] ?? false) {
             $task = new Internal($this, $this->log);
@@ -211,7 +211,7 @@ class Main extends Process
                 }
                 $task = (new Task\Runner($this, $this->log))
                     ->schedule(time() + $payload->value)
-                    ->exec(Endpoint::create([$this, 'announce']))
+                    ->exec(Endpoint::create($payload->endpoint))
                 ;
                 $this->taskQueueAdd($task);
                 $this->send(PacketType::OK, [

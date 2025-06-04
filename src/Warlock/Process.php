@@ -6,9 +6,9 @@ namespace Hazaar\Warlock;
 
 use Hazaar\Application;
 use Hazaar\Util\Boolean;
-use Hazaar\Util\Closure;
 use Hazaar\Util\DateTime;
 use Hazaar\Util\Str;
+use Hazaar\Warlock\Agent\Struct\Endpoint;
 use Hazaar\Warlock\Enum\LogLevel;
 use Hazaar\Warlock\Enum\PacketType;
 use Hazaar\Warlock\Enum\Status;
@@ -656,37 +656,6 @@ abstract class Process
         return set_exception_handler([$this, $methodName]);
     }
 
-    /**
-     * @param array{string,string}|callable $callable this can be a string in the format 'Class::method' or a callable function
-     *
-     * @return array<string, mixed>
-     */
-    protected function makeCallable(array|callable $callable): array
-    {
-        if ($callable instanceof \Closure) {
-            $callable = (string) new Closure($callable);
-        } elseif (is_array($callable)) {
-            if (is_object($callable[0])) {
-                $reflectionMethod = new \ReflectionMethod($callable[0], $callable[1]);
-                $classname = get_class($callable[0]);
-                if (!$reflectionMethod->isStatic()) {
-                    throw new \Exception('Method '.$callable[1].' of class '.$classname.' must be static');
-                }
-                $callable[0] = $classname;
-            } elseif (2 !== count($callable)) {
-                throw new \Exception('Invalid callable definition!');
-            }
-        } elseif (is_string($callable)) {
-            if (false === strpos($callable, '::')) {
-                $callable = [get_class($this), $callable];
-            } else {
-                $callable = explode('::', $callable);
-            }
-        }
-
-        return ['callable' => $callable];
-    }
-
     protected function processCommand(PacketType $command, ?\stdClass $payload = null): bool
     {
         switch ($command) {
@@ -771,12 +740,11 @@ abstract class Process
         $data['application'] = [
             'env' => APPLICATION_ENV,
         ];
-        $data['exec'] = $this->makeCallable($callable);
+        $data['endpoint'] = Endpoint::create($callable, $params);
         if ($tag) {
             $data['tag'] = $tag;
             $data['overwrite'] = Boolean::toString($overwrite);
         }
-        $data['exec']['params'] = $params;
         $this->send(PacketType::get($command), $data);
         if (PacketType::OK === $this->recv($payload, 3)) {
             return $payload->task_id;

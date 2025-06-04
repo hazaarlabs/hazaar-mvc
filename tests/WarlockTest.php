@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use Hazaar\Warlock\Agent\Struct\Endpoint;
 use Hazaar\Warlock\Channel;
 use Hazaar\Warlock\Client;
+use Hazaar\Warlock\Protocol;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -79,5 +81,48 @@ final class WarlockTest extends TestCase
         $result = $warlock->exec(['App\Service\Test', 'doTheThing']);
         $this->assertIsString($result);
         $this->assertTrue($warlock->disconnect());
+    }
+
+    public function testCanCreateEndpointFromString(): void
+    {
+        $endpoint = Endpoint::create('App\Service\Test::doTheThing');
+        $this->assertInstanceOf(Endpoint::class, $endpoint);
+        $this->assertEquals('App\Service\Test', $endpoint->getTarget());
+        $this->assertEquals('doTheThing', $endpoint->getMethod());
+    }
+
+    public function testCanCreateEndpointFromArray(): void
+    {
+        $endpoint = Endpoint::create(['App\Service\Test', 'doTheThing']);
+        $this->assertInstanceOf(Endpoint::class, $endpoint);
+        $this->assertEquals('App\Service\Test', $endpoint->getTarget());
+        $this->assertEquals('doTheThing', $endpoint->getMethod());
+    }
+
+    public function testCanRunEndpointFromClosure(): void
+    {
+        $closure = function (): bool {
+            return true;
+        };
+        $endpoint = Endpoint::create($closure);
+        $this->assertInstanceOf(Endpoint::class, $endpoint);
+        $this->assertInstanceOf('Hazaar\Util\Closure', $endpoint->getTarget());
+        $this->assertEquals('__invoke', $endpoint->getMethod());
+        $this->assertTrue($endpoint->run(new Protocol('test')));
+        $this->assertStringStartsWith('function (): bool', $endpoint->getTarget()->getCode());
+        $serialized = serialize($endpoint);
+        $endpoint = unserialize($serialized);
+        $this->assertInstanceOf(Endpoint::class, $endpoint);
+        $this->assertTrue($endpoint->run(new Protocol('test')));
+    }
+
+    public function testCanRunEndpointFromArrowFunction(): void
+    {
+        $closure = fn () => true;
+        $endpoint = Endpoint::create($closure);
+        $this->assertInstanceOf(Endpoint::class, $endpoint);
+        $this->assertInstanceOf('Hazaar\Util\Closure', $endpoint->getTarget());
+        $this->assertEquals('__invoke', $endpoint->getMethod());
+        $this->assertTrue($endpoint->run(new Protocol('test')));
     }
 }
