@@ -33,6 +33,11 @@ class Closure implements \JsonSerializable
     private string $code;
 
     /**
+     * @var array<string,string> registered classes for closure de-serialization
+     */
+    private array $registeredClasses = [];
+
+    /**
      * Closure constructor.
      *
      * @param null|\Closure|\stdClass $function the closure or stdClass containing code to wrap
@@ -45,10 +50,6 @@ class Closure implements \JsonSerializable
         // $this->code = $this->fetchCode();
         } elseif ($function instanceof \stdClass && isset($function->code)) {
             $this->code = $function->code;
-            eval('$_function = '.rtrim($function->code, ' ;').';');
-            $this->closure = $function;
-            // @phpstan-ignore-next-line
-            $this->reflection = new \ReflectionFunction($_function);
         }
     }
 
@@ -59,6 +60,12 @@ class Closure implements \JsonSerializable
      */
     public function __invoke(): mixed
     {
+        if (!isset($this->reflection)) {
+            if (!isset($this->code)) {
+                throw new \RuntimeException('Closure is not initialized');
+            }
+            $this->__wakeup();
+        }
         $args = func_get_args();
 
         return $this->reflection->invokeArgs($args);
@@ -96,7 +103,15 @@ class Closure implements \JsonSerializable
      */
     public function __wakeup(): void
     {
-        eval('$_function = '.$this->code.';');
+        $code = '';
+        foreach ($this->registeredClasses as $class) {
+            if (!class_exists($class)) {
+                throw new \InvalidArgumentException('Class '.$class.' does not exist');
+            }
+            $code .= "use {$class};\n";
+        }
+        $code .= "\$_function = {$this->code};";
+        eval($code);
         // @phpstan-ignore-next-line
         if (isset($_function) && $_function instanceof \Closure) {
             $this->closure = $_function;
@@ -155,8 +170,16 @@ class Closure implements \JsonSerializable
     public function jsonSerialize(): array
     {
         return [
-            'code' => $this->code,
+            'code' => $this->getCode(),
         ];
+    }
+
+    public function registerClass(string $class): void
+    {
+        if (!class_exists($class)) {
+            throw new \InvalidArgumentException('Class '.$class.' does not exist');
+        }
+        $this->registeredClasses[] = $class;
     }
 
     /**
