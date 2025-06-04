@@ -7,6 +7,7 @@ namespace Hazaar\Tests;
 use Hazaar\Application\Runtime;
 use Hazaar\File\BTree;
 use Hazaar\Util\Arr;
+use Hazaar\Util\Closure;
 use Hazaar\Util\Interval;
 use Hazaar\Util\Str;
 use Hazaar\Util\Version;
@@ -204,5 +205,25 @@ class UtilityTest extends TestCase
         // Metadata should not affect comparison
         $this->assertEquals(0, $v9->compareTo($v10)); // Same version, different metadata
         $this->assertTrue($v9->equalTo($v10)); // Same version, different metadata
+    }
+
+    public function testCreateClosureFromClosure(): void
+    {
+        $closure = new Closure(function (string $myValue): string {
+            return $myValue;
+        });
+        $this->assertStringStartsWith('function (string $myValue): string', $closure->getCode());
+        $this->assertCount(1, $closure->getParameters());
+        $this->assertEquals('myValue', $closure->getParameters()[0]->getName());
+        $this->assertEquals('Hello, World', $closure('Hello, World'));
+    }
+
+    public function testCreateClosureFromArrowFunction(): void
+    {
+        $closure = new Closure(fn ($myValue) => ($myValue).('!'));
+        $this->assertStringStartsWith('fn ($myValue) => ($myValue).(\'!\')', $closure->getCode());
+        $this->assertCount(1, $closure->getParameters());
+        $this->assertEquals('myValue', $closure->getParameters()[0]->getName());
+        $this->assertEquals('Hello, World!', $closure('Hello, World'));
     }
 }

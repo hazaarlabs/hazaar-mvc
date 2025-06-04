@@ -17,6 +17,14 @@ namespace Hazaar\Util;
  * This class is a wrapper around PHP's Closure class that allows
  * for the serialization of closures.  This is useful for storing
  * closures in a database or transmitting them over a network.
+ *
+ * It supports both standard closures and arrow functions (fn).
+ *
+ * The class can serialize the closure code to a string and
+ * deserialize it back to a closure.
+ *
+ * It also provides methods to invoke the closure, get its
+ * parameters, and fetch its code.
  */
 class Closure implements \JsonSerializable
 {
@@ -24,12 +32,17 @@ class Closure implements \JsonSerializable
     protected \ReflectionFunction $reflection;
     private string $code;
 
+    /**
+     * Closure constructor.
+     *
+     * @param null|\Closure|\stdClass $function the closure or stdClass containing code to wrap
+     */
     public function __construct(null|\Closure|\stdClass $function = null)
     {
         if ($function instanceof \Closure) {
             $this->closure = $function;
             $this->reflection = new \ReflectionFunction($function);
-            $this->code = $this->fetchCode();
+        // $this->code = $this->fetchCode();
         } elseif ($function instanceof \stdClass && isset($function->code)) {
             $this->code = $function->code;
             eval('$_function = '.rtrim($function->code, ' ;').';');
@@ -39,6 +52,11 @@ class Closure implements \JsonSerializable
         }
     }
 
+    /**
+     * Invoke the wrapped closure with the given arguments.
+     *
+     * @return mixed the result of the closure execution
+     */
     public function __invoke(): mixed
     {
         $args = func_get_args();
@@ -46,19 +64,36 @@ class Closure implements \JsonSerializable
         return $this->reflection->invokeArgs($args);
     }
 
+    /**
+     * Get the closure code as a string.
+     *
+     * @return string the closure code
+     */
     public function __toString(): string
     {
         return $this->getCode();
     }
 
     /**
-     * @return array<string>
+     * Prepare the object for serialization.
+     *
+     * @return array<string> the list of properties to serialize
      */
     public function __sleep(): array
     {
+        if (!isset($this->code)) {
+            // If the code is not set, fetch it from the reflection
+            $this->code = $this->fetchCode();
+        }
+
         return ['code'];
     }
 
+    /**
+     * Restore the object after deserialization.
+     *
+     * @throws \Exception if the code cannot be converted back to a closure
+     */
     public function __wakeup(): void
     {
         eval('$_function = '.$this->code.';');
@@ -71,16 +106,31 @@ class Closure implements \JsonSerializable
         }
     }
 
+    /**
+     * Get the wrapped closure.
+     *
+     * @return \Closure the wrapped closure
+     */
     public function getClosure(): \Closure
     {
         return $this->closure;
     }
 
+    /**
+     * Get the code for the closure.
+     *
+     * @return string the closure code
+     */
     public function getCode(): string
     {
-        return $this->code;
+        return isset($this->code) ? $this->code : $this->code = $this->fetchCode();
     }
 
+    /**
+     * Load closure code from a string and re-initialize the closure.
+     *
+     * @param string $string the closure code as a string
+     */
     public function loadCodeFromString(string $string): void
     {
         $this->code = $string;
@@ -88,7 +138,9 @@ class Closure implements \JsonSerializable
     }
 
     /**
-     * @return array<\ReflectionParameter>
+     * Get the parameters of the closure.
+     *
+     * @return array<\ReflectionParameter> the closure parameters
      */
     public function getParameters(): array
     {
@@ -96,7 +148,9 @@ class Closure implements \JsonSerializable
     }
 
     /**
-     * @return array<mixed>
+     * Serialize the closure to JSON.
+     *
+     * @return array<mixed> the serialized closure data
      */
     public function jsonSerialize(): array
     {
@@ -105,6 +159,13 @@ class Closure implements \JsonSerializable
         ];
     }
 
+    /**
+     * Fetch the code for the closure from its source file.
+     *
+     * @return string the closure code
+     *
+     * @throws \Exception if the closure code cannot be extracted
+     */
     protected function fetchCode(): string
     {
         $file = new \SplFileObject($this->reflection->getFileName());
@@ -114,10 +175,30 @@ class Closure implements \JsonSerializable
             $code .= $file->current();
             $file->next();
         }
-        // Only keep the code defining that closure
+        // Support both 'function' and 'fn' (arrow function)
         $begin = strpos($code, 'function');
-        $end = strrpos($code, '}');
+        if (false !== $begin) {
+            // Standard closure
+            $end = strrpos($code, '}');
+            if (false === $end) {
+                throw new \Exception('Invalid closure code: '.$code);
+            }
 
-        return substr($code, $begin, $end - $begin + 1);
+            return substr($code, $begin, $end - $begin + 1);
+        }
+        $begin = strpos($code, 'fn');
+        if (false === $begin) {
+            throw new \Exception('Invalid closure code: '.$code);
+        }
+        $arrowPos = strpos($code, '=>', $begin);
+        // Extract the arrow function body using regex
+        $body = substr($code, $arrowPos + 2);
+        // Check for balanced brackets
+        $open = substr_count($body, '(');
+        if (!preg_match('/^(.*?\)){'.$open.'}/', $body, $matches)) {
+            throw new \Exception('Invalid arrow function code: '.$code);
+        }
+
+        return substr($code, $begin, ($arrowPos + 2) - $begin).$matches[0];
     }
 }
