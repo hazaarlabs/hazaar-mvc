@@ -125,4 +125,17 @@ final class WarlockTest extends TestCase
         $this->assertEquals('__invoke', $endpoint->getMethod());
         $this->assertTrue($endpoint->run(new Protocol('test')));
     }
+
+    public function testCanStoreKeyValue(): void
+    {
+        $warlock = new Client(self::$config);
+        $this->assertTrue($warlock->connect());
+        $this->assertTrue($warlock->authenticate('test', 'test'));
+        $testValue = 'test_'.uniqid();
+        $this->assertTrue($warlock->set('test_key', $testValue));
+        $this->assertEquals($testValue, $warlock->get('test_key'));
+        $this->assertTrue($warlock->del('test_key'));
+        $this->assertNull($warlock->get('test_key'));
+        $this->assertTrue($warlock->disconnect());
+    }
 }

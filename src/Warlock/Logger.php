@@ -22,6 +22,14 @@ class Logger
         $this->setLevel($level);
     }
 
+    public function getNewChildLogger(string $prefix): self
+    {
+        $logger = new self($this->level);
+        $logger->setPrefix($prefix);
+
+        return $logger;
+    }
+
     /**
      * Writes a log message with a specified log level.
      *

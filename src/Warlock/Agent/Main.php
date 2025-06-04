@@ -148,7 +148,7 @@ class Main extends Process
                     continue;
                 }
                 if ($args = $task['args'] ?? null) {
-                    $endpoint->params = $args->toArray();
+                    $endpoint->setParams($args->toArray());
                 }
                 $when = $task['when'] ?? null;
                 if ('@reboot' === strtolower($when)) {

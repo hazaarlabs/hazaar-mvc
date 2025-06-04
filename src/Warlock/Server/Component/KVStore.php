@@ -2,40 +2,80 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Warlock\Server;
+namespace Hazaar\Warlock\Server\Component;
 
-use Hazaar\File;
 use Hazaar\File\BTree;
+use Hazaar\File\Dir;
+use Hazaar\Warlock\Enum\LogLevel;
+use Hazaar\Warlock\Enum\PacketType;
+use Hazaar\Warlock\Logger;
+use Hazaar\Warlock\Server\Client;
+use Hazaar\Warlock\Server\Main;
 
 class KVStore
 {
+    private Main $server;
     private Logger $log;
 
     /**
-     * @var array<string, array<string, mixed>>
+     * Configuration for the KV Store component.
+     *
+     * @var array<string,mixed>
+     */
+    private array $config = [];
+
+    /**
+     * @var array<string, array<string,mixed>>
      */
     private array $kvStore = [];
 
     /**
-     * @var array<string, array<int, array<string>>>
+     * @var array<string, array<int,array<string>>>
      */
     private array $kvExpire = [];
     private ?BTree $db = null;
     private int $compactTime = 0;
     private int $lastCompact = 0;
 
-    public function __construct(Logger $log, bool $persistent = false, ?int $compactTime = null)
+    /**
+     * KVStore constructor.
+     *
+     * @param Main                $server the server instance
+     * @param array<string,mixed> $config configuration for the KV Store component
+     */
+    public function __construct(Main $server, array $config = [])
     {
-        $this->log = $log;
-        if (true === $persistent) {
-            $dbFile = new File(Master::$instance->getRuntimePath('kvstore.db'));
-            $this->db = new BTree($dbFile);
-            if ($compactTime > 0) {
-                $this->log->write(W_NOTICE, 'KV Store persistent storage compaction enabled');
-                $this->compactTime = $compactTime;
-                $this->lastCompact = $dbFile->ctime();
+        $this->server = $server;
+        $this->config = $config;
+        $this->log = $server->getLogger('kvstore');
+        $this->log->setLevel($this->config['logLevel'] ?? LogLevel::INFO);
+    }
+
+    public function enablePersistentStorage(int $compactTime = 3600): bool
+    {
+        $dbDir = new Dir($this->server->config['runtime']);
+        if (!$dbDir->exists()) {
+            if (!$dbDir->parent()->isWritable()) {
+                return false;
             }
+            $dbDir->create();
         }
+        $dbFile = $dbDir->get('kvstore.db');
+        $this->db = new BTree($dbFile);
+        if ($compactTime > 0) {
+            $this->log->write('KV Store persistent storage compaction enabled', LogLevel::INFO);
+            $this->compactTime = $compactTime;
+            $this->lastCompact = $dbFile->ctime();
+        }
+
+        return true;
+    }
+
+    public function disablePersistentStorage(): void
+    {
+        $this->db = null;
+        $this->compactTime = 0;
+        $this->lastCompact = 0;
     }
 
     public function expireKeys(): void
@@ -48,7 +88,7 @@ class KVStore
                     break;
                 }
                 foreach ($keys as $key) {
-                    $this->log->write(W_DEBUG, 'KVEXPIRE: '.$namespace.'::'.$key);
+                    $this->log->write('KVEXPIRE: '.$namespace.'::'.$key, LogLevel::DEBUG);
                     unset($this->kvStore[$namespace][$key]);
                 }
                 unset($this->kvExpire[$namespace][$time]);
@@ -57,10 +97,10 @@ class KVStore
                 unset($this->kvExpire[$namespace]);
             }
         }
-        if (null !== $this->db
+        if (isset($this->db)
             && $this->compactTime > 0
             && $this->lastCompact + $this->compactTime <= ($now = time())) {
-            $this->log->write(W_INFO, 'Compacting KV Persistent Storage');
+            $this->log->write('Compacting KV Persistent Storage', LogLevel::INFO);
             $this->db->compact();
             $this->lastCompact = $now;
         }
@@ -72,8 +112,8 @@ class KVStore
     public function &touch(string $namespace, string $key): array
     {
         if (!(array_key_exists($namespace, $this->kvStore) && array_key_exists($key, $this->kvStore[$namespace]))) {
-            if (($slot = $this->db->get($key))
-                && (array_key_exists('e', $slot) && $slot['e'] > time())) {
+            if (isset($this->db) && ($slot = $this->db->get($key))
+                && (!array_key_exists('e', $slot) || $slot['e'] > time())) {
                 $this->kvStore[$namespace][$key] = &$slot;
             } else {
                 $this->kvStore[$namespace][$key] = ['v' => null];
@@ -92,87 +132,118 @@ class KVStore
         if (array_key_exists('t', $slot)) {
             $slot['e'] = time() + $slot['t'];
             $this->kvExpire[$namespace][$slot['e']][] = $key;
-            $this->db->set($key, $slot);
+            if (isset($this->db)) {
+                $this->db->set($key, $slot);
+            }
         }
 
         return $slot;
     }
 
-    public function process(Client $client, string $command, mixed &$payload): ?bool
+    public function process(Client $client, PacketType $command, mixed &$payload): void
     {
         if (!$payload) {
-            return false;
+            throw new \InvalidArgumentException('Payload cannot be null for command: '.$command->name);
         }
         $namespace = (property_exists($payload, 'n') ? $payload->n : 'default');
-        $this->log->write(W_DEBUG, $command.': '.$namespace.(property_exists($payload, 'k') ? '::'.$payload->k : ''));
+        $this->log->write($command->name.': '.$namespace.(property_exists($payload, 'k') ? '::'.$payload->k : ''), LogLevel::DEBUG);
 
         switch ($command) {
-            case 'KVGET':
-                return $this->get($client, $payload, $namespace);
+            case PacketType::KVGET:
+                $this->get($client, $payload, $namespace);
 
-            case 'KVSET':
-                return $this->set($client, $payload, $namespace);
+                break;
 
-            case 'KVHAS':
-                return $this->has($client, $payload, $namespace);
+            case PacketType::KVSET:
+                $this->set($client, $payload, $namespace);
 
-            case 'KVDEL':
-                return $this->del($client, $payload, $namespace);
+                break;
 
-            case 'KVLIST':
-                return $this->list($client, $payload, $namespace);
+            case PacketType::KVHAS:
+                $this->has($client, $payload, $namespace);
 
-            case 'KVCLEAR':
-                return $this->clear($client, $payload, $namespace);
+                break;
 
-            case 'KVPULL':
-                return $this->pull($client, $payload, $namespace);
+            case PacketType::KVDEL:
+                $this->del($client, $payload, $namespace);
 
-            case 'KVPUSH':
-                return $this->push($client, $payload, $namespace);
+                break;
 
-            case 'KVPOP':
-                return $this->pop($client, $payload, $namespace);
+            case PacketType::KVLIST:
+                $this->list($client, $payload, $namespace);
 
-            case 'KVSHIFT':
-                return $this->shift($client, $payload, $namespace);
+                break;
 
-            case 'KVUNSHIFT':
-                return $this->unshift($client, $payload, $namespace);
+            case PacketType::KVCLEAR:
+                $this->clear($client, $payload, $namespace);
 
-            case 'KVCOUNT':
-                return $this->count($client, $payload, $namespace);
+                break;
 
-            case 'KVINCR':
-                return $this->incr($client, $payload, $namespace);
+            case PacketType::KVPULL:
+                $this->pull($client, $payload, $namespace);
 
-            case 'KVDECR':
-                return $this->decr($client, $payload, $namespace);
+                break;
 
-            case 'KVKEYS':
-                return $this->keys($client, $payload, $namespace);
+            case PacketType::KVPUSH:
+                $this->push($client, $payload, $namespace);
 
-            case 'KVVALS':
-                return $this->values($client, $payload, $namespace);
+                break;
+
+            case PacketType::KVPOP:
+                $this->pop($client, $payload, $namespace);
+
+                break;
+
+            case PacketType::KVSHIFT:
+                $this->shift($client, $payload, $namespace);
+
+                break;
+
+            case PacketType::KVUNSHIFT:
+                $this->unshift($client, $payload, $namespace);
+
+                break;
+
+            case PacketType::KVCOUNT:
+                $this->count($client, $payload, $namespace);
+
+                break;
+
+            case PacketType::KVINCR:
+                $this->incr($client, $payload, $namespace);
+
+                break;
+
+            case PacketType::KVDECR:
+                $this->decr($client, $payload, $namespace);
+
+                break;
+
+            case PacketType::KVKEYS:
+                $this->keys($client, $payload, $namespace);
+
+                break;
+
+            case PacketType::KVVALS:
+                $this->values($client, $payload, $namespace);
+
+                break;
         }
-
-        return null;
     }
 
-    public function get(Client $client, mixed $payload, string $namespace): bool
+    public function get(Client $client, mixed $payload, string $namespace): void
     {
         $value = null;
         if (property_exists($payload, 'k')) {
             $slot = $this->touch($namespace, $payload->k);
             $value = $slot['v'];
         } else {
-            $this->log->write(W_ERR, 'KVGET requires \'k\'');
+            $this->log->write('KVGET requires \'k\'', LogLevel::ERROR);
         }
-
-        return $client->send('KVGET', $value);
+        $client->send(PacketType::KVGET, $value);
     }
 
-    public function set(Client $client, mixed $payload, string $namespace): bool
+    public function set(Client $client, mixed $payload, string $namespace): void
     {
         $result = false;
         if (property_exists($payload, 'k')) {
@@ -192,50 +263,50 @@ class KVStore
             }
             $this->kvStore[$namespace][$payload->k] = $slot;
             $result = true;
-            $this->db->set($payload->k, $slot);
+            if (isset($this->db)) {
+                $this->db->set($payload->k, $slot);
+            }
         } else {
-            $this->log->write(W_ERR, 'KVSET requires \'k\'');
+            $this->log->write('KVSET requires \'k\'', LogLevel::ERROR);
         }
-
-        return $client->send('KVSET', $result);
+        $client->send(PacketType::KVSET, $result);
     }
 
-    public function has(Client $client, \stdClass $payload, string $namespace): bool
+    public function has(Client $client, \stdClass $payload, string $namespace): void
     {
         $result = false;
         if (property_exists($payload, 'k')) {
             if (!($result = (array_key_exists($namespace, $this->kvStore) && array_key_exists($payload->k, $this->kvStore[$namespace])))) {
-                if (($slot = $this->db->get($payload->k))
+                if (isset($this->db) && ($slot = $this->db->get($payload->k))
                     && (!array_key_exists('e', $slot) || $slot['e'] > time())) {
                     $result = true;
                     $this->kvStore[$namespace][$payload->k] = &$slot;
                 }
             }
         } else {
-            $this->log->write(W_ERR, 'KVHAS requires \'k\'');
+            $this->log->write('KVHAS requires \'k\'', LogLevel::ERROR);
         }
-        $client->send('KVHAS', $result);
-
-        return true;
+        $client->send(PacketType::KVHAS, $result);
     }
 
-    public function del(Client $client, \stdClass $payload, string $namespace): bool
+    public function del(Client $client, \stdClass $payload, string $namespace): void
     {
         $result = false;
         if (property_exists($payload, 'k')) {
             $result = (array_key_exists($namespace, $this->kvStore) && array_key_exists($payload->k, $this->kvStore[$namespace]));
             if (true === $result) {
                 unset($this->kvStore[$namespace][$payload->k]);
-                $this->db->remove($payload->k);
+                if (isset($this->db)) {
+                    $this->db->remove($payload->k);
+                }
             }
         } else {
-            $this->log->write(W_ERR, 'KVDEL requires \'k\'');
+            $this->log->write('KVDEL requires \'k\'', LogLevel::ERROR);
         }
-
-        return $client->send('KVDEL', $result);
+        $client->send(PacketType::KVDEL, $result);
     }
 
-    public function list(Client $client, \stdClass $payload, string $namespace): bool
+    public function list(Client $client, \stdClass $payload, string $namespace): void
     {
         $list = null;
         if (array_key_exists($namespace, $this->kvStore)) {
@@ -244,18 +315,16 @@ class KVStore
                 $list[$key] = $data['v'];
             }
         }
-
-        return $client->send('KVLIST', $list);
+        $client->send(PacketType::KVLIST, $list);
     }
 
-    public function clear(Client $client, \stdClass $payload, string $namespace): bool
+    public function clear(Client $client, \stdClass $payload, string $namespace): void
     {
         $this->kvStore[$namespace] = [];
-
-        return $client->send('KVCLEAR', true);
+        $client->send(PacketType::KVCLEAR, true);
     }
 
-    public function pull(Client $client, \stdClass $payload, string $namespace): bool
+    public function pull(Client $client, \stdClass $payload, string $namespace): void
     {
         $result = null;
         if (property_exists($payload, 'k')) {
@@ -264,13 +333,12 @@ class KVStore
                 unset($this->kvStore[$namespace][$payload->k]);
             }
         } else {
-            $this->log->write(W_ERR, 'KVPULL requires \'k\'');
+            $this->log->write('KVPULL requires \'k\'', LogLevel::ERROR);
         }
-
-        return $client->send('KVPULL', $result);
+        $client->send(PacketType::KVPULL, $result);
     }
 
-    public function push(Client $client, \stdClass $payload, string $namespace): bool
+    public function push(Client $client, \stdClass $payload, string $namespace): void
     {
         $result = false;
         if (property_exists($payload, 'k')) {
@@ -279,13 +347,12 @@ class KVStore
                 $result = array_push($slot['v'], $payload->v);
             }
         } else {
-            $this->log->write(W_ERR, 'KVPUSH requires \'k\'');
+            $this->log->write('KVPUSH requires \'k\'', LogLevel::ERROR);
         }
-
-        return $client->send('KVPUSH', $result);
+        $client->send(PacketType::KVPUSH, $result);
     }
 
-    public function pop(Client $client, \stdClass $payload, string $namespace): bool
+    public function pop(Client $client, \stdClass $payload, string $namespace): void
     {
         $result = null;
         if (property_exists($payload, 'k')) {
@@ -294,13 +361,12 @@ class KVStore
                 $result = array_pop($slot['v']);
             }
         } else {
-            $this->log->write(W_ERR, 'KVPOP requires \'k\'');
+            $this->log->write('KVPOP requires \'k\'', LogLevel::ERROR);
         }
-
-        return $client->send('KVPOP', $result);
+        $client->send(PacketType::KVPOP, $result);
     }
 
-    public function shift(Client $client, \stdClass $payload, string $namespace): bool
+    public function shift(Client $client, \stdClass $payload, string $namespace): void
     {
         $result = null;
         if (property_exists($payload, 'k')) {
@@ -309,13 +375,12 @@ class KVStore
                 $result = array_shift($slot['v']);
             }
         } else {
-            $this->log->write(W_ERR, 'KVSHIFT requires \'k\'');
+            $this->log->write('KVSHIFT requires \'k\'', LogLevel::ERROR);
         }
-
-        return $client->send('KVSHIFT', $result);
+        $client->send(PacketType::KVSHIFT, $result);
     }
 
-    public function unshift(Client $client, \stdClass $payload, string $namespace): bool
+    public function unshift(Client $client, \stdClass $payload, string $namespace): void
     {
         $result = false;
         if (property_exists($payload, 'k')) {
@@ -324,13 +389,12 @@ class KVStore
                 $result = array_unshift($slot['v'], $payload->v);
             }
         } else {
-            $this->log->write(W_ERR, 'KVUNSHIFT requires \'k\'');
+            $this->log->write('KVUNSHIFT requires \'k\'', LogLevel::ERROR);
         }
-
-        return $client->send('KVUNSHIFT', $result);
+        $client->send(PacketType::KVUNSHIFT, $result);
     }
 
-    public function count(Client $client, \stdClass $payload, string $namespace): bool
+    public function count(Client $client, \stdClass $payload, string $namespace): void
     {
         $result = null;
         if (property_exists($payload, 'k')) {
@@ -339,13 +403,12 @@ class KVStore
                 $result = count($slot['v']);
             }
         } else {
-            $this->log->write(W_ERR, 'KVCOUNT requires \'k\'');
+            $this->log->write('KVCOUNT requires \'k\'', LogLevel::ERROR);
         }
-
-        return $client->send('KVCOUNT', $result);
+        $client->send(PacketType::KVCOUNT, $result);
     }
 
-    public function incr(Client $client, \stdClass $payload, string $namespace): bool
+    public function incr(Client $client, \stdClass $payload, string $namespace): void
     {
         $result = false;
         if (property_exists($payload, 'k')) {
@@ -355,13 +418,12 @@ class KVStore
             }
             $result = ($slot['v'] += (property_exists($payload, 's') ? $payload->s : 1));
         } else {
-            $this->log->write(W_ERR, 'KVINCR requires \'k\'');
+            $this->log->write('KVINCR requires \'k\'', LogLevel::ERROR);
         }
-
-        return $client->send('KVINCR', $result);
+        $client->send(PacketType::KVINCR, $result);
     }
 
-    public function decr(Client $client, \stdClass $payload, string $namespace): bool
+    public function decr(Client $client, \stdClass $payload, string $namespace): void
     {
         $result = false;
         if (property_exists($payload, 'k')) {
@@ -371,29 +433,26 @@ class KVStore
             }
             $result = ($slot['v'] -= (property_exists($payload, 's') ? $payload->s : 1));
         } else {
-            $this->log->write(W_ERR, 'KVDECR requires \'k\'');
+            $this->log->write('KVDECR requires \'k\'', LogLevel::ERROR);
         }
-
-        return $client->send('KVDECR', $result);
+        $client->send(PacketType::KVDECR, $result);
     }
 
-    public function keys(Client $client, \stdClass $payload, string $namespace): bool
+    public function keys(Client $client, \stdClass $payload, string $namespace): void
     {
         $result = null;
         if (array_key_exists($namespace, $this->kvStore)) {
             $result = array_keys($this->kvStore[$namespace]);
         }
-
-        return $client->send('KVKEYS', $result);
+        $client->send(PacketType::KVKEYS, $result);
     }
 
-    public function values(Client $client, \stdClass $payload, string $namespace): bool
+    public function values(Client $client, \stdClass $payload, string $namespace): void
     {
         $result = null;
         if (array_key_exists($namespace, $this->kvStore)) {
             $result = array_values($this->kvStore[$namespace]);
         }
-
-        return $client->send('KVVALS', $result);
+        $client->send(PacketType::KVVALS, $result);
     }
 }

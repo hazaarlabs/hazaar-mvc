@@ -78,7 +78,7 @@ abstract class Process
     /**
      * @param array<mixed> $data
      */
-    private function __kv_send_recv(PacketType $command, array $data): false|string
+    private function __kv_send_recv(PacketType $command, array $data): mixed
     {
         if (!$this->send($command, $data)) {
             return false;
@@ -329,7 +329,7 @@ abstract class Process
         return $this->__kv_send_recv(PacketType::KVSET, $data);
     }
 
-    public function has(string $key, ?string $namespace = null): false|string
+    public function has(string $key, ?string $namespace = null): bool
     {
         $data = ['k' => $key];
         if ($namespace) {
@@ -339,7 +339,7 @@ abstract class Process
         return $this->__kv_send_recv(PacketType::KVHAS, $data);
     }
 
-    public function del(string $key, ?string $namespace = null): false|string
+    public function del(string $key, ?string $namespace = null): bool
     {
         $data = ['k' => $key];
         if ($namespace) {
@@ -349,21 +349,27 @@ abstract class Process
         return $this->__kv_send_recv(PacketType::KVDEL, $data);
     }
 
-    public function clear(?string $namespace = null): false|string
+    public function clear(?string $namespace = null): bool
     {
         $data = ($namespace ? ['n' => $namespace] : null);
 
         return $this->__kv_send_recv(PacketType::KVCLEAR, $data);
     }
 
-    public function list(?string $namespace = null): false|string
+    /**
+     * List all keys in the key-value store.
+     * If a namespace is provided, it will list keys only in that namespace.
+     *
+     * @return array<string>
+     */
+    public function list(?string $namespace = null): array
     {
         $data = ($namespace ? ['n' => $namespace] : null);
 
         return $this->__kv_send_recv(PacketType::KVLIST, $data);
     }
 
-    public function pull(string $key, ?string $namespace = null): false|string
+    public function pull(string $key, ?string $namespace = null): mixed
     {
         $data = ['k' => $key];
         if ($namespace) {
@@ -373,7 +379,7 @@ abstract class Process
         return $this->__kv_send_recv(PacketType::KVPULL, $data);
     }
 
-    public function push(string $key, mixed $value, ?string $namespace = null): false|string
+    public function push(string $key, mixed $value, ?string $namespace = null): bool
     {
         $data = ['k' => $key, 'v' => $value];
         if ($namespace) {
@@ -383,7 +389,7 @@ abstract class Process
         return $this->__kv_send_recv(PacketType::KVPUSH, $data);
     }
 
-    public function pop(string $key, ?string $namespace = null): false|string
+    public function pop(string $key, ?string $namespace = null): mixed
     {
         $data = ['k' => $key];
         if ($namespace) {
@@ -393,7 +399,7 @@ abstract class Process
         return $this->__kv_send_recv(PacketType::KVPOP, $data);
     }
 
-    public function shift(string $key, ?string $namespace = null): false|string
+    public function shift(string $key, ?string $namespace = null): mixed
     {
         $data = ['k' => $key];
         if ($namespace) {
@@ -403,7 +409,7 @@ abstract class Process
         return $this->__kv_send_recv(PacketType::KVSHIFT, $data);
     }
 
-    public function unshift(string $key, mixed $value, ?string $namespace = null): false|string
+    public function unshift(string $key, mixed $value, ?string $namespace = null): bool
     {
         $data = ['k' => $key, 'v' => $value];
         if ($namespace) {
@@ -413,7 +419,7 @@ abstract class Process
         return $this->__kv_send_recv(PacketType::KVUNSHIFT, $data);
     }
 
-    public function incr(string $key, ?int $step = null, ?string $namespace = null): false|string
+    public function incr(string $key, ?int $step = null, ?string $namespace = null): int
     {
         $data = ['k' => $key];
         if ($step > 0) {
@@ -426,7 +432,7 @@ abstract class Process
         return $this->__kv_send_recv(PacketType::KVINCR, $data);
     }
 
-    public function decr(string $key, ?int $step = null, ?string $namespace = null): false|string
+    public function decr(string $key, ?int $step = null, ?string $namespace = null): int
     {
         $data = ['k' => $key];
         if ($step > 0) {
@@ -439,7 +445,13 @@ abstract class Process
         return $this->__kv_send_recv(PacketType::KVDECR, $data);
     }
 
-    public function keys(?string $namespace = null): false|string
+    /**
+     * Get all keys in the key-value store.
+     * If a namespace is provided, it will return keys only in that namespace.
+     *
+     * @return array<string>
+     */
+    public function keys(?string $namespace = null): array
     {
         $data = [];
         if ($namespace) {
@@ -449,7 +461,13 @@ abstract class Process
         return $this->__kv_send_recv(PacketType::KVKEYS, $data);
     }
 
-    public function vals(?string $namespace = null): false|string
+    /**
+     * Get all values in the key-value store.
+     * If a namespace is provided, it will return values only in that namespace.
+     *
+     * @return array<mixed>
+     */
+    public function vals(?string $namespace = null): array
     {
         $data = [];
         if ($namespace) {
@@ -459,7 +477,11 @@ abstract class Process
         return $this->__kv_send_recv(PacketType::KVVALS, $data);
     }
 
-    public function count(string $key, ?string $namespace = null): false|string
+    /**
+     * Count the number of keys in the key-value store.
+     * If a namespace is provided, it will count keys only in that namespace.
+     */
+    public function count(string $key, ?string $namespace = null): int
     {
         $data = ['k' => $key];
         if ($namespace) {

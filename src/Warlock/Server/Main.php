@@ -14,6 +14,7 @@ use Hazaar\Warlock\Exception\ExtensionNotLoaded;
 use Hazaar\Warlock\Logger;
 use Hazaar\Warlock\Protocol;
 use Hazaar\Warlock\Server\Component\Cluster;
+use Hazaar\Warlock\Server\Component\KVStore;
 
 if (!extension_loaded('sockets')) {
     throw new ExtensionNotLoaded('sockets');
@@ -37,6 +38,12 @@ class Main
 
     public static self $instance;
     public Protocol $protocol;
+    public Logger $log;
+
+    /**
+     * The server configuration.
+     */
+    public Config $config;
     private string $env = 'development';
 
     /**
@@ -51,12 +58,6 @@ class Main
      * Epoch of the last time stuff was processed.
      */
     private int $time = 0;
-
-    /**
-     * The server configuration.
-     */
-    private Config $config;
-    private Logger $log;
     private Watcher $watcher;
 
     /**
@@ -115,6 +116,8 @@ class Main
      */
     private int $tv = 1;
 
+    private ?KVStore $kvStore = null;
+
     public function __construct(?string $configFile = null, string $env = 'development')
     {
         self::$instance = $this;
@@ -124,6 +127,8 @@ class Main
             'port' => 13080,
             'encode' => false,
             'phpBinary' => PHP_BINARY,
+            'runtime' => '/var/warlock',
+            'pidfile' => '/var/run/warlock.pid',
             'log' => [
                 'level' => 'debug',
             ],
@@ -138,9 +143,17 @@ class Main
                 // very useful in the WebSocket world though.
             ],
             'agent' => false, // Automatically start the agent process.  This is useful for testing and debugging, but not recommended for production use.
+            'kvstore' => [
+                'enabled' => true,
+                'persist' => true, // Enable persistent storage for the KV Store.  This will store the KV Store in a file on disk.
+                'compact' => 3600, // Compact the KV Store file on shutdown.
+            ],
         ]);
         if (!isset($this->config['listen'])) {
             throw new \Exception('Server configuration not found');
+        }
+        if (isset($this->config['pidfile'])) {
+            $this->pidfile = $this->config['pidfile'];
         }
         $logLevel = LogLevel::fromString($this->config['log']['level']);
         $this->log = new Logger(level: $logLevel);
@@ -183,6 +196,17 @@ class Main
         if (!stream_set_blocking($this->master, false)) {
             throw new \Exception('Failed: stream_set_blocking(0)');
         }
+        if (true === $this->config['kvstore']['enabled']) {
+            $this->log->write('Initialising KV Store', LogLevel::NOTICE);
+            $this->kvStore = new KVStore($this, config: $this->config['kvstore']);
+            if ($this->config['kvstore']['persist']) {
+                $result = $this->kvStore->enablePersistentStorage($this->config['kvstore']['compact'] ?? 3600);
+                if (false === $result) {
+                    $this->log->write('Failed to enable persistent storage for KV Store', LogLevel::ERROR);
+                }
+            }
+            $this->log->write('KV Store component initialized', LogLevel::INFO);
+        }
         $this->streams[0] = $this->master;
         $this->running = true;
         $this->pid = getmypid();
@@ -217,6 +241,9 @@ class Main
                 // $this->cluster->process();
                 $this->eventCleanup();
                 $this->clientCheck();
+                if (null !== $this->kvStore) {
+                    $this->kvStore->expireKeys();
+                }
                 if (isset($this->watcher)) {
                     $this->watcher->process();
                 }
@@ -395,6 +422,11 @@ class Main
         if (true !== $client->authenticated()) {
             throw new \Exception('Admin commands only allowed by authorised clients!');
         }
+        if (null !== $this->kvStore && 'KV' === substr($command->name, 0, 2)) {
+            $this->kvStore->process($client, $command, $payload);
+
+            return;
+        }
         $this->log->write("ADMIN_COMMAND: {$command->name}".($client->id ? " CLIENT={$client->id}" : null), LogLevel::DEBUG);
 
         switch ($command) {
@@ -520,6 +552,11 @@ class Main
             'subscriptions' => count($this->subscriptions),
             'events' => count($this->events),
         ];
+    }
+
+    public function getLogger(string $name): Logger
+    {
+        return $this->log->getNewChildLogger($name);
     }
 
     /**

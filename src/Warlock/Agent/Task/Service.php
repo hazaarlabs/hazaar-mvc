@@ -20,18 +20,12 @@ class Service extends Task
     public int $delay = 0;
     public LogLevel $loglevel = LogLevel::WARN;
 
-    public function construct(array &$data): void
-    {
-        $data['tag'] = $data['name'];
-        parent::construct($data);
-    }
-
-    public function run(): void
+    public function run(): self
     {
         if (false === $this->enabled) {
             $this->log->write('Service is disabled', LogLevel::DEBUG);
 
-            return;
+            return $this;
         }
         if (!($root = getenv('APPLICATION_ROOT'))) {
             $root = '/';
@@ -52,5 +46,7 @@ class Service extends Task
         //     $this->log->write('Service failed to start', LogLevel::DEBUG);
         //     $this->status = TaskStatus::ERROR;
         // }
+
+        return $this;
     }
 }

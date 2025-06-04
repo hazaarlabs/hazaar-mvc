@@ -7,7 +7,6 @@ namespace Hazaar\Controller\Internal;
 use Hazaar\Controller;
 use Hazaar\Controller\Response;
 use Hazaar\Controller\Response\Text;
-use Hazaar\Warlock\Config;
 
 /**
  * Class Warlock.
@@ -41,7 +40,7 @@ class Warlock extends Controller
      */
     private function sid(): Response
     {
-        $config = new Config();
+        $config = new \Hazaar\Config();
 
         return new Text($config['sys']['id'] ?? '');
     }
