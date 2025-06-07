@@ -81,7 +81,7 @@ spec:
     kind: Deployment
     name: hazaar-docs
     apiVersion: apps/v1
-  minReplicas: 1
+  minReplicas: 2
   maxReplicas: 3
   metrics:
     - type: Resource
