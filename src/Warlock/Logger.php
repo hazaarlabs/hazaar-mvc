@@ -17,6 +17,14 @@ class Logger
     private LogLevel $level = LogLevel::INFO;
     private string $prefix = 'WARLOCK';
 
+    /**
+     * Allows the logger to be temporarily silent, meaning it will not output any log messages, but
+     * the log level will still be respected.
+     *
+     * This is useful for scenarios where you want to disable logging without changing the log level.
+     */
+    private bool $silent = false;
+
     public function __construct(LogLevel $level = LogLevel::INFO)
     {
         $this->setLevel($level);
@@ -26,6 +34,7 @@ class Logger
     {
         $logger = new self($this->level);
         $logger->setPrefix($prefix);
+        $logger->setSilent($this->silent);
 
         return $logger;
     }
@@ -38,7 +47,7 @@ class Logger
      */
     public function write(string $message, LogLevel $level = LogLevel::INFO): void
     {
-        if ($level->value > $this->level->value) {
+        if ($this->silent || $level->value > $this->level->value) {
             return;
         }
         echo date('Y-m-d H:i:s')
@@ -85,5 +94,17 @@ class Logger
     public function getPrefix(): string
     {
         return $this->prefix;
+    }
+
+    /**
+     * Sets the silent mode for the logger.
+     *
+     * When silent mode is enabled, the logger will suppress output without changing the log level.
+     *
+     * @param bool $silent whether to enable silent mode
+     */
+    public function setSilent(bool $silent): void
+    {
+        $this->silent = $silent;
     }
 }

@@ -11,6 +11,7 @@ use Hazaar\Warlock\Agent\Task\Internal;
 use Hazaar\Warlock\Connection\Socket;
 use Hazaar\Warlock\Enum\LogLevel;
 use Hazaar\Warlock\Enum\PacketType;
+use Hazaar\Warlock\Enum\PcntlSignals;
 use Hazaar\Warlock\Enum\Status;
 use Hazaar\Warlock\Enum\TaskStatus;
 use Hazaar\Warlock\Interface\Connection;
@@ -19,17 +20,7 @@ use Hazaar\Warlock\Protocol;
 
 class Main extends Process
 {
-    /**
-     * Signals that we will capture.
-     *
-     * @var array<int, string>
-     */
-    public array $pcntlSignals = [
-        SIGINT => 'SIGINT',
-        SIGHUP => 'SIGHUP',
-        SIGTERM => 'SIGTERM',
-        SIGQUIT => 'SIGQUIT',
-    ];
+    public static self $instance;
 
     /**
      * Main task queue.
@@ -55,6 +46,7 @@ class Main extends Process
         if (null === $applicationPath || !is_dir($applicationPath)) {
             throw new \InvalidArgumentException("Application path '{$applicationPath}' does not exist or is not a directory.");
         }
+        self::$instance = $this;
         $this->application = new Application($applicationPath, $env);
         $this->config = new Config();
         $this->config->setBasePath($applicationPath.DIRECTORY_SEPARATOR.'configs');
@@ -95,6 +87,21 @@ class Main extends Process
         parent::__construct(new Protocol((string) $this->config['id'], $this->config['encode']));
     }
 
+    public static function __signalHandler(int $signo, mixed $siginfo): void
+    {
+        $sigName = PcntlSignals::tryFrom($signo)->name ?? 'UNKNOWN';
+        self::$instance->log->write('SIGNAL: '.$sigName, LogLevel::DEBUG);
+
+        switch ($signo) {
+            case SIGINT:
+            case SIGTERM:
+            case SIGQUIT:
+                self::$instance->stop();
+
+                break;
+        }
+    }
+
     /**
      * Returns the agent configuration.
      */
@@ -103,9 +110,9 @@ class Main extends Process
         return $this->config;
     }
 
-    public function setSilent(): void
+    public function setSilent(bool $silent = true): void
     {
-        $this->log->setLevel(LogLevel::NONE);
+        $this->log->setSilent($silent);
     }
 
     public function createConnection(Protocol $protocol, ?string $guid = null): Connection
@@ -128,6 +135,9 @@ class Main extends Process
         $this->log->setLevel(LogLevel::fromString($this->config['log']['level']));
         $this->log->setPrefix('agent');
         $this->log->write('Bootstrapping agent...', LogLevel::DEBUG);
+        foreach (PcntlSignals::cases() as $sig) {
+            pcntl_signal($sig->value, [$this, '__signalHandler'], true);
+        }
         if ($this->config['announce']['enabled'] ?? false) {
             $task = new Internal($this, $this->log);
             $task->schedule('* * * * *');
@@ -161,9 +171,15 @@ class Main extends Process
         return $this;
     }
 
+    public function stop(): void
+    {
+        $this->log->write('Stopping agent', LogLevel::INFO);
+        $this->state = Status::STOPPING;
+    }
+
     public function shutdown(): void
     {
-        $this->log->write('Agent is shutting down', LogLevel::INFO);
+        $this->log->write('Agent is shutting down', LogLevel::NOTICE);
     }
 
     public function init(): bool

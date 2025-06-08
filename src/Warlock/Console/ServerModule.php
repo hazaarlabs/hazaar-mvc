@@ -49,18 +49,19 @@ class ServerModule extends Module
 
     protected function startServer(Input $input, Output $output): int
     {
-        if (true === Boolean::from($input->getOption('silent') ?? false)) {
-            $this->warlock->setSilent(true);
-        }
+        $this->warlock->setSilent(Boolean::from($input->getOption('silent') ?? false));
         if (true === Boolean::from($input->getOption('daemon') ?? false)) {
             if (!function_exists('pcntl_fork')) {
                 exit('PCNTL functions not available');
             }
+            $this->warlock->setSilent(true);
             $pid = pcntl_fork();
             if (-1 === $pid) {
                 exit('Could not fork process');
             }
             if ($pid > 0) {
+                $output->write('Warlock server started in daemon mode with PID '.$pid.'.'.PHP_EOL);
+
                 return 0;
             }
         }

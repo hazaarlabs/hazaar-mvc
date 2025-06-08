@@ -12,7 +12,15 @@ use Hazaar\Warlock\Agent\Struct\Endpoint;
 use Hazaar\Warlock\Enum\LogLevel;
 use Hazaar\Warlock\Enum\PacketType;
 use Hazaar\Warlock\Enum\Status;
+use Hazaar\Warlock\Exception\ExtensionNotLoaded;
 use Hazaar\Warlock\Interface\Connection;
+
+if (!extension_loaded('sockets')) {
+    throw new ExtensionNotLoaded('sockets');
+}
+if (!extension_loaded('pcntl')) {
+    throw new ExtensionNotLoaded('pcntl');
+}
 
 abstract class Process
 {
@@ -73,6 +81,11 @@ abstract class Process
     final public function __exceptionHandler(\Throwable $e): void
     {
         $this->log->write($e->getMessage(), LogLevel::ERROR);
+    }
+
+    public static function __signalHandler(int $signo, mixed $siginfo): void
+    {
+        // Do nothing, this is just a placeholder for child classes to implement
     }
 
     /**
@@ -538,6 +551,8 @@ abstract class Process
         $code = 0;
         $this->state = Status::RECONNECT;
         while (Status::STOPPING !== $this->state) {
+            pcntl_signal_dispatch();
+
             try {
                 $this->slept = false;
                 if (Status::RECONNECT === $this->state) {
@@ -592,11 +607,6 @@ abstract class Process
     }
 
     public function shutdown(): void {}
-
-    final public function stop(): void
-    {
-        $this->state = Status::STOPPING;
-    }
 
     final public function state(): Status
     {

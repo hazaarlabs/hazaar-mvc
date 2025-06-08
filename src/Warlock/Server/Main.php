@@ -10,6 +10,7 @@ use Hazaar\Util\Str;
 use Hazaar\Warlock\Enum\ClientType;
 use Hazaar\Warlock\Enum\LogLevel;
 use Hazaar\Warlock\Enum\PacketType;
+use Hazaar\Warlock\Enum\PcntlSignals;
 use Hazaar\Warlock\Exception\ExtensionNotLoaded;
 use Hazaar\Warlock\Logger;
 use Hazaar\Warlock\Protocol;
@@ -25,17 +26,6 @@ if (!extension_loaded('pcntl')) {
 
 class Main
 {
-    /**
-     * Signals that we will capture.
-     *
-     * @var array<int, string>
-     */
-    public array $pcntlSignals = [
-        SIGINT => 'SIGINT',
-        SIGTERM => 'SIGTERM',
-        SIGQUIT => 'SIGQUIT',
-    ];
-
     public static self $instance;
     public Protocol $protocol;
     public Logger $log;
@@ -170,7 +160,8 @@ class Main
 
     private static function __signalHandler(int $signo, mixed $siginfo): void
     {
-        self::$instance->log->write('SIGNAL: '.self::$instance->pcntlSignals[$signo], LogLevel::DEBUG);
+        $sigName = PcntlSignals::tryFrom($signo)->name ?? 'UNKNOWN';
+        self::$instance->log->write('SIGNAL: '.$sigName, LogLevel::DEBUG);
 
         switch ($signo) {
             case SIGINT:
@@ -182,11 +173,19 @@ class Main
         }
     }
 
+    /**
+     * Bootstrap the server.
+     *
+     * This method will set up the server, create the socket and prepare it for accepting connections.
+     * It will also set up the signal handlers for the server.
+     *
+     * @throws \Exception if the socket could not be created or configured
+     */
     public function bootstrap(): self
     {
         $this->writeStartupMessage('Warlock starting up...');
-        foreach ($this->pcntlSignals as $sig => $name) {
-            pcntl_signal($sig, [$this, '__signalHandler'], true);
+        foreach (PcntlSignals::cases() as $sig) {
+            pcntl_signal($sig->value, [$this, '__signalHandler'], true);
         }
         $this->log->write('Creating TCP socket stream on: '.$this->config['listen'].':'.$this->config['port'], LogLevel::NOTICE);
         if (!($this->master = stream_socket_server('tcp://'.$this->config['listen'].':'.$this->config['port'], $errno, $errstr))) {
@@ -309,9 +308,9 @@ class Main
         return posix_kill($pid, $force ? SIGKILL : SIGTERM);
     }
 
-    public function setSilent(bool $silent): void
+    public function setSilent(bool $silent = true): void
     {
-        $this->silent = $silent;
+        $this->log->setSilent($silent);
     }
 
     /**
