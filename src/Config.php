@@ -26,7 +26,7 @@ use Hazaar\Util\Arr;
  * @implements  \ArrayAccess<string, mixed>
  * @implements  \Iterator<string, mixed>
  */
-class Config implements \ArrayAccess, \Iterator
+class Config implements \ArrayAccess, \Iterator, \Countable
 {
     /**
      * @var array<string>
@@ -352,6 +352,11 @@ class Config implements \ArrayAccess, \Iterator
     public function valid(): bool
     {
         return null !== key($this->options);
+    }
+
+    public function count(): int
+    {
+        return count($this->options);
     }
 
     public function rewind(): void
