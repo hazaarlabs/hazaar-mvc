@@ -118,7 +118,7 @@ class Application
             $this->timer = new Timer(5, $startTime);
             $this->timer->start('init', $startTime);
             // Create a loader object and register it as the default autoloader
-            $this->loader = Loader::getInstance($this->path);
+            $this->loader = Loader::createInstance($this->path);
             $this->loader->register();
             // Store the search paths in the GLOBALS container so they can be used in config includes.
             Config::$overridePaths = self::getConfigOverridePaths();
