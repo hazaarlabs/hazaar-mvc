@@ -12,7 +12,6 @@ use Hazaar\Warlock\Connection\Socket;
 use Hazaar\Warlock\Enum\LogLevel;
 use Hazaar\Warlock\Enum\PacketType;
 use Hazaar\Warlock\Enum\PcntlSignals;
-use Hazaar\Warlock\Enum\Status;
 use Hazaar\Warlock\Enum\TaskStatus;
 use Hazaar\Warlock\Interface\Connection;
 use Hazaar\Warlock\Process;
@@ -20,8 +19,6 @@ use Hazaar\Warlock\Protocol;
 
 class Main extends Process
 {
-    public static self $instance;
-
     /**
      * Main task queue.
      *
@@ -46,7 +43,6 @@ class Main extends Process
         if (null === $applicationPath || !is_dir($applicationPath)) {
             throw new \InvalidArgumentException("Application path '{$applicationPath}' does not exist or is not a directory.");
         }
-        self::$instance = $this;
         $this->application = new Application($applicationPath, $env);
         $this->config = new Config();
         $this->config->setBasePath($applicationPath.DIRECTORY_SEPARATOR.'configs');
@@ -85,21 +81,6 @@ class Main extends Process
             date_default_timezone_set(timezoneId: $tz);
         }
         parent::__construct(new Protocol((string) $this->config['id'], $this->config['encode']));
-    }
-
-    public static function __signalHandler(int $signo, mixed $siginfo): void
-    {
-        $sigName = PcntlSignals::tryFrom($signo)->name ?? 'UNKNOWN';
-        self::$instance->log->write('SIGNAL: '.$sigName, LogLevel::DEBUG);
-
-        switch ($signo) {
-            case SIGINT:
-            case SIGTERM:
-            case SIGQUIT:
-                self::$instance->stop();
-
-                break;
-        }
     }
 
     /**
@@ -171,21 +152,36 @@ class Main extends Process
         return $this;
     }
 
-    public function stop(): void
-    {
-        $this->log->write('Stopping agent', LogLevel::INFO);
-        $this->state = Status::STOPPING;
-    }
-
     public function shutdown(): void
     {
         $this->log->write('Agent is shutting down', LogLevel::NOTICE);
+        if (count($this->tasks) > 0) {
+            $this->log->write('Cancelling all tasks before shutdown', LogLevel::NOTICE);
+            foreach ($this->tasks as $task) {
+                $task->cancel();
+            }
+            $this->tasks = [];
+            // Wait for tasks to finish
+            $this->log->write('Waiting for tasks to finish...', LogLevel::NOTICE);
+            $waitTime = 0;
+            while (count($this->tasks) > 0 && $waitTime < ($this->config['process']['exitWait'] ?? 30)) {
+                $this->run();
+                ++$waitTime;
+            }
+        }
+        if (count($this->tasks) > 0) {
+            $this->log->write('Some tasks did not finish in time, forcing shutdown', LogLevel::ERROR);
+            foreach ($this->tasks as $task) {
+                $task->cancel();
+            }
+            $this->tasks = [];
+        }
+        $this->log->write('Agent shutdown complete', LogLevel::NOTICE);
     }
 
     public function init(): bool
     {
         $this->log->write('Agent ready', LogLevel::NOTICE);
-        $this->state = Status::RUNNING;
 
         return true;
     }

@@ -11,6 +11,7 @@ use Hazaar\Util\Str;
 use Hazaar\Warlock\Agent\Struct\Endpoint;
 use Hazaar\Warlock\Enum\LogLevel;
 use Hazaar\Warlock\Enum\PacketType;
+use Hazaar\Warlock\Enum\PcntlSignals;
 use Hazaar\Warlock\Enum\Status;
 use Hazaar\Warlock\Exception\ExtensionNotLoaded;
 use Hazaar\Warlock\Interface\Connection;
@@ -24,6 +25,10 @@ if (!extension_loaded('pcntl')) {
 
 abstract class Process
 {
+    /**
+     * @var array<self>
+     */
+    public static array $instances = [];
     public int $start = 0;
     public Status $state = Status::STARTING;
     public Protocol $protocol;
@@ -42,6 +47,7 @@ abstract class Process
 
     public function __construct(Protocol $protocol)
     {
+        self::$instances[getmypid()] = $this;
         $this->start = time();
         $this->protocol = $protocol;
         $this->id = Str::guid();
@@ -85,7 +91,22 @@ abstract class Process
 
     public static function __signalHandler(int $signo, mixed $siginfo): void
     {
-        // Do nothing, this is just a placeholder for child classes to implement
+        $sigName = PcntlSignals::tryFrom($signo)->name ?? 'UNKNOWN';
+        $pid = getmypid();
+        if (!($pid && isset(self::$instances[$pid]))) {
+            return;
+        }
+        $instance = self::$instances[$pid];
+        $instance->log->write('SIGNAL: '.$sigName, LogLevel::DEBUG);
+
+        switch ($signo) {
+            case SIGINT:
+            case SIGTERM:
+            case SIGQUIT:
+                $instance->cancel();
+
+                break;
+        }
     }
 
     /**
@@ -284,7 +305,7 @@ abstract class Process
         return $this->sendExec('schedule', ['when' => $when], $callable, $params, $tag, $overwrite);
     }
 
-    public function cancel(string $taskID): bool
+    public function cancelTask(string $taskID): bool
     {
         $this->send(PacketType::CANCEL, $taskID);
 
@@ -607,6 +628,31 @@ abstract class Process
     }
 
     public function shutdown(): void {}
+
+    public function cancel(): void
+    {
+        $this->state = Status::STOPPING;
+        $this->log->write('Stopping process', LogLevel::NOTICE);
+    }
+
+    public function stop(bool $force = false, ?string $pid = null): bool
+    {
+        $this->log->write('Stopping agent...', LogLevel::NOTICE);
+        if ($force) {
+            $this->log->write('Force stopping agent', LogLevel::NOTICE);
+        }
+        // If we have a pid, we can try to stop the process gracefully.
+        if ($pid) {
+            $this->log->write("Stopping agent with PID {$pid}", LogLevel::NOTICE);
+            if (posix_kill((int) $pid, SIGTERM)) {
+                $this->log->write("Sent SIGTERM to PID {$pid}", LogLevel::NOTICE);
+            } else {
+                $this->log->write("Failed to send SIGTERM to PID {$pid}", LogLevel::ERROR);
+            }
+        }
+
+        return true;
+    }
 
     final public function state(): Status
     {
