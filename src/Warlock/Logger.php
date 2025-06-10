@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Hazaar\Warlock;
 
 use Hazaar\Warlock\Enum\LogLevel;
+use Hazaar\Warlock\Interface\LogWriter;
+use Hazaar\Warlock\Logger\EchoWriter;
 
 /**
  * Logger class for handling logging operations with different log levels.
@@ -16,6 +18,7 @@ class Logger
 {
     private LogLevel $level = LogLevel::INFO;
     private string $prefix = 'WARLOCK';
+    private LogWriter $writer;
 
     /**
      * Allows the logger to be temporarily silent, meaning it will not output any log messages, but
@@ -25,9 +28,10 @@ class Logger
      */
     private bool $silent = false;
 
-    public function __construct(LogLevel $level = LogLevel::INFO)
+    public function __construct(LogLevel $level = LogLevel::INFO, ?LogWriter $writer = null)
     {
         $this->setLevel($level);
+        $this->setWriter($writer ?? new EchoWriter());
     }
 
     public function getNewChildLogger(string $prefix): self
@@ -45,15 +49,12 @@ class Logger
      * @param string   $message The message to log. It can be an array, an instance of stdClass, or a string.
      * @param LogLevel $level   The log level of the message. Defaults to LogLevel::INFO.
      */
-    public function write(string $message, LogLevel $level = LogLevel::INFO): void
+    public function write(string $message, LogLevel $level = LogLevel::INFO, ?string $prefix = null): void
     {
         if ($this->silent || $level->value > $this->level->value) {
             return;
         }
-        echo date('Y-m-d H:i:s')
-            .' | '.$level->color(sprintf('%-7s', $this->prefix))
-            .' | '.$level->color(sprintf('%-'.$level::pad().'s', $level->name))
-            .' | '.$level->color($message)."\n";
+        $this->writer->write($message, $level, $prefix ?? $this->prefix);
     }
 
     /**
@@ -106,5 +107,15 @@ class Logger
     public function setSilent(bool $silent): void
     {
         $this->silent = $silent;
+    }
+
+    /**
+     * Sets the log writer instance to be used by the logger.
+     *
+     * @param LogWriter $writer the log writer instance to set
+     */
+    public function setWriter(LogWriter $writer): void
+    {
+        $this->writer = $writer;
     }
 }

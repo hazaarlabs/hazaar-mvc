@@ -221,7 +221,7 @@ abstract class Process
 
     public function log(string $message, LogLevel $level = LogLevel::NOTICE, ?string $name = null): bool
     {
-        return $this->send(PacketType::LOG, ['level' => $level->value, 'msg' => $message, 'name' => $name]);
+        return $this->send(PacketType::LOG, ['level' => $level->value, 'msg' => $message, 'name' => $name ?? $this->log->getPrefix()]);
     }
 
     public function debug(mixed $data, ?string $name = null): bool
@@ -570,7 +570,7 @@ abstract class Process
     final public function main(?array $params = null, bool $dynamic = false): int
     {
         $code = 0;
-        $this->state = Status::RECONNECT;
+        $this->state = $this->connected() ? Status::INIT : Status::RECONNECT;
         while (Status::STOPPING !== $this->state) {
             pcntl_signal_dispatch();
 
@@ -671,7 +671,7 @@ abstract class Process
      * full sleep period is used.  If the timeout parameter is not set then the loop will just dump out after one
      * execution.
      */
-    final protected function sleep(int $timeout = 0, Status $checkStatus = Status::RUNNING): bool
+    protected function sleep(int $timeout = 0, Status $checkStatus = Status::RUNNING): bool
     {
         $start = microtime(true);
         // Sleep if we are still sleeping and the timeout is not reached.  If the timeout is NULL or 0 do this process at least once.

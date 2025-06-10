@@ -2,14 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Hazaar\Warlock\Server\Task;
+namespace Hazaar\Warlock\Agent\Task;
 
+use Hazaar\Warlock\Agent\Main;
 use Hazaar\Warlock\Agent\Task;
 use Hazaar\Warlock\Enum\LogLevel;
+use Hazaar\Warlock\Enum\PacketType;
 use Hazaar\Warlock\Enum\TaskStatus;
+use Hazaar\Warlock\Logger;
 
 class Service extends Task
 {
+    /**
+     * @var array<mixed> service configuration
+     */
+    public array $childConfig = [];
     public string $name = 'Unnamed Service';
     public bool $enabled = true;
 
@@ -20,6 +27,20 @@ class Service extends Task
     public int $delay = 0;
     public LogLevel $loglevel = LogLevel::WARN;
 
+    /**
+     * @param array<mixed> $config
+     */
+    public function __construct(Main $agent, Logger $log, array $config = [])
+    {
+        parent::__construct($agent, $log);
+        $this->status = TaskStatus::INIT;
+        $this->childConfig = $config;
+        $this->start = $config['delay'] ?? 1; // Default start time is immediately
+        if (!isset($this->config['timezone'])) {
+            $this->config['timezone'] = date_default_timezone_get();
+        }
+    }
+
     public function run(): self
     {
         if (false === $this->enabled) {
@@ -27,26 +48,32 @@ class Service extends Task
 
             return $this;
         }
-        if (!($root = getenv('APPLICATION_ROOT'))) {
-            $root = '/';
-        }
         $payload = [
-            'timezone' => date_default_timezone_get(),
-            'config' => ['app' => ['root' => $root]],
             'name' => $this->name,
+            'application' => $this->application,
+            'config' => $this->childConfig,
+            'endpoint' => $this->endpoint,
         ];
-        // if ($config = $process->config) {
-        //     $payload['config'] = array_merge($payload['config'], $config->toArray());
-        // }
-        // $packet = Master::$protocol->encode('service', $payload);
-        // if ($this->write($packet)) {
-        //     $this->log->write('Service started', LogLevel::DEBUG);
-        //     $this->status = TaskStatus::RUNNING;
-        // } else {
-        //     $this->log->write('Service failed to start', LogLevel::DEBUG);
-        //     $this->status = TaskStatus::ERROR;
-        // }
+        if ($this->send(PacketType::SERVICE, $payload)) {
+            $this->log->write('Service started', LogLevel::DEBUG);
+            $this->status = TaskStatus::RUNNING;
+        } else {
+            $this->log->write('Service failed to start', LogLevel::DEBUG);
+            $this->status = TaskStatus::ERROR;
+        }
 
         return $this;
+    }
+
+    protected function processCommand(PacketType $command, mixed $payload = null): bool
+    {
+        if (PacketType::EXEC === $command) {
+            $this->log->write('Processing EXEC command', LogLevel::DEBUG);
+            $this->run();
+
+            return true;
+        }
+
+        return parent::processCommand($command, $payload);
     }
 }

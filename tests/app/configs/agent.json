@@ -1,11 +1,11 @@
 {
     "development": {
         "announce": {
-            "enabled": true,
+            "enabled": false,
             "interval": 60
         },
         "timezone": "Australia/Canberra",
-        "schedule": [
+        "_schedule": [
             {
                 "when": "@reboot",
                 "action": "App\\Service\\Test::doTheThing"

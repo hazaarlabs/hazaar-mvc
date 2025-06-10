@@ -104,6 +104,14 @@ class Runner extends Process
 
                 return true;
 
+            case PacketType::SERVICE:
+                $this->log('Service command received', LogLevel::DEBUG);
+                $this->state = Status::RUNNING;
+                $endpoint = Endpoint::create($payload->endpoint ?? null);
+                $endpoint->run($this->protocol, $payload->name, (array) $payload->config);
+
+                return true;
+
             case PacketType::CANCEL:
                 $this->state = Status::STOPPING;
                 $this->log('Runner stopped successfully', LogLevel::INFO);

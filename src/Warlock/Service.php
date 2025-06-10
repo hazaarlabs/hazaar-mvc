@@ -8,11 +8,13 @@ use Hazaar\Application;
 use Hazaar\Util\Boolean;
 use Hazaar\Util\Cron;
 use Hazaar\Util\DateTime;
+use Hazaar\Warlock\Agent\Container;
 use Hazaar\Warlock\Connection\Pipe;
 use Hazaar\Warlock\Connection\Socket;
+use Hazaar\Warlock\Enum\LogLevel;
+use Hazaar\Warlock\Enum\ScheduleType;
 use Hazaar\Warlock\Enum\Status;
-use Hazaar\Warlock\Interface\Connection;
-use Hazaar\Warlock\Server\Functions;
+use Hazaar\Warlock\Logger\WarlockWriter;
 
 require 'Server/Functions.php';
 define('W_LOCAL', -1);
@@ -33,7 +35,7 @@ define('W_LOCAL', -1);
  *
  * @module      warlock
  */
-abstract class Service extends Process
+abstract class Service extends Container
 {
     protected string $name;
 
@@ -54,95 +56,30 @@ abstract class Service extends Process
     private int $serviceFileMtime;              // The last modified time of the service file
 
     /**
-     * @var array<int>
+     * @param array<mixed> $config
      */
-    private array $__logLevels = [];
-    private int $__strPad = 0;
-    private string $__logFile;
-
-    /**
-     * @var false|resource
-     */
-    private mixed $__log = false;
-
-    private int $__localLogLevel = W_INFO;
-    private bool $__remote = false;
-
-    final public function __construct(Application $application, Protocol $protocol, bool $remote = false)
+    final public function __construct(Protocol $protocol, ?string $name = null, array $config = [])
     {
-        $class = get_class($this);
-        if ('Service' === substr($class, -7)) {
-            $this->name = strtolower(substr($class, 0, strlen($class) - 7));
-        } else {
-            $parts = explode('\\', $class);
-            $this->name = strtolower(array_pop($parts));
-        }
-        $warlock = new Config();
-        $this->log(W_LOCAL, 'Loaded config for '.APPLICATION_ENV);
-        $defaults = [
-            $this->name => [
-                'enabled' => false,
-                'heartbeat' => 60,
-                'checkfile' => 1,
-                'connect_retries' => 3,        // When establishing a control channel, make no more than this number of attempts before giving up
-                'connect_retry_delay' => 100,  // When making multiple attempts to establish the control channel, wait this long between each
-                'server' => [
-                    'host' => '127.0.0.1',
-                    'port' => $warlock['server']['port'],
-                    'access_key' => $warlock['admin']['key'] ?? '',
-                ],
-                'silent' => false,
-                'applicationName' => $warlock['sys']['applicationName'],
-                'log' => $warlock['log'],
-            ],
-        ];
-        $config = Application\Config::getInstance('service', APPLICATION_ENV, $defaults);
-        if (!($this->config = ($config[$this->name] ?? null))) {
-            throw new \Exception("Service '{$this->name}' is not configured!");
-        }
-        $consts = get_defined_constants(true);
-        // Load the warlock log levels into an array.
-        foreach ($consts['user'] as $name => $value) {
-            if ('W_' == substr($name, 0, 2)) {
-                $len = strlen($this->__logLevels[$value] = substr($name, 2));
-                if ($len > $this->__strPad) {
-                    $this->__strPad = $len;
-                }
-            }
-        }
-        $this->__remote = $remote;
-        if ($this->config['log']->has('level') && defined($outLevel = $this->config['log']->get('level'))) {
-            $this->__localLogLevel = constant($outLevel);
-        }
-        if (true === $remote && !isset($this->config['server'])) {
-            throw new \Exception("Warlock server required to run in remote service mode.\n");
-        }
-        $this->__logFile = $warlock['sys']['runtimePath'].DIRECTORY_SEPARATOR.$this->name.'.log';
-        if ((file_exists($this->__logFile) && is_writable($this->__logFile)) || is_writable(dirname($this->__logFile))) {
-            $this->__log = fopen($this->__logFile, 'a');
-        }
-        $this->log(W_LOCAL, "Service '{$this->name}' starting up");
+        parent::__construct($protocol);
+        $this->log->setLevel(LogLevel::DEBUG);
+        $this->log->setPrefix('service');
+        $this->log->setWriter(new WarlockWriter($this));
+        $this->log->write('Initializing service', LogLevel::NOTICE);
+        $this->name = $name ?? 'Unnamed Service';
+        $this->config = $config;
         $this->setErrorHandler('__errorHandler');
         $this->setExceptionHandler('__exceptionHandler');
         if ($tz = $this->config['timezone']) {
             date_default_timezone_set($tz);
         }
-        if ($this->config['checkfile'] > 0) {
+        if (isset($this->config['checkfile'])) {
             $reflection = new \ReflectionClass($this);
             $this->serviceFile = $reflection->getFileName();
             $this->serviceFileMtime = filemtime($this->serviceFile);
             $this->lastCheckfile = time();
         }
-        parent::__construct($application, $protocol);
-        $this->construct($this->application);
-    }
-
-    public function __destruct()
-    {
-        if ($this->__log) {
-            fclose($this->__log);
-        }
-        parent::__destruct();
+        $this->initialize($this->config);
+        $this->log->write('Service initialized: '.$this->name, LogLevel::NOTICE);
     }
 
     private function __processSchedule(): void
@@ -151,43 +88,43 @@ abstract class Service extends Process
             return;
         }
         $count = count($this->schedule);
-        $this->log(W_DEBUG, "Processing {$count} scheduled actions");
+        $this->log("Processing {$count} scheduled actions", LogLevel::DEBUG);
         $this->next = null;
         foreach ($this->schedule as $id => &$exec) {
             if (time() >= $exec['when']) {
-                $this->state = HAZAAR_SERVICE_RUNNING;
+                $this->state = Status::RUNNING;
                 if (is_string($exec['callback'])) {
                     $exec['callback'] = [$this, $exec['callback']];
                 }
 
                 try {
                     if (is_callable($exec['callback'])) {
-                        $this->log(W_DEBUG, "RUN: ACTION={$exec['label']}");
+                        $this->log("RUN: ACTION={$exec['label']}", LogLevel::DEBUG);
                         call_user_func_array($exec['callback'], $exec['args'] ?? []);
                     } else {
-                        $this->log(W_ERR, "Scheduled action {$exec['label']} is not callable!");
+                        $this->log("Scheduled action {$exec['label']} is not callable!", LogLevel::ERROR);
                     }
                 } catch (\Exception $e) {
                     $this->__exceptionHandler($e);
                 }
 
                 switch ($exec['type']) {
-                    case HAZAAR_SCHEDULE_INTERVAL:
+                    case ScheduleType::INTERVAL:
                         if ($exec['when'] = time() + $exec['interval']) {
-                            $this->log(W_DEBUG, "INTERVAL: ACTION={$exec['label']} NEXT=".date('Y-m-d H:i:s', $exec['when']));
+                            $this->log("INTERVAL: ACTION={$exec['label']} NEXT=".date('Y-m-d H:i:s', $exec['when']), LogLevel::DEBUG);
                         }
 
                         break;
 
-                    case HAZAAR_SCHEDULE_CRON:
+                    case ScheduleType::CRON:
                         if ($exec['when'] = $exec['cron']->getNextOccurrence()) {
-                            $this->log(W_DEBUG, "SCHEDULED: ACTION={$exec['label']} NEXT=".date('Y-m-d H:i:s', $exec['when']));
+                            $this->log("SCHEDULED: ACTION={$exec['label']} NEXT=".date('Y-m-d H:i:s', $exec['when']), LogLevel::DEBUG);
                         }
 
                         break;
 
-                    case HAZAAR_SCHEDULE_DELAY:
-                    case HAZAAR_SCHEDULE_NORM:
+                    case ScheduleType::DELAY:
+                    case ScheduleType::NORM:
                     default:
                         unset($this->schedule[$id]);
 
@@ -195,9 +132,9 @@ abstract class Service extends Process
                 }
                 if (null === $exec['when']
                     || 0 === $exec['when']
-                    || (HAZAAR_SCHEDULE_INTERVAL !== $exec['type'] && $exec['when'] < time())) {
+                    || (ScheduleType::INTERVAL !== $exec['type'] && $exec['when'] < time())) {
                     unset($this->schedule[$id]);
-                    $this->log(W_DEBUG, "UNSCHEDULED: ACTION={$exec['label']}");
+                    $this->log("UNSCHEDULED: ACTION={$exec['label']}", LogLevel::DEBUG);
                 }
             }
             if (null === $this->next || ($exec['when'] && $exec['when'] < $this->next)) {
@@ -205,159 +142,16 @@ abstract class Service extends Process
             }
         }
         if (null !== $this->next) {
-            $this->log(W_NOTICE, 'Next scheduled action is at '.date('Y-m-d H:i:s', $this->next));
+            $this->log('Next scheduled action is at '.date('Y-m-d H:i:s', $this->next), LogLevel::NOTICE);
         }
-    }
-
-    // @phpstan-ignore-next-line
-    private function __rotateLogFiles(int $logfiles = 0): void
-    {
-        $this->log(W_LOCAL, 'ROTATING LOG FILES: MAX='.$logfiles);
-        fclose($this->__log);
-        Functions::rotateLogFile($this->__logFile, $logfiles);
-        $this->__log = fopen($this->__logFile, 'a');
-        $this->log(W_LOCAL, 'New log file started');
-    }
-
-    public function log(int $level, mixed $message, ?string $name = null): bool
-    {
-        if (null === $name) {
-            $name = $this->name;
-        }
-        if (W_LOCAL !== $level) {
-            parent::log($level, $message, $name);
-        }
-        if (is_resource($this->__log)) {
-            if ($level <= $this->__localLogLevel) {
-                $label = $this->__logLevels[$level] ?? 'NONE';
-                if (!is_array($message)) {
-                    $message = [$message];
-                }
-                foreach ($message as $m) {
-                    $msg = date('Y-m-d H:i:s')." - {$this->name} - ".str_pad($label, $this->__strPad, ' ', STR_PAD_LEFT).' - '.$m."\n";
-                    fwrite($this->__log, $msg);
-                    if (true === $this->__remote && true !== $this->config['silent']) {
-                        echo $msg;
-                    }
-                }
-                fflush($this->__log);
-            }
-        }
-
-        return true;
-    }
-
-    public function debug(mixed $data, ?string $name = null): bool
-    {
-        if (null === $name) {
-            $name = $this->name;
-        }
-
-        return parent::debug($data, $name);
     }
 
     /**
-     * @param array<mixed> $params
+     * Placeholder for the run method in case the service does not implement its own run method.
      */
-    final public function main(?array $params = null, bool $dynamic = false): int
-    {
-        $this->log(W_LOCAL, 'Service started');
-        $this->state = HAZAAR_SERVICE_INIT;
-        if (true === $this->config['log']['rotate']) {
-            $when = $this->config['log']['rotateAt'] ?? '0 0 * * * *';
-            $logfiles = $this->config['log']['logfiles'] ?? 5;
-            $this->log(W_LOCAL, "Log rotation is enabled. WHEN={$when} LOGFILES={$logfiles}");
-            $this->cron($when, '__rotateLogFiles', [$logfiles]);
-        }
-        $init = $this->init();
-        $this->state = ((false === $init) ? HAZAAR_SERVICE_ERROR : HAZAAR_SERVICE_READY);
-        if (HAZAAR_SERVICE_READY !== $this->state) {
-            return 1;
-        }
-        $this->state = HAZAAR_SERVICE_RUNNING;
-        if (true === $dynamic) {
-            if (!method_exists($this, 'runOnce')) {
-                return 5;
-            }
-            if (false === $this->invokeMethod('runOnce', $params)) {
-                return 1;
-            }
-
-            return 0;
-        }
-        if (!$this->start()) {
-            return 1;
-        }
-        $this->__sendHeartbeat();
-        $this->__processSchedule();
-        $code = 0;
-        while (HAZAAR_SERVICE_RUNNING == $this->state || HAZAAR_SERVICE_SLEEP == $this->state) {
-            $this->slept = false;
-            $this->state = HAZAAR_SERVICE_RUNNING;
-
-            try {
-                $ret = $this->invokeMethod('run', $params);
-                if (false === $ret) {
-                    $this->state = HAZAAR_SERVICE_STOPPING;
-                }
-                /*
-                * If sleep was not executed in the last call to run(), then execute it now.  This protects bad services
-                * from not sleeping as the sleep() call is where new signals are processed.
-                * @phpstan-ignore identical.alwaysTrue
-                */
-                if (false === $this->slept) {
-                    $this->sleep(0);
-                }
-                if ($this->serviceFileMtime > 0 && time() >= ($this->lastCheckfile + $this->config['checkfile'])) {
-                    $this->lastCheckfile = time();
-                    clearstatcache(true, $this->serviceFile);
-                    // Check if the service file has been modified and initiate a restart
-                    if (filemtime($this->serviceFile) > $this->serviceFileMtime) {
-                        $this->log(W_INFO, 'Service file modified. Initiating restart.');
-                        $this->state = HAZAAR_SERVICE_STOPPING;
-                        $code = 6;
-                    }
-                }
-            } catch (\Throwable $e) {
-                $this->__exceptionHandler($e);
-                $this->state = HAZAAR_SERVICE_ERROR;
-                $code = 7;
-            }
-        }
-        $this->state = HAZAAR_SERVICE_STOPPING;
-        $this->log(W_INFO, 'Service is shutting down');
-        $this->shutdown();
-        $this->state = HAZAAR_SERVICE_STOPPED;
-
-        return $code;
-    }
-
-    // BUILT-IN PLACEHOLDER METHODS
     public function run(): void
     {
         $this->sleep(60);
-    }
-
-    public function shutdown(): bool
-    {
-        return true;
-    }
-
-    final public function stop(): void
-    {
-        $this->state = Status::STOPPING;
-    }
-
-    final public function restart(): bool
-    {
-        $this->stop();
-
-        return $this->start();
-    }
-
-    final public function state(): Status
-    {
-        return $this->state;
     }
 
     /**
@@ -375,7 +169,7 @@ abstract class Service extends Process
         $label = (is_string($callback) ? $callback : '<func>');
         $when = time() + $seconds;
         $this->schedule[$id] = [
-            'type' => HAZAAR_SCHEDULE_DELAY,
+            'type' => ScheduleType::DELAY,
             'label' => $label,
             'when' => $when,
             'callback' => $callback,
@@ -384,7 +178,7 @@ abstract class Service extends Process
         if (null === $this->next || $when < $this->next) {
             $this->next = $when;
         }
-        $this->log(W_DEBUG, "SCHEDULED: ACTION={$label} DELAY={$seconds} NEXT=".date('Y-m-d H:i:s', $when));
+        $this->log("SCHEDULED: ACTION={$label} DELAY={$seconds} NEXT=".date('Y-m-d H:i:s', $when), LogLevel::DEBUG);
 
         return $id;
     }
@@ -404,7 +198,7 @@ abstract class Service extends Process
         // First execution in $seconds
         $when = time() + $seconds;
         $data = [
-            'type' => HAZAAR_SCHEDULE_INTERVAL,
+            'type' => ScheduleType::INTERVAL,
             'label' => $label,
             'when' => $when,
             'interval' => $seconds,
@@ -419,7 +213,7 @@ abstract class Service extends Process
         if (null === $this->next || $when < $this->next) {
             $this->next = $when;
         }
-        $this->log(W_DEBUG, "SCHEDULED: ACTION={$label} INTERVAL={$seconds} NEXT=".date('Y-m-d H:i:s', $when));
+        $this->log("SCHEDULED: ACTION={$label} INTERVAL={$seconds} NEXT=".date('Y-m-d H:i:s', $when), LogLevel::DEBUG);
 
         return $id;
     }
@@ -441,7 +235,7 @@ abstract class Service extends Process
         $label = (is_string($callback) ? $callback : '<func>');
         $when = $date->getTimestamp();
         $data = [
-            'type' => HAZAAR_SCHEDULE_NORM,
+            'type' => ScheduleType::NORM,
             'label' => $label,
             'when' => $when,
             'callback' => $callback,
@@ -455,7 +249,7 @@ abstract class Service extends Process
         if (null === $this->next || $when < $this->next) {
             $this->next = $when;
         }
-        $this->log(W_DEBUG, "SCHEDULED: ACTION={$label} SCHEDULE={$date} NEXT=".date('Y-m-d H:i:s', $when));
+        $this->log("SCHEDULED: ACTION={$label} SCHEDULE={$date} NEXT=".date('Y-m-d H:i:s', $when), LogLevel::DEBUG);
 
         return $id;
     }
@@ -476,7 +270,7 @@ abstract class Service extends Process
         $cron = new Cron($format);
         $when = $cron->getNextOccurrence();
         $this->schedule[$id] = [
-            'type' => HAZAAR_SCHEDULE_CRON,
+            'type' => ScheduleType::CRON,
             'label' => $label,
             'when' => $when,
             'callback' => $callback,
@@ -486,145 +280,61 @@ abstract class Service extends Process
         if (null === $this->next || $when < $this->next) {
             $this->next = $when;
         }
-        $this->log(W_DEBUG, "SCHEDULED: ACTION={$label} CRON=\"{$format}\" NEXT=".date('Y-m-d H:i:s', $when));
+        $this->log("SCHEDULED: ACTION={$label} CRON=\"{$format}\" NEXT=".date('Y-m-d H:i:s', $when), LogLevel::DEBUG);
 
         return $id;
     }
 
-    final public function cancel(string $id): bool
+    // public function connect(): bool
+    // {
+    //     if (true === $this->__remote) {
+    //         if (!isset($this->config['server'])) {
+    //             exit("Warlock server required to run in remote service mode.\n");
+    //         }
+    //         $headers = [];
+    //         $headers['X-WARLOCK-ACCESS-KEY'] = base64_encode($this->config['server']['access_key']);
+    //         $headers['X-WARLOCK-CLIENT-TYPE'] = 'service';
+    //         $conn = new Socket($protocol, $guid);
+    //         $this->log(W_LOCAL, 'Connecting to Warlock server at '.$this->config['server']['host'].':'.$this->config['server']['port']);
+    //         if (!$conn->connect($this->config['server']['host'], $this->config['server']['port'], $headers)) {
+    //             return false;
+    //         }
+    //         if (($type = $conn->recv($payload)) === false || 'OK' !== $type) {
+    //             return false;
+    //         }
+    //     } else {
+    //         $conn = new Pipe($protocol, $guid);
+    //     }
+
+    //     return $conn;
+    // }
+
+    final protected function sleep(int $timeout = 0, Status $checkStatus = Status::RUNNING): bool
     {
-        if (!array_key_exists($id, $this->schedule)) {
-            return false;
-        }
-        unset($this->schedule[$id]);
-
-        return true;
-    }
-
-    final public function signal(string $eventID, mixed $data): bool
-    {
-        return $this->send('SIGNAL', ['service' => $this->name, 'id' => $eventID, 'data' => $data]);
-    }
-
-    final public function send(string $command, mixed $payload = null): bool
-    {
-        if (HAZAAR_SERVICE_NONE === $this->state) {
-            return false;
-        }
-        $result = parent::send($command, $payload);
-        if (false === $result) {
-            $this->log(W_LOCAL, 'An error occured while sending command.  Stopping.');
-            $this->stop();
-        }
-
-        return $result;
-    }
-
-    final public function recv(mixed &$payload = null, int $tvSec = 3, int $tvUsec = 0): null|bool|string
-    {
-        if (HAZAAR_SERVICE_NONE === $this->state) {
-            return false;
-        }
-        $result = parent::recv($payload, $tvSec, $tvUsec);
-        if (false === $result) {
-            $this->log(W_LOCAL, 'An error occured while receiving data.  Stopping.');
-            $this->stop();
-        }
-
-        return $result;
-    }
-
-    public function connect(Protocol $protocol, ?string $guid = null): Connection|false
-    {
-        if (true === $this->__remote) {
-            if (!isset($this->config['server'])) {
-                exit("Warlock server required to run in remote service mode.\n");
+        if (isset($this->config['checkfile']) && $this->lastCheckfile + $this->config['checkfile'] < time()) {
+            $this->lastCheckfile = time();
+            if (filemtime($this->serviceFile) !== $this->serviceFileMtime) {
+                $this->log->write('Service file has changed, restarting', LogLevel::NOTICE);
+                // $this->stop();
             }
-            $headers = [];
-            $headers['X-WARLOCK-ACCESS-KEY'] = base64_encode($this->config['server']['access_key']);
-            $headers['X-WARLOCK-CLIENT-TYPE'] = 'service';
-            $conn = new Socket($protocol, $guid);
-            $this->log(W_LOCAL, 'Connecting to Warlock server at '.$this->config['server']['host'].':'.$this->config['server']['port']);
-            if (!$conn->connect($this->config['server']['host'], $this->config['server']['port'], $headers)) {
-                return false;
-            }
-            if (($type = $conn->recv($payload)) === false || 'OK' !== $type) {
-                return false;
-            }
-        } else {
-            $conn = new Pipe($protocol, $guid);
         }
 
-        return $conn;
+        // TODO: Implement a more robust sleep mechanism that checks for service file changes
+        // and uses the next scheduled action time from now in seconds to determine the sleep duration.
+        $this->__processSchedule();
+
+        return parent::sleep($timeout, $checkStatus);
     }
 
     /**
-     * Sleep for a number of seconds.  If data is received during the sleep it is processed.  If the timeout is greater
-     * than zero and data is received, the remaining timeout amount will be used in subsequent selects to ensure the
-     * full sleep period is used.  If the timeout parameter is not set then the loop will just dump out after one
-     * execution.
+     * Initializes the service by subscribing to events and scheduling actions
+     * based on the provided configuration.
+     *
+     * @param array<mixed> $config
      */
-    final protected function sleep(int $timeout = 0): bool
+    private function initialize(array $config): bool
     {
-        $start = microtime(true);
-        $slept = false;
-        // Sleep if we are still sleeping and the timeout is not reached.  If the timeout is NULL or 0 do this process at least once.
-        while ($this->state < 4 && (false === $slept || ($start + $timeout) >= microtime(true))) {
-            $tvSec = 0;
-            $tvUsec = 0;
-            if ($timeout > 0) {
-                $this->state = HAZAAR_SERVICE_SLEEP;
-                $diff = ($start + $timeout) - microtime(true);
-                $hb = $this->lastHeartbeat + $this->config['heartbeat'];
-                $next = ((!$this->next || $hb < $this->next) ? $hb : $this->next);
-                if (null != $next && $next < ($diff + time())) {
-                    $diff = $next - time();
-                }
-                if ($diff > 0) {
-                    $tvSec = (int) floor($diff);
-                    $tvUsec = (int) round(($diff - floor($diff)) * 1000000);
-                } else {
-                    $tvSec = 1;
-                }
-            }
-            $payload = null;
-            if ($type = $this->recv($payload, $tvSec, $tvUsec)) {
-                $this->__processCommand($type, $payload);
-            }
-            if ($this->next > 0 && $this->next <= time()) {
-                $this->__processSchedule();
-            }
-            if (($this->lastHeartbeat + $this->config['heartbeat']) <= time()) {
-                $this->__sendHeartbeat();
-            }
-            $slept = true;
-        }
-        $this->slept = true;
-
-        return true;
-    }
-
-    /**
-     * @param array<mixed> $arguments
-     */
-    private function invokeMethod(string $method, ?array $arguments = null): mixed
-    {
-        $args = [];
-        $initMethod = new \ReflectionMethod($this, $method);
-        foreach ($initMethod->getParameters() as $parameter) {
-            if (!($value = ($arguments[$parameter->getName()] ?? null))) {
-                $value = $parameter->getDefaultValue();
-            }
-            $args[$parameter->getPosition()] = $value;
-        }
-
-        return $initMethod->invokeArgs($this, $args);
-    }
-
-    // CONTROL METHODS
-    private function start(): bool
-    {
-        $events = $this->config['subscribe'] ?? [];
+        $events = $config['subscribe'] ?? [];
         if (is_array($events)) {
             foreach ($events as $eventName => $event) {
                 if (is_array($event)) {
@@ -637,7 +347,7 @@ abstract class Service extends Process
                 }
             }
         }
-        $schedule = $this->config['schedule'] ?? [];
+        $schedule = $config['schedule'] ?? [];
         if (is_array($schedule)) {
             foreach ($schedule as $item) {
                 if (!(is_array($item) && isset($item['action']))) {

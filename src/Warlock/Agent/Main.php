@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Agent;
 
+use Hazaar\Application\FilePath;
 use Hazaar\Config;
+use Hazaar\Loader;
 use Hazaar\Warlock\Agent\Struct\Application;
 use Hazaar\Warlock\Agent\Struct\Endpoint;
 use Hazaar\Warlock\Agent\Task\Internal;
@@ -43,6 +45,9 @@ class Main extends Process
         if (null === $applicationPath || !is_dir($applicationPath)) {
             throw new \InvalidArgumentException("Application path '{$applicationPath}' does not exist or is not a directory.");
         }
+        $loader = Loader::createInstance($applicationPath);
+        $loader->addSearchPath(FilePath::SERVICE, 'services');
+        $loader->register();
         $this->application = new Application($applicationPath, $env);
         $this->config = new Config();
         $this->config->setBasePath($applicationPath.DIRECTORY_SEPARATOR.'configs');
@@ -148,8 +153,39 @@ class Main extends Process
                 $this->scheduleRunner($when, $endpoint, $task['tag'] ?? uniqid(), $task['overwrite'] ?? false);
             }
         }
+        $this->registerServices('services');
 
         return $this;
+    }
+
+    public function registerServices(string $configFile = 'services'): void
+    {
+        $services = new Config();
+        $services->setBasePath($this->config->getBasePath());
+        $services->setEnvironment($this->config->getEnvironment());
+        $services->loadFromFile($configFile);
+        if (0 === $services->count()) {
+            return;
+        }
+        $this->log->write('Loading '.count($services).' services', LogLevel::NOTICE);
+        foreach ($services as $serviceName => $service) {
+            if (!isset($service['target'])) {
+                $serviceClassName = 'App\Service\\'.ucfirst($serviceName);
+                $service['target'] = [$serviceClassName, 'main'];
+                $this->log->write("Using service class {$serviceClassName}", LogLevel::DEBUG);
+            }
+            if (!($endpoint = Endpoint::create($service['target'] ?? null))) {
+                $this->log->write('Warlock service config contains invalid callable.', LogLevel::ERROR);
+
+                continue;
+            }
+            if ($args = $service['args'] ?? null) {
+                $endpoint->setParams($args->toArray());
+            }
+            $task = new Task\Service($this, $this->log, $service);
+            $task->exec($endpoint);
+            $this->taskQueueAdd($task);
+        }
     }
 
     public function shutdown(): void

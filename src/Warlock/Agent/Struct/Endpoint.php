@@ -3,7 +3,6 @@
 namespace Hazaar\Warlock\Agent\Struct;
 
 use Hazaar\Util\Closure;
-use Hazaar\Warlock\Protocol;
 
 class Endpoint implements \JsonSerializable
 {
@@ -131,7 +130,7 @@ class Endpoint implements \JsonSerializable
         $this->params = $params;
     }
 
-    public function run(Protocol $protocol): mixed
+    public function run(mixed ...$constructorArgs): mixed
     {
         if (is_object($this->target)) {
             if ($this->target instanceof Closure) {
@@ -157,7 +156,7 @@ class Endpoint implements \JsonSerializable
             ));
         }
         if ($reflectionClass->isSubclassOf('\Hazaar\Warlock\Agent\Container')) {
-            $container = $reflectionClass->newInstance($protocol);
+            $container = $reflectionClass->newInstance(...$constructorArgs);
 
             return $methodReflection->invoke($container, ...$this->params);
         }

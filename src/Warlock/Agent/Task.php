@@ -74,6 +74,7 @@ abstract class Task extends Process
 
         try {
             parent::start();
+            $this->status = TaskStatus::RUNNING;
         } catch (\Exception $e) {
             $this->log->write('Failed to start task: '.$e->getMessage(), LogLevel::ERROR);
             $this->status = TaskStatus::ERROR;
@@ -361,7 +362,7 @@ abstract class Task extends Process
                 $this->commandLog((object) ['level' => $level, 'msg' => $msg]);
             }
         } else {
-            $this->log->write($payload->msg ?? '--', $level);
+            $this->log->write($payload->msg ?? '--', $level, $payload->name ?? null);
         }
 
         return true;

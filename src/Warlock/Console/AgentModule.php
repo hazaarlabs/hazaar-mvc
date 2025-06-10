@@ -26,16 +26,16 @@ class AgentModule extends Module
             ->addOption(long: 'silent', short: 's', description: 'Show no logging output')
             ->addOption(long: 'daemon', short: 'd', description: 'Run the agent in daemon mode')
         ;
-        // $this->addCommand('stop', [$this, 'stopAgent'])
-        //     ->setDescription('Stop the Warlock agent')
-        //     ->addOption('force', short: 'f', description: 'Force stop the Agent')
-        //     ->addOption('pid', short: 'p', description: 'The PID file to use')
-        // ;
-        // $this->addCommand('restart', [$this, 'restartAgent'])
-        //     ->setDescription('Restart the Warlock agent')
-        //     ->addOption('force', short: 'f', description: 'Force restart the agent')
-        //     ->addOption('pid', short: 'p', description: 'The PID file to use')
-        // ;
+        $this->addCommand('stop', [$this, 'stopAgent'])
+            ->setDescription('Stop the Warlock agent')
+            ->addOption('force', short: 'f', description: 'Force stop the Agent')
+            ->addOption('pid', short: 'p', description: 'The PID file to use')
+        ;
+        $this->addCommand('restart', [$this, 'restartAgent'])
+            ->setDescription('Restart the Warlock agent')
+            ->addOption('force', short: 'f', description: 'Force restart the agent')
+            ->addOption('pid', short: 'p', description: 'The PID file to use')
+        ;
     }
 
     protected function prepare(Input $input, Output $output): int
@@ -59,18 +59,19 @@ class AgentModule extends Module
 
     protected function startAgent(Input $input, Output $output): int
     {
-        if (true === Boolean::from($input->getOption('silent') ?? false)) {
-            $this->agent->setSilent();
-        }
+        $this->agent->setSilent(Boolean::from($input->getOption('silent')));
         if (true === Boolean::from($input->getOption('daemon') ?? false)) {
             if (!function_exists('pcntl_fork')) {
                 exit('PCNTL functions not available');
             }
+            $this->agent->setSilent(true);
             $pid = pcntl_fork();
             if (-1 === $pid) {
                 exit('Could not fork process');
             }
             if ($pid > 0) {
+                $output->write('Warlock agent started in daemon mode with PID '.$pid.'.'.PHP_EOL);
+
                 return 0;
             }
         }
@@ -78,26 +79,26 @@ class AgentModule extends Module
         return $this->agent->bootstrap()->main();
     }
 
-    // protected function stopAgent(Input $input, Output $output): int
-    // {
-    //     $output->write('Stopping Warlock agent...'.PHP_EOL);
-    //     $result = $this->agent->stop($input->getOption('force') ?? false, $input->getOption('pid') ?? null);
-    //     if (false === $result) {
-    //         $output->write('Failed to stop Warlock agent.'.PHP_EOL);
+    protected function stopAgent(Input $input, Output $output): int
+    {
+        $output->write('Stopping Warlock agent...'.PHP_EOL);
+        $result = $this->agent->stop(Boolean::from($input->getOption('force')), $input->getOption('pid') ?? null);
+        if (false === $result) {
+            $output->write('Failed to stop Warlock agent.'.PHP_EOL);
 
-    //         return 0;
-    //     }
-    //     $output->write('Warlock agent stopped.'.PHP_EOL);
+            return 0;
+        }
+        $output->write('Warlock agent stopped.'.PHP_EOL);
 
-    //     return 1;
-    // }
+        return 1;
+    }
 
-    // protected function restartAgent(Input $input, Output $output): int
-    // {
-    //     $output->write('Restarting Warlock agent...'.PHP_EOL);
-    //     $input->setOption('daemon', true);
-    //     $this->stopAgent($input, $output);
+    protected function restartAgent(Input $input, Output $output): int
+    {
+        $output->write('Restarting Warlock agent...'.PHP_EOL);
+        $input->setOption('daemon', true);
+        $this->stopAgent($input, $output);
 
-    //     return $this->startAgent($input, $output);
-    // }
+        return $this->startAgent($input, $output);
+    }
 }
