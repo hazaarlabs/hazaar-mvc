@@ -18,7 +18,6 @@ class ServerModule extends Module
     {
         $this->addCommand('run', [$this, 'startServer'])
             ->setDescription('Run the Warlock server')
-            ->addOption(long: 'env', short: 'e', description: 'The environment to run the server in', valueType: 'env')
             ->addOption(long: 'config', description: 'The configuration file to use', valueType: 'file', default: 'warlock.json')
             ->addOption(long: 'silent', short: 's', description: 'Run the server in single process mode')
             ->addOption(long: 'daemon', short: 'd', description: 'Run the server in daemon mode')

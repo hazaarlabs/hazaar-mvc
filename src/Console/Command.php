@@ -122,26 +122,6 @@ class Command
         return $this;
     }
 
-    public function addGlobalOption(
-        string $long,
-        ?string $short = null,
-        ?string $description = null,
-        bool $takesValue = false,
-        mixed $default = null,
-        ?string $valueType = null
-    ): self {
-        self::$globalOptions[$long] = new Option(
-            long: $long,
-            short: $short,
-            description: $description,
-            takesValue: $takesValue,
-            default: $default,
-            valueType: $valueType
-        );
-
-        return $this;
-    }
-
     public function findOption(string $name): ?Option
     {
         foreach ($this->options as $option) {

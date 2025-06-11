@@ -148,6 +148,10 @@ class Input
 
     public function getOption(string $name, ?string $default = null): mixed
     {
+        if (array_key_exists($name, Command::$globalOptions)) {
+            return $this->globalOptions[$name] ?? $default;
+        }
+
         return $this->options[$name] ?? $default;
     }
 

@@ -86,6 +86,26 @@ abstract class Module
         return $result;
     }
 
+    public function addGlobalOption(
+        string $long,
+        ?string $short = null,
+        ?string $description = null,
+        ?bool $takesValue = null,
+        mixed $default = null,
+        ?string $valueType = null
+    ): self {
+        Command::$globalOptions[$long] = new Option(
+            long: $long,
+            short: $short,
+            description: $description,
+            takesValue: null === $takesValue ? null !== $valueType : false,
+            default: $default,
+            valueType: $valueType
+        );
+
+        return $this;
+    }
+
     protected function prepare(Input $input, Output $output): int
     {
         return 0;
