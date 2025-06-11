@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Server\Component;
 
+use Hazaar\Warlock\Enum\LogLevel;
+use Hazaar\Warlock\Enum\PeerStatus;
+use Hazaar\Warlock\Logger;
 use Hazaar\Warlock\Server\Client;
 use Hazaar\Warlock\Server\Client\Peer;
-use Hazaar\Warlock\Server\Enum\LogLevel;
 use Hazaar\Warlock\Server\Main;
 
 class Cluster
@@ -80,7 +82,7 @@ class Cluster
         if (!$client instanceof Peer) {
             $peer = new Peer($this->config['name'], $client->address, $client->port, true);
             $peer->stream = $client->stream;
-            $peer->status = Peer::STATUS_STREAMING;
+            $peer->status = PeerStatus::STREAMING;
             Main::$instance->clientReplace($peer->stream, $peer);
         } else {
             $peer = $client;

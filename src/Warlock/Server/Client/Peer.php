@@ -6,22 +6,17 @@ namespace Hazaar\Warlock\Server\Client;
 
 use Hazaar\Util\Boolean;
 use Hazaar\Warlock\Enum\ClientType;
+use Hazaar\Warlock\Enum\LogLevel;
+use Hazaar\Warlock\Enum\PacketType;
+use Hazaar\Warlock\Enum\PeerStatus;
+use Hazaar\Warlock\Logger;
 use Hazaar\Warlock\Server\Client;
-use Hazaar\Warlock\Server\Component\Logger;
-use Hazaar\Warlock\Server\Enum\LogLevel;
 use Hazaar\Warlock\Server\Main;
 
 class Peer extends Client
 {
-    public const STATUS_DISCONNECTED = 0;
-    public const STATUS_CONNECTING = 1;
-    public const STATUS_CONNECTED = 2;
-    public const STATUS_NEGOTIATING = 3;
-    public const STATUS_AUTHENTICATING = 4;
-    public const STATUS_STREAMING = 5;
-
     public ClientType $type = ClientType::PEER;
-    public int $status = self::STATUS_DISCONNECTED;
+    public PeerStatus $status = PeerStatus::DISCONNECTED;
     public string $clusterName;
     public static int $reconnectTimeout = 15;
 
@@ -49,11 +44,11 @@ class Peer extends Client
     public function process(): void
     {
         if (false === $this->isConnected()) {
-            if (self::STATUS_DISCONNECTED === $this->status) {
+            if (PeerStatus::DISCONNECTED === $this->status) {
                 $this->connect();
             } else {
                 $this->log->write('Connection to peer '.$this->address.':'.$this->port.' is not connected', LogLevel::DEBUG);
-                $this->status = self::STATUS_DISCONNECTED;
+                $this->status = PeerStatus::DISCONNECTED;
             }
 
             return;
@@ -62,22 +57,22 @@ class Peer extends Client
         $meta = stream_get_meta_data($this->stream);
 
         switch ($this->status) {
-            case self::STATUS_DISCONNECTED:
+            case PeerStatus::DISCONNECTED:
                 $this->connect();
 
                 break;
 
-            case self::STATUS_CONNECTING:
+            case PeerStatus::CONNECTING:
                 if ($meta['timed_out']) {
                     $this->log->write('Connection to peer '.$this->address.' timed out', LogLevel::NOTICE);
                     $this->disconnect();
                 } else {
-                    $this->status = self::STATUS_CONNECTED;
+                    $this->status = PeerStatus::CONNECTED;
                 }
 
                 break;
 
-            case self::STATUS_CONNECTED:
+            case PeerStatus::CONNECTED:
                 if ($meta['eof']) {
                     $this->log->write('Connection to peer '.$this->address.' closed unexpectedly', LogLevel::NOTICE);
                     $this->disconnect();
@@ -96,13 +91,13 @@ class Peer extends Client
                 $packet .= 'X-Cluster-Access-Key: '.$this->accessKey."\n";
                 $packet .= 'X-Client-Name: '.$this->name."\n";
                 $this->write($packet."\n");
-                $this->status = self::STATUS_NEGOTIATING;
+                $this->status = PeerStatus::NEGOTIATING;
 
                 break;
 
-            case self::STATUS_NEGOTIATING:
-            case self::STATUS_AUTHENTICATING:
-            case self::STATUS_STREAMING:
+            case PeerStatus::NEGOTIATING:
+            case PeerStatus::AUTHENTICATING:
+            case PeerStatus::STREAMING:
                 if ($meta['eof']) {
                     $this->log->write('Connection to peer '.$this->address.' closed unexpectedly', LogLevel::NOTICE);
                     $this->disconnect();
@@ -112,31 +107,23 @@ class Peer extends Client
 
     public function recv(string &$buf): void
     {
-        if (self::STATUS_STREAMING === $this->status) {
+        if (PeerStatus::STREAMING === $this->status) {
             parent::recv($buf);
-        } elseif (self::STATUS_NEGOTIATING === $this->status) {
+        } elseif (PeerStatus::NEGOTIATING === $this->status) {
             $lines = explode("\n", $buf);
             $lead = explode(' ', $lines[0], 3);
             if (!(isset($lead[1]) && '101' === $lead[1])) {
                 $this->disconnect();
             } else {
                 $this->log->write('Peer '.$this->address.' connected', LogLevel::INFO);
-                $this->status = self::STATUS_STREAMING;
+                $this->status = PeerStatus::STREAMING;
             }
         }
     }
 
     public function status(): string
     {
-        return match ($this->status) {
-            self::STATUS_DISCONNECTED => 'Disconnected',
-            self::STATUS_CONNECTING => 'Connecting',
-            self::STATUS_CONNECTED => 'Connected',
-            self::STATUS_NEGOTIATING => 'Negotiating',
-            self::STATUS_AUTHENTICATING => 'Authenticating',
-            self::STATUS_STREAMING => 'Streaming',
-            default => 'Unknown'
-        };
+        return $this->status->toString();
     }
 
     public function connect(?string $accessKey = null): void
@@ -148,15 +135,15 @@ class Peer extends Client
         if (null !== $accessKey) {
             $this->accessKey = $accessKey;
         }
-        $this->status = self::STATUS_CONNECTING;
+        $this->status = PeerStatus::CONNECTING;
         $this->log->write("PEER->OPEN: HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", LogLevel::DEBUG);
         $connectFlags = STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT;
         $this->stream = @stream_socket_client('tcp://'.$this->address.':'.$this->port, $errno, $errstr, 30, $connectFlags);
-        if (false !== $this->stream) {
-            Main::$instance->clientAdd($this->stream, $this);
-        } else {
-            $this->status = self::STATUS_DISCONNECTED;
-        }
+        // if (false !== $this->stream) {
+        //     $this->agent->clientAdd($this->stream, $this);
+        // } else {
+        //     $this->status = PeerStatus::DISCONNECTED;
+        // }
     }
 
     public function disconnect(): bool
@@ -167,7 +154,7 @@ class Peer extends Client
             $this->log->write("PEER->CLOSE: HOST={$this->address} PORT={$this->port} CLIENT={$this->id}", LogLevel::DEBUG);
             fclose($this->stream);
         }
-        $this->status = self::STATUS_DISCONNECTED;
+        $this->status = PeerStatus::DISCONNECTED;
         if (true === $this->isRemote) {
             // Main::$instance->cluster->removePeer($this);
         }
@@ -182,16 +169,16 @@ class Peer extends Client
 
     public function sendEvent(string $eventID, string $triggerID, mixed $data): bool
     {
-        if (self::STATUS_STREAMING !== $this->status) {
+        if (PeerStatus::STREAMING !== $this->status) {
             return false;
         }
 
         return parent::sendEvent($eventID, $triggerID, $data);
     }
 
-    protected function processCommand(string $command, mixed $payload = null): bool
+    protected function processCommand(PacketType $command, mixed $payload = null): bool
     {
-        if (self::STATUS_STREAMING !== $this->status) {
+        if (PeerStatus::STREAMING !== $this->status) {
             return false;
         }
 
