@@ -39,6 +39,7 @@ class Client extends Process
         $this->config['serverId'] ??= $config['server']['id'] ?? rand(1000, 9999);
         $protocol = new Protocol((string) $config['server']['id'], $this->config['encode']);
         parent::__construct($protocol);
+        $this->conn->configure($this->config);
     }
 
     public function wait(int $seconds = 0): void

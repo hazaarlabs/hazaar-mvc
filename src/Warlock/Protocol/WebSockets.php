@@ -30,8 +30,12 @@ abstract class WebSockets
      */
     public static function parseHeaders(string $request, string &$body = ''): array
     {
-        [$header, $body] = explode("\r\n\r\n", $request, 2);
-        $lines = explode("\n", $request);
+        $hdrEndPos = strpos($request, "\r\n\r\n") ?: strlen($request);
+        $header = substr($request, 0, $hdrEndPos);
+        if (strlen($request) > $hdrEndPos) {
+            $body = substr($request, $hdrEndPos + 4);
+        }
+        $lines = explode("\n", $header);
         $lead = explode(' ', $lines[0], 3);
         if (!isset($lead[1])) {
             return [];

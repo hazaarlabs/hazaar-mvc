@@ -51,6 +51,9 @@ enum PacketType: int
     // LOGGING/OUTPUT MESSAGES
     case LOG = 0x90;           // Generic log message
     case DEBUG = 0x91;
+    // CLUSTER MESSAGES
+    case PEERINFO = 0xA0;      // Peer information
+    case PEERSTATUS = 0xA1;    // Peer status update
 
     public static function get(string $name): ?PacketType
     {

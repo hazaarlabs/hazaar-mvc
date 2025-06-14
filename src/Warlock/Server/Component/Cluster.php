@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Hazaar\Warlock\Server\Component;
 
 use Hazaar\Warlock\Enum\LogLevel;
+use Hazaar\Warlock\Enum\PacketType;
 use Hazaar\Warlock\Enum\PeerStatus;
 use Hazaar\Warlock\Logger;
-use Hazaar\Warlock\Server\Client;
 use Hazaar\Warlock\Server\Client\Peer;
 use Hazaar\Warlock\Server\Main;
 
@@ -33,7 +33,7 @@ class Cluster
         $this->config = $config;
     }
 
-    public function start(): void
+    public function start(Main $main): void
     {
         if (true !== $this->config['enabled']) {
             return;
@@ -42,7 +42,7 @@ class Cluster
         if (!isset($this->config['peers'])) {
             return;
         }
-        Peer::$reconnectTimeout = $this->config['peerReconnect'] ?? 30;
+        $this->peers = [];
         $peers = $this->config['peers'];
         if (is_array($peers) && 0 === count($peers)) {
             $this->log->write('No peers defined in cluster configuration', LogLevel::INFO);
@@ -50,16 +50,12 @@ class Cluster
             return;
         }
         foreach ($peers as $peerConfig) {
-            if (false === strpos(':', $peerConfig)) {
-                $peerConfig .= ':8000';
+            $this->log->write("CLUSTER->PEER: HOST={$peerConfig}", LogLevel::DEBUG);
+            $peer = new Peer($main, null, array_merge($this->config, ['peer' => $peerConfig]));
+            if ($peer->connect()) {
+                $peer->process();
+                $this->peers[] = $peer;
             }
-            [$address, $port] = explode(':', $peerConfig);
-            if (false === is_numeric($port)) {
-                $port = 8000;
-            }
-            $peer = new Peer($this->config['name'], $address, intval($port));
-            $peer->connect($this->config['accessKey']);
-            $this->peers[] = $peer;
         }
     }
 
@@ -74,19 +70,19 @@ class Cluster
         }
     }
 
-    /**
-     * @param array<string, string> $headers
-     */
-    public function addPeer(array $headers, Client $client): void
+    public function addPeer(Peer $peer): void
     {
-        if (!$client instanceof Peer) {
-            $peer = new Peer($this->config['name'], $client->address, $client->port, true);
-            $peer->stream = $client->stream;
-            $peer->status = PeerStatus::STREAMING;
-            Main::$instance->clientReplace($peer->stream, $peer);
-        } else {
-            $peer = $client;
+        if (array_key_exists($peer->name, $this->peers)) {
+            $this->log->write('Peer already exists: '.$peer->name.' at '.$peer->address.':'.$peer->port, LogLevel::NOTICE);
+
+            return;
         }
+        if (!$peer->isConnected()) {
+            $this->log->write("Peer is not connected: {$peer->name} at {$peer->address}:{$peer->port}", LogLevel::WARN);
+
+            return;
+        }
+        $peer->status = PeerStatus::NEGOTIATING;
         $this->peers[$peer->name] = $peer;
         $this->log->write('Peer added: '.$peer->name.' at '.$peer->address.':'.$peer->port, LogLevel::INFO);
     }
@@ -106,6 +102,31 @@ class Cluster
         }
         foreach ($this->peers as $peer) {
             $peer->process();
+        }
+    }
+
+    public function processCommand(Peer $peer, PacketType $command, ?\stdClass $payload = null): void
+    {
+        switch ($command) {
+            case PacketType::PEERINFO:
+                $this->log->write("Processing PEERINFO command for {$peer->name}", LogLevel::DEBUG);
+                $peer->address = $payload->address ?? $peer->address;
+                $peer->port = $payload->port ?? $peer->port;
+                $this->log->write("Updated peer status: {$peer->name} at {$peer->address}:{$peer->port}", LogLevel::DEBUG);
+
+                // Handle peer info command
+                break;
+
+            case PacketType::PEERSTATUS:
+                $this->log->write("Processing PEERSTATUS command for {$peer->name}", LogLevel::DEBUG);
+
+                // Handle peer status update
+                break;
+
+            default:
+                $this->log->write("Unknown command: {$command->name}", LogLevel::WARN);
+
+                break;
         }
     }
 }

@@ -19,8 +19,8 @@ final class WarlockTest extends TestCase
      * @var array<string, mixed>
      */
     private static array $config = [
-        'host' => 'localhost',
-        'port' => 13080,
+        'host' => '127.0.0.1',
+        'port' => 8000,
         'accessKey' => 'test',
     ];
 

@@ -14,6 +14,8 @@ use Hazaar\Warlock\Enum\PcntlSignals;
 use Hazaar\Warlock\Exception\ExtensionNotLoaded;
 use Hazaar\Warlock\Logger;
 use Hazaar\Warlock\Protocol;
+use Hazaar\Warlock\Server\Client\Agent;
+use Hazaar\Warlock\Server\Client\Peer;
 use Hazaar\Warlock\Server\Component\Cluster;
 use Hazaar\Warlock\Server\Component\KVStore;
 
@@ -26,7 +28,6 @@ if (!extension_loaded('pcntl')) {
 
 class Main
 {
-    public static self $instance;
     public Protocol $protocol;
     public Logger $log;
 
@@ -34,6 +35,11 @@ class Main
      * The server configuration.
      */
     public Config $config;
+
+    /**
+     * @var array<Main>
+     */
+    private static array $instances = [];
     private string $env = 'development';
 
     /**
@@ -106,11 +112,13 @@ class Main
      */
     private int $tv = 1;
 
-    private ?KVStore $kvStore = null;
+    private KVStore $kvStore;
+
+    private Cluster $cluster;
 
     public function __construct(?string $configFile = null, string $env = 'development')
     {
-        self::$instance = $this;
+        self::$instances[getmypid()] = $this;
         $this->config = new Config(sourceFile: $configFile, env: $this->env = $env, defaults: [
             'id' => 1,
             'listen' => '0.0.0.0',
@@ -134,9 +142,13 @@ class Main
             ],
             'agent' => false, // Automatically start the agent process.  This is useful for testing and debugging, but not recommended for production use.
             'kvstore' => [
-                'enabled' => true,
-                'persist' => true, // Enable persistent storage for the KV Store.  This will store the KV Store in a file on disk.
+                'enabled' => false,
+                'persist' => false, // Enable persistent storage for the KV Store.  This will store the KV Store in a file on disk.
                 'compact' => 3600, // Compact the KV Store file on shutdown.
+            ],
+            'cluster' => [
+                'enabled' => false,
+                'hosts' => [], // The hosts to connect to for clustering.  This is a list of hostnames or IP addresses.
             ],
         ]);
         if (!isset($this->config['listen'])) {
@@ -152,22 +164,21 @@ class Main
         if ($tz = $this->config['timezone']) {
             date_default_timezone_set(timezoneId: $tz);
         }
-        if ($this->config['agent'] ?? false) {
-            $this->watcher = new Watcher($this->log);
-        }
-        // $this->cluster = new Cluster($this->log, $config['cluster'] ?? []);
     }
 
     private static function __signalHandler(int $signo, mixed $siginfo): void
     {
+        if (!($instance = self::$instances[getmypid()] ?? null)) {
+            return; // No instance found for this PID
+        }
         $sigName = PcntlSignals::tryFrom($signo)->name ?? 'UNKNOWN';
-        self::$instance->log->write('SIGNAL: '.$sigName, LogLevel::DEBUG);
+        $instance->log->write('SIGNAL: '.$sigName, LogLevel::DEBUG);
 
         switch ($signo) {
             case SIGINT:
             case SIGTERM:
             case SIGQUIT:
-                self::$instance->shutdown();
+                $instance->shutdown();
 
                 break;
         }
@@ -204,13 +215,16 @@ class Main
                     $this->log->write('Failed to enable persistent storage for KV Store', LogLevel::ERROR);
                 }
             }
-            $this->log->write('KV Store component initialized', LogLevel::INFO);
+            $this->log->write('KV Store component initialized', LogLevel::NOTICE);
+        }
+        if ($this->config['cluster']['enabled'] ?? false) {
+            $this->log->write('Initialising Cluster Manager', LogLevel::NOTICE);
+            $this->cluster = new Cluster($this->log, $this->config['cluster'] ?? []);
         }
         $this->streams[0] = $this->master;
         $this->running = true;
         $this->pid = getmypid();
         file_put_contents($this->pidfile, $this->pid);
-        $this->log->write('Ready...', LogLevel::INFO);
 
         return $this;
     }
@@ -225,7 +239,10 @@ class Main
      */
     public function run()
     {
-        // $this->cluster->start();
+        if (isset($this->cluster)) {
+            $this->cluster->start($this);
+        }
+        $this->log->write('Ready...', LogLevel::INFO);
         while ($this->running) {
             pcntl_signal_dispatch();
             if (null !== $this->shutdown && $this->shutdown <= time()) {
@@ -240,19 +257,19 @@ class Main
                 // $this->cluster->process();
                 $this->eventCleanup();
                 $this->clientCheck();
-                if (null !== $this->kvStore) {
+
+                if (isset($this->kvStore)) {
                     $this->kvStore->expireKeys();
                 }
-                if (isset($this->watcher)) {
-                    $this->watcher->process();
+                if (isset($this->cluster)) {
+                    $this->cluster->process();
                 }
                 $this->time = $now;
             }
         }
-        if (isset($this->watcher)) {
-            $this->watcher->stop();
+        if (isset($this->cluster)) {
+            $this->cluster->stop();
         }
-        // $this->cluster->stop();
         $this->log->write('Closing all remaining connections', LogLevel::NOTICE);
         foreach ($this->streams as $stream) {
             fclose($stream);
@@ -335,7 +352,7 @@ class Main
     /**
      * @param resource $stream
      */
-    public function clientAdd(mixed $stream, ClientType $type = ClientType::BASIC): Client|false
+    public function clientAddStream(mixed $stream, ClientType $type = ClientType::BASIC): Client|false
     {
         // If we don't have a stream or id, return false
         if (!is_resource($stream)) {
@@ -348,25 +365,42 @@ class Main
         }
         // Create the new client object
         $client = match ($type) {
-            ClientType::BASIC => new Client($this->log, $stream),
-            ClientType::AGENT => new Client\Agent($this->log, $stream),
-            // ClientType::PEER => new Client\Peer($this->log, $stream, $this->config['peer']),
+            ClientType::BASIC => new Client($this, $stream),
+            ClientType::AGENT => new Agent($this, $stream),
+            ClientType::PEER => new Peer($this, $stream, $this->config['cluster'] ?? []),
             default => null,
         };
-        if (!$client) {
+        if (!($client && $this->clientAdd($client))) {
             return false;
         }
-        $this->log->write("CLIENT->ADD: CLIENT={$client->id}", LogLevel::DEBUG);
-        // Add it to the client array
-        $this->clients[$streamID] = $client;
-        if (!array_key_exists($streamID, $this->streams)) {
-            $this->streams[$streamID] = $stream;
-        }
-        if (ClientType::AGENT === $client->type) {
-            $this->agents[$client->id] = $client;
+        if ($client instanceof Agent) {
+            $this->agents[$client->id] = $client; // Add new agent
+        } elseif ($client instanceof Peer) {
+            if (!isset($this->cluster)) {
+                $this->log->write('Cluster component not initialized, cannot add peer client', LogLevel::ERROR);
+
+                return false;
+            }
+            $this->cluster->addPeer($client);
         }
 
         return $client;
+    }
+
+    public function clientAdd(Client $client): bool
+    {
+        if (!$client->stream) {
+            return false;
+        }
+        $streamID = (int) $client->stream;
+        if (array_key_exists($streamID, $this->clients)) {
+            return false; // Client already exists
+        }
+        $this->log->write("CLIENT->ADD: CLIENT={$client->id}", LogLevel::DEBUG);
+        $this->clients[$streamID] = $client;
+        $this->streams[$streamID] = $client->stream;
+
+        return true;
     }
 
     public function clientReplace(mixed $stream, ?Client $client = null): bool
@@ -421,8 +455,16 @@ class Main
         if (true !== $client->authenticated()) {
             throw new \Exception('Admin commands only allowed by authorised clients!');
         }
-        if (null !== $this->kvStore && 'KV' === substr($command->name, 0, 2)) {
+        if (isset($this->kvStore) && 'KV' === substr($command->name, 0, 2)) {
             $this->kvStore->process($client, $command, $payload);
+
+            return;
+        }
+        if (isset($this->cluster) && 'PEER' === substr($command->name, 0, 4)) {
+            if (!$client instanceof Peer) {
+                throw new \Exception('Cluster commands only allowed by peer clients!');
+            }
+            $this->cluster->processCommand($client, $command, $payload);
 
             return;
         }
@@ -718,13 +760,13 @@ class Main
                 continue;
             }
             $event = &$this->events[$eventID][$trigger];
-            // foreach ($this->cluster->peers as $peer) {
-            //     if (in_array($peer->name, $event['seen'])) {
-            //         continue;
-            //     }
-            //     $peer->sendEvent($eventID, $triggerID, $event['data']);
-            //     $event['seen'][] = $peer->name;
-            // }
+            foreach ($this->cluster->peers as $peer) {
+                if (in_array($peer->name, $event['seen'])) {
+                    continue;
+                }
+                $peer->sendEvent($eventID, $triggerID, $event['data']);
+                $event['seen'][] = $peer->name;
+            }
             if (!array_key_exists($eventID, $this->subscriptions)) {
                 continue;
             }
@@ -779,7 +821,7 @@ class Main
             $client->recv($buf);
         } else {
             $clientType = Client::getTypeFromHandshake($buf);
-            if (!($client = $this->clientAdd($stream, $clientType))) {
+            if (!($client = $this->clientAddStream($stream, $clientType))) {
                 $this->disconnect($stream);
 
                 return false;
