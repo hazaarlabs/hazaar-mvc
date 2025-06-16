@@ -26,7 +26,7 @@ use Hazaar\Util\Arr;
  * @implements  \ArrayAccess<string, mixed>
  * @implements  \Iterator<string, mixed>
  */
-class Config implements \ArrayAccess, \Iterator
+class Config implements \ArrayAccess, \Iterator, \Countable
 {
     /**
      * @var array<string>
@@ -205,14 +205,15 @@ class Config implements \ArrayAccess, \Iterator
     /**
      * Loads the configuration options from an array.
      *
-     * @param array<mixed> $options The configuration options to load
+     * @param array<mixed> $options  The configuration options to load
+     * @param array<mixed> $defaults (optional) The default configuration options
      */
-    public function loadFromArray(array $options): bool
+    public function loadFromArray(array $options, ?array $defaults = null): bool
     {
         if (0 === count($options)) {
             return false;
         }
-        $this->options = [];
+        $this->options = $defaults ?? [];
         $this->global = array_replace_recursive($this->global, Arr::fromDotNotation($options));
         $this->loadConfigOptions($this->options, $this->global, $this->env ?? null);
 
@@ -351,6 +352,11 @@ class Config implements \ArrayAccess, \Iterator
     public function valid(): bool
     {
         return null !== key($this->options);
+    }
+
+    public function count(): int
+    {
+        return count($this->options);
     }
 
     public function rewind(): void

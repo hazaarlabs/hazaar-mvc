@@ -7,6 +7,8 @@ namespace Hazaar\Console;
 abstract class Module
 {
     protected Application $application;
+    private string $name;
+    private string $description;
 
     /**
      * @var array<Command>
@@ -22,6 +24,30 @@ abstract class Module
         $this->input = $input;
         $this->output = $output;
         $this->configure();
+    }
+
+    public function setName(string $name): self
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->name ?? null;
+    }
+
+    public function setDescription(string $description): self
+    {
+        $this->description = $description;
+
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description ?? null;
     }
 
     /**
@@ -47,7 +73,10 @@ abstract class Module
             }
             $command = $this->commands[$command];
             $this->input->run($command);
-            $this->prepare($this->input, $this->output);
+            $result = $this->prepare($this->input, $this->output);
+            if ($result > 0) {
+                return $result;
+            }
             $callable = $command->getCallable();
             $result = $callable($this->input, $this->output);
         } catch (\Exception $e) {
@@ -57,7 +86,30 @@ abstract class Module
         return $result;
     }
 
-    protected function prepare(Input $input, Output $output): void {}
+    public function addGlobalOption(
+        string $long,
+        ?string $short = null,
+        ?string $description = null,
+        ?bool $takesValue = null,
+        mixed $default = null,
+        ?string $valueType = null
+    ): self {
+        Command::$globalOptions[$long] = new Option(
+            long: $long,
+            short: $short,
+            description: $description,
+            takesValue: null === $takesValue ? null !== $valueType : false,
+            default: $default,
+            valueType: $valueType
+        );
+
+        return $this;
+    }
+
+    protected function prepare(Input $input, Output $output): int
+    {
+        return 0;
+    }
 
     /**
      * @param array{object,string} $callback

@@ -338,7 +338,7 @@ class File implements \JsonSerializable
             return new Dir($this->sourceFile, $this->manager, $this->relativePath);
         }
 
-        return null;
+        return $this->parent();
     }
 
     public function parent(): Dir

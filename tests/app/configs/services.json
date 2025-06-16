@@ -1,0 +1,10 @@
+{
+    "development": {
+        "test": {
+            "enabled": true,
+            "interval": 60,
+            "message": "This is a test service",
+            "checkfile": 10
+        }
+    }
+}

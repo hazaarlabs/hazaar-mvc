@@ -9,20 +9,19 @@ use Hazaar\Console\Modules\HelpModule;
 
 class Application
 {
-    private string $name;
-    private string $version;
+    /**
+     * @var array<Module>
+     */
+    public array $modules = [];
 
     /**
      * A list of commands registered with the application by modules.
      *
-     * @var array<Module>
+     * @var array<string,array<Module>>
      */
-    private array $commands = [];
-
-    /**
-     * @var array<Module>
-     */
-    private array $modules = [];
+    public array $commands = [];
+    private string $name;
+    private string $version;
 
     private Input $input;
     private Output $output;
@@ -50,63 +49,33 @@ class Application
         foreach ($this->modules as $module) {
             $module->initialise($this, $this->input, $this->output);
             $modules = array_fill(0, count($module->getCommands()), $module);
-            $this->commands = array_merge($this->commands, array_combine(array_keys($module->getCommands()), $modules));
+            $moduleName = $module->getName() ?? 'default';
+            $this->commands[$moduleName] = array_merge($this->commands[$moduleName] ?? [], array_combine(array_keys($module->getCommands()), $modules));
         }
-        $this->input->initialise((array) $_SERVER['argv']);
-        $this->output->write('<fg=green>'.$this->name.' v'.$this->version.'</>'.PHP_EOL);
-        define('APPLICATION_ENV', $this->input->getGlobalOption('env') ?? getenv('APPLICATION_ENV') ?: 'development');
-        $this->output->write('<fg=green>Environment: '.APPLICATION_ENV.'</>'.PHP_EOL.PHP_EOL);
-        $commandName = $this->input->getCommand();
-        if (!array_key_exists($commandName, $this->commands)) {
-            $this->writeHelp($this->output);
+        $result = $this->input->initialise((array) $_SERVER['argv'], array_keys($this->commands));
+        if (false === $result) {
+            $this->output->write('<fg=red>Invalid command line arguments</>'.PHP_EOL);
+            $this->output->write('<fg=yellow>Use "'.$this->input->getExecutable().' help" for usage information</>'.PHP_EOL);
 
             return 1;
         }
-        $module = $this->commands[$commandName];
-        $code = $module->run($commandName);
-        if (-1 === $code) {
-            $this->writeHelp($this->output);
-            $code = 1;
+        $this->output->write('<fg=green>'.$this->name.' v'.$this->version.'</>'.PHP_EOL);
+        define('APPLICATION_ENV', $this->input->getGlobalOption('env') ?? getenv('APPLICATION_ENV') ?: 'development');
+        $this->output->write('<fg=green>Environment: '.APPLICATION_ENV.'</>'.PHP_EOL.PHP_EOL);
+        $moduleName = $this->input->getModule();
+        if (!array_key_exists($moduleName, $this->commands)) {
+            $moduleName = 'default';
         }
+        $commandName = $this->input->getCommand();
+        if (!($commandName && array_key_exists($commandName, $this->commands[$moduleName]))) {
+            $helpModule = new HelpModule();
+            $helpModule->initialise($this, $this->input, $this->output);
 
-        return $code;
-    }
+            return $helpModule->execute($this->input, $this->output);
+        }
+        $module = $this->commands[$moduleName][$commandName];
 
-    public function writeHelp(Output $output): void
-    {
-        $cli = $this->input->getExecutable();
-        if ($globalOptions = Command::$globalOptions) {
-            $cli .= ' [globals]';
-        }
-        $cli .= ' [command] [options]';
-        $output->write("<fg=green>Usage: {$cli}</>".PHP_EOL);
-        $output->write(PHP_EOL);
-        if (count(Command::$globalOptions) > 0) {
-            $output->write('<fg=green>Global Options:</>'.PHP_EOL);
-            foreach (Command::$globalOptions as $option) {
-                $output->write('  <fg=green>--'.$option['long'].'</>');
-                if (null !== $option['short']) {
-                    $output->write(', <fg=green>-'.$option['short'].'</>');
-                }
-                $output->write(' - '.$option['description'].PHP_EOL);
-            }
-            $output->write(PHP_EOL);
-        }
-        $output->write('<fg=green>Commands:</>'.PHP_EOL);
-        $list = [];
-        foreach ($this->commands as $module) {
-            foreach ($module->getCommands() as $command) {
-                $name = $command->getName();
-                $list[$name] = '  '.$name.' - '.$command->getDescription();
-            }
-        }
-        ksort(array: $list);
-        $output->write(implode(PHP_EOL, $list).PHP_EOL);
-    }
-
-    public function getCommandModule(string $command): ?Module
-    {
-        return $this->commands[$command] ?? null;
+        return $module->run($commandName);
     }
 
     public function handleException(\Throwable $e): void

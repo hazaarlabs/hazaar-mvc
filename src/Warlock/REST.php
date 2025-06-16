@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock;
 
+use Hazaar\Config;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 use Hazaar\HTTP\Response;
+use Hazaar\Warlock\Enum\PacketType;
 
 class REST
 {
@@ -19,7 +21,8 @@ class REST
      */
     public function __construct(array $serverConfig = [])
     {
-        $this->serverConfig = new Config($serverConfig);
+        $this->serverConfig = new Config();
+        $this->serverConfig->loadFromArray($serverConfig);
         $this->client = new Client();
         if (null === $this->serverConfig['client']['encoded']) {
             $this->serverConfig['client']['encoded'] = $this->serverConfig['server']['encoded'];
@@ -39,7 +42,7 @@ class REST
      */
     public function trigger(string $event, mixed $data = null, mixed $options = null, ?Response &$response = null): bool
     {
-        return $this->send('TRIGGER', ['id' => $event, 'data' => $data], $response);
+        return $this->send(PacketType::TRIGGER, ['id' => $event, 'data' => $data], $response);
     }
 
     /**
@@ -50,14 +53,14 @@ class REST
      * specified by defaulting to the server's listen address and port. Additionally, it sets up
      * the authorization header if an admin key is provided.
      *
-     * @param string        $type      the type of the request
+     * @param PacketType    $type      the type of the request
      * @param mixed         $data      The data to be sent with the request. Default is null.
      * @param mixed         $options   Additional options for the request. Default is null.
      * @param null|Response &$response The response object that will be populated with the server's response. Default is null.
      *
      * @return bool returns true if the response status is 200, otherwise false
      */
-    private function send(string $type, mixed $data = null, mixed $options = null, ?Response &$response = null): bool
+    private function send(PacketType $type, mixed $data = null, mixed $options = null, ?Response &$response = null): bool
     {
         if (null === $this->serverConfig['client']['port']) {
             $this->serverConfig['client']['port'] = $this->serverConfig['server']['port'];

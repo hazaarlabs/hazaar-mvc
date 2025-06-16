@@ -14,10 +14,15 @@ class ConfigModule extends Module
 {
     protected function configure(): void
     {
-        $this->addCommand('config')
-            ->setDescription('View or modify the application configuration')
-            ->addArgument('command', 'The tool command to run')
-            ->addArgument('args', 'Arguments to pass to the tool command', true)
+        $this->setName('config')->setDescription('View or modify the application configuration');
+        $this->addCommand('get')
+            ->setDescription('View the application configuration')
+            ->addArgument('option', 'The configuration option to view', true)
+        ;
+        $this->addCommand('set')
+            ->setDescription('Set the application configuration')
+            ->addArgument('option', 'The configuration option to set in the format key=value;key2=value2', true)
+            ->addArgument('value', 'The value to set the configuration option to', false)
         ;
     }
 
@@ -30,7 +35,7 @@ class ConfigModule extends Module
         switch ($configCommand) {
             case 'get':
                 if (!($configArg = $input->getArgument('config'))) {
-                    throw new \Exception('No configuration argument specified', 1);
+                    throw new \InvalidArgumentException('No configuration argument specified', 1);
                 }
                 $value = $config[$configArg];
                 $output->write($configArg.'='.$value.PHP_EOL);
@@ -39,17 +44,17 @@ class ConfigModule extends Module
 
             case 'set':
                 if (!($configArg = $input->getArgument('config'))) {
-                    throw new \Exception('No configuration argument specified', 1);
+                    throw new \InvalidArgumentException('No configuration argument specified', 1);
                 }
                 $configUpdates = Arr::unflatten($configArg, '=', ';');
                 if (0 === count($configUpdates)) {
-                    throw new \Exception('No configuration value specified', 1);
+                    throw new \InvalidArgumentException('No configuration value specified', 1);
                 }
                 foreach ($configUpdates as $key => $value) {
                     $config[$key] = $value;
                 }
                 if (false === $config->save()) {
-                    throw new \Exception('Failed to save configuration', 1);
+                    throw new \InvalidArgumentException('Failed to save configuration', 1);
                 }
 
                 break;

@@ -1,7 +1,33 @@
 {
   "development": {
+    "port": 8000,
+    "kvstore": {
+      "enabled": true
+    },
     "log": {
-      "level": "W_DEBUG"
+      "level": "DEBUG"
+    }
+  },
+  "master": {
+    "include": "development",
+    "port": 8000,
+    "cluster": {
+      "enabled": true,
+      "name": "warlock",
+      "accessKey": "54321"
+    }
+  },
+  "slave": {
+    "include": "development",
+    "port": 8001,
+    "cluster": {
+      "enabled": true,
+      "name": "warlock",
+      "accessKey": "54321",
+      "peerReconnect": 1,
+      "peers": [
+        "127.0.0.1:8000"
+      ]
     }
   }
 }

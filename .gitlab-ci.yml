@@ -114,7 +114,10 @@ Unit Testing:
     POSTGRES_PASSWORD: phpunit12345
     POSTGRES_HOST_AUTH_METHOD: trust
   before_script:
-  - composer install
+    - composer install
+    - bin/warlock run -d --config tests/app/configs/warlock.json
+    - bin/warlock agent run -d -p tests/app
+    - sleep 5
   script:
   - vendor/bin/phpunit --debug
   artifacts:

@@ -10,7 +10,6 @@ class Service extends Client
 {
     public string $name = 'Unnamed Service';
     public ?string $address = 'stream';
-    public int $port = 0;
     public \stdClass $serviceStatus;
 
     protected function frame(string $payload, ?string $type = null, bool $masked = true): false|string

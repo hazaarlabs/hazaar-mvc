@@ -17,7 +17,7 @@ class CryptModule extends Module
         ;
         $this->addCommand('decrypt', [$this, 'decryptFile'])
             ->setDescription('Decrypt a file using the Hazaar encryption system')
-            ->addArgument('file', 'The file to encrypt')
+            ->addArgument('file', 'The file to decrypt')
         ;
         $this->addCommand('check', [$this, 'checkFileEncrypted'])
             ->setDescription('Check if a file is encrypted')

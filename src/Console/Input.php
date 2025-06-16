@@ -35,6 +35,8 @@ class Input
      */
     private array $options = [];
 
+    private ?string $module = null;
+
     private ?string $command = null;
 
     private ?Command $commandObject = null;
@@ -42,44 +44,61 @@ class Input
     /**
      * Initialises the input object with the command line arguments.
      *
-     * @param array<mixed> $argv
+     * @param array<mixed>  $argv
+     * @param array<string> $moduleNames
      */
-    public function initialise(array $argv): void
+    public function initialise(array $argv, array $moduleNames = []): bool
     {
         $this->executable = basename(array_shift($argv));
         if (!current($argv)) {
-            return;
+            return false;
         }
-        $definedOptions = $this->reduceOptions(Command::$globalOptions);
         if (0 === count($argv)) {
             $this->argv = [];
 
-            return;
+            return false;
         }
         while ('-' === substr(current($argv), 0, 1)) {
-            $this->parseOption(current($argv), $definedOptions, $this->globalOptions);
+            $this->parseOption($argv, Command::$globalOptions, $this->globalOptions);
             next($argv);
         }
-        $this->command = current($argv);
+        $this->module = current($argv);
+        if (!in_array($this->module, $moduleNames)) {
+            $this->module = 'default';
+        } else {
+            next($argv);
+        }
+        $command = current($argv);
+        if (false === $command) {
+            return false;
+        }
+        $this->command = $command;
         $this->argv = array_slice($argv, key($argv) + 1);
+
+        return true;
     }
 
     public function run(Command $command): void
     {
         $this->commandObject = $command;
-        $optionsDefinition = $this->reduceOptions($command->getOptions());
+        $optionsDefinition = $command->getOptions();
         $definedArguments = $command->getArguments();
         $argumentsDefinition = [];
         foreach ($definedArguments as $def) {
-            $argumentsDefinition[] = $def['name'];
+            $argumentsDefinition[] = $def->name;
         }
-        foreach ($this->argv as $arg) {
-            if ($this->parseOption($arg, $optionsDefinition, $this->options)) {
+        reset($this->argv);
+        do {
+            if ($this->parseOption($this->argv, $optionsDefinition, $this->options)) {
+                continue;
+            }
+            if (0 === count($argumentsDefinition)) {
+                // No more arguments defined, so we can ignore this one.
                 continue;
             }
             $argName = array_shift($argumentsDefinition);
-            $this->args[$argName] = $arg;
-        }
+            $this->args[$argName] = current($this->argv);
+        } while (false !== next($this->argv));
     }
 
     public function getExecutable(): string
@@ -90,6 +109,11 @@ class Input
     public function getGlobalOption(string $name): mixed
     {
         return $this->globalOptions[$name] ?? null;
+    }
+
+    public function getModule(): ?string
+    {
+        return $this->module;
     }
 
     public function getCommandObject(): ?Command
@@ -112,9 +136,33 @@ class Input
         return $this->args[$name] ?? null;
     }
 
+    /**
+     * Gets all the arguments that were passed to the command.
+     *
+     * @return array<string>
+     */
+    public function getArguments(): array
+    {
+        return $this->args;
+    }
+
     public function getOption(string $name, ?string $default = null): mixed
     {
+        if (array_key_exists($name, Command::$globalOptions)) {
+            return $this->globalOptions[$name] ?? $default;
+        }
+
         return $this->options[$name] ?? $default;
+    }
+
+    /**
+     * Gets the options that were set on the command line.
+     *
+     * @return array<string,mixed> the options
+     */
+    public function getOptions(): array
+    {
+        return $this->options;
     }
 
     public function setOption(string $name, mixed $value): void
@@ -123,118 +171,75 @@ class Input
     }
 
     /**
-     * Reduces the options array to a simple array of option names.
+     * Gets the options that were used on the command line.
      *
-     * @param array<array{long: string, short: null|string, description: null|string, required: bool}> $definedOptions
-     *
-     * @return array<string>
+     * @return array<string> the options
      */
-    private function reduceOptions(array $definedOptions): array
+    public function getArgv(): array
     {
-        $optionsDefinition = [];
-        foreach ($definedOptions as $def) {
-            $optionsDefinition[$def['long']] = $def['long'];
-            if ($def['short']) {
-                $optionsDefinition[$def['short']] = $def['long'];
-            }
-        }
-
-        return $optionsDefinition;
+        return $this->argv ?? [];
     }
 
     /**
      * Parses a command line option and adds it to the options array.
      *
-     * @param array<string,string> $optionsDefinition
+     * @param array<string,string> $argv
+     * @param array<string,Option> $optionsDefinition
      * @param array<string,mixed>  $options
      */
-    private function parseOption(string $arg, array &$optionsDefinition, array &$options): bool
+    private function parseOption(array &$argv, array &$optionsDefinition, array &$options): bool
     {
-        if (str_starts_with($arg, '--')) {
-            $eq = strpos($arg, '=');
-            $key = substr($arg, 2, $eq ? $eq - 2 : null);
-            if (in_array($key, $optionsDefinition)) {
-                $value = $eq ? substr($arg, $eq + 1) : true;
-                $options[$key] = $value;
-            }
-
-            return true;
-        }
-        if (!str_starts_with($arg, '-')) {
+        $arg = current($argv);
+        if (false === $arg) {
             return false;
         }
-        $key = substr($arg, 1, 1);
-        if (array_key_exists($key, $optionsDefinition)) {
-            $value = (strlen($arg) > 2) ? substr($arg, 3) : true;
-            $options[$optionsDefinition[$key]] = $value;
+        $offset = 1;
+        $equalsValue = null;
+        if (str_starts_with($arg, '--')) {
+            $offset = 2;
+            if (($pos = strpos($arg, '=')) !== false) {
+                $equalsValue = trim(substr($arg, $pos + 1));
+                $arg = substr($arg, 0, $pos);
+            }
+        } elseif (!str_starts_with($arg, '-')) {
+            return false;
         }
+        $key = substr($arg, $offset);
+        if (1 === strlen($key)) {
+            // Search for an option with a matching short name
+            foreach ($optionsDefinition as $o) {
+                if (isset($o->short) && $o->short === $key) {
+                    $key = $o->long;
+
+                    break;
+                }
+            }
+        }
+        if (!array_key_exists($key, $optionsDefinition)) {
+            // search for short options
+            return true;
+        }
+        $option = $optionsDefinition[$key];
+        if ($option->takesValue) {
+            if (null !== $equalsValue) {
+                $value = $equalsValue;
+            } else {
+                $value = $option->default;
+                $nextArg = next($argv);
+                if (false !== $nextArg && !str_starts_with($nextArg, '-')) {
+                    $value = $nextArg;
+                }
+            }
+            if (null === $value) {
+                throw new \InvalidArgumentException(
+                    "Option `-{$key}` requires a value, but none was provided."
+                );
+            }
+        } else {
+            $value = true;
+        }
+        $options[$option->long] = $value;
 
         return true;
     }
-
-    // Shows a help page on the CLI for the options and commands that have been configured.
-    // public function showHelp(): int
-    // {
-    //     $pad = 30;
-    //     $script = basename(coalesce(ake($_SERVER, 'CLI_COMMAND'), ake($_SERVER, 'SCRIPT_FILENAME')));
-    //     $msg = "Syntax: {$script}";
-    //     if (count($this->options) > 0) {
-    //         $msg .= ' [options]';
-    //     }
-    //     if (count($this->commands) > 0) {
-    //         $msg .= ' [command]';
-    //     }
-    //     if (count($this->options) > 0) {
-    //         $msg .= "\n\nGlobal Options:\n\n";
-    //         foreach ($this->options as $o) {
-    //             if (ake($o, 4)) {
-    //                 continue;
-    //             }
-    //             $avail = [];
-    //             if ($o[0]) {
-    //                 $avail[] = '-'.$o[0].(is_string($o[2]) ? ' '.$o[2] : '');
-    //             }
-    //             if ($o[1]) {
-    //                 $avail[] = '--'.$o[1].(is_string($o[2]) ? '='.$o[2] : '');
-    //             }
-    //             $msg .= '  '.str_pad(implode(', ', $avail), $pad, ' ', STR_PAD_RIGHT).' '.ake($o, 3)."\n";
-    //         }
-    //     }
-    //     $optionsMsg = [];
-    //     if (count($this->commands) > 0) {
-    //         $msg .= "\nCommands:\n\n";
-    //         foreach ($this->commands as $cmd => $c) {
-    //             $name = $cmd;
-    //             if ($options = ake($c, 1)) {
-    //                 if (!is_array($options)) {
-    //                     $options = [$options];
-    //                 }
-    //                 $name .= ' ['.implode('], [', $options).']';
-    //             }
-    //             $msg .= '  '.str_pad($name, $pad, ' ', STR_PAD_RIGHT).' '.ake($c, 0)."\n";
-    //             foreach ($this->options as $o) {
-    //                 if (ake($o, 4) !== $cmd) {
-    //                     continue;
-    //                 }
-    //                 $avail = [];
-    //                 if ($o[0]) {
-    //                     $avail[] = '-'.$o[0].(is_string($o[2]) ? ' '.$o[2] : '');
-    //                 }
-    //                 if ($o[1]) {
-    //                     $avail[] = '--'.$o[1].(is_string($o[2]) ? '='.$o[2] : '');
-    //                 }
-    //                 $optionsMsg[$cmd][] = '    '.str_pad(implode(', ', $avail), $pad - 2, ' ', STR_PAD_RIGHT).' '.ake($o, 3)."\n";
-    //             }
-    //         }
-    //     }
-    //     if (count($optionsMsg) > 0) {
-    //         $msg .= "\nCommand Options:\n\n";
-    //         foreach ($optionsMsg as $cmd => $options) {
-    //             $msg .= "  {$cmd}:\n\n".implode("\n", $options)."\n";
-    //         }
-    //     }
-    //     echo $msg."\n";
-
-    //     return 0;
-    // }
 }
