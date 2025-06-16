@@ -18,10 +18,11 @@ use Hazaar\Application\FilePath;
  *
  * This class contains methods for auto-loading classes from files in the Hazaar library path. Ordinarily
  * there will be no need for developers to use this class directly but it does contain a few methods for
- * working with paths and library files.
+ * working with application paths and library files.
  *
  * This class is not meant to be instantiated directly and instances should be retrieved using the
- * Loader::getInstance()method.
+ * Loader::getInstance() method.  Don't worry about the instance being created, it is automatically
+ * created when the application starts.
  *
  * ### Example
  *
@@ -44,10 +45,7 @@ class Loader
     public array $paths = [];
     private string $applicationPath;
 
-    /**
-     * @var array<Loader> an array of loader instances
-     */
-    private static array $instances = [];
+    private static self $instance;
 
     /**
      * Initialise a new loader.
@@ -77,13 +75,22 @@ class Loader
     /**
      * Return the current instance of the Loader object.
      */
-    public static function getInstance(string $path): Loader
+    public static function getInstance(): ?Loader
     {
-        if (isset(Loader::$instances[$path])) {
-            return Loader::$instances[$path];
+        if (!isset(Loader::$instance)) {
+            return null;
         }
 
-        return Loader::$instances[$path] = new Loader($path);
+        return Loader::$instance;
+    }
+
+    public static function createInstance(string $path): Loader
+    {
+        if (isset(Loader::$instance)) {
+            throw new \RuntimeException('Loader instance already exists. Use Loader::getInstance() to retrieve the existing instance.');
+        }
+
+        return Loader::$instance = new Loader($path);
     }
 
     /**
@@ -125,10 +132,16 @@ class Loader
      */
     public function addSearchPath(FilePath $type, string $path): void
     {
-        $typeName = $type->value;
-        if (!array_key_exists($typeName, $this->paths) || !in_array($path, $this->paths[$typeName])) {
-            $this->paths[$typeName][] = $path;
+        if (DIRECTORY_SEPARATOR !== substr($path, 0, 1)) {
+            // If the path is not an absolute path, prepend the application path
+            $path = $this->applicationPath.DIRECTORY_SEPARATOR.$path;
         }
+        $typeName = $type->value;
+        if (array_key_exists($typeName, $this->paths)
+            && in_array($path, $this->paths[$typeName])) {
+            return;
+        }
+        $this->paths[$typeName][] = $path;
     }
 
     /**
@@ -209,8 +222,7 @@ class Loader
         if ($searchFile && Loader::isAbsolutePath($searchFile)) {
             return realpath($searchFile);
         }
-        $app = Application::getInstance();
-        $loader = $app ? $app->loader : Loader::getInstance(Application::findApplicationPath() ?? getcwd());
+        $loader = Loader::getInstance();
         if (!$loader) {
             return null;
         }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Connection;
 
+use Hazaar\Warlock\Enum\PacketType;
 use Hazaar\Warlock\Interface\Connection;
 use Hazaar\Warlock\Protocol;
 
@@ -20,7 +21,22 @@ final class Pipe implements Connection
         $this->guid = $guid;
     }
 
-    public function connect(string $applicationName, string $host, int $port, ?array $extraHeaders = null): bool
+    public function configure(array $config): void
+    {
+        // No configuration needed for pipe connection
+    }
+
+    public function getHost(): string
+    {
+        return 'pipe';
+    }
+
+    public function getPort(): int
+    {
+        return 0; // No port for pipe connection
+    }
+
+    public function connect(): bool
     {
         return true;
     }
@@ -37,7 +53,7 @@ final class Pipe implements Connection
         return true;
     }
 
-    public function send(string $command, mixed $payload = null): bool
+    public function send(PacketType $command, mixed $payload = null): bool
     {
         if (!($packet = $this->protocol->encode($command, $payload))) {
             return false;
@@ -64,7 +80,7 @@ final class Pipe implements Connection
         return true;
     }
 
-    public function recv(mixed &$payload = null, int $tvSec = 3, int $tvUsec = 0): null|bool|string
+    public function recv(mixed &$payload = null, int $tvSec = 3, int $tvUsec = 0): null|false|PacketType
     {
         if ($this->buffer && false !== strpos($this->buffer, "\n")) {
             while ($packet = $this->processPacket($this->buffer)) {

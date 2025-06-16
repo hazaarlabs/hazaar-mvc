@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Warlock\Connection;
 
 use Hazaar\Util\Str;
+use Hazaar\Warlock\Enum\PacketType;
 use Hazaar\Warlock\Interface\Connection;
 use Hazaar\Warlock\Protocol;
 use Hazaar\Warlock\Protocol\WebSockets;
@@ -13,6 +14,8 @@ final class Socket extends WebSockets implements Connection
 {
     public int $bytesReceived = 0;
     public int $socketLastError;
+    protected string $host = '127.0.0.1';
+    protected int $port = 13080;
     protected string $id;
     protected string $key;
     protected false|\Socket $socket = false;
@@ -24,7 +27,15 @@ final class Socket extends WebSockets implements Connection
     protected ?string $payloadBuffer = null;
     protected bool $closing = false;
 
-    public function __construct(Protocol $protocol, ?string $guid = null)
+    /**
+     * @var array<string,string>
+     */
+    protected array $headers;
+
+    /**
+     * @param array<string,string> $headers
+     */
+    public function __construct(Protocol $protocol, ?string $guid = null, array $headers = [])
     {
         if (!extension_loaded('sockets')) {
             throw new \Exception('The sockets extension is not loaded.');
@@ -33,6 +44,7 @@ final class Socket extends WebSockets implements Connection
         $this->protocol = $protocol;
         $this->id = null === $guid ? Str::guid() : $guid;
         $this->key = uniqid();
+        $this->headers = $headers;
     }
 
     final public function __destruct()
@@ -40,31 +52,52 @@ final class Socket extends WebSockets implements Connection
         $this->disconnect();
     }
 
-    public function connect(string $applicationName, string $host, int $port, ?array $extraHeaders = null): bool
+    public function configure(array $config): void
+    {
+        $this->host = $config['host'] ?? '127.0.0.1';
+        $this->port = $config['port'] ?? 13080;
+        $this->headers = $config['headers'] ?? [];
+    }
+
+    /**
+     * Get the host of the Warlock server.
+     */
+    public function getHost(): string
+    {
+        return $this->host;
+    }
+
+    /**
+     * Get the port of the Warlock server.
+     */
+    public function getPort(): int
+    {
+        return $this->port;
+    }
+
+    /**
+     * Connect to the Warlock server.
+     */
+    public function connect(): bool
     {
         $this->socket = @socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         if (false === $this->socket) {
             throw new \Exception('Unable to create TCP socket!');
         }
-        if (!($this->connected = @socket_connect($this->socket, $host, $port))) {
+        if (!($this->connected = @socket_connect($this->socket, $this->host, $this->port))) {
             $this->socketLastError = socket_last_error($this->socket);
             error_clear_last();
             socket_close($this->socket);
 
             return $this->socket = false;
         }
-        $headers = [
-            'X-WARLOCK-PHP' => 'true',
-            'X-WARLOCK-USER' => base64_encode(get_current_user()),
-        ];
-        if (is_array($extraHeaders)) {
-            $headers = array_merge($headers, $extraHeaders);
-        }
+        $this->headers['X-WARLOCK-PHP'] = 'true';
+        $this->headers['X-WARLOCK-USER'] = base64_encode(get_current_user());
 
         /**
          * Initiate a WebSockets connection.
          */
-        $handshake = $this->createHandshake('/'.$applicationName.'/warlock?CID='.$this->id, $host, null, $this->key, $headers);
+        $handshake = $this->createHandshake("/warlock?CID={$this->id}", $this->host, null, $this->key, $this->headers);
         @socket_write($this->socket, $handshake, strlen($handshake));
 
         /**
@@ -97,20 +130,19 @@ final class Socket extends WebSockets implements Connection
     public function disconnect(): bool
     {
         $this->frameBuffer = '';
-        if ($this->socket) {
-            if (false === $this->closing) {
-                $this->closing = true;
-                $frame = $this->frame('', 'close');
-                @socket_write($this->socket, $frame, strlen($frame));
-                $this->recv($payload);
-            }
-            socket_close($this->socket);
-            $this->socket = false;
-
-            return true;
+        if (!$this->socket) {
+            return false;
         }
+        if (false === $this->closing) {
+            $this->closing = true;
+            $frame = $this->frame('', 'close');
+            @socket_write($this->socket, $frame, strlen($frame));
+            $this->recv($payload);
+        }
+        socket_close($this->socket);
+        $this->socket = false;
 
-        return false;
+        return true;
     }
 
     public function connected(): bool
@@ -118,7 +150,7 @@ final class Socket extends WebSockets implements Connection
         return false !== $this->socket;
     }
 
-    public function send(string $command, mixed $payload = null): bool
+    public function send(PacketType $command, mixed $payload = null): bool
     {
         if (!$this->socket) {
             return false;
@@ -149,7 +181,7 @@ final class Socket extends WebSockets implements Connection
         return true;
     }
 
-    public function recv(mixed &$payload = null, int $tvSec = 3, int $tvUsec = 0): null|bool|string
+    public function recv(mixed &$payload = null, int $tvSec = 3, int $tvUsec = 0): null|bool|PacketType
     {
         // Process any frames sitting in the local frame buffer first.
         while ($frame = $this->processFrame()) {
@@ -160,11 +192,11 @@ final class Socket extends WebSockets implements Connection
             return $this->protocol->decode($frame, $payload);
         }
         if (!$this->socket) {
-            exit(4);
+            return false;
         }
         $socketOption = socket_get_option($this->socket, SOL_SOCKET, SO_ERROR);
         if (is_int($socketOption) && $socketOption > 0) {
-            exit(4);
+            return false;
         }
         $read = [
             $this->socket,
@@ -188,8 +220,6 @@ final class Socket extends WebSockets implements Connection
                 throw new \Exception('An error occured while receiving from the socket');
             }
             if (0 == $bytesReceived) {
-                $this->disconnect();
-
                 return false;
             }
             if (($start++) > 5) {

@@ -59,6 +59,11 @@ class Documentor
         $this->outputPath = $outputPath;
     }
 
+    public function getOutputPath(): string
+    {
+        return $this->outputPath;
+    }
+
     public function generate(): bool
     {
         if (!is_dir($this->outputPath)) {
@@ -71,9 +76,9 @@ class Documentor
         $timer->start('scan');
         $this->scan();
         $timer->checkpoint('render');
-        $this->log('Scan completed in '.Interval::toString($timer->get('scan') / 1000));
+        $this->log(PHP_EOL.'Scan completed in '.Interval::toString($timer->get('scan') / 1000).PHP_EOL);
         $result = $this->render($this->index, $this->outputPath);
-        $this->log('Rendered in '.Interval::toString($timer->stop('render') / 1000));
+        $this->log(PHP_EOL.'Rendered in '.Interval::toString($timer->stop('render') / 1000));
         $this->log('Total time: '.Interval::toString($timer->get('total') / 1000));
         $this->log('Memory usage: '.Str::fromBytes(memory_get_peak_usage(true)));
 

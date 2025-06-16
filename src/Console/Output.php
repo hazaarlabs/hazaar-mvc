@@ -17,6 +17,6 @@ class Output
 
     public function write(string $message): void
     {
-        echo $this->formatter->format($message);
+        echo html_entity_decode($this->formatter->format($message));
     }
 }

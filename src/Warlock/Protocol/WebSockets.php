@@ -26,17 +26,21 @@ abstract class WebSockets
     }
 
     /**
-     * @return array<string>
+     * @return array<string,string>
      */
-    public function parseHeaders(string $request, string &$body = ''): array|false
+    public static function parseHeaders(string $request, string &$body = ''): array
     {
-        $headers = [];
-        [$header, $body] = explode("\r\n\r\n", $request, 2);
-        $lines = explode("\n", $request);
+        $hdrEndPos = strpos($request, "\r\n\r\n") ?: strlen($request);
+        $header = substr($request, 0, $hdrEndPos);
+        if (strlen($request) > $hdrEndPos) {
+            $body = substr($request, $hdrEndPos + 4);
+        }
+        $lines = explode("\n", $header);
         $lead = explode(' ', $lines[0], 3);
         if (!isset($lead[1])) {
-            return false;
+            return [];
         }
+        $headers = [];
         if (is_numeric($lead[1])) {
             $headers['code'] = (int) $lead[1];
             $headers['status'] = trim($lead[2]);
@@ -362,9 +366,9 @@ abstract class WebSockets
             if ($header['hasmask']) {
                 $header['mask'] = $frame[10].$frame[11].$frame[12].$frame[13];
             }
-            $header['length'] = ord($frame[2]) * 65536 * 65536 * 65536 * 256 + ord($frame[3]) * 65536 * 65536 * 65536 +
-                                ord($frame[4]) * 65536 * 65536 * 256 + ord($frame[5]) * 65536 * 65536 + ord($frame[6]) * 65536 * 256 +
-                                ord($frame[7]) * 65536 + ord($frame[8]) * 256 + ord($frame[9]);
+            $header['length'] = ord($frame[2]) * 65536 * 65536 * 65536 * 256 + ord($frame[3]) * 65536 * 65536 * 65536
+                                + ord($frame[4]) * 65536 * 65536 * 256 + ord($frame[5]) * 65536 * 65536 + ord($frame[6]) * 65536 * 256
+                                + ord($frame[7]) * 65536 + ord($frame[8]) * 256 + ord($frame[9]);
         } elseif (ord($header['hasmask']) > 0) {
             $header['mask'] = $frame[2].$frame[3].$frame[4].$frame[5];
         }

@@ -30,8 +30,6 @@ use Hazaar\Logger\Frontend;
 use Hazaar\Util\Arr;
 use Hazaar\Util\Timer;
 
-require_once __DIR__.DIRECTORY_SEPARATOR.'Constants.php';
-
 define('HAZAAR_VERSION', '3.0');
 define('HAZAAR_START', microtime(true));
 
@@ -120,7 +118,7 @@ class Application
             $this->timer = new Timer(5, $startTime);
             $this->timer->start('init', $startTime);
             // Create a loader object and register it as the default autoloader
-            $this->loader = Loader::getInstance($this->path);
+            $this->loader = Loader::createInstance($this->path);
             $this->loader->register();
             // Store the search paths in the GLOBALS container so they can be used in config includes.
             Config::$overridePaths = self::getConfigOverridePaths();
@@ -702,6 +700,9 @@ class Application
             return realpath($path);
         }
         $searchPath = (null === $searchPath) ? getcwd() : realpath($searchPath);
+        if (false === $searchPath || !is_dir($searchPath)) {
+            return null;
+        }
         $count = 0;
         do {
             if (':' === substr($searchPath, 1, 1)) {

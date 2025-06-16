@@ -1,3 +1,18 @@
-#!/bin/sh
-BASEDIR="$(dirname "$(realpath "$0")")/../"
-php $BASEDIR/src/Warlock/Server.php $*
+#!/usr/bin/env php
+<?php
+
+use Hazaar\Console\Application;
+use Hazaar\Warlock\Console\AgentModule;
+use Hazaar\Warlock\Console\ServerModule;
+
+if (file_exists(__DIR__.'/../../../autoload.php')) {
+    require __DIR__.'/../../../autoload.php';
+} else {
+    require __DIR__.'/../vendor/autoload.php';
+}
+
+$app = new Application('Warlock', '1.0.0');
+$app->add(new ServerModule());
+$app->add(new AgentModule());
+
+$app->run();
