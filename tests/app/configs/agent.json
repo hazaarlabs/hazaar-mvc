@@ -1,5 +1,8 @@
 {
     "development": {
+        "server": {
+            "port": 8000
+        },
         "announce": {
             "enabled": false,
             "interval": 60

@@ -1,5 +1,9 @@
 {
   "development": {
+    "port": 8000,
+    "kvstore": {
+      "enabled": true
+    },
     "log": {
       "level": "DEBUG"
     }

@@ -18,6 +18,10 @@ interface Connection
      */
     public function configure(array $config): void;
 
+    public function getHost(): string;
+
+    public function getPort(): int;
+
     public function connect(): bool;
 
     public function disconnect(): bool;

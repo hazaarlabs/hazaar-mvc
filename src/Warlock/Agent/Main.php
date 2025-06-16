@@ -120,7 +120,7 @@ class Main extends Process
     {
         $this->log->setLevel(LogLevel::fromString($this->config['log']['level']));
         $this->log->setPrefix('agent');
-        $this->log->write('Bootstrapping agent...', LogLevel::DEBUG);
+        $this->log->write('Warlock agent starting up', LogLevel::NOTICE);
         foreach (PcntlSignals::cases() as $sig) {
             pcntl_signal($sig->value, [$this, '__signalHandler'], true);
         }
@@ -154,6 +154,10 @@ class Main extends Process
             }
         }
         $this->registerServices('services');
+        $this->log->write(
+            'Connecting to '.$this->conn->getHost().':'.$this->conn->getPort(),
+            LogLevel::INFO
+        );
 
         return $this;
     }

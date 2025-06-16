@@ -60,6 +60,22 @@ final class Socket extends WebSockets implements Connection
     }
 
     /**
+     * Get the host of the Warlock server.
+     */
+    public function getHost(): string
+    {
+        return $this->host;
+    }
+
+    /**
+     * Get the port of the Warlock server.
+     */
+    public function getPort(): int
+    {
+        return $this->port;
+    }
+
+    /**
      * Connect to the Warlock server.
      */
     public function connect(): bool

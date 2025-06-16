@@ -26,6 +26,16 @@ final class Pipe implements Connection
         // No configuration needed for pipe connection
     }
 
+    public function getHost(): string
+    {
+        return 'pipe';
+    }
+
+    public function getPort(): int
+    {
+        return 0; // No port for pipe connection
+    }
+
     public function connect(): bool
     {
         return true;

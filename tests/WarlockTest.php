@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace Hazaar\Warlock\Tests;
+
 use Hazaar\Warlock\Agent\Struct\Endpoint;
 use Hazaar\Warlock\Channel;
 use Hazaar\Warlock\Client;

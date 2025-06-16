@@ -760,12 +760,14 @@ class Main
                 continue;
             }
             $event = &$this->events[$eventID][$trigger];
-            foreach ($this->cluster->peers as $peer) {
-                if (in_array($peer->name, $event['seen'])) {
-                    continue;
+            if (isset($this->cluster)) {
+                foreach ($this->cluster->peers as $peer) {
+                    if (in_array($peer->name, $event['seen'])) {
+                        continue;
+                    }
+                    $peer->sendEvent($eventID, $triggerID, $event['data']);
+                    $event['seen'][] = $peer->name;
                 }
-                $peer->sendEvent($eventID, $triggerID, $event['data']);
-                $event['seen'][] = $peer->name;
             }
             if (!array_key_exists($eventID, $this->subscriptions)) {
                 continue;
