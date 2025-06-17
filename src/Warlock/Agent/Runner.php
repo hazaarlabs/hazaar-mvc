@@ -1,6 +1,9 @@
 <?php
 
 declare(strict_types=1);
+
+namespace Hazaar\Warlock\Agent;
+
 use Hazaar\Application;
 use Hazaar\Warlock\Agent\Struct\Endpoint;
 use Hazaar\Warlock\Channel;
@@ -77,7 +80,7 @@ class Runner extends Process
         return new Pipe($protocol);
     }
 
-    protected function processCommand(PacketType $command, ?stdClass $payload = null): bool
+    protected function processCommand(PacketType $command, ?\stdClass $payload = null): bool
     {
         // Handle commands specific to the Warlock Agent Runner
         switch ($command) {
@@ -95,7 +98,7 @@ class Runner extends Process
 
                 try {
                     $endpoint->run($this->protocol);
-                } catch (Throwable $e) {
+                } catch (\Throwable $e) {
                     $this->log('Error executing endpoint: '.$e->getMessage(), LogLevel::ERROR);
                     $this->state = Status::ERROR;
 
