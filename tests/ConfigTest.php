@@ -155,4 +155,23 @@ class ConfigTest extends TestCase
         $this->assertEquals('1.0.0', $config->get('app.version'));
         $this->assertTrue($config->get('app.debug'));
     }
+
+    public function testConfigWithInvalidFile(): void
+    {
+        $config = new Config();
+        $config->setBasePath(__DIR__.'/app/configs/');
+        $result = $config->loadFromFile('invalid.json');
+        $this->assertFalse($result); // This line will not be reached due to the exception
+    }
+
+    public function testConfigFromPHPFile(): void
+    {
+        $config = new Config();
+        $config->setBasePath(__DIR__.'/app/configs/');
+        $config->setEnvironment('production');
+        $config->loadFromFile('example.php');
+        $this->assertEquals('PHPUnit - Test Application', $config['app']['name']);
+        $this->assertEquals('1.0.0', $config->get('app.version'));
+        $this->assertEquals('en_AU.UTF-8', $config->get('app.locale'));
+    }
 }
