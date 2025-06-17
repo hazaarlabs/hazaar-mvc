@@ -31,6 +31,11 @@ class Config implements \ArrayAccess, \Iterator, \Countable
     /**
      * @var array<string>
      */
+    private static array $supportedExtensions = ['json', 'ini', 'php'];
+
+    /**
+     * @var array<string>
+     */
     private array $overridePaths = [];
 
     /**
@@ -160,13 +165,13 @@ class Config implements \ArrayAccess, \Iterator, \Countable
                 'ns' => isset($this->env),
             ];
         }
+        $sourceData = null;
         foreach ($sources as &$sourceInfo) {
             $sourceFile = null;
             $pathInfo = pathinfo($sourceInfo['name']);
             // If we have an extension, just use that file.
             if (false === ($pathInfo['extension'] ?? false)) {
-                $extensions = ['json', 'ini']; // Ordered by preference
-                foreach ($extensions as $ext) {
+                foreach (self::$supportedExtensions as $ext) {
                     $filename = $sourceInfo['name'].'.'.$ext;
                     if (file_exists($filename)) {
                         $sourceFile = $filename;
@@ -422,19 +427,32 @@ class Config implements \ArrayAccess, \Iterator, \Countable
             throw new ConfigFileNotFound($source);
         }
         $extention = $file->extension();
-        if ('json' == $extention) {
-            if (false === ($config = $file->parseJSON(true))) {
-                throw new ConfigParseError($source);
-            }
-        } elseif ('ini' == $extention) {
-            if (!$config = parse_ini_string($file->getContents(), true, INI_SCANNER_TYPED)) {
-                throw new ConfigParseError($source);
-            }
-            foreach ($config as &$array) {
-                $array = Arr::fromDotNotation($array);
-            }
-        } else {
-            throw new ConfigUnknownFormat('Unknown file format: '.$source);
+
+        switch ($extention) {
+            case 'php':
+                $config = [$this->env => include (string) $file];
+
+                break;
+
+            case 'json':
+                if (false === ($config = $file->parseJSON(true))) {
+                    throw new ConfigParseError($source);
+                }
+
+                break;
+
+            case 'ini':
+                if (!$config = parse_ini_string($file->getContents(), true, INI_SCANNER_TYPED)) {
+                    throw new ConfigParseError($source);
+                }
+                foreach ($config as &$array) {
+                    $array = Arr::fromDotNotation($array);
+                }
+
+                break;
+
+            default:
+                throw new ConfigUnknownFormat('Unknown file format: '.$source);
         }
         if ($file->isEncrypted()) {
             $this->secureKeys = array_merge($this->secureKeys, $this->secureKeys += $secureKeys = array_keys($config));
