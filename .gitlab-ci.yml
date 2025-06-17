@@ -22,8 +22,8 @@ variables:
   - composer install
   script:
   - mkdir -p docs/src/api
-  - bin/hazaar doc --scan=src --title="API Reference" docs/src/api
-  - bin/hazaar docindex --scan=src docs/src/.vuepress/api_sidebar.js
+  - bin/hazaar doc compile --scan src --title "API Reference" docs/src/api
+  - bin/hazaar doc index --scan src docs/src/.vuepress/api_sidebar.js
   artifacts:
     paths:
     - docs/src/api

@@ -16,16 +16,17 @@ class DocModule extends Module
         $this->setName('doc')->setDescription('Work with API documentation');
         $this->addCommand(name: 'compile', callback: [$this, 'generate'])
             ->setDescription(description: 'Generate API documentation')
-            ->addOption(long: 'title', short: 't', description: 'The title of the documentation', takesValue: true, default: 'API Documentation', valueType: 'title')
-            ->addOption(long: 'scan', description: 'The path to scan for classes', takesValue: true, valueType: 'dir')
-            ->addOption('verbose', short: 'v', description: 'Enable verbose output', takesValue: false, default: false)
+            ->addOption(long: 'title', short: 't', description: 'The title of the documentation', default: 'API Documentation', valueType: 'title')
+            ->addOption(long: 'scan', short: 's', description: 'The path to scan for classes', default: '.', valueType: 'dir')
+            ->addOption('verbose', short: 'v', description: 'Enable verbose output')
             ->addArgument(name: 'output', description: 'The output path for the documentation')
         ;
         $this->addCommand('index', [$this, 'index'])
             ->setDescription('Generate an API documentation index')
-            ->addOption(long: 'title', description: 'The title of the documentation', takesValue: true, default: 'API Documentation')
-            ->addOption(long: 'scan', description: 'The path to scan for classes', takesValue: true, default: '.')
-            ->addOption('format', description: 'The index format to generate', takesValue: true, default: 'vuepress')
+            ->addOption(long: 'title', short: 't', description: 'The title of the documentation', default: 'API Documentation', valueType: 'title')
+            ->addOption(long: 'scan', short: 's', description: 'The path to scan for classes', default: '.', valueType: 'dir')
+            ->addOption('format', short: 'f', description: 'The index format to generate', default: 'vuepress', valueType: 'format')
+            ->addOption('verbose', short: 'v', description: 'Enable verbose output')
             ->addArgument('output', description: 'The output path for the documentation')
         ;
     }

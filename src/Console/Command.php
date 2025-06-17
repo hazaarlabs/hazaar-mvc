@@ -100,7 +100,7 @@ class Command
             long: $long,
             short: $short,
             description: $description,
-            takesValue: null === $takesValue ? null !== $valueType : false,
+            takesValue: null === $takesValue ? null !== $valueType : $takesValue,
             default: $default,
             valueType: $valueType
         );
