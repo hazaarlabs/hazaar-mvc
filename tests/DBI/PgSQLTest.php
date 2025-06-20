@@ -27,7 +27,7 @@ class PgSQLTest extends TestCase
     {
         $this->db = new Adapter();
         $this->db->exec('DROP TABLE IF EXISTS test_table');
-        $this->db->exec('CREATE TABLE test_table (id INT PRIMARY KEY, name TEXT, stored BOOLEAN DEFAULT TRUE)');
+        $this->db->exec('CREATE TABLE test_table (id INT PRIMARY KEY, name TEXT, stored BOOLEAN DEFAULT TRUE, parent INT)');
     }
 
     public function testDatabaseConfig(): void
@@ -65,8 +65,31 @@ class PgSQLTest extends TestCase
                 'type' => 'boolean',
                 'length' => null,
             ],
+            [
+                'name' => 'parent',
+                'default' => null,
+                'not_null' => false,
+                'type' => 'integer',
+                'length' => null,
+            ],
         ];
         $this->assertEquals($columns, $this->db->describeTable('test_table'));
+    }
+
+    public function testSelectSomeQueries(): void
+    {
+        $rowId = rand(1, 10000);
+        $data = [
+            'id' => $rowId,
+            'name' => 'Test Name',
+            'parent' => null,
+        ];
+        $this->assertEquals(1, $this->db->table('test_table')->insert($data));
+        $result = $this->db->table('test_table')->find(['id' => $rowId]);
+        $this->assertEquals($data['name'], $result->fetch()['name']);
+        $result = $this->db->table('test_table')->find(['parent' => null]);
+        $this->assertEquals(1, $result->count());
+        $this->assertEquals($data['name'], $result->fetch()['name']);
     }
 
     public function testModelInsert(): void
@@ -108,6 +131,7 @@ class PgSQLTest extends TestCase
             'id' => $rowId,
             'name' => 'Test Name',
             'stored' => true,
+            'parent' => null,
         ];
         $this->assertEquals(1, $this->db->table('test_table')->insert($data));
         $result = $this->db->table('test_table')->find(['id' => $rowId]);

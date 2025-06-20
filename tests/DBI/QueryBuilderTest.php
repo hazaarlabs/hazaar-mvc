@@ -160,4 +160,26 @@ class QueryBuilderTest extends TestCase
         $sql = 'SELECT id, name FROM "test_table" WHERE id = :id0 OR id = :id1';
         $this->assertEquals($sql, (string) $query->toString());
     }
+
+    public function testSELECTColumnThatIsNull(): void
+    {
+        $query = new SQL();
+        $query->select(['id', 'name'])
+            ->from('test_table')
+            ->where(['parent' => null])
+        ;
+        $sql = 'SELECT id, name FROM "test_table" WHERE ((:parent0::INTEGER IS NULL AND parent IS NULL) OR (:parent0 IS NOT NULL AND parent = :parent0))';
+        $this->assertEquals($sql, (string) $query->toString());
+    }
+
+    public function testSELECTColumnThatIsNotNull(): void
+    {
+        $query = new SQL();
+        $query->select(['id', 'name'])
+            ->from('test_table')
+            ->where(['parent' => ['$ne' => null]])
+        ;
+        $sql = 'SELECT id, name FROM "test_table" WHERE parent IS NOT NULL';
+        $this->assertEquals($sql, (string) $query->toString());
+    }
 }
