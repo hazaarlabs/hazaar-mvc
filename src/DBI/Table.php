@@ -425,20 +425,19 @@ class Table
             $this->where($where);
         }
         $statement = $this->adapter->prepareQuery($this->queryBuilder);
-        $result = $statement->execute();
-
-        if ($result) {
+        if ($statement->execute()) {
             return new \Hazaar\DBI\Result\PDO($statement);
         }
 
         return false;
     }
 
-    public function where(mixed $where = null): self
+    /**
+     * @param array<mixed>|string $where
+     */
+    public function where(array|string $where): self
     {
-        if (null !== $where) {
-            $this->queryBuilder->where($where);
-        }
+        $this->queryBuilder->where($where);
 
         return $this;
     }
