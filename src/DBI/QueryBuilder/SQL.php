@@ -461,6 +461,7 @@ class SQL implements QueryBuilder
 
     public function prepareValue(string $key, mixed $value): mixed
     {
+        $key = str_replace('.', '_', $key);
         if (isset($this->valueIndex[$key])) {
             if (in_array($value, $this->valueIndex[$key])) {
                 $index = array_search($value, $this->valueIndex[$key]);
