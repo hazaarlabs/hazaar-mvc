@@ -58,7 +58,7 @@ class DBI implements BackendInterface, DriverInterface
 
     public function loadRootObject(): bool
     {
-        if (!($this->rootObject = $this->db->table('hz_file')->findOne(['parent' => null]))) {
+        if (!($this->rootObject = $this->db->table('hz_file')->findOne(['$null' => 'parent']))) {
             $this->rootObject = [
                 'kind' => 'dir',
                 'parent' => null,

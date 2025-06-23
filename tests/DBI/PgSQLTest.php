@@ -87,7 +87,7 @@ class PgSQLTest extends TestCase
         $this->assertEquals(1, $this->db->table('test_table')->insert($data));
         $result = $this->db->table('test_table')->find(['id' => $rowId]);
         $this->assertEquals($data['name'], $result->fetch()['name']);
-        $result = $this->db->table('test_table')->find(['parent' => null]);
+        $result = $this->db->table('test_table')->find(['$null' => 'parent']);
         $this->assertEquals(1, $result->count());
         $this->assertEquals($data['name'], $result->fetch()['name']);
     }

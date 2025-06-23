@@ -166,9 +166,9 @@ class QueryBuilderTest extends TestCase
         $query = new SQL();
         $query->select(['id', 'name'])
             ->from('test_table')
-            ->where(['parent' => null])
+            ->where(['$null' => 'parent'])
         ;
-        $sql = 'SELECT id, name FROM "test_table" WHERE parent IS NULL';
+        $sql = 'SELECT id, name FROM "test_table" WHERE "parent" IS NULL';
         $this->assertEquals($sql, (string) $query->toString());
     }
 
@@ -177,9 +177,9 @@ class QueryBuilderTest extends TestCase
         $query = new SQL();
         $query->select(['id', 'name'])
             ->from('test_table')
-            ->where(['parent' => ['$ne' => null]])
+            ->where(['$notnull' => 'parent'])
         ;
-        $sql = 'SELECT id, name FROM "test_table" WHERE parent IS NOT NULL';
+        $sql = 'SELECT id, name FROM "test_table" WHERE "parent" IS NOT NULL';
         $this->assertEquals($sql, (string) $query->toString());
     }
 }

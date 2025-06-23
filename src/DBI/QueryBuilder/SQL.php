@@ -9,7 +9,6 @@ use Hazaar\DBI\Interface\QueryBuilder;
 use Hazaar\DBI\Table;
 use Hazaar\Model;
 use Hazaar\Util\Arr;
-use Hazaar\Util\Boolean;
 
 class SQL implements QueryBuilder
 {
@@ -465,16 +464,17 @@ class SQL implements QueryBuilder
         if (isset($this->valueIndex[$key])) {
             if (in_array($value, $this->valueIndex[$key])) {
                 $index = array_search($value, $this->valueIndex[$key]);
-                $key = ":{$key}{$index}";
             } else {
                 $index = count($this->valueIndex[$key]);
             }
+            $key = ":{$key}{$index}";
         } else {
             $this->valueIndex[$key] = [$value];
             $index = 0;
+            $key = ":{$key}{$index}";
         }
 
-        return ":{$key}{$index}";
+        return $key;
     }
 
     /**
@@ -552,11 +552,7 @@ class SQL implements QueryBuilder
                 if ($parentRef && false === strpos($key, '.')) {
                     $key = $parentRef.'.'.$key;
                 }
-                if (is_null($value) || Boolean::is($value)) {
-                    $parts[] = $this->field($key).' IS '.(('!=' === $tissue) ? 'NOT ' : null).'NULL';
-                } else {
-                    $parts[] = $this->field($key).' '.$tissue.' '.$this->prepareValue($key, value: $value);
-                }
+                $parts[] = $this->field($key).' '.$tissue.' '.$this->prepareValue($key, value: $value);
             }
         }
         $encapsulate = (count($parts) > 1) && ($depth > 0);
@@ -613,14 +609,16 @@ class SQL implements QueryBuilder
                 return $this->prepareCriteria(criteria: $value, bindType: 'OR', depth: $depth);
 
             case 'ne':
-                if (is_null($value)) {
-                    return 'IS NOT NULL';
-                }
-
                 return (is_bool($value) ? 'IS NOT ' : '!= ').$this->prepareValue($key, $value);
 
             case 'not':
                 return 'NOT ('.$this->prepareCriteria(criteria: $value, depth: $depth).')';
+
+            case 'null':
+                return $this->quoteSpecial($value).' IS NULL';
+
+            case 'notnull':
+                return $this->quoteSpecial($value).' IS NOT NULL';
 
             case 'ref':
                 return $tissue.' '.$value;

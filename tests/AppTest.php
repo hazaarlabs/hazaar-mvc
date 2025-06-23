@@ -35,12 +35,11 @@ class AppTest extends TestCase
         $this->assertNotEmpty($controllers, 'Controller path should not be empty');
         $views = Loader::getFilePath(FilePath::VIEW);
         $this->assertIsString($views);
-$this->assertNotEmpty($views, 'View path should not be empty');
-
+        $this->assertNotEmpty($views, 'View path should not be empty');
         $models = Loader::getFilePath(FilePath::MODEL);
         $this->assertIsString($models);
         $this->assertNotEmpty($models, 'Model path should not be empty');
-        $libraries = Loader::getFilePath(FilePath::LIB);
+        $libraries = Loader::getFilePath(FilePath::SUPPORT);
         $this->assertIsString($libraries);
         $this->assertNotEmpty($libraries, 'Library path should not be empty');
     }

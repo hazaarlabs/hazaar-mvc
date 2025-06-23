@@ -121,7 +121,7 @@ class Dbi extends Backend
         $criteria = [
             'key' => $key,
             '$or' => [
-                ['expire' => null],
+                ['$null' => 'expire'],
                 ['expire' => ['$gt' => new DateTime()]],
             ],
         ];
