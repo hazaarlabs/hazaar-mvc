@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Hazaar\File\Backend;
 
-use Hazaar\Util\DateTime;
 use Hazaar\DBI\Adapter;
 use Hazaar\File\Interface\Backend as BackendInterface;
 use Hazaar\File\Interface\Driver as DriverInterface;
 use Hazaar\File\Manager;
+use Hazaar\Util\DateTime;
 use Hazaar\Util\Str;
 
 class DBI implements BackendInterface, DriverInterface
@@ -34,7 +34,7 @@ class DBI implements BackendInterface, DriverInterface
     {
         $this->manager = $manager;
         $defaults = [
-            'dbi' => Adapter::loadConfig(),
+            'dbi' => Adapter::loadConfig()->toArray(),
             'initialise' => true,
             'chunkSize' => 4194304,
         ];

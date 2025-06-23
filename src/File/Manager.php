@@ -45,6 +45,7 @@ class Manager implements Backend
         'googledrive' => 'GoogleDrive',
         'sharepoint' => 'SharePoint',
         'webdav' => 'WebDAV',
+        'dbi' => 'DBI', // Database Interface, used for DBI backends
     ];
     private static string $defaultBackend = 'local';
 

@@ -465,17 +465,16 @@ class SQL implements QueryBuilder
         if (isset($this->valueIndex[$key])) {
             if (in_array($value, $this->valueIndex[$key])) {
                 $index = array_search($value, $this->valueIndex[$key]);
+                $key = ":{$key}{$index}";
             } else {
                 $index = count($this->valueIndex[$key]);
             }
-            $key = ":{$key}{$index}";
         } else {
             $this->valueIndex[$key] = [$value];
             $index = 0;
-            $key = ":{$key}{$index}";
         }
 
-        return $key;
+        return ":{$key}{$index}";
     }
 
     /**
@@ -553,9 +552,8 @@ class SQL implements QueryBuilder
                 if ($parentRef && false === strpos($key, '.')) {
                     $key = $parentRef.'.'.$key;
                 }
-                if ((is_null($value) || Boolean::is($value)) && ('=' == $tissue || '!=' == $tissue)) {
-                    $parts[] = '(('.$this->prepareValue($key, value: $value).'::INTEGER IS NULL AND '.$this->field($key).' IS '.(('!=' === $tissue) ? 'NOT ' : null).'NULL)'
-                    .' OR ('.$this->prepareValue($key, value: $value).' IS NOT NULL AND '.$this->field($key).' '.$tissue.' '.$this->prepareValue($key, value: $value).'))';
+                if (is_null($value) || Boolean::is($value)) {
+                    $parts[] = $this->field($key).' IS '.(('!=' === $tissue) ? 'NOT ' : null).'NULL';
                 } else {
                     $parts[] = $this->field($key).' '.$tissue.' '.$this->prepareValue($key, value: $value);
                 }

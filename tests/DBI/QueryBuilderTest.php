@@ -168,7 +168,7 @@ class QueryBuilderTest extends TestCase
             ->from('test_table')
             ->where(['parent' => null])
         ;
-        $sql = 'SELECT id, name FROM "test_table" WHERE ((:parent0::INTEGER IS NULL AND parent IS NULL) OR (:parent0 IS NOT NULL AND parent = :parent0))';
+        $sql = 'SELECT id, name FROM "test_table" WHERE parent IS NULL';
         $this->assertEquals($sql, (string) $query->toString());
     }
 
