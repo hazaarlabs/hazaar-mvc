@@ -61,4 +61,11 @@ class FileBackendTest extends TestCase
         $this->assertTrue($file->unlink());
         $this->assertFalse($file->exists());
     }
+
+    public function testFileBackendFSCK(): void
+    {
+        $manager = new Manager('dbi');
+        $fsckResult = $manager->fsck();
+        $this->assertTrue($fsckResult, 'File system check failed');
+    }
 }

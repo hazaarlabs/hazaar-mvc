@@ -45,7 +45,10 @@ interface QueryBuilder
 
     public function group(string ...$column): self;
 
-    public function having(string ...$columns): self;
+    /**
+     * @param array<string> $criteria
+     */
+    public function having(array $criteria): self;
 
     /**
      * @param array<string, int>|string $orderBy

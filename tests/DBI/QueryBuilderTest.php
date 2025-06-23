@@ -102,7 +102,7 @@ class QueryBuilderTest extends TestCase
         $query->select(['id', 'name'])
             ->from('test_table')
             ->group('id')
-            ->having('COUNT(id) > 1')
+            ->having(['COUNT(id) > 1'])
         ;
         $sql = 'SELECT id, name FROM "test_table" GROUP BY id HAVING ( COUNT(id) > 1 )';
         $this->assertEquals($sql, (string) $query->toString());
@@ -191,6 +191,18 @@ class QueryBuilderTest extends TestCase
             ->where(['t.id' => 1])
         ;
         $sql = 'SELECT t.id, t.name FROM "test_table" AS t WHERE t.id = :t_id0';
+        $this->assertEquals($sql, (string) $query->toString());
+    }
+
+    public function testSELECTWithGroupByAndHaving(): void
+    {
+        $query = new SQL();
+        $query->select(['id', 'COUNT(*) AS count'])
+            ->from('test_table')
+            ->group('id', 'name')
+            ->having(['COUNT(*) > 1'])
+        ;
+        $sql = 'SELECT id, COUNT(*) AS count FROM "test_table" GROUP BY id, name HAVING ( COUNT(*) > 1 )';
         $this->assertEquals($sql, (string) $query->toString());
     }
 }

@@ -88,20 +88,17 @@ class Table
         return $this;
     }
 
-    /**
-     * @param array<mixed>|string $columns
-     */
-    public function group(array|string $columns): self
+    public function group(string ...$columns): self
     {
-        $this->queryBuilder->group($columns);
+        $this->queryBuilder->group(...$columns);
 
         return $this;
     }
 
     /**
-     * @param array<mixed>|string $having
+     * @param array<mixed> $having
      */
-    public function having(array|string $having): self
+    public function having(array $having): self
     {
         $this->queryBuilder->having($having);
 

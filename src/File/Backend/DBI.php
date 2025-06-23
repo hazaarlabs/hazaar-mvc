@@ -118,8 +118,8 @@ class DBI implements BackendInterface, DriverInterface
         }
         // Check and de-dup any directories that have been duplicated accidentally
         $select = $this->db->table('hz_file')
-            ->group(['parent', 'filename'])
-            ->having(['count(*)' => ['$gt' => 1]])
+            ->group('parent', 'filename')
+            ->having(['count(*) > 1'])
             ->find(['kind' => 'dir'], ['parent', 'filename'])
         ;
         if (!$select) {
@@ -139,8 +139,8 @@ class DBI implements BackendInterface, DriverInterface
         }
         // Check and de-dup any files
         $select = $this->db->table('hz_file')
-            ->group(['parent', 'filename'])
-            ->having(['count(*)' => ['$gt' => 1]])
+            ->group('parent', 'filename')
+            ->having(['count(*) > 1'])
             ->find([], ['parent', 'filename'])
         ;
         while ($row = $select->fetch()) {

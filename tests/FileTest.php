@@ -113,4 +113,32 @@ class FileTest extends TestCase
         $this->assertArrayHasKey('NSW', $geo->states('AU'));
         $this->assertEquals(61, $geo->countryPhoneCode('AU'));
     }
+
+    public function testSharepointFileBackend(): void
+    {
+        // This test is a placeholder for SharePoint file backend tests.
+        // Implement the actual test logic as needed.
+        $this->markTestIncomplete('SharePoint file backend tests are not implemented yet.');
+    }
+
+    public function testGoogleDriveFileBackend(): void
+    {
+        // This test is a placeholder for Google Drive file backend tests.
+        // Implement the actual test logic as needed.
+        $this->markTestIncomplete('Google Drive file backend tests are not implemented yet.');
+    }
+
+    public function testDropboxFileBackend(): void
+    {
+        // This test is a placeholder for Dropbox file backend tests.
+        // Implement the actual test logic as needed.
+        $this->markTestIncomplete('Dropbox file backend tests are not implemented yet.');
+    }
+
+    public function testWebDAVFileBackend(): void
+    {
+        // This test is a placeholder for WebDAV file backend tests.
+        // Implement the actual test logic as needed.
+        $this->markTestIncomplete('WebDAV file backend tests are not implemented yet.');
+    }
 }

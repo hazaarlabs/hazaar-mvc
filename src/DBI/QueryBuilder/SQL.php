@@ -309,7 +309,7 @@ class SQL implements QueryBuilder
         return $this;
     }
 
-    public function having(string ...$columns): self
+    public function having(array $columns): self
     {
         $this->having = $columns;
 
