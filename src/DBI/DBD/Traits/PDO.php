@@ -13,6 +13,7 @@ use Hazaar\DBI\Result;
 use Hazaar\DBI\Result\PDO as PDOResult;
 use Hazaar\DBI\Statement;
 use Hazaar\Util\Arr;
+use Hazaar\Util\DateTime;
 
 /**
  * Relational Database Driver - Base Class.
@@ -42,6 +43,9 @@ trait PDO
         $statement->aliased = true;
         $values = $queryBuilder->getCriteriaValues();
         foreach ($values as $key => $value) {
+            if ($value instanceof DateTime) {
+                $value = $value->format('Y-m-d H:i:s');
+            }
             $statement->bindValue($key, $value);
         }
         $this->lastQueryString = $statement->queryString;

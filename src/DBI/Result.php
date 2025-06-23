@@ -7,6 +7,7 @@ namespace Hazaar\DBI;
 use Hazaar\DBI\Interface\Result as ResultInterface;
 use Hazaar\Model;
 use Hazaar\Util\Arr;
+use Hazaar\Util\Boolean;
 use Hazaar\Util\DateTime;
 
 abstract class Result implements ResultInterface, \Countable
@@ -17,7 +18,7 @@ abstract class Result implements ResultInterface, \Countable
     protected array $arrayColumns = [];
 
     /**
-     * @var array<mixed>
+     * @var array<string,array<string,\stdClass>|\stdClass>
      */
     protected array $meta;
 
@@ -176,7 +177,7 @@ abstract class Result implements ResultInterface, \Countable
                         } elseif ('text' == $type || 'varchar' == $type) {
                             $element = trim($element, "'\"");
                         } elseif ('bool' == $type) {
-                            $element = \Hazaar\Util\Boolean::from($element);
+                            $element = Boolean::from($element);
                         } elseif ('timestamp' == $type || 'date' == $type || 'time' == $type) {
                             $element = new DateTime(trim($element, '"'));
                         } elseif ('json' == $type) {
@@ -205,11 +206,11 @@ abstract class Result implements ResultInterface, \Countable
                     $meta = [];
                     foreach ($this->meta[$name] as $col) {
                         $meta[] = $col;
-                        $aliases[] = $col['table'] ?? null;
+                        $aliases[] = $col->table ?? null;
                     }
                 } else {
                     $meta = $this->meta[$name];
-                    if (!($alias = $meta['table'] ?? null)) {
+                    if (!($alias = $meta->table ?? null)) {
                         continue;
                     }
                     $aliases[] = $alias;

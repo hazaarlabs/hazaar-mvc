@@ -155,4 +155,20 @@ class PgSQLTest extends TestCase
         $this->assertEquals($rowId, $row->id);
         $this->assertEquals('Test Name', $row->name);
     }
+
+    public function testSelectRowWithTableAlias(): void
+    {
+        $rowId = rand(1, 10000);
+        $data = [
+            'id' => $rowId,
+            'name' => 'Test Name',
+        ];
+        $this->assertEquals(1, $this->db->table('test_table')->insert($data));
+        $statement = $this->db->table('test_table', 't')->find(['t.id' => $rowId]);
+        $this->assertEquals('SELECT * FROM "public"."test_table" "t" WHERE t.id = :t_id0', (string) $statement);
+        $row = $statement->row();
+        $this->assertInstanceOf(Row::class, $row);
+        $this->assertEquals($rowId, $row->id);
+        $this->assertEquals('Test Name', $row->name);
+    }
 }

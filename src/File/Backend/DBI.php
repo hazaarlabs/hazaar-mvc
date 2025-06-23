@@ -58,8 +58,9 @@ class DBI implements BackendInterface, DriverInterface
 
     public function loadRootObject(): bool
     {
-        if (!($this->rootObject = $this->db->table('hz_file')->findOne(['$null' => 'parent']))) {
-            $this->rootObject = [
+        $rootObject = $this->db->table('hz_file')->findOne(['$null' => 'parent']);
+        if (!$rootObject) {
+            $rootObject = [
                 'kind' => 'dir',
                 'parent' => null,
                 'filename' => 'ROOT',
@@ -68,7 +69,7 @@ class DBI implements BackendInterface, DriverInterface
                 'length' => 0,
                 'mime_type' => 'directory',
             ];
-            if (!($this->rootObject['id'] = $this->db->table('hz_file')->insert($this->rootObject, 'id'))) {
+            if (!($rootObject['id'] = $this->db->table('hz_file')->insert($rootObject, 'id'))) {
                 throw new \Exception('Unable to create DBI filesystem root object: '.$this->db->errorInfo()[2]);
             }
             /*
@@ -81,6 +82,7 @@ class DBI implements BackendInterface, DriverInterface
              */
             $this->fsck(true);
         }
+        $this->rootObject = $rootObject;
         if (!$this->rootObject['created_on'] instanceof DateTime) {
             $this->rootObject['created_on'] = new DateTime($this->rootObject['created_on']);
         }
@@ -457,10 +459,10 @@ class DBI implements BackendInterface, DriverInterface
                 } else {
                     $stmt->bindParam(3, $bytes, \PDO::PARAM_LOB);
                 }
-                if (!($lastChunk_id = $stmt->execute()) > 0) {
+                if (!$stmt->execute()) {
                     throw $this->db->errorException('Write failed!');
                 }
-                settype($lastChunk_id, 'integer');
+                $lastChunk_id = $stmt->fetchColumn();
                 if (0 === (int) $n) {
                     $chunkId = $lastChunk_id;
                 }
@@ -928,8 +930,9 @@ class DBI implements BackendInterface, DriverInterface
         if (!($result = $this->db->query($sql))) {
             throw new \Exception($this->db->errorInfo()[2]);
         }
+        $result = $this->db->table('hz_file_chunk')->delete(['id' => ['$in' => array_column($result->fetchAll(), 'id')]]);
 
-        return $this->db->table('hz_file_chunk')->delete(['id' => ['$in' => array_column($result->fetchAll(), 'id')]]);
+        return $result > 0;
     }
 
     /**

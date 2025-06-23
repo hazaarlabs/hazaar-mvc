@@ -182,4 +182,15 @@ class QueryBuilderTest extends TestCase
         $sql = 'SELECT id, name FROM "test_table" WHERE "parent" IS NOT NULL';
         $this->assertEquals($sql, (string) $query->toString());
     }
+
+    public function testSELECTColumnWithTableAlias(): void
+    {
+        $query = new SQL();
+        $query->select(['t.id', 't.name'])
+            ->from('test_table', 't')
+            ->where(['t.id' => 1])
+        ;
+        $sql = 'SELECT t.id, t.name FROM "test_table" AS t WHERE t.id = :t_id0';
+        $this->assertEquals($sql, (string) $query->toString());
+    }
 }

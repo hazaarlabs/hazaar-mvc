@@ -8,35 +8,22 @@
                 "columns": [
                     {
                         "name": "id",
-                        "ordinal_position": 1,
-                        "default": null,
-                        "not_null": true,
-                        "data_type": "serial",
-                        "length": null
+                        "type": "serial",
+                        "not_null": true
                     },
                     {
                         "name": "parent",
-                        "ordinal_position": 2,
-                        "default": null,
-                        "not_null": false,
-                        "data_type": "integer",
-                        "length": null
+                        "type": "integer"
                     },
                     {
                         "name": "n",
-                        "ordinal_position": 3,
-                        "default": null,
-                        "not_null": true,
-                        "data_type": "integer",
-                        "length": null
+                        "type": "integer",
+                        "not_null": true
                     },
                     {
                         "name": "data",
-                        "ordinal_position": 4,
-                        "default": null,
-                        "not_null": true,
-                        "data_type": "bytea",
-                        "length": null
+                        "type": "bytea",
+                        "not_null": true
                     }
                 ]
             }
@@ -49,115 +36,69 @@
                 "columns": [
                     {
                         "name": "id",
-                        "ordinal_position": 1,
-                        "default": null,
-                        "not_null": true,
-                        "data_type": "serial",
-                        "length": null
+                        "type": "serial",
+                        "not_null": true
                     },
                     {
                         "name": "kind",
-                        "ordinal_position": 2,
-                        "default": null,
-                        "not_null": false,
-                        "data_type": "text",
-                        "length": null
+                        "type": "text"
                     },
                     {
                         "name": "parent",
-                        "ordinal_position": 3,
-                        "default": null,
-                        "not_null": false,
-                        "data_type": "integer",
-                        "length": null
+                        "type": "integer"
                     },
                     {
                         "name": "start_chunk",
-                        "ordinal_position": 4,
-                        "default": null,
-                        "not_null": false,
-                        "data_type": "integer",
-                        "length": null
+                        "type": "integer"
                     },
                     {
                         "name": "filename",
-                        "ordinal_position": 5,
-                        "default": null,
-                        "not_null": false,
-                        "data_type": "text",
-                        "length": null
+                        "type": "text",
+                        "not_null": true
                     },
                     {
                         "name": "created_on",
-                        "ordinal_position": 6,
-                        "default": null,
-                        "not_null": false,
-                        "data_type": "timestamp",
-                        "length": null
+                        "type": "timestamp with time zone",
+                        "default": "CURRENT_TIMESTAMP",
+                        "not_null": true
                     },
                     {
                         "name": "modified_on",
-                        "ordinal_position": 7,
-                        "default": null,
-                        "not_null": false,
-                        "data_type": "timestamp",
-                        "length": null
+                        "type": "timestamp with time zone",
+                        "not_null": false
                     },
                     {
                         "name": "length",
-                        "ordinal_position": 8,
-                        "default": null,
-                        "not_null": false,
-                        "data_type": "integer",
-                        "length": null
+                        "type": "integer",
+                        "default": 0,
+                        "not_null": true
                     },
                     {
                         "name": "mime_type",
-                        "ordinal_position": 9,
-                        "default": null,
-                        "not_null": false,
-                        "data_type": "text",
-                        "length": null
+                        "type": "text",
+                        "default": "'text/plain'",
+                        "not_null": true
                     },
                     {
                         "name": "md5",
-                        "ordinal_position": 10,
-                        "default": null,
-                        "not_null": false,
-                        "data_type": "text",
-                        "length": null
+                        "type": "text",
+                        "not_null": true
                     },
                     {
                         "name": "owner",
-                        "ordinal_position": 11,
-                        "default": null,
-                        "not_null": false,
-                        "data_type": "text",
-                        "length": null
+                        "type": "text"
                     },
                     {
                         "name": "group",
-                        "ordinal_position": 12,
-                        "default": null,
-                        "not_null": false,
-                        "data_type": "text",
-                        "length": null
+                        "type": "text"
                     },
                     {
                         "name": "mode",
-                        "ordinal_position": 13,
-                        "default": null,
-                        "not_null": false,
-                        "data_type": "text",
-                        "length": null
+                        "type": "text"
                     },
                     {
                         "name": "metadata",
-                        "ordinal_position": 14,
-                        "default": null,
-                        "not_null": false,
-                        "data_type": "json",
-                        "length": null
+                        "type": "json"
                     }
                 ]
             }
