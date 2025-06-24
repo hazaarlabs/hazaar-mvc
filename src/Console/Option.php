@@ -13,7 +13,7 @@ class Option
         public bool $required = false,
         public ?string $valueType = null
     ) {
-        if (!preg_match('/^[a-zA-Z][a-zA-Z0-9-]*$/', $this->long)) {
+        if (!preg_match('/^[a-zA-Z][a-zA-Z0-9_-]*$/', $this->long)) {
             throw new \InvalidArgumentException("Invalid long option name: {$this->long}");
         }
         if ($this->short && !preg_match('/^[a-zA-Z]$/', $this->short)) {
