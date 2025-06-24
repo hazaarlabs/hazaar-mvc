@@ -4,8 +4,8 @@
 use Hazaar\Console\Application;
 use Hazaar\Console\Modules\ConfigModule;
 use Hazaar\Console\Modules\CreateModule;
-use Hazaar\Console\Modules\CryptModule;
 use Hazaar\Console\Modules\DocModule;
+use Hazaar\Console\Modules\FileModule;
 use Hazaar\Console\Modules\UtilsModule;
 
 if (file_exists(__DIR__.'/../../../autoload.php')) {
@@ -18,7 +18,7 @@ $app = new Application('Hazaar Tool', '0.3.0');
 $app->add(new ConfigModule());
 $app->add(new CreateModule());
 $app->add(new DocModule());
-$app->add(new CryptModule());
+$app->add(new FileModule());
 $app->add(new UtilsModule());
 
 $app->run();

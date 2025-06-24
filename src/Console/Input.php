@@ -51,7 +51,11 @@ class Input
     {
         $this->executable = basename(array_shift($argv));
         if (!current($argv)) {
-            return false;
+            $this->module = 'default';
+            $this->command = 'help';
+            $this->argv = [];
+
+            return true;
         }
         if (0 === count($argv)) {
             $this->argv = [];
