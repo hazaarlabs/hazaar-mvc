@@ -1,42 +1,42 @@
-# Getting Started
+# Getting Started with Hazaar
 
-Getting up and running with Hazaar is really easy and is done in only a few basic
-steps.  Hazaar has been developed to run on Linux so it is compatible with any Linux
-distro supported by PHP, including WSL on Windows.  
+Getting up and running with Hazaar is quick and straightforward. This guide will walk you through installing Composer (if you don't have it already), setting up a new Hazaar project, and running your first application.
 
-If you hit any problems, please feel free to create a support issue so they can be fixed
-using the Hazaar [issue tracker](https://git.hazaar.io/hazaar/framework/issues).
+Hazaar is developed for Linux and works on any Linux distribution supported by PHP, including WSL on Windows. If you encounter any issues, please create a support issue using the Hazaar [issue tracker](https://git.hazaar.io/hazaar/framework/issues).
 
-Hazaar can be installed with [Composer](http://getcomposer.org) and is available via
-[Packagist](http://packagist.org). 
+---
 
-## Installing Composer
+## 1. Prerequisites
 
-If you have already installed Composer on your system, you can skip this step and move
-on [to the next section.](#install-the-example-application).
+- **PHP 8.0 or higher** must be installed on your system.
+- **Composer** (dependency manager for PHP)
 
-Composer is a popular dependency management tool for PHP, created mainly to facilitate
-installation and updates for project dependencies. It will check which other packages
-a specific project depends on and install them for you, using the appropriate versions
-according to the project requirements.
+---
 
-Composer runs on any system that supports PHP.  Please see the composer documentation at
-http://www.getcomposer.org for details on how to install composer on your system.
+## 2. Install Composer
 
-On a Unix-like system, you can install Composer globally with the following command:
+Hazaar is distributed via [Composer](https://getcomposer.org) and is available on [Packagist](https://packagist.org/packages/hazaar/hazaar).
 
-```
-$ curl -sS https://getcomposer.org/installer | php
-$ sudo mv composer.phar /usr/local/bin/composer
+If you already have Composer installed, skip to [Install the Example Application](#3-install-the-example-application).
+
+Composer is a popular dependency management tool for PHP. It checks which packages your project depends on and installs them for you.
+
+To install Composer globally on a Unix-like system, run:
+
+```sh
+curl -sS https://getcomposer.org/installer | php
+sudo mv composer.phar /usr/local/bin/composer
 ```
 
-To test your installation you can run the composer command from your command line:
+> **Tip:** If you get a "command not found" error after installation, make sure `/usr/local/bin` is in your `PATH`.
 
-```
-$ composer
+To verify Composer is installed, run:
+
+```sh
+composer
 ```
 
-And you should get output similar to this:
+You should see output similar to:
 
 ```
    ______
@@ -46,56 +46,49 @@ And you should get output similar to this:
 \____/\____/_/ /_/ /_/ .___/\____/____/\___/_/
                     /_/
 Composer version 2.7.1 2024-02-09 15:26:28
-
-Usage:
-  command [options] [arguments]
-
-Options:
-  -h, --help                     Display help for the given command. When no command is given display help for the list command
-  -q, --quiet                    Do not output any message
-  -V, --version                  Display this application version
-      --ansi|--no-ansi           Force (or disable --no-ansi) ANSI output
-  -n, --no-interaction           Do not ask any interactive question
-      --profile                  Display timing and memory usage information
-      --no-plugins               Whether to disable plugins.
-      --no-scripts               Skips the execution of all scripts defined in composer.json file.
-  -d, --working-dir=WORKING-DIR  If specified, use the given directory as working directory.
-      --no-cache                 Prevent use of the cache
-  -v|vv|vvv, --verbose           Increase the verbosity of messages: 1 for normal output, 2 for more verbose output and 3 for debug
-
-. . .
+... (more output) ...
 ```
 
-This means Composer was succesfully installed on your system.
+For more details or troubleshooting, see the [Composer documentation](https://getcomposer.org/doc/).
 
-## Install the Example Application
+---
 
-Because Hazaar is a library, you need to create a project that depends on it for composer
-to download it.  The easiest way to do this is to install the example application.  This will
-also give you a starting point for development.
+## 3. Install the Example Application
 
-You can do this with one command using composer:
+Hazaar is a library, so you need to create a project that depends on it. The easiest way is to use the example application, which provides a working starter template for your own development.
 
-```
-$ composer create-project hazaar/hazaar myapp
-```
+To create a new project called `myapp`:
 
-That's it.  You should now have the example application and Hazaar downloaded and ready
-to go. You can start the application with PHP's built-in web server by running the following
-command from the project directory:
-
-```
-$ cd myapp
-$ composer serve
+```sh
+composer create-project hazaar/hazaar myapp
 ```
 
-You can now access the application from your web browser by navigating to http://localhost:8000.
+This will download the example application and all Hazaar dependencies into a new `myapp` directory.
 
-## What's Next?
+---
 
-* [Configuration](/docs/basics/configuration.md) - Learn how to configure your application.
-* [Routing](/docs/basics/routing.md) - Learn how routing works for your application.
-* [Controllers](/docs/basics/controllers.md) - Learn how to create controllers for your application.
-* [Views](/docs/basics/views/overview.md) - Learn how to create views for your application.
-* [Models](/docs/basics/models.md) - Learn how to create models for your application.
-* [Database](/docs/dbi/overview.md) - Learn how to use databases in your application.
+## 4. Run the Application
+
+Change into your new project directory and start the built-in development server:
+
+```sh
+cd myapp
+composer serve
+```
+
+You can now access your application in your web browser at [http://localhost:8000](http://localhost:8000).
+
+---
+
+## 5. What's Next?
+
+- [Configuration](/docs/basics/configuration.md) – Learn how to configure your application.
+- [Routing](/docs/basics/routing.md) – Understand how routing works.
+- [Controllers](/docs/basics/controllers.md) – Create controllers for your application.
+- [Views](/docs/basics/views/overview.md) – Build views for your application.
+- [Models](/docs/basics/models.md) – Work with models.
+- [Database](/docs/dbi/overview.md) – Use databases in your application.
+
+---
+
+If you have questions or run into issues, check the [FAQ](/docs/faq/) or reach out via the [contact page](/contact).
