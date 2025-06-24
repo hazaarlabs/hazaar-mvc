@@ -20,7 +20,11 @@ class Config extends \Hazaar\Config
 
     protected function __construct(?string $sourceFile = null, ?string $env = null, ?array $defaults = null)
     {
-        $this->setBasePath(Loader::getFilePath(FilePath::CONFIG));
+        $configPath = Loader::getFilePath(FilePath::CONFIG);
+        if (!$configPath) {
+            throw new \RuntimeException('Configuration path not found. Please check your file structure.');
+        }
+        $this->setBasePath($configPath);
         $this->setEnvironment($env ?? APPLICATION_ENV);
         if (count(self::$overridePaths) > 0) {
             $this->setOverridePaths(self::$overridePaths);

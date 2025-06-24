@@ -103,6 +103,13 @@ class Input
             $argName = array_shift($argumentsDefinition);
             $this->args[$argName] = current($this->argv);
         } while (false !== next($this->argv));
+        // Check if there are boolean options that were not set
+        foreach ($optionsDefinition as $option) {
+            if ($option->takesValue || array_key_exists($option->long, $this->options)) {
+                continue;
+            }
+            $this->options[$option->long] = $option->default ?? false;
+        }
     }
 
     public function getExecutable(): string

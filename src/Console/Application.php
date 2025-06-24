@@ -31,7 +31,7 @@ class Application
      *
      * @var array{Module,string}
      */
-    private array $methods = [];
+    private array $methods;
 
     public function __construct(string $name = 'UNKNOWN', string $version = 'UNKNOWN')
     {
@@ -81,8 +81,10 @@ class Application
             return $helpModule->execute($this->input, $this->output);
         }
         $module = $this->commands[$moduleName][$commandName];
-        foreach ($this->methods as $method) {
-            call_user_func($method, $this->input, $this->output);
+        if (isset($this->methods)) {
+            foreach ($this->methods as $method) {
+                call_user_func($method, $this->input, $this->output);
+            }
         }
 
         return $module->run($commandName);
