@@ -162,7 +162,7 @@ class Config implements \ArrayAccess, \Iterator, \Countable
         foreach ($this->overridePaths as $override) {
             $sources[] = [
                 'name' => $this->basePath.DIRECTORY_SEPARATOR.$override.DIRECTORY_SEPARATOR.$source,
-                'ns' => isset($this->env),
+                'ns' => false,
             ];
         }
         $sourceData = null;
