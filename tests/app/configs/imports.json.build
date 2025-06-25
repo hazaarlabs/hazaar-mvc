@@ -1,0 +1,5 @@
+{
+    "dropbox": {
+        "accessToken": "$DROPBOX_ACCESS_TOKEN"
+    }
+}

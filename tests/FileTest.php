@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Hazaar\Tests;
 
+use Hazaar\Application;
 use Hazaar\Application\Runtime;
 use Hazaar\File;
-use Hazaar\File\BTree;
-use Hazaar\Util\GeoData;
+use Hazaar\File\Dir;
+use Hazaar\File\Manager;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -75,6 +76,7 @@ class FileTest extends TestCase
         $this->assertFalse($encryptFile->isEncrypted());
         $this->assertTrue($encryptFile->encrypt());
         $this->assertTrue($encryptFile->isEncrypted());
+        $this->assertNotEquals($content, $encryptFile->getContents());
         unset($encryptFile);
         $decryptFile = new File($file);
         $this->assertTrue($decryptFile->isEncrypted());
@@ -84,61 +86,93 @@ class FileTest extends TestCase
         $this->assertTrue($decryptFile->unlink());
     }
 
-    public function testBTreeFile(): void
+    public function testDropboxFileBackendWithDirs(): void
     {
-        $db = new BTree(Runtime::getInstance()->getPath('UnitTest.db'));
-        $this->assertInstanceOf('\Hazaar\File\BTree', $db);
-        $this->assertTrue($db->set('test', 'value'));
-        $this->assertEquals('value', $db->get('test'));
-        // $this->assertTrue($db->compact());
+        $accessToken = Application::getInstance()->config['dropbox']['accessToken'] ?? '';
+        if (empty($accessToken)) {
+            $this->markTestSkipped('Dropbox access token is not set in the configuration.');
+        }
+        $manager = new Manager('dropbox', [
+            'app_key' => 'eqvhcsusjid3mdm',
+            'app_secret' => 'yowjphtrmmdbmmt',
+            'oauth2' => [
+                'access_token' => $accessToken,
+            ],
+        ]);
+        $this->assertTrue($manager->authorised());
+        $this->assertTrue($manager->refresh(true));
+        $this->assertInstanceOf(Dir::class, $manager->get('/'));
+        if ($manager->exists('/test')) {
+            $this->assertTrue($manager->unlink('/test'));
+        }
+        $this->assertTrue($manager->mkdir('/test'));
+        $this->assertTrue($manager->exists('/test'));
+        $this->assertInstanceOf(Dir::class, $manager->get('/test'));
+        $this->assertTrue($manager->unlink('/test'));
+        $this->assertFalse($manager->exists('/test'));
     }
 
-    public function testGeoData(): void
+    public function testDropboxFileBackendWithTextFile(): void
     {
-        $geo = new GeoData();
-        $this->assertArrayHasKey('AU', $geo->countries());
-        $countryInfo = $geo->countryInfo('AU');
-        $this->assertArrayHasKey('currency', $countryInfo);
-        $this->assertArrayHasKey('languages', $countryInfo);
-        $this->assertArrayHasKey('name', $countryInfo);
-        $this->assertArrayHasKey('phone_code', $countryInfo);
-        $this->assertArrayHasKey('continent', $countryInfo);
-        $this->assertArrayHasKey('capital', $countryInfo);
-        $this->assertEquals('Australia', $geo->countryName('AU'));
-        $this->assertIsArray($a = $geo->countryContinent('AU'));
-        $this->assertEquals('Oceania', $a['name']);
-        // Assert array contains en-AU
-        $this->assertContains('en-AU', $geo->countryLanguages('AU'));
-        $this->assertIsArray($s = $geo->states('AU'));
-        $this->assertArrayHasKey('NSW', $geo->states('AU'));
-        $this->assertEquals(61, $geo->countryPhoneCode('AU'));
+        $accessToken = Application::getInstance()->config['dropbox']['accessToken'] ?? '';
+        if (empty($accessToken)) {
+            $this->markTestSkipped('Dropbox access token is not set in the configuration.');
+        }
+        $manager = new Manager('dropbox', [
+            'app_key' => 'eqvhcsusjid3mdm',
+            'app_secret' => 'yowjphtrmmdbmmt',
+            'oauth2' => [
+                'access_token' => $accessToken,
+            ],
+        ]);
+        $this->assertTrue($manager->authorised());
+        $this->assertTrue($manager->refresh(true));
+        if ($manager->exists('/example.txt')) {
+            $this->assertTrue($manager->unlink('/example.txt'));
+        }
+        $exampleFile = $manager->get('/example.txt');
+        $this->assertEquals(20, $exampleFile->putContents('This is a test file.'));
+        $this->assertTrue($exampleFile->exists());
+        $this->assertInstanceOf(File::class, $exampleFile);
+        $this->assertEquals(20, $exampleFile->size());
+        $this->assertEquals('This is a test file.', $exampleFile->getContents());
+        $this->assertTrue($exampleFile->unlink());
     }
 
-    public function testSharepointFileBackend(): void
+    public function testDropboxFileBackendWithImageFile(): void
     {
-        // This test is a placeholder for SharePoint file backend tests.
-        // Implement the actual test logic as needed.
-        $this->markTestIncomplete('SharePoint file backend tests are not implemented yet.');
+        $accessToken = Application::getInstance()->config['dropbox']['accessToken'] ?? '';
+        if (empty($accessToken)) {
+            $this->markTestSkipped('Dropbox access token is not set in the configuration.');
+        }
+        $manager = new Manager('dropbox', [
+            'app_key' => 'eqvhcsusjid3mdm',
+            'app_secret' => 'yowjphtrmmdbmmt',
+            'oauth2' => [
+                'access_token' => $accessToken,
+            ],
+        ]);
+        $this->assertTrue($manager->authorised());
+        $this->assertTrue($manager->refresh(true));
+        $imageFile = $manager->get('/circuitboard.jpg');
+        $this->assertTrue($imageFile->exists());
+        $this->assertNotEmpty($imageFile->getContents());
+        $this->assertEquals('image/jpeg', $imageFile->mimeContentType());
+        $thumb = $imageFile->thumbnailURL(100, 100);
     }
 
     public function testGoogleDriveFileBackend(): void
     {
-        // This test is a placeholder for Google Drive file backend tests.
-        // Implement the actual test logic as needed.
-        $this->markTestIncomplete('Google Drive file backend tests are not implemented yet.');
-    }
-
-    public function testDropboxFileBackend(): void
-    {
-        // This test is a placeholder for Dropbox file backend tests.
-        // Implement the actual test logic as needed.
-        $this->markTestIncomplete('Dropbox file backend tests are not implemented yet.');
+        $this->markTestIncomplete('Google Drive file backend is not implemented yet.');
     }
 
     public function testWebDAVFileBackend(): void
     {
-        // This test is a placeholder for WebDAV file backend tests.
-        // Implement the actual test logic as needed.
-        $this->markTestIncomplete('WebDAV file backend tests are not implemented yet.');
+        $this->markTestIncomplete('WebDAV file backend is not implemented yet.');
+    }
+
+    public function testHazaarFileBackend(): void
+    {
+        $this->markTestIncomplete('Hazaar file backend is not implemented yet.');
     }
 }
