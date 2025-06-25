@@ -4,7 +4,7 @@ FROM php:8.4-alpine
 COPY --from=composer:2.8.3 /usr/bin/composer /usr/bin/composer
 
 RUN apk add --no-cache git g++ gcc autoconf libc-dev make zlib-dev \
-    libpng-dev libzip-dev icu-dev libpq-dev \
+    libpng-dev libzip-dev icu-dev libpq-dev envsubst \
     libxml2-dev musl-locales linux-headers npm sqlite-dev
 
 # Set the locale

@@ -252,7 +252,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
     public function exists(string $path): bool
     {
         if (($info = $this->info($path)) !== false) {
-            return 'deleted' !== $info->{'.tag'};
+            return 'deleted' !== ($info->{'.tag'} ?? null);
         }
 
         return false;
