@@ -8,6 +8,7 @@ use Hazaar\Application\Runtime;
 use Hazaar\File\BTree;
 use Hazaar\Util\Arr;
 use Hazaar\Util\Closure;
+use Hazaar\Util\GeoData;
 use Hazaar\Util\Interval;
 use Hazaar\Util\Str;
 use Hazaar\Util\Version;
@@ -44,6 +45,27 @@ class UtilityTest extends TestCase
         $this->assertTrue($btree->remove('key'));
         $this->assertNull($btree->get('key'));
         $this->assertTrue($btree->compact());
+    }
+
+    public function testGeoData(): void
+    {
+        $geo = new GeoData();
+        $this->assertArrayHasKey('AU', $geo->countries());
+        $countryInfo = $geo->countryInfo('AU');
+        $this->assertArrayHasKey('currency', $countryInfo);
+        $this->assertArrayHasKey('languages', $countryInfo);
+        $this->assertArrayHasKey('name', $countryInfo);
+        $this->assertArrayHasKey('phone_code', $countryInfo);
+        $this->assertArrayHasKey('continent', $countryInfo);
+        $this->assertArrayHasKey('capital', $countryInfo);
+        $this->assertEquals('Australia', $geo->countryName('AU'));
+        $this->assertIsArray($a = $geo->countryContinent('AU'));
+        $this->assertEquals('Oceania', $a['name']);
+        // Assert array contains en-AU
+        $this->assertContains('en-AU', $geo->countryLanguages('AU'));
+        $this->assertIsArray($s = $geo->states('AU'));
+        $this->assertArrayHasKey('NSW', $geo->states('AU'));
+        $this->assertEquals(61, $geo->countryPhoneCode('AU'));
     }
 
     public function testUptimeFunction(): void
