@@ -227,4 +227,9 @@ class URL implements \ArrayAccess
 
         return null;
     }
+
+    public function appendPath(string $path): void
+    {
+        $this->parts['path'] .= '/'.ltrim($path, '/');
+    }
 }

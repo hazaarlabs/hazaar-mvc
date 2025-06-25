@@ -178,7 +178,7 @@ class Response implements \ArrayAccess
                         break;
                     }
                     $chunkLenString = substr($this->buffer, 0, $chunkLenEnd - $this->chunkOffset - 2);
-                    $chunkLen = hexdec($chunkLenString) + 2;
+                    $chunkLen = (int)(hexdec($chunkLenString) + 2);
                     // If we don't have the whole chunk, bomb out for now.  This expects that this read method will be
                     // called again later with more of the response body.  The +2 includes the CRLF chunk terminator.
                     if ((strlen($this->buffer) - $chunkLenEnd) < $chunkLen) {
