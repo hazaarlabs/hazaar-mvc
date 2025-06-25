@@ -341,7 +341,11 @@ class Client
 
     public function uncacheCookie(CacheAdapter $cache): bool
     {
-        if ($this->cookies = $cache->get('hazaar-http-client-cookies')) {
+        $cookies = $cache->get('hazaar-http-client-cookies');
+        if (false === $cookies) {
+            return false;
+        }
+        if ($this->cookies = $cookies) {
             return true;
         }
         $this->cookies = [];

@@ -7,6 +7,7 @@ namespace Hazaar\HTTP;
 use Hazaar\Auth\Adapter;
 use Hazaar\HTTP\Exception\CertificateNotFound;
 use Hazaar\HTTP\Exception\HostNotFound;
+use Hazaar\Util\Boolean;
 use Hazaar\XML\Element;
 
 /**
@@ -28,7 +29,6 @@ class Request implements \ArrayAccess
      * @var resource
      */
     public mixed $context;
-    public string $rawURL;
 
     /**
      * @var array<string,array<string>|string>
@@ -54,8 +54,8 @@ class Request implements \ArrayAccess
     /**
      * HTTP request constructor.
      *
-     * @param string   $url            The url of the resource that will be requested
-     * @param string   $method         The request method to use.  Typically GET, POST, etc
+     * @param string   $url           The url of the resource that will be requested
+     * @param string   $method        The request method to use.  Typically GET, POST, etc
      * @param string   $contentType   optionally set the content type header
      * @param resource $customContext Optionally use a custom context.  Allows to define private SSL certificates.
      */
@@ -88,7 +88,6 @@ class Request implements \ArrayAccess
         if (null === $url) {
             return $this->url;
         }
-        $this->rawURL = $url;
         $this->url = ($url instanceof URL) ? $url : new URL($url);
         /*
          * !!NOTE!!
@@ -108,6 +107,12 @@ class Request implements \ArrayAccess
         $this->setHeader('Host', $this->url->host());
 
         return $this->url;
+    }
+
+    public function appendURL(string $path): void
+    {
+        $this->url->appendPath($path);
+        $this->url($this->url);
     }
 
     /**
@@ -130,7 +135,7 @@ class Request implements \ArrayAccess
      * Enable multipart mime request body optionally using the specified boundary and content type.
      *
      * @param string $contentType Optional request content type to use.  Defaults to multipart/form-data.
-     * @param string $boundary     Optional boundary identifier. Defaults to HazaarMultipartBoundary_{uniqid}
+     * @param string $boundary    Optional boundary identifier. Defaults to HazaarMultipartBoundary_{uniqid}
      *
      * @return bool True if multipart was enabled.  False if it was already enabled.
      */
@@ -179,7 +184,7 @@ class Request implements \ArrayAccess
     /**
      * Add a multipart chunk to the request.
      *
-     * @param mixed                     $data         the data to add to the request
+     * @param mixed                     $data        the data to add to the request
      * @param string                    $contentType the content type of the added data
      * @param null|array<string,string> $headers
      */
@@ -269,10 +274,10 @@ class Request implements \ArrayAccess
     /**
      * Sets the value of a header.
      *
-     * @param string $key            the name of the header to set
-     * @param string $value          the value to set on the header
+     * @param string $key           the name of the header to set
+     * @param string $value         the value to set on the header
      * @param bool   $allowMultiple Whether multiple instances of the header are allowed.  Defaults to false, meaning if the
-     *                               header exists, it will be updated.  Multiple headers are rare but the main one is 'Cookie'.
+     *                              header exists, it will be updated.  Multiple headers are rare but the main one is 'Cookie'.
      */
     public function setHeader(string $key, string $value, bool $allowMultiple = false): void
     {
@@ -516,7 +521,7 @@ class Request implements \ArrayAccess
      */
     public function setURLEncode(bool $value = true): void
     {
-        $this->dontEncodeURL = !\Hazaar\Util\Boolean::from($value);
+        $this->dontEncodeURL = !Boolean::from($value);
     }
 
     /**
