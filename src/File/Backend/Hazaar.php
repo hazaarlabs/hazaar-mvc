@@ -6,7 +6,6 @@ namespace Hazaar\File\Backend;
 
 use Hazaar\File\Interface\Backend as BackendInterface;
 use Hazaar\File\Interface\Driver as DriverInterface;
-use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 use Hazaar\HTTP\URL;
@@ -15,7 +14,6 @@ use Hazaar\Util\URL as URLUtil;
 class Hazaar implements BackendInterface, DriverInterface
 {
     public string $separator = '/';
-    protected Manager $manager;
 
     /**
      * @var array<string, mixed>
@@ -37,9 +35,8 @@ class Hazaar implements BackendInterface, DriverInterface
     /**
      * @param array<string, mixed> $options
      */
-    public function __construct(array $options, Manager $manager)
+    public function __construct(array $options = [])
     {
-        $this->manager = $manager;
         $this->options = array_merge([
             'url' => null,
         ], $options);

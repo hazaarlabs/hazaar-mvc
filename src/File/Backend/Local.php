@@ -7,12 +7,10 @@ namespace Hazaar\File\Backend;
 use Hazaar\File\BTree;
 use Hazaar\File\Interface\Backend as BackendInterface;
 use Hazaar\File\Interface\Driver as DriverInterface;
-use Hazaar\File\Manager;
 
 class Local implements BackendInterface, DriverInterface
 {
     public string $separator = DIRECTORY_SEPARATOR;
-    protected Manager $manager;
 
     /**
      * @var array<mixed>
@@ -24,12 +22,8 @@ class Local implements BackendInterface, DriverInterface
      */
     private array $meta = [];
 
-    /**
-     * @param array<mixed> $options
-     */
-    public function __construct(array $options, Manager $manager)
+    public function __construct(array $options = [])
     {
-        $this->manager = $manager;
         $this->options = array_merge_recursive(['display_hidden' => false, 'root' => DIRECTORY_SEPARATOR], $options);
     }
 

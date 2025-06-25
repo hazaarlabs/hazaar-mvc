@@ -5,17 +5,15 @@ declare(strict_types=1);
 namespace Hazaar\File\Backend;
 
 use Hazaar\Cache\Adapter;
-use Hazaar\File\Image;
 use Hazaar\File\Interface\Backend as BackendInterface;
 use Hazaar\File\Interface\Driver as DriverInterface;
-use Hazaar\File\Manager;
 use Hazaar\HTTP\Request;
 use Hazaar\HTTP\Response;
+use Hazaar\Util\Boolean;
 
 class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInterface
 {
     public string $separator = '/';
-    protected Manager $manager;
 
     /**
      * @var array<mixed>
@@ -30,12 +28,9 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
 
     /**
      * WebDAV constructor.
-     *
-     * @param array<mixed> $options
      */
-    public function __construct(array $options, Manager $manager)
+    public function __construct(array $options = [])
     {
-        $this->manager = $manager;
         $this->options = array_merge([
             'cache_backend' => 'file',
             'cache_meta' => true,
@@ -270,31 +265,11 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
         if (!($info = $this->info($path))) {
             return false;
         }
-        if ($info['thumb_exists']) {
-            $size = 'l';
-            if ($width < 32 && $height < 32) {
-                $size = 'xs';
-            } elseif ($width < 64 && $height < 64) {
-                $size = 's';
-            } elseif ($width < 128 && $height < 128) {
-                $size = 'm';
-            } elseif ($width < 640 && $height < 480) {
-                $size = 'l';
-            } elseif ($width < 1024 && $height < 768) {
-                $size = 'xl';
-            }
-            $request = new Request('https://api-content.dropbox.com/1/thumbnails/auto'.$path, 'GET');
-            $request['format'] = $format;
-            $request['size'] = $size;
-            $response = $this->send($request, 0);
-            $image = new Image($path, null, $this->manager);
-            $image->setContents($response->body);
-            $image->resize($width, $height, true, 'center', true, true, null, 0, 0);
-
-            return $image->getContents();
+        if (!$info['thumb_exists']) {
+            return false;
         }
 
-        return false;
+        return 'https://api-content.dropbox.com/1/thumbnails/auto'.$path;
     }
 
     // File Operations
@@ -304,7 +279,7 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
         $request['root'] = 'auto';
         $request['path'] = $path;
         $response = $this->send($request);
-        if ($response instanceof Response && \Hazaar\Util\Boolean::from($response['is_dir'])) {
+        if ($response instanceof Response && Boolean::from($response['is_dir'])) {
             $this->meta[strtolower($response['path'])] = $response->body;
 
             return true;

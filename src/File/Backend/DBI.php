@@ -7,14 +7,12 @@ namespace Hazaar\File\Backend;
 use Hazaar\DBI\Adapter;
 use Hazaar\File\Interface\Backend as BackendInterface;
 use Hazaar\File\Interface\Driver as DriverInterface;
-use Hazaar\File\Manager;
 use Hazaar\Util\DateTime;
 use Hazaar\Util\Str;
 
 class DBI implements BackendInterface, DriverInterface
 {
     public string $separator = '/';
-    protected Manager $manager;
 
     /**
      * @var array<mixed>
@@ -30,9 +28,8 @@ class DBI implements BackendInterface, DriverInterface
     /**
      * @param array<mixed> $options
      */
-    public function __construct(array $options, Manager $manager)
+    public function __construct(array $options = [])
     {
-        $this->manager = $manager;
         $defaults = [
             'dbi' => Adapter::loadConfig()->toArray(),
             'initialise' => true,

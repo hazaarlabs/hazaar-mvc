@@ -8,15 +8,12 @@ use Hazaar\Cache\Adapter;
 use Hazaar\File\Backend\Exception\GoogleDriveError;
 use Hazaar\File\Interface\Backend as BackendInterface;
 use Hazaar\File\Interface\Driver as DriverInterface;
-use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 
 class GoogleDrive extends Client implements BackendInterface, DriverInterface
 {
     public string $separator = '/';
-
-    protected Manager $manager;
 
     /**
      * @var array<string>
@@ -60,10 +57,9 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
     private int $cursor;
     private string $oauth2ID;
 
-    public function __construct(array $options, Manager $manager)
+    public function __construct(array $options = [])
     {
         parent::__construct();
-        $this->manager = $manager;
         $this->options = array_merge([
             'cache_backend' => 'file',
             'oauth2' => ['access_token' => null],
