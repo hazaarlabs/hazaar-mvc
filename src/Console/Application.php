@@ -26,6 +26,13 @@ class Application
     private Input $input;
     private Output $output;
 
+    /**
+     * A list of methods registered with the application.
+     *
+     * @var array{Module,string}
+     */
+    private array $methods;
+
     public function __construct(string $name = 'UNKNOWN', string $version = 'UNKNOWN')
     {
         $this->name = $name;
@@ -74,8 +81,21 @@ class Application
             return $helpModule->execute($this->input, $this->output);
         }
         $module = $this->commands[$moduleName][$commandName];
+        if (isset($this->methods)) {
+            foreach ($this->methods as $method) {
+                call_user_func($method, $this->input, $this->output);
+            }
+        }
 
         return $module->run($commandName);
+    }
+
+    /**
+     * @param array{Module,string} $method
+     */
+    public function registerMethod(array $method): void
+    {
+        $this->methods[] = $method;
     }
 
     public function handleException(\Throwable $e): void

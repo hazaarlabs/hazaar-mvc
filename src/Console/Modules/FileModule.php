@@ -7,10 +7,11 @@ use Hazaar\Console\Module;
 use Hazaar\Console\Output;
 use Hazaar\File;
 
-class CryptModule extends Module
+class FileModule extends Module
 {
     protected function configure(): void
     {
+        $this->setName('file')->setDescription('Work with files and encryption');
         $this->addCommand('encrypt', [$this, 'encryptFile'])
             ->setDescription('Encrypt a file using the Hazaar encryption system')
             ->addArgument('file', 'The file to encrypt')

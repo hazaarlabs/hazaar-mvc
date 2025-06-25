@@ -17,7 +17,8 @@ function sidebarGuide() {
                     text: 'Installation', link: '/docs/start/install/overview',
                     "children": [
                         { text: 'Composer', link: '/docs/start/install/composer' },
-                        { text: 'DevContainer', link: '/docs/start/install/devcontainer' }
+                        { text: 'DevContainer', link: '/docs/start/install/devcontainer' },
+                        { text: 'Manual', link: '/docs/start/install/manual' }
                     ]
                 },
                 { text: 'Directory Structure', link: '/docs/start/structure' },
@@ -31,6 +32,10 @@ function sidebarGuide() {
                         { text: 'Docker', link: '/docs/deploy/docker' },
                         { text: 'FrankenPHP', link: '/docs/deploy/frankenphp' }
                     ]
+                },
+                {
+                    text: "Frequently Asked Questions",
+                    link: "/docs/start/faq"
                 }
             ]
         },
@@ -64,7 +69,7 @@ function sidebarGuide() {
                 { text: 'Generating URLs', link: '/docs/basics/urls' },
                 { text: 'Validation', link: '/docs/basics/validation' },
                 { text: 'Security', link: '/docs/basics/security' },
-                { text: 'Helper Functions', link: '/docs/basics/helpers' },
+                { text: 'Utilities', link: '/docs/basics/utilities' },
                 { text: 'CLI Tools', link: '/docs/basics/cli-tools' }
             ]
         },

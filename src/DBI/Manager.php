@@ -109,8 +109,12 @@ class Manager
             return $this->versions;
         }
 
-        if (!file_exists($this->migrateDir) && is_dir($this->migrateDir)) {
+        if (!(file_exists($this->migrateDir)
+            && is_dir($this->migrateDir))) {
             return [];
+        }
+        if (!is_readable($this->migrateDir)) {
+            throw new \RuntimeException('Migration directory is not readable: '.$this->migrateDir);
         }
         $this->versions = [];
         $dir = dir($this->migrateDir);

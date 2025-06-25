@@ -1,138 +1,200 @@
 # CLI Tools
 
-Hazaar provides a number of CLI tools to help you manage your application and database.  These tools are designed to be easy to use and provide a consistent interface across all platforms.
+Hazaar provides a suite of command-line tools to help you manage, develop, and maintain both the Hazaar framework and your application. These tools are built using the powerful Hazaar console classes such as [`Hazaar\Console\Application`](/api/class/Hazaar/Console/Application.html) and [`Hazaar\Console\Module`](/api/class/Hazaar/Console/Module.html), which provide a modular and extensible foundation for CLI development. 
+
+These CLI tools allow you to:
+- Manage application configuration and structure
+- Work with files, encryption, and geodata
+- Generate and maintain API documentation
+- Control and monitor background services and agents
+- Streamline development and operational workflows for Hazaar-based projects
+
+They are designed to be easy to use, scriptable, and consistent across platforms, making it simple to automate and manage all aspects of your Hazaar application from the command line.
 
 ## Hazaar CLI
 
-::: warning
-The Hazzar CLI tool is still in development and will change in future releases as new features are added to the hazaar console framework.  Please check the documentation for the latest information.
-:::
-
-The `hazaar` too is available in the `vendor/bin` directory of your application.  You can run it from the command line like this:
+The `hazaar` tool is available in the `vendor/bin` directory of your application, or globally if installed. You can run it from the command line like this:
 
 ```bash
-$ vendor/bin/hazaar
+$ hazaar
 Hazaar Tool v0.3.0
 Environment: development
-
-Usage: hazaar [globals] [command] [options]
-
+Hazaar Console Application
+Usage: hazaar [GLOBAL OPTIONS]  [COMMAND OPTIONS]
 Global Options:
-  --env, -e - The environment to use.  Overrides the APPLICATION_ENV environment variable
+  --env, -e <ENV>    The environment to use.  Overrides the APPLICATION_ENV environment variable
+Available Commands:
+  config     View or modify the application configuration
+  create     Create a new application object (view, controller or model)
+  doc        Work with API documentation
+  file       Work with files and encryption
+  geo        Cache the geodata database file
+  help       Display help information for a command
+```
 
-Commands:
-  config - View or modify the application configuration
-  create - Create a new application object (view, controller or model)
-  decrypt - Decrypt a file using the Hazaar encryption system
-  doc - Generate API documentation
-  docindex - Generate an API documentation index
-  encrypt - Encrypt a file using the Hazaar encryption system
-  geo - Cache the geodata database file
-  help - Display help information for a command
-```  
+To see available commands and options, run:
 
-## Commands
+```bash
+$ hazaar help
+```
+
+## Command Reference
+
+### `help`
+Display help information for a command:
+
+```bash
+hazaar help [command]
+```
 
 ### `config`
+View or modify the application configuration. Configuration keys use dot-notation (e.g., `database.host`).
 
-The `config` command is used to display the configuration for the application environment.  This is useful for debugging and understanding how the application is configured.
-
-```bash
-$ vendor/bin/hazaar config
-Hazaar Tool v0.3.0
-Environment: development
-
-app.env = development
-```
+- View config:
+  ```bash
+  hazaar config get app.theme
+  ```
+- Set config:
+  ```bash
+  hazaar config set app.name "My Test App"
+  ```
 
 ### `create`
-
-The `create` command is used to create a new application object (view, controller or model).  This is useful for quickly generating the boilerplate code for a new object.
-
-```bash
-$ vendor/bin/hazaar create controller MyController
-```
-
-This will create a new controller class in the `app/controllers` directory with the name `MyController`.  The class will extend the `Hazaar\Controller` class and will include a basic constructor and index action.  The class will also include a docblock with the class name and a list of available actions.
+Create a new application object (layout, view, controller, controller_basic, controller_action, model) from a template. This helps you quickly scaffold new components for your application.
 
 ```bash
-$ vendor/bin/hazaar create model MyModel
+hazaar create controller MyController
+hazaar create model MyModel
+hazaar create view MyView
 ```
 
-This will create a new model class in the `app/models` directory with the name `MyModel`.  The class will extend the `Hazaar\Model` class and will include a basic constructor and a list of available methods.  The class will also include a docblock with the class name and a list of available methods.
+### `file`
+Work with files and encryption. You can encrypt and decrypt files, check if a file is encrypted, and view encrypted file contents. The `check` command will set an exit code of 1 if the file is encrypted, which is useful for scripting and automation.
 
-```bash
-$ vendor/bin/hazaar create view MyView
-```
-
-This will create a new view class in the `app/views` directory with the name `MyView`.  The class will extend the `Hazaar\View` class and will include a basic constructor and a list of available methods.  The class will also include a docblock with the class name and a list of available methods.
-
-### `encrypt`
-
-The `encrypt` command is used to encrypt a file using the Hazaar encryption system.  Files are encrypted in-place, so be careful when using this command.  The `encrypt` command will overwrite the original file with the encrypted version.
-
-```bash
-$ vendor/bin/hazaar encrypt secure.json
-```
-
-::: tip
-Configuration files can be encrypted to protect sensitive information and will be automatically decrypted when loaded by the application.  This is useful for protecting sensitive information such as API keys, database passwords, and other sensitive information.
-:::
-
-::: warning
-The `encrypt` command will overwrite the original file with the encrypted version.  Be careful when using this command.  It is recommended that your files are either backed up or version controlled before using this command.
-:::
-
-### `decrypt`
-
-The `decrypt` command is used to decrypt a file using the Hazaar encryption system. 
-
-```bash
-$ vendor/bin/hazaar decrypt secure.json
-```
-
-### `view`
-
-The `view` command is used to view the contents of a file, automatically decrypting it if it is encrypted.  This is useful for viewing the contents of a file without having to manually decrypt it first.
-
-```bash
-$ vendor/bin/hazaar view secure.json
-```
+- Check if a file is encrypted (exit code 1 if encrypted):
+  ```bash
+  hazaar file check secure.json
+  ```
+- Encrypt a file:
+  ```bash
+  hazaar file encrypt secure.json
+  ```
+- Decrypt a file:
+  ```bash
+  hazaar file decrypt secure.json
+  ```
+- View the contents of an encrypted file:
+  ```bash
+  hazaar file view secure.json
+  ```
 
 ### `doc`
+Work with API documentation. Use this to compile source documentation into markdown for use in API documentation systems like VuePress. The `index` command can generate a VuePress sidebar index.
 
-The `doc` command is used to generate API documentation for the application.  Currently the only output format supported is markdown, but new formats will be added in the future.  The documentation is generated using the `Hazaar\Doc` class and is based on the docblocks in the application code.  See [Hazaar\Console\API\Documentor](/api/class/Hazaar/Console/API/Documentor.html) for more information.
-
-```bash
-$ vendor/bin/hazaar doc
-```
-
-::: note
-This is the feature used to generate the documentation for the Hazaar framework itself that is available on the website.  See [API Documentation](/api/home.html) for reference.
-
-### `docindex`
-
-The `docindex` command is used to generate an API documentation index for the application.  This is useful for generating a list of all available classes and methods in the application.  Currently only the VuePress sidebar format is supported.
-
-```bash
-$ vendor/bin/hazaar docindex
-```
-
-::: note
-This is the feature used to generate the documentation index for the Hazaar framework itself that is available on the website.  See [API Documentation](/api/home.html) for reference.
-:::
+- Compile documentation:
+  ```bash
+  hazaar doc compile
+  ```
+- Generate documentation index (for VuePress sidebar):
+  ```bash
+  hazaar doc index
+  ```
 
 ### `geo`
-
-The `cache` command is used to cache the geodata database file.  This is useful for speeding up the application when using the `Hazaar\Util\GeoData` class by preloading the database file into the runtime directory.  This command is run automatically upon first use of the `Hazaar\Util\GeoData` class, but can be run manually if needed to reduce startup time.
+Work with the geodata database used by [`Hazaar\Util\Geodata`](/api/class/Hazaar/Util/Geodata.html). This command helps manage and cache geodata required by your application. For more information, see the [`Hazaar\Util\Geodata`](/api/class/Hazaar/Util/Geodata.html) source file.
 
 ```bash
-$ vendor/bin/hazaar cache
-Hazaar Tool v0.3.0
-Environment: development
-
-Fetching geodata database file...
-GeoData database file cached successfully.
-Database file: /hazaar/geodata.db
-Database file size: 131MB bytes
+hazaar geo
 ```
+
+## Warlock CLI
+
+The `warlock` tool is included with Hazaar and provides functionality for managing and interacting with Warlock servers and agents. You can run it from the command line like this:
+
+```bash
+$ warlock
+Warlock v1.0.0
+Environment: development
+Hazaar Console Application
+Usage: warlock [GLOBAL OPTIONS]  [COMMAND OPTIONS]
+Global Options:
+  --env, -e <ENV>    The environment to use.  Overrides the APPLICATION_ENV environment variable
+Available Commands:
+  agent       Warlock Agent Commands
+  help        Display help information for a command
+  restart     Restart the Warlock server
+  run         Run the Warlock server
+  stop        Stop the Warlock server
+```
+
+To see available commands and options, run:
+
+```bash
+$ warlock help
+```
+
+## Command Reference
+
+### `help`
+Display help information for a command:
+
+```bash
+warlock help [command]
+```
+
+### `run`
+Start the Warlock server. This should be started with a configuration file specifying server options and services. Example:
+
+```bash
+warlock run /path/to/warlock-config.php
+```
+
+### `stop`
+Stop the Warlock server. This is only used if the server was started in the background.
+
+```bash
+warlock stop
+```
+
+### `restart`
+Restart the Warlock server. This is only used if the server was started in the background.
+
+```bash
+warlock restart
+```
+
+### `agent`
+Manage the Warlock agent, which is a separate server that connects to the main Warlock server to listen for code execution messages. The agent acts as a code execution service and can run code in the form of closures—either delayed, at an interval, scheduled, or as a service. Services are stored in `/app/services`.
+
+To see available agent subcommands and options, run:
+
+```bash
+warlock help agent
+```
+
+## Agent Subcommands
+
+### `agent run`
+Start the Warlock agent. This will connect the agent to the main Warlock server and begin listening for code execution messages.
+
+```bash
+warlock agent run
+```
+
+### `agent stop`
+Stop the Warlock agent. This is only used if the agent was started in the background.
+
+```bash
+warlock agent stop
+```
+
+### `agent restart`
+Restart the Warlock agent. This is only used if the agent was started in the background.
+
+```bash
+warlock agent restart
+```
+
+:::tip
+Refer to the Warlock CLI output for the most up-to-date list of commands and options.
+:::
