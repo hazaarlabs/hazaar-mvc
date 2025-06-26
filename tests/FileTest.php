@@ -133,17 +133,7 @@ class FileTest extends TestCase
 
     public function testGoogleDriveFileBackend(): void
     {
-        $config = Application::getInstance()->config->get('googledrive') ?? [];
-        $manager = new Manager('googledrive', $config);
-        if (!$manager->authorised()) {
-            $accessCode = getenv('GOOGLE_DRIVE_ACCESS_CODE') ?: $config['access_code'] ?? '';
-            $authURL = $manager->buildAuthURL($config['redirect_uri']);
-            $this->assertNotEmpty($accessCode, 'Google Drive tests require an access code from: '.$authURL);
-            $this->assertTrue(
-                $manager->authoriseWithCode($accessCode, $config['redirect_uri']),
-                'Google Drive tests require a valid access code from: '.$authURL
-            );
-        }
+        $manager = $this->getGoogleDriveManager();
         $this->assertTrue($manager->authorised());
         $this->assertTrue($manager->refresh());
         $this->assertInstanceOf(Dir::class, $manager->get('/'));
@@ -155,6 +145,34 @@ class FileTest extends TestCase
         $this->assertInstanceOf(Dir::class, $manager->get('/test'));
         $this->assertTrue($manager->unlink('/test'));
         $this->assertFalse($manager->exists('/test'));
+    }
+
+    public function testGoogleDriveFileBackendWithTextFile(): void
+    {
+        $manager = $this->getGoogleDriveManager();
+        $this->assertTrue($manager->authorised());
+        $this->assertTrue($manager->refresh(true));
+        if ($manager->exists('/example.txt')) {
+            $this->assertTrue($manager->unlink('/example.txt'));
+        }
+        $exampleFile = $manager->get('/example.txt');
+        $this->assertEquals(20, $exampleFile->putContents('This is a test file.'));
+        $this->assertTrue($exampleFile->exists());
+        $this->assertInstanceOf(File::class, $exampleFile);
+        $this->assertEquals(20, $exampleFile->size());
+        $this->assertEquals('This is a test file.', $exampleFile->getContents());
+        $this->assertTrue($exampleFile->unlink());
+    }
+
+    public function testGoogleDriveFileBackendWithImageFile(): void
+    {
+        $manager = $this->getGoogleDriveManager();
+        $this->assertTrue($manager->authorised());
+        $this->assertTrue($manager->refresh(true));
+        $imageFile = $manager->get('/circuitboard.jpg');
+        $this->assertTrue($imageFile->exists());
+        $this->assertNotEmpty($imageFile->getContents());
+        $this->assertEquals('image/jpeg', $imageFile->mimeContentType());
     }
 
     public function testWebDAVFileBackend(): void
@@ -182,6 +200,26 @@ class FileTest extends TestCase
             $this->assertTrue(
                 $manager->authoriseWithCode($accessCode),
                 'Dropbox tests require a valid access code from: '.$manager->buildAuthURL()
+            );
+        }
+
+        return $manager;
+    }
+
+    private function getGoogleDriveManager(): Manager
+    {
+        $config = Application::getInstance()->config->get('googledrive') ?? [];
+        $manager = new Manager('googledrive', $config);
+        if (!$manager->authorised()) {
+            // Check if the access code is set in the environment variables
+            // or in the configuration file.  Environment variables take precedence and
+            // will be available in the CI environment.
+            $accessCode = getenv('GOOGLE_DRIVE_ACCESS_CODE') ?: $config['access_code'] ?? '';
+            $authURL = $manager->buildAuthURL($config['redirect_uri']);
+            $this->assertNotEmpty($accessCode, 'Google Drive tests require an access code from: '.$authURL);
+            $this->assertTrue(
+                $manager->authoriseWithCode($accessCode, $config['redirect_uri']),
+                'Google Drive tests require a valid access code from: '.$authURL
             );
         }
 
