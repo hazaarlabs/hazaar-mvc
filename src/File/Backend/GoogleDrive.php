@@ -34,14 +34,15 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
     private array $meta = [];
 
     private int $cursor;
-    private string $oauth2ID;
 
     public function __construct(array $options = [])
     {
         parent::__construct();
         $this->options = array_merge([
-            'cache_backend' => 'file',
-            'oauth2' => ['access_token' => null],
+            'cache' => [
+                'backend' => 'file',
+            ],
+            'oauth2' => null,
             'refresh_attempts' => 5,
             'maxResults' => 100,
             'root' => '/',
@@ -49,12 +50,18 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         if (!isset($this->options['client_id'], $this->options['client_secret'])) {
             throw new GoogleDriveError('Google Drive filesystem backend requires both client_id and client_secret.');
         }
-        $cacheOps = [
-            'use_pragma' => false,
-            'namespace' => 'googledrive_'.$this->options['client_id'],
-        ];
-        $this->cache = new Adapter($this->options['cache_backend'], $cacheOps);
-        $this->oauth2ID = 'oauth2_data::'.md5(string: $this->options['client_id']);
+        if (!isset($this->options['cache']['backend'])) {
+            throw new GoogleDriveError('Dropbox filesystem backend requires cache backend to be set.');
+        }
+        if (!isset($this->options['cache']['namespace'])) {
+            $this->options['cache']['namespace'] = 'googledrive:'.$this->options['client_id'];
+        }
+        $this->options['cache']['options']['use_pragma'] = false;
+        $this->cache = new Adapter(
+            $this->options['cache']['backend'],
+            $this->options['cache']['options'],
+            $this->options['cache']['namespace']
+        );
         $this->reload();
     }
 
@@ -76,14 +83,14 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
 
     public function reload(): bool
     {
-        if ($oauth2 = $this->cache->get($this->oauth2ID)) {
+        if ($oauth2 = $this->cache->get('oauth2_data')) {
             $this->options['oauth2'] = $oauth2;
         }
-        if (($cursor = $this->cache->get('cursor')) !== false) {
+        if ($cursor = $this->cache->get('cursor')) {
             $this->cursor = $cursor;
-        }
-        if (($meta = $this->cache->get('meta')) !== false) {
-            $this->meta = $meta;
+            if ($meta = $this->cache->get('meta')) {
+                $this->meta = $meta;
+            }
         }
 
         return true;
@@ -91,9 +98,9 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
 
     public function reset(): bool
     {
-        unset($this->options['oauth2']);
         $this->meta = [];
-        $this->cache->remove($this->oauth2ID);
+        $this->options['oauth2'] = null;
+        $this->cache->remove('oauth2_data');
         $this->cache->remove('cursor');
         $this->cache->remove('meta');
 
@@ -139,8 +146,11 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             return false;
         }
         if ($auth = $response->body()) {
-            $this->options['oauth2'] = array_merge($this->options['oauth2'], (array) $auth);
-            $this->cache->set($this->oauth2ID, $this->options['oauth2'], -1);
+            if (isset($auth->expires_in)) {
+                $auth->expires = time() + ($auth->expires_in - 1); // Pull a second off to avoid expiry issues
+            }
+            $this->options['oauth2'] = array_merge($this->options['oauth2'] ?? [], (array) $auth);
+            $this->cache->set('oauth2_data', $this->options['oauth2']);
 
             return true;
         }
@@ -150,9 +160,23 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
 
     public function authorised(): bool
     {
-        return isset($this->options['oauth2'])
-            && isset($this->options['oauth2']['access_token'])
-            && null != $this->options['oauth2']['access_token'];
+        if (!(isset($this->options['oauth2']) && null !== $this->options['oauth2']['access_token'])) {
+            return false;
+        }
+        // Check if the access token is still valid
+        if (isset($this->options['oauth2']['expires']) && $this->options['oauth2']['expires'] < time()) {
+            if (!isset($this->options['oauth2']['refresh_token'])) {
+                return false; // Access\Refresh token has expired
+            }
+
+            return $this->authoriseWithCode(
+                $this->options['oauth2']['refresh_token'],
+                null,
+                'refresh_token'
+            );
+        }
+
+        return true;
     }
 
     public function buildAuthURL(?string $redirectUri = null): string

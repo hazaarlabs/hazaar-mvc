@@ -366,11 +366,8 @@ class Redis extends Backend
      */
     private function deconstructValue(mixed $value): array
     {
-        if ($value instanceof \stdClass) {
-            $value = (array) $value;
-        }
         if (!is_array($value)) {
-            return ['__value__', $value];
+            return ['__value__', serialize($value)];
         }
         $values = [];
         foreach ($value as $key => $item) {

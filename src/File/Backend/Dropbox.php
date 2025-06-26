@@ -37,16 +37,11 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
     {
         parent::__construct();
         $this->options = array_replace_recursive([
-            'oauth2_method' => 'POST',
-            'oauth_version' => '2.0',
             'file_limit' => 1000,
             'cache' => [
                 'backend' => 'file',
-                'options' => [
-                    'use_pragma' => false,
-                ],
             ],
-            'oauth2' => ['access_token' => null],
+            'oauth2' => null,
         ], $options);
         if (!(isset($this->options['app_key'], $this->options['app_secret']))) {
             throw new DropboxError('Dropbox filesystem backend requires both app_key and app_secret.');
@@ -54,19 +49,16 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         if (!isset($this->options['cache']['backend'])) {
             throw new DropboxError('Dropbox filesystem backend requires cache backend to be set.');
         }
-        if (!isset($this->options['cache']['options']['namespace'])) {
-            $this->options['cache']['options']['namespace'] = 'dropbox_'.$this->options['app_key'];
+        if (!isset($this->options['cache']['namespace'])) {
+            $this->options['cache']['namespace'] = 'dropbox:'.$this->options['app_key'];
         }
-        $this->cache = new Adapter($this->options['cache']['backend'], $this->options['cache']['options']);
-        if ($oauth2 = $this->cache->get('oauth2_data')) {
-            $this->options['oauth2'] = $oauth2;
-        }
-        if ($cursors = $this->cache->get('cursors')) {
-            $this->cursors = $cursors;
-            if (($meta = $this->cache->get('meta')) !== false) {
-                $this->meta = $meta;
-            }
-        }
+        $this->options['cache']['options']['use_pragma'] = false;
+        $this->cache = new Adapter(
+            $this->options['cache']['backend'],
+            $this->options['cache']['options'],
+            $this->options['cache']['namespace']
+        );
+        $this->reload();
     }
 
     public function __destruct()
@@ -86,9 +78,38 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         return 'Dropbox';
     }
 
+    public function reload(): void
+    {
+        if ($oauth2 = $this->cache->get('oauth2_data')) {
+            $this->options['oauth2'] = $oauth2;
+        }
+        if ($cursors = $this->cache->get('cursors')) {
+            $this->cursors = $cursors;
+            if ($meta = $this->cache->get('meta')) {
+                $this->meta = $meta;
+            }
+        }
+    }
+
+    public function reset(): bool
+    {
+        $this->cursors = [];
+        $this->meta = [];
+        $this->options['oauth2'] = null;
+        $this->cache->remove('cursors');
+        $this->cache->remove('meta');
+        $this->cache->remove('oauth2_data');
+
+        return true;
+    }
+
     public function authorise(?string $redirectUri = null): bool
     {
         if (($code = $_REQUEST['code'] ?? null) && ($state = $_REQUEST['state'] ?? null)) {
+            if ($state != $this->cache->pull('oauth2_state')) {
+                return false;
+            }
+
             return $this->authoriseWithCode($code);
         }
 
@@ -100,19 +121,28 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         ?string $redirectUri = null,
         string $grantType = 'authorization_code'
     ): bool {
-        $request = new Request('https://api.dropbox.com/1/oauth2/token', $this->options['oauth2_method']);
-        $request->populate([
-            'code' => $code,
-            'grant_type' => $grantType,
-            'client_id' => $this->options['app_key'],
-            'client_secret' => $this->options['app_secret'],
-        ]);
+        $request = new Request('https://api.dropboxapi.com/oauth2/token', 'POST');
+        if ('refresh_token' === $grantType) {
+            $request['refresh_token'] = $code;
+        } else {
+            $request['code'] = $code;
+        }
+        $request['grant_type'] = $grantType;
+        $request['client_id'] = $this->options['app_key'];
+        $request['client_secret'] = $this->options['app_secret'];
         $response = $this->send($request);
+        if ($redirectUri) {
+            $request['redirect_uri'] = $redirectUri;
+        }
         if (200 !== $response->status) {
             return false;
         }
-        if ($auth = json_decode($response->body, true)) {
-            $this->cache->set('oauth2_data', $auth);
+        if ($auth = $response->body()) {
+            if (isset($auth->expires_in)) {
+                $auth->expires = time() + ($auth->expires_in - 1); // Pull a second off to avoid expiry issues
+            }
+            $this->options['oauth2'] = array_merge($this->options['oauth2'] ?? [], (array) $auth);
+            $this->cache->set('oauth2_data', $this->options['oauth2']);
 
             return true;
         }
@@ -122,26 +152,40 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
 
     public function authorised(): bool
     {
-        return isset($this->options['oauth2']) && null !== $this->options['oauth2']['access_token'];
+        if (!(isset($this->options['oauth2']) && null !== $this->options['oauth2']['access_token'])) {
+            return false;
+        }
+        // Check if the access token is still valid
+        if (isset($this->options['oauth2']['expires']) && $this->options['oauth2']['expires'] < time()) {
+            if (!isset($this->options['oauth2']->refresh_token)) {
+                return false; // Access\Refresh token has expired
+            }
+
+            return $this->authoriseWithCode(
+                $this->options['oauth2']['refresh_token'],
+                null,
+                'refresh_token'
+            );
+        }
+
+        return true;
     }
 
     public function buildAuthURL(?string $redirectUri = null): string
     {
-        // if (!$redirectUri) {
-        //     $redirectUri = $_SERVER['REQUEST_URI'];
-        // }
         $state = md5(uniqid());
-        $this->cache->set('oauth2_state', $state);
+        $this->cache->set('oauth2_state', $state, 300);
         $params = [
             'response_type=code',
             'client_id='.$this->options['app_key'],
             'state='.$state,
+            'token_access_type=offline',
         ];
         if ($redirectUri) {
             $params[] = 'redirect_uri='.urlencode($redirectUri);
         }
 
-        return 'https://www.dropbox.com/1/oauth2/authorize?'.implode('&', $params);
+        return 'https://www.dropbox.com/oauth2/authorize?'.implode('&', $params);
     }
 
     public function refresh(bool $reset = false): bool

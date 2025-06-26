@@ -194,14 +194,13 @@ class FileTest extends TestCase
             // or in the configuration file.  Environment variables take precedence and
             // will be available in the CI environment.
             $accessCode = getenv('DROPBOX_ACCESS_CODE') ?: $config['access_code'] ?? '';
-            if (!$accessCode) {
-                $this->markTestIncomplete('Dropbox tests require an access code from: '.$manager->buildAuthURL());
-            }
+            $this->assertNotEmpty($accessCode, 'Dropbox tests require an access code from: '.$manager->buildAuthURL());
             $this->assertTrue(
                 $manager->authoriseWithCode($accessCode),
                 'Dropbox tests require a valid access code from: '.$manager->buildAuthURL()
             );
         }
+        $manager->refresh(true);
 
         return $manager;
     }
@@ -222,6 +221,7 @@ class FileTest extends TestCase
                 'Google Drive tests require a valid access code from: '.$authURL
             );
         }
+        $manager->refresh(true);
 
         return $manager;
     }

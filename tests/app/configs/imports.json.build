@@ -7,7 +7,9 @@
             "options": {
                 "server": "keydb-master.default.svc.cluster.local",
                 "port": 6379,
-                "serverpass": "$REDIS_SERVERPASS"
+                "serverpass": "$REDIS_SERVERPASS",
+                "dbIndex": 1,
+                "ttl": 0
             }
         }
     },
@@ -20,7 +22,9 @@
             "options": {
                 "server": "keydb-master.default.svc.cluster.local",
                 "port": 6379,
-                "serverpass": "$REDIS_SERVERPASS"
+                "serverpass": "$REDIS_SERVERPASS",
+                "dbIndex": 1,
+                "ttl": 0
             }
         }
     }
