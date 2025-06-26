@@ -88,17 +88,7 @@ class FileTest extends TestCase
 
     public function testDropboxFileBackendWithDirs(): void
     {
-        $accessToken = Application::getInstance()->config['dropbox']['accessToken'] ?? '';
-        if (empty($accessToken)) {
-            $this->markTestSkipped('Dropbox access token is not set in the configuration.');
-        }
-        $manager = new Manager('dropbox', [
-            'app_key' => 'eqvhcsusjid3mdm',
-            'app_secret' => 'yowjphtrmmdbmmt',
-            'oauth2' => [
-                'access_token' => $accessToken,
-            ],
-        ]);
+        $manager = $this->getDropboxManager();
         $this->assertTrue($manager->authorised());
         $this->assertTrue($manager->refresh(true));
         $this->assertInstanceOf(Dir::class, $manager->get('/'));
@@ -114,17 +104,7 @@ class FileTest extends TestCase
 
     public function testDropboxFileBackendWithTextFile(): void
     {
-        $accessToken = Application::getInstance()->config['dropbox']['accessToken'] ?? '';
-        if (empty($accessToken)) {
-            $this->markTestSkipped('Dropbox access token is not set in the configuration.');
-        }
-        $manager = new Manager('dropbox', [
-            'app_key' => 'eqvhcsusjid3mdm',
-            'app_secret' => 'yowjphtrmmdbmmt',
-            'oauth2' => [
-                'access_token' => $accessToken,
-            ],
-        ]);
+        $manager = $this->getDropboxManager();
         $this->assertTrue($manager->authorised());
         $this->assertTrue($manager->refresh(true));
         if ($manager->exists('/example.txt')) {
@@ -141,17 +121,7 @@ class FileTest extends TestCase
 
     public function testDropboxFileBackendWithImageFile(): void
     {
-        $accessToken = Application::getInstance()->config['dropbox']['accessToken'] ?? '';
-        if (empty($accessToken)) {
-            $this->markTestSkipped('Dropbox access token is not set in the configuration.');
-        }
-        $manager = new Manager('dropbox', [
-            'app_key' => 'eqvhcsusjid3mdm',
-            'app_secret' => 'yowjphtrmmdbmmt',
-            'oauth2' => [
-                'access_token' => $accessToken,
-            ],
-        ]);
+        $manager = $this->getDropboxManager();
         $this->assertTrue($manager->authorised());
         $this->assertTrue($manager->refresh(true));
         $imageFile = $manager->get('/circuitboard.jpg');
@@ -174,5 +144,26 @@ class FileTest extends TestCase
     public function testHazaarFileBackend(): void
     {
         $this->markTestIncomplete('Hazaar file backend is not implemented yet.');
+    }
+
+    private function getDropboxManager(): Manager
+    {
+        $config = Application::getInstance()->config->get('dropbox');
+        $manager = new Manager('dropbox', $config);
+        if (!$manager->authorised()) {
+            // Check if the access code is set in the environment variables
+            // or in the configuration file.  Environment variables take precedence and
+            // will be available in the CI environment.
+            $accessCode = getenv('DROPBOX_ACCESS_CODE') ?: $config['access_code'] ?? '';
+            if (!$accessCode) {
+                $this->markTestIncomplete('Dropbox tests require an access code from: '.$manager->buildAuthURL());
+            }
+            $this->assertTrue(
+                $manager->authoriseWithCode($accessCode),
+                'Dropbox tests require a valid access code from: '.$manager->buildAuthURL()
+            );
+        }
+
+        return $manager;
     }
 }

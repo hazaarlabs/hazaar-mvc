@@ -1,5 +1,14 @@
 {
     "dropbox": {
-        "accessToken": "$DROPBOX_ACCESS_TOKEN"
+        "app_key": "$DROPBOX_APP_KEY",
+        "app_secret": "$DROPBOX_APP_SECRET",
+        "cache": {
+            "backend": "redis",
+            "options": {
+                "server": "keydb-master.default.svc.cluster.local",
+                "port": 6379,
+                "serverpass": "$REDIS_SERVERPASS"
+            }
+        }
     }
 }

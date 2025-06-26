@@ -40,17 +40,28 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
             'oauth2_method' => 'POST',
             'oauth_version' => '2.0',
             'file_limit' => 1000,
-            'cache_backend' => 'file',
+            'cache' => [
+                'backend' => 'file',
+                'options' => [
+                    'use_pragma' => false,
+                ],
+            ],
             'oauth2' => ['access_token' => null],
         ], $options);
         if (!(isset($this->options['app_key'], $this->options['app_secret']))) {
             throw new DropboxError('Dropbox filesystem backend requires both app_key and app_secret.');
         }
-        $this->cache = new Adapter($this->options['cache_backend'], ['use_pragma' => false, 'namespace' => 'dropbox_'.$this->options['app_key']]);
+        if (!isset($this->options['cache']['backend'])) {
+            throw new DropboxError('Dropbox filesystem backend requires cache backend to be set.');
+        }
+        if (!isset($this->options['cache']['options']['namespace'])) {
+            $this->options['cache']['options']['namespace'] = 'dropbox_'.$this->options['app_key'];
+        }
+        $this->cache = new Adapter($this->options['cache']['backend'], $this->options['cache']['options']);
         if ($oauth2 = $this->cache->get('oauth2_data')) {
             $this->options['oauth2'] = $oauth2;
         }
-        if (($cursors = $this->cache->get('cursors')) !== false) {
+        if ($cursors = $this->cache->get('cursors')) {
             $this->cursors = $cursors;
             if (($meta = $this->cache->get('meta')) !== false) {
                 $this->meta = $meta;
@@ -78,29 +89,32 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
     public function authorise(?string $redirectUri = null): bool
     {
         if (($code = $_REQUEST['code'] ?? null) && ($state = $_REQUEST['state'] ?? null)) {
-            if ($state != $this->cache->pull('oauth2_state')) {
-                throw new \Exception('Bad state!');
-            }
-            $request = new Request('https://api.dropbox.com/1/oauth2/token', $this->options['oauth2_method']);
-            $request->populate([
-                'code' => $code,
-                'grant_type' => 'authorization_code',
-                'client_id' => $this->options['app_key'],
-                'client_secret' => $this->options['app_secret'],
-                'redirect_uri' => $redirectUri,
-            ]);
-            $response = $this->send($request);
-            if (200 !== $response->status) {
-                return false;
-            }
-            if ($auth = json_decode($response->body, true)) {
-                $this->cache->set('oauth2_data', $auth);
-
-                return true;
-            }
+            return $this->authoriseWithCode($code);
         }
 
         return $this->authorised();
+    }
+
+    public function authoriseWithCode(string $code): bool
+    {
+        $request = new Request('https://api.dropbox.com/1/oauth2/token', $this->options['oauth2_method']);
+        $request->populate([
+            'code' => $code,
+            'grant_type' => 'authorization_code',
+            'client_id' => $this->options['app_key'],
+            'client_secret' => $this->options['app_secret'],
+        ]);
+        $response = $this->send($request);
+        if (200 !== $response->status) {
+            return false;
+        }
+        if ($auth = json_decode($response->body, true)) {
+            $this->cache->set('oauth2_data', $auth);
+
+            return true;
+        }
+
+        return false;
     }
 
     public function authorised(): bool
@@ -110,17 +124,19 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
 
     public function buildAuthURL(?string $redirectUri = null): string
     {
-        if (!$redirectUri) {
-            $redirectUri = $_SERVER['REQUEST_URI'];
-        }
+        // if (!$redirectUri) {
+        //     $redirectUri = $_SERVER['REQUEST_URI'];
+        // }
         $state = md5(uniqid());
         $this->cache->set('oauth2_state', $state);
         $params = [
             'response_type=code',
             'client_id='.$this->options['app_key'],
-            'redirect_uri='.$redirectUri,
             'state='.$state,
         ];
+        if ($redirectUri) {
+            $params[] = 'redirect_uri='.urlencode($redirectUri);
+        }
 
         return 'https://www.dropbox.com/1/oauth2/authorize?'.implode('&', $params);
     }
