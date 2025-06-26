@@ -436,6 +436,15 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
         return true;
     }
 
+    public function authoriseWithCode(
+        string $code,
+        ?string $redirectUri = null,
+        string $grantType = 'authorization_code'
+    ): bool {
+        // This method is not implemented for Hazaar backend.
+        return false;
+    }
+
     public function buildAuthURL(?string $callbackUrl = null): ?string
     {
         return null;

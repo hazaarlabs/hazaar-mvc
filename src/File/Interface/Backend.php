@@ -130,6 +130,12 @@ interface Backend
 
     public function authorise(?string $redirectUri = null): bool;
 
+    public function authoriseWithCode(
+        string $code,
+        ?string $redirectUri = null,
+        string $grantType = 'authorization_code'
+    ): bool;
+
     public function authorised(): bool;
 
     public function buildAuthURL(?string $callbackUrl = null): ?string;

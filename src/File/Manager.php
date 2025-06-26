@@ -270,13 +270,12 @@ class Manager implements Backend
         return $this->authorise($redirectUri);
     }
 
-    public function authoriseWithCode(string $code): bool
-    {
-        if (!method_exists($this->backend, 'authoriseWithCode')) {
-            throw new \Exception('Backend does not support authorisation with code!');
-        }
-
-        return $this->backend->authoriseWithCode($code);
+    public function authoriseWithCode(
+        string $code,
+        ?string $redirectUri = null,
+        string $grantType = 'authorization_code'
+    ): bool {
+        return $this->backend->authoriseWithCode($code, $redirectUri, $grantType);
     }
 
     public function authorised(): bool

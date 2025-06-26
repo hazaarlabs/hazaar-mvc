@@ -95,12 +95,15 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         return $this->authorised();
     }
 
-    public function authoriseWithCode(string $code): bool
-    {
+    public function authoriseWithCode(
+        string $code,
+        ?string $redirectUri = null,
+        string $grantType = 'authorization_code'
+    ): bool {
         $request = new Request('https://api.dropbox.com/1/oauth2/token', $this->options['oauth2_method']);
         $request->populate([
             'code' => $code,
-            'grant_type' => 'authorization_code',
+            'grant_type' => $grantType,
             'client_id' => $this->options['app_key'],
             'client_secret' => $this->options['app_secret'],
         ]);
@@ -296,7 +299,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return 'folder' === $info->{'.tag'};
+        return 'folder' === ($info->{'.tag'} ?? null);
     }
 
     // TRUE if path is a symlink

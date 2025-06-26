@@ -133,7 +133,28 @@ class FileTest extends TestCase
 
     public function testGoogleDriveFileBackend(): void
     {
-        $this->markTestIncomplete('Google Drive file backend is not implemented yet.');
+        $config = Application::getInstance()->config->get('googledrive') ?? [];
+        $manager = new Manager('googledrive', $config);
+        if (!$manager->authorised()) {
+            $accessCode = getenv('GOOGLE_DRIVE_ACCESS_CODE') ?: $config['access_code'] ?? '';
+            $authURL = $manager->buildAuthURL($config['redirect_uri']);
+            $this->assertNotEmpty($accessCode, 'Google Drive tests require an access code from: '.$authURL);
+            $this->assertTrue(
+                $manager->authoriseWithCode($accessCode, $config['redirect_uri']),
+                'Google Drive tests require a valid access code from: '.$authURL
+            );
+        }
+        $this->assertTrue($manager->authorised());
+        $this->assertTrue($manager->refresh());
+        $this->assertInstanceOf(Dir::class, $manager->get('/'));
+        if ($manager->exists('/test')) {
+            $this->assertTrue($manager->unlink('/test'));
+        }
+        $this->assertTrue($manager->mkdir('/test'));
+        $this->assertTrue($manager->exists('/test'));
+        $this->assertInstanceOf(Dir::class, $manager->get('/test'));
+        $this->assertTrue($manager->unlink('/test'));
+        $this->assertFalse($manager->exists('/test'));
     }
 
     public function testWebDAVFileBackend(): void

@@ -474,6 +474,15 @@ class Hazaar implements BackendInterface, DriverInterface
         return false;
     }
 
+    public function authoriseWithCode(
+        string $code,
+        ?string $redirectUri = null,
+        string $grantType = 'authorization_code'
+    ): bool {
+        // This method is not implemented for Hazaar backend.
+        return false;
+    }
+
     public function authorised(): bool
     {
         return false;
