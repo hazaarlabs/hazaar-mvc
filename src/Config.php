@@ -411,17 +411,15 @@ class Config implements \ArrayAccess, \Iterator, \Countable
                 if ($mtime > filemtime($source)) {
                     $cacheData = \apcu_fetch($cacheKey);
                     if (is_array($cacheData) && 2 === count($cacheData) && isset($cacheData[0], $cacheData[1])) {
-                        [$secureKeys, $source] = \apcu_fetch($cacheKey);
+                        [$secureKeys, $config] = \apcu_fetch($cacheKey);
+                        $this->secureKeys = array_merge($this->secureKeys, $secureKeys);
+
+                        return $config;
                     }
                 }
             }
         }
-        // If we have loaded this config file, continue on to the next
-        if ($source && !is_string($source)) {
-            $this->secureKeys = array_merge($this->secureKeys, $secureKeys);
 
-            return $source;
-        }
         $file = new File($source);
         if (!$file->exists()) {
             throw new ConfigFileNotFound($source);
