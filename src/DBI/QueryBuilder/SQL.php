@@ -849,13 +849,11 @@ class SQL implements QueryBuilder
         if ($this->fields instanceof Table) {
             $sql .= ' '.(string) $this->fields;
         } else {
-            $fieldDef = array_keys($this->fields);
-            foreach ($fieldDef as &$field) {
-                $field = $this->field($field);
-            }
-            $valueDef = array_values($this->fields);
-            foreach ($valueDef as $key => &$value) {
-                $value = $this->prepareValue(key: $fieldDef[$key], value: $value);
+            $fieldDef = []; // array_keys($this->fields);
+            $valueDef = []; // array_values($this->fields);
+            foreach ($this->fields as $key => $value) {
+                $fieldDef[] = $this->field($key);
+                $valueDef[] = $this->prepareValue(key: $key, value: $value);
             }
             $sql .= ' ('.implode(', ', $fieldDef).') VALUES ('.implode(', ', $valueDef).')';
         }
