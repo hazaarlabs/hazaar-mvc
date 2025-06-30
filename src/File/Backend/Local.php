@@ -137,7 +137,7 @@ class Local implements BackendInterface, DriverInterface
         return move_uploaded_file($file['tmp_name'], $fullPath);
     }
 
-    public function copy(string $src, string $dst, bool $recursive = false): bool
+    public function copy(string $src, string $dst, bool $overwrite = false): bool
     {
         $src = rtrim($src, DIRECTORY_SEPARATOR);
         $dst = rtrim($dst, DIRECTORY_SEPARATOR);
@@ -153,7 +153,7 @@ class Local implements BackendInterface, DriverInterface
 
                 return true;
             }
-        } elseif ($this->isDir($src) && $recursive) {
+        } elseif ($this->isDir($src) && $overwrite) {
             $dst .= DIRECTORY_SEPARATOR.basename($src);
             if (!$this->exists($dst)) {
                 $this->mkdir($dst);

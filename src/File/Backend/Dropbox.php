@@ -529,7 +529,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         return $this->unlink($path);
     }
 
-    public function copy(string $src, string $dst, bool $recursive = false): bool
+    public function copy(string $src, string $dst, bool $overwrite = false): bool
     {
         if ($this->isFile($dst)) {
             return false;

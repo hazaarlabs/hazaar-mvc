@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hazaar\Tests\DBI;
 
 use Hazaar\DBI\Adapter;
+use Hazaar\File;
 use Hazaar\File\Backend\DBI;
 use Hazaar\File\Dir;
 use Hazaar\File\Manager;
@@ -67,5 +68,25 @@ class FileBackendTest extends TestCase
         $manager = new Manager('dbi');
         $fsckResult = $manager->fsck();
         $this->assertTrue($fsckResult, 'File system check failed');
+    }
+
+    public function testFileCopy(): void
+    {
+        $manager = new Manager('dbi');
+        $sourceFile = $manager->get('/test.txt');
+        if (!$sourceFile->exists()) {
+            $sourceFile->putContents('This is a source file for copy test.');
+        }
+        $this->assertTrue($sourceFile->exists());
+        $this->assertInstanceOf(File::class, $destinationFile = $sourceFile->copyTo('/copy_of_test.txt', true));
+        $this->assertTrue($destinationFile->exists());
+        $this->assertEquals('This is a source file for copy test.', $destinationFile->getContents());
+        $sourceFile->putContents('This is an updated source file for copy test.');
+        $this->assertInstanceOf(File::class, $destinationFile = $sourceFile->copyTo('/copy_of_test.txt', true));
+        $this->assertEquals('This is an updated source file for copy test.', $destinationFile->getContents());
+        $this->assertTrue($destinationFile->unlink());
+        $this->assertFalse($destinationFile->exists());
+        $this->assertTrue($sourceFile->unlink());
+        $this->assertFalse($sourceFile->exists());
     }
 }

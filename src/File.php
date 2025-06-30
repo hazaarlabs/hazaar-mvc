@@ -7,6 +7,7 @@ namespace Hazaar;
 use Hazaar\Application\FilePath;
 use Hazaar\Application\Runtime;
 use Hazaar\File\Dir;
+use Hazaar\File\Exception\TargetExists;
 use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
@@ -634,43 +635,34 @@ class File implements \JsonSerializable
      * @throws File\Exception\SourceNotFound
      * @throws File\Exception\TargetNotFound
      */
-    public function copyTo(string $destination, bool $overwrite = false, bool $createDest = false, ?Manager $dstManager = null): bool|File
-    {
+    public function copyTo(
+        string $destination,
+        bool $overwrite = false,
+        bool $createDest = false,
+        ?Manager $dstManager = null
+    ): bool|File {
         if (!$dstManager) {
             $dstManager = $this->manager;
-        }
-        if ($this->contents) {
-            $this->manager = $dstManager;
-            $dir = new Dir($destination, $dstManager);
-            if (!$dir->exists()) {
-                if (!$createDest) {
-                    throw new \Exception('Destination does not exist!');
-                }
-                $dir->create(true);
-            }
-            $this->sourceFile = $destination.'/'.$this->basename();
-            $this->save();
-
-            return $this;
         }
         if (!$this->exists()) {
             throw new File\Exception\SourceNotFound($this->sourceFile, $destination);
         }
-        if (!$dstManager->exists($destination)) {
-            if ($createDest) {
-                $dstManager->mkdir($destination);
-            } else {
-                throw new File\Exception\TargetNotFound($destination, $this->sourceFile);
+        // If the destination is a Dir object, then we need to get the full path
+        if ($dstManager->exists($destination)) {
+            if (!$dstManager->isDir($destination) && true !== $overwrite) {
+                throw new TargetExists($destination);
+            }
+            if (true !== $overwrite) {
+                $destination = rtrim($destination, '/').'/'.$this->basename();
             }
         }
-        $actualDestination = rtrim($destination, '/').'/'.$this->basename();
         if ($dstManager === $this->manager) {
-            $result = $dstManager->copy($this->sourceFile, $actualDestination, true, $this->manager);
+            $result = $dstManager->copy($this->sourceFile, $destination, $overwrite, $this->manager);
         } else {
-            $result = $dstManager->write($actualDestination, $this->getContents(), $this->mimeContentType(), $overwrite);
+            $result = $dstManager->write($destination, $this->getContents(), $this->mimeContentType(), $overwrite);
         }
         if ($result) {
-            return new File($actualDestination, $dstManager, $this->relativePath);
+            return new File($destination, $dstManager, $this->relativePath);
         }
 
         return false;

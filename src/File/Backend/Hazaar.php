@@ -371,7 +371,7 @@ class Hazaar implements BackendInterface, DriverInterface
         return false;
     }
 
-    public function copy(string $src, string $dst, bool $recursive = false): bool
+    public function copy(string $src, string $dst, bool $overwrite = false): bool
     {
         dump(__METHOD__);
 

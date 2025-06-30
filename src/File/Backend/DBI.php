@@ -531,20 +531,21 @@ class DBI implements BackendInterface, DriverInterface
         $target['filename'] = basename($dst);
         $target['modified_on'] = new DateTime();
         $target['parent'] = $dstParent['id'];
-        unset($target['id']);
+        unset($target['id']); // Unset so we don't try and update the existing id.
         if ($existing = &$this->info($dst)) {
             if (true !== $overwrite) {
                 return false;
             }
             unset($dstParent['items'][$target['filename']]);
-            if (!($id = $this->db->table('hz_file')->update(['id' => $existing['id']], $target))) {
+            if (!($id = $this->db->table('hz_file')->update($target, ['id' => $existing['id']]))) {
                 return false;
             }
+            $target['id'] = $existing['id']; // Put it back after the update
         } else {
             if (!($id = $this->db->table('hz_file')->insert($target, 'id'))) {
                 return false;
             }
-            $target['id'] = $id;
+            $target['id'] = $id; // Store the new id in the target array
         }
 
         if (!array_key_exists('items', $dstParent)) {
@@ -936,7 +937,11 @@ class DBI implements BackendInterface, DriverInterface
         if (!($result = $this->db->query($sql))) {
             throw new \Exception($this->db->errorInfo()[2]);
         }
-        $result = $this->db->table('hz_file_chunk')->delete(['id' => ['$in' => array_column($result->fetchAll(), 'id')]]);
+        $chunkIDs = $result->fetchAll(\PDO::FETCH_ASSOC);
+        if (count($chunkIDs) < 1) {
+            return false;
+        }
+        $result = $this->db->table('hz_file_chunk')->delete(['id' => ['$in' => array_column($chunkIDs, 'id')]]);
 
         return $result > 0;
     }

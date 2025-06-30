@@ -490,7 +490,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
     }
 
     // Copy a file from src to dst
-    public function copy(string $src, string $dst, bool $recursive = false): bool
+    public function copy(string $src, string $dst, bool $overwrite = false): bool
     {
         if (!($item = $this->resolvePath($src))) {
             return false;

@@ -441,7 +441,7 @@ class Manager implements Backend
     public function copy(
         string $src,
         string $dst,
-        bool $recursive = false,
+        bool $overwrite = false,
         ?Manager $srcManager = null,
         ?\Closure $callback = null
     ): bool {
@@ -457,17 +457,13 @@ class Manager implements Backend
                     ) > 0;
 
                 case 'dir':
-                    if (!$recursive) {
-                        return false;
-                    }
-
                     return $this->deepCopy($file->fullpath(), $dst, $srcManager, $callback);
             }
 
             throw new \Exception("Copy of source type '".$file->type()."' between different sources is currently not supported");
         }
 
-        return $this->backend->copy($src, $dst, $recursive);
+        return $this->backend->copy($src, $dst, $overwrite);
     }
 
     public function move(string $src, string $dst, ?Manager $srcManager = null): bool
