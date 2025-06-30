@@ -180,11 +180,6 @@ class FileTest extends TestCase
         $this->markTestIncomplete('WebDAV file backend is not implemented yet.');
     }
 
-    public function testHazaarFileBackend(): void
-    {
-        $this->markTestIncomplete('Hazaar file backend is not implemented yet.');
-    }
-
     private function getDropboxManager(): Manager
     {
         $config = Application::getInstance()->config->get('dropbox');
