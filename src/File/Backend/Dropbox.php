@@ -157,7 +157,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         }
         // Check if the access token is still valid
         if (isset($this->options['oauth2']['expires']) && $this->options['oauth2']['expires'] < time()) {
-            if (!isset($this->options['oauth2']->refresh_token)) {
+            if (!isset($this->options['oauth2']['refresh_token'])) {
                 return false; // Access\Refresh token has expired
             }
 
