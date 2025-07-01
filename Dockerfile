@@ -30,4 +30,11 @@ RUN set -e -x \
     && curl -L https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/releases/latest/download/php-cs-fixer.phar -o /usr/local/bin/php-cs-fixer \
     && chmod +x /usr/local/bin/php-cs-fixer
 
+RUN wget https://github.com/micromata/dave/releases/download/v0.5.0/dave-linux-amd64.zip && \
+    unzip dave-linux-amd64.zip -d /usr/local/bin/ && \
+    rm dave-linux-amd64.zip && \
+    chmod +x /usr/local/bin/dave && \
+    mkdir -p /var/hazaar/webdav && \
+    echo "Hello, World!" > /var/hazaar/webdav/hello.txt
+
 ENV PATH="/hazaar/bin:${PATH}"

@@ -33,11 +33,11 @@ class WebDAV extends Client
     {
         parent::__construct();
         $this->settings = $settings;
-        if (!isset($this->settings['baseuri'])) {
-            throw new \Exception('WebDAV: No baseuri specified');
+        if (!isset($this->settings['url'])) {
+            throw new \Exception('WebDAV: No base URL specified');
         }
-        $this->settings['baseuri'] = rtrim($this->settings['baseuri'], '/');
-        if (isset($this->settings['username']) && isset($this->settings['password'])) {
+        $this->settings['url'] = rtrim($this->settings['url'], '/');
+        if (isset($this->settings['username'], $this->settings['password'])) {
             parent::auth($this->settings['username'], $this->settings['password']);
         }
         $options = $this->options('/');
@@ -46,7 +46,7 @@ class WebDAV extends Client
                 throw new \Exception('WebDAV server returned status '.$options->status.': '.$options->name);
             }
             if (!array_key_exists('dav', $options->headers)) {
-                throw new \Exception('Base URI does not support WebDAV protocol.  URI='.$this->settings['baseuri']);
+                throw new \Exception('Base URI does not support WebDAV protocol.  URI='.$this->settings['url']);
             }
             $this->classes = explode(',', $options->headers['dav'][0]);
             if (!in_array(1, $this->classes)) {
@@ -70,12 +70,12 @@ class WebDAV extends Client
             return $url;
         }
 
-        return $this->settings['baseuri'].'/'.ltrim(implode('/', array_map('rawurlencode', explode('/', trim($url, '/')))), '/');
+        return $this->settings['url'].'/'.ltrim(implode('/', array_map('rawurlencode', explode('/', trim($url, '/')))), '/');
     }
 
     public function path(string $url): false|string
     {
-        $expr = '/^'.preg_quote(trim($this->settings['baseuri'], '/'), '/').'\/(.*)/';
+        $expr = '/^'.preg_quote(trim($this->settings['url'], '/'), '/').'\/(.*)/';
         if (preg_match($expr, $url, $matches)) {
             return '/'.trim($matches[1], '/');
         }
@@ -84,13 +84,38 @@ class WebDAV extends Client
     }
 
     /**
+     * Get the options for a URL.
+     *
+     * @param string $url the URL to get the options for
+     */
+    public function options(string $url): Response
+    {
+        $request = new Request($this->getAbsoluteUrl($url), 'OPTIONS');
+        $response = parent::send($request);
+        if (200 != $response->status) {
+            throw new \Exception('WebDAV server returned status '.$response->status.': '.$response->name);
+        }
+        if (isset($response->headers['dav'])) {
+            $this->classes = explode(',', $response->headers['dav'][0]);
+            if (!in_array(1, $this->classes)) {
+                throw new \Exception('Server must at least support WebDAV class 1!');
+            }
+        }
+        if (isset($response->headers['allow'])) {
+            $this->allow = array_map('trim', explode(',', $response->headers['allow']));
+        }
+
+        return $response;
+    }
+
+    /**
      * Get the contents of a file.
      *
-     * @param string        $url             the URL of the file to get the contents of
-     * @param array<mixed>  $properties      An array of properties to request.  If empty, all properties will be requested.
-     * @param int           $depth           the depth of the PROPFIND request
+     * @param string        $url            the URL of the file to get the contents of
+     * @param array<mixed>  $properties     An array of properties to request.  If empty, all properties will be requested.
+     * @param int           $depth          the depth of the PROPFIND request
      * @param bool          $returnResponse if true, the raw response object will be returned instead of the file contents
-     * @param array<string> $namespaces      an array of namespaces to use in the PROPFIND request
+     * @param array<string> $namespaces     an array of namespaces to use in the PROPFIND request
      */
     public function propfind(string $url, array $properties = [], int $depth = 1, bool $returnResponse = false, array $namespaces = []): mixed
     {

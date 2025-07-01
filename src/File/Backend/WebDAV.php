@@ -35,13 +35,16 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
             'cache_backend' => 'file',
             'cache_meta' => true,
         ], $options);
-        if (!isset($this->options['baseuri'])) {
+        if (!isset($this->options['url'])) {
             throw new \Exception('WebDAV file browser backend requires a URL!');
         }
         if (isset($this->options['cookies'])) {
             $this->setCookie($this->options['cookies']);
         }
-        $this->cache = new Adapter($this->options['cache_backend'], ['use_pragma' => false, 'namespace' => 'webdav_'.$this->options['baseuri'].'_'.$this->options['username']]);
+        $this->cache = new Adapter($this->options['cache_backend'], [
+            'use_pragma' => false,
+            'namespace' => 'webdav_'.$this->options['url'].'_'.($this->options['username'] ?? 'nouser'),
+        ]);
         if ($this->options['cache_meta'] ?? false) {
             if (($meta = $this->cache->get('meta')) !== false) {
                 $this->meta = $meta;
@@ -567,9 +570,9 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
             return false;
         }
         $meta = array_merge($this->meta, $meta);
-        foreach ($meta as $name => $info) {
-            $name = '/'.trim($name, '/');
-            $info['scanned'] = ($name == $path);
+        foreach ($meta as $info) {
+            $name = '/'.trim($info['displayname'], '/');
+            $info['scanned'] = ($info['displayname'] == $path);
             $this->meta[$name] = $info;
         }
 

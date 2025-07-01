@@ -177,7 +177,12 @@ class FileTest extends TestCase
 
     public function testWebDAVFileBackend(): void
     {
-        $this->markTestIncomplete('WebDAV file backend is not implemented yet.');
+        $manager = new Manager('webdav', [
+            'url' => 'http://localhost:8888/webdav',
+        ]);
+        $this->assertTrue($manager->authorised());
+        $this->assertTrue($manager->refresh(true));
+        $this->assertTrue($manager->exists('/hello.txt'));
     }
 
     private function getDropboxManager(): Manager
