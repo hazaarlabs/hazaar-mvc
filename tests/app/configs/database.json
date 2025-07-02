@@ -1,5 +1,5 @@
 {
-    "development": {
+    "gitlab": {
         "type": "pgsql",
         "host": "localhost",
         "port": 5432,

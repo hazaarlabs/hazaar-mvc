@@ -188,6 +188,9 @@ class FileTest extends TestCase
     private function getDropboxManager(): Manager
     {
         $config = Application::getInstance()->config->get('dropbox');
+        if (!$config) {
+            $this->markTestSkipped('Dropbox configuration is not set.');
+        }
         $manager = new Manager('dropbox', $config);
         if (!$manager->authorised()) {
             // Check if the access code is set in the environment variables
@@ -208,6 +211,9 @@ class FileTest extends TestCase
     private function getGoogleDriveManager(): Manager
     {
         $config = Application::getInstance()->config->get('googledrive') ?? [];
+        if (!$config) {
+            $this->markTestSkipped('Google Drive configuration is not set.');
+        }
         $manager = new Manager('googledrive', $config);
         if (!$manager->authorised()) {
             // Check if the access code is set in the environment variables

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hazaar\Tests\DBI;
 
+use Hazaar\Application\Config;
 use Hazaar\DBI\Adapter;
 use Hazaar\File;
 use Hazaar\File\Backend\DBI;
@@ -20,6 +21,10 @@ class FileBackendTest extends TestCase
 
     public function setUp(): void
     {
+        $config = Config::getInstance('database');
+        if (!$config->get('type')) {
+            $this->markTestSkipped('DBI configuration is not set.');
+        }
         $this->dbi = new Adapter();
         if (!$this->dbi->tableExists('hz_file')) {
             $manager = $this->dbi->getSchemaManager();

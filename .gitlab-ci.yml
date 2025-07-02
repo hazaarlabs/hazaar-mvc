@@ -12,6 +12,7 @@ stages:
 - package
 - deploy
 variables:
+  APPLICATION_ENV: "gitlab"
   APPLICATION_PATH: "."
   UNIT_TEST_IMAGE: "$CI_REGISTRY_IMAGE:test"
   APP_VERSION: "$CI_PIPELINE_IID"
