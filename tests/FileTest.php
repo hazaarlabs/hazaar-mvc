@@ -177,12 +177,23 @@ class FileTest extends TestCase
 
     public function testWebDAVFileBackend(): void
     {
-        $manager = new Manager('webdav', [
-            'url' => 'http://localhost:8888/webdav',
-        ]);
+        $manager = $this->getWebDAVManager();
         $this->assertTrue($manager->authorised());
         $this->assertTrue($manager->refresh(true));
         $this->assertTrue($manager->exists('/hello.txt'));
+        $this->assertTrue($manager->isDir('/testing'));
+    }
+
+    private function getWebDAVManager(): Manager
+    {
+        $config = Application::getInstance()->config->get('webdav');
+        if (!$config) {
+            $this->markTestSkipped('WebDAV configuration is not set.');
+        }
+        $manager = new Manager('webdav', $config);
+        $manager->refresh(true);
+
+        return $manager;
     }
 
     private function getDropboxManager(): Manager

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Hazaar\File\Backend;
 
 use Hazaar\Cache\Adapter;
+use Hazaar\File\Image;
 use Hazaar\File\Interface\Backend as BackendInterface;
 use Hazaar\File\Interface\Driver as DriverInterface;
+use Hazaar\File\Manager;
 use Hazaar\HTTP\Request;
 use Hazaar\HTTP\Response;
 use Hazaar\Util\Boolean;
@@ -14,6 +16,7 @@ use Hazaar\Util\Boolean;
 class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInterface
 {
     public string $separator = '/';
+    protected Manager $manager;
 
     /**
      * @var array<mixed>
@@ -28,12 +31,14 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
 
     /**
      * WebDAV constructor.
+     *
+     * @param array<mixed> $options
      */
     public function __construct(array $options = [])
     {
         $this->options = array_merge([
             'cache_backend' => 'file',
-            'cache_meta' => true,
+            'cache_meta' => false,
         ], $options);
         if (!isset($this->options['url'])) {
             throw new \Exception('WebDAV file browser backend requires a URL!');
@@ -41,14 +46,10 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
         if (isset($this->options['cookies'])) {
             $this->setCookie($this->options['cookies']);
         }
-        $this->cache = new Adapter($this->options['cache_backend'], [
-            'use_pragma' => false,
-            'namespace' => 'webdav_'.$this->options['url'].'_'.($this->options['username'] ?? 'nouser'),
-        ]);
-        if ($this->options['cache_meta'] ?? false) {
-            if (($meta = $this->cache->get('meta')) !== false) {
-                $this->meta = $meta;
-            }
+        $this->cache = new Adapter($this->options['cache_backend'], ['use_pragma' => false, 'namespace' => 'webdav_'.$this->options['url'].'_'.$this->options['username']]);
+        if (($this->options['cache_meta'] ?? false)
+            && ($meta = $this->cache->get('meta'))) {
+            $this->meta = $meta;
         }
         parent::__construct($this->options);
     }
@@ -268,11 +269,31 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
         if (!($info = $this->info($path))) {
             return false;
         }
-        if (!$info['thumb_exists']) {
-            return false;
+        if ($info['thumb_exists']) {
+            $size = 'l';
+            if ($width < 32 && $height < 32) {
+                $size = 'xs';
+            } elseif ($width < 64 && $height < 64) {
+                $size = 's';
+            } elseif ($width < 128 && $height < 128) {
+                $size = 'm';
+            } elseif ($width < 640 && $height < 480) {
+                $size = 'l';
+            } elseif ($width < 1024 && $height < 768) {
+                $size = 'xl';
+            }
+            $request = new Request('https://api-content.dropbox.com/1/thumbnails/auto'.$path, 'GET');
+            $request['format'] = $format;
+            $request['size'] = $size;
+            $response = $this->send($request, 0);
+            $image = new Image($path, null, $this->manager);
+            $image->setContents($response->body);
+            $image->resize($width, $height, true, 'center', true, true, null, 0, 0);
+
+            return $image->getContents();
         }
 
-        return 'https://api-content.dropbox.com/1/thumbnails/auto'.$path;
+        return false;
     }
 
     // File Operations
@@ -296,7 +317,7 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
         return $this->unlink($path);
     }
 
-    public function copy(string $src, string $dst, bool $overwrite = false): bool
+    public function copy(string $src, string $dst, bool $recursive = false): bool
     {
         if ($this->isFile($dst)) {
             return false;
@@ -439,13 +460,9 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
         return true;
     }
 
-    public function authoriseWithCode(
-        string $code,
-        ?string $redirectUri = null,
-        string $grantType = 'authorization_code'
-    ): bool {
-        // This method is not implemented for Hazaar backend.
-        return false;
+    public function authoriseWithCode(string $code, ?string $redirectUri = null, string $grantType = 'authorization_code'): bool
+    {
+        return true;
     }
 
     public function buildAuthURL(?string $callbackUrl = null): ?string
@@ -570,9 +587,8 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
             return false;
         }
         $meta = array_merge($this->meta, $meta);
-        foreach ($meta as $info) {
-            $name = '/'.trim($info['displayname'], '/');
-            $info['scanned'] = ($info['displayname'] == $path);
+        foreach ($meta as $name => $info) {
+            $info['scanned'] = $name == $path;
             $this->meta[$name] = $info;
         }
 

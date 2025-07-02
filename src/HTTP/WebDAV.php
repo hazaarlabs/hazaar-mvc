@@ -9,6 +9,7 @@ use Hazaar\XML\Element;
 
 class WebDAV extends Client
 {
+    private URL $url;
     private bool $authorised = false;
 
     /**
@@ -34,9 +35,9 @@ class WebDAV extends Client
         parent::__construct();
         $this->settings = $settings;
         if (!isset($this->settings['url'])) {
-            throw new \Exception('WebDAV: No base URL specified');
+            throw new \Exception('WebDAV: No url specified');
         }
-        $this->settings['url'] = rtrim($this->settings['url'], '/');
+        $this->url = new URL($this->settings['url']);
         if (isset($this->settings['username'], $this->settings['password'])) {
             parent::auth($this->settings['username'], $this->settings['password']);
         }
@@ -46,7 +47,7 @@ class WebDAV extends Client
                 throw new \Exception('WebDAV server returned status '.$options->status.': '.$options->name);
             }
             if (!array_key_exists('dav', $options->headers)) {
-                throw new \Exception('Base URI does not support WebDAV protocol.  URI='.$this->settings['url']);
+                throw new \Exception('Base URI does not support WebDAV protocol.  URI='.$this->url->path());
             }
             $this->classes = explode(',', $options->headers['dav'][0]);
             if (!in_array(1, $this->classes)) {
@@ -64,48 +65,30 @@ class WebDAV extends Client
         return $this->authorised;
     }
 
-    public function getAbsoluteUrl(string $url): string
+    public function getAbsoluteUrl(string $uri): URL
     {
-        if (preg_match('/\w\:\/\/.*/', $url)) {
-            return $url;
-        }
+        // return $this->url.'/'.ltrim(implode('/', array_map('rawurlencode', explode('/', trim($url, '/')))), '/');
+        $url = clone $this->url;
+        $url->appendPath($uri);
 
-        return $this->settings['url'].'/'.ltrim(implode('/', array_map('rawurlencode', explode('/', trim($url, '/')))), '/');
+        return $url;
     }
 
-    public function path(string $url): false|string
+    public function path(string $uri): false|string
     {
-        $expr = '/^'.preg_quote(trim($this->settings['url'], '/'), '/').'\/(.*)/';
-        if (preg_match($expr, $url, $matches)) {
+        $expr = '/^\/'.preg_quote(trim($this->url->path(), '/'), '/').'\/(.*)/';
+        if (preg_match($expr, $uri, $matches)) {
             return '/'.trim($matches[1], '/');
         }
 
         return false;
     }
 
-    /**
-     * Get the options for a URL.
-     *
-     * @param string $url the URL to get the options for
-     */
-    public function options(string $url): Response
+    public function options(string $url): false|Response
     {
-        $request = new Request($this->getAbsoluteUrl($url), 'OPTIONS');
-        $response = parent::send($request);
-        if (200 != $response->status) {
-            throw new \Exception('WebDAV server returned status '.$response->status.': '.$response->name);
-        }
-        if (isset($response->headers['dav'])) {
-            $this->classes = explode(',', $response->headers['dav'][0]);
-            if (!in_array(1, $this->classes)) {
-                throw new \Exception('Server must at least support WebDAV class 1!');
-            }
-        }
-        if (isset($response->headers['allow'])) {
-            $this->allow = array_map('trim', explode(',', $response->headers['allow']));
-        }
+        $request = new Request($this->getAbsoluteurl($url), 'OPTIONS');
 
-        return $response;
+        return parent::send($request);
     }
 
     /**
@@ -165,6 +148,9 @@ class WebDAV extends Client
         $newResult = [];
         foreach ($result as $href => $statusList) {
             $path = $this->path($href);
+            if (!$path) {
+                throw new \Exception('Could not parse path from href: '.$href);
+            }
             $newResult[$path] = isset($statusList[200]) ? $statusList[200] : [];
         }
 
