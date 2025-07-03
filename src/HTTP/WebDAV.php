@@ -131,7 +131,7 @@ class WebDAV extends Client
             $propfind->add('d:allprop');
         }
         $request->setBody($xml->toXML());
-        $response = parent::send($request);
+        $response = parent::send(request: $request);
         if (207 != $response->status) {
             throw new \Exception('WebDAV server returned: '.$response->body(), $response->status);
         }

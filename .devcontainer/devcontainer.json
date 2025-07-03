@@ -16,7 +16,6 @@
 				"junstyle.php-cs-fixer",
 				"aswinkumar863.smarty-template-support",
 				"SanderRonde.phpstan-vscode",
-				"ms-azuretools.vscode-docker",
 				"DEVSENSE.phptools-vscode"
 			]
 		}

@@ -23,7 +23,7 @@ RUN pecl install apcu xdebug; \
     echo 'memory_limit = -1' >> /usr/local/etc/php/conf.d/docker-php-memlimit.ini ;\
     echo -e "\nxdebug.mode = develop, debug\nxdebug.start_with_request = 1\nxdebug.log_level = 0" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
-RUN mkdir -p /var/hazaar; \
+RUN mkdir -p /var/hazaar && \
     wget https://api.hazaar.io/databases/geodata.db -O /var/hazaar/geodata.db
 
 RUN set -e -x \
@@ -34,7 +34,6 @@ RUN wget https://github.com/micromata/dave/releases/download/v0.5.0/dave-linux-a
     unzip dave-linux-amd64.zip -d /usr/local/bin/ && \
     rm dave-linux-amd64.zip && \
     chmod +x /usr/local/bin/dave && \
-    mkdir -p /var/hazaar/webdav && \
-    echo "Hello, World!" > /var/hazaar/webdav/hello.txt
+    mkdir -p /var/hazaar/webdav
 
 ENV PATH="/hazaar/bin:${PATH}"

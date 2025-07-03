@@ -180,8 +180,36 @@ class FileTest extends TestCase
         $manager = $this->getWebDAVManager();
         $this->assertTrue($manager->authorised());
         $this->assertTrue($manager->refresh(true));
-        $this->assertTrue($manager->exists('/hello.txt'));
+        if (!$manager->exists('/testing')) {
+            $this->assertTrue($manager->mkdir('/testing'));
+        }
+        $this->assertTrue($manager->exists('/testing'));
         $this->assertTrue($manager->isDir('/testing'));
+        $file = $manager->get('/testing/hello.txt');
+        $this->assertInstanceOf(File::class, $file);
+        $this->assertEquals(20, $file->putContents('This is a test file.'));
+        $this->assertTrue($file->exists());
+        $this->assertTrue($file->unlink());
+        $this->assertTrue($manager->unlink('/testing'));
+        $this->assertFalse($manager->exists('/testing'));
+    }
+
+    public function testWebDAVFileBackendFileOperations(): void
+    {
+        $manager = $this->getWebDAVManager();
+        $this->assertTrue($manager->authorised());
+        $this->assertTrue($manager->refresh(true));
+        if ($manager->exists('/hello.txt')) {
+            $this->assertTrue($manager->isReadable('/hello.txt'));
+            $this->assertTrue($manager->unlink('/hello.txt'));
+        }
+        $file = $manager->get('/hello.txt');
+        $this->assertInstanceOf(File::class, $file);
+        $file->putContents('Hello, World!');
+        $this->assertTrue($file->exists());
+        $this->assertEquals(13, $file->size());
+        $this->assertEquals('Hello, World!', $file->getContents());
+        $this->assertTrue($file->isReadable());
     }
 
     private function getWebDAVManager(): Manager
