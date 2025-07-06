@@ -8,6 +8,7 @@ use Hazaar\Application\Runtime;
 use Hazaar\File\BTree;
 use Hazaar\Util\Arr;
 use Hazaar\Util\Closure;
+use Hazaar\Util\Exception\InvalidClosure;
 use Hazaar\Util\GeoData;
 use Hazaar\Util\Interval;
 use Hazaar\Util\Str;
@@ -252,6 +253,10 @@ class UtilityTest extends TestCase
     public function testCanRunClosureAfterSerialization(): void
     {
         $closure = new Closure(function (string $myValue): string {
+            if ('Hello, World' !== $myValue) {
+                throw new \InvalidArgumentException('Expected a string');
+            }
+
             return $myValue;
         });
         $serialized = serialize($closure);
@@ -263,11 +268,26 @@ class UtilityTest extends TestCase
     public function testCanRunClosureAfterJSONSerialization(): void
     {
         $closure = new Closure(function (string $myValue): string {
+            if ('Hello, World' !== $myValue) {
+                throw new \InvalidArgumentException('Expected a string');
+            }
+
             return $myValue;
         });
         $json = json_encode($closure);
         $unserializedClosure = new Closure(json_decode($json));
         $this->assertInstanceOf(Closure::class, $unserializedClosure);
         $this->assertEquals('Hello, World', $unserializedClosure('Hello, World'));
+    }
+
+    public function testClosureSerializationThrowsExceptionOnInvalidClosure(): void
+    {
+        $this->expectException(InvalidClosure::class);
+        $test = 'Hello, World';
+        $closure = new Closure(function () use ($test): string {
+            return $test;
+        });
+        // This will throw an error because the closure cannot be serialized when the "use" keyword is used
+        $serialized = serialize($closure);
     }
 }

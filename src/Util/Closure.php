@@ -11,6 +11,10 @@ declare(strict_types=1);
 
 namespace Hazaar\Util;
 
+use Hazaar\Util\Exception\ClosureNotInitialised;
+use Hazaar\Util\Exception\InvalidArrowFunction;
+use Hazaar\Util\Exception\InvalidClosure;
+
 /**
  * The Hazaar Closure Class.
  *
@@ -62,7 +66,7 @@ class Closure implements \JsonSerializable
     {
         if (!isset($this->reflection)) {
             if (!isset($this->code)) {
-                throw new \RuntimeException('Closure is not initialized');
+                throw new ClosureNotInitialised();
             }
             $this->__wakeup();
         }
@@ -99,7 +103,7 @@ class Closure implements \JsonSerializable
     /**
      * Restore the object after deserialization.
      *
-     * @throws \Exception if the code cannot be converted back to a closure
+     * @throws InvalidClosure if the code cannot be converted back to a closure
      */
     public function __wakeup(): void
     {
@@ -117,7 +121,7 @@ class Closure implements \JsonSerializable
             $this->closure = $_function;
             $this->reflection = new \ReflectionFunction($_function);
         } else {
-            throw new \Exception('Bad code: '.$this->code);
+            throw new InvalidClosure('Bad code: '.$this->code);
         }
     }
 
@@ -187,7 +191,7 @@ class Closure implements \JsonSerializable
      *
      * @return string the closure code
      *
-     * @throws \Exception if the closure code cannot be extracted
+     * @throws InvalidClosure if the closure code cannot be extracted
      */
     protected function fetchCode(): string
     {
@@ -204,14 +208,19 @@ class Closure implements \JsonSerializable
             // Standard closure
             $end = strrpos($code, '}');
             if (false === $end) {
-                throw new \Exception('Invalid closure code: '.$code);
+                throw new InvalidClosure('Invalid closure code: '.$code);
+            }
+            $code = substr($code, $begin, $end - $begin + 1);
+            if (preg_match('/function\s*\(.*\)\suse\s\(/', $code)) {
+                // If the code contains 'function', it is a standard closure
+                throw new InvalidClosure('Closures using the "use" keyword are not supported for portable execution in Warlock agents. Please pass captured variables as explicit arguments to the Warlock control function instead.');
             }
 
-            return substr($code, $begin, $end - $begin + 1);
+            return $code;
         }
         $begin = strpos($code, 'fn');
         if (false === $begin) {
-            throw new \Exception('Invalid closure code: '.$code);
+            throw new InvalidClosure('Invalid closure code: '.$code);
         }
         $arrowPos = strpos($code, '=>', $begin);
         // Extract the arrow function body using regex
@@ -219,7 +228,7 @@ class Closure implements \JsonSerializable
         // Check for balanced brackets
         $open = substr_count($body, '(');
         if (!preg_match('/^(.*?\)){'.$open.'}/', $body, $matches)) {
-            throw new \Exception('Invalid arrow function code: '.$code);
+            throw new InvalidArrowFunction();
         }
 
         return substr($code, $begin, ($arrowPos + 2) - $begin).$matches[0];
