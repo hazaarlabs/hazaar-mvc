@@ -25,7 +25,7 @@ class Config extends \Hazaar\Config
             throw new \RuntimeException('Configuration path not found. Please check your file structure.');
         }
         $this->setBasePath($configPath);
-        $this->setEnvironment($env ?? APPLICATION_ENV);
+        $this->setEnvironment($env ?? constant('APPLICATION_ENV') ?: 'development');
         if (count(self::$overridePaths) > 0) {
             $this->setOverridePaths(self::$overridePaths);
         }
@@ -47,7 +47,7 @@ class Config extends \Hazaar\Config
         ?string $env = null,
         ?array $defaults = null
     ): Config {
-        $sourceKey = $sourceFile.'_'.($env ?? APPLICATION_ENV);
+        $sourceKey = $sourceFile.'_'.($env ?? constant('APPLICATION_ENV') ?: 'development');
         if (array_key_exists($sourceKey, self::$instances)) {
             return self::$instances[$sourceKey];
         }

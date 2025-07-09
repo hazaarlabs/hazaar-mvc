@@ -312,8 +312,9 @@ class Error extends Diagnostic
      */
     public function text(): Text
     {
+        $env = defined('APPLICATION_ENV') ? constant('APPLICATION_ENV') : 'development';
         $out = "*****************************\n\tEXCEPTION\n*****************************\n\n";
-        $out .= "Environment:\t".APPLICATION_ENV."\n";
+        $out .= "Environment:\t{$env}\n";
         $out .= "Timestamp:\t".date('c')."\n";
         $out .= "Class:\t\t".$this->errclass."\n";
         if ($this->errno > 0) {
@@ -352,7 +353,7 @@ class Error extends Diagnostic
         $app = Application::getInstance();
         $view = new Layout('@views/error');
         $view->populate([
-            'env' => APPLICATION_ENV,
+            'env' => defined('APPLICATION_ENV') ? constant('APPLICATION_ENV') : 'development',
             'type' => $this->type,
             'err' => [
                 'code' => $this->errno,

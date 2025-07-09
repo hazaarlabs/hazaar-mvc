@@ -104,7 +104,7 @@ class Adapter implements ConstraintAPI, ExtensionAPI, GroupAPI, IndexAPI, Schema
      */
     private static array $managerInstances = [];
 
-    private string $env = APPLICATION_ENV;
+    private string $env;
 
     /**
      * @var array<LogEntry>
@@ -121,6 +121,7 @@ class Adapter implements ConstraintAPI, ExtensionAPI, GroupAPI, IndexAPI, Schema
      */
     public function __construct(null|array|string $config = null)
     {
+        $this->env = defined('APPLICATION_ENV') ? constant('APPLICATION_ENV') : 'development';
         if (is_array($config)) {
             $config = array_merge($config, self::$defaultConfig);
         } else {
@@ -213,8 +214,9 @@ class Adapter implements ConstraintAPI, ExtensionAPI, GroupAPI, IndexAPI, Schema
      * NOTE:  Only the first instance created is tracked, so it is still possible to create multiple connections by
      * instantiating the DBI Adapter directly.  The choice is yours.
      */
-    public static function getInstance(?string $configEnv = APPLICATION_ENV): self
+    public static function getInstance(?string $configEnv = null): self
     {
+        $configEnv ??= defined('APPLICATION_ENV') ? constant('APPLICATION_ENV') : 'development';
         if (array_key_exists($configEnv, self::$instances)) {
             return self::$instances[$configEnv];
         }
@@ -235,7 +237,7 @@ class Adapter implements ConstraintAPI, ExtensionAPI, GroupAPI, IndexAPI, Schema
             $config = self::loadConfig($configEnv);
             $config['environment'] = $configEnv;
         } catch (\Exception $e) {
-            throw new \Exception("DBI is not configured for APPLICATION_ENV '".APPLICATION_ENV."'");
+            throw new \Exception("DBI is not configured for APPLICATION_ENV '{$configEnv}'");
         }
 
         return new Manager($config->toArray(), $logCallback);
@@ -316,7 +318,7 @@ class Adapter implements ConstraintAPI, ExtensionAPI, GroupAPI, IndexAPI, Schema
      */
     public static function loadConfig(?string &$configName = null): Config
     {
-        $configName ??= APPLICATION_ENV;
+        $configName ??= defined('APPLICATION_ENV') ? constant('APPLICATION_ENV') : 'development';
         if (!array_key_exists($configName, Adapter::$loadedConfigs)) {
             if (!Config::$overridePaths) {
                 Config::$overridePaths = Application::getConfigOverridePaths();

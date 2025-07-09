@@ -45,7 +45,7 @@ class UserModule extends Module
 
             return -1;
         }
-        $env = $input->getOption('env') ?? defined('APPLICATION_ENV') ? APPLICATION_ENV : 'development';
+        $env = $input->getOption('env') ?? constant('APPLICATION_ENV') ?: 'development';
         $appConfig = Config::getInstance($env);
 
         switch ($command) {

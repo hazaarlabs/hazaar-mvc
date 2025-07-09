@@ -54,7 +54,7 @@ class ConfigModule extends Module
 
     protected function showConfig(Input $input, Output $output): int
     {
-        $env = $input->getOption('env') ?? defined('APPLICATION_ENV') ? APPLICATION_ENV : 'development';
+        $env = $input->getOption('env') ?? constant('APPLICATION_ENV') ?: 'development';
         $config = Config::getInstance('application', $env);
         $output->write('app.env = '.$env.PHP_EOL);
         $list = Arr::toDotNotation($config->toArray());
@@ -67,7 +67,7 @@ class ConfigModule extends Module
 
     protected function getConfigItem(Input $input, Output $output): int
     {
-        $env = $input->getOption('env') ?? defined('APPLICATION_ENV') ? APPLICATION_ENV : 'development';
+        $env = $input->getOption('env') ?? constant('APPLICATION_ENV') ?: 'development';
         $config = Config::getInstance('application', $env);
         if (!($configArg = $input->getArgument('option'))) {
             throw new \InvalidArgumentException('No configuration argument specified', 1);
@@ -85,7 +85,7 @@ class ConfigModule extends Module
 
     protected function setConfigItem(Input $input, Output $output): int
     {
-        $env = $input->getOption('env') ?? defined('APPLICATION_ENV') ? APPLICATION_ENV : 'development';
+        $env = $input->getOption('env') ?? constant('APPLICATION_ENV') ?: 'development';
         $config = Config::getInstance('application', $env);
         if (!($configArg = $input->getArgument('config'))) {
             throw new \InvalidArgumentException('No configuration argument specified', 1);
@@ -106,7 +106,7 @@ class ConfigModule extends Module
 
     protected function checkConfig(Input $input, Output $output): int
     {
-        $env = $input->getOption('env') ?? defined('APPLICATION_ENV') ? APPLICATION_ENV : 'development';
+        $env = $input->getOption('env') ?? constant('APPLICATION_ENV') ?: 'development';
         $config = Config::getInstance('application', $env);
         if (!$config->count() > 0) {
             $output->write('No configuration found for environment: '.$env.PHP_EOL);

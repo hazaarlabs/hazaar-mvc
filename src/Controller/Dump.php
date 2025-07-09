@@ -187,7 +187,7 @@ class Dump extends Diagnostic
     {
         $application = Application::getInstance();
         $view = new Layout('@views/dump');
-        $data['env'] = APPLICATION_ENV;
+        $data['env'] = defined('APPLICATION_ENV') ? constant('APPLICATION_ENV') : 'development';
         $data['data'] = $this->data;
         $data['time'] = $application->timer->all();
         $data['log'] = $this->log;

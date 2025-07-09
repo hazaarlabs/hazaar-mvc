@@ -65,7 +65,7 @@ class Manager
             $this->logHandler = $logHandler;
         }
         if (!isset($dbiConfig['environment'])) {
-            $dbiConfig['environment'] = APPLICATION_ENV;
+            $dbiConfig['environment'] = defined('APPLICATION_ENV') ? constant('APPLICATION_ENV') : 'development';
         }
         $this->config = array_merge($dbiConfig, $dbiConfig['manager'] ?? []);
         $workDir = Loader::getFilePath(FilePath::DB);

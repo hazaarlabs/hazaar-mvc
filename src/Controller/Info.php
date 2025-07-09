@@ -20,10 +20,11 @@ class Info extends Action
      */
     public function index(): void
     {
+        $start = defined('HAZAAR_START') ? constant('HAZAAR_START') : microtime(true);
         $this->layout('@views/info');
         $this->view->populate([
             'version' => HAZAAR_VERSION,
-            'time' => (microtime(true) - HAZAAR_START) * 1000,
+            'time' => (microtime(true) - $start) * 1000,
         ]);
     }
 }
