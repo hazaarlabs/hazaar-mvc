@@ -210,6 +210,19 @@ class FileTest extends TestCase
         $this->assertEquals(13, $file->size());
         $this->assertEquals('Hello, World!', $file->getContents());
         $this->assertTrue($file->isReadable());
+        $this->assertTrue($file->isWritable());
+        $this->assertInstanceOf(File::class, $newFile = $file->copy('/hello_copy.txt'));
+        $this->assertTrue($newFile->exists());
+        if ($manager->exists('/testdir')) {
+            $this->assertTrue($manager->unlink('/testdir'));
+        }
+        $this->assertTrue($manager->mkdir('/testdir'));
+        $this->assertTrue($manager->exists('/testdir'));
+        $this->assertTrue($manager->isDir('/testdir'));
+        $this->assertInstanceOf(File::class, $copyFile = $newFile->copyTo('/testdir'));
+        $this->assertTrue($copyFile->exists());
+        $this->assertInstanceOf(File::class, $linkFile = $newFile->moveTo('/testdir/hello_moved.txt'));
+        $this->assertTrue($linkFile->exists());
     }
 
     private function getWebDAVManager(): Manager

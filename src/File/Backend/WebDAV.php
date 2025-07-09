@@ -127,7 +127,7 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
             return false;
         }
 
-        return in_array('W', str_split($info['permissions'] ?? ''));
+        return true;
     }
 
     // TRUE if path is a directory
@@ -295,27 +295,21 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
         return $this->unlink($path);
     }
 
-    public function copy(string $src, string $dst, bool $recursive = false): bool
+    public function copy(string $src, string $dst, bool $overwrite = false): bool
     {
-        if ($this->isFile($dst)) {
+        if ($this->exists($dst) && !$overwrite) {
             return false;
         }
-        $dst = rtrim($dst, '/').'/'.basename($src);
-        if ($this->exists($dst)) {
-            return false;
-        }
-        $request = new Request('https://api.dropbox.com/1/fileops/copy', 'POST');
-        $request['root'] = 'auto';
-        $request['from_path'] = $src;
-        $request['to_path'] = $dst;
+        $request = new Request($this->getAbsoluteUrl($src), 'COPY');
+        $request->setHeader('Destination', $this->getAbsoluteUrl($dst)->path());
         $response = $this->send($request);
-        $this->meta[strtolower($response['path'])] = $response->body;
-        $key = $this->options['app_key'].'::'.strtolower($src);
-        if ($meta = $this->cache->get($key)) {
-            $this->cache->set($this->options['app_key'].'::'.strtolower($response['path']), $meta);
+        if ($response && (201 === $response->status || 204 === $response->status)) {
+            $this->updateMeta(pathinfo($dst, PATHINFO_DIRNAME));
+
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     public function link(string $src, string $dst): bool
@@ -323,28 +317,26 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
         return false;
     }
 
-    public function move(string $src, string $dst): bool
+    public function move(string $src, string $dst, bool $overwrite = false): bool
     {
-        if ($this->isFile($dst)) {
+        if ($this->exists($dst) && !$overwrite) {
             return false;
         }
-        $dst = rtrim($dst, '/').'/'.basename($src);
-        if ($this->exists($dst)) {
-            return false;
+        $request = new Request($this->getAbsoluteUrl($src), 'MOVE');
+        $request->setHeader('Destination', $this->getAbsoluteUrl($dst)->path());
+        if (!$overwrite) {
+            $request->setHeader('Overwrite', 'F');
         }
-        $request = new Request('https://api.dropbox.com/1/fileops/move', 'POST');
-        $request['root'] = 'auto';
-        $request['from_path'] = $src;
-        $request['to_path'] = $dst;
         $response = $this->send($request);
-        $this->meta[strtolower($response['path'])] = $response->body;
-        $key = $this->options['app_key'].'::'.strtolower($src);
-        if ($meta = $this->cache->get($key)) {
-            $this->cache->set($this->options['app_key'].'::'.strtolower($response['path']), $meta);
-            $this->cache->remove($key);
+        if ($response && in_array($response->status, [201, 204])) {
+            unset($this->meta[$src]);
+            $this->updateMeta(pathinfo($src, PATHINFO_DIRNAME));
+            $this->updateMeta(pathinfo($dst, PATHINFO_DIRNAME));
+
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     // Access operations

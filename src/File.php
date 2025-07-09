@@ -690,14 +690,13 @@ class File implements \JsonSerializable
         }
         if ($this->contents) {
             $this->manager = $dstManager;
-            $dir = new Dir($destination, $dstManager);
-            if (!$dir->exists()) {
+            if (!$dstManager->exists(dirname($destination))) {
                 if (!$createDest) {
                     throw new \Exception('Destination does not exist!');
                 }
-                $dir->create(true);
+                $dstManager->mkdir(dirname($destination), true);
             }
-            $this->sourceFile = $destination.'/'.$this->basename();
+            $this->sourceFile = $destination;
 
             if (!$this->save()) {
                 return false;
