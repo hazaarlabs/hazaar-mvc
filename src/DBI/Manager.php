@@ -750,6 +750,29 @@ class Manager
         }
     }
 
+    public function migrateDBIFileBackend(): bool
+    {
+        if (!isset($this->dbi)) {
+            $this->connect();
+        }
+        $timer = new Timer();
+        $this->dbi->log('Migrating DBI file backend');
+        $version = Version::loadFromFile(Loader::getFilePath(FilePath::SUPPORT, 'dbi/schema.json'), true);
+        if (!$version) {
+            $this->dbi->log('Failed to load DBI file backend migration version');
+
+            return false;
+        }
+        $result = $version->replay($this->dbi, self::$schemaInfoTable);
+        if ($result) {
+            $this->dbi->log('DBI file backend migrated in '.$timer);
+        } else {
+            $this->dbi->log('DBI file backend migration failed in '.$timer);
+        }
+
+        return $result;
+    }
+
     /**
      * Connects to the database.
      *

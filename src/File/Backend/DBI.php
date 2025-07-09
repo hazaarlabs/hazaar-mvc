@@ -4,17 +4,15 @@ declare(strict_types=1);
 
 namespace Hazaar\File\Backend;
 
-use Hazaar\Util\DateTime;
 use Hazaar\DBI\Adapter;
 use Hazaar\File\Interface\Backend as BackendInterface;
 use Hazaar\File\Interface\Driver as DriverInterface;
-use Hazaar\File\Manager;
+use Hazaar\Util\DateTime;
 use Hazaar\Util\Str;
 
 class DBI implements BackendInterface, DriverInterface
 {
     public string $separator = '/';
-    protected Manager $manager;
 
     /**
      * @var array<mixed>
@@ -30,11 +28,10 @@ class DBI implements BackendInterface, DriverInterface
     /**
      * @param array<mixed> $options
      */
-    public function __construct(array $options, Manager $manager)
+    public function __construct(array $options = [])
     {
-        $this->manager = $manager;
         $defaults = [
-            'dbi' => Adapter::loadConfig(),
+            'dbi' => Adapter::loadConfig()->toArray(),
             'initialise' => true,
             'chunkSize' => 4194304,
         ];
@@ -58,8 +55,9 @@ class DBI implements BackendInterface, DriverInterface
 
     public function loadRootObject(): bool
     {
-        if (!($this->rootObject = $this->db->table('hz_file')->findOne(['parent' => null]))) {
-            $this->rootObject = [
+        $rootObject = $this->db->table('hz_file')->findOne(['$null' => 'parent']);
+        if (!$rootObject) {
+            $rootObject = [
                 'kind' => 'dir',
                 'parent' => null,
                 'filename' => 'ROOT',
@@ -68,7 +66,7 @@ class DBI implements BackendInterface, DriverInterface
                 'length' => 0,
                 'mime_type' => 'directory',
             ];
-            if (!($this->rootObject['id'] = $this->db->table('hz_file')->insert($this->rootObject, 'id'))) {
+            if (!($rootObject['id'] = $this->db->table('hz_file')->insert($rootObject, 'id'))) {
                 throw new \Exception('Unable to create DBI filesystem root object: '.$this->db->errorInfo()[2]);
             }
             /*
@@ -81,6 +79,7 @@ class DBI implements BackendInterface, DriverInterface
              */
             $this->fsck(true);
         }
+        $this->rootObject = $rootObject;
         if (!$this->rootObject['created_on'] instanceof DateTime) {
             $this->rootObject['created_on'] = new DateTime($this->rootObject['created_on']);
         }
@@ -116,8 +115,8 @@ class DBI implements BackendInterface, DriverInterface
         }
         // Check and de-dup any directories that have been duplicated accidentally
         $select = $this->db->table('hz_file')
-            ->group(['parent', 'filename'])
-            ->having(['count(*)' => ['$gt' => 1]])
+            ->group('parent', 'filename')
+            ->having(['count(*) > 1'])
             ->find(['kind' => 'dir'], ['parent', 'filename'])
         ;
         if (!$select) {
@@ -137,8 +136,8 @@ class DBI implements BackendInterface, DriverInterface
         }
         // Check and de-dup any files
         $select = $this->db->table('hz_file')
-            ->group(['parent', 'filename'])
-            ->having(['count(*)' => ['$gt' => 1]])
+            ->group('parent', 'filename')
+            ->having(['count(*) > 1'])
             ->find([], ['parent', 'filename'])
         ;
         while ($row = $select->fetch()) {
@@ -457,10 +456,10 @@ class DBI implements BackendInterface, DriverInterface
                 } else {
                     $stmt->bindParam(3, $bytes, \PDO::PARAM_LOB);
                 }
-                if (!($lastChunk_id = $stmt->execute()) > 0) {
+                if (!$stmt->execute()) {
                     throw $this->db->errorException('Write failed!');
                 }
-                settype($lastChunk_id, 'integer');
+                $lastChunk_id = $stmt->fetchColumn();
                 if (0 === (int) $n) {
                     $chunkId = $lastChunk_id;
                 }
@@ -532,20 +531,21 @@ class DBI implements BackendInterface, DriverInterface
         $target['filename'] = basename($dst);
         $target['modified_on'] = new DateTime();
         $target['parent'] = $dstParent['id'];
-        unset($target['id']);
+        unset($target['id']); // Unset so we don't try and update the existing id.
         if ($existing = &$this->info($dst)) {
             if (true !== $overwrite) {
                 return false;
             }
             unset($dstParent['items'][$target['filename']]);
-            if (!($id = $this->db->table('hz_file')->update(['id' => $existing['id']], $target))) {
+            if (!($id = $this->db->table('hz_file')->update($target, ['id' => $existing['id']]))) {
                 return false;
             }
+            $target['id'] = $existing['id']; // Put it back after the update
         } else {
             if (!($id = $this->db->table('hz_file')->insert($target, 'id'))) {
                 return false;
             }
-            $target['id'] = $id;
+            $target['id'] = $id; // Store the new id in the target array
         }
 
         if (!array_key_exists('items', $dstParent)) {
@@ -745,6 +745,15 @@ class DBI implements BackendInterface, DriverInterface
         return true;
     }
 
+    public function authoriseWithCode(
+        string $code,
+        ?string $redirectUri = null,
+        string $grantType = 'authorization_code'
+    ): bool {
+        // This method is not implemented for Hazaar backend.
+        return false;
+    }
+
     public function authorised(): bool
     {
         return true;
@@ -928,8 +937,13 @@ class DBI implements BackendInterface, DriverInterface
         if (!($result = $this->db->query($sql))) {
             throw new \Exception($this->db->errorInfo()[2]);
         }
+        $chunkIDs = $result->fetchAll(\PDO::FETCH_ASSOC);
+        if (count($chunkIDs) < 1) {
+            return false;
+        }
+        $result = $this->db->table('hz_file_chunk')->delete(['id' => ['$in' => array_column($chunkIDs, 'id')]]);
 
-        return $this->db->table('hz_file_chunk')->delete(['id' => ['$in' => array_column($result->fetchAll(), 'id')]]);
+        return $result > 0;
     }
 
     /**

@@ -9,6 +9,7 @@ use Hazaar\XML\Element;
 
 class WebDAV extends Client
 {
+    private URL $url;
     private bool $authorised = false;
 
     /**
@@ -33,11 +34,11 @@ class WebDAV extends Client
     {
         parent::__construct();
         $this->settings = $settings;
-        if (!isset($this->settings['baseuri'])) {
-            throw new \Exception('WebDAV: No baseuri specified');
+        if (!isset($this->settings['url'])) {
+            throw new \Exception('WebDAV: No url specified');
         }
-        $this->settings['baseuri'] = rtrim($this->settings['baseuri'], '/');
-        if (isset($this->settings['username']) && isset($this->settings['password'])) {
+        $this->url = new URL($this->settings['url']);
+        if (isset($this->settings['username'], $this->settings['password'])) {
             parent::auth($this->settings['username'], $this->settings['password']);
         }
         $options = $this->options('/');
@@ -46,7 +47,7 @@ class WebDAV extends Client
                 throw new \Exception('WebDAV server returned status '.$options->status.': '.$options->name);
             }
             if (!array_key_exists('dav', $options->headers)) {
-                throw new \Exception('Base URI does not support WebDAV protocol.  URI='.$this->settings['baseuri']);
+                throw new \Exception('Base URI does not support WebDAV protocol.  URI='.$this->url->path());
             }
             $this->classes = explode(',', $options->headers['dav'][0]);
             if (!in_array(1, $this->classes)) {
@@ -64,33 +65,40 @@ class WebDAV extends Client
         return $this->authorised;
     }
 
-    public function getAbsoluteUrl(string $url): string
+    public function getAbsoluteUrl(string $uri): URL
     {
-        if (preg_match('/\w\:\/\/.*/', $url)) {
-            return $url;
-        }
+        // return $this->url.'/'.ltrim(implode('/', array_map('rawurlencode', explode('/', trim($url, '/')))), '/');
+        $url = clone $this->url;
+        $url->appendPath($uri);
 
-        return $this->settings['baseuri'].'/'.ltrim(implode('/', array_map('rawurlencode', explode('/', trim($url, '/')))), '/');
+        return $url;
     }
 
-    public function path(string $url): false|string
+    public function path(string $uri): false|string
     {
-        $expr = '/^'.preg_quote(trim($this->settings['baseuri'], '/'), '/').'\/(.*)/';
-        if (preg_match($expr, $url, $matches)) {
+        $expr = '/^\/'.preg_quote(trim($this->url->path(), '/'), '/').'\/(.*)/';
+        if (preg_match($expr, $uri, $matches)) {
             return '/'.trim($matches[1], '/');
         }
 
         return false;
     }
 
+    public function options(string $url): false|Response
+    {
+        $request = new Request($this->getAbsoluteurl($url), 'OPTIONS');
+
+        return parent::send($request);
+    }
+
     /**
      * Get the contents of a file.
      *
-     * @param string        $url             the URL of the file to get the contents of
-     * @param array<mixed>  $properties      An array of properties to request.  If empty, all properties will be requested.
-     * @param int           $depth           the depth of the PROPFIND request
+     * @param string        $url            the URL of the file to get the contents of
+     * @param array<mixed>  $properties     An array of properties to request.  If empty, all properties will be requested.
+     * @param int           $depth          the depth of the PROPFIND request
      * @param bool          $returnResponse if true, the raw response object will be returned instead of the file contents
-     * @param array<string> $namespaces      an array of namespaces to use in the PROPFIND request
+     * @param array<string> $namespaces     an array of namespaces to use in the PROPFIND request
      */
     public function propfind(string $url, array $properties = [], int $depth = 1, bool $returnResponse = false, array $namespaces = []): mixed
     {
@@ -123,7 +131,7 @@ class WebDAV extends Client
             $propfind->add('d:allprop');
         }
         $request->setBody($xml->toXML());
-        $response = parent::send($request);
+        $response = parent::send(request: $request);
         if (207 != $response->status) {
             throw new \Exception('WebDAV server returned: '.$response->body(), $response->status);
         }
@@ -140,6 +148,9 @@ class WebDAV extends Client
         $newResult = [];
         foreach ($result as $href => $statusList) {
             $path = $this->path($href);
+            if (!$path) {
+                throw new \Exception('Could not parse path from href: '.$href);
+            }
             $newResult[$path] = isset($statusList[200]) ? $statusList[200] : [];
         }
 

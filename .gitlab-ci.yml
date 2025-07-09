@@ -12,6 +12,7 @@ stages:
 - package
 - deploy
 variables:
+  APPLICATION_ENV: "gitlab"
   APPLICATION_PATH: "."
   UNIT_TEST_IMAGE: "$CI_REGISTRY_IMAGE:test"
   APP_VERSION: "$CI_PIPELINE_IID"
@@ -115,9 +116,11 @@ Unit Testing:
     POSTGRES_HOST_AUTH_METHOD: trust
   before_script:
     - composer install
+    - envsubst < tests/app/configs/imports.json.build > tests/app/configs/imports.json 
     - bin/warlock run -d --config tests/app/configs/warlock.json
     - bin/warlock agent run -d -p tests/app
     - sleep 5
+    - dave --config .devcontainer/dave.yaml &
   script:
   - vendor/bin/phpunit --debug
   artifacts:

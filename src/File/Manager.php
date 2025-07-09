@@ -45,6 +45,7 @@ class Manager implements Backend
         'googledrive' => 'GoogleDrive',
         'sharepoint' => 'SharePoint',
         'webdav' => 'WebDAV',
+        'dbi' => 'DBI', // Database Interface, used for DBI backends
     ];
     private static string $defaultBackend = 'local';
 
@@ -269,6 +270,14 @@ class Manager implements Backend
         return $this->authorise($redirectUri);
     }
 
+    public function authoriseWithCode(
+        string $code,
+        ?string $redirectUri = null,
+        string $grantType = 'authorization_code'
+    ): bool {
+        return $this->backend->authoriseWithCode($code, $redirectUri, $grantType);
+    }
+
     public function authorised(): bool
     {
         return $this->backend->authorised();
@@ -432,7 +441,7 @@ class Manager implements Backend
     public function copy(
         string $src,
         string $dst,
-        bool $recursive = false,
+        bool $overwrite = false,
         ?Manager $srcManager = null,
         ?\Closure $callback = null
     ): bool {
@@ -448,17 +457,13 @@ class Manager implements Backend
                     ) > 0;
 
                 case 'dir':
-                    if (!$recursive) {
-                        return false;
-                    }
-
                     return $this->deepCopy($file->fullpath(), $dst, $srcManager, $callback);
             }
 
             throw new \Exception("Copy of source type '".$file->type()."' between different sources is currently not supported");
         }
 
-        return $this->backend->copy($src, $dst, $recursive);
+        return $this->backend->copy($src, $dst, $overwrite);
     }
 
     public function move(string $src, string $dst, ?Manager $srcManager = null): bool

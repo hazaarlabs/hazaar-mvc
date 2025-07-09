@@ -12,8 +12,8 @@ declare(strict_types=1);
 namespace Hazaar\Cache\Backend;
 
 use Hazaar\Cache\Backend;
-use Hazaar\Util\DateTime;
 use Hazaar\DBI\Adapter;
+use Hazaar\Util\DateTime;
 
 /**
  * The DBI cache backend.
@@ -38,7 +38,7 @@ class Dbi extends Backend
 
     public function init(string $namespace): void
     {
-        $this->db = new Adapter($this->options);
+        $this->db = new Adapter($this->options['dbi'] ?? null);
         if (isset($this->options['schema']) && !$this->db->schemaExists($this->options['schema'])) {
             $this->db->createSchema($this->options['schema']);
         }
@@ -121,7 +121,7 @@ class Dbi extends Backend
         $criteria = [
             'key' => $key,
             '$or' => [
-                ['expire' => null],
+                ['$null' => 'expire'],
                 ['expire' => ['$gt' => new DateTime()]],
             ],
         ];

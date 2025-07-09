@@ -8,15 +8,12 @@ use Hazaar\Cache\Adapter;
 use Hazaar\File\Backend\Exception\GoogleDriveError;
 use Hazaar\File\Interface\Backend as BackendInterface;
 use Hazaar\File\Interface\Driver as DriverInterface;
-use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 
 class GoogleDrive extends Client implements BackendInterface, DriverInterface
 {
     public string $separator = '/';
-
-    protected Manager $manager;
 
     /**
      * @var array<string>
@@ -32,41 +29,20 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
     private Adapter $cache;
 
     /**
-     * @var array<mixed>
+     * @var array<\stdClass>
      */
     private array $meta = [];
 
-    /**
-     * @var array<string>
-     */
-    private array $metaItems = [
-        'kind',
-        'id',
-        'title',
-        'parents',
-        'labels',
-        'copyable',
-        'editable',
-        'mimeType',
-        'createdDate',
-        'modifiedDate',
-        'fileSize',
-        'downloadUrl',
-        'exportLinks',
-        'thumbnailLink',
-        'webContentLink',
-        'md5Checksum',
-    ];
     private int $cursor;
-    private string $oauth2ID;
 
-    public function __construct(array $options, Manager $manager)
+    public function __construct(array $options = [])
     {
         parent::__construct();
-        $this->manager = $manager;
         $this->options = array_merge([
-            'cache_backend' => 'file',
-            'oauth2' => ['access_token' => null],
+            'cache' => [
+                'backend' => 'file',
+            ],
+            'oauth2' => null,
             'refresh_attempts' => 5,
             'maxResults' => 100,
             'root' => '/',
@@ -74,19 +50,30 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         if (!isset($this->options['client_id'], $this->options['client_secret'])) {
             throw new GoogleDriveError('Google Drive filesystem backend requires both client_id and client_secret.');
         }
-        $cacheOps = [
-            'use_pragma' => false,
-            'namespace' => 'googledrive_'.$this->options['client_id'],
-        ];
-        $this->cache = new Adapter($this->options['cache_backend'], $cacheOps);
-        $this->oauth2ID = 'oauth2_data::'.md5(implode('', $this->scope));
+        if (!isset($this->options['cache']['backend'])) {
+            throw new GoogleDriveError('Dropbox filesystem backend requires cache backend to be set.');
+        }
+        if (!isset($this->options['cache']['namespace'])) {
+            $this->options['cache']['namespace'] = 'googledrive:'.$this->options['client_id'];
+        }
+        $this->options['cache']['options']['use_pragma'] = false;
+        $this->cache = new Adapter(
+            $this->options['cache']['backend'],
+            $this->options['cache']['options'],
+            $this->options['cache']['namespace']
+        );
         $this->reload();
     }
 
     public function __destruct()
     {
-        $this->cache->set('meta', $this->meta);
-        $this->cache->set('cursor', $this->cursor);
+        if (isset($this->cursor)) {
+            $this->cache->set('meta', $this->meta);
+            $this->cache->set('cursor', $this->cursor);
+        } else {
+            $this->cache->remove('meta');
+            $this->cache->remove('cursor');
+        }
     }
 
     public static function label(): string
@@ -96,14 +83,14 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
 
     public function reload(): bool
     {
-        if ($oauth2 = $this->cache->get($this->oauth2ID)) {
+        if ($oauth2 = $this->cache->get('oauth2_data')) {
             $this->options['oauth2'] = $oauth2;
         }
-        if (($cursor = $this->cache->get('cursor')) !== false) {
+        if ($cursor = $this->cache->get('cursor')) {
             $this->cursor = $cursor;
-        }
-        if (($meta = $this->cache->get('meta')) !== false) {
-            $this->meta = $meta;
+            if ($meta = $this->cache->get('meta')) {
+                $this->meta = $meta;
+            }
         }
 
         return true;
@@ -111,9 +98,9 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
 
     public function reset(): bool
     {
-        unset($this->options['oauth2']);
         $this->meta = [];
-        $this->cache->remove($this->oauth2ID);
+        $this->options['oauth2'] = null;
+        $this->cache->remove('oauth2_data');
         $this->cache->remove('cursor');
         $this->cache->remove('meta');
 
@@ -124,28 +111,46 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
     {
         if (($code = $_REQUEST['code'] ?? null) && ($state = $_REQUEST['state'] ?? null)) {
             if ($state != $this->cache->pull('oauth2_state')) {
-                throw new \Exception('Bad state!');
+                return false;
             }
-            $request = new Request('https://accounts.google.com/o/oauth2/token', 'POST');
-            $request['code'] = $code;
-            $request['redirect_uri'] = (string) $redirectUri;
-            $request['grant_type'] = 'authorization_code';
-        } elseif ($this->options['oauth2']->has('refresh_token') && $refreshToken = $this->options['oauth2']->get('refresh_token')) {
-            $request = new Request('https://www.googleapis.com/oauth2/v3/token', 'POST');
-            $request['refresh_token'] = $refreshToken;
-            $request['grant_type'] = 'refresh_token';
+            $grantType = 'authorization_code';
+        } elseif (isset($this->options['oauth2']['refresh_token'])
+            && ($code = $this->options['oauth2']['refresh_token'] ?? null)) {
+            $grantType = 'refresh_token';
         } else {
             return $this->authorised();
         }
+
+        return $this->authoriseWithCode($code, $redirectUri, $grantType);
+    }
+
+    public function authoriseWithCode(
+        string $code,
+        ?string $redirectUri = null,
+        string $grantType = 'authorization_code'
+    ): bool {
+        $request = new Request('https://www.googleapis.com/oauth2/v3/token', 'POST');
+        if ('refresh_token' === $grantType) {
+            $request['refresh_token'] = $code;
+        } else {
+            $request['code'] = $code;
+        }
+        $request['grant_type'] = $grantType;
         $request['client_id'] = $this->options['client_id'];
         $request['client_secret'] = $this->options['client_secret'];
+        if ($redirectUri) {
+            $request['redirect_uri'] = $redirectUri;
+        }
         $response = $this->send($request);
         if (200 !== $response->status) {
             return false;
         }
-        if ($auth = json_decode($response->body, true)) {
-            $this->options['oauth2']->extend($auth);
-            $this->cache->set($this->oauth2ID, $this->options['oauth2']->toArray(), -1);
+        if ($auth = $response->body()) {
+            if (isset($auth->expires_in)) {
+                $auth->expires = time() + ($auth->expires_in - 1); // Pull a second off to avoid expiry issues
+            }
+            $this->options['oauth2'] = array_merge($this->options['oauth2'] ?? [], (array) $auth);
+            $this->cache->set('oauth2_data', $this->options['oauth2']);
 
             return true;
         }
@@ -155,9 +160,23 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
 
     public function authorised(): bool
     {
-        return isset($this->options['oauth2'])
-            && isset($this->options['oauth2']['access_token'])
-            && null != $this->options['oauth2']['access_token'];
+        if (!(isset($this->options['oauth2']) && null !== $this->options['oauth2']['access_token'])) {
+            return false;
+        }
+        // Check if the access token is still valid
+        if (isset($this->options['oauth2']['expires']) && $this->options['oauth2']['expires'] < time()) {
+            if (!isset($this->options['oauth2']['refresh_token'])) {
+                return false; // Access\Refresh token has expired
+            }
+
+            return $this->authoriseWithCode(
+                $this->options['oauth2']['refresh_token'],
+                null,
+                'refresh_token'
+            );
+        }
+
+        return true;
     }
 
     public function buildAuthURL(?string $redirectUri = null): string
@@ -183,46 +202,39 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             $this->meta = [];
             $request = new Request('https://www.googleapis.com/drive/v2/changes', 'GET');
             $response = $this->sendRequest($request);
-            $this->cursor = (int) $response['largestChangeId'];
+            $this->cursor = (int) $response->largestChangeId;
             $request = new Request('https://www.googleapis.com/drive/v2/files/root', 'GET');
             $response = $this->sendRequest($request);
-            $this->meta[$response['id']] = array_intersect_key($response, array_flip($this->metaItems));
+            $this->meta[$response->id] = $response;
             $request = new Request('https://www.googleapis.com/drive/v2/files', 'GET');
             if (isset($this->options['maxResults'])) {
                 $request['maxResults'] = $this->options['maxResults'];
             }
             while (true) {
                 $response = $this->sendRequest($request);
-                if (!$response) {
-                    return false;
+                foreach ($response->items as $item) {
+                    $this->meta[$item->id] = $item;
                 }
-                foreach ($response['items']->toArray() as $item) {
-                    $this->meta[$item['id']] = array_intersect_key($item, array_flip($this->metaItems));
-                }
-                if (!isset($response['nextPageToken'])) {
+                if (!isset($response->nextPageToken)) {
                     break;
                 }
-                $request['pageToken'] = $response['nextPageToken'];
+                $request['pageToken'] = $response->nextPageToken;
             }
 
             return true;
         }
         $request = new Request('https://www.googleapis.com/drive/v2/changes?pageToken='.($this->cursor + 1), 'GET');
         $response = $this->sendRequest($request);
-        $this->cursor = $response['largestChangeId'];
-        if (!$response) {
-            return false;
-        }
+        $this->cursor = intval($response->largestChangeId);
         $items = [];
         $deleted = [];
-        foreach ($response['items']->toArray() as $item) {
-            if (true === $item['deleted'] && array_key_exists($item['fileId'], $this->meta)) {
-                $items = array_merge($items, $this->resolveItem($this->meta[$item['fileId']]));
-                $deleted[] = $item['fileId'];
-            } elseif (array_key_exists('file', $item)) {
-                $file = array_intersect_key($item['file'], array_flip($this->metaItems));
-                $this->meta[$item['fileId']] = $file;
-                $items = array_merge($items, $this->resolveItem($file));
+        foreach ($response->items as $item) {
+            if (true === $item->deleted && isset($this->meta[$item->fileId])) {
+                $items = array_merge($items, $this->resolveItem($this->meta[$item->fileId]));
+                $deleted[] = $item->fileId;
+            } elseif (isset($item->file)) {
+                $this->meta[$item->fileId] = $item->file;
+                $items = array_merge($items, $this->resolveItem($item->file));
             }
         }
         foreach ($deleted as $fileId) {
@@ -243,11 +255,11 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         $parent = $this->resolvePath($path);
         $items = [];
         foreach ($this->meta as $item) {
-            if (!(array_key_exists('parents', $item) && $item['parents']) || $item['labels']['trashed']) {
+            if (!(isset($item->parents) && $item->parents) || $item->labels->trashed) {
                 continue;
             }
-            if ($this->itemHasParent($item, $parent['id'])) {
-                $items[] = $item['title'];
+            if ($this->itemHasParent($item, $parent->id)) {
+                $items[] = $item->title;
             }
         }
 
@@ -258,7 +270,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
     public function exists(string $path): bool
     {
         if ($item = $this->resolvePath($path)) {
-            return !($item['labels']['trashed'] ?? false);
+            return !($item->labels->trashed ?? false);
         }
 
         return false;
@@ -275,7 +287,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return $item['copyable'] ?? false;
+        return $item->copyable ?? false;
     }
 
     public function isWritable(string $path): bool
@@ -284,7 +296,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return $item['editable'] ?? false;
+        return $item->editable ?? false;
     }
 
     // TRUE if path is a directory
@@ -294,7 +306,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return 'application/vnd.google-apps.folder' == $item['mimeType'];
+        return 'application/vnd.google-apps.folder' == $item->mimeType;
     }
 
     // TRUE if path is a symlink
@@ -315,7 +327,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         if (!($item = $this->resolvePath($path))) {
             return false;
         }
-        if ('application/vnd.google-apps.folder' == $item['mimeType']) {
+        if ('application/vnd.google-apps.folder' == $item->mimeType) {
             return 'dir';
         }
 
@@ -329,7 +341,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return strtotime($item['createdDate']);
+        return strtotime($item->createdDate);
     }
 
     // Returns the file modification time
@@ -339,7 +351,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return strtotime($item['modifiedDate']);
+        return strtotime($item->modifiedDate);
     }
 
     public function touch(string $path): bool
@@ -347,7 +359,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         if (!($item = $this->resolvePath($path))) {
             return false;
         }
-        $request = new Request('https://www.googleapis.com/drive/v2/files/'.$item['id'], 'PATCH', 'application/json');
+        $request = new Request('https://www.googleapis.com/drive/v2/files/'.$item->id, 'PATCH', 'application/json');
         $request['modifiedDate'] = date('c');
         $this->sendRequest($request, false);
 
@@ -366,7 +378,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return $item['fileSize'] ?? 0;
+        return $item->fileSize ?? 0;
     }
 
     public function fileperms(string $path): false|int
@@ -403,12 +415,13 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         if (!($parent = $this->resolvePath(dirname($path)))) {
             return false;
         }
-        if (count($item['parents']) > 1) {
-            $request = new Request('https://www.googleapis.com/drive/v2/files/'.$item['id'].'/parents/'.$parent['id'], 'DELETE', 'application/json');
+        if (count($item->parents) > 1) {
+            $request = new Request('https://www.googleapis.com/drive/v2/files/'.$item->id.'/parents/'.$parent->id, 'DELETE');
             $this->sendRequest($request, false);
         } else {
-            $request = new Request('https://www.googleapis.com/drive/v2/files/'.$item['id'], 'DELETE');
+            $request = new Request('https://www.googleapis.com/drive/v2/files/'.$item->id, 'DELETE');
             $this->sendRequest($request, false);
+            unset($this->meta[$item->id]);
         }
 
         return true;
@@ -420,7 +433,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             return null;
         }
 
-        return $item['mimeType'] ?? null;
+        return $item->mimeType ?? null;
     }
 
     public function md5Checksum(string $path): ?string
@@ -429,7 +442,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             return null;
         }
 
-        return $item['md5Checksum'] ?? null;
+        return $item->md5Checksum ?? null;
     }
 
     // Create a directory
@@ -440,11 +453,11 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         }
         $request = new Request('https://www.googleapis.com/drive/v2/files', 'POST', 'application/json');
         $request['title'] = basename($path);
-        $request['parents'] = [['id' => $parent['id']]];
+        $request['parents'] = [['id' => $parent->id]];
         $request['mimeType'] = 'application/vnd.google-apps.folder';
         $response = $this->sendRequest($request);
-        if ($response) {
-            $this->meta[$response['id']] = $response;
+        if ($response instanceof \stdClass && isset($response->id)) {
+            $this->meta[$response->id] = $response;
 
             return true;
         }
@@ -477,7 +490,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
     }
 
     // Copy a file from src to dst
-    public function copy(string $src, string $dst, bool $recursive = false): bool
+    public function copy(string $src, string $dst, bool $overwrite = false): bool
     {
         if (!($item = $this->resolvePath($src))) {
             return false;
@@ -485,12 +498,12 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         if (!($parent = $this->resolvePath($dst))) {
             return false;
         }
-        $request = new Request('https://www.googleapis.com/drive/v2/files/'.$item['id'].'/copy', 'POST', 'application/json');
-        $request['title'] = $item['title'];
-        $request['parents'] = [['id' => $parent['id']]];
+        $request = new Request('https://www.googleapis.com/drive/v2/files/'.$item->id.'/copy', 'POST', 'application/json');
+        $request['title'] = $item->title;
+        $request['parents'] = [['id' => $parent->id]];
         $response = $this->sendRequest($request);
-        if ($response) {
-            $this->meta[$response['id']] = $response;
+        if ($response instanceof \stdClass && isset($response->id)) {
+            $this->meta[$response->id] = $response;
 
             return true;
         }
@@ -506,7 +519,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         if (!($parent = $this->resolvePath($dst))) {
             return false;
         }
-        $request = new Request('https://www.googleapis.com/drive/v2/files/'.$item['id'].'/parents/'.$parent['id'], 'POST', 'application/json');
+        $request = new Request('https://www.googleapis.com/drive/v2/files/'.$item->id.'/parents/'.$parent->id, 'POST', 'application/json');
         $this->sendRequest($request, false);
 
         return true;
@@ -524,12 +537,12 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         if (!($dstParent = $this->resolvePath($dst))) {
             return false;
         }
-        $request = new Request('https://www.googleapis.com/drive/v2/files/'.$item['id'].'/parents', 'POST', 'application/json');
-        $request->populate(['id' => $dstParent['id']]);
+        $request = new Request('https://www.googleapis.com/drive/v2/files/'.$item->id.'/parents', 'POST', 'application/json');
+        $request->populate(['id' => $dstParent->id]);
         $response = $this->sendRequest($request);
-        if ($response) {
-            $this->meta[$item['id']]['parents'][] = $request->toArray();
-            $request = new Request('https://www.googleapis.com/drive/v2/files/'.$item['id'].'/parents/'.$srcParent['id'], 'DELETE', 'application/json');
+        if ($response instanceof \stdClass) {
+            $this->meta[$item->id]->parents[] = $request->toArray();
+            $request = new Request('https://www.googleapis.com/drive/v2/files/'.$item->id.'/parents/'.$srcParent->id, 'DELETE', 'application/json');
             $this->sendRequest($request, false);
 
             return true;
@@ -544,12 +557,12 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         if (!($item = $this->resolvePath($path))) {
             return false;
         }
-        if (!($downloadUrl = $item['downloadUrl'] ?? null)) {
-            if ($exportLinks = $item['exportLinks'] ?? null) {
-                if (array_key_exists('application/rtf', $exportLinks)) {
-                    $downloadUrl = $exportLinks['application/rtf'];
-                } elseif (array_key_exists('application/pdf', $exportLinks)) {
-                    $downloadUrl = $exportLinks['application/pdf'];
+        if (!($downloadUrl = $item->downloadUrl ?? null)) {
+            if ($exportLinks = $item->exportLinks ?? null) {
+                if (property_exists($exportLinks, 'application/rtf')) {
+                    $downloadUrl = $exportLinks->{'application/rtf'};
+                } elseif (property_exists($exportLinks, 'application/pdf')) {
+                    $downloadUrl = $exportLinks->{'application/pdf'};
                 } else {
                     return false;
                 }
@@ -570,11 +583,11 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             return null;
         }
         $request = new Request('https://www.googleapis.com/upload/drive/v2/files?uploadType=multipart', 'POST');
-        $request->addMultipart(['title' => basename($file), 'parents' => [['id' => $parent['id']]]], 'application/json');
+        $request->addMultipart(['title' => basename($file), 'parents' => [['id' => $parent->id]]], 'application/json');
         $request->addMultipart($data, $contentType);
         $response = $this->sendRequest($request);
-        if ($response) {
-            $this->meta[$response['id']] = $response;
+        if ($response instanceof \stdClass && isset($response->id)) {
+            $this->meta[$response->id] = $response;
 
             return strlen($data);
         }
@@ -616,7 +629,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         if (!($item = $this->resolvePath($path))) {
             return false;
         }
-        if (!($link = $item['thumbnailLink'] ?? null)) {
+        if (!($link = $item->thumbnailLink ?? null)) {
             return false;
         }
         if (($pos = strrpos($link, '=')) > 0) {
@@ -633,7 +646,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return str_replace('&export=download', '', $item['webContentLink'] ?? null);
+        return isset($item->webContentLink) ? str_replace('&export=download', '', $item->webContentLink) : null;
     }
 
     public function thumbnailURL(string $path, int $width = 100, int $height = 100, string $format = 'jpeg', array $params = []): false|string
@@ -736,10 +749,7 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         return false;
     }
 
-    /**
-     * @return array<mixed>|string
-     */
-    private function sendRequest(Request $request, bool $isMeta = true): array|string
+    private function sendRequest(Request $request, bool $isMeta = true): \stdClass|string
     {
         $count = 0;
         while (++$count) {
@@ -757,9 +767,9 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
                 }
             } else {
                 if ('application/json' == $response->getHeader('content-type')) {
-                    $meta = $response->body;
-                    if (isset($meta['error'])) {
-                        $err = $meta['error'];
+                    $meta = $response->body();
+                    if (isset($meta->error)) {
+                        $err = $meta->error;
                     } else {
                         $err = 'Unknown error!';
                     }
@@ -774,27 +784,24 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
             }
         }
         if (true == $isMeta) {
-            $meta = $response->body;
-            if (isset($meta['error'])) {
-                throw new \Exception($meta['error']);
+            $meta = $response->body();
+            if (isset($meta->error)) {
+                throw new \Exception($meta->error);
             }
         } else {
-            $meta = $response->body;
+            $meta = $response->body();
         }
 
         return $meta;
     }
 
-    /**
-     * @param array<mixed> $item
-     */
-    private function itemHasParent(array $item, string $parentId): bool
+    private function itemHasParent(\stdClass $item, string $parentId): bool
     {
-        if (!(array_key_exists('parents', $item) && is_array($item['parents']))) {
+        if (!(isset($item->parents) && is_array($item->parents))) {
             return false;
         }
-        foreach ($item['parents'] as $itemParent) {
-            if ($itemParent['id'] == $parentId) {
+        foreach ($item->parents as $itemParent) {
+            if ($itemParent->id == $parentId) {
                 return true;
             }
         }
@@ -802,15 +809,12 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
         return false;
     }
 
-    /**
-     * @return array<mixed>|false
-     */
-    private function resolvePath(string $path): array|false
+    private function resolvePath(string $path): false|\stdClass
     {
         $path = '/'.trim($this->options['root'], '/').'/'.ltrim($path, '/');
         $parent = null;
         foreach ($this->meta as $item) {
-            if (0 === count($item['parents'])) {
+            if (0 === count($item->parents)) {
                 $parent = $item;
 
                 break;
@@ -827,10 +831,10 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
                 if (!$part) {
                     continue;
                 }
-                $id = $parent['id'];
+                $id = $parent->id;
                 $parent = null;
                 foreach ($this->meta as $item) {
-                    if (array_key_exists('title', $item) && $item['title'] === $part && $this->itemHasParent($item, $id)) {
+                    if (isset($item->title) && $item->title === $part && $this->itemHasParent($item, $id)) {
                         $parent = $item;
                     }
                 }
@@ -844,23 +848,21 @@ class GoogleDrive extends Client implements BackendInterface, DriverInterface
     }
 
     /**
-     * @param array<mixed> $item
-     *
      * @return array<string>
      */
-    private function resolveItem(array $item): array
+    private function resolveItem(\stdClass $item): array
     {
-        if (!($parents = $item['parents'] ?? null)) {
+        if (!($parents = $item->parents ?? null)) {
             return ['/'];
         }
         $path = [];
         foreach ($parents as $parentRef) {
-            if (!($parent = $this->meta[$parentRef['id']] ?? null)) {
+            if (!($parent = $this->meta[$parentRef->id] ?? null)) {
                 continue;
             }
             $parentPaths = $this->resolveItem($parent);
-            foreach ($parentPaths as $index => $value) {
-                $path[] = rtrim($value, '/').'/'.$item['title'];
+            foreach ($parentPaths as $value) {
+                $path[] = rtrim($value, '/').'/'.$item->title;
             }
         }
 

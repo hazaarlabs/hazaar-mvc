@@ -118,7 +118,7 @@ class Shm extends Backend
         $index = $this->getIndex();
         if (!(array_key_exists(self::GC_KEY, $index)
             && $index[self::GC_KEY] > 0
-            && (time() - $this->options['gc_interval']) < $index[self::GC_KEY])) {
+            && (time() - ($this->options['gc_interval'] ?? 300)) < $index[self::GC_KEY])) {
             $now = time();
             foreach ($index as $key => $i) {
                 if (self::GC_KEY === $key) {

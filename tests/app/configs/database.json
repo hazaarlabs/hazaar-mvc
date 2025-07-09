@@ -6,5 +6,8 @@
         "dbname": "hazaar_framework",
         "user": "phpunit",
         "password": "phpunit12345"
+    },
+    "gitlab": {
+        "include": "development"
     }
 }

@@ -78,7 +78,7 @@ interface Backend
     public function rmdir(string $path, bool $recurse = false): bool;
 
     // Copy a file from src to dst
-    public function copy(string $src, string $dst, bool $recursive = false): bool;
+    public function copy(string $src, string $dst, bool $overwrite = false): bool;
 
     // Move a file from src to dst
     public function move(string $src, string $dst): bool;
@@ -129,6 +129,12 @@ interface Backend
     public function thumbnailURL(string $path, int $width = 100, int $height = 100, string $format = 'jpeg', array $params = []): false|string;
 
     public function authorise(?string $redirectUri = null): bool;
+
+    public function authoriseWithCode(
+        string $code,
+        ?string $redirectUri = null,
+        string $grantType = 'authorization_code'
+    ): bool;
 
     public function authorised(): bool;
 

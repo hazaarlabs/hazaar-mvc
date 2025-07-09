@@ -40,14 +40,15 @@ class Main extends Process
 
     private Application $application;
 
-    public function __construct(?string $applicationPath = null, ?string $configFile = null, string $env = 'development')
+    public function __construct(?string $configFile = null, string $env = 'development')
     {
-        if (null === $applicationPath || !is_dir($applicationPath)) {
-            throw new \InvalidArgumentException("Application path '{$applicationPath}' does not exist or is not a directory.");
+        $loader = Loader::getInstance();
+        if (!$loader instanceof Loader) {
+            throw new \RuntimeException('Application loader instance not found or not initialized.');
         }
-        $loader = Loader::createInstance($applicationPath);
         $loader->addSearchPath(FilePath::SERVICE, 'services');
         $loader->register();
+        $applicationPath = $loader->searchFile(FilePath::APPLICATION);
         $this->application = new Application($applicationPath, $env);
         $this->config = new Config();
         $this->config->setBasePath($applicationPath.DIRECTORY_SEPARATOR.'configs');

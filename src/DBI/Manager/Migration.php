@@ -33,11 +33,19 @@ class Migration extends Model
 
     public function replay(Adapter $dbi): bool
     {
+        if (!isset($this->up)) {
+            throw new \RuntimeException('Migration has no up event defined.');
+        }
+
         return $this->up->run($dbi);
     }
 
     public function rollback(Adapter $dbi): bool
     {
+        if (!isset($this->down)) {
+            throw new \RuntimeException('Migration has no down event defined.');
+        }
+
         return $this->down->run($dbi);
     }
 }

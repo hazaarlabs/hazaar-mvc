@@ -51,11 +51,24 @@ class Obj
      */
     public static function merge(mixed ...$objects): ?object
     {
-        if (count($objects) < 2 || !is_object($objects[0])) {
+        if (count($objects) < 2) {
             return null;
         }
-        $targetReflection = new \ReflectionObject($objects[0]);
-        $targetObject = $targetReflection->newInstance();
+        $firstObject = null;
+        // Find the first non-null object
+        foreach ($objects as $object) {
+            if (is_object($object) || is_array($object)) {
+                $firstObject = $object;
+
+                break;
+            }
+        }
+        if (null === $firstObject || is_array($firstObject)) {
+            $targetObject = new \stdClass();
+        } else {
+            $targetReflection = new \ReflectionObject($firstObject);
+            $targetObject = $targetReflection->newInstance();
+        }
         foreach ($objects as $object) {
             if (is_object($object)) {
                 $reflection = new \ReflectionObject($object);

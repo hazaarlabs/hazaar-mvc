@@ -8,6 +8,7 @@ use Hazaar\Application;
 use Hazaar\Console\Input;
 use Hazaar\Console\Module;
 use Hazaar\Console\Output;
+use Hazaar\Loader;
 use Hazaar\Util\Boolean;
 use Hazaar\Warlock\Agent\Main;
 
@@ -41,6 +42,7 @@ class AgentModule extends Module
     protected function prepare(Input $input, Output $output): int
     {
         $env = $input->getOption('env') ?? 'development';
+        $configFile = $input->getOption('config') ?? 'agent.json';
         $applicationPath = $input->getOption('path');
         if (!$applicationPath || '/' !== substr(trim($applicationPath), 0, 1)) {
             $searchResult = Application::findApplicationPath($applicationPath);
@@ -51,8 +53,8 @@ class AgentModule extends Module
             }
             $applicationPath = $searchResult;
         }
-        $configFile = $input->getOption('config') ?? 'agent.json';
-        $this->agent = new Main($applicationPath, $configFile, $env);
+        Loader::createInstance($applicationPath);
+        $this->agent = new Main($configFile, $env);
 
         return 0;
     }
