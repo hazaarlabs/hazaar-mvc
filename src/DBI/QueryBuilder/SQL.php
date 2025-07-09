@@ -9,7 +9,6 @@ use Hazaar\DBI\Interface\QueryBuilder;
 use Hazaar\DBI\Table;
 use Hazaar\Model;
 use Hazaar\Util\Arr;
-use Hazaar\Util\Boolean;
 
 class SQL implements QueryBuilder
 {
@@ -310,7 +309,7 @@ class SQL implements QueryBuilder
         return $this;
     }
 
-    public function having(string ...$columns): self
+    public function having(array $columns): self
     {
         $this->having = $columns;
 
@@ -462,6 +461,7 @@ class SQL implements QueryBuilder
 
     public function prepareValue(string $key, mixed $value): mixed
     {
+        $key = str_replace('.', '_', $key);
         if (isset($this->valueIndex[$key])) {
             if (in_array($value, $this->valueIndex[$key])) {
                 $index = array_search($value, $this->valueIndex[$key]);
@@ -553,12 +553,7 @@ class SQL implements QueryBuilder
                 if ($parentRef && false === strpos($key, '.')) {
                     $key = $parentRef.'.'.$key;
                 }
-                if ((is_null($value) || Boolean::is($value)) && ('=' == $tissue || '!=' == $tissue)) {
-                    $parts[] = '(('.$this->prepareValue($key, value: $value).'::INTEGER IS NULL AND '.$this->field($key).' IS '.(('!=' === $tissue) ? 'NOT ' : null).'NULL)'
-                    .' OR ('.$this->prepareValue($key, value: $value).' IS NOT NULL AND '.$this->field($key).' '.$tissue.' '.$this->prepareValue($key, value: $value).'))';
-                } else {
-                    $parts[] = $this->field($key).' '.$tissue.' '.$this->prepareValue($key, value: $value);
-                }
+                $parts[] = $this->field($key).' '.$tissue.' '.$this->prepareValue($key, value: $value);
             }
         }
         $encapsulate = (count($parts) > 1) && ($depth > 0);
@@ -615,14 +610,16 @@ class SQL implements QueryBuilder
                 return $this->prepareCriteria(criteria: $value, bindType: 'OR', depth: $depth);
 
             case 'ne':
-                if (is_null($value)) {
-                    return 'IS NOT NULL';
-                }
-
                 return (is_bool($value) ? 'IS NOT ' : '!= ').$this->prepareValue($key, $value);
 
             case 'not':
                 return 'NOT ('.$this->prepareCriteria(criteria: $value, depth: $depth).')';
+
+            case 'null':
+                return $this->quoteSpecial($value).' IS NULL';
+
+            case 'notnull':
+                return $this->quoteSpecial($value).' IS NOT NULL';
 
             case 'ref':
                 return $tissue.' '.$value;
@@ -852,13 +849,11 @@ class SQL implements QueryBuilder
         if ($this->fields instanceof Table) {
             $sql .= ' '.(string) $this->fields;
         } else {
-            $fieldDef = array_keys($this->fields);
-            foreach ($fieldDef as &$field) {
-                $field = $this->field($field);
-            }
-            $valueDef = array_values($this->fields);
-            foreach ($valueDef as $key => &$value) {
-                $value = $this->prepareValue(key: $fieldDef[$key], value: $value);
+            $fieldDef = []; // array_keys($this->fields);
+            $valueDef = []; // array_values($this->fields);
+            foreach ($this->fields as $key => $value) {
+                $fieldDef[] = $this->field($key);
+                $valueDef[] = $this->prepareValue(key: $key, value: $value);
             }
             $sql .= ' ('.implode(', ', $fieldDef).') VALUES ('.implode(', ', $valueDef).')';
         }

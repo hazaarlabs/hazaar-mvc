@@ -6,5 +6,8 @@
             "message": "This is a test service",
             "checkfile": 10
         }
+    },
+    "gitlab": {
+        "include": "development"
     }
 }

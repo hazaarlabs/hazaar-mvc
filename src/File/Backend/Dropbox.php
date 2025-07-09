@@ -6,17 +6,16 @@ namespace Hazaar\File\Backend;
 
 use Hazaar\Cache\Adapter;
 use Hazaar\File\Backend\Exception\DropboxError;
-use Hazaar\File\Image;
 use Hazaar\File\Interface\Backend as BackendInterface;
 use Hazaar\File\Interface\Driver as DriverInterface;
-use Hazaar\File\Manager;
 use Hazaar\HTTP\Client;
 use Hazaar\HTTP\Request;
 
 class Dropbox extends Client implements BackendInterface, DriverInterface
 {
     public string $separator = '/';
-    protected Manager $manager;
+    private string $apiURL = 'https://api.dropbox.com/2';
+    private string $apiContentURL = 'https://content.dropboxapi.com/2';
 
     /**
      * @var array<mixed>
@@ -25,48 +24,53 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
     private Adapter $cache;
 
     /**
-     * @var array<mixed>
+     * @var array<string,\stdClass>
      */
     private array $meta = [];
 
     /**
-     * @var array<mixed>
+     * @var array<string,string>
      */
-    private array $cursor;
+    private array $cursors;
 
-    /**
-     * @param array<mixed> $options
-     */
-    public function __construct(array $options, Manager $manager)
+    public function __construct(array $options = [])
     {
         parent::__construct();
-        $this->manager = $manager;
-        $this->options = array_merge_recursive([
-            'oauth2_method' => 'POST',
-            'oauth_version' => '2.0',
+        $this->options = array_replace_recursive([
             'file_limit' => 1000,
-            'cache_backend' => 'file',
-            'oauth2' => ['access_token' => null],
+            'cache' => [
+                'backend' => 'file',
+            ],
+            'oauth2' => null,
         ], $options);
         if (!(isset($this->options['app_key'], $this->options['app_secret']))) {
             throw new DropboxError('Dropbox filesystem backend requires both app_key and app_secret.');
         }
-        $this->cache = new Adapter($this->options['cache_backend'], ['use_pragma' => false, 'namespace' => 'dropbox_'.$this->options['app_key']]);
-        if ($oauth2 = $this->cache->get('oauth2_data')) {
-            $this->options['oauth2'] = $oauth2;
+        if (!isset($this->options['cache']['backend'])) {
+            throw new DropboxError('Dropbox filesystem backend requires cache backend to be set.');
         }
-        if (($cursor = $this->cache->get('cursor')) !== false) {
-            $this->cursor = $cursor;
+        if (!isset($this->options['cache']['namespace'])) {
+            $this->options['cache']['namespace'] = 'dropbox:'.$this->options['app_key'];
         }
-        if (($meta = $this->cache->get('meta')) !== false) {
-            $this->meta = $meta;
-        }
+        $this->options['cache']['options']['use_pragma'] = false;
+        $this->cache = new Adapter(
+            $this->options['cache']['backend'],
+            $this->options['cache']['options'],
+            $this->options['cache']['namespace']
+        );
+        $this->reload();
     }
 
     public function __destruct()
     {
-        $this->cache->set('meta', $this->meta);
-        $this->cache->set('cursor', $this->cursor);
+        if (isset($this->cursors)) {
+            $this->cache->set('cursors', $this->cursors);
+            $this->cache->set('meta', $this->meta);
+        } else {
+            // If cursors are not set, we can clear it from cache
+            $this->cache->remove('cursors');
+            $this->cache->remove('meta');
+        }
     }
 
     public static function label(): string
@@ -74,90 +78,136 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         return 'Dropbox';
     }
 
+    public function reload(): void
+    {
+        if ($oauth2 = $this->cache->get('oauth2_data')) {
+            $this->options['oauth2'] = $oauth2;
+        }
+        if ($cursors = $this->cache->get('cursors')) {
+            $this->cursors = $cursors;
+            if ($meta = $this->cache->get('meta')) {
+                $this->meta = $meta;
+            }
+        }
+    }
+
+    public function reset(): bool
+    {
+        $this->cursors = [];
+        $this->meta = [];
+        $this->options['oauth2'] = null;
+        $this->cache->remove('cursors');
+        $this->cache->remove('meta');
+        $this->cache->remove('oauth2_data');
+
+        return true;
+    }
+
     public function authorise(?string $redirectUri = null): bool
     {
         if (($code = $_REQUEST['code'] ?? null) && ($state = $_REQUEST['state'] ?? null)) {
             if ($state != $this->cache->pull('oauth2_state')) {
-                throw new \Exception('Bad state!');
-            }
-            $request = new Request('https://api.dropbox.com/1/oauth2/token', $this->options['oauth2_method']);
-            $request->populate([
-                'code' => $code,
-                'grant_type' => 'authorization_code',
-                'client_id' => $this->options['app_key'],
-                'client_secret' => $this->options['app_secret'],
-                'redirect_uri' => $redirectUri,
-            ]);
-            $response = $this->send($request);
-            if (200 !== $response->status) {
                 return false;
             }
-            if ($auth = json_decode($response->body, true)) {
-                $this->cache->set('oauth2_data', $auth);
 
-                return true;
-            }
+            return $this->authoriseWithCode($code);
         }
 
         return $this->authorised();
     }
 
+    public function authoriseWithCode(
+        string $code,
+        ?string $redirectUri = null,
+        string $grantType = 'authorization_code'
+    ): bool {
+        $request = new Request('https://api.dropboxapi.com/oauth2/token', 'POST');
+        if ('refresh_token' === $grantType) {
+            $request['refresh_token'] = $code;
+        } else {
+            $request['code'] = $code;
+        }
+        $request['grant_type'] = $grantType;
+        $request['client_id'] = $this->options['app_key'];
+        $request['client_secret'] = $this->options['app_secret'];
+        $response = $this->send($request);
+        if ($redirectUri) {
+            $request['redirect_uri'] = $redirectUri;
+        }
+        if (200 !== $response->status) {
+            return false;
+        }
+        if ($auth = $response->body()) {
+            if (isset($auth->expires_in)) {
+                $auth->expires = time() + ($auth->expires_in - 1); // Pull a second off to avoid expiry issues
+            }
+            $this->options['oauth2'] = array_merge($this->options['oauth2'] ?? [], (array) $auth);
+            $this->cache->set('oauth2_data', $this->options['oauth2']);
+
+            return true;
+        }
+
+        return false;
+    }
+
     public function authorised(): bool
     {
-        return isset($this->options['oauth2']) && null !== $this->options['oauth2']['access_token'];
+        if (!(isset($this->options['oauth2']) && null !== $this->options['oauth2']['access_token'])) {
+            return false;
+        }
+        // Check if the access token is still valid
+        if (isset($this->options['oauth2']['expires']) && $this->options['oauth2']['expires'] < time()) {
+            if (!isset($this->options['oauth2']['refresh_token'])) {
+                return false; // Access\Refresh token has expired
+            }
+
+            return $this->authoriseWithCode(
+                $this->options['oauth2']['refresh_token'],
+                null,
+                'refresh_token'
+            );
+        }
+
+        return true;
     }
 
     public function buildAuthURL(?string $redirectUri = null): string
     {
-        if (!$redirectUri) {
-            $redirectUri = $_SERVER['REQUEST_URI'];
-        }
         $state = md5(uniqid());
-        $this->cache->set('oauth2_state', $state);
+        $this->cache->set('oauth2_state', $state, 300);
         $params = [
             'response_type=code',
             'client_id='.$this->options['app_key'],
-            'redirect_uri='.$redirectUri,
             'state='.$state,
+            'token_access_type=offline',
         ];
+        if ($redirectUri) {
+            $params[] = 'redirect_uri='.urlencode($redirectUri);
+        }
 
-        return 'https://www.dropbox.com/1/oauth2/authorize?'.implode('&', $params);
+        return 'https://www.dropbox.com/oauth2/authorize?'.implode('&', $params);
     }
 
     public function refresh(bool $reset = false): bool
     {
-        if (!$this->authorised()) {
-            return false;
-        }
-        $request = new Request('https://api.dropbox.com/1/delta', 'POST');
-        if (!$reset && count($this->meta) && $this->cursor) {
-            $request['cursor'] = $this->cursor;
-        }
-        $response = $this->sendRequest($request);
-        $this->cursor = $response['cursor'];
-        if (true === $response['reset']) {
-            $this->meta = [
-                '/' => [
-                    'bytes' => 0,
-                    'icon' => 'folder',
-                    'path' => '/',
-                    'is_dir' => true,
-                    'thumb_exists' => false,
-                    'root' => 'app_folder',
-                    'modified' => 'Thu, 21 May 2015 06:06:57 +0000',
-                    'size' => '0 bytes',
-                ],
-            ];
-        }
-        foreach ($response['entries'] as $entry) {
-            [$path, $meta] = $entry->toArray();
-            if ($meta) {
-                $this->meta[$path] = $meta;
-            } elseif (array_key_exists($path, $this->meta)) {
-                unset($this->meta[$path]);
+        if (true === $reset) {
+            unset($this->cursors);
+        } else {
+            foreach ($this->cursors as $path => $cursor) {
+                $request = new Request(
+                    "{$this->apiURL}/files/list_folder/continue",
+                    'POST',
+                    'application/json'
+                );
+                $request['cursor'] = $cursor;
+                $response = $this->sendRequest($request);
+                if (isset($response->entries)) {
+                    foreach ($response->entries as $entry) {
+                        $this->meta[$entry->path_lower] = $entry;
+                    }
+                }
             }
         }
-        ksort($this->meta);
 
         return true;
     }
@@ -191,26 +241,63 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         return $list;
     }
 
-    /**
-     * @return array<mixed>|bool
-     */
-    public function info(string $path): array|bool
+    public function info(string $path): false|\stdClass
     {
-        if (!$this->cursor) {
-            $this->refresh();
-        }
-        if (!($meta = $this->meta[strtolower($path)] ?? null)) {
+        if (!$this->authorised()) {
             return false;
         }
+        if (isset($this->meta[$path])) {
+            return $this->meta[$path];
+        }
+        $request = new Request(
+            "{$this->apiURL}/files/list_folder",
+            'POST',
+            'application/json'
+        );
+        $folderPath = dirname($path);
+        // If the path is root, we need to set it to empty string as required by Dropbox API.
+        if ('/' === $folderPath) {
+            $folderPath = '';
+        }
+        if (isset($this->cursors[$folderPath])) {
+            $request->appendURL('/continue');
+            $request['cursor'] = $this->cursors[$folderPath];
+        } else {
+            $request['path'] = $folderPath; // Dropbox API expects empty string for root
+        }
+        $response = $this->sendRequest($request);
+        if (!$response) {
+            return false;
+        }
+        $this->cursors[$folderPath] = $response->cursor;
+        if (!isset($this->meta[$path])) {
+            $this->meta['/'] = (object) [
+                '.tag' => 'folder',
+                'name' => 'Root Folder',
+                'path_lower' => '/',
+                'path_display' => '/',
+            ];
+        }
+        foreach ($response->entries as $entry) {
+            $this->meta[$entry->path_lower] = $entry;
 
-        return $meta;
+            // TODO: This is the old code to remove meta from cache when a file is deleted.
+            // if ($meta) {
+            //     $this->meta[$entry->path_lower] = $meta;
+            // } elseif (array_key_exists($path, $this->meta)) {
+            //     unset($this->meta[$path]);
+            // }
+        }
+        ksort($this->meta);
+
+        return $this->meta[$path] ?? false;
     }
 
     public function search(string $query, bool $includeDeleted = false): false
     {
         throw new DropboxError('Search is not done yet!');
         /*
-        $request = new Request('https://api.dropbox.com/1/search/auto/', 'POST');
+        $request = new Request("{$this->apiURL}/files/search', 'POST');
         $request->query = $query;
         if ($this->options->has('file_limit')) {
             $request->file_limit = $this->options['file_limit'];
@@ -228,7 +315,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
     public function exists(string $path): bool
     {
         if (($info = $this->info($path)) !== false) {
-            return true;
+            return 'deleted' !== ($info->{'.tag'} ?? null);
         }
 
         return false;
@@ -256,7 +343,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return $info['is_dir'];
+        return 'folder' === ($info->{'.tag'} ?? null);
     }
 
     // TRUE if path is a symlink
@@ -272,7 +359,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return !$info['is_dir'];
+        return 'file' === $info->{'.tag'};
     }
 
     // Returns the file type
@@ -282,7 +369,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return $info['is_dir'] ? 'dir' : 'file';
+        return $info->{'.tag'};
     }
 
     // Returns the file modification time
@@ -292,7 +379,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return strtotime($info['created']);
+        return strtotime($info->client_modified);
     }
 
     // Returns the file modification time
@@ -302,7 +389,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return strtotime($info['modified']);
+        return strtotime($info->server_modified);
     }
 
     public function touch(string $path): bool
@@ -322,7 +409,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
             return false;
         }
 
-        return $info['bytes'];
+        return $info->size ?? 0;
     }
 
     public function fileperms(string $path): false|int
@@ -352,21 +439,21 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
 
     public function unlink(string $path): bool
     {
-        $request = new Request('https://api.dropbox.com/1/fileops/delete', 'POST');
-        $request['root'] = 'auto';
+        $request = new Request(
+            "{$this->apiURL}/files/delete_v2",
+            'POST',
+            'application/json'
+        );
         $request['path'] = $path;
         $response = $this->sendRequest($request);
-        if ($response['is_deleted']) {
-            $key = strtolower($response['path']);
-            if (array_key_exists($key, $this->meta)) {
-                unset($this->meta[$key]);
-            }
-            $this->clearMeta($response['path']);
-
-            return true;
+        if (!isset($response->metadata)) {
+            return false;
+        }
+        if (array_key_exists($response->metadata->path_lower, $this->meta)) {
+            unset($this->meta[$response->metadata->path_lower]);
         }
 
-        return false;
+        return true;
     }
 
     public function mimeContentType(string $path): ?string
@@ -375,7 +462,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
             return null;
         }
 
-        return $info['is_dir'] ? 'dir' : $info['mime_type'];
+        return 'folder' === $info->{'.tag'} ? 'dir' : null;
     }
 
     public function md5Checksum(string $path): ?string
@@ -391,50 +478,32 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         if (!($info = $this->info($path))) {
             return false;
         }
-        if ($info['thumb_exists']) {
-            $size = 'l';
-            if ($width < 32 && $height < 32) {
-                $size = 'xs';
-            } elseif ($width < 64 && $height < 64) {
-                $size = 's';
-            } elseif ($width < 128 && $height < 128) {
-                $size = 'm';
-            } elseif ($width < 640 && $height < 480) {
-                $size = 'l';
-            } elseif ($width < 1024 && $height < 768) {
-                $size = 'xl';
-            }
-            $request = new Request('https://api-content.dropbox.com/1/thumbnails/auto'.$path, 'GET');
-            $request['format'] = $format;
-            $request['size'] = $size;
-            $response = $this->sendRequest($request, false);
-            if (!is_string($response)) {
-                return false;
-            }
-            $image = new Image($path, null, $this->manager);
-            $image->setContents($response);
-            $image->resize($width, $height, false, 'center', true, true, null, 0, 0);
 
-            return $image->getContents();
-        }
-
-        return false;
+        return "{$this->apiContentURL}/files/get_thumbnail_v2"
+            .'?path='.urlencode($path)
+            .'&format='.$format
+            .'&size=w'.$width.'h'.$height
+            .'&mode=fit'
+            .'&thumbnail_size=w'.$width.'h'.$height;
     }
 
     // File Operations
     public function mkdir(string $path): bool
     {
-        $request = new Request('https://api.dropbox.com/1/fileops/create_folder', 'POST');
-        $request['root'] = 'auto';
+        $request = new Request(
+            "{$this->apiURL}/files/create_folder_v2",
+            'POST',
+            'application/json'
+        );
         $request['path'] = $path;
         $response = $this->sendRequest($request);
-        if (\Hazaar\Util\Boolean::from($response['is_dir'])) {
-            $this->meta[strtolower($response['path'])] = $response;
-
-            return true;
+        if (!(isset($response->metadata) && $response->metadata->path_lower)) {
+            return false;
         }
+        $response->metadata->{'.tag'} = 'folder';
+        $this->meta[$response->metadata->path_lower] = $response->metadata;
 
-        return false;
+        return true;
     }
 
     public function rmdir(string $path, bool $recurse = false): bool
@@ -460,7 +529,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         return $this->unlink($path);
     }
 
-    public function copy(string $src, string $dst, bool $recursive = false): bool
+    public function copy(string $src, string $dst, bool $overwrite = false): bool
     {
         if ($this->isFile($dst)) {
             return false;
@@ -515,7 +584,14 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
     // Access operations
     public function read(string $path, int $offset = -1, ?int $maxlen = null): false|string
     {
-        $request = new Request('https://api-content.dropbox.com/1/files/auto'.$path, 'GET');
+        $request = new Request(
+            "{$this->apiContentURL}/files/download",
+            'GET',
+            'application/octet-stream'
+        );
+        $args = [
+            'path' => $path,
+        ];
         if ($offset >= 0) {
             $range = 'bytes='.$offset.'-';
             if ($maxlen) {
@@ -523,22 +599,31 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
             }
             $request->setHeader('Range', $range);
         }
+        $request->setHeader('Dropbox-API-Arg', json_encode($args));
 
         return $this->sendRequest($request, false);
     }
 
     public function write(string $path, string $data, ?string $contentType = null, bool $overwrite = false): ?int
     {
-        $request = new Request('https://api-content.dropbox.com/1/files_put/auto'.$path, 'POST');
-        $request->setHeader('Content-Type', $contentType);
-        if ($overwrite) {
-            $request['overwrite'] = true;
-        }
-        $request['body'] = $data;
+        $request = new Request(
+            "{$this->apiContentURL}/files/upload",
+            'POST',
+            'application/octet-stream'
+        );
+        $args = [
+            'path' => $path,
+            'mode' => $overwrite ? 'overwrite' : 'add',
+        ];
+        $request->setHeader('Dropbox-API-Arg', json_encode($args));
+        $request->setBody($data);
         $response = $this->sendRequest($request);
-        $this->meta[strtolower($response['path'])] = $response;
+        if (!$response || !isset($response->id)) {
+            return null;
+        }
+        $this->meta[$response->path_lower] = $response;
 
-        return strlen($data);
+        return $response->size;
     }
 
     /**
@@ -560,7 +645,7 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
     public function getMeta(string $path, ?string $key = null): array|false|string
     {
         if ($meta = $this->cache->get($this->options['app_key'].'::'.strtolower($path))) {
-            return $key !== null ? ($meta[$key] ?? null) : $meta;
+            return null !== $key ? ($meta[$key] ?? null) : $meta;
         }
 
         return false;
@@ -611,18 +696,18 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
             return false;
         }
         $info = $this->info($path);
-        if ($info['is_dir']) {
+        if ('file' !== $info->{'.tag'}) {
             return false;
         }
-        if (($media = $info['media'] ?? null) && strtotime($media['expires']) > time()) {
+        if (($media = $info->media ?? null) && strtotime($media->expires) > time()) {
             return $media['url'];
         }
         $request = new Request('https://api.dropbox.com/1/media/auto'.$path, 'POST');
         $response = $this->sendRequest($request);
-        if ($response['url']) {
+        if ($response->url) {
             $this->meta[strtolower($path)]['media'] = $response;
 
-            return $response['url'];
+            return $response->url;
         }
 
         return false;
@@ -723,39 +808,29 @@ class Dropbox extends Client implements BackendInterface, DriverInterface
         return false;
     }
 
-    /**
-     * @return array<mixed>|string
-     */
-    private function sendRequest(Request $request, bool $isMeta = true): array|string
+    private function sendRequest(Request $request, bool $isMeta = true): mixed
     {
         $request->setHeader('Authorization', 'Bearer '.$this->options['oauth2']['access_token']);
         $response = $this->send($request);
+        // If the response status is 409, it means the request was made to a path that does not exist or is not accessible.
+        // This is a common scenario when the path is not found or the user does not have permission to access it.
+        // It is not an error condition, so we do not throw an exception.
+        if (409 === $response->status) {
+            return null;
+        }
         if (200 != $response->status) {
-            $meta = $response->body;
-            if (isset($meta['error'])) {
-                $err = $meta['error'];
-            } else {
-                $err = 'Unknown error!';
-            }
+            $err = $response->body;
 
             throw new DropboxError($err, $response->status);
         }
-        if (true == $isMeta) {
-            $meta = $response->body;
-            if (isset($meta['error'])) {
-                throw new DropboxError($meta['error']);
-            }
-        } else {
-            $meta = $response->body;
+        if (true !== $isMeta) {
+            return $response->body();
+        }
+        $meta = $response->body();
+        if (isset($meta->error)) {
+            throw new DropboxError($meta->error);
         }
 
         return $meta;
-    }
-
-    private function clearMeta(string $path): bool
-    {
-        $this->cache->remove($this->options['app_key'].'::'.strtolower($path));
-
-        return true;
     }
 }

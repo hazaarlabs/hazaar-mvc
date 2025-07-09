@@ -16,11 +16,13 @@
 				"junstyle.php-cs-fixer",
 				"aswinkumar863.smarty-template-support",
 				"SanderRonde.phpstan-vscode",
-				"ms-azuretools.vscode-docker",
 				"DEVSENSE.phptools-vscode"
 			]
 		}
-	}
+	},
+	"mounts": [
+		"source=hazaar-data,target=/var/hazaar,type=volume"
+	]
 	// Uncomment the next line to run commands after the container is created - for example installing curl.
 	// "postCreateCommand": "apt-get update && apt-get install -y curl",
 	// Uncomment when using a ptrace-based debugger like C++, Go, and Rust

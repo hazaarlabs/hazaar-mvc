@@ -102,7 +102,7 @@ class QueryBuilderTest extends TestCase
         $query->select(['id', 'name'])
             ->from('test_table')
             ->group('id')
-            ->having('COUNT(id) > 1')
+            ->having(['COUNT(id) > 1'])
         ;
         $sql = 'SELECT id, name FROM "test_table" GROUP BY id HAVING ( COUNT(id) > 1 )';
         $this->assertEquals($sql, (string) $query->toString());
@@ -166,9 +166,9 @@ class QueryBuilderTest extends TestCase
         $query = new SQL();
         $query->select(['id', 'name'])
             ->from('test_table')
-            ->where(['parent' => null])
+            ->where(['$null' => 'parent'])
         ;
-        $sql = 'SELECT id, name FROM "test_table" WHERE ((:parent0::INTEGER IS NULL AND parent IS NULL) OR (:parent0 IS NOT NULL AND parent = :parent0))';
+        $sql = 'SELECT id, name FROM "test_table" WHERE "parent" IS NULL';
         $this->assertEquals($sql, (string) $query->toString());
     }
 
@@ -177,9 +177,32 @@ class QueryBuilderTest extends TestCase
         $query = new SQL();
         $query->select(['id', 'name'])
             ->from('test_table')
-            ->where(['parent' => ['$ne' => null]])
+            ->where(['$notnull' => 'parent'])
         ;
-        $sql = 'SELECT id, name FROM "test_table" WHERE parent IS NOT NULL';
+        $sql = 'SELECT id, name FROM "test_table" WHERE "parent" IS NOT NULL';
+        $this->assertEquals($sql, (string) $query->toString());
+    }
+
+    public function testSELECTColumnWithTableAlias(): void
+    {
+        $query = new SQL();
+        $query->select(['t.id', 't.name'])
+            ->from('test_table', 't')
+            ->where(['t.id' => 1])
+        ;
+        $sql = 'SELECT t.id, t.name FROM "test_table" AS t WHERE t.id = :t_id0';
+        $this->assertEquals($sql, (string) $query->toString());
+    }
+
+    public function testSELECTWithGroupByAndHaving(): void
+    {
+        $query = new SQL();
+        $query->select(['id', 'COUNT(*) AS count'])
+            ->from('test_table')
+            ->group('id', 'name')
+            ->having(['COUNT(*) > 1'])
+        ;
+        $sql = 'SELECT id, COUNT(*) AS count FROM "test_table" GROUP BY id, name HAVING ( COUNT(*) > 1 )';
         $this->assertEquals($sql, (string) $query->toString());
     }
 }

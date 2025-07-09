@@ -46,17 +46,27 @@ class Version extends Model
      * from its filename. The filename must follow the pattern: {number}_{comment}.json
      * where {number} is a sequence of digits and {comment} is a word.
      *
-     * @param string $filename the path to the file to load
+     * @param string $filename  the path to the file to load
+     * @param bool   $forceLoad whether to force loading the file even if it does not match the expected fileame pattern
      *
      * @return null|self returns an instance of self if the file is valid, otherwise null
      */
-    public static function loadFromFile(string $filename): ?self
+    public static function loadFromFile(string $filename, bool $forceLoad = false): ?self
     {
         $source = pathinfo($filename);
         $matches = [];
-        if (!(isset($source['extension'])
-            && 'json' === $source['extension']
-            && preg_match('/^(\d+)_(\w+)$/', $source['filename'], $matches))) {
+        if (!(isset($source['extension']) && 'json' === $source['extension'])) {
+            return null;
+        }
+        $filenameIsStandard = preg_match('/^(\d+)_(\w+)$/', $source['filename'], $matches);
+        if (!$filenameIsStandard && $forceLoad) {
+            $matches = [
+                0 => $source['filename'],
+                1 => date('YmdHis'),
+                2 => 'migration',
+            ];
+        } elseif (!$filenameIsStandard) {
+            // If forceLoad is false, we only allow loading if the filename matches the standard pattern
             return null;
         }
 
@@ -224,7 +234,7 @@ class Version extends Model
         $this->defineEventHook('serialize', function () {
             if (!isset($this->migrate)) {
                 $migration = $this->loadMigration();
-                if (null !== $migration) {
+                if (null !== $migration && isset($migration->down)) {
                     $this->migrate = $migration->down;
                 }
             }

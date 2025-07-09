@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace Hazaar\File\Backend;
 
 use Hazaar\Cache\Adapter;
-use Hazaar\File\Image;
 use Hazaar\File\Interface\Backend as BackendInterface;
 use Hazaar\File\Interface\Driver as DriverInterface;
 use Hazaar\File\Manager;
 use Hazaar\HTTP\Request;
-use Hazaar\HTTP\Response;
 
 class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInterface
 {
@@ -33,24 +31,22 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
      *
      * @param array<mixed> $options
      */
-    public function __construct(array $options, Manager $manager)
+    public function __construct(array $options = [])
     {
-        $this->manager = $manager;
         $this->options = array_merge([
             'cache_backend' => 'file',
-            'cache_meta' => true,
+            'cache_meta' => false,
         ], $options);
-        if (!isset($this->options['baseuri'])) {
+        if (!isset($this->options['url'])) {
             throw new \Exception('WebDAV file browser backend requires a URL!');
         }
         if (isset($this->options['cookies'])) {
             $this->setCookie($this->options['cookies']);
         }
-        $this->cache = new Adapter($this->options['cache_backend'], ['use_pragma' => false, 'namespace' => 'webdav_'.$this->options['baseuri'].'_'.$this->options['username']]);
-        if ($this->options['cache_meta'] ?? false) {
-            if (($meta = $this->cache->get('meta')) !== false) {
-                $this->meta = $meta;
-            }
+        $this->cache = new Adapter($this->options['cache_backend'], ['use_pragma' => false, 'namespace' => 'webdav_'.$this->options['url'].'_'.$this->options['username']]);
+        if (($this->options['cache_meta'] ?? false)
+            && ($meta = $this->cache->get('meta'))) {
+            $this->meta = $meta;
         }
         parent::__construct($this->options);
     }
@@ -104,7 +100,7 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
     // Check if file/path exists
     public function exists(string $path): bool
     {
-        if (($info = $this->info($path)) !== false) {
+        if (false !== $this->info($path)) {
             return true;
         }
 
@@ -122,7 +118,7 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
             return false;
         }
 
-        return in_array('R', str_split($info['permissions'] ?? ''));
+        return true;
     }
 
     public function isWritable(string $path): bool
@@ -131,7 +127,7 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
             return false;
         }
 
-        return in_array('W', str_split($info['permissions'] ?? ''));
+        return true;
     }
 
     // TRUE if path is a directory
@@ -239,6 +235,15 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
 
     public function unlink(string $path): bool
     {
+        $request = new Request($this->getAbsoluteUrl($path), 'DELETE');
+        $response = $this->send($request);
+        if ($response && (204 === $response->status || 200 === $response->status)) {
+            // Optionally update meta cache
+            unset($this->meta[$path]);
+
+            return true;
+        }
+
         return false;
     }
 
@@ -267,45 +272,17 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
      */
     public function thumbnailURL(string $path, int $width = 100, int $height = 100, string $format = 'jpeg', array $params = []): false|string
     {
-        if (!($info = $this->info($path))) {
-            return false;
-        }
-        if ($info['thumb_exists']) {
-            $size = 'l';
-            if ($width < 32 && $height < 32) {
-                $size = 'xs';
-            } elseif ($width < 64 && $height < 64) {
-                $size = 's';
-            } elseif ($width < 128 && $height < 128) {
-                $size = 'm';
-            } elseif ($width < 640 && $height < 480) {
-                $size = 'l';
-            } elseif ($width < 1024 && $height < 768) {
-                $size = 'xl';
-            }
-            $request = new Request('https://api-content.dropbox.com/1/thumbnails/auto'.$path, 'GET');
-            $request['format'] = $format;
-            $request['size'] = $size;
-            $response = $this->send($request, 0);
-            $image = new Image($path, null, $this->manager);
-            $image->setContents($response->body);
-            $image->resize($width, $height, true, 'center', true, true, null, 0, 0);
-
-            return $image->getContents();
-        }
-
         return false;
     }
 
     // File Operations
     public function mkdir(string $path): bool
     {
-        $request = new Request('https://api.dropbox.com/1/fileops/create_folder', 'POST');
-        $request['root'] = 'auto';
-        $request['path'] = $path;
+        $request = new Request($this->getAbsoluteUrl($path), 'MKCOL');
         $response = $this->send($request);
-        if ($response instanceof Response && \Hazaar\Util\Boolean::from($response['is_dir'])) {
-            $this->meta[strtolower($response['path'])] = $response->body;
+        if ($response && (201 === $response->status || 200 === $response->status)) {
+            // Optionally update meta cache
+            $this->updateMeta(pathinfo($path, PATHINFO_DIRNAME));
 
             return true;
         }
@@ -318,27 +295,21 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
         return $this->unlink($path);
     }
 
-    public function copy(string $src, string $dst, bool $recursive = false): bool
+    public function copy(string $src, string $dst, bool $overwrite = false): bool
     {
-        if ($this->isFile($dst)) {
+        if ($this->exists($dst) && !$overwrite) {
             return false;
         }
-        $dst = rtrim($dst, '/').'/'.basename($src);
-        if ($this->exists($dst)) {
-            return false;
-        }
-        $request = new Request('https://api.dropbox.com/1/fileops/copy', 'POST');
-        $request['root'] = 'auto';
-        $request['from_path'] = $src;
-        $request['to_path'] = $dst;
+        $request = new Request($this->getAbsoluteUrl($src), 'COPY');
+        $request->setHeader('Destination', $this->getAbsoluteUrl($dst)->path());
         $response = $this->send($request);
-        $this->meta[strtolower($response['path'])] = $response->body;
-        $key = $this->options['app_key'].'::'.strtolower($src);
-        if ($meta = $this->cache->get($key)) {
-            $this->cache->set($this->options['app_key'].'::'.strtolower($response['path']), $meta);
+        if ($response && (201 === $response->status || 204 === $response->status)) {
+            $this->updateMeta(pathinfo($dst, PATHINFO_DIRNAME));
+
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     public function link(string $src, string $dst): bool
@@ -346,28 +317,26 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
         return false;
     }
 
-    public function move(string $src, string $dst): bool
+    public function move(string $src, string $dst, bool $overwrite = false): bool
     {
-        if ($this->isFile($dst)) {
+        if ($this->exists($dst) && !$overwrite) {
             return false;
         }
-        $dst = rtrim($dst, '/').'/'.basename($src);
-        if ($this->exists($dst)) {
-            return false;
+        $request = new Request($this->getAbsoluteUrl($src), 'MOVE');
+        $request->setHeader('Destination', $this->getAbsoluteUrl($dst)->path());
+        if (!$overwrite) {
+            $request->setHeader('Overwrite', 'F');
         }
-        $request = new Request('https://api.dropbox.com/1/fileops/move', 'POST');
-        $request['root'] = 'auto';
-        $request['from_path'] = $src;
-        $request['to_path'] = $dst;
         $response = $this->send($request);
-        $this->meta[strtolower($response['path'])] = $response->body;
-        $key = $this->options['app_key'].'::'.strtolower($src);
-        if ($meta = $this->cache->get($key)) {
-            $this->cache->set($this->options['app_key'].'::'.strtolower($response['path']), $meta);
-            $this->cache->remove($key);
+        if ($response && in_array($response->status, [201, 204])) {
+            unset($this->meta[$src]);
+            $this->updateMeta(pathinfo($src, PATHINFO_DIRNAME));
+            $this->updateMeta(pathinfo($dst, PATHINFO_DIRNAME));
+
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     // Access operations
@@ -383,16 +352,22 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
 
     public function write(string $path, string $data, ?string $contentType = null, bool $overwrite = false): ?int
     {
-        $request = new Request('https://api-content.dropbox.com/1/files_put/auto'.$path, 'POST');
-        $request->setHeader('Content-Type', $contentType);
+        $request = new Request($this->getAbsoluteUrl($path), 'PUT');
+        $request->setHeader('Content-Type', $contentType ?? 'application/octet-stream');
         if ($overwrite) {
             $request['overwrite'] = true;
         }
-        $request['body'] = $data;
+        $request->setBody($data);
         $response = $this->send($request);
-        $this->meta[strtolower($response['path'])] = $response->body;
+        if (200 !== $response->status && 201 !== $response->status) {
+            return null;
+        }
+        $info = $this->info($path, true);
+        if (!$info) {
+            return null;
+        }
 
-        return strlen($data);
+        return intval($info['getcontentlength'] ?? 0);
     }
 
     /**
@@ -457,6 +432,11 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
     }
 
     public function authorise(?string $redirectUri = null): bool
+    {
+        return true;
+    }
+
+    public function authoriseWithCode(string $code, ?string $redirectUri = null, string $grantType = 'authorization_code'): bool
     {
         return true;
     }
@@ -564,11 +544,11 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
     /**
      * @return array<mixed>
      */
-    private function info(string $path): array|false
+    private function info(string $path, bool $forceUpdate = false): array|false
     {
         $path = '/'.trim($path, '/');
-        if ($meta = $this->meta[$path] ?? null) {
-            return $meta;
+        if (true !== $forceUpdate && isset($this->meta[$path])) {
+            return $this->meta[$path];
         }
         if (!$this->updateMeta($path)) {
             return false;
@@ -579,14 +559,18 @@ class WebDAV extends \Hazaar\HTTP\WebDAV implements BackendInterface, DriverInte
 
     private function updateMeta(string $path): bool
     {
-        if (!($meta = $this->propfind($path))) {
+        try {
+            if (!($meta = $this->propfind($path))) {
+                return false;
+            }
+            $meta = array_merge($this->meta, $meta);
+            foreach ($meta as $name => $info) {
+                $info['scanned'] = $name == $path;
+                $this->meta[$name] = $info;
+            }
+        } catch (\Exception $e) {
+            // Log the exception or handle it as needed
             return false;
-        }
-        $meta = array_merge($this->meta, $meta);
-        foreach ($meta as $name => $info) {
-            $name = '/'.trim($name, '/');
-            $info['scanned'] = ($name == $path);
-            $this->meta[$name] = $info;
         }
 
         return true;

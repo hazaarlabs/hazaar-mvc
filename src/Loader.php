@@ -226,8 +226,14 @@ class Loader
         if (!$loader) {
             return null;
         }
+
+        return $loader->searchFile($type, $searchFile);
+    }
+
+    public function searchFile(FilePath $type, ?string $searchFile = null): ?string
+    {
         // If the search file is not an absolute path then search the loader paths for it.
-        $paths = $loader->getSearchPaths($type);
+        $paths = $this->getSearchPaths($type);
         if (!$paths) {
             return null;
         }

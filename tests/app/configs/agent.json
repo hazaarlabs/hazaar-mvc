@@ -14,5 +14,8 @@
                 "action": "App\\Service\\Test::doTheThing"
             }
         ]
+    },
+    "gitlab": {
+        "include": "development"
     }
 }

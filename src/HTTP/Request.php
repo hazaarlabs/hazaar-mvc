@@ -29,6 +29,7 @@ class Request implements \ArrayAccess
      * @var resource
      */
     public mixed $context;
+    public URL $url;
 
     /**
      * @var array<string,array<string>|string>
@@ -38,7 +39,6 @@ class Request implements \ArrayAccess
         'Content-Type' => 'text/html',
         'Connection' => 'close',
     ];
-    private URL $url;
     private string $fsockHost;
     private mixed $body = null;
     private bool $multipart = false;

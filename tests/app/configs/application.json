@@ -35,7 +35,10 @@
           }
         }
       }
-    }
+    },
+    "import": [
+      "imports.json"
+    ]
   },
   "development": {
     "include": "production",
@@ -46,5 +49,8 @@
       "display_startup_errors": 1,
       "display_errors": 1
     }
+  },
+  "gitlab": {
+    "include": "production"
   }
 }

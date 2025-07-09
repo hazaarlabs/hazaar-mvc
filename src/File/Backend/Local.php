@@ -7,12 +7,10 @@ namespace Hazaar\File\Backend;
 use Hazaar\File\BTree;
 use Hazaar\File\Interface\Backend as BackendInterface;
 use Hazaar\File\Interface\Driver as DriverInterface;
-use Hazaar\File\Manager;
 
 class Local implements BackendInterface, DriverInterface
 {
     public string $separator = DIRECTORY_SEPARATOR;
-    protected Manager $manager;
 
     /**
      * @var array<mixed>
@@ -24,12 +22,8 @@ class Local implements BackendInterface, DriverInterface
      */
     private array $meta = [];
 
-    /**
-     * @param array<mixed> $options
-     */
-    public function __construct(array $options, Manager $manager)
+    public function __construct(array $options = [])
     {
-        $this->manager = $manager;
         $this->options = array_merge_recursive(['display_hidden' => false, 'root' => DIRECTORY_SEPARATOR], $options);
     }
 
@@ -143,7 +137,7 @@ class Local implements BackendInterface, DriverInterface
         return move_uploaded_file($file['tmp_name'], $fullPath);
     }
 
-    public function copy(string $src, string $dst, bool $recursive = false): bool
+    public function copy(string $src, string $dst, bool $overwrite = false): bool
     {
         $src = rtrim($src, DIRECTORY_SEPARATOR);
         $dst = rtrim($dst, DIRECTORY_SEPARATOR);
@@ -159,7 +153,7 @@ class Local implements BackendInterface, DriverInterface
 
                 return true;
             }
-        } elseif ($this->isDir($src) && $recursive) {
+        } elseif ($this->isDir($src) && $overwrite) {
             $dst .= DIRECTORY_SEPARATOR.basename($src);
             if (!$this->exists($dst)) {
                 $this->mkdir($dst);
@@ -466,6 +460,15 @@ class Local implements BackendInterface, DriverInterface
     public function authorise(?string $redirectUri = null): bool
     {
         return true;
+    }
+
+    public function authoriseWithCode(
+        string $code,
+        ?string $redirectUri = null,
+        string $grantType = 'authorization_code'
+    ): bool {
+        // This method is not implemented for Hazaar backend.
+        return false;
     }
 
     public function authorised(): bool
