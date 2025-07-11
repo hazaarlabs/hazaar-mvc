@@ -25,7 +25,7 @@ The first thing to do is to define your event handler.  Because this is being ex
 service) the method must be a static class method.
 
 ```php
-namespace Application\Model;
+namespace App\Model;
 
 class MyTestClass {
 

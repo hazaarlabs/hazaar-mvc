@@ -28,7 +28,7 @@ The `sendEarlyHints` method allows you to send Link headers to the browser befor
 ```php
 <?php
 
-namespace Application\Controller;
+namespace App\Controller;
 
 use Hazaar\Controller\Action;
 use Hazaar\HTTP\Link;
@@ -60,7 +60,7 @@ You can also create Link objects inline:
 ```php
 <?php
 
-namespace Application\Controller;
+namespace App\Controller;
 
 use Hazaar\Controller\Action;
 use Hazaar\HTTP\Link;

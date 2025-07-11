@@ -129,7 +129,7 @@ method works almost exactly the same as using a closure except that the code can
 For example:
 
 ```php
-namespace Application\Model;
+namespace App\Model;
 
 class MyTestClass 
 {

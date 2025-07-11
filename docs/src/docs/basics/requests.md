@@ -46,7 +46,7 @@ In this example our controller has a `get` method that returns a product formatt
 This URL loads `Application\Controller\Product` and executes its `list` method. The corresponding controller is located in `application/controllers/api/v1/product.php`:
 
 ```php
-namespace Application\Controller\Api\V1;
+namespace App\Controller\Api\V1;
 
 use Hazaar\Controller\Basic;
 use Hazaar\Controller\Response;

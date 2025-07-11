@@ -19,7 +19,7 @@ Next, create a new controller in the `controllers` directory.  For example, crea
 ```php
 <?php
 
-namespace Application\Controller;
+namespace App\Controller;
 
 use Hazaar\Controller\Rest;
 
