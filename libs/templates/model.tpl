@@ -1,6 +1,6 @@
 declare(strict_types=1);
 
-namespace Application\Models;
+namespace App\Models;
 
 use Hazaar\Model;
 

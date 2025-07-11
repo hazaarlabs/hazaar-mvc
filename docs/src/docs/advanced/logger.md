@@ -88,7 +88,7 @@ This message will be logged because the log level (2) is less than the level set
 If you are using namespaces, remember that the log alias is in the root namespace so you will need to prefix it with a backslash for it to find it.
 
 ```php
-namespace Application\Model\Stuff;
+namespace App\Model\Stuff;
 \log::write("This is my log from inside a namespace");
 ```
 

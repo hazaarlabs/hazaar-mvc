@@ -45,7 +45,7 @@ class AgentModule extends Module
         $configFile = $input->getOption('config') ?? 'agent.json';
         $applicationPath = $input->getOption('path');
         if (!$applicationPath || '/' !== substr(trim($applicationPath), 0, 1)) {
-            $searchResult = Application::findApplicationPath($applicationPath);
+            $searchResult = Application::findAppPath($applicationPath);
             if (null === $searchResult) {
                 $output->write('Application path not found: '.$applicationPath.PHP_EOL);
 

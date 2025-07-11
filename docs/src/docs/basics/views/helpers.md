@@ -606,7 +606,7 @@ Create a new *.php* file in the *helpers/view* directory called *Example.php* (n
 ```php
 <?php
 
-namespace Application\Helper\View;
+namespace App\Helper\View;
 
 class Example extends \Hazaar\View\Helper {
 

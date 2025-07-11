@@ -14,11 +14,11 @@ use Hazaar\Util\Arr;
 
 class ConfigModule extends Module
 {
-    public function prepareApplication(Input $input, Output $output): int
+    public function prepareApp(Input $input, Output $output): int
     {
         $applicationPath = $input->getOption('path');
         if (!$applicationPath || '/' !== substr(trim($applicationPath), 0, 1)) {
-            $searchResult = Application::findApplicationPath($applicationPath);
+            $searchResult = Application::findAppPath($applicationPath);
             if (null === $searchResult) {
                 $output->write('Application path not found: '.$applicationPath.PHP_EOL);
 
@@ -33,7 +33,7 @@ class ConfigModule extends Module
 
     protected function configure(): void
     {
-        $this->application->registerMethod([$this, 'prepareApplication']);
+        $this->application->registerMethod([$this, 'prepareApp']);
         $this->setName('config')->setDescription('View or modify the application configuration');
         $this->addCommand('show', [$this, 'showConfig'])
             ->setDescription('Show the application configuration')

@@ -239,8 +239,8 @@ Example `routes.php` file:
 
 use Hazaar\Application\Router;
 use Hazaar\Controller\Response\View;
-use Application\Controller\Index;
-use Application\Controller\API;
+use App\Controller\Index;
+use App\Controller\API;
 
 Router::get('/', [Index::class, 'index']);
 Router::get('/about', function() {
@@ -316,7 +316,7 @@ Example:
 This URL loads the `Application\Controller\Product` controller and executes its `get` method with `1234` as an argument. The corresponding controller in `application/controllers/Product.php`:
 
 ```php
-namespace Application\Controller;
+namespace App\Controller;
 
 use Hazaar\Controller\Basic;
 use Hazaar\Controller\Response\Json;
@@ -402,7 +402,7 @@ The attribute accepts the following parameters:
 Example:
 
 ```php
-namespace Application\Controller\Api\V1;
+namespace App\Controller\Api\V1;
 
 use Hazaar\Application\Route;
 
@@ -432,7 +432,7 @@ Define route parameters in the URL pattern using curly braces.
 Example:
 
 ```php
-namespace Application\Controller;
+namespace App\Controller;
 
 use Hazaar\Application\Route;
 use Hazaar\Controller\Basic;
@@ -539,7 +539,7 @@ To define a route, add the `@route` annotation to the controller class or method
 Example:
 
 ```php
-namespace Application\Controller;
+namespace App\Controller;
 
 use Hazaar\Controller\Action;
 
