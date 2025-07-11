@@ -22,7 +22,7 @@ enum FilePath: string
     case EVENT = 'event';
     case LISTENER = 'listener';
 
-    public static function fromApplicationNamespace(string $namespace): ?self
+    public static function fromAppNamespace(string $namespace): ?self
     {
         return match ($namespace) {
             'Model' => self::MODEL,

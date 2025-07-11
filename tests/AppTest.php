@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
  */
 class AppTest extends TestCase
 {
-    public function testApplication(): void
+    public function testApp(): void
     {
         $app = Application::getInstance();
         $this->assertInstanceOf('\Hazaar\Application', $app);

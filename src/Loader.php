@@ -290,7 +290,7 @@ class Loader
             return;
         }
         $filename = implode(DIRECTORY_SEPARATOR, array_slice($namepath, 2)).'.php';
-        $type = FilePath::fromApplicationNamespace($namepath[1]);
+        $type = FilePath::fromAppNamespace($namepath[1]);
         if (!$type) {
             return;
         }

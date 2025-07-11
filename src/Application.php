@@ -107,7 +107,7 @@ class Application
         try {
             Application::$instance = $this;
             $this->environment = $env;
-            $path = self::findApplicationPath($path);
+            $path = self::findAppPath($path);
             if (null === $path) {
                 throw new AppDirNotFound();
             }
@@ -393,7 +393,7 @@ class Application
      *
      * @return string The resolved application path
      */
-    public function getApplicationPath($suffix = null): string
+    public function getAppPath($suffix = null): string
     {
         return realpath($this->path.DIRECTORY_SEPARATOR.(string) $suffix);
     }
@@ -694,7 +694,7 @@ class Application
         return $this->base;
     }
 
-    public static function findApplicationPath(?string $searchPath = null): ?string
+    public static function findAppPath(?string $searchPath = null): ?string
     {
         if ($path = getenv('APPLICATION_PATH')) {
             return realpath($path);
