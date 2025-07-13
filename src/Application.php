@@ -27,6 +27,7 @@ use Hazaar\Application\URL;
 use Hazaar\Events\EventDispatcher;
 use Hazaar\File\Metric;
 use Hazaar\Logger\Frontend;
+use Hazaar\Middleware\Interface\Middleware;
 use Hazaar\Middleware\MiddlewareDispatcher;
 use Hazaar\Util\Arr;
 use Hazaar\Util\Timer;
@@ -622,6 +623,16 @@ class Application
     public function setResponseType(string $type): void
     {
         $this->config['app']['responseType'] = $type;
+    }
+
+    /**
+     * Adds a middleware to the middleware dispatcher.
+     *
+     * @param Middleware $middleware the middleware instance to add
+     */
+    public function addMiddleware(Middleware $middleware): void
+    {
+        $this->middlewareDispatcher->add($middleware);
     }
 
     /**
