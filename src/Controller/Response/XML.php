@@ -9,7 +9,7 @@ use Hazaar\XML\Element;
 
 class XML extends Response
 {
-    private ?Element $content = null;
+    private ?Element $xmlContent = null;
 
     public function __construct(?Element $content = null, int $status = 200)
     {
@@ -22,11 +22,11 @@ class XML extends Response
         if (!$content instanceof Element) {
             throw new \Exception('XML content must be an instance of Hazaar\XML\Element');
         }
-        $this->content = $content;
+        $this->xmlContent = $content;
     }
 
     public function getContent(): string
     {
-        return $this->content->toXML();
+        return $this->xmlContent->toXML();
     }
 }
