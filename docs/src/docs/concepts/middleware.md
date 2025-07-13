@@ -83,6 +83,37 @@ class LogToDatabase implements Middleware
 }
 ```
 
+## Example 3: Early Return (Short-Circuiting)
+
+This example demonstrates a middleware that checks for a required header and returns a Bad Request response if the header is missing, preventing further middleware or controller execution.
+
+```php
+// filepath: /work/app/middleware/RequireHeader.php
+<?php
+
+namespace App\Middleware;
+
+use Hazaar\Application\Request;
+use Hazaar\Controller\Response;
+use Hazaar\Controller\Response\HTTP\BadRequest;
+use Hazaar\Middleware\Interface\Middleware;
+
+class RequireHeader implements Middleware
+{
+    public function handle(Request $request, callable $next): Response
+    {
+        // Check for a required header
+        if (!$request->getHeader('X-Required-Header')) {
+            // Return a Bad Request response and stop further processing
+            return new BadRequest('Missing required header: X-Required-Header');
+        }
+
+        // Continue to the next middleware/controller
+        return $next($request);
+    }
+}
+```
+
 ## Registering Middleware
 
 To use middleware, you can also register it manually with the `MiddlewareDispatcher` if needed:
@@ -91,6 +122,7 @@ To use middleware, you can also register it manually with the `MiddlewareDispatc
 $dispatcher = new \Hazaar\Middleware\MiddlewareDispatcher();
 $dispatcher->add(new \App\Middleware\AddHeader());
 $dispatcher->add(new \App\Middleware\LogToDatabase());
+$dispatcher->add(new \App\Middleware\RequireHeader());
 ```
 
 Or load all middleware from a directory (not usually necessary, as this is handled automatically):
