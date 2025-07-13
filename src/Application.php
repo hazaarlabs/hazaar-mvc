@@ -27,6 +27,7 @@ use Hazaar\Application\URL;
 use Hazaar\Events\EventDispatcher;
 use Hazaar\File\Metric;
 use Hazaar\Logger\Frontend;
+use Hazaar\Middleware\MiddlewareDispatcher;
 use Hazaar\Util\Arr;
 use Hazaar\Util\Timer;
 
@@ -83,6 +84,7 @@ class Application
     private Runtime $runtime;
 
     private EventDispatcher $eventDispatcher;
+    private MiddlewareDispatcher $middlewareDispatcher;
 
     /**
      * The main application constructor.
@@ -238,6 +240,7 @@ class Application
                 'helper' => 'helpers',
                 'event' => 'events',
                 'listener' => 'listeners',
+                'middleware' => 'middleware',
             ],
             'view' => [
                 'prepare' => false,
@@ -466,6 +469,11 @@ class Application
             $this->eventDispatcher = EventDispatcher::getInstance();
             $this->eventDispatcher->withEvents($eventsDir);
         }
+        $this->middlewareDispatcher = new MiddlewareDispatcher();
+        $middelwareDir = $this->path.DIRECTORY_SEPARATOR.'middleware';
+        if (is_dir($middelwareDir)) {
+            $this->middlewareDispatcher->loadMiddleware($middelwareDir);
+        }
         $this->timer->stop('boot');
 
         return $this;
@@ -522,10 +530,15 @@ class Application
                     throw new RouteNotFound($request->getPath());
                 }
                 $controller = $route->getController();
-                $response = $controller->initialize($request);
-                if (null === $response) {
-                    $response = $controller->runRoute($route);
-                }
+                $finalHandler = function (Request $request) use ($controller, $route) {
+                    $response = $controller->initialize($request);
+                    if (null === $response) {
+                        $response = $controller->runRoute($route);
+                    }
+
+                    return $response;
+                };
+                $response = $this->middlewareDispatcher->handle($request, $finalHandler);
             }
             if (count($this->outputFunctions) > 0) {
                 foreach ($this->outputFunctions as $func) {
