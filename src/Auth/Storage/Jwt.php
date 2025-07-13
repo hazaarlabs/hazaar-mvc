@@ -6,7 +6,7 @@ namespace Hazaar\Auth\Storage;
 
 use Hazaar\Application;
 use Hazaar\Application\FilePath;
-use Hazaar\Auth\Adapter;
+use Hazaar\Application\Request;
 use Hazaar\Auth\Interface\Storage;
 use Hazaar\Auth\Storage\Exception\JWTPrivateKeyFileNotFound;
 use Hazaar\Auth\Storage\Exception\NoApplication;
@@ -23,7 +23,7 @@ use Hazaar\Util\URL;
  *
  * This class provides a JWT authentication adapter for the Hazaar framework.
  */
-class JWT implements Storage
+class Jwt implements Storage
 {
     protected ?string $passphrase = null;
     protected ?string $privateKey = null;
@@ -42,15 +42,13 @@ class JWT implements Storage
      * @var array<string,mixed>
      */
     private ?array $data = null;
-    private bool $writeCookie = false;
-    private bool $clearCookie = false;
+    private Middleware\Jwt $middleware;
 
     public function __construct(array $config = [])
     {
         if (!($app = Application::getInstance())) {
             throw new NoApplication('JWT');
         }
-        $app->registerOutputFunction([$this, 'writeToken']);
         $this->config = $config;
         Arr::enhance($this->config, [
             'alg' => 'HS256',
@@ -73,6 +71,7 @@ class JWT implements Storage
             }
         }
         $this->checkToken();
+        $app->addMiddleware($this->middleware = new Middleware\Jwt($this));
     }
 
     public function isEmpty(): bool
@@ -96,7 +95,7 @@ class JWT implements Storage
             $data['data'] = [];
         }
         $this->data = $data;
-        $this->writeCookie = true;
+        $this->middleware->writeCookie = true;
     }
 
     public function has(string $key): bool
@@ -121,7 +120,7 @@ class JWT implements Storage
     {
         if ('identity' !== $key) {
             $this->data['data'][$key] = $value;
-            $this->writeCookie = true;
+            $this->middleware->writeCookie = true;
         }
     }
 
@@ -136,7 +135,7 @@ class JWT implements Storage
     {
         if (false === $this->isEmpty()) {
             $this->data = null;
-            $this->clearCookie = true;
+            $this->middleware->clearCookie = true;
         }
     }
 
@@ -158,23 +157,9 @@ class JWT implements Storage
                 'exp' => $JWTBody['iat'] + $this->config['refresh'],
             ]), $this->buildRefreshTokenKey($this->passphrase));
         }
-        $this->writeCookie = false;
+        $this->middleware->writeCookie = false;
 
         return $out;
-    }
-
-    public function writeToken(): void
-    {
-        if (true === $this->clearCookie) {
-            setcookie('hazaar-auth-token', '', time() - 3600, '/', $_SERVER['HTTP_HOST'], true, true);
-            setcookie('hazaar-auth-refresh', '', time() - 3600, '/', $_SERVER['HTTP_HOST'], true, true);
-        } elseif (true === $this->writeCookie) {
-            $tokens = $this->getToken();
-            setcookie('hazaar-auth-token', $tokens['token'], time() + $this->config['timeout'], '/', $_SERVER['HTTP_HOST'], true, true);
-            if (isset($tokens['refresh'])) {
-                setcookie('hazaar-auth-refresh', $tokens['refresh'], time() + $this->config['refresh'], '/', $_SERVER['HTTP_HOST'], true, true);
-            }
-        }
     }
 
     /**
@@ -249,7 +234,7 @@ class JWT implements Storage
             if ($this->refresh($refreshToken, $JWTBody)) {
                 $this->data = ['data' => $JWTBody];
                 $this->data['identity'] = $JWTBody['sub'];
-                $this->writeCookie = true;
+                $this->middleware->writeCookie = true;
 
                 return true;
             }
@@ -281,7 +266,7 @@ class JWT implements Storage
     private function buildRefreshTokenKey(string $passphrase): string
     {
         $fingerprint = $_SERVER['HTTP_USER_AGENT'];
-        $request = new Application\Request();
+        $request = new Request();
         if (isset($this->config['fingerprintIP'])
             && true === $this->config['fingerprintIP']
             && ($clientIP = $request->getRemoteAddr())) {
