@@ -76,11 +76,6 @@ class Application
     private static ?Application $instance = null;
     private static string $root;
 
-    /**
-     * @var array<callable>
-     */
-    private array $outputFunctions = [];
-
     private Runtime $runtime;
 
     private EventDispatcher $eventDispatcher;
@@ -540,11 +535,6 @@ class Application
                 };
                 $response = $this->middlewareDispatcher->handle($request, $finalHandler);
             }
-            if (count($this->outputFunctions) > 0) {
-                foreach ($this->outputFunctions as $func) {
-                    $func($response);
-                }
-            }
             $this->timer->checkpoint('render');
             // Finally, write the response to the output buffer.
             $response->writeOutput();
@@ -632,16 +622,6 @@ class Application
     public function setResponseType(string $type): void
     {
         $this->config['app']['responseType'] = $type;
-    }
-
-    /**
-     * Register an output function.
-     *
-     * @param array<object|string>|callable $function
-     */
-    public function registerOutputFunction(array|callable $function): void
-    {
-        $this->outputFunctions[] = $function;
     }
 
     /**
