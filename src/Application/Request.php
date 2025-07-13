@@ -265,6 +265,17 @@ class Request implements RequestInterface
     }
 
     /**
+     * Sets a header value for the request.
+     *
+     * @param string $header the name of the header to set
+     * @param string $value  the value to assign to the header
+     */
+    public function setHeader(string $header, string $value): void
+    {
+        $this->headers[$header] = $value;
+    }
+
+    /**
      * Return the current request content type.
      *
      * This is a helpful method for doing a few things in one go as it will only return a content type
@@ -345,13 +356,13 @@ class Request implements RequestInterface
      */
     public static function getRemoteAddr(): ?string
     {
-        $forwardedIp = getenv('HTTP_X_FORWARDED_FOR') ?:
-            getenv('HTTP_X_FORWARDED') ?:
-            getenv('HTTP_FORWARDED_FOR') ?:
-            getenv('HTTP_FORWARDED');
+        $forwardedIp = getenv('HTTP_X_FORWARDED_FOR')
+            ?: getenv('HTTP_X_FORWARDED')
+            ?: getenv('HTTP_FORWARDED_FOR')
+            ?: getenv('HTTP_FORWARDED');
         if (!$forwardedIp) {
-            return isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] :
-                (getenv('REMOTE_ADDR') ?: getenv('HTTP_CLIENT_IP') ?: null);
+            return isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR']
+                : (getenv('REMOTE_ADDR') ?: getenv('HTTP_CLIENT_IP') ?: null);
         }
         $forwarded = explode(',', $forwardedIp);
 
@@ -497,7 +508,7 @@ class Request implements RequestInterface
     /**
      * Check to see if a request value has been set.
      *
-     * @param array<string>|string $keys      the key of the request value to check for
+     * @param array<string>|string $keys     the key of the request value to check for
      * @param bool                 $checkAny The check type when $key is an array.  TRUE means that ANY key must exist.  FALSE means ALL keys must exist.
      *
      * @return bool true if the value is set, False otherwise
