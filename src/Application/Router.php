@@ -273,7 +273,7 @@ class Router
      *
      * @return null|Route the matched route or null if no route matches
      */
-    private function evaluateRequest(Request $request): ?Route
+    public function evaluateRequest(Request $request): ?Route
     {
         $matchedRoute = null;
         $path = $request->getPath();

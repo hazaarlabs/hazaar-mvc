@@ -558,7 +558,7 @@ class Application
             if ($controller instanceof Controller\Error) {
                 Error::dieDieDie($e->getMessage());
             } else {
-                $this->exceptionHandler($e, isset($route) ? $route->getResponseType() : null);
+                $this->exceptionHandler($e);
             }
         }
 

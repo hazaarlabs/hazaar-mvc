@@ -33,6 +33,12 @@ class MiddlewareDispatcher
      * MiddlewareDispatcher constructor.
      *
      * Initializes the middleware dispatcher with an empty stack.
+     *
+     * Optionally accepts a configuration array to load global middleware and aliases.
+     * This allows for dynamic configuration of middleware components
+     * and their aliases, enhancing the flexibility of the middleware system.
+     *
+     * @param array{global?:array<string>,aliases?:array<string,string>} $middlwareConfig configuration for middleware, including optional global middleware and aliases
      */
     public function __construct(array $middlwareConfig = [])
     {

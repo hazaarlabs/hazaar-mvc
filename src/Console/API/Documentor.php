@@ -370,7 +370,6 @@ class Documentor
 
             foreach ($parts as $part) {
                 $fullPath = trim($fullPath.'\\'.$part, '\\');
-                // @phpstan-ignore isset.offset
                 if (!isset($current[$part])) {
                     $current[$part] = (object) [
                         'name' => $part,
