@@ -33,26 +33,21 @@ class MiddlewareDispatcher
     }
 
     /**
-     * Loads and registers middleware classes from the specified directory.
+     * Adds an array of global middleware classes to the dispatcher.
      *
-     * Scans the given directory for PHP files, constructs the fully qualified class name
-     * for each file, and checks if the class exists and implements the Middleware interface.
-     * If valid, the middleware is instantiated and added to the dispatcher.
+     * Each class in the provided array is validated to ensure it exists and implements the Middleware interface.
+     * If a class does not exist or does not implement the required interface, an InvalidArgumentException is thrown.
+     * Valid middleware classes are instantiated and added to the dispatcher.
      *
-     * @param string $directory the directory path containing middleware PHP files
+     * @param array $middlewareClasses array of middleware class names to add
      *
-     * @throws \InvalidArgumentException if the directory does not exist or if a class does not implement the Middleware interface
+     * @throws \InvalidArgumentException if a class does not exist or does not implement Middleware interface
      */
-    public function loadMiddleware(string $directory): void
+    public function addGlobalMiddleware(array $middlewareClasses): void
     {
-        if (!is_dir($directory)) {
-            throw new \InvalidArgumentException("Directory {$directory} does not exist.");
-        }
-
-        foreach (glob($directory.'/*.php') as $file) {
-            $middlewareClass = 'App\Middleware\\'.basename($file, '.php');
+        foreach ($middlewareClasses as $middlewareClass) {
             if (!class_exists($middlewareClass)) {
-                continue;
+                throw new \InvalidArgumentException("Class {$middlewareClass} does not exist.");
             }
             if (!is_subclass_of($middlewareClass, Middleware::class)) {
                 throw new \InvalidArgumentException("Class {$middlewareClass} does not implement Middleware interface.");

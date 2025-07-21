@@ -466,9 +466,9 @@ class Application
             $this->eventDispatcher->withEvents($eventsDir);
         }
         $this->middlewareDispatcher = new MiddlewareDispatcher();
-        $middelwareDir = $this->path.DIRECTORY_SEPARATOR.'middleware';
-        if (is_dir($middelwareDir)) {
-            $this->middlewareDispatcher->loadMiddleware($middelwareDir);
+        if (isset($this->config['middleware']['global'])
+            && is_array($this->config['middleware']['global'])) {
+            $this->middlewareDispatcher->addGlobalMiddleware($this->config['middleware']['global']);
         }
         $this->timer->stop('boot');
 
