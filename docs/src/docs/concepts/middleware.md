@@ -5,7 +5,7 @@
 Middleware in Hazaar Framework provides a flexible mechanism to process HTTP requests and responses at various stages of your application's lifecycle. Middleware components allow you to intercept, modify, or act upon requests before they reach your controllers, and responses before they are sent to the client. This enables features such as authentication, logging, request modification, and more, in a clean and reusable way.
 
 ::: note
- By default, Hazaar Framework automatically loads all middleware classes found in the `/work/app/middleware` directory during the application bootstrap process. You do not need to manually register middleware from this directory; simply place your middleware PHP files there and they will be included in the middleware stack in alphabetical order.
+ All middleware classes must be placed in the `/work/app/middleware` directory. Middleware is not loaded automatically; instead, global middleware is explicitly defined in your application configuration under the `middleware.global` property. You may use class names or aliases, which are mapped in the `middleware.aliases` property.
 :::
 
 ## How Middleware Works
@@ -21,7 +21,38 @@ When a request is handled, the middleware stack is executed in the order it was 
 
 Middleware is registered with the `MiddlewareDispatcher`, which manages the stack and execution order.
 
-## Example 1: Modifying a Request
+## Types of Middleware
+
+Hazaar supports two types of middleware:
+
+* *Global Middleware* - Only middleware listed in the `middleware.global` array in your config is loaded and executed for every request. The array can contain class names or aliases. Aliases are defined in the `middleware.aliases` property and map to class names.
+* *Route Middleware* - Route middleware is attached to specific routes and only executed for requests matching those routes. This is useful for applying authentication, authorization, or other logic to selected endpoints. 
+
+::: tip
+Global middleware runs for every request. Route middleware runs only for requests matching the route.
+:::
+
+## Global Middleware
+
+Global middleware must be defined in your application configuration, for example:
+
+```json
+{
+  "middleware": {
+    "global": [
+      "App\\Middleware\\AddHeader",
+      "auth" // alias example
+    ],
+    "aliases": {
+      "auth": "App\\Middleware\\RequireAuth"
+    }
+  }
+}
+```
+
+Only the middleware listed in the `global` array will be loaded and executed for every request. Aliases allow you to use short names in your config.
+
+### Example 1: Modifying a Request
 
 This example demonstrates a middleware that adds a custom header to the request before passing it to the next handler.
 
@@ -48,7 +79,7 @@ class AddHeader implements Middleware
 }
 ```
 
-## Example 2: Logging After Response
+### Example 2: Logging After Response
 
 This example shows a middleware that logs request and response information to a database after the response has been generated, using `Hazaar\DBI\Adapter` to insert into a `log` table.
 
@@ -83,7 +114,7 @@ class LogToDatabase implements Middleware
 }
 ```
 
-## Example 3: Early Return (Short-Circuiting)
+### Example 3: Early Return (Short-Circuiting)
 
 This example demonstrates a middleware that checks for a required header and returns a Bad Request response if the header is missing, preventing further middleware or controller execution.
 
@@ -114,7 +145,7 @@ class RequireHeader implements Middleware
 }
 ```
 
-## Registering Middleware
+### Registering Middleware
 
 To use middleware, you can also register it manually with the `MiddlewareDispatcher` if needed:
 
@@ -125,11 +156,59 @@ $dispatcher->add(new \App\Middleware\LogToDatabase());
 $dispatcher->add(new \App\Middleware\RequireHeader());
 ```
 
-Or load all middleware from a directory (not usually necessary, as this is handled automatically):
+## Route Middleware
+
+Route middleware allows you to attach middleware to specific routes, rather than applying it globally to all requests. This is useful for applying authentication, authorization, or other logic only to certain endpoints.
+
+Route middleware is registered on a route using the `middleware()` chaining method call. The middleware will only be executed for requests matching that route. You can use either class names or aliases (defined in your config under `middleware.aliases`).
+
+#### Example: File Route Middleware
 
 ```php
-$dispatcher->loadMiddleware('/work/app/middleware');
+Router::get('/admin', [AdminController::class, 'dashboard'])
+    ->middleware('auth'); // 'auth' is an alias defined in config
 ```
+
+#### Example: JSON Route Middleware
+
+```json
+[
+    {
+        "route": "/admin",
+        "controller": "Application\\Controller\\Admin",
+        "action": "dashboard",
+        "method": "GET",
+        "middleware": "auth"
+    }
+]
+```
+
+Aliases are mapped to middleware class names in your configuration:
+
+```json
+{
+  "middleware": {
+    "aliases": {
+      "auth": "App\\Middleware\\RequireAuth"
+    }
+  }
+}
+```
+
+Route middleware is executed after global middleware and before the controller action. You can specify a middleware class name or alias per route. Each middleware should implement the `Hazaar\Middleware\Interface\Middleware` interface.
+
+::: tip
+Use route middleware for logic that only applies to specific endpoints, such as authentication, permission checks, or request validation. Aliases help keep your route definitions clean and maintainable.
+:::
+
+## Route Middleware Summary
+
+Middleware provides a powerful way to encapsulate cross-cutting concerns in your Hazaar Framework application. By chaining middleware, you can keep your controllers clean and focused on business logic, while handling concerns like authentication, logging, and request/response manipulation in reusable components.
+Route middleware is executed after global middleware and before the controller action. You can specify one or more middleware classes or aliases per route. Each middleware should implement the `Hazaar\Middleware\Interface\Middleware` interface.
+
+::: tip
+Use route middleware for logic that only applies to specific endpoints, such as authentication, permission checks, or request validation. Aliases help keep your route definitions clean and maintainable.
+:::
 
 ## Summary
 

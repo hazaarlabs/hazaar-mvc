@@ -22,7 +22,7 @@ class File extends Loader
             throw new Exception\MissingRouteFile($filename);
         }
 
-        include_once $file;
+        include $file;
 
         return true;
     }
