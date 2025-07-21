@@ -224,7 +224,7 @@ class Application
                 'layout' => 'app',
             ],
             'router' => [
-                'type' => 'basic',
+                'type' => 'file',
                 'controller' => 'index',
                 'action' => 'index',
             ],

@@ -428,7 +428,7 @@ class Config implements \ArrayAccess, \Iterator, \Countable
 
         switch ($extention) {
             case 'php':
-                $config = [$this->env => include (string) $file];
+                $config = include (string) $file;
 
                 break;
 
