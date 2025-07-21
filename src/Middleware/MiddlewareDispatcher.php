@@ -16,6 +16,13 @@ use Hazaar\Middleware\Interface\Middleware;
 class MiddlewareDispatcher
 {
     /**
+     * Stores aliases for middleware classes.
+     *
+     * @var array<string, string>
+     */
+    public static array $aliases = [];
+
+    /**
      * Stack of middleware components to be executed in order.
      *
      * @var array<Middleware>
@@ -23,12 +30,40 @@ class MiddlewareDispatcher
     private array $middlewareStack = [];
 
     /**
+     * MiddlewareDispatcher constructor.
+     *
+     * Initializes the middleware dispatcher with an empty stack.
+     */
+    public function __construct(array $middlwareConfig = [])
+    {
+        // Optionally load global middleware from configuration
+        if (isset($middlwareConfig['global']) && is_array($middlwareConfig['global'])) {
+            $this->addFromArray($middlwareConfig['global']);
+        }
+        if (isset($middlwareConfig['aliases']) && is_array($middlwareConfig['aliases'])) {
+            self::$aliases = array_merge(self::$aliases, $middlwareConfig['aliases']);
+        }
+    }
+
+    /**
      * Adds a middleware instance to the middleware stack.
      *
      * @param Middleware $middleware the middleware to add to the stack
      */
-    public function add(Middleware $middleware): void
+    public function add(Middleware|string $middleware): void
     {
+        if (is_string($middleware)) {
+            if (array_key_exists($middleware, self::$aliases)) {
+                $middleware = self::$aliases[$middleware];
+            }
+            if (!class_exists($middleware)) {
+                throw new \InvalidArgumentException("Class {$middleware} does not exist.");
+            }
+            if (!is_subclass_of($middleware, Middleware::class)) {
+                throw new \InvalidArgumentException("Class {$middleware} does not implement Middleware interface.");
+            }
+            $middleware = new $middleware();
+        }
         $this->middlewareStack[] = $middleware;
     }
 
@@ -39,20 +74,14 @@ class MiddlewareDispatcher
      * If a class does not exist or does not implement the required interface, an InvalidArgumentException is thrown.
      * Valid middleware classes are instantiated and added to the dispatcher.
      *
-     * @param array $middlewareClasses array of middleware class names to add
+     * @param array<string> $middlewareClasses array of middleware class names to add
      *
      * @throws \InvalidArgumentException if a class does not exist or does not implement Middleware interface
      */
-    public function addGlobalMiddleware(array $middlewareClasses): void
+    public function addFromArray(array $middlewareClasses): void
     {
         foreach ($middlewareClasses as $middlewareClass) {
-            if (!class_exists($middlewareClass)) {
-                throw new \InvalidArgumentException("Class {$middlewareClass} does not exist.");
-            }
-            if (!is_subclass_of($middlewareClass, Middleware::class)) {
-                throw new \InvalidArgumentException("Class {$middlewareClass} does not implement Middleware interface.");
-            }
-            $this->add(new $middlewareClass());
+            $this->add($middlewareClass);
         }
     }
 

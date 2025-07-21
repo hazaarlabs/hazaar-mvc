@@ -12,8 +12,11 @@ declare(strict_types=1);
 namespace Hazaar\Application;
 
 use Hazaar\Application\Router\Exception\RouteNotFound;
+use Hazaar\Application\Router\Exception\RouterNotInitialised;
 use Hazaar\Application\Router\Loader;
 use Hazaar\Controller\Error;
+use Hazaar\Controller\Response;
+use Hazaar\Middleware\MiddlewareDispatcher;
 
 class Router
 {
@@ -43,6 +46,7 @@ class Router
     public array $config;
     private static ?self $instance = null;
     private Loader $routeLoader;
+    private MiddlewareDispatcher $middlewareDispatcher;
 
     /**
      * @var array<Route>
@@ -64,6 +68,7 @@ class Router
             throw new Router\Exception\LoaderNotSupported($type);
         }
         $this->routeLoader = new $loaderClass($this->config);
+        $this->middlewareDispatcher = new MiddlewareDispatcher();
     }
 
     /**
@@ -82,49 +87,33 @@ class Router
     }
 
     /**
-     * Evaluates the given request and matches it against the defined routes.
+     * Handles an incoming HTTP request by evaluating the route, applying middleware, and executing the controller logic.
      *
-     * @param Request $request the request to evaluate
+     * @param Request $request the incoming HTTP request to handle
      *
-     * @return null|Route the matched route or null if no route matches
+     * @return Response|Route returns a Response object after processing the request, or a Route object if applicable
+     *
+     * @throws RouteNotFound if no matching route is found for the request path
      */
-    public function evaluateRequest(Request $request): ?Route
+    public function handle(Request $request): Response|Route
     {
-        $matchedRoute = null;
-        $path = $request->getPath();
-        // Search for internal controllers
-        if ($offset = strpos($path, '/', 1)) {
-            $route = substr($path, 1, $offset);
-            if (array_key_exists($route, self::$internal)) {
-                $controller = self::$internal[$route];
-                $action = substr($path, $offset + 1);
-                $route = new Route(substr($path, $offset + 1));
-                $route->setCallable([$controller, $action]);
-
-                return $route;
+        $route = $this->evaluateRequest($request);
+        if (!$route) {
+            throw new RouteNotFound($request->getPath());
+        }
+        $this->middlewareDispatcher->addFromArray($route->getMiddleware());
+        $finalHandler = function (Request $request) use ($route): Response {
+            $controller = $route->getController();
+            $response = $controller->initialize($request);
+            if (null === $response) {
+                $response = $controller->runRoute($route);
             }
-        }
-        $matchedRoute = $this->routeLoader->evaluateRequest($request);
-        if ($matchedRoute instanceof Route) {
-            return $matchedRoute;
-        }
-        $method = $request->getMethod();
-        foreach ($this->routes as $route) {
-            if ($route->match($method, $path)) {
-                return $matchedRoute = $route;
-            }
-        }
-        // If no route is found, and the path is '/', use the default controller
-        if (!('/' === $request->getPath() && ($controller = $this->config['controller']))) {
-            return null;
-        }
-        $controllerClass = '\\' === substr($controller, 0, 1)
-            ? $controller
-            : 'App\Controller\\'.ucfirst($controller);
-        $route = new Route();
-        $route->setCallable([$controllerClass, $this->config['action']]);
+            $controller->shutdown($response);
 
-        return $route;
+            return $response;
+        };
+
+        return $this->middlewareDispatcher->handle($request, $finalHandler);
     }
 
     /**
@@ -174,9 +163,9 @@ class Router
      * @param string $path     the URL path for the route
      * @param mixed  $callable the callback or controller action to handle the request
      */
-    public static function get(string $path, mixed $callable): void
+    public static function get(string $path, mixed $callable): Route
     {
-        self::match(['GET'], $path, $callable);
+        return self::match(['GET'], $path, $callable);
     }
 
     /**
@@ -185,9 +174,9 @@ class Router
      * @param string $path     the URL path for the route
      * @param mixed  $callable the callback or controller method to handle the request
      */
-    public static function post(string $path, mixed $callable): void
+    public static function post(string $path, mixed $callable): Route
     {
-        self::match(['POST'], $path, $callable);
+        return self::match(['POST'], $path, $callable);
     }
 
     /**
@@ -196,9 +185,9 @@ class Router
      * @param string $path     the URI path that the route will respond to
      * @param mixed  $callable the handler for the route, which can be a callable or other valid route handler
      */
-    public static function put(string $path, mixed $callable): void
+    public static function put(string $path, mixed $callable): Route
     {
-        self::match(['PUT'], $path, $callable);
+        return self::match(['PUT'], $path, $callable);
     }
 
     /**
@@ -207,9 +196,9 @@ class Router
      * @param string $path     the URL path that the route should match
      * @param mixed  $callable the callback or controller action to be executed when the route is matched
      */
-    public static function delete(string $path, mixed $callable): void
+    public static function delete(string $path, mixed $callable): Route
     {
-        self::match(['DELETE'], $path, $callable);
+        return self::match(['DELETE'], $path, $callable);
     }
 
     /**
@@ -218,9 +207,9 @@ class Router
      * @param string $path     the URI path that the route will match
      * @param mixed  $callable the callback or controller action to be executed when the route is matched
      */
-    public static function patch(string $path, mixed $callable): void
+    public static function patch(string $path, mixed $callable): Route
     {
-        self::match(['PATCH'], $path, $callable);
+        return self::match(['PATCH'], $path, $callable);
     }
 
     /**
@@ -229,9 +218,9 @@ class Router
      * @param string $path     the URL path to match
      * @param mixed  $callable the callback or controller action to handle the request
      */
-    public static function options(string $path, mixed $callable): void
+    public static function options(string $path, mixed $callable): Route
     {
-        self::match(['OPTIONS'], $path, $callable);
+        return self::match(['OPTIONS'], $path, $callable);
     }
 
     /**
@@ -240,9 +229,9 @@ class Router
      * @param string $path     the path pattern to match
      * @param mixed  $callable the callback to execute when the route is matched
      */
-    public static function any(string $path, mixed $callable): void
+    public static function any(string $path, mixed $callable): Route
     {
-        self::match(['ANY'], $path, $callable);
+        return self::match(['ANY'], $path, $callable);
     }
 
     /**
@@ -254,10 +243,10 @@ class Router
      *                                            It can be a string in the format 'Class::method',
      *                                            an array with the class and method, or a Closure.
      */
-    public static function match(null|array|string $methods, string $path, mixed $callable): void
+    public static function match(null|array|string $methods, string $path, mixed $callable): Route
     {
         if (!self::$instance) {
-            return;
+            throw new RouterNotInitialised();
         }
         if (is_string($callable)) {
             $callable = explode('::', $callable);
@@ -265,6 +254,8 @@ class Router
         $route = new Route($path, $methods);
         $route->setCallable($callable);
         self::$instance->addRoute($route);
+
+        return $route;
     }
 
     public static function add(Route $route): void
@@ -273,5 +264,51 @@ class Router
             return;
         }
         self::$instance->addRoute($route);
+    }
+
+    /**
+     * Evaluates the given request and matches it against the defined routes.
+     *
+     * @param Request $request the request to evaluate
+     *
+     * @return null|Route the matched route or null if no route matches
+     */
+    private function evaluateRequest(Request $request): ?Route
+    {
+        $matchedRoute = null;
+        $path = $request->getPath();
+        // Search for internal controllers
+        if ($offset = strpos($path, '/', 1)) {
+            $route = substr($path, 1, $offset);
+            if (array_key_exists($route, self::$internal)) {
+                $controller = self::$internal[$route];
+                $action = substr($path, $offset + 1);
+                $route = new Route(substr($path, $offset + 1));
+                $route->setCallable([$controller, $action]);
+
+                return $route;
+            }
+        }
+        $matchedRoute = $this->routeLoader->evaluateRequest($request);
+        if ($matchedRoute instanceof Route) {
+            return $matchedRoute;
+        }
+        $method = $request->getMethod();
+        foreach ($this->routes as $route) {
+            if ($route->match($method, $path)) {
+                return $matchedRoute = $route;
+            }
+        }
+        // If no route is found, and the path is '/', use the default controller
+        if (!('/' === $request->getPath() && ($controller = $this->config['controller']))) {
+            return null;
+        }
+        $controllerClass = '\\' === substr($controller, 0, 1)
+            ? $controller
+            : 'App\Controller\\'.ucfirst($controller);
+        $route = new Route();
+        $route->setCallable([$controllerClass, $this->config['action']]);
+
+        return $route;
     }
 }

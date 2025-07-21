@@ -20,10 +20,10 @@ use Hazaar\Application\Exception\AppDirNotFound;
 use Hazaar\Application\FilePath;
 use Hazaar\Application\Request;
 use Hazaar\Application\Router;
-use Hazaar\Application\Router\Exception\RouteNotFound;
 use Hazaar\Application\Router\Exception\RouterInitialisationFailed;
 use Hazaar\Application\Runtime;
 use Hazaar\Application\URL;
+use Hazaar\Controller\Response;
 use Hazaar\Events\EventDispatcher;
 use Hazaar\File\Metric;
 use Hazaar\Logger\Frontend;
@@ -132,6 +132,7 @@ class Application
             $routerConfig = $this->config['router'] ?? ['type' => 'file'];
             $routerConfig['applicationPath'] = $this->path;
             $this->router = new Router($routerConfig);
+            $this->middlewareDispatcher = new MiddlewareDispatcher($this->config['middleware'] ?? []);
             $this->timer->stop('init');
         } catch (\Throwable $e) {
             Error::dieDieDie($e);
@@ -465,11 +466,6 @@ class Application
             $this->eventDispatcher = EventDispatcher::getInstance();
             $this->eventDispatcher->withEvents($eventsDir);
         }
-        $this->middlewareDispatcher = new MiddlewareDispatcher();
-        if (isset($this->config['middleware']['global'])
-            && is_array($this->config['middleware']['global'])) {
-            $this->middlewareDispatcher->addGlobalMiddleware($this->config['middleware']['global']);
-        }
         $this->timer->stop('boot');
 
         return $this;
@@ -521,15 +517,10 @@ class Application
             } elseif (!$this->router) {
                 throw new \Exception('Router not initialised');
             } else {
-                $route = $this->router->evaluateRequest($request);
-                if (!$route) {
-                    throw new RouteNotFound($request->getPath());
-                }
-                $controller = $route->getController();
-                $finalHandler = function (Request $request) use ($controller, $route) {
-                    $response = $controller->initialize($request);
-                    if (null === $response) {
-                        $response = $controller->runRoute($route);
+                $finalHandler = function (Request $request) {
+                    $response = $this->router->handle($request);
+                    if (!$response instanceof Response) {
+                        throw new \Exception('Invalid response from router');
                     }
 
                     return $response;
@@ -539,9 +530,6 @@ class Application
             $this->timer->checkpoint('render');
             // Finally, write the response to the output buffer.
             $response->writeOutput();
-            // Shutdown the controller
-            $this->timer->checkpoint('shutdown');
-            $controller->shutdown($response);
             $code = $response->getStatus();
             ob_end_flush();
             if (isset($this->eventDispatcher)) {
