@@ -67,6 +67,7 @@ function sidebarGuide() {
                     ]
                 },
                 { text: 'Generating URLs', link: '/docs/basics/urls' },
+                { text: 'Middleware', link: '/docs/basics/middleware' },
                 { text: 'Validation', link: '/docs/basics/validation' },
                 { text: 'Security', link: '/docs/basics/security' },
                 { text: 'Utilities', link: '/docs/basics/utilities' },
