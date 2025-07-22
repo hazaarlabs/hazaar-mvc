@@ -9,11 +9,9 @@ export default hopeTheme({
     displayFooter: true,
     copyright: 'Copyright © 2012-present Hazaar Labs',
     plugins: {
-        markdownTab: {
-            tabs: true,
+        markdown: {
             codeTabs: true,
-        },
-        mdEnhance: {
+            tabs: true,
             echarts: true,
             flowchart: true,
             markmap: true,
