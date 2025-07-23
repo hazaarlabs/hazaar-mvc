@@ -72,19 +72,18 @@ class Json extends Loader
     public function evaluateRequest(Request $request): ?Route
     {
         $jsonRouterFile = $this->config['file'] ?? 'route.json';
-        $routeFile = Config::getInstance($jsonRouterFile);
-        if (!isset($routeFile['routes'])) {
-            throw new \Exception('Invalid JSON route file.  Missing "routes" key.');
-        }
-        $routes = $routeFile['routes'];
-        foreach ($routes as $route) {
-            if (!isset($route['route'])) {
+        $routes = Config::getInstance($jsonRouterFile);
+        foreach ($routes as $routeItem) {
+            if (!isset($routeItem['route'])) {
                 continue;
             }
-            $controller = 'App\Controller\\'.ucfirst($route['controller'] ?? $this->config['controller'] ?? 'index');
-            $action = $route['action'] ?? $this->config['action'] ?? 'index';
-            $args = $route['args'] ?? [];
-            Router::match($route['methods'] ?? ['GET'], $route['route'], [$controller, $action, $args]);
+            $controller = 'App\Controller\\'.ucfirst($routeItem['controller'] ?? $this->config['controller'] ?? 'index');
+            $action = $routeItem['action'] ?? $this->config['action'] ?? 'index';
+            $args = $routeItem['args'] ?? [];
+            $route = Router::match($routeItem['methods'] ?? ['GET'], $routeItem['route'], [$controller, $action, $args]);
+            if (isset($routeItem['middleware'])) {
+                $route->middleware($routeItem['middleware']);
+            }
         }
 
         return null;
