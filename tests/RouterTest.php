@@ -48,7 +48,7 @@ class RouterTest extends TestCase
         $this->assertEquals('index', $route->getAction());
         $args = ['arg1', 'arg2', 'arg3'];
         $this->assertEquals($args, $route->getActionArgs());
-        $this->assertInstanceOf(Response::class, $controller->runRoute($route));
+        $this->assertInstanceOf(Response::class, $controller->run($route));
     }
 
     public function testBasicRouterWithActionController(): void
@@ -62,8 +62,9 @@ class RouterTest extends TestCase
         $this->assertTrue($router->initialise());
         $this->assertInstanceOf(Route::class, $route = $router->evaluateRequest($request));
         $this->assertInstanceOf(Index::class, $controller = $route->getController());
+        $controller->initialize($request);
         $this->assertEquals('index', $route->getAction());
-        $this->assertInstanceOf(Response::class, $controller->runRoute($route));
+        $this->assertInstanceOf(Response::class, $controller->run($route));
     }
 
     public function testBasicRouter404Controller(): void
@@ -91,7 +92,7 @@ class RouterTest extends TestCase
         $this->assertInstanceOf(Index::class, $controller = $route->getController());
         $this->assertEquals('missing', $route->getAction());
         $this->expectException(ActionNotFound::class);
-        $this->assertInstanceOf(Response::class, $controller->runRoute($route));
+        $this->assertInstanceOf(Response::class, $controller->run($route));
     }
 
     public function testAdvancedRouter(): void
@@ -108,7 +109,7 @@ class RouterTest extends TestCase
         $this->assertInstanceOf(Test::class, $controller = $route->getController());
         $this->assertEquals('foo', $route->getAction());
         $this->assertEquals(['word'], $route->getActionArgs());
-        $this->assertInstanceOf(Response::class, $controller->runRoute($route));
+        $this->assertInstanceOf(Response::class, $controller->run($route));
     }
 
     public function testCustomRouter(): void
@@ -125,7 +126,7 @@ class RouterTest extends TestCase
         $this->assertInstanceOf(Test::class, $controller = $route->getController());
         $this->assertEquals('bar', $route->getAction());
         $this->assertEquals(['word' => 'hellothere'], $route->getActionArgs());
-        $this->assertInstanceOf(Response::class, $controller->runRoute($route));
+        $this->assertInstanceOf(Response::class, $controller->run($route));
     }
 
     public function testNoneRouter(): void

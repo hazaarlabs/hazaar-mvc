@@ -39,6 +39,11 @@ class Route
     private array $callableParameters = [];
 
     /**
+     * @var array<string> an array of middleware names or instances associated with the route
+     */
+    private array $middleware = [];
+
+    /**
      * @param array<string> $methods
      */
     public function __construct(
@@ -282,5 +287,31 @@ class Route
     public function prefixPath(string $path): void
     {
         $this->path = '/'.ltrim($path, '/').$this->path;
+    }
+
+    /**
+     * Adds middleware(s) to the route.
+     *
+     * Accepts a string of middleware names separated by colons and merges them into the existing middleware array.
+     *
+     * @param string $middleware Middleware name(s), separated by colons (e.g., 'auth:logging').
+     *
+     * @return self returns the current instance for method chaining
+     */
+    public function middleware(string $middleware): self
+    {
+        $this->middleware = array_merge($this->middleware ?? [], explode(':', $middleware));
+
+        return $this;
+    }
+
+    /**
+     * Retrieves the list of middleware associated with the route.
+     *
+     * @return array<string> an array containing middleware instances or definitions
+     */
+    public function getMiddleware(): array
+    {
+        return $this->middleware;
     }
 }

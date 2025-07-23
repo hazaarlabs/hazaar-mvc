@@ -57,7 +57,6 @@ class Dump extends Diagnostic
      */
     public function __construct(array $data)
     {
-        parent::__construct('debug');
         $this->data = $data;
     }
 

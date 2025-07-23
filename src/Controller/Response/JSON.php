@@ -12,20 +12,28 @@ use Hazaar\Controller\Response\Exception\JSONNotSupported;
  */
 class JSON extends Response implements \ArrayAccess
 {
-    protected mixed $content = [];
+    /**
+     * @var array<mixed>
+     */
+    protected array $jsonContent = [];
     /*
      * If the callback is set, such as in a JSONP request, we use the callback to return
      * the encoded data.
      */
     private ?string $callback = null;
 
-    public function __construct(mixed $data = [], int $status = 200)
+    /**
+     * @param array<mixed> $data
+     *
+     * @throws JSONNotSupported
+     */
+    public function __construct(array $data = [], int $status = 200)
     {
         if (!function_exists('json_encode')) {
             throw new JSONNotSupported();
         }
         parent::__construct('application/json', $status);
-        $this->content = $data;
+        $this->setContent($data);
     }
 
     public function __set(string $key, null|int|string $value): void
@@ -38,7 +46,7 @@ class JSON extends Response implements \ArrayAccess
      */
     public function toArray(): array
     {
-        return $this->content;
+        return $this->jsonContent;
     }
 
     public function &__get(string $key): mixed
@@ -48,12 +56,12 @@ class JSON extends Response implements \ArrayAccess
 
     public function &get(string $key): mixed
     {
-        return $this->content[$key];
+        return $this->jsonContent[$key];
     }
 
     public function set(string $key, mixed $value): void
     {
-        $this->content[$key] = $value;
+        $this->jsonContent[$key] = $value;
     }
 
     /**
@@ -61,7 +69,7 @@ class JSON extends Response implements \ArrayAccess
      */
     public function populate(array $data): void
     {
-        $this->content = $data;
+        $this->jsonContent = $data;
     }
 
     /**
@@ -69,7 +77,7 @@ class JSON extends Response implements \ArrayAccess
      */
     public function push(array $data): void
     {
-        $this->content[] = $data;
+        $this->jsonContent[] = $data;
     }
 
     // JSONP Tools
@@ -78,9 +86,14 @@ class JSON extends Response implements \ArrayAccess
         $this->callback = $callback;
     }
 
+    public function setContent(mixed $data): void
+    {
+        $this->jsonContent = (array) $data;
+    }
+
     public function getContent(): string
     {
-        $data = json_encode($this->content, JSON_INVALID_UTF8_SUBSTITUTE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        $data = json_encode($this->jsonContent, JSON_INVALID_UTF8_SUBSTITUTE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
         if (false === $data) {
             throw new \Exception('JSON Encode error: '.json_last_error_msg());
         }
@@ -94,13 +107,13 @@ class JSON extends Response implements \ArrayAccess
     // ArrayAccess
     public function offsetExists(mixed $offset): bool
     {
-        return array_key_exists($offset, $this->content);
+        return array_key_exists($offset, $this->jsonContent);
     }
 
     public function offsetGet(mixed $offset): mixed
     {
-        if (array_key_exists($offset, $this->content)) {
-            return $this->content[$offset];
+        if (array_key_exists($offset, $this->jsonContent)) {
+            return $this->jsonContent[$offset];
         }
 
         return null;
@@ -109,14 +122,14 @@ class JSON extends Response implements \ArrayAccess
     public function offsetSet(mixed $offset, mixed $value): void
     {
         if (null === $offset) {
-            $this->content[] = $value;
+            $this->jsonContent[] = $value;
         } else {
-            $this->content[$offset] = $value;
+            $this->jsonContent[$offset] = $value;
         }
     }
 
     public function offsetUnset(mixed $offset): void
     {
-        unset($this->content[$offset]);
+        unset($this->jsonContent[$offset]);
     }
 }

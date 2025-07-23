@@ -816,7 +816,7 @@ abstract class Process
         bool $overwrite = false
     ): false|string {
         $data['application'] = [
-            'env' => APPLICATION_ENV,
+            'env' => constant('APPLICATION_ENV') ?: 'development',
         ];
         $data['endpoint'] = Endpoint::create($callable, $params);
         if ($tag) {

@@ -232,7 +232,6 @@ class SMTP extends Transport
         $write = null;
         $exempt = null;
         stream_select($read, $write, $exempt, $this->readTimeout, 0);
-        // @phpstan-ignore-next-line
         if (!(count($read) > 0 && $read[0] == $this->socket)) {
             throw new \Exception('SMTP data receive timeout');
         }

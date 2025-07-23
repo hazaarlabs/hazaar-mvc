@@ -570,3 +570,42 @@ public function getProduct(int $id) {
 }
 ```
 
+### Middleware
+
+You can attach middleware to specific routes to handle authentication, authorization, or other logic for individual endpoints. Route middleware is specified using the `middleware()` chaining method for file routes, or the `middleware` property for JSON routes. You may use either a middleware class name or an alias (defined in your config).
+
+#### Example (file route):
+
+```php
+Router::get('/admin', [AdminController::class, 'dashboard'])
+    ->middleware('auth'); // 'auth' is an alias defined in config
+```
+
+#### Example (JSON route):
+
+```json
+[
+    {
+        "route": "/admin",
+        "controller": "Application\\Controller\\Admin",
+        "action": "dashboard",
+        "method": "GET",
+        "middleware": "auth"
+    }
+]
+```
+
+Aliases are mapped to middleware class names in your configuration:
+
+```json
+{
+  "middleware": {
+    "aliases": {
+      "auth": "App\\Middleware\\RequireAuth"
+    }
+  }
+}
+```
+
+For more details, see [Middleware: Route Middleware](/docs/concepts/middleware#route-middleware).
+

@@ -16,10 +16,10 @@ namespace Hazaar\Auth\Storage;
 
 use Hazaar\Application;
 use Hazaar\Application\Request;
-use Hazaar\Util\Arr;
 use Hazaar\Auth\Adapter;
 use Hazaar\Auth\Interface\Storage;
 use Hazaar\Cache\Adapter as CacheAdapter;
+use Hazaar\Util\Arr;
 
 /**
  * @brief       Session based authentication adapter
@@ -201,8 +201,9 @@ class Cache implements Storage
         }
         $this->sessionID = $sessionID;
         $this->session = new CacheAdapter($this->config['backend'], $this->config, $sessionID);
-        Application::getInstance()->registerOutputFunction(function () use ($sessionID): void {
-            setcookie($this->config['name'], $sessionID, 0, '/', '', true, true);
-        });
+        Application::getInstance()->addMiddleware(new Middleware\Cache(
+            $this->config['name'],
+            $sessionID
+        ));
     }
 }

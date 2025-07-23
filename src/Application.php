@@ -20,13 +20,15 @@ use Hazaar\Application\Exception\AppDirNotFound;
 use Hazaar\Application\FilePath;
 use Hazaar\Application\Request;
 use Hazaar\Application\Router;
-use Hazaar\Application\Router\Exception\RouteNotFound;
 use Hazaar\Application\Router\Exception\RouterInitialisationFailed;
 use Hazaar\Application\Runtime;
 use Hazaar\Application\URL;
+use Hazaar\Controller\Response;
 use Hazaar\Events\EventDispatcher;
 use Hazaar\File\Metric;
 use Hazaar\Logger\Frontend;
+use Hazaar\Middleware\Interface\Middleware;
+use Hazaar\Middleware\MiddlewareDispatcher;
 use Hazaar\Util\Arr;
 use Hazaar\Util\Timer;
 
@@ -75,14 +77,10 @@ class Application
     private static ?Application $instance = null;
     private static string $root;
 
-    /**
-     * @var array<callable>
-     */
-    private array $outputFunctions = [];
-
     private Runtime $runtime;
 
     private EventDispatcher $eventDispatcher;
+    private MiddlewareDispatcher $middlewareDispatcher;
 
     /**
      * The main application constructor.
@@ -134,6 +132,7 @@ class Application
             $routerConfig = $this->config['router'] ?? ['type' => 'file'];
             $routerConfig['applicationPath'] = $this->path;
             $this->router = new Router($routerConfig);
+            $this->middlewareDispatcher = new MiddlewareDispatcher($this->config['middleware'] ?? []);
             $this->timer->stop('init');
         } catch (\Throwable $e) {
             Error::dieDieDie($e);
@@ -226,7 +225,7 @@ class Application
                 'layout' => 'app',
             ],
             'router' => [
-                'type' => 'basic',
+                'type' => 'file',
                 'controller' => 'index',
                 'action' => 'index',
             ],
@@ -238,6 +237,7 @@ class Application
                 'helper' => 'helpers',
                 'event' => 'events',
                 'listener' => 'listeners',
+                'middleware' => 'middleware',
             ],
             'view' => [
                 'prepare' => false,
@@ -510,34 +510,24 @@ class Application
                 ob_end_clean();
             }
             if (null !== $controller) {
-                $response = $controller->initialize($request);
-                if (null === $response) {
-                    $response = $controller->run();
-                }
+                $controller->initialize($request);
+                $response = $controller->run();
             } elseif (!$this->router) {
                 throw new \Exception('Router not initialised');
             } else {
-                $route = $this->router->evaluateRequest($request);
-                if (!$route) {
-                    throw new RouteNotFound($request->getPath());
-                }
-                $controller = $route->getController();
-                $response = $controller->initialize($request);
-                if (null === $response) {
-                    $response = $controller->runRoute($route);
-                }
-            }
-            if (count($this->outputFunctions) > 0) {
-                foreach ($this->outputFunctions as $func) {
-                    $func($response);
-                }
+                $finalHandler = function (Request $request) {
+                    $response = $this->router->handle($request);
+                    if (!$response instanceof Response) {
+                        throw new \Exception('Invalid response from router');
+                    }
+
+                    return $response;
+                };
+                $response = $this->middlewareDispatcher->handle($request, $finalHandler);
             }
             $this->timer->checkpoint('render');
             // Finally, write the response to the output buffer.
             $response->writeOutput();
-            // Shutdown the controller
-            $this->timer->checkpoint('shutdown');
-            $controller->shutdown($response);
             $code = $response->getStatus();
             ob_end_flush();
             if (isset($this->eventDispatcher)) {
@@ -566,7 +556,7 @@ class Application
             if ($controller instanceof Controller\Error) {
                 Error::dieDieDie($e->getMessage());
             } else {
-                $this->exceptionHandler($e, isset($route) ? $route->getResponseType() : null);
+                $this->exceptionHandler($e);
             }
         }
 
@@ -622,13 +612,13 @@ class Application
     }
 
     /**
-     * Register an output function.
+     * Adds a middleware to the middleware dispatcher.
      *
-     * @param array<object|string>|callable $function
+     * @param Middleware $middleware the middleware instance to add
      */
-    public function registerOutputFunction(array|callable $function): void
+    public function addMiddleware(Middleware $middleware): void
     {
-        $this->outputFunctions[] = $function;
+        $this->middlewareDispatcher->add($middleware);
     }
 
     /**

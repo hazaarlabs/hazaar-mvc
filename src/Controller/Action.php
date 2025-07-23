@@ -32,12 +32,6 @@ abstract class Action extends Basic
      */
     protected array $methods = [];
 
-    public function __construct(?string $name = null)
-    {
-        parent::__construct($name);
-        $this->view = new ViewRenderer();
-    }
-
     /**
      * Initializes the controller action with the given request.
      *
@@ -48,19 +42,17 @@ abstract class Action extends Basic
      * application configuration.
      *
      * @param Request $request the request object to initialize the action with
-     *
-     * @return null|Response the response from the parent initialize method, or null
      */
-    public function initialize(Request $request): ?Response
+    public function initialize(Request $request): void
     {
+        $this->view = new ViewRenderer();
         $app = Application::getInstance();
         if (false === $request->isXmlHttpRequest()
             && null !== $app
             && isset($app->config['app']['layout'])) {
             $this->view->layout($app->config['app']['layout']);
         }
-
-        return parent::initialize($request);
+        parent::initialize($request);
     }
 
     /**

@@ -56,7 +56,7 @@ class ConfigTest extends TestCase
 
     public function testConfigFromFileWithNoEnvironment(): void
     {
-        $config = new Config(__DIR__.'/app/configs/application.json');
+        $config = new Config(__DIR__.'/app/configs/application.php');
         $this->assertEquals('PHPUnit - Test Application', $config['production']['app']['name']);
         $this->assertEquals('1.0.0', $config->get('production.app.version'));
         $this->assertEquals('en_AU.UTF-8', $config->get('production.app.locale'));
@@ -83,7 +83,7 @@ class ConfigTest extends TestCase
         $result = $config->loadFromArray([
             'production' => [
                 'import' => [
-                    'application.json:production',
+                    'application.php:production',
                 ],
                 'app' => [
                     'name' => 'Test Application',
@@ -114,7 +114,7 @@ class ConfigTest extends TestCase
         $config->setBasePath(__DIR__.'/app/configs/');
         $result = $config->loadFromArray([
             'import' => [
-                'application.json',
+                'application.php',
             ],
         ]);
         $this->assertTrue($result);
