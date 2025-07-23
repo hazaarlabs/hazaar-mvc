@@ -12,8 +12,11 @@ declare(strict_types=1);
 namespace Hazaar\Controller;
 
 use Hazaar\Application\Request;
-use Hazaar\Cache;
+use Hazaar\Application\Route;
+use Hazaar\Cache\Adapter;
 use Hazaar\Controller;
+use Hazaar\HTTP\Link;
+use Hazaar\Middleware\MiddlewareDispatcher;
 use Hazaar\View;
 
 /**
@@ -32,14 +35,76 @@ use Hazaar\View;
  */
 abstract class Basic extends Controller
 {
+    protected string $name = 'basic';
     protected bool $stream = false;
 
-    public function initialize(Request $request): ?Response
+    /**
+     * @var array<array<bool|int>>
+     */
+    private array $cachedActions = [];
+
+    /**
+     * @var array<Response>
+     */
+    private array $cachedResponses = [];
+    private ?Adapter $responseCache = null;
+
+    /**
+     * @var array<Middleware>
+     */
+    private array $middleware = [];
+
+    public function initialize(Request $request): void
     {
         parent::initialize($request);
-        $this->init($request);
+        $this->init();
+    }
 
-        return $this->initResponse($request);
+    /**
+     * Run the controller action.
+     *
+     * This is the main entry point for the controller when there is a route to run.  It is called by the application
+     * to run a route and execute the controller action.  The action name and arguments are taken from the route.
+     *
+     * @param null|Route $route the route to run, or null if no route is provided
+     */
+    public function run(?Route $route = null): Response
+    {
+        $finalHandler = function () use ($route): Response {
+            if ($response = $this->getCachedResponse($route)) {
+                return $response;
+            }
+            // Execute the controller action
+            $response = $this->runAction($route->getAction(), $route->getActionArgs());
+            $this->cacheResponse($route, $response);
+
+            return $response;
+        };
+        if (count($this->middleware) > 0) {
+            // If we have middleware, we need to run it first
+            $dispatcher = new MiddlewareDispatcher();
+            $appliedMiddleware = [];
+            foreach ($this->middleware as $middleware) {
+                if ($middleware->match($route->getAction())) {
+                    $appliedMiddleware[] = $middleware->name;
+                }
+            }
+            $dispatcher->addFromArray($appliedMiddleware);
+
+            return $dispatcher->handle($this->request, $finalHandler);
+        }
+
+        return $finalHandler();
+    }
+
+    final public function shutdown(): void
+    {
+        if (!($this->responseCache && count($this->cachedResponses) > 0)) {
+            return;
+        }
+        foreach ($this->cachedResponses as $cacheItem) {
+            $this->responseCache->set($cacheItem[0], $cacheItem[1], $cacheItem[2]);
+        }
     }
 
     /**
@@ -152,10 +217,103 @@ abstract class Basic extends Controller
         return true;
     }
 
-    protected function init(Request $request): void {}
-
-    protected function initResponse(Request $request): ?Response
+    /**
+     * Send early hints to the client.
+     *
+     * This method sends early hints to the client using the HTTP/2 or HTTP/3 protocol.  It is used to inform the client
+     * about resources that should be preloaded or prefetched.  The `Link` class is used to create the links.
+     *
+     * @param array<Link> $links an array of Link objects to send as early hints
+     */
+    public function sendEarlyHints(array $links): bool
     {
+        if (!function_exists('headers_send')) {
+            return false;
+        }
+        foreach ($links as $link) {
+            header((string) $link, false);
+        }
+        headers_send(103);
+
+        return true;
+    }
+
+    public function cacheAction(string $actionName, int $timeout = 60, bool $private = false): bool
+    {
+        if (null === $this->responseCache) {
+            $this->responseCache = new Adapter();
+        }
+        $this->getCacheKey($this->name, $actionName, [], $cacheName);
+        $this->cachedActions[$cacheName] = [
+            'timeout' => $timeout,
+            'private' => $private,
+        ];
+
+        return true;
+    }
+
+    /**
+     * Creates and returns a new Middleware instance with the specified name.
+     *
+     * @param string $name the name of the middleware to instantiate
+     *
+     * @return Middleware the newly created Middleware instance
+     */
+    protected function middleware(string $name): Middleware
+    {
+        return $this->middleware[] = new Middleware($name);
+    }
+
+    protected function init(): void {}
+
+    /**
+     * Get the cache key for the current action.
+     *
+     * @param string       $controller the controller name
+     * @param string       $action     the action name
+     * @param array<mixed> $actionArgs the action arguments
+     * @param null|string  $cacheName  the cache name
+     *
+     * @param-out string $cacheName
+     */
+    private function getCacheKey(
+        string $controller,
+        string $action,
+        ?array $actionArgs = null,
+        ?string &$cacheName = null
+    ): false|string {
+        $cacheName = $controller.'::'.$action;
+        if (!array_key_exists($cacheName, $this->cachedActions)) {
+            return false;
+        }
+
+        return $cacheName.'('.serialize($actionArgs).')';
+    }
+
+    // Cache a response to the current action invocation.
+    private function cacheResponse(Route $route, Response $response): bool
+    {
+        if (null === $this->responseCache) {
+            return false;
+        }
+        $cacheKey = $this->getCacheKey($this->name, $route->getAction(), $route->getActionArgs(), $cacheName);
+        if (false !== $cacheKey) {
+            $this->cachedResponses[] = [$cacheKey, $response, $this->cachedActions[$cacheName]['timeout']];
+        }
+
+        return true;
+    }
+
+    private function getCachedResponse(Route $route): ?Response
+    {
+        if (null === $this->responseCache) {
+            return null;
+        }
+        $cacheKey = $this->getCacheKey($this->name, $route->getAction(), $route->getActionArgs());
+        if (false !== $cacheKey && ($response = $this->responseCache->get($cacheKey))) {
+            return $response;
+        }
+
         return null;
     }
 }

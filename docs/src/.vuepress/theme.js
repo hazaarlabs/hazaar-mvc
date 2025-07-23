@@ -4,21 +4,21 @@ import sidebar from './sidebar';
 
 export default hopeTheme({
     logo: 'images/hazaar-logo.svg',
+    changelog: true,
     navbar,
     sidebar,
     displayFooter: true,
     copyright: 'Copyright © 2012-present Hazaar Labs',
+    markdown: {
+        tabs: true,
+        codeTabs: true,
+        echarts: true,
+        flowchart: true,
+        markmap: true,
+        mermaid: true,
+        preview: true,
+    },
     plugins: {
-        markdownTab: {
-            tabs: true,
-            codeTabs: true,
-        },
-        mdEnhance: {
-            echarts: true,
-            flowchart: true,
-            markmap: true,
-            mermaid: true,
-        },
         copyright: {
             global: true,
             author: 'Hazaar Labs',

@@ -7,7 +7,6 @@ namespace Hazaar\XML\RPC;
 use Hazaar\Application\Request;
 use Hazaar\Application\Route;
 use Hazaar\Controller;
-use Hazaar\Controller\Response;
 use Hazaar\Controller\Response\XML;
 use Hazaar\XML\Element;
 use Hazaar\XML\RPC\Exception\InvalidRequest;
@@ -22,17 +21,17 @@ abstract class Server extends Controller
      */
     protected array $registeredMethods = [];
 
-    public function __toString()
+    public function __toString(): string
     {
         return get_class($this);
     }
 
-    public function initialize(Request $request): ?Response
+    public function initialize(Request $request): void
     {
         parent::initialize($request);
         $autoRegister = true;
         if (method_exists($this, 'init')) {
-            $autoRegister = $this->init($request);
+            $autoRegister = $this->init();
         }
         if (false !== $autoRegister) {
             foreach (get_class_methods($this) as $method) {
@@ -45,8 +44,6 @@ abstract class Server extends Controller
                 }
             }
         }
-
-        return null;
     }
 
     public function run(?Route $route = null): XML

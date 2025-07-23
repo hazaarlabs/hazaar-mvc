@@ -12,8 +12,11 @@ declare(strict_types=1);
 namespace Hazaar\Application;
 
 use Hazaar\Application\Router\Exception\RouteNotFound;
+use Hazaar\Application\Router\Exception\RouterNotInitialised;
 use Hazaar\Application\Router\Loader;
 use Hazaar\Controller\Error;
+use Hazaar\Controller\Response;
+use Hazaar\Middleware\MiddlewareDispatcher;
 
 class Router
 {
@@ -43,6 +46,7 @@ class Router
     public array $config;
     private static ?self $instance = null;
     private Loader $routeLoader;
+    private MiddlewareDispatcher $middlewareDispatcher;
 
     /**
      * @var array<Route>
@@ -64,6 +68,7 @@ class Router
             throw new Router\Exception\LoaderNotSupported($type);
         }
         $this->routeLoader = new $loaderClass($this->config);
+        $this->middlewareDispatcher = new MiddlewareDispatcher();
     }
 
     /**
@@ -79,6 +84,184 @@ class Router
         }
 
         return true;
+    }
+
+    /**
+     * Handles an incoming HTTP request by evaluating the route, applying middleware, and executing the controller logic.
+     *
+     * @param Request $request the incoming HTTP request to handle
+     *
+     * @return Response|Route returns a Response object after processing the request, or a Route object if applicable
+     *
+     * @throws RouteNotFound if no matching route is found for the request path
+     */
+    public function handle(Request $request): Response|Route
+    {
+        $route = $this->evaluateRequest($request);
+        if (!$route) {
+            throw new RouteNotFound($request->getPath());
+        }
+        $this->middlewareDispatcher->addFromArray($route->getMiddleware());
+        $finalHandler = function (Request $request) use ($route): Response {
+            $controller = $route->getController();
+            $controller->initialize($request);
+            $response = $controller->run($route);
+            $controller->shutdown();
+
+            return $response;
+        };
+
+        return $this->middlewareDispatcher->handle($request, $finalHandler);
+    }
+
+    /**
+     * Adds a route to the router.
+     *
+     * This method sets the router for the given route and then adds the route
+     * to the list of routes managed by this router.
+     *
+     * @param Route $route the route to be added
+     */
+    public function addRoute(Route $route): void
+    {
+        $route->setRouter($this);
+        $this->routes[] = $route;
+    }
+
+    /**
+     * Retrieves the error controller instance.
+     *
+     * This method checks the configuration for a specified error controller class.
+     * If the class exists and is a subclass of the Error class, it instantiates
+     * and returns the error controller. If no valid error controller is found in
+     * the configuration, it returns a default Error instance.
+     *
+     * @return Error the error controller instance
+     */
+    public function getErrorController(): Error
+    {
+        $controller = null;
+        if (isset($this->config['errorController'])
+            && ($errorController = $this->config['errorController'])) {
+            $controllerClass = '\App\Controller\\'.ucfirst($errorController);
+            if (class_exists($controllerClass) && is_subclass_of($controllerClass, Error::class)) {
+                $controller = new $controllerClass();
+            }
+        }
+        if (null === $controller) {
+            $controller = new Error();
+        }
+
+        return $controller;
+    }
+
+    /**
+     * Registers a route that responds to HTTP GET requests.
+     *
+     * @param string $path     the URL path for the route
+     * @param mixed  $callable the callback or controller action to handle the request
+     */
+    public static function get(string $path, mixed $callable): Route
+    {
+        return self::match(['GET'], $path, $callable);
+    }
+
+    /**
+     * Registers a route that responds to HTTP POST requests.
+     *
+     * @param string $path     the URL path for the route
+     * @param mixed  $callable the callback or controller method to handle the request
+     */
+    public static function post(string $path, mixed $callable): Route
+    {
+        return self::match(['POST'], $path, $callable);
+    }
+
+    /**
+     * Registers a route that responds to HTTP PUT requests.
+     *
+     * @param string $path     the URI path that the route will respond to
+     * @param mixed  $callable the handler for the route, which can be a callable or other valid route handler
+     */
+    public static function put(string $path, mixed $callable): Route
+    {
+        return self::match(['PUT'], $path, $callable);
+    }
+
+    /**
+     * Registers a route that responds to HTTP DELETE requests.
+     *
+     * @param string $path     the URL path that the route should match
+     * @param mixed  $callable the callback or controller action to be executed when the route is matched
+     */
+    public static function delete(string $path, mixed $callable): Route
+    {
+        return self::match(['DELETE'], $path, $callable);
+    }
+
+    /**
+     * Registers a route that responds to HTTP PATCH requests.
+     *
+     * @param string $path     the URI path that the route will match
+     * @param mixed  $callable the callback or controller action to be executed when the route is matched
+     */
+    public static function patch(string $path, mixed $callable): Route
+    {
+        return self::match(['PATCH'], $path, $callable);
+    }
+
+    /**
+     * Registers a route that responds to HTTP OPTIONS requests.
+     *
+     * @param string $path     the URL path to match
+     * @param mixed  $callable the callback or controller action to handle the request
+     */
+    public static function options(string $path, mixed $callable): Route
+    {
+        return self::match(['OPTIONS'], $path, $callable);
+    }
+
+    /**
+     * Registers a route that responds to any HTTP method.
+     *
+     * @param string $path     the path pattern to match
+     * @param mixed  $callable the callback to execute when the route is matched
+     */
+    public static function any(string $path, mixed $callable): Route
+    {
+        return self::match(['ANY'], $path, $callable);
+    }
+
+    /**
+     * Matches a route with the given HTTP methods, path, and callable.
+     *
+     * @param null|array<string>|string $methods  The HTTP methods to match (e.g., ['GET', 'POST']).
+     * @param string                    $path     The path to match (e.g., '/user/{id}').
+     * @param mixed                     $callable The callable to execute when the route is matched.
+     *                                            It can be a string in the format 'Class::method',
+     *                                            an array with the class and method, or a Closure.
+     */
+    public static function match(null|array|string $methods, string $path, mixed $callable): Route
+    {
+        if (!self::$instance) {
+            throw new RouterNotInitialised();
+        }
+        if (is_string($callable)) {
+            $callable = explode('::', $callable);
+        }
+        $route = new Route($path, $methods);
+        $route->setCallable($callable);
+        self::$instance->addRoute($route);
+
+        return $route;
+    }
+
+    public static function add(Route $route): void
+    {
+        if (!self::$instance) {
+            return;
+        }
+        self::$instance->addRoute($route);
     }
 
     /**
@@ -125,153 +308,5 @@ class Router
         $route->setCallable([$controllerClass, $this->config['action']]);
 
         return $route;
-    }
-
-    /**
-     * Adds a route to the router.
-     *
-     * This method sets the router for the given route and then adds the route
-     * to the list of routes managed by this router.
-     *
-     * @param Route $route the route to be added
-     */
-    public function addRoute(Route $route): void
-    {
-        $route->setRouter($this);
-        $this->routes[] = $route;
-    }
-
-    /**
-     * Retrieves the error controller instance.
-     *
-     * This method checks the configuration for a specified error controller class.
-     * If the class exists and is a subclass of the Error class, it instantiates
-     * and returns the error controller. If no valid error controller is found in
-     * the configuration, it returns a default Error instance.
-     *
-     * @return Error the error controller instance
-     */
-    public function getErrorController(): Error
-    {
-        $controller = null;
-        if (isset($this->config['errorController'])
-            && ($errorController = $this->config['errorController'])) {
-            $controllerClass = '\App\Controller\\'.ucfirst($errorController);
-            if (class_exists($controllerClass) && is_subclass_of($controllerClass, Error::class)) {
-                $controller = new $controllerClass($errorController);
-            }
-        }
-        if (null === $controller) {
-            $controller = new Error('error');
-        }
-
-        return $controller;
-    }
-
-    /**
-     * Registers a route that responds to HTTP GET requests.
-     *
-     * @param string $path     the URL path for the route
-     * @param mixed  $callable the callback or controller action to handle the request
-     */
-    public static function get(string $path, mixed $callable): void
-    {
-        self::match(['GET'], $path, $callable);
-    }
-
-    /**
-     * Registers a route that responds to HTTP POST requests.
-     *
-     * @param string $path     the URL path for the route
-     * @param mixed  $callable the callback or controller method to handle the request
-     */
-    public static function post(string $path, mixed $callable): void
-    {
-        self::match(['POST'], $path, $callable);
-    }
-
-    /**
-     * Registers a route that responds to HTTP PUT requests.
-     *
-     * @param string $path     the URI path that the route will respond to
-     * @param mixed  $callable the handler for the route, which can be a callable or other valid route handler
-     */
-    public static function put(string $path, mixed $callable): void
-    {
-        self::match(['PUT'], $path, $callable);
-    }
-
-    /**
-     * Registers a route that responds to HTTP DELETE requests.
-     *
-     * @param string $path     the URL path that the route should match
-     * @param mixed  $callable the callback or controller action to be executed when the route is matched
-     */
-    public static function delete(string $path, mixed $callable): void
-    {
-        self::match(['DELETE'], $path, $callable);
-    }
-
-    /**
-     * Registers a route that responds to HTTP PATCH requests.
-     *
-     * @param string $path     the URI path that the route will match
-     * @param mixed  $callable the callback or controller action to be executed when the route is matched
-     */
-    public static function patch(string $path, mixed $callable): void
-    {
-        self::match(['PATCH'], $path, $callable);
-    }
-
-    /**
-     * Registers a route that responds to HTTP OPTIONS requests.
-     *
-     * @param string $path     the URL path to match
-     * @param mixed  $callable the callback or controller action to handle the request
-     */
-    public static function options(string $path, mixed $callable): void
-    {
-        self::match(['OPTIONS'], $path, $callable);
-    }
-
-    /**
-     * Registers a route that responds to any HTTP method.
-     *
-     * @param string $path     the path pattern to match
-     * @param mixed  $callable the callback to execute when the route is matched
-     */
-    public static function any(string $path, mixed $callable): void
-    {
-        self::match(['ANY'], $path, $callable);
-    }
-
-    /**
-     * Matches a route with the given HTTP methods, path, and callable.
-     *
-     * @param null|array<string>|string $methods  The HTTP methods to match (e.g., ['GET', 'POST']).
-     * @param string                    $path     The path to match (e.g., '/user/{id}').
-     * @param mixed                     $callable The callable to execute when the route is matched.
-     *                                            It can be a string in the format 'Class::method',
-     *                                            an array with the class and method, or a Closure.
-     */
-    public static function match(null|array|string $methods, string $path, mixed $callable): void
-    {
-        if (!self::$instance) {
-            return;
-        }
-        if (is_string($callable)) {
-            $callable = explode('::', $callable);
-        }
-        $route = new Route($path, $methods);
-        $route->setCallable($callable);
-        self::$instance->addRoute($route);
-    }
-
-    public static function add(Route $route): void
-    {
-        if (!self::$instance) {
-            return;
-        }
-        self::$instance->addRoute($route);
     }
 }

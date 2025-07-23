@@ -27,6 +27,7 @@ class Response implements ResponseInterface
     protected bool $headersSet = false;
     protected string $contentType = 'text/plain';
     protected int $statusCode = 0;
+    protected string $content = '';
 
     public function __construct(string $type = 'text/html', int $status = 501)
     {
@@ -238,7 +239,7 @@ class Response implements ResponseInterface
      */
     public function getContent(): string
     {
-        return '';
+        return $this->content ?? '';
     }
 
     /**
@@ -246,7 +247,10 @@ class Response implements ResponseInterface
      *
      * @param mixed $content the content to be set for the response
      */
-    public function setContent(mixed $content): void {}
+    public function setContent(mixed $content): void
+    {
+        $this->content = (string) $content;
+    }
 
     /**
      * Retrieves the content length.
@@ -255,7 +259,7 @@ class Response implements ResponseInterface
      */
     public function getContentLength(): int
     {
-        return 0;
+        return strlen($this->content);
     }
 
     /**

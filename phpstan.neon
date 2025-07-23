@@ -9,3 +9,4 @@ parameters:
         - tests/app/route.php
     universalObjectCratesClasses:
         - Hazaar\Model
+    treatPhpDocTypesAsCertain: false

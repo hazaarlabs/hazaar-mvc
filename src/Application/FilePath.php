@@ -21,6 +21,7 @@ enum FilePath: string
     case DB = 'db';
     case EVENT = 'event';
     case LISTENER = 'listener';
+    case MIDDLEWARE = 'middleware';
 
     public static function fromAppNamespace(string $namespace): ?self
     {
@@ -31,6 +32,7 @@ enum FilePath: string
             'Event' => self::EVENT,
             'Listener' => self::LISTENER,
             'Service' => self::SERVICE,
+            'Middleware' => self::MIDDLEWARE,
             default => null,
         };
     }
