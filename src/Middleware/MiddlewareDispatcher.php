@@ -38,17 +38,15 @@ class MiddlewareDispatcher
      * This allows for dynamic configuration of middleware components
      * and their aliases, enhancing the flexibility of the middleware system.
      *
-     * @param array{global?:array<string>,aliases?:array<string,string>} $middlwareConfig configuration for middleware, including optional global middleware and aliases
+     * @param array<string, string> $middlwareAliases an associative array of middleware aliases
+     *                                                where keys are alias names and values are fully qualified class names of middleware.
+     *                                                This allows for easy reference to middleware classes without needing to specify their full paths.
+     *
+     * @throws \InvalidArgumentException if a class does not exist or does not implement Middleware interface
      */
-    public function __construct(array $middlwareConfig = [])
+    public function __construct(array $middlwareAliases = [])
     {
-        // Optionally load global middleware from configuration
-        if (isset($middlwareConfig['global']) && is_array($middlwareConfig['global'])) {
-            $this->addFromArray($middlwareConfig['global']);
-        }
-        if (isset($middlwareConfig['aliases']) && is_array($middlwareConfig['aliases'])) {
-            self::$aliases = array_merge(self::$aliases, $middlwareConfig['aliases']);
-        }
+        self::$aliases = array_merge(self::$aliases, $middlwareAliases);
     }
 
     /**

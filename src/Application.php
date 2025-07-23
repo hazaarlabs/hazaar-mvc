@@ -131,8 +131,12 @@ class Application
             // Create a new router object for evaluating routes
             $routerConfig = $this->config['router'] ?? ['type' => 'file'];
             $routerConfig['applicationPath'] = $this->path;
-            $this->router = new Router($routerConfig);
-            $this->middlewareDispatcher = new MiddlewareDispatcher($this->config['middleware'] ?? []);
+            $this->router = new Router($routerConfig, $this->config['middleware']['aliases'] ?? []);
+            $this->middlewareDispatcher = new MiddlewareDispatcher($this->config['middleware']['aliases'] ?? []);
+            // Optionally load global middleware from configuration
+            if (isset($this->config['middleware']['global']) && is_array($this->config['middleware']['global'])) {
+                $this->middlewareDispatcher->addFromArray($this->config['middleware']['global']);
+            }
             $this->timer->stop('init');
         } catch (\Throwable $e) {
             Error::dieDieDie($e);

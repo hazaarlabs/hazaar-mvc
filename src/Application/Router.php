@@ -56,9 +56,10 @@ class Router
     /**
      * Creates a new Router object.
      *
-     * @param array<mixed> $config the configuration settings
+     * @param array<mixed>         $config            the configuration settings
+     * @param array<string,string> $middlewareAliases configuration for middleware, including optional global middleware and aliases
      */
-    final public function __construct(array $config)
+    final public function __construct(array $config, array $middlewareAliases = [])
     {
         self::$instance = $this;
         $this->config = array_merge(self::$defaultConfig, $config);
@@ -68,7 +69,7 @@ class Router
             throw new Router\Exception\LoaderNotSupported($type);
         }
         $this->routeLoader = new $loaderClass($this->config);
-        $this->middlewareDispatcher = new MiddlewareDispatcher();
+        $this->middlewareDispatcher = new MiddlewareDispatcher($middlewareAliases);
     }
 
     /**
