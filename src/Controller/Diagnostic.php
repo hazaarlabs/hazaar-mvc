@@ -38,12 +38,10 @@ class Diagnostic extends Action
      * various conditions such as environment variables, the PHP SAPI, and request headers.
      *
      * @param Request $request the request object, or null if not available
-     *
-     * @return null|Response the response object, or null if not available
      */
-    public function initialize(Request $request): ?Response
+    public function initialize(Request $request): void
     {
-        $response = parent::initialize($request);
+        parent::initialize($request);
         if (getenv('HAZAAR_SID')) {
             $this->responseType = Response::TYPE_HAZAAR;
         } elseif (PHP_SAPI == 'cli') {
@@ -63,8 +61,6 @@ class Diagnostic extends Action
         } else {
             $this->responseType = Response::TYPE_HTML;
         }
-
-        return $response;
     }
 
     /**
@@ -84,7 +80,7 @@ class Diagnostic extends Action
      *
      * @return Response the response object, which can be of type JSON or HTML
      */
-    final public function run(): Response
+    final public function run(?Route $route = null): Response
     {
         if ($this->responseType && method_exists($this, $method = Response::getResponseTypeName($this->responseType))) {
             $response = call_user_func([$this, $method], $this->caller);

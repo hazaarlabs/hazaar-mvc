@@ -57,12 +57,11 @@ class Error extends Diagnostic
      */
     private static ?array $statusCodes = null;
 
-    public function __construct($name = 'Error')
+    public function __construct()
     {
         if (!is_array(self::$statusCodes)) {
             self::$statusCodes = $this->loadStatusCodes();
         }
-        parent::__construct($name);
     }
 
     /**

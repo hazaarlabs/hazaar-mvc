@@ -510,10 +510,8 @@ class Application
                 ob_end_clean();
             }
             if (null !== $controller) {
-                $response = $controller->initialize($request);
-                if (null === $response) {
-                    $response = $controller->run();
-                }
+                $controller->initialize($request);
+                $response = $controller->run();
             } elseif (!$this->router) {
                 throw new \Exception('Router not initialised');
             } else {

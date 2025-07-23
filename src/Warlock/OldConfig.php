@@ -5,9 +5,10 @@ declare(strict_types=1);
 namespace Hazaar\Warlock;
 
 use Hazaar\Application\FilePath;
+use Hazaar\Config;
 use Hazaar\Loader;
 
-class OldConfig extends \Hazaar\Config
+class OldConfig extends Config
 {
     /**
      * @var array<mixed>
@@ -69,9 +70,10 @@ class OldConfig extends \Hazaar\Config
     /**
      * @param array<mixed> $config
      */
-    public function __construct(string $configFile = 'warlock', array $config = [], ?string $env = APPLICATION_ENV)
+    public function __construct(string $configFile = 'warlock', array $config = [], ?string $env = null)
     {
         $defaultConfig = self::$defaultConfig;
+        $env = $env ?: \constant('APPLICATION_ENV') ?: 'development';
 
         try {
             if ('/' !== substr($configFile, 0, 1)) {

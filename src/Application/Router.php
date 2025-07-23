@@ -104,11 +104,9 @@ class Router
         $this->middlewareDispatcher->addFromArray($route->getMiddleware());
         $finalHandler = function (Request $request) use ($route): Response {
             $controller = $route->getController();
-            $response = $controller->initialize($request);
-            if (null === $response) {
-                $response = $controller->runRoute($route);
-            }
-            $controller->shutdown($response);
+            $controller->initialize($request);
+            $response = $controller->run($route);
+            $controller->shutdown();
 
             return $response;
         };
@@ -147,11 +145,11 @@ class Router
             && ($errorController = $this->config['errorController'])) {
             $controllerClass = '\App\Controller\\'.ucfirst($errorController);
             if (class_exists($controllerClass) && is_subclass_of($controllerClass, Error::class)) {
-                $controller = new $controllerClass($errorController);
+                $controller = new $controllerClass();
             }
         }
         if (null === $controller) {
-            $controller = new Error('error');
+            $controller = new Error();
         }
 
         return $controller;

@@ -25,7 +25,7 @@ class Test extends Basic
         return 'bar: '.($word ?? '');
     }
 
-    protected function init(Request $request): void
+    protected function init(): void
     {
         $this->cacheAction('index', 60);
     }
