@@ -62,6 +62,7 @@ class RouterTest extends TestCase
         $this->assertTrue($router->initialise());
         $this->assertInstanceOf(Route::class, $route = $router->evaluateRequest($request));
         $this->assertInstanceOf(Index::class, $controller = $route->getController());
+        $controller->initialize($request);
         $this->assertEquals('index', $route->getAction());
         $this->assertInstanceOf(Response::class, $controller->run($route));
     }

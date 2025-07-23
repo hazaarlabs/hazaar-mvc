@@ -2,23 +2,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hazaar-docs
+  name: hazaar-docs-dev
   namespace: hazaar
   labels:
-    app: hazaar-docs
+    app: hazaar-docs-dev
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: hazaar-docs
+      app: hazaar-docs-dev
   template:
     metadata:
       labels:
-        app: hazaar-docs
+        app: hazaar-docs-dev
     spec:
       containers:
-      - name: hazaar-docs
-        image: registry.hazaar.io/hazaar/framework:docs-production
+      - name: hazaar-docs-dev
+        image: registry.hazaar.io/hazaar/framework:docs-testing
         imagePullPolicy: Always
         ports:
         - containerPort: 80
@@ -40,11 +40,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: hazaar-docs
+  name: hazaar-docs-dev
   namespace: hazaar
 spec:
   selector:
-    app: hazaar-docs
+    app: hazaar-docs-dev
   ports:
     - protocol: TCP
       port: 80
@@ -53,42 +53,19 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: hazaar-docs
+  name: hazaar-docs-dev
   namespace: hazaar
 spec:
   ingressClassName: nginx
   rules:
-    - host: hazaar.io
+    - host: test.hazaar.io
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: hazaar-docs
+                name: hazaar-docs-dev
                 port:
                   number: 80
- 
-
----
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: hazaar-docs
-  namespace: hazaar
-spec:
-  scaleTargetRef:
-    kind: Deployment
-    name: hazaar-docs
-    apiVersion: apps/v1
-  minReplicas: 2
-  maxReplicas: 3
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 60
-
  
