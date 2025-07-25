@@ -13,7 +13,7 @@ use Hazaar\Middleware\Interface\Middleware;
  * Handles the execution flow of middleware stacks, allowing for request and response
  * manipulation at various stages of the application's lifecycle.
  */
-class MiddlewareDispatcher
+class Dispatcher
 {
     /**
      * Stores aliases for middleware classes.
@@ -25,7 +25,7 @@ class MiddlewareDispatcher
     /**
      * Stack of middleware components to be executed in order.
      *
-     * @var array<Middleware>
+     * @var array<Handler>
      */
     private array $middlewareStack = [];
 
@@ -52,23 +52,12 @@ class MiddlewareDispatcher
     /**
      * Adds a middleware instance to the middleware stack.
      *
-     * @param Middleware $middleware the middleware to add to the stack
+     * @param array<string>|string $middleware the middleware to add to the stack
      */
-    public function add(Middleware|string $middleware): void
+    public function add(array|string $middleware): void
     {
-        if (is_string($middleware)) {
-            if (array_key_exists($middleware, self::$aliases)) {
-                $middleware = self::$aliases[$middleware];
-            }
-            if (!class_exists($middleware)) {
-                throw new \InvalidArgumentException("Class {$middleware} does not exist.");
-            }
-            if (!is_subclass_of($middleware, Middleware::class)) {
-                throw new \InvalidArgumentException("Class {$middleware} does not implement Middleware interface.");
-            }
-            $middleware = new $middleware();
-        }
-        $this->middlewareStack[] = $middleware;
+        $name = array_shift($middleware);
+        $this->middlewareStack[] = new Handler($name, $middleware);
     }
 
     /**
@@ -90,6 +79,46 @@ class MiddlewareDispatcher
     }
 
     /**
+     * Adds a middleware handler to the middleware stack.
+     *
+     * @param Handler $handler the middleware handler to add to the stack
+     */
+    public function addHandler(Handler $handler): void
+    {
+        $this->middlewareStack[] = $handler;
+    }
+
+    /**
+     * Add multiple middleware handlers to the dispatcher.
+     *
+     * This method allows for adding multiple middleware handlers at once.
+     *
+     * @param array<Handler> $handlers an array of middleware handlers to add
+     */
+    public function addHandlers(array $handlers): void
+    {
+        foreach ($handlers as $handler) {
+            if (!$handler instanceof Handler) {
+                throw new \InvalidArgumentException('Handler must be an instance of Handler class.');
+            }
+            $this->middlewareStack[] = $handler;
+        }
+    }
+
+    /**
+     * Adds a middleware to the middleware stack.
+     *
+     * @param Middleware $middleware the middleware instance to add
+     * @param mixed      ...$args    Additional arguments to pass to the middleware handler.
+     */
+    public function addMiddleware(Middleware $middleware, mixed ...$args): void
+    {
+        $middlewareHandler = new Handler(get_class($middleware), $args);
+        $middlewareHandler->setInstance($middleware);
+        $this->middlewareStack[] = $middlewareHandler;
+    }
+
+    /**
      * Handles the incoming HTTP request by passing it through the middleware stack.
      *
      * This method reverses the middleware stack and wraps each middleware around the next,
@@ -107,7 +136,7 @@ class MiddlewareDispatcher
         $next = $finalHandler;
         foreach ($stack as $middleware) {
             $next = function (Request $request) use ($middleware, $next) {
-                return $middleware->handle($request, $next);
+                return $middleware->run($request, $next);
             };
         }
 

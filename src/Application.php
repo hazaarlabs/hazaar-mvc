@@ -27,8 +27,8 @@ use Hazaar\Controller\Response;
 use Hazaar\Events\EventDispatcher;
 use Hazaar\File\Metric;
 use Hazaar\Logger\Frontend;
+use Hazaar\Middleware\Dispatcher;
 use Hazaar\Middleware\Interface\Middleware;
-use Hazaar\Middleware\MiddlewareDispatcher;
 use Hazaar\Util\Arr;
 use Hazaar\Util\Timer;
 
@@ -80,7 +80,7 @@ class Application
     private Runtime $runtime;
 
     private EventDispatcher $eventDispatcher;
-    private MiddlewareDispatcher $middlewareDispatcher;
+    private Dispatcher $middlewareDispatcher;
 
     /**
      * The main application constructor.
@@ -132,7 +132,7 @@ class Application
             $routerConfig = $this->config['router'] ?? ['type' => 'file'];
             $routerConfig['applicationPath'] = $this->path;
             $this->router = new Router($routerConfig, $this->config['middleware']['aliases'] ?? []);
-            $this->middlewareDispatcher = new MiddlewareDispatcher($this->config['middleware']['aliases'] ?? []);
+            $this->middlewareDispatcher = new Dispatcher($this->config['middleware']['aliases'] ?? []);
             // Optionally load global middleware from configuration
             if (isset($this->config['middleware']['global']) && is_array($this->config['middleware']['global'])) {
                 $this->middlewareDispatcher->addFromArray($this->config['middleware']['global']);
@@ -622,7 +622,7 @@ class Application
      */
     public function addMiddleware(Middleware $middleware): void
     {
-        $this->middlewareDispatcher->add($middleware);
+        $this->middlewareDispatcher->addMiddleware($middleware);
     }
 
     /**

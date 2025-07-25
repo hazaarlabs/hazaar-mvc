@@ -15,5 +15,5 @@ interface Middleware
      *
      * @return Response The response object
      */
-    public function handle(Request $request, callable $next): Response;
+    public function handle(Request $request, callable $next, mixed ...$args): Response;
 }
