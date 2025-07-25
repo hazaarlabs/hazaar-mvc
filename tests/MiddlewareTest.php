@@ -4,8 +4,8 @@ namespace Hazaar\Tests;
 
 use Hazaar\Application\Request;
 use Hazaar\Controller\Response;
+use Hazaar\Middleware\Dispatcher;
 use Hazaar\Middleware\Interface\Middleware;
-use Hazaar\Middleware\MiddlewareDispatcher;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -15,7 +15,7 @@ class MiddlewareTest extends TestCase
 {
     public function testMiddlewareHandlesRequest(): void
     {
-        $middleware = new MiddlewareDispatcher();
+        $middleware = new Dispatcher();
         $request = $this->createMock(Request::class);
         $finalHandler = function (Request $request) {
             $response = new Response();
@@ -24,7 +24,7 @@ class MiddlewareTest extends TestCase
             return $response;
         };
         $middleware->add(new class implements Middleware {
-            public function handle(Request $request, callable $next): Response
+            public function handle(Request $request, callable $next, mixed ...$args): Response
             {
                 // Simulate some processing
                 return $next($request);
@@ -37,7 +37,7 @@ class MiddlewareTest extends TestCase
 
     public function testMiddlewareModifiesRequest(): void
     {
-        $middleware = new MiddlewareDispatcher();
+        $middleware = new Dispatcher();
         $request = new Request();
         $finalHandler = function (Request $request) {
             $response = new Response($request->getHeader('X-Test-Content-Type'));
@@ -46,7 +46,7 @@ class MiddlewareTest extends TestCase
             return $response;
         };
         $middleware->add(new class implements Middleware {
-            public function handle(Request $request, callable $next): Response
+            public function handle(Request $request, callable $next, mixed ...$args): Response
             {
                 $request->setHeader('X-Test-Content-Type', 'application/text');
 

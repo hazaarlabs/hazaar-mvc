@@ -12,9 +12,9 @@ Middleware in Hazaar Framework provides a flexible mechanism to process HTTP req
 
 Hazaar supports three types of middleware:
 
-* *Global Middleware* - Only middleware listed in the `middleware.global` array in your config is loaded and executed for every request. The array can contain class names or aliases. Aliases are defined in the `middleware.aliases` property and map to class names.
-* *Route Middleware* - Route middleware is attached to specific routes and only executed for requests matching those routes. This is useful for applying authentication, authorization, or other logic to selected endpoints.
-* *Controller Middleware* - Middleware can also be registered directly within a controller's constructor. This allows you to apply middleware to specific controller actions, with fine-grained control using `only` and `except` methods.
+* *Global Middleware* - Only middleware listed in the `middleware.global` array in your config is loaded and executed for every request. The array can contain class names or aliases. Aliases are defined in the `middleware.aliases` property and map to class names. You can also pass arguments to global middleware by defining the middleware as an array, where the first element is the class/alias and subsequent elements are arguments.
+* *Route Middleware* - Route middleware is attached to specific routes and only executed for requests matching those routes. This is useful for applying authentication, authorization, or other logic to selected endpoints. You can pass arguments to route middleware by providing them as additional arguments to the `middleware()` method.
+* *Controller Middleware* - Middleware can also be registered directly within a controller's constructor. This allows you to apply middleware to specific controller actions, with fine-grained control using `only` and `except` methods. Arguments can be passed after the middleware name in the `middleware()` call.
 
 ::: tip
 Global middleware runs for every request. Route middleware runs only for requests matching the route. Controller middleware runs for specific actions within a controller.
@@ -42,7 +42,8 @@ Global middleware must be defined in your application configuration, for example
   "middleware": {
     "global": [
       "App\\Middleware\\AddHeader",
-      "auth" // alias example
+      ["auth", "admin"], // 'auth' middleware with argument 'admin'
+      ["App\\Middleware\\Throttle", 10] // Throttle middleware with argument 10
     ],
     "aliases": {
       "auth": "App\\Middleware\\RequireAuth"
@@ -51,7 +52,8 @@ Global middleware must be defined in your application configuration, for example
 }
 ```
 
-Only the middleware listed in the `global` array will be loaded and executed for every request. Aliases allow you to use short names in your config.
+- If the middleware entry is a string, it is treated as the middleware class or alias with no arguments.
+- If the middleware entry is an array, the first element is the class or alias, and the remaining elements are passed as arguments to the middleware handler.
 
 ### Example 1: Modifying a Request
 
@@ -161,13 +163,13 @@ $dispatcher->add(new \App\Middleware\RequireHeader());
 
 Route middleware allows you to attach middleware to specific routes, rather than applying it globally to all requests. This is useful for applying authentication, authorization, or other logic only to certain endpoints.
 
-Route middleware is registered on a route using the `middleware()` chaining method call. The middleware will only be executed for requests matching that route. You can use either class names or aliases (defined in your config under `middleware.aliases`).
+Route middleware is registered on a route using the `middleware()` chaining method call. The middleware will only be executed for requests matching that route. You can use either class names or aliases (defined in your config under `middleware.aliases`). Arguments can be passed as additional parameters after the middleware name.
 
 #### Example: File Route Middleware
 
 ```php
 Router::get('/admin', [AdminController::class, 'dashboard'])
-    ->middleware('auth'); // 'auth' is an alias defined in config
+    ->middleware('auth', 'admin'); // 'auth' alias with argument 'admin'
 ```
 
 #### Example: JSON Route Middleware
@@ -179,10 +181,13 @@ Router::get('/admin', [AdminController::class, 'dashboard'])
         "controller": "Application\\Controller\\Admin",
         "action": "dashboard",
         "method": "GET",
-        "middleware": "auth"
+        "middleware": ["auth", "admin"]
     }
 ]
 ```
+
+- For file routes, use `->middleware('name', arg1, arg2, ...)`.
+- For JSON routes, use an array where the first element is the middleware name or alias, and the rest are arguments.
 
 Aliases are mapped to middleware class names in your configuration:
 
@@ -196,7 +201,7 @@ Aliases are mapped to middleware class names in your configuration:
 }
 ```
 
-Route middleware is executed after global middleware and before the controller action. You can specify a middleware class name or alias per route. Each middleware should implement the `Hazaar\Middleware\Interface\Middleware` interface.
+Route middleware is executed after global middleware and before the controller action. Each middleware should implement the `Hazaar\Middleware\Interface\Middleware` interface.
 
 ::: tip
 Use route middleware for logic that only applies to specific endpoints, such as authentication, permission checks, or request validation. Aliases help keep your route definitions clean and maintainable.
@@ -215,7 +220,7 @@ Use route middleware for logic that only applies to specific endpoints, such as 
 
 Controller middleware allows you to attach middleware directly to controller actions by registering them in the controller's constructor. This provides fine-grained control over which actions the middleware applies to, using the `only` and `except` methods.
 
-To register middleware in a controller, use the `middleware()` method inside the constructor. You can specify the middleware class name or alias. The `only()` and `except()` methods allow you to restrict the middleware to specific actions.
+To register middleware in a controller, use the `middleware()` method inside the constructor. You can specify the middleware class name or alias, and pass arguments after the name.
 
 ### Example: Registering Middleware in a Controller
 
@@ -233,11 +238,11 @@ class Main extends Action
 {
     public function __construct()
     {
-        // Apply the Auth middleware only to the 'index' action
-        $this->middleware(Auth::class)->only('index');
+        // Apply the Auth middleware only to the 'index' action, with argument 'admin'
+        $this->middleware(Auth::class, 'admin')->only('index');
 
-        // Apply the Throttle middleware to all actions except 'profile'
-        $this->middleware(Throttle::class)->except('profile');
+        // Apply the Throttle middleware to all actions except 'profile', with argument 10
+        $this->middleware(Throttle::class, 10)->except('profile');
 
         $this->cacheAction('index', 60); // Cache the index action for 60 seconds
     }
@@ -255,18 +260,18 @@ class Main extends Action
 ```
 
 In this example:
-- `Auth` middleware is applied only to the `index` action using `only('index')`.
-- `Throttle` middleware is applied to all actions except `profile` using `except('profile')`.
+- `Auth` middleware is applied only to the `index` action with the argument `'admin'`.
+- `Throttle` middleware is applied to all actions except `profile` with the argument `10`.
 
 You can chain multiple middleware registrations and use `only()` or `except()` to control their scope. This approach keeps your middleware logic close to the controller actions they affect, making your codebase easier to understand and maintain.
 
 ### Summary Table
 
-| Method                | Description                                                        |
-|-----------------------|--------------------------------------------------------------------|
-| `middleware($class)`  | Registers middleware for the controller.                           |
-| `only($actions)`      | Restricts middleware to specified actions (string or array).       |
-| `except($actions)`    | Excludes middleware from specified actions (string or array).      |
+| Method                              | Description                                                        |
+|------------------------------------- |--------------------------------------------------------------------|
+| `middleware($class, ...$args)`      | Registers middleware for the controller, passing any arguments.     |
+| `only($actions)`                    | Restricts middleware to specified actions (string or array).        |
+| `except($actions)`                  | Excludes middleware from specified actions (string or array).       |
 
 ## Summary
 

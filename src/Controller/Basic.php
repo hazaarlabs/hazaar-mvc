@@ -16,7 +16,8 @@ use Hazaar\Application\Route;
 use Hazaar\Cache\Adapter;
 use Hazaar\Controller;
 use Hazaar\HTTP\Link;
-use Hazaar\Middleware\MiddlewareDispatcher;
+use Hazaar\Middleware\Dispatcher;
+use Hazaar\Middleware\Handler;
 use Hazaar\View;
 
 /**
@@ -50,7 +51,7 @@ abstract class Basic extends Controller
     private ?Adapter $responseCache = null;
 
     /**
-     * @var array<Middleware>
+     * @var array<Handler>
      */
     private array $middleware = [];
 
@@ -82,14 +83,12 @@ abstract class Basic extends Controller
         };
         if (count($this->middleware) > 0) {
             // If we have middleware, we need to run it first
-            $dispatcher = new MiddlewareDispatcher();
-            $appliedMiddleware = [];
+            $dispatcher = new Dispatcher();
             foreach ($this->middleware as $middleware) {
                 if ($middleware->match($route->getAction())) {
-                    $appliedMiddleware[] = $middleware->name;
+                    $dispatcher->addHandler($middleware);
                 }
             }
-            $dispatcher->addFromArray($appliedMiddleware);
 
             return $dispatcher->handle($this->request, $finalHandler);
         }
@@ -257,11 +256,11 @@ abstract class Basic extends Controller
      *
      * @param string $name the name of the middleware to instantiate
      *
-     * @return Middleware the newly created Middleware instance
+     * @return Handler the newly created Middleware instance
      */
-    protected function middleware(string $name): Middleware
+    protected function middleware(string $name, mixed ...$args): Handler
     {
-        return $this->middleware[] = new Middleware($name);
+        return $this->middleware[] = new Handler($name, $args);
     }
 
     protected function init(): void {}

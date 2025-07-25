@@ -16,7 +16,7 @@ use Hazaar\Application\Router\Exception\RouterNotInitialised;
 use Hazaar\Application\Router\Loader;
 use Hazaar\Controller\Error;
 use Hazaar\Controller\Response;
-use Hazaar\Middleware\MiddlewareDispatcher;
+use Hazaar\Middleware\Dispatcher;
 
 class Router
 {
@@ -46,7 +46,7 @@ class Router
     public array $config;
     private static ?self $instance = null;
     private Loader $routeLoader;
-    private MiddlewareDispatcher $middlewareDispatcher;
+    private Dispatcher $middlewareDispatcher;
 
     /**
      * @var array<Route>
@@ -69,7 +69,7 @@ class Router
             throw new Router\Exception\LoaderNotSupported($type);
         }
         $this->routeLoader = new $loaderClass($this->config);
-        $this->middlewareDispatcher = new MiddlewareDispatcher($middlewareAliases);
+        $this->middlewareDispatcher = new Dispatcher($middlewareAliases);
     }
 
     /**
@@ -102,7 +102,7 @@ class Router
         if (!$route) {
             throw new RouteNotFound($request->getPath());
         }
-        $this->middlewareDispatcher->addFromArray($route->getMiddleware());
+        $this->middlewareDispatcher->addHandlers($route->getMiddlewareHandlers());
         $finalHandler = function (Request $request) use ($route): Response {
             $controller = $route->getController();
             $controller->initialize($request);

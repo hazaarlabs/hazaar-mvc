@@ -5,6 +5,7 @@ namespace Hazaar\Application;
 use Hazaar\Controller;
 use Hazaar\Controller\Closure;
 use Hazaar\Controller\Response;
+use Hazaar\Middleware\Handler;
 use Hazaar\Util\Boolean;
 
 /**
@@ -39,7 +40,7 @@ class Route
     private array $callableParameters = [];
 
     /**
-     * @var array<string> an array of middleware names or instances associated with the route
+     * @var array<Handler> an array of middleware instances associated with the route
      */
     private array $middleware = [];
 
@@ -298,9 +299,9 @@ class Route
      *
      * @return self returns the current instance for method chaining
      */
-    public function middleware(string $middleware): self
+    public function middleware(string $middleware, mixed ...$args): self
     {
-        $this->middleware = array_merge($this->middleware ?? [], explode(':', $middleware));
+        $this->middleware[] = new Handler($middleware, $args);
 
         return $this;
     }
@@ -308,9 +309,9 @@ class Route
     /**
      * Retrieves the list of middleware associated with the route.
      *
-     * @return array<string> an array containing middleware instances or definitions
+     * @return array<Handler> an array containing middleware instances or definitions
      */
-    public function getMiddleware(): array
+    public function getMiddlewareHandlers(): array
     {
         return $this->middleware;
     }
