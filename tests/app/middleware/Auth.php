@@ -9,7 +9,7 @@ use Hazaar\Middleware\Interface\Middleware;
 
 class Auth implements Middleware
 {
-    public function handle(Request $request, callable $next): Response
+    public function handle(Request $request, callable $next, mixed ...$args): Response
     {
         $authenticated = $request->get('authenticated', false);
         if (false === $authenticated) {

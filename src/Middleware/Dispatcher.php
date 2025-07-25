@@ -54,10 +54,18 @@ class Dispatcher
      *
      * @param array<string>|string $middleware the middleware to add to the stack
      */
-    public function add(array|string $middleware): void
+    public function add(array|Middleware|string $middleware, mixed ...$args): void
     {
-        $name = array_shift($middleware);
-        $this->middlewareStack[] = new Handler($name, $middleware);
+        if ($middleware instanceof Middleware) {
+            $middlewareHandler = new Handler(get_class($middleware), $args);
+            $middlewareHandler->setInstance($middleware);
+        } elseif (is_array($middleware)) {
+            $name = array_shift($middleware);
+            $middlewareHandler = new Handler($name, $middleware);
+        } else {
+            $middlewareHandler = new Handler($middleware);
+        }
+        $this->middlewareStack[] = $middlewareHandler;
     }
 
     /**
@@ -103,19 +111,6 @@ class Dispatcher
             }
             $this->middlewareStack[] = $handler;
         }
-    }
-
-    /**
-     * Adds a middleware to the middleware stack.
-     *
-     * @param Middleware $middleware the middleware instance to add
-     * @param mixed      ...$args    Additional arguments to pass to the middleware handler.
-     */
-    public function addMiddleware(Middleware $middleware, mixed ...$args): void
-    {
-        $middlewareHandler = new Handler(get_class($middleware), $args);
-        $middlewareHandler->setInstance($middleware);
-        $this->middlewareStack[] = $middlewareHandler;
     }
 
     /**

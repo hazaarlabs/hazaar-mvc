@@ -622,7 +622,7 @@ class Application
      */
     public function addMiddleware(Middleware $middleware): void
     {
-        $this->middlewareDispatcher->addMiddleware($middleware);
+        $this->middlewareDispatcher->add($middleware);
     }
 
     /**
