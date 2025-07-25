@@ -8,7 +8,7 @@ use Hazaar\Middleware\Interface\Middleware;
 
 class Example implements Middleware
 {
-    public function handle(Request $request, callable $next): Response
+    public function handle(Request $request, callable $next, mixed ...$args): Response
     {
         $response = $next($request);
         // Example middleware logic

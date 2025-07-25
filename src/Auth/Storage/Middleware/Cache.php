@@ -17,7 +17,7 @@ class Cache implements Middleware
         $this->sessionID = $sessionID;
     }
 
-    public function handle(Request $request, callable $next): Response
+    public function handle(Request $request, callable $next, mixed ...$args): Response
     {
         setcookie($this->name, $this->sessionID, 0, '/', '', true, true);
 

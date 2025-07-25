@@ -20,7 +20,7 @@ class Jwt implements Middleware
         $this->jwt = $jwtStorage;
     }
 
-    public function handle(Request $request, callable $next): Response
+    public function handle(Request $request, callable $next, mixed ...$args): Response
     {
         if (true === $this->clearCookie) {
             setcookie('hazaar-auth-token', '', time() - 3600, '/', $_SERVER['HTTP_HOST'], true, true);
