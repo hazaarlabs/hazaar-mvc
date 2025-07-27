@@ -91,7 +91,7 @@ class Layout extends View
             $this->prepare();
         }
 
-        return parent::render();
+        return parent::render($data);
     }
 
     /**
