@@ -21,10 +21,14 @@ class HTPasswd extends Adapter
     {
         parent::__construct($config);
         if (isset($this->options['passwdFile'])) {
-            $this->passwd = $this->options['passwdFile'];
+            $passwdFile = $this->options['passwdFile'];
         } else {
-            $this->passwd = Loader::getFilePath(FilePath::CONFIG, '.passwd');
+            $passwdFile = Loader::getFilePath(FilePath::CONFIG, '.passwd');
         }
+        if (!$passwdFile) {
+            throw new HTPasswdFileMissing('.passwd');
+        }
+        $this->passwd = $passwdFile;
     }
 
     /**
