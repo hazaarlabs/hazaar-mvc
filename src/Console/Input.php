@@ -87,10 +87,7 @@ class Input
         $this->commandObject = $command;
         $optionsDefinition = $command->getOptions();
         $definedArguments = $command->getArguments();
-        $argumentsDefinition = [];
-        foreach ($definedArguments as $def) {
-            $argumentsDefinition[] = $def->name;
-        }
+        $argumentsDefinition = array_keys($definedArguments);
         reset($this->argv);
         do {
             if ($this->parseOption($this->argv, $optionsDefinition, $this->options)) {
@@ -101,7 +98,14 @@ class Input
                 continue;
             }
             $argName = array_shift($argumentsDefinition);
-            $this->args[$argName] = current($this->argv);
+            $arg = $definedArguments[$argName];
+            $argValue = current($this->argv);
+            if ($arg->required && !$argValue) {
+                throw new \InvalidArgumentException(
+                    "Argument `{$argName}` is required, but none was provided.\n\nRun `{$this->executable} help {$this->module} {$command->getName()}` for usage information."
+                );
+            }
+            $this->args[$argName] = $argValue;
         } while (false !== next($this->argv));
         // Check if there are boolean options that were not set
         foreach ($optionsDefinition as $option) {
