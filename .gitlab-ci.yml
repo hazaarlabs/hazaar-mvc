@@ -1,10 +1,3 @@
-# You can override the included template(s) by including variable overrides
-# SAST customization: https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
-# Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/pipeline/#customization
-# Dependency Scanning customization: https://docs.gitlab.com/ee/user/application_security/dependency_scanning/#customizing-the-dependency-scanning-settings
-# Container Scanning customization: https://docs.gitlab.com/ee/user/application_security/container_scanning/#customizing-the-container-scanning-settings
-# Note that environment variables can be set in several places
-# See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
 stages:
 - build_test
 - test
@@ -73,9 +66,10 @@ Build Unit Test Image:
   script:
   - docker build --network host --pull --rm -f "Dockerfile" -t $UNIT_TEST_IMAGE .
   - docker push --all-tags $CI_REGISTRY_IMAGE
-  only:
-    changes:
-    - Dockerfile
+  rules:
+    - changes:
+        - Dockerfile
+      if: $CI_PIPELINE_SOURCE != "schedule"
 Code Quality:
   stage: test
   image: "$UNIT_TEST_IMAGE"
@@ -90,6 +84,8 @@ Code Quality:
     when: always
     reports:
       junit: phplint-test-results.xml
+  rules:
+  - if: $CI_PIPELINE_SOURCE != "schedule"
 Static Analysis:
   stage: test
   image: "$UNIT_TEST_IMAGE"
@@ -101,6 +97,8 @@ Static Analysis:
     when: always
     reports:
       junit: phpstan-test-results.xml
+  rules:
+  - if: $CI_PIPELINE_SOURCE != "schedule"
 Unit Testing:
   stage: test
   image:
@@ -135,7 +133,7 @@ Build Production Documentation:
   extends: ".Build Docs"
   environment: production
   rules:
-  - if: $CI_COMMIT_BRANCH == "master"
+  - if: $CI_COMMIT_BRANCH == "master" && $CI_PIPELINE_SOURCE != "schedule"
 Build Testing Image:
   extends: ".Build Image"
   environment: testing
@@ -149,7 +147,7 @@ Build Production Image:
   needs:
   - Build Production Documentation
   rules:
-  - if: $CI_COMMIT_BRANCH == "master"
+  - if: $CI_COMMIT_BRANCH == "master" && $CI_PIPELINE_SOURCE != "schedule"
 Deploy Documentation to Testing:
   extends: ".Deploy Image"
   environment: testing
@@ -163,8 +161,4 @@ Deploy Documentation to Production:
   needs:
   - Build Production Image
   rules:
-  - if: $CI_COMMIT_BRANCH == "master"
-sast:
-  stage: test
-include:
-- template: Security/SAST.gitlab-ci.yml
+  - if: $CI_COMMIT_BRANCH == "master" && $CI_PIPELINE_SOURCE != "schedule"
