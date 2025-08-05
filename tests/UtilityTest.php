@@ -46,16 +46,58 @@ class UtilityTest extends TestCase
         $this->assertEquals('value', $btree->get('key'));
         $this->assertTrue($btree->remove('key'));
         $this->assertNull($btree->get('key'));
+
+        /**
+         * Inserts 1000 unique key-value pairs into the B-tree and asserts that each insertion is successful.
+         *
+         * For each iteration:
+         * - Generates a unique key using uniqid().
+         * - Stores a value associated with the key in the $keyIndex array.
+         * - Inserts the key-value pair into the B-tree using $btree->set().
+         * - Asserts that the insertion returns true.
+         */
+        $keyIndex = [];
+        for ($i = 0; $i < 1000; ++$i) {
+            $key = uniqid();
+            $keyIndex[$key] = 'value: '.$key;
+            $this->assertTrue($btree->set($key, $keyIndex[$key]));
+        }
+        /*
+         * Iterates 100 times to randomly select a key from the $keyIndex array,
+         * then performs the following assertions for each selected key:
+         * - Ensures the selected key is a string.
+         * - Checks that the key exists in the $keyIndex array.
+         * - Verifies that the value associated with the key in $keyIndex matches
+         *   the value returned by $btree->get($testKey).
+         */
+        for ($i = 0; $i < 100; ++$i) {
+            $testKey = array_rand($keyIndex);
+            $this->assertIsString($testKey);
+            $this->assertArrayHasKey($testKey, $keyIndex);
+            $this->assertEquals($keyIndex[$testKey], $btree->get($testKey));
+        }
         $this->assertTrue($btree->compact());
     }
 
     public function testBTree2File(): void
     {
-        $btree = new BTree2(Runtime::getInstance()->getPath('test.btree'));
+        $btree = new BTree2(Runtime::getInstance()->getPath('test.btree2'));
         $this->assertTrue($btree->set('key', 'value'));
         // $this->assertEquals('value', $btree->get('key'));
         // $this->assertTrue($btree->remove('key'));
         // $this->assertNull($btree->get('key'));
+        // $keyIndex = [];
+        // for ($i = 0; $i < 1000; ++$i) {
+        //     $key = uniqid();
+        //     $keyIndex[$key] = 'value: '.$key;
+        //     $this->assertTrue($btree->set($key, $keyIndex[$key]));
+        // }
+        // for ($i = 0; $i < 100; ++$i) {
+        //     $testKey = array_rand($keyIndex);
+        //     $this->assertIsString($testKey);
+        //     $this->assertArrayHasKey($testKey, $keyIndex);
+        //     $this->assertEquals($keyIndex[$testKey], $btree->get($testKey));
+        // }
         // $this->assertTrue($btree->compact());
     }
 
