@@ -7,6 +7,7 @@ namespace Hazaar\Tests;
 use Hazaar\Application\Runtime;
 use Hazaar\File\BTree;
 use Hazaar\Util\Arr;
+use Hazaar\Util\BTree as BTree2;
 use Hazaar\Util\Closure;
 use Hazaar\Util\Exception\InvalidClosure;
 use Hazaar\Util\GeoData;
@@ -46,6 +47,16 @@ class UtilityTest extends TestCase
         $this->assertTrue($btree->remove('key'));
         $this->assertNull($btree->get('key'));
         $this->assertTrue($btree->compact());
+    }
+
+    public function testBTree2File(): void
+    {
+        $btree = new BTree2(Runtime::getInstance()->getPath('test.btree'));
+        $this->assertTrue($btree->set('key', 'value'));
+        // $this->assertEquals('value', $btree->get('key'));
+        // $this->assertTrue($btree->remove('key'));
+        // $this->assertNull($btree->get('key'));
+        // $this->assertTrue($btree->compact());
     }
 
     public function testGeoData(): void
@@ -243,7 +254,7 @@ class UtilityTest extends TestCase
 
     public function testCreateClosureFromArrowFunction(): void
     {
-        $closure = new Closure(fn ($myValue) => ($myValue).('!'));
+        $closure = new Closure(fn ($myValue) => $myValue.'!');
         $this->assertStringStartsWith('fn ($myValue) => ($myValue).(\'!\')', $closure->getCode());
         $this->assertCount(1, $closure->getParameters());
         $this->assertEquals('myValue', $closure->getParameters()[0]->getName());
