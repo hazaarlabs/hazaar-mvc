@@ -83,22 +83,7 @@ class UtilityTest extends TestCase
     {
         $btree = new BTree2(Runtime::getInstance()->getPath('test.btree2'));
         $this->assertTrue($btree->set('key', 'value'));
-        // $this->assertEquals('value', $btree->get('key'));
-        // $this->assertTrue($btree->remove('key'));
-        // $this->assertNull($btree->get('key'));
-        // $keyIndex = [];
-        // for ($i = 0; $i < 1000; ++$i) {
-        //     $key = uniqid();
-        //     $keyIndex[$key] = 'value: '.$key;
-        //     $this->assertTrue($btree->set($key, $keyIndex[$key]));
-        // }
-        // for ($i = 0; $i < 100; ++$i) {
-        //     $testKey = array_rand($keyIndex);
-        //     $this->assertIsString($testKey);
-        //     $this->assertArrayHasKey($testKey, $keyIndex);
-        //     $this->assertEquals($keyIndex[$testKey], $btree->get($testKey));
-        // }
-        // $this->assertTrue($btree->compact());
+        $this->assertEquals('value', $btree->get('key'));
     }
 
     public function testGeoData(): void

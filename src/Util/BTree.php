@@ -9,7 +9,7 @@ use Hazaar\Util\BTree\NodeType;
 
 class BTree
 {
-    private const VERSION = 'V1.0';
+    private const VERSION_STRING = 'V1.0';
     private const HEADER_SIZE = 12; // 64 bit pointer + 4 byte header
     private int $slotSize = 8; // Size of each node slot in bytes
 
@@ -42,14 +42,12 @@ class BTree
 
     public function set(string $key, mixed $value): bool
     {
-        // Implementation for setting a key-value pair in the BTree
-        return false;
+        return $this->rootNode->set($key, $value);
     }
 
     public function get(string $key): mixed
     {
-        // Implementation for getting a value by key from the BTree
-        return null;
+        return $this->rootNode->get($key);
     }
 
     public function remove(string $key): bool
@@ -71,7 +69,7 @@ class BTree
         $buffer = fread($this->file, self::HEADER_SIZE);
         if ($buffer && self::HEADER_SIZE === strlen($buffer)) {
             $header = unpack('a4ver/Sslot/Lptr', $buffer);
-            if (self::VERSION !== $header['ver']) {
+            if (self::VERSION_STRING !== $header['ver']) {
                 throw new \RuntimeException("Invalid BTree file header: {$this->filePath}");
             }
             $this->slotSize = $header['slot'];
@@ -79,7 +77,7 @@ class BTree
         } else {
             $this->rootNode = Node::create($this->file, $this->slotSize, NodeType::LEAF);
             $headerPtr = self::HEADER_SIZE + 1;
-            fwrite($this->file, pack('a4SL', self::VERSION, $this->slotSize, $headerPtr)); // Write a zero header if the file is empty
+            fwrite($this->file, pack('a4SL', self::VERSION_STRING, $this->slotSize, $headerPtr)); // Write a zero header if the file is empty
             $this->rootNode->write($headerPtr);
         }
     }
