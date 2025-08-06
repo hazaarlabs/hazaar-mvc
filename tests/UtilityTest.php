@@ -84,6 +84,8 @@ class UtilityTest extends TestCase
         $btree = new BTree2(Runtime::getInstance()->getPath('test.btree2'));
         $this->assertTrue($btree->set('key', 'value'));
         $this->assertEquals('value', $btree->get('key'));
+        $this->assertTrue($btree->remove('key'));
+        $this->assertNull($btree->get('key'));
     }
 
     public function testGeoData(): void
@@ -281,7 +283,7 @@ class UtilityTest extends TestCase
 
     public function testCreateClosureFromArrowFunction(): void
     {
-        $closure = new Closure(fn ($myValue) => $myValue.'!');
+        $closure = new Closure(fn ($myValue) => ($myValue).('!'));
         $this->assertStringStartsWith('fn ($myValue) => ($myValue).(\'!\')', $closure->getCode());
         $this->assertCount(1, $closure->getParameters());
         $this->assertEquals('myValue', $closure->getParameters()[0]->getName());

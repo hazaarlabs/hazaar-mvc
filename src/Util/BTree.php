@@ -9,8 +9,8 @@ use Hazaar\Util\BTree\NodeType;
 
 class BTree
 {
-    private const VERSION_STRING = 'V1.0';
-    private const HEADER_SIZE = 12; // 64 bit pointer + 4 byte header
+    private const VERSION_STRING = '1.0';
+    private Version $version;
     private int $slotSize = 8; // Size of each node slot in bytes
 
     private string $filePath;
@@ -24,6 +24,7 @@ class BTree
 
     public function __construct(string $filePath)
     {
+        $this->version = new Version(self::VERSION_STRING);
         $this->filePath = $filePath;
         // Initialize the BTree file if it does not exist
         $file = fopen($this->filePath, 'c+');
@@ -40,9 +41,23 @@ class BTree
         // Save the BTree to file on destruction
     }
 
+    /**
+     * Sets the value for the specified key in the B-Tree.
+     *
+     * @param string $key   the key to set in the B-Tree
+     * @param mixed  $value the value to associate with the key
+     *
+     * @return bool returns true on success
+     */
     public function set(string $key, mixed $value): bool
     {
-        return $this->rootNode->set($key, $value);
+        $ptr = $this->rootNode->ptr;
+        $this->rootNode->set($key, $value);
+        if ($ptr !== $this->rootNode->ptr) {
+            $this->writeHeader();
+        }
+
+        return true;
     }
 
     public function get(string $key): mixed
@@ -52,8 +67,13 @@ class BTree
 
     public function remove(string $key): bool
     {
-        // Implementation for removing a key-value pair from the BTree
-        return false;
+        $ptr = $this->rootNode->ptr;
+        $this->rootNode->remove($key);
+        if ($ptr !== $this->rootNode->ptr) {
+            $this->writeHeader();
+        }
+
+        return true;
     }
 
     public function compact(): bool
@@ -64,21 +84,33 @@ class BTree
 
     private function loadRootNode(): void
     {
+        $headerSize = 10; // Size of the header in bytes
         // Load the root node from the file
         fseek($this->file, 0);
-        $buffer = fread($this->file, self::HEADER_SIZE);
-        if ($buffer && self::HEADER_SIZE === strlen($buffer)) {
-            $header = unpack('a4ver/Sslot/Lptr', $buffer);
-            if (self::VERSION_STRING !== $header['ver']) {
+        $buffer = fread($this->file, $headerSize);
+        if ($buffer && $headerSize === strlen($buffer)) {
+            $header = unpack('Smajor/Sminor/Sslot/Lptr', $buffer);
+            if ($this->version->getMajor() !== $header['major']) {
                 throw new \RuntimeException("Invalid BTree file header: {$this->filePath}");
             }
             $this->slotSize = $header['slot'];
             $this->rootNode = new Node($this->file, $header['ptr']);
         } else {
             $this->rootNode = Node::create($this->file, $this->slotSize, NodeType::LEAF);
-            $headerPtr = self::HEADER_SIZE + 1;
-            fwrite($this->file, pack('a4SL', self::VERSION_STRING, $this->slotSize, $headerPtr)); // Write a zero header if the file is empty
-            $this->rootNode->write($headerPtr);
+            $this->rootNode->write($headerSize + 1);
+            $this->writeHeader();
         }
+    }
+
+    private function writeHeader(): void
+    {
+        fseek($this->file, 0);
+        fwrite($this->file, pack(
+            'SSSL',
+            $this->version->getMajor(),
+            $this->version->getMinor(),
+            $this->slotSize,
+            $this->rootNode->ptr
+        ));
     }
 }

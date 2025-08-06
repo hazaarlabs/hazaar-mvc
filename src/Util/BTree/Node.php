@@ -53,13 +53,13 @@ class Node
 
     public function read(?int $ptr = null): bool
     {
-        if (null === $ptr) {
-            $ptr = $this->ptr;
+        if (null !== $ptr) {
+            $this->ptr = $ptr;
         }
-        if (!$ptr) {
+        if (!$this->ptr) {
             return false;
         }
-        fseek($this->file, $ptr);
+        fseek($this->file, $this->ptr);
         $typeBuffer = fread($this->file, 1);
         if (false === $typeBuffer || 1 !== strlen($typeBuffer)) {
             return false;
@@ -77,12 +77,12 @@ class Node
         $this->children = [];
         for ($i = 0; $i < $this->length; $i += 20) {
             $len = strlen($data);
-            if (strlen($data) < $i + 20) {
+            if ($len < $i + 20) {
                 break; // Prevent reading beyond the data length
             }
-            $key = substr($data, $i, 16); // Extract key (16 bytes)
+            $key = trim(substr($data, $i, 16)); // Extract key (16 bytes)
             $childPtr = unpack('L', substr($data, $i + 16, 4))[1]; // Extract pointer (4 bytes)
-            if (false !== $key && false !== $childPtr) {
+            if ($key && $childPtr > 0) {
                 $this->children[$key] = $childPtr;
             }
         }
@@ -100,7 +100,7 @@ class Node
         fwrite($this->file, pack('a', $this->nodeType->value));
         $data = '';
         foreach ($this->children as $key => $child) {
-            $data .= pack('aL', $key, $child);
+            $data .= pack('a16L', $key, $child);
         }
         $this->length = $this->slotSize * 20; // 16 byte key and 4 byte pointer
         fwrite($this->file, pack('L', $this->length));
@@ -124,7 +124,7 @@ class Node
         fwrite($this->file, $dataLength);
         fwrite($this->file, $data);
         $this->children[$key] = $ptr;
-        $this->write();
+        $this->write(ftell($this->file));
 
         return true;
     }
@@ -150,5 +150,19 @@ class Node
         }
 
         return unserialize($data);
+    }
+
+    public function remove(string $key): bool
+    {
+        if (NodeType::LEAF !== $this->nodeType) {
+            throw new \RuntimeException('Cannot remove value from a non-leaf node.');
+        }
+        if (!isset($this->children[$key])) {
+            return false; // Key does not exist
+        }
+        unset($this->children[$key]);
+        $this->write();
+
+        return true;
     }
 }
