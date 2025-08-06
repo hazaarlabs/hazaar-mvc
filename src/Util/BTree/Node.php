@@ -30,6 +30,7 @@ class Node
     final public function __construct(mixed $file, ?int $ptr = null)
     {
         $this->file = $file;
+        $this->nodeType = NodeType::INTERNAL; // Default to INTERNAL type
         if (null !== $ptr) {
             $this->read($ptr);
         }
@@ -115,7 +116,14 @@ class Node
     public function set(string $key, mixed $value): bool
     {
         if (NodeType::LEAF !== $this->nodeType) {
-            throw new \RuntimeException('Cannot set value in a non-leaf node.');
+            $this->lookupChild($key)->set($key, $value);
+
+            return true;
+        }
+        if (count($this->children) >= $this->slotSize) {
+            $this->split()->set($key, $value);
+
+            return true;
         }
         fseek($this->file, 0, SEEK_END);
         $ptr = ftell($this->file);
@@ -123,6 +131,7 @@ class Node
         $dataLength = pack('L', strlen($data));
         fwrite($this->file, $dataLength);
         fwrite($this->file, $data);
+        ksort($this->children); // Ensure children are sorted by key
         $this->children[$key] = $ptr;
         $this->write(ftell($this->file));
 
@@ -164,5 +173,47 @@ class Node
         $this->write();
 
         return true;
+    }
+
+    private function lookupChild(string $key): Node
+    {
+        foreach ($this->children as $childKey => $childPtr) {
+            if ($key < $childKey) {
+                // Return the child node that should contain the key
+                $childNode = new self($this->file, $childPtr);
+                $childNode->read();
+
+                return $childNode;
+            }
+        }
+        // If no child is found, return the last child
+        $lastChildPtr = end($this->children);
+        $lastChildNode = new self($this->file, $lastChildPtr);
+        $lastChildNode->read();
+
+        return $lastChildNode;
+    }
+
+    private function split(): Node
+    {
+        // Split the current node into two nodes
+        $newNode = self::create($this->file, $this->slotSize, $this->nodeType);
+        $midIndex = (int) (count($this->children) / 2);
+        $keys = array_keys($this->children);
+        $midKey = $keys[$midIndex];
+
+        // Move half of the children to the new node
+        for ($i = $midIndex; $i < count($keys); ++$i) {
+            $key = $keys[$i];
+            $newNode->children[$key] = $this->children[$key];
+            unset($this->children[$key]);
+        }
+        $this->nodeType = NodeType::INTERNAL; // Change the type to INTERNAL
+
+        // Write both nodes to the file
+        $this->write();
+        $newNode->write();
+
+        return $newNode;
     }
 }
