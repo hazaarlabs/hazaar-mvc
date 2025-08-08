@@ -79,6 +79,13 @@ class UtilityTest extends TestCase
         $this->assertTrue($btree->compact());
     }
 
+    public function testBTree2File2(): void
+    {
+        $btree = new BTree2(Runtime::getInstance()->getPath('test.btree2'));
+        $this->assertTrue($btree->set('key-c', 'value'));
+        // $this->assertEquals('value', $btree->get('key'));
+    }
+
     public function testBTree2File(): void
     {
         $btree = new BTree2(Runtime::getInstance()->getPath('test.btree2'));
