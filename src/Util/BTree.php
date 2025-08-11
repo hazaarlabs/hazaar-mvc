@@ -11,7 +11,7 @@ class BTree
 {
     private const VERSION_STRING = '1.0';
     private Version $version;
-    private int $slotSize = 4; // Size of each node slot in bytes
+    private int $slotSize = 8; // Size of each node slot in bytes
 
     private string $filePath;
 
