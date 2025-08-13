@@ -98,7 +98,7 @@ class UtilityTest extends TestCase
          */
         $keyIndex = [];
         for ($i = 0; $i < 1000; ++$i) {
-            $key = uniqid();
+            $key = md5((string) rand(0, 1000000));
             $keyIndex[$key] = 'value: '.$key;
             $this->assertTrue($btree->set($key, $keyIndex[$key]));
         }
@@ -117,6 +117,8 @@ class UtilityTest extends TestCase
             $this->assertArrayHasKey($testKey, $keyIndex);
             $this->assertEquals($keyIndex[$testKey], $btree->get($testKey));
         }
+        $data = $btree->toArray();
+        $this->assertGreaterThan(0, count($data));
     }
 
     public function testGeoData(): void

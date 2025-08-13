@@ -87,6 +87,19 @@ class BTree
         return false;
     }
 
+    /**
+     * Return the entire B-Tree as an array.
+     *
+     * @return array<string,mixed>
+     */
+    public function toArray(): array
+    {
+        $result = [];
+        $this->rootNode->toArray($result);
+
+        return $result;
+    }
+
     private function loadRootNode(): bool
     {
         $headerSize = 10; // Size of the header in bytes
