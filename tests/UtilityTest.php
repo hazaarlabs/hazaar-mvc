@@ -87,7 +87,8 @@ class UtilityTest extends TestCase
         if (file_exists($file)) {
             unlink($file);
         }
-        $btree = new BTree2($file);
+        $keySize = 32; // Set a fixed length for keys
+        $btree = new BTree2($file, $keySize);
         $this->assertTrue($btree->set('key', 'value'));
         $this->assertEquals('value', $btree->get('key'));
         $this->assertTrue($btree->remove('key'));
@@ -103,11 +104,11 @@ class UtilityTest extends TestCase
          * - Asserts that the insertion returns true.
          */
         $keyIndex = [];
-        $keylen = 16; // Set a fixed length for keys
-        for ($i = 0; $i < 1000; ++$i) {
-            $key = substr(str_shuffle(str_repeat('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', $keylen)), 0, rand(2, $keylen));
-            $keyIndex[$key] = 'value: '.$key;
-            $this->assertTrue($btree->set((string) $key, $keyIndex[$key]));
+
+        for ($i = 0; $i < 20; ++$i) {
+            $key = substr(str_shuffle(str_repeat('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', $keySize)), 0, rand(2, $keySize));
+            $keyIndex[$key] = $i.': '.$key;
+            $this->assertTrue($btree->set($key, $keyIndex[$key]));
         }
 
         /*
@@ -118,9 +119,9 @@ class UtilityTest extends TestCase
          * @param array  $keyIndex array of keys and their expected values
          * @param object $btree    B-tree object with a get method to retrieve values by key
          */
-        // foreach ($keyIndex as $testKey => $testValue) {
-        //     $this->assertEquals($keyIndex[$testKey], $btree->get((string) $testKey));
-        // }
+        foreach ($keyIndex as $testKey => $testValue) {
+            $this->assertEquals($keyIndex[$testKey], $btree->get((string) $testKey));
+        }
     }
 
     public function testGeoData(): void

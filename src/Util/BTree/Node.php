@@ -123,7 +123,6 @@ class Node
         fseek($this->file, $ptr);
         fwrite($this->file, pack('a', $this->nodeType->value));
         $data = '';
-        ksort($this->children); // Ensure children are sorted by key
         foreach ($this->children as $key => $child) {
             $data .= pack('a'.$this->keySize.'L', $key, $child);
         }
@@ -154,15 +153,16 @@ class Node
         if ($dataLength > $curDataLength) {
             fseek($this->file, 0, SEEK_END);
             $this->children[$key] = ftell($this->file);
+            ksort($this->children); // Ensure children are sorted by key
             fwrite($this->file, pack('L', $dataLength));
         }
         fwrite($this->file, $data);
         // If the node is full, split it.
         // NOTE:  This MUST be done after the set operation to ensure the value ends up in the correct node
-        if (count($this->children) >= $this->slotSize) {
+        if (count($this->children) > $this->slotSize) {
             $this->split();
         } else {
-            $this->write();
+            $this->write(); // Write the current node after setting the value
         }
 
         return true;
@@ -227,14 +227,16 @@ class Node
         if (isset($this->children[$newKey]) && $this->children[$newKey] !== $node->ptr) {
             throw new \RuntimeException('Node with the same key already exists in the parent node.');
         }
-        if (count($this->children) >= $this->slotSize && !isset($this->children[$newKey])) {
-            $this->split();
-        }
         if (!isset($node->ptr)) {
             $node->write(); // Ensure the new node is written before adding
         }
         $this->children[$newKey] = $node->ptr; // Add the new node's pointer to the current node
-        $this->write(); // Write the current node after adding the new node
+        ksort($this->children); // Ensure children are sorted by key
+        if (count($this->children) > $this->slotSize) {
+            $this->split();
+        } else {
+            $this->write(); // Write the current node after adding the new node
+        }
     }
 
     private function readValue(int $ptr): mixed
