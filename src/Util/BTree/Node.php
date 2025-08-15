@@ -6,12 +6,12 @@ namespace Hazaar\Util\BTree;
 
 class Node
 {
-    private const NODE_KEY_SIZE = 32; // Size of each key in bytes
     private const NODE_PTR_SIZE = 4; // Size of each pointer in bytes
-    private const NODE_CHILD_SIZE = self::NODE_KEY_SIZE + self::NODE_PTR_SIZE; // Size of each child entry in bytes
     public int $ptr;
-    public int $length = 0;
-    public int $slotSize = 8; // Size of each node slot in bytes
+    public int $length;
+    public int $slotSize; // Size of each node slot in bytes
+    public int $keySize; // Maximum size of each key in bytes
+    public int $childSize;
     public int $cacheSize = 64;
 
     /**
@@ -39,11 +39,14 @@ class Node
      * @param resource $file The file resource where the BTree is stored
      * @param int      $ptr  The pointer to the node in the file
      */
-    final public function __construct(mixed $file, ?int $ptr = null, ?self $parentNode = null)
+    final public function __construct(mixed $file, ?int $ptr = null, int $slotSize = 16, int $keySize = 32)
     {
         $this->file = $file;
-        $this->parentNode = $parentNode;
+        $this->parentNode = null;
         $this->nodeType = NodeType::INTERNAL; // Default to INTERNAL type
+        $this->slotSize = $slotSize;
+        $this->keySize = $keySize;
+        $this->childSize = $this->keySize + self::NODE_PTR_SIZE; // Update child size based on new key size
         if (null !== $ptr) {
             $this->read($ptr);
         }
@@ -52,20 +55,16 @@ class Node
     /**
      * Create a new Node instance with initialized children slots.
      *
-     * @param resource $file     The file resource where the BTree is stored
-     * @param int      $slotSize The number of slots in the node
+     * @param resource $file The file resource where the BTree is stored
      */
-    public static function create(mixed $file, int $slotSize, NodeType $type = NodeType::INTERNAL, ?self $parentNode = null): Node
-    {
-        $node = new static($file);
+    public static function create(
+        mixed $file,
+        NodeType $type = NodeType::INTERNAL,
+        int $slotSize = 16,
+        int $keySize = 32
+    ): Node {
+        $node = new static($file, slotSize: $slotSize, keySize: $keySize);
         $node->nodeType = $type;
-        if (null === $parentNode) {
-            self::$nodeCache[] = [];
-        } else {
-            $node->parentNode = $parentNode;
-        }
-        $node->slotSize = $slotSize;
-        $node->children = [];
 
         return $node;
     }
@@ -94,18 +93,18 @@ class Node
             return false;
         }
         $this->children = [];
-        for ($i = 0; $i < $this->length; $i += self::NODE_CHILD_SIZE) {
+        for ($i = 0; $i < $this->length; $i += $this->childSize) {
             $len = strlen($data);
-            if ($len < $i + self::NODE_CHILD_SIZE) {
+            if ($len < $i + $this->childSize) {
                 break; // Prevent reading beyond the data length
             }
-            $key = trim(substr($data, $i, length: self::NODE_KEY_SIZE)); // Extract key (32 bytes)
-            $childPtr = unpack('L', substr($data, $i + self::NODE_KEY_SIZE, self::NODE_PTR_SIZE))[1];
-            if ($key && $childPtr > 0) {
-                $this->children[$key] = $childPtr;
+            $key = trim(substr($data, $i, length: $this->keySize)); // Extract key (32 bytes)
+            if ('' === $key) {
+                break;
             }
+            $this->children[$key] = unpack('L', substr($data, $i + $this->keySize, self::NODE_PTR_SIZE))[1];
         }
-        $this->slotSize = $this->length / self::NODE_CHILD_SIZE;
+        $this->slotSize = $this->length / $this->childSize;
         $this->cacheNode($this);
 
         return true;
@@ -126,9 +125,9 @@ class Node
         $data = '';
         ksort($this->children); // Ensure children are sorted by key
         foreach ($this->children as $key => $child) {
-            $data .= pack('a'.self::NODE_KEY_SIZE.'L', $key, $child);
+            $data .= pack('a'.$this->keySize.'L', $key, $child);
         }
-        $this->length = $this->slotSize * self::NODE_CHILD_SIZE;
+        $this->length = $this->slotSize * $this->childSize;
         fwrite($this->file, pack('L', $this->length));
         if (false === fwrite($this->file, str_pad($data, $this->length, "\0", STR_PAD_RIGHT), $this->length)) {
             return false;
@@ -141,9 +140,6 @@ class Node
 
     public function set(string $key, mixed $value): bool
     {
-        if (count($this->children) >= $this->slotSize && !isset($this->children[$key])) {
-            $this->split();
-        }
         if (NodeType::LEAF !== $this->nodeType) {
             return $this->lookupChild($key)->set($key, $value);
         }
@@ -151,7 +147,7 @@ class Node
         $dataLength = strlen($data);
         $curDataLength = 0;
         // If the key already exists, update its value
-        if (isset($this->children[$key])) {
+        if (isset($this->children[$key]) && $this->children[$key] > 0) {
             fseek($this->file, $this->children[$key]);
             $curDataLength = unpack('L', fread($this->file, self::NODE_PTR_SIZE))[1];
         }
@@ -161,7 +157,13 @@ class Node
             fwrite($this->file, pack('L', $dataLength));
         }
         fwrite($this->file, $data);
-        $this->write();
+        // If the node is full, split it.
+        // NOTE:  This MUST be done after the set operation to ensure the value ends up in the correct node
+        if (count($this->children) >= $this->slotSize) {
+            $this->split();
+        } else {
+            $this->write();
+        }
 
         return true;
     }
@@ -213,6 +215,28 @@ class Node
         }
     }
 
+    public function addNode(self $node): void
+    {
+        if (!$node->parentNode) {
+            $node->parentNode = $this; // Set the parent node if not already set
+        }
+        if (NodeType::INTERNAL !== $this->nodeType) {
+            throw new \RuntimeException('Cannot add node to a non-internal node.');
+        }
+        $newKey = array_key_last($node->children);
+        if (isset($this->children[$newKey]) && $this->children[$newKey] !== $node->ptr) {
+            throw new \RuntimeException('Node with the same key already exists in the parent node.');
+        }
+        if (count($this->children) >= $this->slotSize && !isset($this->children[$newKey])) {
+            $this->split();
+        }
+        if (!isset($node->ptr)) {
+            $node->write(); // Ensure the new node is written before adding
+        }
+        $this->children[$newKey] = $node->ptr; // Add the new node's pointer to the current node
+        $this->write(); // Write the current node after adding the new node
+    }
+
     private function readValue(int $ptr): mixed
     {
         fseek($this->file, $ptr);
@@ -241,71 +265,39 @@ class Node
             if (isset(self::$nodeCache[$childPtr])) {
                 return self::$nodeCache[$childPtr]; // Return cached node
             }
-
             // Return the child node that should contain the key
-            return new self($this->file, $childPtr, $this);
+            $node = new self($this->file, $childPtr);
+            $node->parentNode = $this;
+
+            return $node;
         }
-        if (count($this->children) >= $this->slotSize) {
-            // If the node is full, create a new leaf node
-            $this->split();
-        }
-        $newNode = self::create($this->file, $this->slotSize, NodeType::LEAF, $this);
+        $newNode = self::create($this->file, NodeType::LEAF, $this->slotSize, $this->keySize);
+        $newNode->children[$key] = 0; // Initialize the new node with the key
         $newNode->write(); // Create a new leaf node for the key
-        $this->children[$key] = $newNode->ptr;
-        $this->write();
+        $this->addNode($newNode);
 
         return $newNode; // Return the new node
     }
 
     private function split(): void
     {
-        if (NodeType::LEAF === $this->nodeType) {
-            $this->nodeType = NodeType::INTERNAL; // Change the type to INTERNAL
-            $newNode1 = self::create($this->file, $this->slotSize, NodeType::LEAF, $this);
-            $newNode2 = self::create($this->file, $this->slotSize, NodeType::LEAF, $this);
-            $keys = array_keys($this->children);
-            $midIndex = (int) (count($keys) / 2);
-            $midKey = $keys[$midIndex - 1];
-            $lastKey = end($keys);
-            foreach ($this->children as $key => $value) {
-                if ($key <= $midKey) {
-                    $newNode1->children[$key] = $this->children[$key];
-                } else {
-                    $newNode2->children[$key] = $this->children[$key];
-                }
-                unset($this->children[$key]);
-            }
-            $newNode1->write();
-            $newNode2->write();
-            // Set the new nodes as children of the current node
-            $this->children = [
-                $midKey => $newNode1->ptr,
-                $lastKey => $newNode2->ptr,
-            ];
+        // Split the current node and promote the median key to the parent node
+        $midIndex = (int) (count($this->children) / 2);
+        $newNode = self::create(
+            file: $this->file,
+            type: $this->nodeType,
+            slotSize: $this->slotSize,
+            keySize: $this->keySize
+        );
+        $newNode->children = array_slice($this->children, 0, $midIndex, preserve_keys: true); // Move first half of children to newNode
+        $newNode->write();
+        $this->children = array_slice($this->children, $midIndex, preserve_keys: true); // Keep first half of children in current node
+        if (null !== $this->parentNode) {
+            // Promote the median key to the parent node
+            $this->parentNode->addNode($newNode);
         } else {
-            // Split the current internal node
-            $newNode = self::create($this->file, $this->slotSize, $this->nodeType, $this->parentNode ?? $this);
-            $keys = array_keys($this->children);
-            $midIndex = (int) (count($keys) / 2);
-            $lastKey = end($keys);
-
-            // Move the second half of children to the new node
-            for ($i = $midIndex; $i < count($keys); ++$i) {
-                $key = $keys[$i];
-                $newNode->children[$key] = $this->children[$key];
-                unset($this->children[$key]);
-            }
-            $newNode->write();
-
-            if (null !== $this->parentNode) {
-                // Promote the median key to the parent node
-                $this->parentNode->children[$lastKey] = $newNode->ptr;
-                $this->parentNode->write();
-            } else {
-                // This is the root node, create a new root
-                $this->children[$lastKey] = $newNode->ptr;
-                $this->write();
-            }
+            // This is the root node, create a new root
+            $this->addNode($newNode);
         }
 
         // Write both nodes to the file
@@ -314,6 +306,9 @@ class Node
 
     private function cacheNode(self $node): void
     {
+        if ($this->cacheSize <= 0) {
+            return; // No caching if cache size is not set
+        }
         if (!isset($node->ptr) || $node->ptr <= 0) {
             throw new \RuntimeException('Invalid node pointer, cannot cache node.');
         }

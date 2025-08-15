@@ -11,7 +11,8 @@ class BTree
 {
     private const VERSION_STRING = '1.0';
     private Version $version;
-    private int $slotSize = 8; // Size of each node slot in bytes
+    private int $slotSize = 16; // Size of each node slot in bytes
+    private int $keySize = 32; // Maximum size of each key in bytes
 
     private string $filePath;
 
@@ -22,10 +23,33 @@ class BTree
 
     private Node $rootNode;
 
-    public function __construct(string $filePath)
+    /**
+     * Constructs a new BTree instance.
+     *
+     * Initializes the BTree with the specified file path, key size, and slot size.
+     * If the BTree file does not exist, it will be created. Loads the root node from the file.
+     *
+     * The header will be written to the file in the format:
+     * - Major version (2 bytes)
+     * - Minor version (2 bytes)
+     * - Slot size (2 bytes)
+     * - Key size (2 bytes)
+     * - Pointer to the root node (4 bytes)
+     *
+     * If the file already exists, it will read the header to determine the BTree's configuration.
+     *
+     * @param string $filePath path to the BTree file
+     * @param int    $keySize  Size of the key in bytes. Default is 32.
+     * @param int    $slotSize Size of the slot in bytes. Default is 16.
+     *
+     * @throws \RuntimeException if the BTree file cannot be opened
+     */
+    public function __construct(string $filePath, int $keySize = 32, int $slotSize = 16)
     {
         $this->version = new Version(self::VERSION_STRING);
         $this->filePath = $filePath;
+        $this->slotSize = $slotSize;
+        $this->keySize = $keySize;
         // Initialize the BTree file if it does not exist
         $file = fopen($this->filePath, 'c+');
         if (false === $file) {
@@ -34,11 +58,6 @@ class BTree
         $this->file = $file;
         // Load the root node from the file
         $this->loadRootNode();
-    }
-
-    public function __destruct()
-    {
-        // Save the BTree to file on destruction
     }
 
     public function reset(): bool
@@ -87,6 +106,19 @@ class BTree
         return false;
     }
 
+    public function empty(): bool
+    {
+        $this->rootNode = Node::create(
+            file: $this->file,
+            type: NodeType::INTERNAL,
+            slotSize: $this->slotSize,
+            keySize: $this->keySize
+        );
+        $this->rootNode->write(10); // Write the header size
+
+        return $this->writeHeader();
+    }
+
     /**
      * Return the entire B-Tree as an array.
      *
@@ -107,17 +139,22 @@ class BTree
         fseek($this->file, 0);
         $buffer = fread($this->file, $headerSize);
         if ($buffer && $headerSize === strlen($buffer)) {
-            $header = unpack('Smajor/Sminor/Sslot/Lptr', $buffer);
+            $header = unpack('Smajor/Sminor/Sslot/Skeys/Lptr', $buffer);
             if ($this->version->getMajor() !== $header['major']) {
                 return false;
             }
             $this->slotSize = $header['slot'];
+            $this->keySize = $header['keys'];
             $this->rootNode = new Node($this->file, $header['ptr']);
 
             return true;
         }
-
-        $this->rootNode = Node::create($this->file, $this->slotSize, NodeType::LEAF);
+        $this->rootNode = Node::create(
+            file: $this->file,
+            type: NodeType::INTERNAL,
+            slotSize: $this->slotSize,
+            keySize: $this->keySize
+        );
         $this->rootNode->write($headerSize + 1);
 
         return $this->writeHeader();
@@ -128,10 +165,11 @@ class BTree
         fseek($this->file, 0);
 
         return false !== fwrite($this->file, pack(
-            'SSSL',
+            'SSSSL',
             $this->version->getMajor(),
             $this->version->getMinor(),
             $this->slotSize,
+            $this->keySize,
             $this->rootNode->ptr
         ));
     }
