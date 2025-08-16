@@ -12,7 +12,7 @@ class Node
     public int $slotSize; // Size of each node slot in bytes
     public int $keySize; // Maximum size of each key in bytes
     public int $childSize;
-    public int $cacheSize = 64;
+    public int $cacheSize = 128;
 
     /**
      * @var array<string,null|int>
