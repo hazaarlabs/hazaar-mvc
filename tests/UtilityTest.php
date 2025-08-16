@@ -104,14 +104,14 @@ class UtilityTest extends TestCase
          * - Asserts that the insertion returns true.
          */
         $keyIndex = [];
-
-        for ($i = 0; $i < 20; ++$i) {
-            $key = substr(str_shuffle(str_repeat('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', $keySize)), 0, rand(2, $keySize));
-            $keyIndex[$key] = $i.': '.$key;
-            $this->assertTrue($btree->set($key, $keyIndex[$key]));
+        $keylen = 32; // Set a fixed length for keys
+        for ($i = 0; $i < 1000; ++$i) {
+            $key = substr(str_shuffle(str_repeat('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', $keylen)), 0, rand(2, $keylen));
+            $keyIndex[$key] = 'value: '.$key;
+            $this->assertTrue($btree->set((string) $key, $keyIndex[$key]));
         }
 
-        /*
+        /**
          * Iterates over each key-value pair in the $keyIndex array and asserts that
          * the value retrieved from the $btree using the string representation of the key
          * matches the expected value from $keyIndex.
