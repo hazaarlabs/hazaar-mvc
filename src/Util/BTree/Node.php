@@ -239,6 +239,37 @@ class Node
         }
     }
 
+    public function verifyTree(?Node $node = null, ?string $minKey = null, ?string $maxKey = null): bool
+    {
+        if (null === $node) {
+            $node = $this;
+        }
+        $keys = array_keys($node->children);
+        $sortedKeys = $keys;
+        sort($sortedKeys, SORT_STRING);
+        if ($keys !== $sortedKeys) {
+            return false; // Keys are not sorted
+        }
+        $childMinKey = $minKey;
+        foreach ($node->children as $key => $ptr) {
+            if (null !== $minKey && $key <= $minKey) {
+                return false; // Key is not greater than minKey
+            }
+            if (null !== $maxKey && $key > $maxKey) {
+                return false; // Key is not less than or equal to maxKey
+            }
+            if (NodeType::INTERNAL === $node->nodeType) {
+                $childNode = self::$nodeCache[$ptr] ?? new self($node->file, $ptr);
+                if (!$this->verifyTree($childNode, $childMinKey, $key)) {
+                    return false;
+                }
+                $childMinKey = $key;
+            }
+        }
+
+        return true;
+    }
+
     private function readValue(int $ptr): mixed
     {
         fseek($this->file, $ptr);

@@ -132,6 +132,11 @@ class BTree
         return $result;
     }
 
+    public function verify(): bool
+    {
+        return $this->rootNode->verifyTree();
+    }
+
     private function loadRootNode(): bool
     {
         $headerSize = 10; // Size of the header in bytes
