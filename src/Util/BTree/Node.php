@@ -41,6 +41,9 @@ class Node
      */
     final public function __construct(mixed $file, ?int $ptr = null, int $slotSize = 16, int $keySize = 32)
     {
+        if ($slotSize < 4) {
+            throw new \InvalidArgumentException('Slot size must be at least 4.');
+        }
         $this->file = $file;
         $this->parentNode = null;
         $this->nodeType = NodeType::INTERNAL; // Default to INTERNAL type
@@ -140,7 +143,20 @@ class Node
     public function set(string $key, mixed $value): bool
     {
         if (NodeType::LEAF !== $this->nodeType) {
-            return $this->lookupChild($key)->set($key, $value);
+            $childNode = $this->lookupChild($key);
+            if ($childNode) {
+                return $childNode->set($key, $value);
+            }
+            $childNode = self::create(
+                $this->file,
+                NodeType::LEAF,
+                $this->slotSize,
+                $this->keySize
+            );
+            $childNode->set($key, $value);
+            $this->addNode($childNode);
+
+            return true;
         }
         $data = serialize($value);
         $dataLength = strlen($data);
@@ -170,8 +186,9 @@ class Node
 
     public function get(string $key): mixed
     {
-        if (NodeType::INTERNAL === $this->nodeType) {
-            return $this->lookupChild($key)->get($key);
+        if (NodeType::INTERNAL === $this->nodeType
+            && $childNode = $this->lookupChild($key)) {
+            return $childNode->get($key);
         }
         if (!isset($this->children[$key])) {
             return null;
@@ -203,6 +220,9 @@ class Node
     {
         if (NodeType::LEAF === $this->nodeType) {
             foreach ($this->children as $key => $ptr) {
+                if (array_key_exists($key, $result)) {
+                    throw new \RuntimeException("Duplicate key found: {$key}");
+                }
                 $result[$key] = $this->readValue($ptr);
             }
 
@@ -217,9 +237,10 @@ class Node
 
     public function addNode(self $node): void
     {
-        if (!$node->parentNode) {
-            $node->parentNode = $this; // Set the parent node if not already set
+        if ($node->parentNode) {
+            throw new \RuntimeException('Node already has a parent, cannot add to another node.');
         }
+        $node->parentNode = $this; // Set the parent node if not already set
         if (NodeType::INTERNAL !== $this->nodeType) {
             throw new \RuntimeException('Cannot add node to a non-internal node.');
         }
@@ -286,7 +307,7 @@ class Node
         return unserialize($data);
     }
 
-    private function lookupChild(string $key): Node
+    private function lookupChild(string $key): ?Node
     {
         if (NodeType::LEAF === $this->nodeType) {
             throw new \RuntimeException('Cannot lookup child in a leaf node.');
@@ -304,12 +325,8 @@ class Node
 
             return $node;
         }
-        $newNode = self::create($this->file, NodeType::LEAF, $this->slotSize, $this->keySize);
-        $newNode->children[$key] = 0; // Initialize the new node with the key
-        $newNode->write(); // Create a new leaf node for the key
-        $this->addNode($newNode);
 
-        return $newNode; // Return the new node
+        return null;
     }
 
     private function split(): void
@@ -323,7 +340,11 @@ class Node
             keySize: $this->keySize
         );
         $newNode->children = array_slice($this->children, 0, $midIndex, preserve_keys: true); // Move first half of children to newNode
-        $newNode->write();
+        foreach ($newNode->children as $key => $ptr) {
+            if (isset(self::$nodeCache[$ptr])) {
+                self::$nodeCache[$ptr]->parentNode = $newNode; // Update parent node for cached nodes
+            }
+        }
         $this->children = array_slice($this->children, $midIndex, preserve_keys: true); // Keep first half of children in current node
         if (null !== $this->parentNode) {
             // Promote the median key to the parent node
