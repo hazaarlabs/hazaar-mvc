@@ -31,6 +31,7 @@ class Node
      * @var array<int,self>
      */
     private static array $nodeCache = [];
+
     private ?self $parentNode;
 
     /**
@@ -72,6 +73,13 @@ class Node
         return $node;
     }
 
+    /**
+     * Reads the node data from the file at the specified pointer.
+     *
+     * @param null|int $ptr The pointer to the node in the file. If null, uses the current node's pointer.
+     *
+     * @return bool returns true on success, false on failure
+     */
     public function read(?int $ptr = null): bool
     {
         if (null !== $ptr) {
@@ -113,6 +121,13 @@ class Node
         return true;
     }
 
+    /**
+     * Writes the node data to the file at the specified pointer.
+     *
+     * @param null|int $ptr The pointer to write the node in the file. If null, writes to the end of the file.
+     *
+     * @return bool returns true on success, false on failure
+     */
     public function write(?int $ptr = null): bool
     {
         if (null === $ptr) {
@@ -140,6 +155,14 @@ class Node
         return true;
     }
 
+    /**
+     * Sets the value for the specified key in the node.
+     *
+     * @param string $key   the key to set
+     * @param mixed  $value the value to associate with the key
+     *
+     * @return bool returns true on success
+     */
     public function set(string $key, mixed $value): bool
     {
         if (NodeType::LEAF !== $this->nodeType) {
@@ -184,6 +207,13 @@ class Node
         return true;
     }
 
+    /**
+     * Gets the value for the specified key from the node.
+     *
+     * @param string $key the key to get
+     *
+     * @return mixed the value associated with the key, or null if the key does not exist
+     */
     public function get(string $key): mixed
     {
         if (NodeType::INTERNAL === $this->nodeType
@@ -197,6 +227,13 @@ class Node
         return $this->readValue($this->children[$key]);
     }
 
+    /**
+     * Removes the specified key from the node.
+     *
+     * @param string $key the key to remove
+     *
+     * @return bool returns true on success, false if the key does not exist
+     */
     public function remove(string $key): bool
     {
         if (NodeType::LEAF !== $this->nodeType) {
@@ -235,6 +272,13 @@ class Node
         }
     }
 
+    /**
+     * Adds a child node to the current node.
+     *
+     * @param self $node the node to add as a child
+     *
+     * @throws \RuntimeException if the node already has a parent, if the current node is not an internal node, or if a node with the same key already exists
+     */
     public function addNode(self $node): void
     {
         if ($node->parentNode) {
@@ -329,6 +373,9 @@ class Node
         return null;
     }
 
+    /**
+     * Splits the current node into two nodes and promotes the median key to the parent.
+     */
     private function split(): void
     {
         // Split the current node and promote the median key to the parent node
@@ -358,6 +405,13 @@ class Node
         $this->write();
     }
 
+    /**
+     * Caches the specified node.
+     *
+     * @param self $node the node to cache
+     *
+     * @throws \RuntimeException if the node has an invalid pointer
+     */
     private function cacheNode(self $node): void
     {
         if ($this->cacheSize <= 0) {

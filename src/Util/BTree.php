@@ -60,6 +60,11 @@ class BTree
         $this->loadRootNode();
     }
 
+    /**
+     * Resets the B-Tree by reloading the root node from the file.
+     *
+     * @return bool returns true on success
+     */
     public function reset(): bool
     {
         return $this->loadRootNode();
@@ -84,11 +89,25 @@ class BTree
         return true;
     }
 
+    /**
+     * Gets the value for the specified key from the B-Tree.
+     *
+     * @param string $key the key to get from the B-Tree
+     *
+     * @return mixed the value associated with the key, or null if the key does not exist
+     */
     public function get(string $key): mixed
     {
         return $this->rootNode->get($key);
     }
 
+    /**
+     * Removes the specified key from the B-Tree.
+     *
+     * @param string $key the key to remove from the B-Tree
+     *
+     * @return bool returns true on success
+     */
     public function remove(string $key): bool
     {
         $ptr = $this->rootNode->ptr;
@@ -100,12 +119,22 @@ class BTree
         return true;
     }
 
+    /**
+     * Compacts the B-Tree file to reduce its size.
+     *
+     * @return bool returns true on success
+     */
     public function compact(): bool
     {
         // Implementation for compacting the BTree file
         return false;
     }
 
+    /**
+     * Empties the B-Tree by creating a new root node.
+     *
+     * @return bool returns true on success
+     */
     public function empty(): bool
     {
         $this->rootNode = Node::create(
@@ -132,11 +161,21 @@ class BTree
         return $result;
     }
 
+    /**
+     * Verifies the integrity of the B-Tree.
+     *
+     * @return bool returns true if the B-Tree is valid, false otherwise
+     */
     public function verify(): bool
     {
         return $this->rootNode->verifyTree();
     }
 
+    /**
+     * Loads the root node from the B-Tree file.
+     *
+     * @return bool returns true on success
+     */
     private function loadRootNode(): bool
     {
         $headerSize = 10; // Size of the header in bytes
@@ -165,6 +204,11 @@ class BTree
         return $this->writeHeader();
     }
 
+    /**
+     * Writes the header to the B-Tree file.
+     *
+     * @return bool returns true on success
+     */
     private function writeHeader(): bool
     {
         fseek($this->file, 0);
