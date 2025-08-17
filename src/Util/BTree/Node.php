@@ -63,6 +63,12 @@ class Node
         }
     }
 
+    public function resetCache(): void
+    {
+        self::$nodeCache = []; // Clear the node cache
+        self::$recordCache = []; // Clear the record cache
+    }
+
     /**
      * Create a new Node instance with initialized children slots.
      *
@@ -280,7 +286,7 @@ class Node
                 if (array_key_exists($key, $result)) {
                     throw new \RuntimeException("Duplicate key found: {$key}");
                 }
-                $record = self::$recordCache ?? Record::create($this);
+                $record = self::$recordCache[$key] ?? Record::create($this);
                 $result[$key] = $record->read($ptr);
             }
 

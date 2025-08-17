@@ -9,6 +9,7 @@ use Hazaar\Util\BTree\NodeType;
 
 class BTree
 {
+    private const BTREE_HEADER_SIZE = 12; // Size of the header in bytes
     private const VERSION_STRING = '1.0';
     private Version $version;
     private int $slotSize = 16; // Size of each node slot in bytes
@@ -53,14 +54,14 @@ class BTree
         $this->slotSize = $slotSize;
         $this->keySize = $keySize;
         // Initialize the BTree file if it does not exist
-        $mode = ($this->readOnly = $readOnly) ? 'rb' : 'a+b';
+        $mode = ($this->readOnly = $readOnly) ? 'rb' : 'c+b';
         $file = fopen($this->filePath, $mode);
         if (false === $file) {
             throw new \RuntimeException("Could not open BTree file: {$this->filePath}");
         }
         $this->file = $file;
         // Load the root node from the file
-        $this->loadRootNode();
+        $this->readHeader();
     }
 
     public function __destruct()
@@ -73,8 +74,11 @@ class BTree
      */
     public function close(): void
     {
-        if (is_resource($this->file)) {
+        if (isset($this->file) && is_resource($this->file)) {
             fclose($this->file);
+        }
+        if (isset($this->rootNode)) {
+            $this->rootNode->resetCache();
         }
         unset($this->file, $this->rootNode);
     }
@@ -86,7 +90,11 @@ class BTree
      */
     public function reset(): bool
     {
-        return $this->loadRootNode();
+        if (isset($this->rootNode)) {
+            $this->rootNode->resetCache();
+        }
+
+        return $this->readHeader();
     }
 
     /**
@@ -165,7 +173,7 @@ class BTree
             slotSize: $this->slotSize,
             keySize: $this->keySize
         );
-        $this->rootNode->write(10); // Write the header size
+        $this->rootNode->write(self::BTREE_HEADER_SIZE); // Write the header size
 
         return $this->writeHeader();
     }
@@ -198,13 +206,12 @@ class BTree
      *
      * @return bool returns true on success
      */
-    private function loadRootNode(): bool
+    private function readHeader(): bool
     {
-        $headerSize = 10; // Size of the header in bytes
         // Load the root node from the file
         fseek($this->file, 0);
-        $buffer = fread($this->file, $headerSize);
-        if ($buffer && $headerSize === strlen($buffer)) {
+        $buffer = fread($this->file, self::BTREE_HEADER_SIZE);
+        if ($buffer && self::BTREE_HEADER_SIZE === strlen($buffer)) {
             $header = unpack('Smajor/Sminor/Sslot/Skeys/Lptr', $buffer);
             if ($this->version->getMajor() !== $header['major']) {
                 throw new \RuntimeException(
@@ -223,7 +230,7 @@ class BTree
             slotSize: $this->slotSize,
             keySize: $this->keySize
         );
-        $this->rootNode->write($headerSize + 1);
+        $this->rootNode->write(self::BTREE_HEADER_SIZE);
 
         return $this->writeHeader();
     }
@@ -235,15 +242,16 @@ class BTree
      */
     private function writeHeader(): bool
     {
-        fseek($this->file, 0);
-
-        return false !== fwrite($this->file, pack(
+        $header = pack(
             'SSSSL',
             $this->version->getMajor(),
             $this->version->getMinor(),
             $this->slotSize,
             $this->keySize,
             $this->rootNode->ptr
-        ));
+        );
+        fseek($this->file, 0);
+
+        return false !== fwrite($this->file, $header);
     }
 }

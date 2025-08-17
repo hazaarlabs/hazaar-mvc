@@ -50,6 +50,7 @@ class UtilityTest extends TestCase
         $this->assertEquals('value', $btree->get('key'));
         $this->assertTrue($btree->remove('key'));
         $this->assertNull($btree->get('key'));
+        $this->assertTrue($btree->set('key', 'value'));
 
         /**
          * Inserts 1000 unique key-value pairs into the B-tree and asserts that each insertion is successful.
@@ -79,6 +80,9 @@ class UtilityTest extends TestCase
         foreach ($keyIndex as $testKey => $testValue) {
             $this->assertEquals($keyIndex[$testKey], $btree->get((string) $testKey));
         }
+        $btree->close();
+        $btree = new BTree($file, false, $keySize);
+        $this->assertEquals('value', $btree->get('key'));
     }
 
     /**
