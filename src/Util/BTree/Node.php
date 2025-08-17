@@ -6,7 +6,7 @@ namespace Hazaar\Util\BTree;
 
 class Node
 {
-    private const NODE_PTR_SIZE = 4; // Size of each pointer in bytes
+    public const NODE_PTR_SIZE = 4; // Size of each pointer in bytes
     public int $ptr;
     public int $length;
     public int $slotSize; // Size of each node slot in bytes
@@ -23,7 +23,7 @@ class Node
     /**
      * @var resource
      */
-    protected mixed $file;
+    public mixed $file;
 
     /**
      * Cache for nodes to avoid excessive file reads.
@@ -32,6 +32,13 @@ class Node
      */
     private static array $nodeCache = [];
 
+    /**
+     * Cache for records to avoid multiple reads from the file.
+     * This is a static property to allow sharing across instances.
+     *
+     * @var array<int,Record>
+     */
+    private static array $recordCache = [];
     private ?self $parentNode;
 
     /**
@@ -181,21 +188,11 @@ class Node
 
             return true;
         }
-        $data = serialize($value);
-        $dataLength = strlen($data);
-        $curDataLength = 0;
-        // If the key already exists, update its value
-        if (isset($this->children[$key]) && $this->children[$key] > 0) {
-            fseek($this->file, $this->children[$key]);
-            $curDataLength = unpack('L', fread($this->file, self::NODE_PTR_SIZE))[1];
+        $record = self::$recordCache[$key] ?? Record::create($this);
+        if (!$record->write($key, $value)) {
+            return false; // If the record write fails, return false
         }
-        if ($dataLength > $curDataLength) {
-            fseek($this->file, 0, SEEK_END);
-            $this->children[$key] = ftell($this->file);
-            ksort($this->children); // Ensure children are sorted by key
-            fwrite($this->file, pack('L', $dataLength));
-        }
-        fwrite($this->file, $data);
+        $this->addRecord($record);
         // If the node is full, split it.
         // NOTE:  This MUST be done after the set operation to ensure the value ends up in the correct node
         if (count($this->children) > $this->slotSize) {
@@ -223,8 +220,9 @@ class Node
         if (!isset($this->children[$key])) {
             return null;
         }
+        $record = self::$recordCache[$key] ?? Record::create($this);
 
-        return $this->readValue($this->children[$key]);
+        return $record->read($this->children[$key]);
     }
 
     /**
@@ -260,7 +258,8 @@ class Node
                 if (array_key_exists($key, $result)) {
                     throw new \RuntimeException("Duplicate key found: {$key}");
                 }
-                $result[$key] = $this->readValue($ptr);
+                $record = self::$recordCache ?? Record::create($this);
+                $result[$key] = $record->read($ptr);
             }
 
             return;
@@ -289,7 +288,7 @@ class Node
             throw new \RuntimeException('Cannot add node to a non-internal node.');
         }
         $newKey = array_key_last($node->children);
-        if (isset($this->children[$newKey]) && $this->children[$newKey] !== $node->ptr) {
+        if (isset($this->children[$newKey], $node->ptr) && $this->children[$newKey] !== $node->ptr) {
             throw new \RuntimeException('Node with the same key already exists in the parent node.');
         }
         if (!isset($node->ptr)) {
@@ -304,6 +303,40 @@ class Node
         }
     }
 
+    /**
+     * Adds a record to the current node.
+     *
+     * @param Record $record the record to add
+     *
+     * @return bool returns true on success, false if the node is not a leaf
+     */
+    public function addRecord(Record $record): bool
+    {
+        if (!(NodeType::LEAF === $this->nodeType
+            && isset($record->ptr)
+            && $record->ptr > 0
+            && isset($record->key))) {
+            return false;
+        }
+        $this->children[$record->key] = $record->ptr; // Add the record's pointer to the current node
+        ksort($this->children); // Ensure children are sorted by key
+        while (count(self::$recordCache) >= $this->cacheSize) {
+            array_shift(self::$recordCache); // Remove the oldest cached record if cache size exceeds limit
+        }
+        self::$recordCache[$record->key] = $record; // Cache the record for future access
+
+        return true;
+    }
+
+    /**
+     * Verifies the integrity of the B-Tree from this node downwards.
+     *
+     * @param null|Node   $node   The node to verify. If null, starts from the current node.
+     * @param null|string $minKey the minimum key value for the current node
+     * @param null|string $maxKey the maximum key value for the current node
+     *
+     * @return bool returns true if the subtree is valid, false otherwise
+     */
     public function verifyTree(?Node $node = null, ?string $minKey = null, ?string $maxKey = null): bool
     {
         if (null === $node) {
@@ -335,22 +368,15 @@ class Node
         return true;
     }
 
-    private function readValue(int $ptr): mixed
-    {
-        fseek($this->file, $ptr);
-        $lengthBuffer = fread($this->file, self::NODE_PTR_SIZE);
-        if (false === $lengthBuffer || self::NODE_PTR_SIZE !== strlen($lengthBuffer)) {
-            return null;
-        }
-        $length = unpack('L', $lengthBuffer)[1];
-        $data = fread($this->file, $length);
-        if (false === $data || strlen($data) !== $length) {
-            return null;
-        }
-
-        return unserialize($data);
-    }
-
+    /**
+     * Looks up the child node that should contain the specified key.
+     *
+     * @param string $key the key to look up
+     *
+     * @return null|Node the child node, or null if no suitable child is found
+     *
+     * @throws \RuntimeException if called on a leaf node
+     */
     private function lookupChild(string $key): ?Node
     {
         if (NodeType::LEAF === $this->nodeType) {
