@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Hazaar\Warlock\Server\Component;
 
-use Hazaar\File\BTree;
 use Hazaar\File\Dir;
+use Hazaar\Util\BTree;
 use Hazaar\Warlock\Enum\LogLevel;
 use Hazaar\Warlock\Enum\PacketType;
 use Hazaar\Warlock\Logger;
@@ -61,7 +61,7 @@ class KVStore
             $dbDir->create();
         }
         $dbFile = $dbDir->get('kvstore.db');
-        $this->db = new BTree($dbFile);
+        $this->db = new BTree((string) $dbFile);
         if ($compactTime > 0) {
             $this->log->write('KV Store persistent storage compaction enabled', LogLevel::INFO);
             $this->compactTime = $compactTime;

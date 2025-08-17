@@ -14,7 +14,7 @@ namespace Hazaar\Cache\Backend;
 use Hazaar\Application;
 use Hazaar\Application\Runtime;
 use Hazaar\Cache\Backend;
-use Hazaar\File\BTree;
+use Hazaar\Util\BTree;
 
 /**
  * @brief The file cache backend.
@@ -185,7 +185,7 @@ class File extends Backend
         $this->keepalive();
         $this->local = [];
 
-        return $this->store->resetBTreeFile();
+        return $this->store->empty();
     }
 
     /**
@@ -194,7 +194,7 @@ class File extends Backend
     public function toArray(): array
     {
         $array = [];
-        $values = $this->store->range("\x00", "\xff");
+        $values = $this->store->toArray();
         foreach ($values as $key => $cache) {
             if ('__' === substr($key, 0, 2)) {
                 continue;

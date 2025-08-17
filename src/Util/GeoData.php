@@ -6,7 +6,6 @@ namespace Hazaar\Util;
 
 use Hazaar\Application\Runtime;
 use Hazaar\File;
-use Hazaar\File\BTree;
 
 /**
  * The GeoData class for accessing geographic information on countries.
@@ -72,7 +71,7 @@ class GeoData
         }
         if ($downloadDBFile) {
             $dbFile = self::fetchDBFile($dbFile);
-            self::$db = new BTree($dbFile, true);
+            self::$db = new BTree((string) $dbFile, true);
         }
     }
 
@@ -84,7 +83,7 @@ class GeoData
     private function __list(BTree $db, ?string $field = null): array
     {
         $list = [];
-        $codes = $db->range("\x00", "\xff");
+        $codes = $db->toArray();
         foreach ($codes as $code => $info) {
             if ('__' == substr($code, 0, 2)) {
                 continue;
@@ -264,7 +263,7 @@ class GeoData
      */
     public function countryCode(string $name): ?string
     {
-        $info = self::$db->range("\x00", "\xff");
+        $info = self::$db->toArray();
         foreach ($info as $code => $country) {
             if ('__' == substr($code, 0, 2)) {
                 continue;

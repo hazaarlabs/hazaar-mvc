@@ -14,11 +14,10 @@ namespace Hazaar\Util;
 use Hazaar\Application\FilePath;
 use Hazaar\Cache\Adapter;
 use Hazaar\File;
-use Hazaar\File\BTree;
 use Hazaar\Loader;
 
 /**
- * Money class
+ * Money class.
  *
  * This class is used to extend a normal integer value by adding currency related features such as the
  * currency type (AUD, USD, JPY, etc) and realtime currency conversion using Yahoo Quotes.
@@ -118,7 +117,7 @@ class Money
     public function getCurrencyInfo(?string $currency = null): mixed
     {
         if (null == self::$db) {
-            $file = new File(Loader::getFilePath(FilePath::SUPPORT, 'currency.db'));
+            $file = Loader::getFilePath(FilePath::SUPPORT, 'currency.db');
             self::$db = new BTree($file, true);
         }
         if (null === $currency) {
@@ -192,7 +191,7 @@ class Money
     {
         if ($country) {
             if (strlen($country) < 3) {
-                $countries = self::$db->range("\x00", "\xff");
+                $countries = self::$db->toArray();
                 foreach ($countries as $c) {
                     if (0 !== strcasecmp($c['iso'], $country)) {
                         continue;

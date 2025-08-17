@@ -3,8 +3,8 @@
 namespace Hazaar\RateLimiter\Backend;
 
 use Hazaar\Application\Runtime;
-use Hazaar\File\BTree;
 use Hazaar\RateLimiter\Backend;
+use Hazaar\Util\BTree;
 
 class File extends Backend
 {

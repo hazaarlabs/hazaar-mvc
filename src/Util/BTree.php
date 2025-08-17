@@ -22,6 +22,7 @@ class BTree
     private mixed $file;
 
     private Node $rootNode;
+    private bool $readOnly = false;
 
     /**
      * Constructs a new BTree instance.
@@ -39,25 +40,43 @@ class BTree
      * If the file already exists, it will read the header to determine the BTree's configuration.
      *
      * @param string $filePath path to the BTree file
+     * @param bool   $readOnly if true, the BTree will be opened in read-only mode; otherwise, it will be opened in read-write mode
      * @param int    $keySize  Size of the key in bytes. Default is 32.
      * @param int    $slotSize Size of the slot in bytes. Default is 16.
      *
      * @throws \RuntimeException if the BTree file cannot be opened
      */
-    public function __construct(string $filePath, int $keySize = 32, int $slotSize = 16)
+    public function __construct(string $filePath, bool $readOnly = false, int $keySize = 32, int $slotSize = 16)
     {
         $this->version = new Version(self::VERSION_STRING);
         $this->filePath = $filePath;
         $this->slotSize = $slotSize;
         $this->keySize = $keySize;
         // Initialize the BTree file if it does not exist
-        $file = fopen($this->filePath, 'c+');
+        $mode = ($this->readOnly = $readOnly) ? 'rb' : 'a+b';
+        $file = fopen($this->filePath, $mode);
         if (false === $file) {
             throw new \RuntimeException("Could not open BTree file: {$this->filePath}");
         }
         $this->file = $file;
         // Load the root node from the file
         $this->loadRootNode();
+    }
+
+    public function __destruct()
+    {
+        $this->close();
+    }
+
+    /**
+     * Closes the BTree file resource.
+     */
+    public function close(): void
+    {
+        if (is_resource($this->file)) {
+            fclose($this->file);
+        }
+        unset($this->file, $this->rootNode);
     }
 
     /**
@@ -80,6 +99,9 @@ class BTree
      */
     public function set(string $key, mixed $value): bool
     {
+        if ($this->readOnly) {
+            return false; // Cannot set values in read-only mode
+        }
         $ptr = $this->rootNode->ptr;
         $this->rootNode->set($key, $value);
         if ($ptr !== $this->rootNode->ptr) {
@@ -185,7 +207,9 @@ class BTree
         if ($buffer && $headerSize === strlen($buffer)) {
             $header = unpack('Smajor/Sminor/Sslot/Skeys/Lptr', $buffer);
             if ($this->version->getMajor() !== $header['major']) {
-                return false;
+                throw new \RuntimeException(
+                    "BTree version mismatch: expected {$this->version->getMajor()}, got {$header['major']}"
+                );
             }
             $this->slotSize = $header['slot'];
             $this->keySize = $header['keys'];

@@ -95,18 +95,26 @@ class Node
         if (!$this->ptr) {
             return false;
         }
+        if (!flock($this->file, LOCK_SH)) {
+            return false; // Lock the file for shared access
+        }
         fseek($this->file, $this->ptr);
         $typeBuffer = fread($this->file, 1);
         if (false === $typeBuffer || 1 !== strlen($typeBuffer)) {
+            flock($this->file, LOCK_UN); // Unlock the file before returning
+
             return false;
         }
         $this->nodeType = NodeType::from(unpack('a', $typeBuffer)[1]);
         $lengthBuffer = fread($this->file, self::NODE_PTR_SIZE);
         if (false === $lengthBuffer || self::NODE_PTR_SIZE !== strlen($lengthBuffer)) {
+            flock($this->file, LOCK_UN); // Unlock the file before returning
+
             return false;
         }
         $this->length = unpack('L', $lengthBuffer)[1];
         $data = fread($this->file, $this->length);
+        flock($this->file, LOCK_UN); // Unlock the file after reading
         if (false === $data) {
             return false;
         }
@@ -144,6 +152,9 @@ class Node
             }
             $ptr = $this->ptr;
         }
+        if (!flock($this->file, LOCK_EX)) {
+            return false; // Lock the file for exclusive access
+        }
         // Save the node to the file at the specified pointer
         fseek($this->file, $ptr);
         fwrite($this->file, pack('a', $this->nodeType->value));
@@ -153,7 +164,18 @@ class Node
         }
         $this->length = $this->slotSize * $this->childSize;
         fwrite($this->file, pack('L', $this->length));
-        if (false === fwrite($this->file, str_pad($data, $this->length, "\0", STR_PAD_RIGHT), $this->length)) {
+        $result = fwrite(
+            stream: $this->file,
+            data: str_pad(
+                string: $data,
+                length: $this->length,
+                pad_string: "\0",
+                pad_type: STR_PAD_RIGHT
+            ),
+            length: $this->length
+        );
+        flock($this->file, LOCK_UN); // Unlock the file after writing
+        if (false === $result) {
             return false;
         }
         $this->ptr = $ptr;

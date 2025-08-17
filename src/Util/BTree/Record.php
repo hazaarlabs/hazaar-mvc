@@ -35,6 +35,9 @@ class Record
         if (null === $ptr) {
             $ptr = $this->ptr;
         }
+        if (!flock($this->file, LOCK_SH)) {
+            return false;
+        }
         /*
          * Seek to the record's position but skip the max record length which is
          * used to check if an in-place update can be performed.
@@ -53,12 +56,16 @@ class Record
             return false;
         }
         $this->ptr = $ptr;
+        flock($this->file, LOCK_UN);
 
         return $this->value = unserialize($data);
     }
 
     public function write(string $key, mixed $value): bool
     {
+        if (!flock($this->file, LOCK_EX)) {
+            return false;
+        }
         $data = serialize($value);
         $dataLength = strlen($data);
         $maxRecordLength = 0;
@@ -75,6 +82,7 @@ class Record
         }
         fwrite($this->file, pack('L', $dataLength));
         fwrite($this->file, $data);
+        flock($this->file, LOCK_UN);
         $this->key = $key;
         $this->value = $value;
 
