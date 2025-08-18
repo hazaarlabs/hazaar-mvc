@@ -382,6 +382,7 @@ class Node
         }
         $childMinKey = $minKey;
         foreach ($node->children as $key => $ptr) {
+            $key = (string) $key;
             if (null !== $minKey && $key <= $minKey) {
                 return false; // Key is not greater than minKey
             }
@@ -481,7 +482,12 @@ class Node
     }
 
     /**
-     * Splits the current node into two nodes and promotes the median key to the parent.
+     * Splits the current node into two nodes when it becomes full.
+     *
+     * This method is called when the number of children in the current node exceeds its slot size.
+     * It divides the children into two halves, creates a new node to store the first half,
+     * and keeps the second half in the current node. The median key is then promoted to the parent node.
+     * If the current node is the root, a new root is created.
      */
     private function split(): void
     {

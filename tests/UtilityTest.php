@@ -47,10 +47,10 @@ class UtilityTest extends TestCase
         $keySize = 32; // Set a fixed length for keys
         $btree = new BTree($file, false, $keySize);
         $this->assertTrue($btree->set('key', 'value'));
+        $this->assertTrue($btree->set('key2', 'value2'));
         $this->assertEquals('value', $btree->get('key'));
-        $this->assertTrue($btree->remove('key'));
-        $this->assertNull($btree->get('key'));
-        $this->assertTrue($btree->set('key', 'value'));
+        // $this->assertTrue($btree->remove('key'));
+        // $this->assertNull($btree->get('key'));
 
         /**
          * Inserts 1000 unique key-value pairs into the B-tree and asserts that each insertion is successful.
@@ -77,12 +77,41 @@ class UtilityTest extends TestCase
          * @param array  $keyIndex array of keys and their expected values
          * @param object $btree    B-tree object with a get method to retrieve values by key
          */
+        $removedKeys = [];
+        $removeRecord = false;
+        foreach ($keyIndex as $testKey => $testValue) {
+            $this->assertEquals($keyIndex[$testKey], $btree->get((string) $testKey));
+            $removeRecord = !$removeRecord;
+            if ($removeRecord) {
+                $this->assertTrue($btree->remove((string) $testKey));
+                $this->assertNull($btree->get((string) $testKey));
+                unset($keyIndex[$testKey]);
+                $removedKeys[] = $testKey;
+            }
+        }
+        $btree->close();
+        // Reopen the B-tree and assert that the values still exist
+        $this->assertFileExists($file);
+        $this->assertTrue(is_readable($file));
+        $btree = new BTree($file, false, $keySize);
+        $this->assertEquals('value', $btree->get('key'));
+        $this->assertTrue($btree->compact());
+        $this->assertTrue($btree->verify());
+
+        /**
+         * Iterates over each key-value pair in the $keyIndex array and asserts that
+         * the value retrieved from the $btree using the string representation of the key
+         * matches the expected value from $keyIndex and still exists after compaction.
+         *
+         * @param array  $keyIndex array of keys and their expected values
+         * @param object $btree    B-tree object with a get method to retrieve values by key
+         */
         foreach ($keyIndex as $testKey => $testValue) {
             $this->assertEquals($keyIndex[$testKey], $btree->get((string) $testKey));
         }
-        $btree->close();
-        $btree = new BTree($file, false, $keySize);
-        $this->assertEquals('value', $btree->get('key'));
+        foreach ($removedKeys as $testKey) {
+            $this->assertNull($btree->get((string) $testKey));
+        }
     }
 
     /**

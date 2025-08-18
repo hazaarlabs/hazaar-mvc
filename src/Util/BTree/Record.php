@@ -14,6 +14,16 @@ class Record
      */
     private mixed $file;
 
+    /**
+     * Creates a new Record instance.
+     *
+     * @param Node   $parentNode the parent node of the record
+     * @param string $key        the key of the record
+     *
+     * @return self the new Record instance
+     *
+     * @throws \InvalidArgumentException if the file resource in the parent node is invalid
+     */
     public static function create(Node $parentNode, string $key): self
     {
         if (!is_resource($parentNode->file)
@@ -28,6 +38,17 @@ class Record
         return $record;
     }
 
+    /**
+     * Reads the record's value from the file.
+     *
+     * If the value is already in memory, it is returned directly. Otherwise, it seeks to the
+     * record's position in the file, reads its length and data, unserializes the data,
+     * and returns the value.
+     *
+     * @param null|int $ptr the pointer to the record in the file. If null, uses the current record's pointer.
+     *
+     * @return mixed the value of the record, or false on failure
+     */
     public function read(?int $ptr = null): mixed
     {
         if (isset($this->ptr) && $ptr === $this->ptr && isset($this->value)) {
@@ -62,6 +83,18 @@ class Record
         return $this->value = unserialize($data);
     }
 
+    /**
+     * Writes the record's key and value to the file.
+     *
+     * Serializes the value and writes it to the file. If the record already exists and the new
+     * data fits within the allocated space, it updates the record in-place. Otherwise, it
+     * appends the new record to the end of the file and updates the pointer.
+     *
+     * @param string $key   the key of the record
+     * @param mixed  $value the value of the record
+     *
+     * @return bool returns true on success, false on failure
+     */
     public function write(string $key, mixed $value): bool
     {
         if (!flock($this->file, LOCK_EX)) {
@@ -88,5 +121,25 @@ class Record
         $this->value = $value;
 
         return true;
+    }
+
+    /**
+     * Moves the record to a new leaf node.
+     *
+     * This method updates the record's parent node and file handle, resets its pointer,
+     * writes the record to the new location in the file, and adds the record to the new leaf node.
+     *
+     * @param Node $leaf the new leaf node to move the record to
+     *
+     * @return bool returns true on success
+     */
+    public function moveTo(Node $leaf): bool
+    {
+        $this->parentNode = $leaf;
+        $this->file = $leaf->file;
+        $this->ptr = 0;
+        $this->write($this->key, $this->value);
+
+        return $leaf->addRecord($this);
     }
 }

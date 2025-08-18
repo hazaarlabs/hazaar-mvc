@@ -6,6 +6,7 @@ namespace Hazaar\Util;
 
 use Hazaar\Util\BTree\Node;
 use Hazaar\Util\BTree\NodeType;
+use Hazaar\Util\BTree\Record;
 
 class BTree
 {
@@ -64,6 +65,11 @@ class BTree
         $this->readHeader();
     }
 
+    /**
+     * Destructor for the BTree class.
+     *
+     * Ensures that the BTree file resource is closed when the object is destroyed.
+     */
     public function __destruct()
     {
         $this->close();
@@ -165,7 +171,68 @@ class BTree
      */
     public function compact(): bool
     {
-        return false; // Cannot compact in read-only mode
+        if ($this->readOnly) {
+            return false; // Cannot compact in read-only mode
+        }
+        $tmpFilePath = $this->filePath.'.tmp';
+        $tmpFile = fopen($tmpFilePath, 'c+b');
+        if (false === $tmpFile) {
+            throw new \RuntimeException("Could not open temporary BTree file: {$tmpFilePath}");
+        }
+        $newRootNode = Node::create(
+            file: $tmpFile,
+            type: NodeType::INTERNAL,
+            slotSize: $this->slotSize,
+            keySize: $this->keySize
+        );
+        $newRootNode->write(self::BTREE_HEADER_SIZE); // Write the header
+        $this->writeHeader($tmpFile);
+        $newLeafNode = null;
+        foreach ($this->rootNode->leaf() as $leafNode) {
+            foreach ($leafNode->children as $key => $recordPtr) {
+                if (!$newLeafNode) {
+                    $newLeafNode = Node::create(
+                        file: $tmpFile,
+                        type: NodeType::LEAF,
+                        slotSize: $this->slotSize,
+                        keySize: $this->keySize
+                    );
+                }
+                $record = Record::create($leafNode, (string) $key);
+                $record->read($recordPtr);
+                $record->moveTo($newLeafNode);
+                if (count($newLeafNode->children) >= ($this->slotSize / 2)) {
+                    $newRootNode->addNode($newLeafNode);
+                    $newLeafNode = null;
+                }
+            }
+        }
+        if ($newLeafNode) {
+            $newRootNode->addNode($newLeafNode);
+        }
+        $newRootNode->write(self::BTREE_HEADER_SIZE); // Write the header
+        // Close the old file and reset the root node cache
+        $this->rootNode->resetCache();
+        fclose($this->file);
+        fclose($tmpFile);
+        // Rename the temporary file to the original file path
+        if (!rename($tmpFilePath, $this->filePath)) {
+            throw new \RuntimeException("Could not rename temporary BTree file to: {$this->filePath}");
+        }
+        unset($this->rootNode);
+        $this->file = fopen($this->filePath, 'c+b');
+
+        return $this->readHeader();
+    }
+
+    /**
+     * Returns the total number of elements in the B-tree.
+     *
+     * @return int the count of elements stored in the tree
+     */
+    public function count(): int
+    {
+        return $this->rootNode->countRecords();
     }
 
     /**
