@@ -1,6 +1,4 @@
-# Hazaar/Util/BTree Class Documentation
-
-## Introduction
+## BTree File Utilities ([`Hazaar\Util\BTree`](/api/class/Hazaar/Util/Btree.html))
 
 The `Hazaar\Util\BTree` class provides a robust, file-based B-Tree implementation for PHP. It allows for efficient storage and retrieval of key-value pairs on disk, making it suitable for large datasets that may not fit into memory.
 
