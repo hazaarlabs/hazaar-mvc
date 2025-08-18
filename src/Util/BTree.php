@@ -111,7 +111,7 @@ class BTree
             return false; // Cannot set values in read-only mode
         }
         $ptr = $this->rootNode->ptr;
-        $leafNode = $this->rootNode->lookup($key);
+        $leafNode = $this->rootNode->lookupLeafNode($key);
         if ($leafNode) {
             $leafNode->set($key, $value);
         } else {
@@ -133,7 +133,7 @@ class BTree
      */
     public function get(string $key): mixed
     {
-        $leafNode = $this->rootNode->lookup($key);
+        $leafNode = $this->rootNode->lookupLeafNode($key);
         if ($leafNode) {
             return $leafNode->get($key);
         }
@@ -150,7 +150,7 @@ class BTree
      */
     public function remove(string $key): bool
     {
-        $leafNode = $this->rootNode->lookup($key);
+        $leafNode = $this->rootNode->lookupLeafNode($key);
         if ($leafNode) {
             return $leafNode->remove($key);
         }
@@ -194,7 +194,12 @@ class BTree
     public function toArray(): array
     {
         $result = [];
-        $this->rootNode->toArray($result);
+        foreach ($this->rootNode->leaf() as $node) {
+            foreach ($node->children as $key => $recordPtr) {
+                $record = Record::create($node, (string) $key);
+                $result[$record->key] = $record->read($recordPtr);
+            }
+        }
 
         return $result;
     }

@@ -14,7 +14,7 @@ class Record
      */
     private mixed $file;
 
-    public static function create(Node $parentNode): self
+    public static function create(Node $parentNode, string $key): self
     {
         if (!is_resource($parentNode->file)
             || 'stream' !== get_resource_type($parentNode->file)) {
@@ -23,6 +23,7 @@ class Record
         $record = new self();
         $record->parentNode = $parentNode;
         $record->file = $parentNode->file;
+        $record->key = $key;
 
         return $record;
     }

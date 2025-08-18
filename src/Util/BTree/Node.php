@@ -28,7 +28,7 @@ class Node
     /**
      * Cache for nodes to avoid excessive file reads.
      *
-     * @var array<int,self>
+     * @var array<int,array<int,self>>
      */
     private static array $nodeCache = [];
 
@@ -77,8 +77,7 @@ class Node
      */
     public function resetCache(): void
     {
-        self::$nodeCache = []; // Clear the node cache
-        self::$recordCache = []; // Clear the record cache
+        unset(self::$nodeCache[(int) $this->file], self::$nodeCache[(int) $this->file]);
     }
 
     /**
@@ -247,7 +246,7 @@ class Node
         if (NodeType::LEAF !== $this->nodeType) {
             throw new \RuntimeException('Cannot set value in a non-leaf node.');
         }
-        $record = self::$recordCache[$key] ?? Record::create($this);
+        $record = self::$recordCache[$key] ?? Record::create($this, $key);
         if (!$record->write($key, $value)) {
             return false; // If the record write fails, return false
         }
@@ -278,7 +277,7 @@ class Node
         if (!isset($this->children[$key])) {
             return null;
         }
-        $record = self::$recordCache[$key] ?? Record::create($this);
+        $record = self::$recordCache[$key] ?? Record::create($this, $key);
 
         return $record->read($this->children[$key]);
     }
@@ -302,31 +301,6 @@ class Node
         $this->write();
 
         return true;
-    }
-
-    /**
-     * Return the entire B-Tree node and its children as an array.
-     *
-     * @param array<string,mixed> $result The array to populate with node data
-     */
-    public function toArray(array &$result): void
-    {
-        if (NodeType::LEAF === $this->nodeType) {
-            foreach ($this->children as $key => $ptr) {
-                if (array_key_exists($key, $result)) {
-                    throw new \RuntimeException("Duplicate key found: {$key}");
-                }
-                $record = self::$recordCache[$key] ?? Record::create($this);
-                $result[$key] = $record->read($ptr);
-            }
-
-            return;
-        }
-        foreach ($this->children as $key => $ptr) {
-            $node = self::$nodeCache[$ptr] ?? new self($this->file, $ptr);
-            $node->toArray($result);
-            $this->cacheNode($node); // Cache the node after reading
-        }
     }
 
     /**
@@ -415,7 +389,7 @@ class Node
                 return false; // Key is not less than or equal to maxKey
             }
             if (NodeType::INTERNAL === $node->nodeType) {
-                $childNode = self::$nodeCache[$ptr] ?? new self($node->file, $ptr);
+                $childNode = self::$nodeCache[(int) $this->file][$ptr] ?? new self($node->file, $ptr);
                 if (!$this->verifyTree($childNode, $childMinKey, $key)) {
                     return false;
                 }
@@ -427,6 +401,28 @@ class Node
     }
 
     /**
+     * Counts the total number of child nodes in the subtree rooted at this node.
+     *
+     * If the node is a leaf, returns the number of its children directly.
+     * Otherwise, recursively counts the children of all descendant nodes.
+     *
+     * @return int the total count of child nodes
+     */
+    public function countRecords(): int
+    {
+        if (NodeType::LEAF === $this->nodeType) {
+            return count($this->children);
+        }
+        $count = 0;
+        foreach ($this->children as $ptr) {
+            $childNode = self::$nodeCache[(int) $this->file][$ptr] ?? new self($this->file, $ptr);
+            $count += $childNode->countRecords(); // Recursively count children
+        }
+
+        return $count;
+    }
+
+    /**
      * Looks up the child node that should contain the specified key.
      *
      * @param string $key the key to look up
@@ -435,7 +431,7 @@ class Node
      *
      * @throws \RuntimeException if called on a leaf node
      */
-    public function lookup(string $key): ?Node
+    public function lookupLeafNode(string $key): ?Node
     {
         if (NodeType::LEAF === $this->nodeType) {
             throw new \RuntimeException('Cannot lookup child in a leaf node.');
@@ -445,7 +441,7 @@ class Node
                 continue;
             }
             // Return the child node that should contain the key
-            $node = self::$nodeCache[$childPtr] ?? new self($this->file, $childPtr);
+            $node = self::$nodeCache[(int) $this->file][$childPtr] ?? new self($this->file, $childPtr);
             $node->parentNode = $this;
 
             if (NodeType::LEAF === $node->nodeType) {
@@ -453,10 +449,35 @@ class Node
                 return $node;
             }
 
-            return $node->lookup($key);
+            return $node->lookupLeafNode($key);
         }
 
         return null;
+    }
+
+    /**
+     * Returns a generator that yields all leaf nodes in the subtree rooted at this node.
+     *
+     * This method traverses the B-tree and yields each leaf node it encounters.
+     * It can be used to iterate over all leaf nodes in the B-tree.
+     *
+     * @return \Generator<self> yields leaf nodes
+     */
+    public function leaf(): \Generator
+    {
+        if (NodeType::LEAF === $this->nodeType) {
+            yield $this; // Yield the current leaf node
+
+            return;
+        }
+        foreach ($this->children as $childPtr) {
+            $childNode = self::$nodeCache[(int) $this->file][$childPtr] ?? new self($this->file, $childPtr);
+            if (NodeType::LEAF === $childNode->nodeType) {
+                yield $childNode; // Yield leaf nodes
+            } else {
+                yield from $childNode->leaf(); // Recursively yield leaf nodes from child nodes
+            }
+        }
     }
 
     /**
@@ -474,8 +495,8 @@ class Node
         );
         $newNode->children = array_slice($this->children, 0, $midIndex, preserve_keys: true); // Move first half of children to newNode
         foreach ($newNode->children as $key => $ptr) {
-            if (isset(self::$nodeCache[$ptr])) {
-                self::$nodeCache[$ptr]->parentNode = $newNode; // Update parent node for cached nodes
+            if (isset(self::$nodeCache[(int) $this->file][$ptr])) {
+                self::$nodeCache[(int) $this->file][$ptr]->parentNode = $newNode; // Update parent node for cached nodes
             }
         }
         $this->children = array_slice($this->children, $midIndex, preserve_keys: true); // Keep first half of children in current node
@@ -506,12 +527,15 @@ class Node
         if (!isset($node->ptr) || $node->ptr <= 0) {
             throw new \RuntimeException('Invalid node pointer, cannot cache node.');
         }
-        if (array_key_exists($node->ptr, self::$nodeCache)) {
+        if (!array_key_exists((int) $this->file, self::$nodeCache)) {
+            self::$nodeCache[(int) $this->file] = []; // Initialize cache for this file if not already set
+        }
+        if (array_key_exists($node->ptr, self::$nodeCache[(int) $this->file])) {
             return; // Node is already cached
         }
-        while (count(self::$nodeCache) >= $node->cacheSize) {
-            array_shift(self::$nodeCache); // Remove the oldest cached node if cache size exceeds limit
+        while (count(self::$nodeCache[(int) $this->file]) >= $node->cacheSize) {
+            array_shift(self::$nodeCache[(int) $this->file]); // Remove the oldest cached node if cache size exceeds limit
         }
-        self::$nodeCache[$node->ptr] = $node; // Cache the node for future access
+        self::$nodeCache[(int) $this->file][$node->ptr] = $node; // Cache the node for future access
     }
 }
