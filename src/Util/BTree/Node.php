@@ -42,10 +42,14 @@ class Node
     private ?self $parentNode;
 
     /**
-     * Node constructor.
+     * Constructs a new BTree node.
      *
-     * @param resource $file The file resource where the BTree is stored
-     * @param int      $ptr  The pointer to the node in the file
+     * @param resource $file     the file resource or handler associated with the node
+     * @param null|int $ptr      optional pointer to the node's position in the file
+     * @param int      $slotSize the size of each slot in the node (minimum 4)
+     * @param int      $keySize  the size of each key in the node
+     *
+     * @throws \InvalidArgumentException if the slot size is less than 4
      */
     final public function __construct(mixed $file, ?int $ptr = null, int $slotSize = 16, int $keySize = 32)
     {
@@ -63,6 +67,14 @@ class Node
         }
     }
 
+    /**
+     * Resets the static caches for nodes and records.
+     *
+     * This method clears both the node cache and the record cache by
+     * setting their respective static arrays to empty. Use this to
+     * ensure that cached data is discarded and fresh data will be loaded
+     * on subsequent accesses.
+     */
     public function resetCache(): void
     {
         self::$nodeCache = []; // Clear the node cache
@@ -191,6 +203,38 @@ class Node
     }
 
     /**
+     * Adds a new key-value pair to the B-tree node.
+     *
+     * This method creates a new leaf node, sets the provided key and value,
+     * and adds the node as a child to the current node. Only internal nodes
+     * can have children; attempting to add a record to a non-leaf node will
+     * throw a RuntimeException.
+     *
+     * @param string $key   the key to add to the node
+     * @param mixed  $value the value associated with the key
+     *
+     * @return bool returns true on successful addition
+     *
+     * @throws \RuntimeException if the node is not an internal node
+     */
+    public function add(string $key, mixed $value): bool
+    {
+        if (NodeType::INTERNAL !== $this->nodeType) {
+            throw new \RuntimeException('Cannot add record to a non-leaf node.');
+        }
+        $childNode = self::create(
+            $this->file,
+            NodeType::LEAF,
+            $this->slotSize,
+            $this->keySize
+        );
+        $childNode->set($key, $value);
+        $this->addNode($childNode);
+
+        return true;
+    }
+
+    /**
      * Sets the value for the specified key in the node.
      *
      * @param string $key   the key to set
@@ -201,20 +245,7 @@ class Node
     public function set(string $key, mixed $value): bool
     {
         if (NodeType::LEAF !== $this->nodeType) {
-            $childNode = $this->lookupChild($key);
-            if ($childNode) {
-                return $childNode->set($key, $value);
-            }
-            $childNode = self::create(
-                $this->file,
-                NodeType::LEAF,
-                $this->slotSize,
-                $this->keySize
-            );
-            $childNode->set($key, $value);
-            $this->addNode($childNode);
-
-            return true;
+            throw new \RuntimeException('Cannot set value in a non-leaf node.');
         }
         $record = self::$recordCache[$key] ?? Record::create($this);
         if (!$record->write($key, $value)) {
@@ -241,9 +272,8 @@ class Node
      */
     public function get(string $key): mixed
     {
-        if (NodeType::INTERNAL === $this->nodeType
-            && $childNode = $this->lookupChild($key)) {
-            return $childNode->get($key);
+        if (NodeType::LEAF !== $this->nodeType) {
+            throw new \RuntimeException('Cannot only get value from a leaf node.');
         }
         if (!isset($this->children[$key])) {
             return null;
@@ -263,7 +293,7 @@ class Node
     public function remove(string $key): bool
     {
         if (NodeType::LEAF !== $this->nodeType) {
-            return $this->lookupChild($key)->remove($key);
+            throw new \RuntimeException('Cannot only get value from a leaf node.');
         }
         if (!isset($this->children[$key])) {
             return false; // Key does not exist
@@ -405,7 +435,7 @@ class Node
      *
      * @throws \RuntimeException if called on a leaf node
      */
-    private function lookupChild(string $key): ?Node
+    public function lookup(string $key): ?Node
     {
         if (NodeType::LEAF === $this->nodeType) {
             throw new \RuntimeException('Cannot lookup child in a leaf node.');
@@ -414,14 +444,16 @@ class Node
             if (!($key <= $childKey)) {
                 continue;
             }
-            if (isset(self::$nodeCache[$childPtr])) {
-                return self::$nodeCache[$childPtr]; // Return cached node
-            }
             // Return the child node that should contain the key
-            $node = new self($this->file, $childPtr);
+            $node = self::$nodeCache[$childPtr] ?? new self($this->file, $childPtr);
             $node->parentNode = $this;
 
-            return $node;
+            if (NodeType::LEAF === $node->nodeType) {
+                // If the child node is a leaf, return it directly
+                return $node;
+            }
+
+            return $node->lookup($key);
         }
 
         return null;

@@ -111,9 +111,14 @@ class BTree
             return false; // Cannot set values in read-only mode
         }
         $ptr = $this->rootNode->ptr;
-        $this->rootNode->set($key, $value);
+        $leafNode = $this->rootNode->lookup($key);
+        if ($leafNode) {
+            $leafNode->set($key, $value);
+        } else {
+            $this->rootNode->add($key, $value);
+        }
         if ($ptr !== $this->rootNode->ptr) {
-            $this->writeHeader();
+            $this->writeHeader($this->file);
         }
 
         return true;
@@ -128,7 +133,12 @@ class BTree
      */
     public function get(string $key): mixed
     {
-        return $this->rootNode->get($key);
+        $leafNode = $this->rootNode->lookup($key);
+        if ($leafNode) {
+            return $leafNode->get($key);
+        }
+
+        return null;
     }
 
     /**
@@ -140,10 +150,9 @@ class BTree
      */
     public function remove(string $key): bool
     {
-        $ptr = $this->rootNode->ptr;
-        $this->rootNode->remove($key);
-        if ($ptr !== $this->rootNode->ptr) {
-            $this->writeHeader();
+        $leafNode = $this->rootNode->lookup($key);
+        if ($leafNode) {
+            return $leafNode->remove($key);
         }
 
         return true;
@@ -156,8 +165,7 @@ class BTree
      */
     public function compact(): bool
     {
-        // Implementation for compacting the BTree file
-        return false;
+        return false; // Cannot compact in read-only mode
     }
 
     /**
@@ -175,7 +183,7 @@ class BTree
         );
         $this->rootNode->write(self::BTREE_HEADER_SIZE); // Write the header size
 
-        return $this->writeHeader();
+        return $this->writeHeader($this->file);
     }
 
     /**
@@ -232,7 +240,7 @@ class BTree
         );
         $this->rootNode->write(self::BTREE_HEADER_SIZE);
 
-        return $this->writeHeader();
+        return $this->writeHeader($this->file);
     }
 
     /**
@@ -240,7 +248,7 @@ class BTree
      *
      * @return bool returns true on success
      */
-    private function writeHeader(): bool
+    private function writeHeader(mixed $file): bool
     {
         $header = pack(
             'SSSSL',
@@ -250,8 +258,8 @@ class BTree
             $this->keySize,
             $this->rootNode->ptr
         );
-        fseek($this->file, 0);
+        fseek($file, 0);
 
-        return false !== fwrite($this->file, $header);
+        return false !== fwrite($file, $header);
     }
 }
