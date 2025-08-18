@@ -8,7 +8,13 @@ use Hazaar\Util\BTree\Node;
 use Hazaar\Util\BTree\NodeType;
 use Hazaar\Util\BTree\Record;
 
-class BTree
+/**
+ * BTree class provides a B-Tree implementation for storing key-value pairs.
+ * It supports basic operations like insert, delete, and search.
+ *
+ * @implements \IteratorAggregate<string, mixed>
+ */
+class BTree implements \IteratorAggregate
 {
     private const BTREE_HEADER_SIZE = 12; // Size of the header in bytes
     private const VERSION_STRING = '1.0';
@@ -236,6 +242,24 @@ class BTree
     }
 
     /**
+     * Returns a generator that yields all records in the B-Tree.
+     *
+     * This method traverses the B-Tree and yields each record's key and value.
+     *
+     * @return \Generator<string, mixed> a generator yielding key-value pairs from the B-Tree
+     */
+    public function getIterator(): \Generator
+    {
+        foreach ($this->rootNode->leaf() as $node) {
+            foreach ($node->children as $key => $recordPtr) {
+                $record = Record::create($node, (string) $key);
+
+                yield $record->key => $record->read($recordPtr);
+            }
+        }
+    }
+
+    /**
      * Empties the B-Tree by creating a new root node.
      *
      * @return bool returns true on success
@@ -260,15 +284,7 @@ class BTree
      */
     public function toArray(): array
     {
-        $result = [];
-        foreach ($this->rootNode->leaf() as $node) {
-            foreach ($node->children as $key => $recordPtr) {
-                $record = Record::create($node, (string) $key);
-                $result[$record->key] = $record->read($recordPtr);
-            }
-        }
-
-        return $result;
+        return iterator_to_array($this->getIterator());
     }
 
     /**

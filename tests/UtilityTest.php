@@ -47,10 +47,9 @@ class UtilityTest extends TestCase
         $keySize = 32; // Set a fixed length for keys
         $btree = new BTree($file, false, $keySize);
         $this->assertTrue($btree->set('key', 'value'));
-        $this->assertTrue($btree->set('key2', 'value2'));
         $this->assertEquals('value', $btree->get('key'));
-        // $this->assertTrue($btree->remove('key'));
-        // $this->assertNull($btree->get('key'));
+        $this->assertTrue($btree->remove('key'));
+        $this->assertNull($btree->get('key'));
 
         /**
          * Inserts 1000 unique key-value pairs into the B-tree and asserts that each insertion is successful.
@@ -94,7 +93,18 @@ class UtilityTest extends TestCase
         $this->assertFileExists($file);
         $this->assertTrue(is_readable($file));
         $btree = new BTree($file, false, $keySize);
-        $this->assertEquals('value', $btree->get('key'));
+
+        /**
+         * Iterates over each key-value pair in the $keyIndex array and asserts that
+         * the value retrieved from the $btree using the string representation of the key
+         * matches the expected value from $keyIndex and still exists after compaction.
+         *
+         * @param array  $keyIndex array of keys and their expected values
+         * @param object $btree    B-tree object with a get method to retrieve values by key
+         */
+        foreach ($keyIndex as $testKey => $testValue) {
+            $this->assertEquals($keyIndex[$testKey], $btree->get((string) $testKey));
+        }
         $this->assertTrue($btree->compact());
         $this->assertTrue($btree->verify());
 
@@ -111,6 +121,11 @@ class UtilityTest extends TestCase
         }
         foreach ($removedKeys as $testKey) {
             $this->assertNull($btree->get((string) $testKey));
+        }
+
+        foreach ($btree as $key => $value) {
+            $this->assertArrayHasKey($key, $keyIndex);
+            $this->assertEquals($keyIndex[$key], $value);
         }
     }
 
@@ -317,7 +332,7 @@ class UtilityTest extends TestCase
 
     public function testCreateClosureFromArrowFunction(): void
     {
-        $closure = new Closure(fn ($myValue) => ($myValue).('!'));
+        $closure = new Closure(fn ($myValue) => $myValue.'!');
         $this->assertStringStartsWith('fn ($myValue) => ($myValue).(\'!\')', $closure->getCode());
         $this->assertCount(1, $closure->getParameters());
         $this->assertEquals('myValue', $closure->getParameters()[0]->getName());

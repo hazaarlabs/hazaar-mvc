@@ -70,8 +70,19 @@ function sidebarGuide() {
                 { text: 'Middleware', link: '/docs/basics/middleware' },
                 { text: 'Validation', link: '/docs/basics/validation' },
                 { text: 'Security', link: '/docs/basics/security' },
-                { text: 'Utilities', link: '/docs/basics/utilities' },
                 { text: 'CLI Tools', link: '/docs/basics/cli-tools' }
+            ]
+        },
+        {
+            text: 'Utility Classes',
+            collapsible: true,
+            children: [
+                { text: 'Overview', link: '/docs/utils/overview' },
+                { text: 'Strings', link: '/docs/utils/strings' },
+                { text: 'Numbers', link: '/docs/utils/numbers' },
+                { text: 'Dates', link: '/docs/utils/dates' },
+                { text: 'Arrays', link: '/docs/utils/arrays' },
+                { text: 'B-Tree', link: '/docs/utils/btree' },
             ]
         },
         {
