@@ -173,11 +173,16 @@ class BTree implements \IteratorAggregate
     /**
      * Compacts the B-Tree file to reduce its size.
      *
+     * @param float $fillFactor the fill factor for compacting the B-Tree, default is 0.5  This is used
+     *                          to determine how full the nodes should be after compaction.
+     *                          * A fill factor of 0.5 means that nodes will be 50% full after compaction.
+     *                          * A fill factor of 0.8 means that nodes will be 80% full after compaction.
+     *
      * @return bool returns true on success
      */
-    public function compact(): bool
+    public function compact(float $fillFactor = 0.5): bool
     {
-        if ($this->readOnly) {
+        if ($this->readOnly || 0 === $this->count()) {
             return false; // Cannot compact in read-only mode
         }
         $tmpFilePath = $this->filePath.'.tmp';
@@ -185,17 +190,13 @@ class BTree implements \IteratorAggregate
         if (false === $tmpFile) {
             throw new \RuntimeException("Could not open temporary BTree file: {$tmpFilePath}");
         }
-        $newRootNode = Node::create(
-            file: $tmpFile,
-            type: NodeType::INTERNAL,
-            slotSize: $this->slotSize,
-            keySize: $this->keySize
-        );
-        $newRootNode->write(self::BTREE_HEADER_SIZE); // Write the header
         $this->writeHeader($tmpFile);
+        $fillCount = (int) ($this->slotSize * $fillFactor);
         $newLeafNode = null;
+        $nodeTree = [];
         foreach ($this->rootNode->leaf() as $leafNode) {
             foreach ($leafNode->children as $key => $recordPtr) {
+                // Create a new leaf node if it doesn't exist
                 if (!$newLeafNode) {
                     $newLeafNode = Node::create(
                         file: $tmpFile,
@@ -204,19 +205,71 @@ class BTree implements \IteratorAggregate
                         keySize: $this->keySize
                     );
                 }
+                // Create a new record and move it to the new leaf node
                 $record = Record::create($leafNode, (string) $key);
                 $record->read($recordPtr);
                 $record->moveTo($newLeafNode);
-                if (count($newLeafNode->children) >= ($this->slotSize / 2)) {
-                    $newRootNode->addNode($newLeafNode);
+                // Check if the new leaf node is full
+                if (count($newLeafNode->children) >= $fillCount) {
+                    // If the new top level internal node does not exist, create it
+                    if (!isset($nodeTree[0])) {
+                        $nodeTree[0] = Node::create(
+                            file: $tmpFile,
+                            type: NodeType::INTERNAL,
+                            slotSize: $this->slotSize,
+                            keySize: $this->keySize
+                        );
+                    }
+                    // Add the new leaf node to the new internal node
+                    $nodeTree[0]->addNode($newLeafNode);
                     $newLeafNode = null;
+                    // Check if the new internal node is full and propagate upwards
+                    for ($i = 0; $i < count($nodeTree); ++$i) {
+                        // If the current node is not set or does not have enough children, skip it
+                        if (!($nodeTree[$i] && count($nodeTree[$i]->children) >= $fillCount)) {
+                            continue;
+                        }
+                        // If the new internal node is full, add it to the node tree
+                        // If the next internal node does not exist, create it
+                        if (!isset($nodeTree[$i + 1])) {
+                            $nodeTree[$i + 1] = Node::create(
+                                file: $tmpFile,
+                                type: NodeType::INTERNAL,
+                                slotSize: $this->slotSize,
+                                keySize: $this->keySize
+                            );
+                        }
+                        // Add the current internal node to the next internal node
+                        // This effectively propagates the full internal node upwards in the tree
+                        $nodeTree[$i + 1]->addNode($nodeTree[$i]);
+                        $nodeTree[$i] = null;
+                    }
                 }
             }
         }
+        // If there is a new leaf node that has not been added to the node tree, add it now
         if ($newLeafNode) {
-            $newRootNode->addNode($newLeafNode);
+            $nodeTree[0]->addNode($newLeafNode);
         }
-        $newRootNode->write(self::BTREE_HEADER_SIZE); // Write the header
+        // Now make sure all internal nodes are propagated upwards
+        // This is necessary to ensure that the tree structure is maintained
+        // and that the root node is correctly set
+        for ($i = 0; $i < count($nodeTree) - 1; ++$i) {
+            // If the next internal node does not exist, create it
+            if (!isset($nodeTree[$i + 1])) {
+                $nodeTree[$i + 1] = Node::create(
+                    file: $tmpFile,
+                    type: NodeType::INTERNAL,
+                    slotSize: $this->slotSize,
+                    keySize: $this->keySize
+                );
+            }
+            // Add the current internal node to the next internal node
+            // This effectively propagates the full internal node upwards in the tree
+            $nodeTree[$i + 1]->addNode($nodeTree[$i]);
+        }
+        $newRootNode = array_pop($nodeTree);
+        $this->writeHeader($tmpFile, $newRootNode);
         // Close the old file and reset the root node cache
         $this->rootNode->resetCache();
         fclose($this->file);
@@ -336,7 +389,7 @@ class BTree implements \IteratorAggregate
      *
      * @return bool returns true on success
      */
-    private function writeHeader(mixed $file): bool
+    private function writeHeader(mixed $file, ?Node $rootNode = null): bool
     {
         $header = pack(
             'SSSSL',
@@ -344,7 +397,7 @@ class BTree implements \IteratorAggregate
             $this->version->getMinor(),
             $this->slotSize,
             $this->keySize,
-            $this->rootNode->ptr
+            $rootNode->ptr ?? $this->rootNode->ptr ?? 0
         );
         fseek($file, 0);
 
