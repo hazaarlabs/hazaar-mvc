@@ -153,6 +153,16 @@ class BTree implements \IteratorAggregate
         return null;
     }
 
+    public function has(string $key): bool
+    {
+        $leafNode = $this->rootNode->lookupLeafNode($key);
+        if ($leafNode) {
+            return $leafNode->has($key);
+        }
+
+        return false;
+    }
+
     /**
      * Removes the specified key from the B-Tree.
      *
