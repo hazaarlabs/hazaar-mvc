@@ -221,63 +221,17 @@ class BTree implements \IteratorAggregate
                 $record->moveTo($newLeafNode);
                 // Check if the new leaf node is full
                 if (count($newLeafNode->children) >= $fillCount) {
-                    // If the new top level internal node does not exist, create it
-                    if (!isset($nodeTree[0])) {
-                        $nodeTree[0] = Node::create(
-                            file: $tmpFile,
-                            type: NodeType::INTERNAL,
-                            slotSize: $this->slotSize,
-                            keySize: $this->keySize
-                        );
-                    }
-                    // Add the new leaf node to the new internal node
-                    $nodeTree[0]->addNode($newLeafNode);
+                    $this->addLeafToTree($nodeTree, $tmpFile, $newLeafNode);
+                    $this->propagateNodeTree($nodeTree, $tmpFile, $fillCount);
                     $newLeafNode = null;
-                    // Check if the new internal node is full and propagate upwards
-                    for ($i = 0; $i < count($nodeTree); ++$i) {
-                        // If the current node is not set or does not have enough children, skip it
-                        if (!($nodeTree[$i] && count($nodeTree[$i]->children) >= $fillCount)) {
-                            continue;
-                        }
-                        // If the new internal node is full, add it to the node tree
-                        // If the next internal node does not exist, create it
-                        if (!isset($nodeTree[$i + 1])) {
-                            $nodeTree[$i + 1] = Node::create(
-                                file: $tmpFile,
-                                type: NodeType::INTERNAL,
-                                slotSize: $this->slotSize,
-                                keySize: $this->keySize
-                            );
-                        }
-                        // Add the current internal node to the next internal node
-                        // This effectively propagates the full internal node upwards in the tree
-                        $nodeTree[$i + 1]->addNode($nodeTree[$i]);
-                        $nodeTree[$i] = null;
-                    }
                 }
             }
         }
         // If there is a new leaf node that has not been added to the node tree, add it now
         if ($newLeafNode) {
-            $nodeTree[0]->addNode($newLeafNode);
+            $this->addLeafToTree($nodeTree, $tmpFile, $newLeafNode);
         }
-        // Now make sure all internal nodes are propagated upwards
-        // This is necessary to ensure that the tree structure is maintained
-        // and that the root node is correctly set
-        for ($i = 0; $i < count($nodeTree) - 1; ++$i) {
-            // If the next internal node does not exist, create it
-            if (!isset($nodeTree[$i + 1])) {
-                $nodeTree[$i + 1] = Node::create(
-                    file: $tmpFile,
-                    type: NodeType::INTERNAL,
-                    slotSize: $this->slotSize,
-                    keySize: $this->keySize
-                );
-            }
-            // Add the current internal node to the next internal node
-            // This effectively propagates the full internal node upwards in the tree
-            $nodeTree[$i + 1]->addNode($nodeTree[$i]);
-        }
+        $this->propagateNodeTree($nodeTree, $tmpFile, 0);
         $newRootNode = array_pop($nodeTree);
         $this->writeHeader($tmpFile, $newRootNode);
         // Close the old file and reset the root node cache
@@ -358,6 +312,67 @@ class BTree implements \IteratorAggregate
     public function verify(): bool
     {
         return $this->rootNode->verifyTree();
+    }
+
+    /**
+     * Adds a new leaf node to the B-Tree.
+     *
+     * This method is used internally to add a new leaf node to the B-Tree structure.
+     * It checks if the new leaf node is full and adds it to the tree if necessary.
+     *
+     * @param array<?Node> $nodeTree    The current node tree
+     * @param resource     $file        The file resource for the B-Tree
+     * @param Node         $newLeafNode The new leaf node to be added
+     */
+    private function addLeafToTree(array &$nodeTree, mixed $file, Node $newLeafNode): void
+    {
+        // If the new top level internal node does not exist, create it
+        if (!isset($nodeTree[0])) {
+            $nodeTree[0] = Node::create(
+                file: $file,
+                type: NodeType::INTERNAL,
+                slotSize: $this->slotSize,
+                keySize: $this->keySize
+            );
+        }
+        // Add the new leaf node to the new internal node
+        $nodeTree[0]->addNode($newLeafNode);
+    }
+
+    /**
+     * Adds a node to the B-Tree.
+     *
+     * This method is used internally to add a new node to the B-Tree structure.
+     * It checks if the new node is full and propagates it upwards in the tree if necessary.
+     *
+     * @param array<?Node> $nodeTree  The current node tree
+     * @param resource     $file      The file resource for the B-Tree
+     * @param int          $fillCount The fill count for the nodes
+     */
+    private function propagateNodeTree(array &$nodeTree, mixed $file, int $fillCount): void
+    {
+        $totalNodeCount = count($nodeTree);
+        // // Check if the new internal node is full and propagate upwards
+        for ($i = 0; $i < $totalNodeCount; ++$i) {
+            // If the current node is not set or does not have enough children, skip it
+            if (!($nodeTree[$i] && count($nodeTree[$i]->children) >= $fillCount)) {
+                continue;
+            }
+            // If the new internal node is full, add it to the node tree
+            // If the next internal node does not exist, create it
+            if (!isset($nodeTree[$i + 1])) {
+                $nodeTree[$i + 1] = Node::create(
+                    file: $file,
+                    type: NodeType::INTERNAL,
+                    slotSize: $this->slotSize,
+                    keySize: $this->keySize
+                );
+            }
+            // Add the current internal node to the next internal node
+            // This effectively propagates the full internal node upwards in the tree
+            $nodeTree[$i + 1]->addNode($nodeTree[$i]);
+            $nodeTree[$i] = null;
+        }
     }
 
     /**
