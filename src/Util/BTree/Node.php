@@ -283,6 +283,25 @@ class Node
     }
 
     /**
+     * Checks if the specified key exists in the node.
+     *
+     * @param string $key the key to check
+     *
+     * @return bool returns true if the key exists, false otherwise
+     */
+    public function has(string $key): bool
+    {
+        if (NodeType::LEAF !== $this->nodeType) {
+            throw new \RuntimeException('Cannot check existence in a non-leaf node.');
+        }
+        if (!isset($this->children[$key])) {
+            return false; // Key does not exist
+        }
+
+        return true;
+    }
+
+    /**
      * Removes the specified key from the node.
      *
      * @param string $key the key to remove
