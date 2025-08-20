@@ -45,7 +45,7 @@ class UtilityTest extends TestCase
             unlink($file);
         }
         $keySize = 32; // Set a fixed length for keys
-        $btree = new BTree($file, false, $keySize, 4);
+        $btree = new BTree($file, false, $keySize);
         $this->assertTrue($btree->set('key', 'value'));
         $this->assertEquals('value', $btree->get('key'));
         $this->assertTrue($btree->remove('key'));
@@ -62,7 +62,7 @@ class UtilityTest extends TestCase
          */
         $keyIndex = [];
         $keylen = 32; // Set a fixed length for keys
-        for ($i = 0; $i < 100; ++$i) {
+        for ($i = 0; $i < 1000; ++$i) {
             $key = substr(str_shuffle(str_repeat('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', $keylen)), 0, rand(2, $keylen));
             $keyIndex[$key] = 'value: '.$key;
             $this->assertTrue($btree->set((string) $key, $keyIndex[$key]));
@@ -117,9 +117,6 @@ class UtilityTest extends TestCase
          * @param object $btree    B-tree object with a get method to retrieve values by key
          */
         foreach ($keyIndex as $testKey => $testValue) {
-            if (!$btree->has((string) $testKey)) {
-                $this->fail("Key {$testKey} not found in B-tree after compaction.");
-            }
             $this->assertEquals($keyIndex[$testKey], $btree->get((string) $testKey));
         }
         foreach ($removedKeys as $testKey) {

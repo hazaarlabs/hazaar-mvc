@@ -235,7 +235,6 @@ class BTree implements \IteratorAggregate
         $newRootNode = array_pop($nodeTree);
         $this->writeHeader($tmpFile, $newRootNode);
         // Close the old file and reset the root node cache
-        $this->rootNode->resetCache();
         fclose($this->file);
         fclose($tmpFile);
         // Rename the temporary file to the original file path
@@ -405,6 +404,7 @@ class BTree implements \IteratorAggregate
             keySize: $this->keySize
         );
         $this->rootNode->write(self::BTREE_HEADER_SIZE);
+        $this->rootNode->resetCache();
 
         return $this->writeHeader($this->file);
     }
