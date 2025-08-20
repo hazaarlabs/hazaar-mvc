@@ -237,6 +237,7 @@ class BTree implements \IteratorAggregate
         // Close the old file and reset the root node cache
         fclose($this->file);
         fclose($tmpFile);
+        $this->rootNode->resetCache();
         // Rename the temporary file to the original file path
         if (!rename($tmpFilePath, $this->filePath)) {
             throw new \RuntimeException("Could not rename temporary BTree file to: {$this->filePath}");
@@ -360,6 +361,9 @@ class BTree implements \IteratorAggregate
             // If the new internal node is full, add it to the node tree
             // If the next internal node does not exist, create it
             if (!isset($nodeTree[$i + 1])) {
+                if (0 === $fillCount && $i + 1 === $totalNodeCount) {
+                    break;
+                }
                 $nodeTree[$i + 1] = Node::create(
                     file: $file,
                     type: NodeType::INTERNAL,
@@ -404,7 +408,6 @@ class BTree implements \IteratorAggregate
             keySize: $this->keySize
         );
         $this->rootNode->write(self::BTREE_HEADER_SIZE);
-        $this->rootNode->resetCache();
 
         return $this->writeHeader($this->file);
     }
