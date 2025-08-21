@@ -162,6 +162,9 @@ class Node
      */
     public function write(?int $ptr = null): bool
     {
+        if (count($this->children) > $this->slotSize) {
+            throw new \RuntimeException('Unable to write node that has too many children!'); // Ensure the node does not exceed its slot size
+        }
         if (null === $ptr) {
             if (!isset($this->ptr)) {
                 fseek($this->file, 0, SEEK_END);

@@ -201,7 +201,7 @@ class BTree implements \IteratorAggregate
             throw new \RuntimeException("Could not open temporary BTree file: {$tmpFilePath}");
         }
         $this->writeHeader($tmpFile);
-        $fillCount = (int) ($this->slotSize * $fillFactor);
+        $fillCount = max(4, (int) ($this->slotSize * $fillFactor)); // Ensure a minimum fill count of 4
         $newLeafNode = null;
         $nodeTree = [];
         foreach ($this->rootNode->leaf() as $leafNode) {
