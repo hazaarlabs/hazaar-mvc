@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Hazaar\File\Backend;
 
-use Hazaar\File\BTree;
 use Hazaar\File\Interface\Backend as BackendInterface;
 use Hazaar\File\Interface\Driver as DriverInterface;
+use Hazaar\Util\BTree;
 
 class Local implements BackendInterface, DriverInterface
 {

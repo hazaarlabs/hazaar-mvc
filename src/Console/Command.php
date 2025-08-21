@@ -20,7 +20,7 @@ class Command
     private array $options = [];
 
     /**
-     * @var array<Argument>
+     * @var array<string,Argument>
      */
     private array $arguments = [];
 
@@ -113,7 +113,8 @@ class Command
         ?string $description = null,
         bool $required = false
     ): self {
-        $this->arguments[] = new Argument(
+        $name = strtolower(trim($name));
+        $this->arguments[$name] = new Argument(
             name: $name,
             description: $description,
             required: $required
