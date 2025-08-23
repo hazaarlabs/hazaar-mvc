@@ -104,13 +104,14 @@ class FileTest extends TestCase
 
     public function testDropboxFileBackendWithTextFile(): void
     {
+        $filename = '/'.uniqid('example_').'.txt';
         $manager = $this->getDropboxManager();
         $this->assertTrue($manager->authorised());
         $this->assertTrue($manager->refresh(true));
-        if ($manager->exists('/example.txt')) {
-            $this->assertTrue($manager->unlink('/example.txt'));
+        if ($manager->exists($filename)) {
+            $this->assertTrue($manager->unlink($filename));
         }
-        $exampleFile = $manager->get('/example.txt');
+        $exampleFile = $manager->get($filename);
         $this->assertEquals(20, $exampleFile->putContents('This is a test file.'));
         $this->assertTrue($exampleFile->exists());
         $this->assertInstanceOf(File::class, $exampleFile);
@@ -149,13 +150,14 @@ class FileTest extends TestCase
 
     public function testGoogleDriveFileBackendWithTextFile(): void
     {
+        $filename = '/'.uniqid('example_').'.txt';
         $manager = $this->getGoogleDriveManager();
         $this->assertTrue($manager->authorised());
         $this->assertTrue($manager->refresh(true));
-        if ($manager->exists('/example.txt')) {
-            $this->assertTrue($manager->unlink('/example.txt'));
+        if ($manager->exists($filename)) {
+            $this->assertTrue($manager->unlink($filename));
         }
-        $exampleFile = $manager->get('/example.txt');
+        $exampleFile = $manager->get($filename);
         $this->assertEquals(20, $exampleFile->putContents('This is a test file.'));
         $this->assertTrue($exampleFile->exists());
         $this->assertInstanceOf(File::class, $exampleFile);
